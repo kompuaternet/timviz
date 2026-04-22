@@ -1,0 +1,84 @@
+import { cookies } from "next/headers";
+import { NextResponse } from "next/server";
+import { getSessionCookieName, signSessionValue } from "../../../../../../lib/pro-auth";
+import { exchangeCodeForGoogleProfile, getGoogleOAuthSettings } from "../../../../../../lib/google-oauth";
+import { getProfessionalIdByEmail } from "../../../../../../lib/pro-data";
+
+const GOOGLE_OAUTH_STATE_COOKIE = "rezervo_google_oauth_state";
+const GOOGLE_OAUTH_MODE_COOKIE = "rezervo_google_oauth_mode";
+
+function clearOAuthCookies(cookieStore: Awaited<ReturnType<typeof cookies>>) {
+  cookieStore.set(GOOGLE_OAUTH_STATE_COOKIE, "", {
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/",
+    secure: false,
+    maxAge: 0
+  });
+  cookieStore.set(GOOGLE_OAUTH_MODE_COOKIE, "", {
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/",
+    secure: false,
+    maxAge: 0
+  });
+}
+
+export async function GET(request: Request) {
+  const url = new URL(request.url);
+  const code = url.searchParams.get("code")?.trim() || "";
+  const state = url.searchParams.get("state")?.trim() || "";
+  const cookieStore = await cookies();
+  const expectedState = cookieStore.get(GOOGLE_OAUTH_STATE_COOKIE)?.value || "";
+  const mode = cookieStore.get(GOOGLE_OAUTH_MODE_COOKIE)?.value === "register" ? "register" : "login";
+
+  if (!code || !state || !expectedState || state !== expectedState) {
+    clearOAuthCookies(cookieStore);
+    return NextResponse.redirect(new URL("/pro/login?google_error=state", request.url));
+  }
+
+  try {
+    const settings = getGoogleOAuthSettings(url.origin);
+    const profile = await exchangeCodeForGoogleProfile({
+      code,
+      clientId: settings.clientId,
+      clientSecret: settings.clientSecret,
+      redirectUri: settings.redirectUri
+    });
+    const professionalId = await getProfessionalIdByEmail(profile.email);
+
+    clearOAuthCookies(cookieStore);
+
+    if (professionalId) {
+      cookieStore.set(getSessionCookieName(), signSessionValue(professionalId), {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: false,
+        maxAge: 60 * 60 * 24 * 7
+      });
+      return NextResponse.redirect(new URL("/pro/calendar", request.url));
+    }
+
+    const createAccountUrl = new URL("/pro/create-account", request.url);
+    createAccountUrl.searchParams.set("google", "1");
+    createAccountUrl.searchParams.set("email", profile.email);
+    if (profile.givenName) {
+      createAccountUrl.searchParams.set("firstName", profile.givenName);
+    }
+    if (profile.familyName) {
+      createAccountUrl.searchParams.set("lastName", profile.familyName);
+    }
+    if (profile.locale) {
+      createAccountUrl.searchParams.set("locale", profile.locale);
+    }
+    if (mode === "login") {
+      createAccountUrl.searchParams.set("google_from", "login");
+    }
+
+    return NextResponse.redirect(createAccountUrl);
+  } catch {
+    clearOAuthCookies(cookieStore);
+    return NextResponse.redirect(new URL("/pro/login?google_error=oauth", request.url));
+  }
+}

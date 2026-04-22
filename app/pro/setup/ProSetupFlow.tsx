@@ -1,0 +1,1219 @@
+"use client";
+
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import GlobalLanguageSwitcher from "../../GlobalLanguageSwitcher";
+import styles from "../pro.module.css";
+import { isProLanguage, profileLanguageFromCode, type ProLanguage } from "../i18n";
+import type { AccountDraft } from "../../../lib/pro-data";
+import {
+  clearScheduleReminder,
+  markScheduleReminderPending
+} from "../../../lib/schedule-reminder";
+import {
+  categoryOptions,
+  getCategoryTemplate,
+  getServicesForCategories
+} from "../../../lib/service-templates";
+
+const serviceModes = [
+  "Клиенты приходят в мое физическое заведение",
+  "Я работаю с выездом к клиенту",
+  "Я предоставляю услуги онлайн"
+] as const;
+
+type ServiceMode = (typeof serviceModes)[number];
+
+const joinBusinessOptions = [
+  {
+    name: "Studio Aura",
+    city: "Киев",
+    role: "Мастер",
+    description: "Салон красоты · 4 мастера · онлайн-запись и календарь"
+  },
+  {
+    name: "Barber Drive",
+    city: "Львов",
+    role: "Барбер",
+    description: "Барбершоп · командное расписание · подтверждение визитов"
+  },
+  {
+    name: "Nail Yard",
+    city: "Одесса",
+    role: "Нейл-мастер",
+    description: "Ногтевая студия · общий салонный аккаунт · личный график"
+  }
+];
+
+const setupText = {
+  ru: {
+    close: "Закрыть",
+    continue: "Продолжить →",
+    saving: "Сохраняем...",
+    ownerSetup: {
+      eyebrow: "Настройка аккаунта",
+      title: "Как вы хотите настроить профессиональный аккаунт?",
+      text: "Можно создать новый бизнес-аккаунт владельца или присоединиться к уже существующему салону как мастер или сотрудник.",
+      ownerTitle: "Создать бизнес-аккаунт",
+      ownerText: "Пользователь будет владельцем бизнеса, увидит основное меню, настроит услуги, мастеров, расписание и все записи салона.",
+      memberTitle: "Присоединиться к существующему бизнесу",
+      memberText: "Пользователь подключается к салону и управляет только своими записями и рабочим графиком в составе команды."
+    },
+    businessName: {
+      eyebrow: "Настройка владельца бизнеса",
+      title: "Как называется ваш бизнес?",
+      text: "Название бизнеса увидят клиенты и сотрудники внутри системы.",
+      name: "Название бизнеса",
+      website: "Сайт бизнеса",
+      namePlaceholder: "Название бизнеса"
+    },
+    join: {
+      eyebrow: "Подключение к салону",
+      title: "К какому бизнесу вы хотите присоединиться?",
+      text: "Для мастера или сотрудника это отдельный путь: без создания своего бизнеса, но с собственным графиком и личными записями."
+    },
+    categories: {
+      eyebrow: "Категория бизнеса",
+      title: "Чем занимается ваш бизнес?",
+      text: "На основе категории мы сразу подготовим базовый набор услуг, на которые потом будет идти запись.",
+      added: "Будут добавлены услуги:",
+      suggestions: "✦ См. предложения",
+      addManual: "Добавить новую услугу",
+      skip: "Не сейчас",
+      primary: "Основной",
+      categoryHint: "Услуги будут предложены автоматически на следующем шаге кабинета.",
+      deleteService: "Удалить услугу"
+    },
+    format: {
+      eyebrow: "Формат бизнеса",
+      title: "Сколько мастеров будет работать в аккаунте?",
+      text: "Если это один мастер, кабинет будет проще. Если команда, владелец получит расширенное меню: сотрудники, роли, графики и общие записи.",
+      solo: "Один мастер",
+      soloText: "Упрощенный личный кабинет: услуги, рабочее время, свои записи и клиенты.",
+      team: "Группа мастеров",
+      teamText: "Расширенный кабинет владельца: команда, расписание по мастерам, общая запись и управление салоном."
+    },
+    place: {
+      eyebrow: "Место оказания услуг",
+      title: "Где вы предоставляете услуги?",
+      text: "Если выбирается физическое заведение, адрес сохранится в аккаунте, чтобы потом бизнес можно было показывать на карте.",
+      findAddress: "Найти адрес на карте",
+      addressPlaceholder: "Начните вводить реальный адрес",
+      searching: "Ищем адрес...",
+      selectAddress: "Выбрать адрес",
+      preview: "Предпросмотр первого найденного адреса на карте. Нажмите на вариант выше, чтобы сохранить его в аккаунте.",
+      warning: "Введите адрес и выберите результат поиска, чтобы сохранить координаты бизнеса.",
+      openGoogle: "Открыть в Google Maps"
+    },
+    serviceModes: {
+      "Клиенты приходят в мое физическое заведение": "Клиенты приходят в мое физическое заведение",
+      "Я работаю с выездом к клиенту": "Я работаю с выездом к клиенту",
+      "Я предоставляю услуги онлайн": "Я предоставляю услуги онлайн"
+    },
+    modal: {
+      chooseServices: "Выберите услуги",
+      templateText: "Шаблон для категории",
+      templateSuffix: "собран из предложений из вашего справочника услуг.",
+      best: "Лучшие предложения",
+      bestText: "80% бизнесов похожего профиля обычно начинают с этих услуг.",
+      popular: "Другие популярные услуги",
+      selected: "Выбрано",
+      choose: "+ Выбрать",
+      addServices: "Добавить услуги",
+      addService: "Добавить услугу",
+      addServiceText: "Добавьте основную информацию об услуге прямо сейчас. Позже можно будет настроить описание и дополнительные параметры.",
+      serviceName: "Название услуги",
+      serviceType: "Тип услуги",
+      otherCategory: "Другая",
+      hours: "Часы",
+      minutes: "Минут",
+      price: "Цена",
+      add: "Добавить"
+    }
+  },
+  uk: {
+    close: "Закрити",
+    continue: "Продовжити →",
+    saving: "Зберігаємо...",
+    ownerSetup: {
+      eyebrow: "Налаштування акаунта",
+      title: "Як ви хочете налаштувати професійний акаунт?",
+      text: "Можна створити новий бізнес-акаунт власника або приєднатися до вже існуючого салону як майстер чи співробітник.",
+      ownerTitle: "Створити бізнес-акаунт",
+      ownerText: "Користувач буде власником бізнесу, побачить основне меню, налаштує послуги, майстрів, розклад і всі записи салону.",
+      memberTitle: "Приєднатися до існуючого бізнесу",
+      memberText: "Користувач підключається до салону і керує тільки своїми записами та робочим графіком у складі команди."
+    },
+    businessName: {
+      eyebrow: "Налаштування власника бізнесу",
+      title: "Як називається ваш бізнес?",
+      text: "Назву бізнесу бачитимуть клієнти та співробітники всередині системи.",
+      name: "Назва бізнесу",
+      website: "Сайт бізнесу",
+      namePlaceholder: "Назва бізнесу"
+    },
+    join: {
+      eyebrow: "Підключення до салону",
+      title: "До якого бізнесу ви хочете приєднатися?",
+      text: "Для майстра або співробітника це окремий шлях: без створення свого бізнесу, але з власним графіком і особистими записами."
+    },
+    categories: {
+      eyebrow: "Категорія бізнесу",
+      title: "Чим займається ваш бізнес?",
+      text: "На основі категорії ми одразу підготуємо базовий набір послуг, на які потім буде йти запис.",
+      added: "Будуть додані послуги:",
+      suggestions: "✦ Переглянути пропозиції",
+      addManual: "Додати нову послугу",
+      skip: "Не зараз",
+      primary: "Основна",
+      categoryHint: "Послуги будуть запропоновані автоматично на наступному кроці кабінету.",
+      deleteService: "Видалити послугу"
+    },
+    format: {
+      eyebrow: "Формат бізнесу",
+      title: "Скільки майстрів працюватиме в акаунті?",
+      text: "Якщо це один майстер, кабінет буде простішим. Якщо команда, власник отримає розширене меню: співробітники, ролі, графіки та спільні записи.",
+      solo: "Один майстер",
+      soloText: "Спрощений кабінет: послуги, робочий час, свої записи і клієнти.",
+      team: "Група майстрів",
+      teamText: "Розширений кабінет власника: команда, розклад по майстрах, спільний запис і керування салоном."
+    },
+    place: {
+      eyebrow: "Місце надання послуг",
+      title: "Де ви надаєте послуги?",
+      text: "Якщо обрано фізичний заклад, адреса збережеться в акаунті, щоб потім бізнес можна було показувати на карті.",
+      findAddress: "Знайти адресу на карті",
+      addressPlaceholder: "Почніть вводити реальну адресу",
+      searching: "Шукаємо адресу...",
+      selectAddress: "Вибрати адресу",
+      preview: "Попередній перегляд першої знайденої адреси на карті. Натисніть на варіант вище, щоб зберегти його в акаунті.",
+      warning: "Введіть адресу і виберіть результат пошуку, щоб зберегти координати бізнесу.",
+      openGoogle: "Відкрити в Google Maps"
+    },
+    serviceModes: {
+      "Клиенты приходят в мое физическое заведение": "Клієнти приходять у мій фізичний заклад",
+      "Я работаю с выездом к клиенту": "Я працюю з виїздом до клієнта",
+      "Я предоставляю услуги онлайн": "Я надаю послуги онлайн"
+    },
+    modal: {
+      chooseServices: "Виберіть послуги",
+      templateText: "Шаблон для категорії",
+      templateSuffix: "зібраний із пропозицій вашого довідника послуг.",
+      best: "Найкращі пропозиції",
+      bestText: "80% бізнесів схожого профілю зазвичай починають із цих послуг.",
+      popular: "Інші популярні послуги",
+      selected: "Вибрано",
+      choose: "+ Вибрати",
+      addServices: "Додати послуги",
+      addService: "Додати послугу",
+      addServiceText: "Додайте основну інформацію про послугу зараз. Пізніше можна буде налаштувати опис і додаткові параметри.",
+      serviceName: "Назва послуги",
+      serviceType: "Тип послуги",
+      otherCategory: "Другая",
+      hours: "Години",
+      minutes: "Хвилин",
+      price: "Ціна",
+      add: "Додати"
+    }
+  },
+  en: {
+    close: "Close",
+    continue: "Continue →",
+    saving: "Saving...",
+    ownerSetup: {
+      eyebrow: "Account setup",
+      title: "How do you want to set up your professional account?",
+      text: "Create a new owner account or join an existing salon as a specialist or team member.",
+      ownerTitle: "Create a business account",
+      ownerText: "The user becomes the business owner and manages services, staff, schedules and all salon bookings.",
+      memberTitle: "Join an existing business",
+      memberText: "The user joins a salon and manages only their own bookings and working schedule within the team."
+    },
+    businessName: {
+      eyebrow: "Business owner setup",
+      title: "What is your business called?",
+      text: "Clients and team members will see this name inside the system.",
+      name: "Business name",
+      website: "Business website",
+      namePlaceholder: "Business name"
+    },
+    join: {
+      eyebrow: "Join a salon",
+      title: "Which business do you want to join?",
+      text: "For a specialist or employee this is a separate path: no own business account, but personal schedule and bookings."
+    },
+    categories: {
+      eyebrow: "Business category",
+      title: "What does your business do?",
+      text: "Based on the category we prepare starter services that clients can book later.",
+      added: "Services to add:",
+      suggestions: "✦ View suggestions",
+      addManual: "Add new service",
+      skip: "Not now",
+      primary: "Primary",
+      categoryHint: "Services will be suggested automatically on the next setup step.",
+      deleteService: "Remove service"
+    },
+    format: {
+      eyebrow: "Business format",
+      title: "How many specialists will work in this account?",
+      text: "A solo account is simpler. A team account unlocks staff, roles, schedules and shared bookings.",
+      solo: "One specialist",
+      soloText: "Simple workspace: services, working hours, own bookings and clients.",
+      team: "Team of specialists",
+      teamText: "Extended owner workspace: team, staff schedules, shared booking and salon management."
+    },
+    place: {
+      eyebrow: "Service location",
+      title: "Where do you provide services?",
+      text: "If you choose a physical venue, the address will be saved so the business can be shown on maps later.",
+      findAddress: "Find address on map",
+      addressPlaceholder: "Start typing a real address",
+      searching: "Searching address...",
+      selectAddress: "Choose address",
+      preview: "Preview of the first found address on the map. Click a result above to save it to the account.",
+      warning: "Enter an address and choose a search result to save business coordinates.",
+      openGoogle: "Open in Google Maps"
+    },
+    serviceModes: {
+      "Клиенты приходят в мое физическое заведение": "Clients come to my physical venue",
+      "Я работаю с выездом к клиенту": "I travel to the client",
+      "Я предоставляю услуги онлайн": "I provide services online"
+    },
+    modal: {
+      chooseServices: "Choose services",
+      templateText: "Template for",
+      templateSuffix: "is built from your service catalog suggestions.",
+      best: "Best suggestions",
+      bestText: "80% of similar businesses usually start with these services.",
+      popular: "Other popular services",
+      selected: "Selected",
+      choose: "+ Choose",
+      addServices: "Add services",
+      addService: "Add service",
+      addServiceText: "Add the basic service information now. You can configure description and extra settings later.",
+      serviceName: "Service name",
+      serviceType: "Service type",
+      otherCategory: "Другая",
+      hours: "Hours",
+      minutes: "Minutes",
+      price: "Price",
+      add: "Add"
+    }
+  }
+};
+
+function getInitialSetupLanguage(): ProLanguage {
+  if (typeof window === "undefined") return "ru";
+
+  const savedLanguage = window.localStorage.getItem("rezervo-pro-language");
+  if (isProLanguage(savedLanguage)) return savedLanguage;
+
+  const candidates = [navigator.language, ...(navigator.languages ?? [])]
+    .filter(Boolean)
+    .map((value) => value.toLowerCase());
+
+  if (candidates.some((value) => value.startsWith("uk") || value.includes("-ua"))) return "uk";
+  if (candidates.some((value) => value.startsWith("en"))) return "en";
+  return "ru";
+}
+
+type AddressSuggestion = {
+  label: string;
+  details: string;
+  lat: number;
+  lon: number;
+};
+
+type Draft = {
+  ownerMode: "owner" | "member";
+  joinBusinessName: string;
+  joinBusinessRole: string;
+  companyName: string;
+  website: string;
+  categories: string[];
+  services: string[];
+  accountType: "solo" | "team";
+  serviceMode: ServiceMode;
+  address: string;
+  addressDetails: string;
+  addressLat: number | null;
+  addressLon: number | null;
+};
+
+type SuggestedSelection = Record<string, boolean>;
+
+const initialDraft: Draft = {
+  ownerMode: "owner",
+  joinBusinessName: "",
+  joinBusinessRole: "",
+  companyName: "",
+  website: "",
+  categories: [],
+  services: [],
+  accountType: "solo",
+  serviceMode: "Клиенты приходят в мое физическое заведение",
+  address: "",
+  addressDetails: "",
+  addressLat: null,
+  addressLon: null
+};
+
+export default function ProSetupFlow() {
+  const router = useRouter();
+  const [language, setLanguage] = useState<ProLanguage>("ru");
+  const [step, setStep] = useState(0);
+  const [draft, setDraft] = useState<Draft>(initialDraft);
+  const [isSaving, setIsSaving] = useState(false);
+  const [addressSuggestions, setAddressSuggestions] = useState<AddressSuggestion[]>([]);
+  const [isSearchingAddress, setIsSearchingAddress] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [showManualService, setShowManualService] = useState(false);
+  const [manualServiceName, setManualServiceName] = useState("");
+  const [manualServiceCategory, setManualServiceCategory] = useState("Другая");
+  const [manualServiceHours, setManualServiceHours] = useState("0");
+  const [manualServiceMinutes, setManualServiceMinutes] = useState("30");
+  const [manualServicePrice, setManualServicePrice] = useState("");
+  const [suggestedSelection, setSuggestedSelection] = useState<SuggestedSelection>({});
+  const t = setupText[language];
+
+  const totalSteps = draft.ownerMode === "owner" ? 5 : 2;
+
+  const progress = useMemo(
+    () => Array.from({ length: totalSteps }, (_, index) => index <= step),
+    [step, totalSteps]
+  );
+
+  const canContinue =
+    (step === 0 && Boolean(draft.ownerMode)) ||
+    (step === 1 &&
+      (draft.ownerMode === "member"
+        ? draft.joinBusinessName.trim().length > 1
+        : draft.companyName.trim().length > 1)) ||
+    (draft.ownerMode === "owner" &&
+      step === 2 &&
+      (draft.categories.length > 0 || draft.services.length > 0)) ||
+    (draft.ownerMode === "owner" && step === 3 && Boolean(draft.accountType)) ||
+    (draft.ownerMode === "owner" &&
+      step === 4 &&
+      Boolean(draft.serviceMode) &&
+      (draft.serviceMode !== "Клиенты приходят в мое физическое заведение" ||
+        (draft.addressDetails.trim().length > 0 &&
+          draft.addressLat !== null &&
+          draft.addressLon !== null)));
+
+  const mapEmbedUrl = useMemo(() => {
+    if (draft.addressLat === null || draft.addressLon === null) {
+      return "";
+    }
+
+    const delta = 0.008;
+    const left = draft.addressLon - delta;
+    const right = draft.addressLon + delta;
+    const top = draft.addressLat + delta;
+    const bottom = draft.addressLat - delta;
+
+    return `https://www.openstreetmap.org/export/embed.html?bbox=${left}%2C${bottom}%2C${right}%2C${top}&layer=mapnik&marker=${draft.addressLat}%2C${draft.addressLon}`;
+  }, [draft.addressLat, draft.addressLon]);
+
+  const previewSuggestion = addressSuggestions[0] ?? null;
+  const primaryCategory = draft.categories[0] ?? "Другая";
+  const primaryTemplate = useMemo(() => getCategoryTemplate(primaryCategory), [primaryCategory]);
+  const allSuggestedServices = useMemo(
+    () => [...primaryTemplate.topSuggestions, ...primaryTemplate.popularServices],
+    [primaryTemplate]
+  );
+  const manualCategoryOptions = useMemo(
+    () => Array.from(new Set(["Другая", ...categoryOptions.filter((category) => category !== "Другая")])),
+    []
+  );
+
+  const previewMapEmbedUrl = useMemo(() => {
+    if (!previewSuggestion) {
+      return "";
+    }
+
+    const delta = 0.008;
+    const left = previewSuggestion.lon - delta;
+    const right = previewSuggestion.lon + delta;
+    const top = previewSuggestion.lat + delta;
+    const bottom = previewSuggestion.lat - delta;
+
+    return `https://www.openstreetmap.org/export/embed.html?bbox=${left}%2C${bottom}%2C${right}%2C${top}&layer=mapnik&marker=${previewSuggestion.lat}%2C${previewSuggestion.lon}`;
+  }, [previewSuggestion]);
+
+  useEffect(() => {
+    const nextLanguage = getInitialSetupLanguage();
+    setLanguage(nextLanguage);
+
+    const handleLanguageChange = (event: Event) => {
+      const next = (event as CustomEvent<ProLanguage>).detail;
+      if (isProLanguage(next)) {
+        setLanguage(next);
+      }
+    };
+
+    window.addEventListener("rezervo-language-change", handleLanguageChange);
+    return () => window.removeEventListener("rezervo-language-change", handleLanguageChange);
+  }, []);
+
+  useEffect(() => {
+    if (
+      step !== 4 ||
+      draft.serviceMode !== "Клиенты приходят в мое физическое заведение" ||
+      draft.address.trim().length < 3
+    ) {
+      setAddressSuggestions([]);
+      return;
+    }
+
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(async () => {
+      try {
+        setIsSearchingAddress(true);
+        const response = await fetch(`/api/address/search?q=${encodeURIComponent(draft.address)}`, {
+          signal: controller.signal,
+          headers: { Accept: "application/json" }
+        });
+        const payload = (await response.json()) as {
+          results?: Array<{
+            display_name: string;
+            lat: string;
+            lon: string;
+            address?: Record<string, string>;
+          }>;
+        };
+        const result = Array.isArray(payload.results) ? payload.results : [];
+
+        setAddressSuggestions(
+          result.map((item) => {
+            const address = item.address ?? {};
+            const house = address.house_number ?? "";
+            const street =
+              address.road ?? address.pedestrian ?? address.footway ?? address.neighbourhood ?? "";
+            const city = address.city ?? address.town ?? address.village ?? address.municipality ?? "";
+            const region = address.state ?? address.region ?? address.county ?? "";
+            const country = address.country ?? "";
+            const postcode = address.postcode ?? "";
+            const primaryLine =
+              [street, house].filter(Boolean).join(", ") ||
+              item.display_name.split(",")[0]?.trim() ||
+              item.display_name;
+
+            return {
+              label: item.display_name,
+              details: [primaryLine, city, region, postcode, country].filter(Boolean).join("\n"),
+              lat: Number(item.lat),
+              lon: Number(item.lon)
+            };
+          })
+        );
+      } catch {
+        setAddressSuggestions([]);
+      } finally {
+        setIsSearchingAddress(false);
+      }
+    }, 350);
+
+    return () => {
+      controller.abort();
+      window.clearTimeout(timeoutId);
+    };
+  }, [draft.address, draft.serviceMode, step]);
+
+  function goBack() {
+    if (step === 0) {
+      router.push("/pro/create-account");
+      return;
+    }
+
+    setStep((current) => current - 1);
+  }
+
+  async function finishSetup() {
+    setIsSaving(true);
+
+    const accountDraftRaw = window.localStorage.getItem("rezervo-pro-account-draft");
+    const accountDraft: AccountDraft = accountDraftRaw
+      ? JSON.parse(accountDraftRaw)
+          : {
+              firstName: "",
+              lastName: "",
+              email: "",
+              password: "",
+              phone: "",
+              country: "Ukraine",
+              timezone: "Europe/Kiev",
+              language: "русский (RU)",
+              currency: "UAH"
+            };
+
+    accountDraft.language = profileLanguageFromCode(language);
+
+    const response = await fetch("/api/pro/setup", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        account: accountDraft,
+        setup: draft
+      })
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      setIsSaving(false);
+      throw new Error(result.error || "Failed to save professional setup.");
+    }
+
+    if (draft.ownerMode === "owner") {
+      markScheduleReminderPending(result.professionalId);
+    } else {
+      clearScheduleReminder(result.professionalId);
+    }
+
+    router.push(`/pro/calendar?professionalId=${result.professionalId}`);
+  }
+
+  async function handleContinue() {
+    if (draft.ownerMode === "member") {
+      if (step === 1) {
+        await finishSetup();
+        return;
+      }
+
+      setStep(1);
+      return;
+    }
+
+    if (step === totalSteps - 1) {
+      await finishSetup();
+      return;
+    }
+
+    setStep((current) => current + 1);
+  }
+
+  function selectOwnerMode(mode: "owner" | "member") {
+    setDraft((current) => ({ ...current, ownerMode: mode }));
+    setStep(0);
+  }
+
+  function toggleCategory(category: string) {
+    setDraft((current) => {
+      const exists = current.categories.includes(category);
+      const nextCategories = exists
+        ? current.categories.filter((item) => item !== category)
+        : current.categories.length >= 3
+          ? current.categories
+          : [...current.categories, category];
+
+      return {
+        ...current,
+        categories: nextCategories,
+        services: getServicesForCategories(nextCategories)
+      };
+    });
+  }
+
+  function toggleSuggestedService(serviceName: string) {
+    setSuggestedSelection((current) => ({
+      ...current,
+      [serviceName]: !current[serviceName]
+    }));
+  }
+
+  function applySuggestedServices() {
+    const selected = allSuggestedServices
+      .filter((service) => suggestedSelection[service.name])
+      .map((service) => service.name);
+
+    if (selected.length === 0) {
+      setShowSuggestions(false);
+      return;
+    }
+
+    setDraft((current) => ({
+      ...current,
+      services: Array.from(new Set([...current.services, ...selected]))
+    }));
+    setShowSuggestions(false);
+  }
+
+  function addManualService() {
+    const name = manualServiceName.trim();
+
+    if (!name) {
+      return;
+    }
+
+    setDraft((current) => ({
+      ...current,
+      categories: Array.from(new Set([...current.categories, manualServiceCategory || "Другая"])),
+      services: Array.from(new Set([...current.services, name]))
+    }));
+    setManualServiceName("");
+    setManualServiceCategory("Другая");
+    setManualServiceHours("0");
+    setManualServiceMinutes("30");
+    setManualServicePrice("");
+    setShowManualService(false);
+  }
+
+  function applyAddress(suggestion: AddressSuggestion) {
+    setDraft((current) => ({
+      ...current,
+      address: suggestion.label,
+      addressDetails: suggestion.details,
+      addressLat: suggestion.lat,
+      addressLon: suggestion.lon
+    }));
+    setAddressSuggestions([]);
+  }
+
+  return (
+    <div className={styles.onboardingShell}>
+      <div className={styles.onboardingTop}>
+        <div className={styles.progressRail}>
+          {progress.map((active, index) => (
+            <div
+              key={index}
+              className={`${styles.progressStep} ${active ? styles.progressActive : ""}`}
+            />
+          ))}
+        </div>
+        <div className={styles.topActions}>
+          <button type="button" className={styles.circleButton} onClick={goBack}>
+            ←
+          </button>
+          <button type="button" className={styles.ghostButton} onClick={() => router.push("/pro")}>
+            {t.close}
+          </button>
+          <button
+            type="button"
+            className={styles.primaryButton}
+            disabled={!canContinue || isSaving}
+            onClick={() => {
+              void handleContinue();
+            }}
+          >
+            {isSaving ? t.saving : t.continue}
+          </button>
+          <GlobalLanguageSwitcher mode="inline" />
+        </div>
+      </div>
+
+      <div className={styles.wizardFrame}>
+        {step === 0 ? (
+          <section className={styles.wizardCard}>
+            <div className={styles.wizardHeader}>
+              <p className={styles.eyebrow}>{t.ownerSetup.eyebrow}</p>
+              <h1>{t.ownerSetup.title}</h1>
+              <p>{t.ownerSetup.text}</p>
+            </div>
+
+            <div className={styles.choiceGrid}>
+              <button
+                type="button"
+                className={`${styles.choiceCard} ${
+                  draft.ownerMode === "owner" ? styles.selectedCard : ""
+                }`}
+                onClick={() => selectOwnerMode("owner")}
+              >
+                <span className={styles.choiceTitle}>{t.ownerSetup.ownerTitle}</span>
+                <span className={styles.choiceText}>{t.ownerSetup.ownerText}</span>
+              </button>
+
+              <button
+                type="button"
+                className={`${styles.choiceCard} ${
+                  draft.ownerMode === "member" ? styles.selectedCard : ""
+                }`}
+                onClick={() => selectOwnerMode("member")}
+              >
+                <span className={styles.choiceTitle}>{t.ownerSetup.memberTitle}</span>
+                <span className={styles.choiceText}>{t.ownerSetup.memberText}</span>
+              </button>
+            </div>
+          </section>
+        ) : null}
+
+        {step === 1 && draft.ownerMode === "owner" ? (
+          <section className={styles.wizardCard}>
+            <div className={styles.wizardHeader}>
+              <p className={styles.eyebrow}>{t.businessName.eyebrow}</p>
+              <h1>{t.businessName.title}</h1>
+              <p>{t.businessName.text}</p>
+            </div>
+
+            <div className={styles.fieldStack}>
+              <div className={styles.field}>
+                <label htmlFor="companyName">{t.businessName.name}</label>
+                <input
+                  id="companyName"
+                  className={styles.input}
+                  placeholder={t.businessName.namePlaceholder}
+                  value={draft.companyName}
+                  onChange={(event) =>
+                    setDraft((current) => ({ ...current, companyName: event.target.value }))
+                  }
+                />
+              </div>
+
+              <div className={styles.field}>
+                <label htmlFor="website">{t.businessName.website}</label>
+                <input
+                  id="website"
+                  className={styles.input}
+                  placeholder="www.yoursite.com"
+                  value={draft.website}
+                  onChange={(event) =>
+                    setDraft((current) => ({ ...current, website: event.target.value }))
+                  }
+                />
+              </div>
+            </div>
+          </section>
+        ) : null}
+
+        {step === 1 && draft.ownerMode === "member" ? (
+          <section className={styles.wizardCard}>
+            <div className={styles.wizardHeader}>
+              <p className={styles.eyebrow}>{t.join.eyebrow}</p>
+              <h1>{t.join.title}</h1>
+              <p>{t.join.text}</p>
+            </div>
+
+            <div className={styles.serviceStack}>
+              {joinBusinessOptions.map((item) => (
+                <button
+                  key={item.name}
+                  type="button"
+                  className={`${styles.serviceOption} ${
+                    draft.joinBusinessName === item.name ? styles.selectedCard : ""
+                  }`}
+                  onClick={() =>
+                    setDraft((current) => ({
+                      ...current,
+                      joinBusinessName: item.name,
+                      joinBusinessRole: item.role
+                    }))
+                  }
+                >
+                  <span className={styles.choiceTitle}>{item.name}</span>
+                  <span className={styles.choiceText}>{`${item.city} · ${item.role}`}</span>
+                  <span className={styles.choiceText}>{item.description}</span>
+                </button>
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        {step === 2 && draft.ownerMode === "owner" ? (
+          <section className={styles.wizardCard}>
+            <div className={styles.wizardHeader}>
+              <p className={styles.eyebrow}>{t.categories.eyebrow}</p>
+              <h1>{t.categories.title}</h1>
+              <p>{t.categories.text}</p>
+            </div>
+
+            <div className={styles.generatedBlock}>
+              <strong>{t.categories.added}</strong>
+              <div className={styles.generatedList}>
+                {draft.services.map((service) => (
+                  <button
+                    key={service}
+                    type="button"
+                    className={styles.generatedChipButton}
+                    onClick={() =>
+                      setDraft((current) => ({
+                        ...current,
+                        services: current.services.filter((item) => item !== service)
+                      }))
+                    }
+                    aria-label={`${t.categories.deleteService} ${service}`}
+                    title={t.categories.deleteService}
+                  >
+                    <span className={styles.generatedChip}>{service}</span>
+                    <span className={styles.generatedChipRemove}>×</span>
+                  </button>
+                ))}
+              </div>
+              <div className={styles.templateActions}>
+                <button
+                  type="button"
+                  className={styles.primaryButton}
+                  onClick={() => setShowSuggestions(true)}
+                >
+                  {t.categories.suggestions}
+                </button>
+                <button
+                  type="button"
+                  className={styles.ghostButton}
+                  onClick={() => {
+                    setManualServiceCategory("Другая");
+                    setShowManualService(true);
+                  }}
+                >
+                  {t.categories.addManual}
+                </button>
+                <button
+                  type="button"
+                  className={styles.ghostButton}
+                  onClick={() =>
+                    setDraft((current) => ({
+                      ...current,
+                      services: []
+                    }))
+                  }
+                >
+                  {t.categories.skip}
+                </button>
+              </div>
+            </div>
+
+            <div className={styles.categoryGrid}>
+              {categoryOptions.map((category) => {
+                const selected = draft.categories.includes(category);
+                return (
+                  <button
+                    key={category}
+                    type="button"
+                    className={`${styles.categoryCard} ${selected ? styles.selectedCard : ""}`}
+                    onClick={() => toggleCategory(category)}
+                  >
+                    {selected ? (
+                      <span className={styles.categoryBadge}>
+                        {draft.categories.indexOf(category) === 0
+                          ? t.categories.primary
+                          : draft.categories.indexOf(category) + 1}
+                      </span>
+                    ) : null}
+                    <span className={styles.choiceTitle}>{category}</span>
+                    <span className={styles.choiceText}>
+                      {t.categories.categoryHint}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        ) : null}
+
+        {step === 3 && draft.ownerMode === "owner" ? (
+          <section className={styles.wizardCard}>
+            <div className={styles.wizardHeader}>
+              <p className={styles.eyebrow}>{t.format.eyebrow}</p>
+              <h1>{t.format.title}</h1>
+              <p>{t.format.text}</p>
+            </div>
+
+            <div className={styles.choiceGrid}>
+              <button
+                type="button"
+                className={`${styles.choiceCard} ${
+                  draft.accountType === "solo" ? styles.selectedCard : ""
+                }`}
+                onClick={() => setDraft((current) => ({ ...current, accountType: "solo" }))}
+              >
+                <span className={styles.choiceTitle}>{t.format.solo}</span>
+                <span className={styles.choiceText}>{t.format.soloText}</span>
+              </button>
+
+              <button
+                type="button"
+                className={`${styles.choiceCard} ${
+                  draft.accountType === "team" ? styles.selectedCard : ""
+                }`}
+                onClick={() => setDraft((current) => ({ ...current, accountType: "team" }))}
+              >
+                <span className={styles.choiceTitle}>{t.format.team}</span>
+                <span className={styles.choiceText}>{t.format.teamText}</span>
+              </button>
+            </div>
+          </section>
+        ) : null}
+
+        {step === 4 && draft.ownerMode === "owner" ? (
+          <section className={styles.wizardCard}>
+            <div className={styles.wizardHeader}>
+              <p className={styles.eyebrow}>{t.place.eyebrow}</p>
+              <h1>{t.place.title}</h1>
+              <p>{t.place.text}</p>
+            </div>
+
+            <div className={styles.serviceStack}>
+              {serviceModes.map((mode) => (
+                <button
+                  key={mode}
+                  type="button"
+                  className={`${styles.serviceOption} ${
+                    draft.serviceMode === mode ? styles.selectedCard : ""
+                  }`}
+                  onClick={() => setDraft((current) => ({ ...current, serviceMode: mode }))}
+                >
+                  <span className={styles.choiceTitle}>{t.serviceModes[mode]}</span>
+                </button>
+              ))}
+            </div>
+
+            {draft.serviceMode === "Клиенты приходят в мое физическое заведение" ? (
+              <div className={styles.mapCard}>
+                <div className={styles.field}>
+                  <label htmlFor="address">{t.place.findAddress}</label>
+                  <input
+                    id="address"
+                    className={styles.input}
+                    value={draft.address}
+                    onChange={(event) =>
+                      setDraft((current) => ({
+                        ...current,
+                        address: event.target.value,
+                        addressDetails: "",
+                        addressLat: null,
+                        addressLon: null
+                      }))
+                    }
+                    placeholder={t.place.addressPlaceholder}
+                  />
+                </div>
+
+                <div className={styles.addressSearchList}>
+                  {isSearchingAddress ? (
+                    <div className={styles.addressHint}>{t.place.searching}</div>
+                  ) : null}
+                  {addressSuggestions.map((item) => (
+                    <button
+                      key={`${item.label}-${item.lat}-${item.lon}`}
+                      type="button"
+                      className={styles.addressSearchItem}
+                      onClick={() => applyAddress(item)}
+                    >
+                      <span className={styles.addressSearchText}>
+                        <strong>{item.details.split("\n")[0] ?? item.label}</strong>
+                        <span>{item.label}</span>
+                      </span>
+                      <span className={styles.addressSearchAction}>{t.place.selectAddress}</span>
+                    </button>
+                  ))}
+                </div>
+
+                {draft.addressDetails ? (
+                  <>
+                    {mapEmbedUrl ? (
+                      <iframe
+                        title="Business address map"
+                        className={styles.mapFrame}
+                        src={mapEmbedUrl}
+                      />
+                    ) : null}
+                    {draft.addressLat !== null && draft.addressLon !== null ? (
+                      <a
+                        href={`https://www.google.com/maps/search/?api=1&query=${draft.addressLat},${draft.addressLon}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className={styles.ghostButton}
+                      >
+                        {t.place.openGoogle}
+                      </a>
+                    ) : null}
+                  </>
+                ) : previewSuggestion ? (
+                  <>
+                    <div className={styles.addressHint}>
+                      {t.place.preview}
+                    </div>
+                    {previewMapEmbedUrl ? (
+                      <iframe
+                        title="Address preview map"
+                        className={styles.mapFrame}
+                        src={previewMapEmbedUrl}
+                      />
+                    ) : null}
+                  </>
+                ) : (
+                  <div className={styles.addressWarning}>
+                    {t.place.warning}
+                  </div>
+                )}
+              </div>
+            ) : null}
+          </section>
+        ) : null}
+      </div>
+
+      {showSuggestions ? (
+        <div className={styles.templateModalBackdrop}>
+          <div className={styles.templateModal}>
+            <div className={styles.templateModalHeader}>
+              <button type="button" className={styles.circleButton} onClick={() => setShowSuggestions(false)}>
+                ×
+              </button>
+              <div>
+                <h2>{t.modal.chooseServices}</h2>
+                <p>
+                  {t.modal.templateText} «{primaryTemplate.title}» {t.modal.templateSuffix}
+                </p>
+              </div>
+            </div>
+
+            <div className={styles.templateModalBody}>
+              <div className={styles.templateListBlock}>
+                <strong>{t.modal.best}</strong>
+                <span>{t.modal.bestText}</span>
+                <div className={styles.templateList}>
+                  {primaryTemplate.topSuggestions.map((service) => (
+                    <div key={service.name} className={styles.templateServiceRow}>
+                      <div>
+                        <strong>{service.name}</strong>
+                        <span>{service.durationMinutes ?? 60} мин · {service.price ?? 700} грн.</span>
+                      </div>
+                      <button
+                        type="button"
+                        className={`${styles.templateSelectButton} ${suggestedSelection[service.name] ? styles.templateSelectButtonActive : ""}`}
+                        onClick={() => toggleSuggestedService(service.name)}
+                      >
+                        {suggestedSelection[service.name] ? t.modal.selected : t.modal.choose}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className={styles.templateListBlock}>
+                <strong>{t.modal.popular}</strong>
+                <div className={styles.templateList}>
+                  {primaryTemplate.popularServices.map((service) => (
+                    <div key={service.name} className={styles.templateServiceRow}>
+                      <div>
+                        <strong>{service.name}</strong>
+                        <span>{service.durationMinutes ?? 60} мин · {service.price ?? 700} грн.</span>
+                      </div>
+                      <button
+                        type="button"
+                        className={`${styles.templateSelectButton} ${suggestedSelection[service.name] ? styles.templateSelectButtonActive : ""}`}
+                        onClick={() => toggleSuggestedService(service.name)}
+                      >
+                        {suggestedSelection[service.name] ? t.modal.selected : t.modal.choose}
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className={styles.templateModalFooter}>
+              <button type="button" className={styles.primaryButton} onClick={applySuggestedServices}>
+                {t.modal.addServices} ({Object.values(suggestedSelection).filter(Boolean).length})
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {showManualService ? (
+        <div className={styles.templateModalBackdrop}>
+          <div className={styles.templateFormModal}>
+            <div className={styles.templateModalHeader}>
+              <button type="button" className={styles.circleButton} onClick={() => setShowManualService(false)}>
+                ×
+              </button>
+              <div>
+                <h2>{t.modal.addService}</h2>
+                <p>{t.modal.addServiceText}</p>
+              </div>
+            </div>
+
+            <div className={styles.fieldStack}>
+              <div className={styles.field}>
+                <label htmlFor="manualServiceName">{t.modal.serviceName}</label>
+                <input
+                  id="manualServiceName"
+                  className={styles.input}
+                  value={manualServiceName}
+                  onChange={(event) => setManualServiceName(event.target.value)}
+                  placeholder={t.modal.serviceName}
+                />
+              </div>
+
+              <div className={styles.field}>
+                <label htmlFor="manualServiceType">{t.modal.serviceType}</label>
+                <select
+                  id="manualServiceType"
+                  className={styles.select}
+                  value={manualServiceCategory}
+                  onChange={(event) => setManualServiceCategory(event.target.value)}
+                >
+                  {manualCategoryOptions.map((category) => (
+                    <option key={category} value={category}>
+                      {category}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className={styles.templateDurationRow}>
+                <div className={styles.field}>
+                  <label htmlFor="manualHours">{t.modal.hours}</label>
+                  <select
+                    id="manualHours"
+                    className={styles.select}
+                    value={manualServiceHours}
+                    onChange={(event) => setManualServiceHours(event.target.value)}
+                  >
+                    {Array.from({ length: 25 }, (_, hour) => (
+                      <option key={hour} value={String(hour)}>
+                        {hour}h
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className={styles.field}>
+                  <label htmlFor="manualMinutes">{t.modal.minutes}</label>
+                  <select
+                    id="manualMinutes"
+                    className={styles.select}
+                    value={manualServiceMinutes}
+                    onChange={(event) => setManualServiceMinutes(event.target.value)}
+                  >
+                    <option value="15">15min</option>
+                    <option value="30">30min</option>
+                    <option value="45">45min</option>
+                    <option value="60">60min</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className={styles.templateDurationRow}>
+                <div className={styles.field}>
+                  <label htmlFor="manualPrice">{t.modal.price}</label>
+                  <input
+                    id="manualPrice"
+                    className={styles.input}
+                    value={manualServicePrice}
+                    onChange={(event) => setManualServicePrice(event.target.value)}
+                    placeholder={t.modal.price}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className={styles.templateModalFooter}>
+              <button
+                type="button"
+                className={styles.primaryButton}
+                disabled={!manualServiceName.trim()}
+                onClick={addManualService}
+              >
+                {t.modal.add}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}

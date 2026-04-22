@@ -1,0 +1,30 @@
+[
+  {
+    "id": "RZV-RQ8RXI",
+    "salonSlug": "barber-drive",
+    "salonName": "Barber Drive",
+    "serviceName": "Мужская стрижка",
+    "appointmentDate": "2026-04-21",
+    "appointmentTime": "10:30",
+    "customerName": "аккк",
+    "customerPhone": "+7 900 000 00 00",
+    "customerNotes": "",
+    "status": "confirmed",
+    "source": "local",
+    "createdAt": "2026-04-21T06:57:10.799Z"
+  },
+  {
+    "id": "RZV-4HFUBF",
+    "salonSlug": "barber-drive",
+    "salonName": "Barber Drive",
+    "serviceName": "Мужская стрижка",
+    "appointmentDate": "0023-12-12",
+    "appointmentTime": "15:00",
+    "customerName": "анна",
+    "customerPhone": "+3809899999333",
+    "customerNotes": "",
+    "status": "confirmed",
+    "source": "local",
+    "createdAt": "2026-04-21T06:41:32.034Z"
+  }
+]

@@ -1,0 +1,69 @@
+{
+  "nextTicketNumber": 1002,
+  "processedTelegramUpdateIds": [
+    426543296,
+    426543297,
+    426543298,
+    426543299,
+    426543300
+  ],
+  "tickets": [
+    {
+      "id": "SUP-1001",
+      "professionalId": "pro_f1803d5e-f722-4b03-a66f-5ef392608532",
+      "businessName": "Runo",
+      "userName": "VASYLENKO VITALII",
+      "email": "info@comp.us",
+      "phone": "+38 067 760 91 13",
+      "page": "/pro/calendar",
+      "language": "uk",
+      "status": "open",
+      "createdAt": "2026-04-16T04:59:04.353Z",
+      "updatedAt": "2026-04-21T18:01:48.713Z"
+    }
+  ],
+  "messages": [
+    {
+      "id": "msg_b69d650a-60ba-42d9-9729-9336bc94bddf",
+      "ticketId": "SUP-1001",
+      "source": "user",
+      "text": "Добрий день. мне не понятно как это работает",
+      "createdAt": "2026-04-16T04:59:04.354Z",
+      "telegramMessageId": 6
+    },
+    {
+      "id": "msg_dfdb303e-8325-427c-95fd-ef54e5c309e0",
+      "ticketId": "SUP-1001",
+      "source": "support",
+      "text": "Что именно Вам не понятно",
+      "createdAt": "2026-04-16T04:59:25.652Z",
+      "telegramMessageId": 7,
+      "telegramUpdateId": 426543299
+    },
+    {
+      "id": "msg_abc7e960-af94-4102-8ea0-43d5f68afd58",
+      "ticketId": "SUP-1001",
+      "source": "user",
+      "text": "как вообще все работает и что мне делать",
+      "createdAt": "2026-04-16T04:59:40.935Z",
+      "telegramMessageId": 8
+    },
+    {
+      "id": "msg_8382e6aa-db3a-4cad-9ee0-bef6b5014707",
+      "ticketId": "SUP-1001",
+      "source": "user",
+      "text": "куда и как",
+      "createdAt": "2026-04-21T18:01:28.161Z",
+      "telegramMessageId": 9
+    },
+    {
+      "id": "msg_84f86cd5-a086-4570-8ab1-12f1a7272573",
+      "ticketId": "SUP-1001",
+      "source": "support",
+      "text": "все ок все получится",
+      "createdAt": "2026-04-21T18:01:48.713Z",
+      "telegramMessageId": 10,
+      "telegramUpdateId": 426543300
+    }
+  ]
+}

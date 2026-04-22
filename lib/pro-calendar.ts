@@ -1,0 +1,789 @@
+import { promises as fs } from "fs";
+import path from "path";
+import { ensureServiceForProfessional, getWorkspaceSnapshot } from "./pro-data";
+import type { ServiceRecord } from "./pro-data";
+import { getSupabaseAdmin, isSupabaseConfigured } from "./supabase";
+
+export type CalendarAppointmentKind = "appointment" | "blocked";
+export type CalendarAttendanceStatus = "pending" | "arrived" | "no_show";
+
+export type CalendarAppointment = {
+  id: string;
+  businessId: string;
+  professionalId: string;
+  appointmentDate: string;
+  startTime: string;
+  endTime: string;
+  kind: CalendarAppointmentKind;
+  customerName: string;
+  customerPhone: string;
+  serviceName: string;
+  notes: string;
+  attendance: CalendarAttendanceStatus;
+  priceAmount: number;
+  createdAt: string;
+};
+
+export type CalendarPeriodStats = {
+  visitsCount: number;
+  revenue: number;
+};
+
+export type CalendarClient = {
+  name: string;
+  phone: string;
+};
+
+export type ClientDirectoryEntry = {
+  id: string;
+  name: string;
+  phone: string;
+  visitsCount: number;
+  totalSales: number;
+  createdAt: string;
+};
+
+export type PublicCalendarAppointment = Pick<
+  CalendarAppointment,
+  "businessId" | "professionalId" | "appointmentDate" | "startTime" | "endTime" | "kind"
+>;
+
+type CalendarStore = {
+  appointments: CalendarAppointment[];
+};
+
+type CalendarAppointmentRow = {
+  id: string;
+  business_id: string;
+  professional_id: string;
+  appointment_date: string;
+  start_time: string;
+  end_time: string;
+  kind?: string | null;
+  customer_name?: string | null;
+  customer_phone?: string | null;
+  service_name?: string | null;
+  notes?: string | null;
+  attendance?: string | null;
+  price_amount?: number | null;
+  created_at: string;
+};
+
+const storePath = path.join(process.cwd(), "data", "pro-calendar.json");
+
+function makeId(prefix: string) {
+  return `${prefix}_${crypto.randomUUID()}`;
+}
+
+function normalizeKind(value: unknown): CalendarAppointmentKind {
+  return value === "blocked" ? "blocked" : "appointment";
+}
+
+function normalizeAttendance(value: unknown): CalendarAttendanceStatus {
+  return value === "arrived" || value === "no_show" ? value : "pending";
+}
+
+function normalizeAppointment(
+  appointment: Partial<CalendarAppointment> & {
+    id: string;
+    businessId: string;
+    professionalId: string;
+    appointmentDate: string;
+    startTime: string;
+    endTime: string;
+    createdAt: string;
+  }
+): CalendarAppointment {
+  return {
+    id: appointment.id,
+    businessId: appointment.businessId,
+    professionalId: appointment.professionalId,
+    appointmentDate: appointment.appointmentDate,
+    startTime: appointment.startTime,
+    endTime: appointment.endTime,
+    kind: normalizeKind(appointment.kind),
+    customerName: appointment.customerName?.trim() ?? "",
+    customerPhone: appointment.customerPhone?.trim() ?? "",
+    serviceName: appointment.serviceName?.trim() ?? "",
+    notes: appointment.notes?.trim() ?? "",
+    attendance: normalizeAttendance(appointment.attendance),
+    priceAmount:
+      typeof appointment.priceAmount === "number" && Number.isFinite(appointment.priceAmount)
+        ? Math.max(0, appointment.priceAmount)
+        : 0,
+    createdAt: appointment.createdAt
+  };
+}
+
+function mapSupabaseAppointment(row: CalendarAppointmentRow): CalendarAppointment {
+  return normalizeAppointment({
+    id: row.id,
+    businessId: row.business_id,
+    professionalId: row.professional_id,
+    appointmentDate: row.appointment_date,
+    startTime: row.start_time,
+    endTime: row.end_time,
+    kind: normalizeKind(row.kind),
+    customerName: row.customer_name ?? "",
+    customerPhone: row.customer_phone ?? "",
+    serviceName: row.service_name ?? "",
+    notes: row.notes ?? "",
+    attendance: normalizeAttendance(row.attendance),
+    priceAmount: row.price_amount ?? 0,
+    createdAt: row.created_at
+  });
+}
+
+async function ensureStore() {
+  try {
+    await fs.access(storePath);
+  } catch {
+    const initial: CalendarStore = { appointments: [] };
+    await fs.writeFile(storePath, JSON.stringify(initial, null, 2) + "\n", "utf8");
+  }
+}
+
+async function readStore() {
+  await ensureStore();
+  const file = await fs.readFile(storePath, "utf8");
+  const parsed = JSON.parse(file) as Partial<CalendarStore>;
+  const appointments = Array.isArray(parsed.appointments) ? parsed.appointments : [];
+
+  return {
+    appointments: appointments
+      .map((appointment) => {
+        if (!appointment?.id || !appointment.businessId || !appointment.professionalId) {
+          return null;
+        }
+
+        return normalizeAppointment({
+          id: appointment.id,
+          businessId: appointment.businessId,
+          professionalId: appointment.professionalId,
+          appointmentDate: appointment.appointmentDate ?? "",
+          startTime: appointment.startTime ?? "",
+          endTime: appointment.endTime ?? "",
+          kind: appointment.kind ?? "appointment",
+          customerName: appointment.customerName ?? "",
+          customerPhone: appointment.customerPhone ?? "",
+          serviceName: appointment.serviceName ?? "",
+          notes: appointment.notes ?? "",
+          attendance: appointment.attendance ?? "pending",
+          priceAmount:
+            typeof appointment.priceAmount === "number"
+              ? appointment.priceAmount
+              : appointment.kind === "blocked"
+                ? 0
+                : 0,
+          createdAt: appointment.createdAt ?? new Date(0).toISOString()
+        });
+      })
+      .filter((appointment): appointment is CalendarAppointment => Boolean(appointment))
+  } satisfies CalendarStore;
+}
+
+async function writeStore(data: CalendarStore) {
+  await fs.writeFile(storePath, JSON.stringify(data, null, 2) + "\n", "utf8");
+}
+
+async function readAppointmentsForProfessional(professionalId: string) {
+  if (isSupabaseConfigured()) {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      return [];
+    }
+
+    const { data, error } = await supabase
+      .from("calendar_appointments")
+      .select(
+        "id, business_id, professional_id, appointment_date, start_time, end_time, kind, customer_name, customer_phone, service_name, notes, attendance, price_amount, created_at"
+      )
+      .eq("professional_id", professionalId)
+      .order("appointment_date", { ascending: true })
+      .order("start_time", { ascending: true })
+      .order("created_at", { ascending: true });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return (data ?? []).map((row) => mapSupabaseAppointment(row as CalendarAppointmentRow));
+  }
+
+  const store = await readStore();
+  return store.appointments
+    .filter((appointment) => appointment.professionalId === professionalId)
+    .sort(
+      (left, right) =>
+        `${left.appointmentDate}${left.startTime}${left.createdAt}`.localeCompare(
+          `${right.appointmentDate}${right.startTime}${right.createdAt}`
+        )
+    );
+}
+
+export async function getPublicCalendarAppointments(): Promise<PublicCalendarAppointment[]> {
+  if (isSupabaseConfigured()) {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      return [];
+    }
+
+    const { data, error } = await supabase
+      .from("calendar_appointments")
+      .select("business_id, professional_id, appointment_date, start_time, end_time, kind")
+      .order("appointment_date", { ascending: true })
+      .order("start_time", { ascending: true });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return (data ?? []).map((row) => ({
+      businessId: row.business_id,
+      professionalId: row.professional_id,
+      appointmentDate: row.appointment_date,
+      startTime: row.start_time,
+      endTime: row.end_time,
+      kind: normalizeKind(row.kind)
+    }));
+  }
+
+  const store = await readStore();
+  return store.appointments.map((appointment) => ({
+    businessId: appointment.businessId,
+    professionalId: appointment.professionalId,
+    appointmentDate: appointment.appointmentDate,
+    startTime: appointment.startTime,
+    endTime: appointment.endTime,
+    kind: appointment.kind
+  }));
+}
+
+function getWeekRange(dateKey: string) {
+  const date = new Date(`${dateKey}T00:00:00`);
+  const dayIndex = (date.getDay() + 6) % 7;
+  const start = new Date(date);
+  start.setDate(date.getDate() - dayIndex);
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+
+  return {
+    start: start.toISOString().slice(0, 10),
+    end: end.toISOString().slice(0, 10)
+  };
+}
+
+function getMonthRange(dateKey: string) {
+  const date = new Date(`${dateKey}T00:00:00`);
+  const start = new Date(date.getFullYear(), date.getMonth(), 1);
+  const end = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+
+  return {
+    start: start.toISOString().slice(0, 10),
+    end: end.toISOString().slice(0, 10)
+  };
+}
+
+function summarizeAppointments(
+  appointments: CalendarAppointment[],
+  startDate: string,
+  endDate: string
+): CalendarPeriodStats {
+  const visits = appointments.filter(
+    (appointment) =>
+      appointment.kind === "appointment" &&
+      appointment.appointmentDate >= startDate &&
+      appointment.appointmentDate <= endDate
+  );
+
+  return {
+    visitsCount: visits.length,
+    revenue: visits.reduce((sum, appointment) => sum + (appointment.priceAmount || 0), 0)
+  };
+}
+
+function addMinutes(time: string, minutesToAdd: number) {
+  const [hours, minutes] = time.split(":").map(Number);
+  const total = hours * 60 + minutes + minutesToAdd;
+  const nextHours = Math.floor(total / 60);
+  const nextMinutes = total % 60;
+  return `${String(nextHours).padStart(2, "0")}:${String(nextMinutes).padStart(2, "0")}`;
+}
+
+function getDefaultDuration(serviceName: string, services: ServiceRecord[]) {
+  const match = services.find((service) => service.name === serviceName);
+
+  if (!match) {
+    return 60;
+  }
+
+  if (
+    /окраш|наращ|укреп|комплекс|педикюр|массаж|спа|пилинг|терап/i.test(match.name)
+  ) {
+    return 90;
+  }
+
+  return 60;
+}
+
+export async function getCalendarDaySnapshot(input: {
+  professionalId: string;
+  appointmentDate: string;
+}) {
+  const workspace = await getWorkspaceSnapshot(input.professionalId);
+
+  if (!workspace) {
+    return null;
+  }
+
+  const professionalAppointments = await readAppointmentsForProfessional(input.professionalId);
+  const existing = professionalAppointments.filter(
+    (appointment) => appointment.appointmentDate === input.appointmentDate
+  );
+  const weekRange = getWeekRange(input.appointmentDate);
+  const monthRange = getMonthRange(input.appointmentDate);
+  const clients = Array.from(
+    new Map(
+      professionalAppointments
+        .filter(
+          (appointment) =>
+            appointment.customerName.trim() &&
+            appointment.customerName.trim().toLowerCase() !== "клиент"
+        )
+        .map((appointment) => [
+          `${appointment.customerName.trim().toLowerCase()}::${appointment.customerPhone.trim()}`,
+          {
+            name: appointment.customerName.trim(),
+            phone: appointment.customerPhone.trim()
+          }
+        ])
+    ).values()
+  ).sort((left, right) => left.name.localeCompare(right.name, "ru"));
+
+  return {
+    workspace,
+    appointments: existing.sort((left, right) => left.startTime.localeCompare(right.startTime)),
+    clients,
+    stats: {
+      day: summarizeAppointments(professionalAppointments, input.appointmentDate, input.appointmentDate),
+      week: summarizeAppointments(professionalAppointments, weekRange.start, weekRange.end),
+      month: summarizeAppointments(professionalAppointments, monthRange.start, monthRange.end)
+    }
+  };
+}
+
+export async function createCalendarAppointment(input: {
+  professionalId: string;
+  appointmentDate: string;
+  startTime: string;
+  endTime?: string;
+  customerName: string;
+  customerPhone: string;
+  serviceName: string;
+  notes: string;
+  priceAmount?: number;
+}) {
+  const workspace = await getWorkspaceSnapshot(input.professionalId);
+
+  if (!workspace) {
+    throw new Error("Workspace not found.");
+  }
+
+  if (!input.startTime.trim()) {
+    throw new Error("Start time is required.");
+  }
+
+  const serviceName = input.serviceName.trim();
+  if (!serviceName) {
+    throw new Error("Service name is required.");
+  }
+
+  const service =
+    workspace.services.find((item) => item.name === serviceName) ??
+    (await ensureServiceForProfessional({
+      professionalId: input.professionalId,
+      serviceName
+    }));
+
+  const appointment: CalendarAppointment = {
+    id: makeId("cal"),
+    businessId: workspace.business.id,
+    professionalId: input.professionalId,
+    appointmentDate: input.appointmentDate,
+    startTime: input.startTime,
+    endTime:
+      input.endTime ??
+      addMinutes(input.startTime, getDefaultDuration(service.name, [...workspace.services, service])),
+    kind: "appointment",
+    customerName: input.customerName.trim() || "Клиент",
+    customerPhone: input.customerPhone.trim(),
+    serviceName: service.name,
+    notes: input.notes.trim(),
+    attendance: "pending",
+    priceAmount:
+      typeof input.priceAmount === "number" && Number.isFinite(input.priceAmount)
+        ? Math.max(0, input.priceAmount)
+        : service.price,
+    createdAt: new Date().toISOString()
+  };
+
+  if (isSupabaseConfigured()) {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      throw new Error("Supabase is not available.");
+    }
+
+    const { error } = await supabase.from("calendar_appointments").insert({
+      id: appointment.id,
+      business_id: appointment.businessId,
+      professional_id: appointment.professionalId,
+      appointment_date: appointment.appointmentDate,
+      start_time: appointment.startTime,
+      end_time: appointment.endTime,
+      kind: appointment.kind,
+      customer_name: appointment.customerName,
+      customer_phone: appointment.customerPhone,
+      service_name: appointment.serviceName,
+      notes: appointment.notes,
+      attendance: appointment.attendance,
+      price_amount: appointment.priceAmount,
+      created_at: appointment.createdAt
+    });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return appointment;
+  }
+
+  const store = await readStore();
+  store.appointments.push(appointment);
+  await writeStore(store);
+
+  return appointment;
+}
+
+export async function getClientDirectory(professionalId: string): Promise<ClientDirectoryEntry[]> {
+  const appointments = (await readAppointmentsForProfessional(professionalId)).filter(
+    (appointment) =>
+      appointment.kind === "appointment" &&
+      appointment.customerName.trim() &&
+      appointment.customerName.trim().toLowerCase() !== "клиент"
+  );
+
+  const grouped = new Map<string, ClientDirectoryEntry>();
+
+  for (const appointment of appointments) {
+    const key = `${appointment.customerName.trim().toLowerCase()}::${appointment.customerPhone.trim()}`;
+    const existing = grouped.get(key);
+
+    if (existing) {
+      existing.visitsCount += 1;
+      existing.totalSales += appointment.priceAmount || 0;
+      if (new Date(appointment.createdAt).getTime() < new Date(existing.createdAt).getTime()) {
+        existing.createdAt = appointment.createdAt;
+      }
+      continue;
+    }
+
+    grouped.set(key, {
+      id: key,
+      name: appointment.customerName.trim(),
+      phone: appointment.customerPhone.trim(),
+      visitsCount: 1,
+      totalSales: appointment.priceAmount || 0,
+      createdAt: appointment.createdAt
+    });
+  }
+
+  return Array.from(grouped.values()).sort(
+    (left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime()
+  );
+}
+
+export async function getAppointmentUsageForProfessional(professionalId: string) {
+  if (isSupabaseConfigured()) {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      return 0;
+    }
+
+    const { count, error } = await supabase
+      .from("calendar_appointments")
+      .select("id", { count: "exact", head: true })
+      .eq("professional_id", professionalId)
+      .eq("kind", "appointment");
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return count ?? 0;
+  }
+
+  const store = await readStore();
+
+  return store.appointments.filter(
+    (appointment) => appointment.professionalId === professionalId && appointment.kind === "appointment"
+  ).length;
+}
+
+export async function updateCalendarAppointmentTime(input: {
+  professionalId: string;
+  appointmentId: string;
+  startTime: string;
+  endTime?: string;
+}) {
+  const workspace = await getWorkspaceSnapshot(input.professionalId);
+
+  if (!workspace) {
+    throw new Error("Workspace not found.");
+  }
+
+  if (isSupabaseConfigured()) {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      throw new Error("Supabase is not available.");
+    }
+
+    const { data: existing, error: existingError } = await supabase
+      .from("calendar_appointments")
+      .select(
+        "id, business_id, professional_id, appointment_date, start_time, end_time, kind, customer_name, customer_phone, service_name, notes, attendance, price_amount, created_at"
+      )
+      .eq("id", input.appointmentId)
+      .eq("professional_id", input.professionalId)
+      .maybeSingle();
+
+    if (existingError) {
+      throw new Error(existingError.message);
+    }
+
+    if (!existing) {
+      throw new Error("Appointment not found.");
+    }
+
+    const duration = timeToDurationMinutes(existing.start_time, existing.end_time);
+    const nextEndTime = input.endTime ?? addMinutes(input.startTime, duration);
+    const { data, error } = await supabase
+      .from("calendar_appointments")
+      .update({
+        start_time: input.startTime,
+        end_time: nextEndTime
+      })
+      .eq("id", input.appointmentId)
+      .eq("professional_id", input.professionalId)
+      .select(
+        "id, business_id, professional_id, appointment_date, start_time, end_time, kind, customer_name, customer_phone, service_name, notes, attendance, price_amount, created_at"
+      )
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    if (!data) {
+      throw new Error("Appointment not found.");
+    }
+
+    return mapSupabaseAppointment(data as CalendarAppointmentRow);
+  }
+
+  const store = await readStore();
+  const appointment = store.appointments.find(
+    (item) =>
+      item.id === input.appointmentId && item.professionalId === input.professionalId
+  );
+
+  if (!appointment) {
+    throw new Error("Appointment not found.");
+  }
+
+  const duration = timeToDurationMinutes(appointment.startTime, appointment.endTime);
+  appointment.startTime = input.startTime;
+  appointment.endTime = input.endTime ?? addMinutes(input.startTime, duration);
+
+  await writeStore(store);
+  return appointment;
+}
+
+export async function createBlockedCalendarTime(input: {
+  professionalId: string;
+  appointmentDate: string;
+  startTime: string;
+  endTime: string;
+  serviceName?: string;
+}) {
+  const workspace = await getWorkspaceSnapshot(input.professionalId);
+
+  if (!workspace) {
+    throw new Error("Workspace not found.");
+  }
+
+  const blocked: CalendarAppointment = {
+    id: makeId("blk"),
+    businessId: workspace.business.id,
+    professionalId: input.professionalId,
+    appointmentDate: input.appointmentDate,
+    startTime: input.startTime,
+    endTime: input.endTime,
+    kind: "blocked",
+    customerName: "",
+    customerPhone: "",
+    serviceName: input.serviceName?.trim() || "Забронированное время",
+    notes: "",
+    attendance: "pending",
+    priceAmount: 0,
+    createdAt: new Date().toISOString()
+  };
+
+  if (isSupabaseConfigured()) {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      throw new Error("Supabase is not available.");
+    }
+
+    const { error } = await supabase.from("calendar_appointments").insert({
+      id: blocked.id,
+      business_id: blocked.businessId,
+      professional_id: blocked.professionalId,
+      appointment_date: blocked.appointmentDate,
+      start_time: blocked.startTime,
+      end_time: blocked.endTime,
+      kind: blocked.kind,
+      customer_name: blocked.customerName,
+      customer_phone: blocked.customerPhone,
+      service_name: blocked.serviceName,
+      notes: blocked.notes,
+      attendance: blocked.attendance,
+      price_amount: blocked.priceAmount,
+      created_at: blocked.createdAt
+    });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return blocked;
+  }
+
+  const store = await readStore();
+  store.appointments.push(blocked);
+  await writeStore(store);
+
+  return blocked;
+}
+
+export async function deleteCalendarAppointment(input: {
+  professionalId: string;
+  appointmentId: string;
+}) {
+  const workspace = await getWorkspaceSnapshot(input.professionalId);
+
+  if (!workspace) {
+    throw new Error("Workspace not found.");
+  }
+
+  if (isSupabaseConfigured()) {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      throw new Error("Supabase is not available.");
+    }
+
+    const { data, error } = await supabase
+      .from("calendar_appointments")
+      .delete()
+      .eq("id", input.appointmentId)
+      .eq("professional_id", input.professionalId)
+      .select("id")
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    if (!data) {
+      throw new Error("Appointment not found.");
+    }
+
+    return { ok: true };
+  }
+
+  const store = await readStore();
+  const beforeLength = store.appointments.length;
+  store.appointments = store.appointments.filter(
+    (item) => !(item.id === input.appointmentId && item.professionalId === input.professionalId)
+  );
+
+  if (store.appointments.length === beforeLength) {
+    throw new Error("Appointment not found.");
+  }
+
+  await writeStore(store);
+  return { ok: true };
+}
+
+export async function updateCalendarAppointmentMeta(input: {
+  professionalId: string;
+  appointmentId: string;
+  attendance: CalendarAttendanceStatus;
+  priceAmount: number;
+}) {
+  const workspace = await getWorkspaceSnapshot(input.professionalId);
+
+  if (!workspace) {
+    throw new Error("Workspace not found.");
+  }
+
+  if (isSupabaseConfigured()) {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      throw new Error("Supabase is not available.");
+    }
+
+    const { data, error } = await supabase
+      .from("calendar_appointments")
+      .update({
+        attendance: input.attendance,
+        price_amount: Math.max(0, Number.isFinite(input.priceAmount) ? input.priceAmount : 0)
+      })
+      .eq("id", input.appointmentId)
+      .eq("professional_id", input.professionalId)
+      .select(
+        "id, business_id, professional_id, appointment_date, start_time, end_time, kind, customer_name, customer_phone, service_name, notes, attendance, price_amount, created_at"
+      )
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    if (!data) {
+      throw new Error("Appointment not found.");
+    }
+
+    return mapSupabaseAppointment(data as CalendarAppointmentRow);
+  }
+
+  const store = await readStore();
+  const appointment = store.appointments.find(
+    (item) => item.id === input.appointmentId && item.professionalId === input.professionalId
+  );
+
+  if (!appointment) {
+    throw new Error("Appointment not found.");
+  }
+
+  appointment.attendance = input.attendance;
+  appointment.priceAmount = Math.max(0, Number.isFinite(input.priceAmount) ? input.priceAmount : 0);
+
+  await writeStore(store);
+  return appointment;
+}
+
+function timeToDurationMinutes(start: string, end: string) {
+  const [startHours, startMinutes] = start.split(":").map(Number);
+  const [endHours, endMinutes] = end.split(":").map(Number);
+  return endHours * 60 + endMinutes - (startHours * 60 + startMinutes);
+}

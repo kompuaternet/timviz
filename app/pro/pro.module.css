@@ -1,0 +1,7043 @@
+.splitShell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(620px, 54%) 1fr;
+  background:
+    radial-gradient(circle at 24% 16%, rgba(132, 118, 255, 0.16), transparent 28%),
+    radial-gradient(circle at 88% 72%, rgba(255, 217, 245, 0.4), transparent 30%),
+    linear-gradient(180deg, #fff 0%, #fbf9ff 54%, #fff 100%);
+}
+
+.formSide {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  padding: 44px 40px;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(18px);
+}
+
+.visualSide {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 24% 16%, rgba(255, 255, 255, 0.92), transparent 19%),
+    radial-gradient(circle at 72% 34%, rgba(255, 179, 232, 0.35), transparent 28%),
+    radial-gradient(circle at 50% 80%, rgba(112, 88, 255, 0.24), transparent 34%),
+    linear-gradient(145deg, #f4f0ff 0%, #e9e3ff 46%, #fff1fb 100%);
+}
+
+.visualPhoto {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(125deg, rgba(255, 255, 255, 0.72), transparent 44%),
+    radial-gradient(circle at 16% 72%, rgba(7, 7, 9, 0.08), transparent 28%);
+  filter: saturate(1.02);
+}
+
+.visualOverlay {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.08), transparent 28%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.2), rgba(65, 46, 120, 0.04));
+}
+
+.panel {
+  width: min(100%, 680px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 20px;
+  min-height: calc(100vh - 88px);
+}
+
+.compactPanel {
+  width: min(100%, 760px);
+  margin: 0 auto;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  color: #171411;
+}
+
+.brandLogoInline {
+  width: 122px;
+  flex: 0 0 auto;
+}
+
+.heroTitle,
+.createHeroTitle,
+.wizardHeader h1,
+.createVisualText strong,
+.templateModalHeader h2,
+.supportHeader h2,
+.clientsTitle,
+.clientsPromo strong,
+.clientsFormSection h3,
+.placeholderCard h1,
+.schedulePageTitle,
+.asideHeroTitle,
+.servicesHeroCompact h1,
+.servicesHero h1,
+.servicesToolCard h2,
+.servicesCardHeader h2,
+.settingsHero h1,
+.settingsCardHeader h2 {
+  font-family: var(--font-display);
+  font-weight: var(--font-display-weight);
+  text-wrap: balance;
+}
+
+.heroTitle {
+  margin: 0;
+  max-width: 620px;
+  font-size: clamp(2.45rem, 4vw, 4.45rem);
+  line-height: 1.02;
+  letter-spacing: -0.05em;
+  color: #151311;
+}
+
+.heroSubtitle {
+  max-width: 580px;
+  margin: 16px 0 0;
+  color: #5f5a65;
+  font-size: 1.04rem;
+  line-height: 1.55;
+}
+
+.eyebrow {
+  margin: 0;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: #7058ff;
+  font-weight: 950;
+}
+
+.createHeroTitle {
+  max-width: 630px;
+  font-size: clamp(2.1rem, 2.85vw, 3.05rem);
+  line-height: 1.03;
+  letter-spacing: -0.05em;
+  font-weight: var(--font-display-weight);
+}
+
+.createTopLanguage {
+  position: absolute;
+  top: 24px;
+  right: 44px;
+  z-index: 30;
+}
+
+.createTopLanguageTrigger {
+  min-width: 82px;
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 0 16px;
+  border: 1px solid rgba(18, 16, 26, 0.09);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.78);
+  color: #151311;
+  box-shadow: 0 18px 46px rgba(53, 38, 112, 0.1);
+  backdrop-filter: blur(18px);
+  font: inherit;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.createTopLanguageMenu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 218px;
+  display: grid;
+  gap: 4px;
+  padding: 8px;
+  border: 1px solid rgba(17, 17, 17, 0.1);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow:
+    0 26px 80px rgba(28, 18, 64, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(22px);
+}
+
+.createTopLanguageMenu button {
+  min-height: 46px;
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 16px;
+  background: transparent;
+  color: #171411;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.createTopLanguageMenu strong {
+  font-weight: 950;
+}
+
+.createTopLanguageMenu span {
+  color: #5f5a65;
+  font-weight: 820;
+}
+
+.fieldStack {
+  display: grid;
+  gap: 16px;
+}
+
+.createAccountGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.field {
+  display: grid;
+  gap: 10px;
+}
+
+.field label {
+  font-size: 0.93rem;
+  font-weight: 850;
+  color: #191613;
+}
+
+.fieldHint,
+.fieldError {
+  display: block;
+  color: #81766b;
+  font-size: 0.88rem;
+  line-height: 1.4;
+}
+
+.fieldError {
+  color: #b74242;
+}
+
+.input,
+.select,
+.phoneCode,
+.phoneCodeSelect,
+.phoneInput,
+.textarea {
+  width: 100%;
+  min-height: 54px;
+  padding: 14px 16px;
+  border-radius: 17px;
+  border: 1px solid rgba(17, 17, 17, 0.12);
+  background: rgba(255, 255, 255, 0.9);
+  color: #171411;
+  font: inherit;
+  box-shadow: 0 14px 34px rgba(69, 54, 119, 0.045);
+}
+
+.input:focus,
+.select:focus,
+.phoneCodeSelect:focus,
+.phoneInput:focus,
+.textarea:focus {
+  outline: none;
+  border-color: #7058ff;
+  box-shadow: 0 0 0 4px rgba(112, 88, 255, 0.12);
+}
+
+.textarea {
+  min-height: 110px;
+  resize: vertical;
+}
+
+.phoneRow {
+  display: grid;
+  grid-template-columns: 104px 1fr;
+  gap: 10px;
+}
+
+.createPhoneRow {
+  grid-template-columns: 92px 1fr;
+}
+
+.phoneCode {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f8f5ef;
+  font-weight: 800;
+}
+
+.phoneCodeSelect {
+  cursor: pointer;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(248, 245, 239, 0.92));
+  font-weight: 800;
+  appearance: none;
+}
+
+.phonePrefixPicker {
+  position: relative;
+  min-width: 0;
+}
+
+.phonePrefixButton {
+  width: 100%;
+  min-height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 10px;
+  border: 1px solid rgba(17, 17, 17, 0.12);
+  border-radius: 17px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(247, 244, 239, 0.94));
+  color: #151311;
+  font: inherit;
+  font-weight: 950;
+  cursor: pointer;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.94),
+    0 16px 34px rgba(69, 54, 119, 0.06);
+}
+
+.phonePrefixButtonOpen,
+.phonePrefixButton:focus-visible {
+  outline: none;
+  border-color: #7058ff;
+  box-shadow:
+    0 0 0 4px rgba(112, 88, 255, 0.12),
+    0 18px 48px rgba(69, 54, 119, 0.12);
+}
+
+.phonePrefixMenu {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  z-index: 20;
+  width: 292px;
+  max-height: 342px;
+  overflow: auto;
+  padding: 8px;
+  border: 1px solid rgba(17, 17, 17, 0.1);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow:
+    0 26px 80px rgba(28, 18, 64, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(22px);
+}
+
+.phonePrefixMenu button {
+  width: 100%;
+  min-height: 46px;
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 16px;
+  background: transparent;
+  color: #171411;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.phonePrefixMenu button:hover,
+.phonePrefixOptionActive {
+  background: rgba(112, 88, 255, 0.1) !important;
+}
+
+.phonePrefixMenu strong {
+  font-weight: 950;
+  letter-spacing: -0.02em;
+}
+
+.phonePrefixMenu span {
+  min-width: 0;
+  color: #5f5a65;
+  font-weight: 820;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.createSelectPicker {
+  position: relative;
+  min-width: 0;
+}
+
+.createSelectButton {
+  width: 100%;
+  min-height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 16px;
+  border: 1px solid rgba(17, 17, 17, 0.12);
+  border-radius: 17px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(247, 244, 239, 0.94));
+  color: #151311;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.94),
+    0 16px 34px rgba(69, 54, 119, 0.06);
+  font: inherit;
+  font-weight: 850;
+  text-align: left;
+  cursor: pointer;
+}
+
+.createSelectButton span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.createSelectButtonOpen,
+.createSelectButton:focus-visible,
+.createTopLanguageTrigger:focus-visible {
+  outline: none;
+  border-color: #7058ff;
+  box-shadow:
+    0 0 0 4px rgba(112, 88, 255, 0.12),
+    0 18px 48px rgba(69, 54, 119, 0.12);
+}
+
+.createSelectMenu {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  z-index: 25;
+  width: min(360px, 100vw - 48px);
+  max-height: 342px;
+  overflow: auto;
+  display: grid;
+  gap: 4px;
+  padding: 8px;
+  border: 1px solid rgba(17, 17, 17, 0.1);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow:
+    0 26px 80px rgba(28, 18, 64, 0.18),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(22px);
+}
+
+.createSelectMenu button {
+  min-height: 44px;
+  padding: 8px 12px;
+  border: 0;
+  border-radius: 15px;
+  background: transparent;
+  color: #171411;
+  font: inherit;
+  font-weight: 820;
+  text-align: left;
+  cursor: pointer;
+}
+
+.createSelectMenu button:hover,
+.createSelectOptionActive {
+  background: rgba(112, 88, 255, 0.1) !important;
+  color: #4f3df1 !important;
+}
+
+.primaryButton,
+.ghostButton,
+.socialButton,
+.choiceCard,
+.categoryCard,
+.serviceOption {
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.primaryButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 60px;
+  padding: 0 22px;
+  border: 1px solid rgba(95, 73, 221, 0.12);
+  border-radius: 999px;
+  background: linear-gradient(135deg, #6f4cff 0%, #4f46e5 52%, #171411 100%);
+  color: #fff;
+  font: inherit;
+  font-weight: 950;
+  cursor: pointer;
+  box-shadow:
+    0 18px 40px rgba(95, 73, 221, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.24);
+}
+
+.primaryButton:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow:
+    0 22px 44px rgba(95, 73, 221, 0.34),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28);
+}
+
+.primaryButton:disabled {
+  opacity: 0.62;
+  cursor: not-allowed;
+}
+
+.ghostButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 50px;
+  padding: 0 18px;
+  border-radius: 999px;
+  border: 1px solid #d9d0c6;
+  background: rgba(255, 255, 255, 0.88);
+  color: #171411;
+  font: inherit;
+  cursor: pointer;
+  box-shadow: 0 12px 34px rgba(107, 92, 196, 0.08);
+}
+
+.socialDivider {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  color: #9a9083;
+}
+
+.socialDivider::before,
+.socialDivider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: #e3dbd1;
+}
+
+.socialStack {
+  display: grid;
+  gap: 12px;
+}
+
+.socialButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 56px;
+  border-radius: 999px;
+  border: 1px solid #d9d0c6;
+  background: #fff;
+  color: #171411;
+  font: inherit;
+  font-weight: 600;
+}
+
+.socialIcon {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: inline-grid;
+  place-items: center;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.google {
+  color: #db4437;
+  background: rgba(219, 68, 55, 0.1);
+}
+
+.facebook {
+  color: #1877f2;
+  background: rgba(24, 119, 242, 0.1);
+}
+
+.apple {
+  background: rgba(17, 17, 17, 0.08);
+}
+
+.helperBlock {
+  border-top: 1px solid #ece4da;
+  padding-top: 20px;
+  color: #6f675f;
+  line-height: 1.6;
+}
+
+.mutedLink {
+  color: #6952ff;
+  text-decoration: none;
+}
+
+.onboardingShell {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 78% 34%, rgba(123, 111, 255, 0.24), transparent 34%),
+    radial-gradient(circle at 56% 72%, rgba(255, 210, 246, 0.34), transparent 28%),
+    radial-gradient(circle at 18% 14%, rgba(255, 255, 255, 0.94), transparent 18%),
+    linear-gradient(180deg, #ffffff 0%, #f7f4ff 58%, #fcfbff 100%);
+  color: #161311;
+}
+
+.onboardingTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 24px 28px 0;
+}
+
+.progressRail {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+
+.progressStep {
+  height: 4px;
+  border-radius: 999px;
+  background: #ece6de;
+}
+
+.progressActive {
+  background: linear-gradient(90deg, #7a61ff 0%, #b2a5ff 100%);
+}
+
+.topActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.topActions :global(.global-language-switcher-inline) {
+  z-index: 25;
+}
+
+.topActions :global(.global-language-trigger) {
+  height: 44px;
+  min-width: 68px;
+  box-shadow: none;
+}
+
+.circleButton {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid #d9d0c6;
+  background: rgba(255, 255, 255, 0.88);
+  font: inherit;
+  cursor: pointer;
+  box-shadow: 0 12px 34px rgba(107, 92, 196, 0.08);
+}
+
+.wizardFrame {
+  width: min(100%, 860px);
+  margin: 0 auto;
+  padding: 26px 28px 72px;
+}
+
+.wizardCard {
+  display: grid;
+  gap: 28px;
+}
+
+.wizardHeader {
+  display: grid;
+  gap: 12px;
+  max-width: 780px;
+}
+
+.wizardHeader h1 {
+  margin: 0;
+  font-size: clamp(2.1rem, 5vw, 3.8rem);
+  line-height: 1.03;
+  letter-spacing: -0.045em;
+}
+
+.wizardHeader p {
+  margin: 0;
+  color: #7b7167;
+  font-size: 1.08rem;
+  line-height: 1.6;
+}
+
+.choiceGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.choiceCard,
+.categoryCard,
+.serviceOption {
+  border: 1px solid rgba(17, 17, 17, 0.08);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.8);
+  padding: 22px;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 0 18px 58px rgba(107, 92, 196, 0.12);
+}
+
+.choiceCard:hover,
+.categoryCard:hover,
+.serviceOption:hover,
+.socialButton:hover,
+.ghostButton:hover {
+  transform: translateY(-1px);
+}
+
+.selectedCard {
+  border-color: #7a61ff;
+  box-shadow: 0 0 0 3px rgba(122, 97, 255, 0.12);
+}
+
+.choiceTitle {
+  display: block;
+  margin-top: 12px;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.choiceText {
+  display: block;
+  margin-top: 8px;
+  color: #7b7167;
+  line-height: 1.55;
+}
+
+.categoryGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.categoryCard {
+  min-height: 118px;
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  position: relative;
+}
+
+.categoryBadge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #7a61ff;
+  color: #fff;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.categoryName {
+  font-weight: 700;
+}
+
+.serviceStack {
+  display: grid;
+  gap: 14px;
+  max-width: 560px;
+}
+
+.generatedBlock {
+  display: grid;
+  gap: 12px;
+  padding: 20px 22px;
+  border-radius: 22px;
+  border: 1px solid rgba(17, 17, 17, 0.08);
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 16px 44px rgba(107, 92, 196, 0.08);
+}
+
+.generatedList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.generatedChipButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.generatedChip {
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: rgba(122, 97, 255, 0.1);
+  color: #5f49dd;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.generatedChipRemove {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: inline-grid;
+  place-items: center;
+  background: rgba(122, 97, 255, 0.14);
+  color: #5f49dd;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.templateActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.templateModalBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(18, 16, 14, 0.48);
+  display: grid;
+  place-items: center;
+  padding: 32px 18px;
+}
+
+.templateModal,
+.templateFormModal {
+  width: min(100%, 760px);
+  max-height: calc(100vh - 64px);
+  overflow: auto;
+  border-radius: 28px;
+  background: #fff;
+  box-shadow: 0 28px 60px rgba(23, 18, 13, 0.18);
+  padding: 24px;
+  display: grid;
+  gap: 22px;
+}
+
+.templateFormModal {
+  width: min(100%, 680px);
+}
+
+.templateModalHeader {
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.templateModalHeader h2 {
+  margin: 0;
+  font-size: 2.2rem;
+  line-height: 1;
+}
+
+.templateModalHeader p {
+  margin: 10px 0 0;
+  color: #786f66;
+  line-height: 1.6;
+}
+
+.templateModalBody {
+  display: grid;
+  gap: 24px;
+}
+
+.templateListBlock {
+  display: grid;
+  gap: 10px;
+}
+
+.templateListBlock > strong {
+  font-size: 1.1rem;
+}
+
+.templateListBlock > span {
+  color: #7b7167;
+}
+
+.templateList {
+  display: grid;
+  gap: 12px;
+}
+
+.templateServiceRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 0;
+  border-bottom: 1px solid #eee6dd;
+}
+
+.templateServiceRow strong {
+  display: block;
+  font-size: 1.05rem;
+}
+
+.templateServiceRow span {
+  display: block;
+  margin-top: 6px;
+  color: #7d746a;
+}
+
+.templateSelectButton {
+  min-width: 126px;
+  min-height: 42px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 0;
+  background: #2d3139;
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+}
+
+.templateSelectButtonActive {
+  background: #6f5cff;
+}
+
+.templateModalFooter {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.templateDurationRow {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.mapCard {
+  border: 1px solid rgba(17, 17, 17, 0.08);
+  border-radius: 24px;
+  padding: 24px;
+  background: rgba(255, 255, 255, 0.8);
+  display: grid;
+  gap: 18px;
+  box-shadow: 0 18px 58px rgba(107, 92, 196, 0.1);
+}
+
+.addressPreview {
+  color: #4f4740;
+  line-height: 1.6;
+  white-space: pre-line;
+}
+
+.addressSearchList {
+  display: grid;
+  gap: 10px;
+}
+
+.addressHint {
+  color: #7b7167;
+  font-size: 0.95rem;
+}
+
+.addressSearchItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  width: 100%;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(17, 17, 17, 0.08);
+  background: rgba(255, 255, 255, 0.92);
+  color: #171411;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 0 14px 34px rgba(107, 92, 196, 0.1);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+
+.addressSearchItem:hover {
+  transform: translateY(-1px);
+  border-color: rgba(122, 97, 255, 0.34);
+  box-shadow: 0 22px 44px rgba(23, 20, 17, 0.12);
+}
+
+.addressSearchText {
+  display: grid;
+  min-width: 0;
+  gap: 5px;
+}
+
+.addressSearchText strong {
+  color: #171411;
+  font-size: 0.98rem;
+}
+
+.addressSearchText span {
+  color: #6f675f;
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.addressSearchAction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #171411 0%, #6c5dff 165%);
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+  box-shadow: 0 12px 24px rgba(107, 92, 196, 0.22);
+}
+
+.addressWarning {
+  padding: 16px 18px;
+  border-radius: 16px;
+  background: rgba(255, 224, 224, 0.42);
+  color: #8f3535;
+}
+
+.mapFrame {
+  width: 100%;
+  min-height: 320px;
+  border: 1px solid rgba(17, 17, 17, 0.08);
+  border-radius: 20px;
+  background: rgba(244, 240, 255, 0.82);
+}
+
+.mapMock {
+  position: relative;
+  overflow: hidden;
+  min-height: 290px;
+  border-radius: 20px;
+  background:
+    linear-gradient(90deg, rgba(86, 165, 248, 0.12), rgba(153, 222, 182, 0.18)),
+    url("https://maps.gstatic.com/tactile/basepage/pegman_sherlock.png") top left/0 0 no-repeat,
+    linear-gradient(135deg, #eef2f1 0%, #d8e4df 100%);
+}
+
+.mapRoad,
+.mapRoadAlt {
+  position: absolute;
+  inset: auto;
+  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid rgba(72, 84, 79, 0.08);
+}
+
+.mapRoad {
+  width: 140%;
+  height: 56px;
+  top: 42%;
+  left: -20%;
+  transform: rotate(-18deg);
+}
+
+.mapRoadAlt {
+  width: 54px;
+  height: 140%;
+  top: -20%;
+  left: 44%;
+  transform: rotate(14deg);
+}
+
+.mapPin {
+  position: absolute;
+  top: 48%;
+  left: 53%;
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: #121212;
+  color: #fff;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 18px 30px rgba(18, 18, 18, 0.22);
+}
+
+.mapZoom {
+  position: absolute;
+  right: 18px;
+  bottom: 18px;
+  display: grid;
+  gap: 8px;
+}
+
+.mapZoom button {
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.94);
+  font: inherit;
+}
+
+.wizardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.terms {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  color: #6f675f;
+  max-width: 620px;
+  line-height: 1.55;
+}
+
+.terms input {
+  width: 20px;
+  height: 20px;
+  margin-top: 4px;
+  accent-color: #7058ff;
+}
+
+.createAccountActions {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.createAccountActions .primaryButton {
+  min-width: 260px;
+}
+
+.createVisualContent {
+  position: relative;
+  z-index: 2;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 22px;
+  padding: 54px;
+}
+
+.createVisualBadge {
+  align-self: flex-start;
+  display: inline-flex;
+  min-height: 42px;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 16px;
+  border: 1px solid rgba(17, 17, 17, 0.1);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.74);
+  color: #5f49dd;
+  font-weight: 950;
+  box-shadow: 0 18px 46px rgba(58, 42, 122, 0.1);
+  backdrop-filter: blur(14px);
+}
+
+.createVisualBadge span {
+  font-size: 0.92rem;
+  line-height: 1;
+  letter-spacing: 0.01em;
+}
+
+.createVisualBadgeLogoImage {
+  width: 82px;
+  height: auto;
+  display: block;
+  flex: 0 0 auto;
+}
+
+.createVisualPhotoCard {
+  position: relative;
+  min-height: 520px;
+  border: 1px solid rgba(17, 17, 17, 0.08);
+  border-radius: 42px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 74% 16%, rgba(255, 255, 255, 0.9), transparent 22%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.76), rgba(236, 229, 255, 0.72));
+  box-shadow: 0 36px 120px rgba(66, 48, 122, 0.2);
+}
+
+.createVisualPhotoCard::before {
+  content: "";
+  position: absolute;
+  inset: auto -8% -18% -8%;
+  height: 44%;
+  background:
+    radial-gradient(ellipse at center, rgba(17, 17, 17, 0.12), transparent 68%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0), rgba(251, 246, 255, 0.9));
+}
+
+.createPerson {
+  position: absolute;
+  right: 8%;
+  bottom: 12%;
+  width: 270px;
+  height: 380px;
+}
+
+.createPersonHair {
+  position: absolute;
+  top: 0;
+  left: 36px;
+  width: 150px;
+  height: 150px;
+  border-radius: 46% 54% 48% 52%;
+  background:
+    radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.28), transparent 20%),
+    linear-gradient(135deg, #362214, #7d4a2f 58%, #2f1b13);
+  box-shadow: 18px 12px 0 rgba(54, 34, 20, 0.82);
+}
+
+.createPersonFace {
+  position: absolute;
+  top: 76px;
+  left: 80px;
+  width: 96px;
+  height: 118px;
+  border-radius: 42% 42% 48% 48%;
+  background: linear-gradient(180deg, #f2be91, #df9168);
+  box-shadow: inset -14px -10px 0 rgba(129, 66, 45, 0.1);
+}
+
+.createPersonBody {
+  position: absolute;
+  left: 24px;
+  bottom: 0;
+  width: 220px;
+  height: 218px;
+  border-radius: 58px 58px 24px 24px;
+  background:
+    radial-gradient(circle at 22% 20%, rgba(255, 255, 255, 0.24), transparent 22%),
+    linear-gradient(135deg, #111, #3b304f 54%, #7058ff);
+}
+
+.createLaptop {
+  position: absolute;
+  left: 8%;
+  bottom: 10%;
+  width: min(590px, 72%);
+  border: 10px solid #161616;
+  border-radius: 24px;
+  background: #111;
+  box-shadow: 0 30px 80px rgba(20, 20, 30, 0.28);
+  transform: perspective(1200px) rotateY(-8deg) rotateX(3deg);
+  transform-origin: left bottom;
+  overflow: hidden;
+}
+
+.createLaptopTop {
+  height: 32px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 12px;
+  background: #111;
+}
+
+.createLaptopTop span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #fff;
+  opacity: 0.46;
+}
+
+.createLaptop img {
+  width: 100%;
+  display: block;
+}
+
+.createVisualText {
+  max-width: 620px;
+  padding: 24px 26px;
+  border: 1px solid rgba(17, 17, 17, 0.09);
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: 0 22px 70px rgba(66, 48, 122, 0.1);
+  backdrop-filter: blur(14px);
+}
+
+.createVisualText strong,
+.createVisualText span {
+  display: block;
+}
+
+.createVisualText strong {
+  font-size: clamp(1.6rem, 2.1vw, 2.4rem);
+  line-height: 1.04;
+  letter-spacing: -0.04em;
+}
+
+.createVisualText span {
+  margin-top: 12px;
+  color: #5f5a65;
+  font-weight: 750;
+  line-height: 1.45;
+}
+
+.workspaceShell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 72px 1fr 360px;
+  background: #f7f7f9;
+}
+
+.scheduleShell {
+  grid-template-columns: 72px 1fr;
+}
+
+.calendarShell {
+  grid-template-columns: 72px minmax(0, 1fr) 0;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.calendarShellExpanded {
+  grid-template-columns: 72px minmax(0, 1fr) 760px;
+}
+
+.workspaceSidebar {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0 14px;
+  background: linear-gradient(180deg, #151515 0%, #0d0d0f 100%);
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.workspaceSidebarTop {
+  display: grid;
+  gap: 10px;
+}
+
+.workspaceSidebarBottom {
+  display: grid;
+  gap: 10px;
+}
+
+.workspaceNavButton {
+  width: 48px;
+  height: 48px;
+  position: relative;
+  border-radius: 13px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.82);
+  text-decoration: none;
+  display: grid;
+  place-items: center;
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease, transform 120ms ease;
+}
+
+.workspaceNavButton:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.workspaceNavButton svg {
+  width: 24px;
+  height: 24px;
+}
+
+.workspaceNavDot {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #ff4d4f;
+  box-shadow: 0 0 0 2px rgba(27, 22, 18, 0.72);
+}
+
+.workspaceActive {
+  background: #6f4cff;
+  color: #fff;
+  border-color: transparent;
+  box-shadow: 0 10px 24px rgba(111, 92, 255, 0.32);
+}
+
+.mobileWorkspaceNav {
+  display: none;
+}
+
+.mobileWorkspaceNavLink {
+  position: relative;
+  min-width: 0;
+  min-height: 62px;
+  padding: 8px 6px;
+  border-radius: 16px;
+  color: #6b6157;
+  text-decoration: none;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 6px;
+  transition: background-color 120ms ease, color 120ms ease, transform 120ms ease, box-shadow 120ms ease;
+}
+
+.mobileWorkspaceNavLink:hover {
+  background: rgba(17, 17, 17, 0.04);
+  color: #171411;
+}
+
+.mobileWorkspaceNavIcon {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+.mobileWorkspaceNavIcon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.mobileWorkspaceNavLabel {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.7rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.mobileWorkspaceNavActive {
+  background: linear-gradient(135deg, #171411 0%, #6c5dff 175%);
+  color: #fff;
+  box-shadow: 0 14px 28px rgba(111, 92, 255, 0.22);
+}
+
+.supportFloatingButton {
+  position: fixed;
+  right: 14px;
+  top: calc(78px + env(safe-area-inset-top));
+  bottom: auto;
+  z-index: 80;
+  width: 46px;
+  height: 46px;
+  border: 0;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #1fb8b4, #11a3c8);
+  color: #fff;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 14px 26px rgba(17, 163, 200, 0.26);
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.supportFloatingButton:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 18px 32px rgba(17, 163, 200, 0.32);
+}
+
+.supportFloatingButton svg {
+  width: 22px;
+  height: 22px;
+}
+
+.supportOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  background: rgba(15, 15, 16, 0.45);
+  backdrop-filter: blur(3px);
+  display: flex;
+  justify-content: flex-end;
+  align-items: stretch;
+  padding: 24px;
+}
+
+.supportPanel {
+  width: min(460px, 100%);
+  border-radius: 24px;
+  background: #fff;
+  box-shadow: 0 28px 70px rgba(0, 0, 0, 0.24);
+  display: grid;
+  grid-template-rows: auto auto 1fr auto auto;
+  overflow: hidden;
+}
+
+.supportHeader {
+  padding: 20px 22px;
+  background: linear-gradient(135deg, #17b3b1, #12a2c7);
+  color: #fff;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.supportHeader span {
+  display: block;
+  margin-bottom: 5px;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.supportHeader h2 {
+  margin: 0;
+  font-size: 1.12rem;
+}
+
+.supportHeader button {
+  width: 36px;
+  height: 36px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.supportGuide {
+  margin: 16px 16px 0;
+  padding: 16px;
+  border-radius: 18px;
+  background: #f6f4ef;
+  color: #4f4740;
+}
+
+.supportGuide strong {
+  display: block;
+  margin-bottom: 6px;
+  color: #171411;
+}
+
+.supportGuide p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.supportGuide small {
+  display: inline-flex;
+  margin-top: 12px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #171411;
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+}
+
+.supportMessages {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  overflow: auto;
+}
+
+.supportBubble {
+  max-width: 86%;
+  align-self: flex-start;
+  padding: 13px 15px;
+  border-radius: 17px 17px 17px 5px;
+  background: #f1f1f1;
+  color: #171411;
+  line-height: 1.45;
+}
+
+.supportBubbleUser {
+  align-self: flex-end;
+  border-radius: 17px 17px 5px 17px;
+  background: #171411;
+  color: #fff;
+}
+
+.supportComposer {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border-top: 1px solid #eee8df;
+}
+
+.supportComposer textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 86px;
+  border: 1px solid #ded6ca;
+  border-radius: 16px;
+  padding: 13px 14px;
+  font: inherit;
+  outline: none;
+}
+
+.supportComposer textarea:focus {
+  border-color: #17a9ba;
+  box-shadow: 0 0 0 4px rgba(23, 169, 186, 0.12);
+}
+
+.supportComposer button {
+  height: 48px;
+  border: 0;
+  border-radius: 999px;
+  background: #171411;
+  color: #fff;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.supportComposer button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.supportStatus {
+  margin: 0;
+  padding: 0 16px 16px;
+  color: #287d49;
+  font-weight: 800;
+}
+
+.supportStatusError {
+  color: #b33434;
+}
+
+.languageSwitcher {
+  position: relative;
+  display: grid;
+  place-items: center;
+  padding-bottom: 8px;
+  margin-bottom: 4px;
+}
+
+.languageSwitcher::after {
+  content: "";
+  width: 38px;
+  height: 1px;
+  margin-top: 8px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.languageTrigger {
+  width: 42px;
+  height: 42px;
+  border: 0;
+  border-radius: 50%;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02)),
+    #202024;
+  display: grid;
+  place-items: center;
+  font-size: 1.25rem;
+  cursor: pointer;
+}
+
+.languageMenu {
+  position: absolute;
+  top: 0;
+  left: calc(100% + 10px);
+  z-index: 30;
+  min-width: 116px;
+  padding: 8px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: #171719;
+  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.22);
+  display: none;
+  gap: 4px;
+}
+
+.languageSwitcherOpen .languageMenu {
+  display: grid;
+}
+
+.languageMenu button {
+  min-height: 34px;
+  border: 0;
+  border-radius: 11px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.82);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.languageMenu button:hover,
+.languageOptionActive {
+  background: rgba(111, 76, 255, 0.28) !important;
+  color: #fff !important;
+}
+
+.clientsShell {
+  display: block;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 90% 0%, rgba(107, 82, 255, 0.08), transparent 30%),
+    #fffdf9;
+}
+
+.clientsMain {
+  padding: 40px clamp(24px, 5vw, 72px) 40px;
+  display: grid;
+  align-content: start;
+  gap: 20px;
+  background: transparent;
+  min-width: 0;
+  max-width: 1480px;
+  margin: 0 auto;
+}
+
+.clientsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 4px 0 8px;
+}
+
+.clientsKicker {
+  color: #8f857a;
+  font-size: 0.95rem;
+  margin-bottom: 8px;
+}
+
+.clientsTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.clientsTitle {
+  margin: 0;
+  font-size: clamp(2.6rem, 5vw, 4.6rem);
+  line-height: 1.02;
+  letter-spacing: -0.045em;
+}
+
+.clientsBadge {
+  min-width: 28px;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: #f1ede7;
+  color: #62584c;
+  display: inline-grid;
+  place-items: center;
+  font-size: 0.9rem;
+}
+
+.clientsSubtitle {
+  margin: 10px 0 0;
+  max-width: 720px;
+  color: #7f756a;
+  line-height: 1.6;
+}
+
+.clientsActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+}
+
+.clientsPrimaryAddButton {
+  min-height: 58px;
+  padding: 0 28px;
+  border: 0;
+  border-radius: 999px;
+  background: #080808;
+  color: #fff;
+  font: inherit;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+  box-shadow: 0 18px 36px rgba(8, 8, 8, 0.16);
+  cursor: pointer;
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.clientsPrimaryAddButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 22px 46px rgba(8, 8, 8, 0.2);
+}
+
+.clientsOptionsWrap {
+  position: relative;
+}
+
+.clientsOptionsMenu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  z-index: 10;
+  min-width: 240px;
+  display: grid;
+  padding: 10px;
+  gap: 4px;
+  border-radius: 20px;
+  border: 1px solid #e7ddd3;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 24px 54px rgba(28, 20, 12, 0.14);
+}
+
+.clientsOptionsMenu button {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  text-align: left;
+  color: #171411;
+  font: inherit;
+}
+
+.clientsOptionsMenu button:hover {
+  background: #f6f2ec;
+}
+
+.clientsGhostButton {
+  min-height: 44px;
+  padding: 0 18px;
+  border-radius: 999px;
+  border: 1px solid #ddd5cb;
+  background: #fff;
+  color: #171411;
+  font: inherit;
+}
+
+.clientsPromo {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(260px, 0.75fr);
+  overflow: hidden;
+  border-radius: 28px;
+  background: linear-gradient(90deg, #111111 0%, #24123f 52%, #952dc1 100%);
+  color: #fff;
+  min-height: 178px;
+}
+
+.clientsPromo > div:first-child {
+  padding: 28px 24px;
+}
+
+.clientsPromo strong {
+  display: block;
+  font-size: 2rem;
+  line-height: 1.06;
+}
+
+.clientsPromo p {
+  margin: 12px 0 0;
+  max-width: 520px;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.55;
+}
+
+.clientsPromoActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.clientsPromoButton {
+  min-height: 40px;
+  padding: 0 18px;
+  border-radius: 999px;
+  border: 0;
+  background: #fff;
+  color: #171411;
+  font: inherit;
+  font-weight: 600;
+}
+
+.clientsPromoLink {
+  min-height: 40px;
+  padding: 0 10px;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  font: inherit;
+}
+
+.clientsPromoVisual {
+  position: relative;
+  overflow: hidden;
+}
+
+.clientsPromoVisual span {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.42), rgba(255, 255, 255, 0.12) 55%, rgba(255, 255, 255, 0.04) 100%);
+}
+
+.clientsPromoVisual span:nth-child(1) {
+  width: 86px;
+  height: 86px;
+  top: 28px;
+  right: 46px;
+}
+
+.clientsPromoVisual span:nth-child(2) {
+  width: 116px;
+  height: 116px;
+  bottom: -18px;
+  right: 126px;
+}
+
+.clientsPromoVisual span:nth-child(3) {
+  width: 88px;
+  height: 88px;
+  bottom: 24px;
+  left: 48px;
+}
+
+.clientsPromoVisual span:nth-child(4) {
+  width: 124px;
+  height: 124px;
+  bottom: -22px;
+  right: -10px;
+}
+
+.clientsPromoClose {
+  position: absolute;
+  top: 16px;
+  right: 18px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font: inherit;
+  z-index: 1;
+}
+
+.clientsToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 10px;
+  border: 1px solid #eee6dc;
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 18px 48px rgba(47, 37, 26, 0.06);
+}
+
+.clientsToolbarLeft {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.clientsSearch {
+  min-width: min(620px, calc(100vw - 180px));
+  min-height: 52px;
+  padding: 0 14px;
+  border-radius: 18px;
+  border: 1px solid #e5dbcf;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #8a8073;
+}
+
+.clientsSearch svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.clientsSearch input {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  outline: none;
+  font: inherit;
+  color: #171411;
+}
+
+.clientsSearchClear {
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 50%;
+  background: #f0ebe5;
+  color: #51493f;
+  font: inherit;
+  flex-shrink: 0;
+}
+
+.clientsTable {
+  display: grid;
+  gap: 0;
+  border: 1px solid #eee6dc;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.86);
+  overflow: hidden;
+  box-shadow: 0 18px 48px rgba(47, 37, 26, 0.055);
+}
+
+.clientsTableHead,
+.clientsRow {
+  display: grid;
+  grid-template-columns: 40px minmax(240px, 2fr) minmax(180px, 1.2fr) 120px 140px 140px;
+  gap: 10px;
+  align-items: center;
+}
+
+.clientsTableHead {
+  padding: 16px 20px;
+  color: #1f1a16;
+  font-weight: 700;
+  border-bottom: 1px solid #ece6dd;
+  background: #fbf8f3;
+}
+
+.clientsRows {
+  display: grid;
+}
+
+.clientsRow {
+  padding: 14px 20px;
+  border-bottom: 1px solid #efe9e0;
+  min-height: 80px;
+  cursor: pointer;
+  transition: background 140ms ease;
+}
+
+.clientsRow:hover {
+  background: #fffaf2;
+}
+
+.clientsCheckboxCell {
+  display: grid;
+  place-items: center;
+}
+
+.clientsCheckboxCell input {
+  width: 24px;
+  height: 24px;
+  border-radius: 8px;
+}
+
+.clientIdentity {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.clientAvatar {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #f0ecff;
+  color: #5f49e8;
+  font-weight: 700;
+  font-size: 1.3rem;
+}
+
+.clientIdentity strong {
+  display: block;
+  font-size: 1.05rem;
+}
+
+.clientIdentity span {
+  display: block;
+  margin-top: 4px;
+  color: #857a6d;
+}
+
+.clientsEmptyState {
+  min-height: 240px;
+  display: grid;
+  place-items: center;
+  gap: 8px;
+  color: #7f756a;
+  text-align: center;
+}
+
+.clientsStatus {
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: #f5f2ff;
+  color: #5b48e7;
+  border: 1px solid #ddd6ff;
+}
+
+.clientsModalBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 30;
+  background: rgba(20, 16, 12, 0.18);
+  backdrop-filter: blur(5px);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.clientsModal {
+  width: min(520px, 100vw);
+  height: 100vh;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(111, 92, 255, 0.08), transparent 35%),
+    #fffdf9;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  border-left: 1px solid #e8dfd4;
+  box-shadow: -28px 0 80px rgba(30, 23, 15, 0.18);
+}
+
+.clientsDrawerHeader {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 22px 24px 18px;
+  border-bottom: 1px solid #eee7df;
+}
+
+.clientsDrawerHeader strong {
+  display: block;
+  font-size: 1.45rem;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+}
+
+.clientsDrawerHeader span {
+  display: block;
+  margin-top: 3px;
+  color: #81786f;
+  font-size: 0.88rem;
+}
+
+.clientsDrawerTabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin: 16px 24px 0;
+  padding: 5px;
+  border-radius: 18px;
+  background: #f0ede7;
+}
+
+.clientsDrawerTabs button {
+  min-height: 42px;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+  color: #746b61;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.clientsDrawerTabActive {
+  background: #fff !important;
+  color: #171411 !important;
+  box-shadow: 0 8px 20px rgba(45, 35, 24, 0.08);
+}
+
+.clientsModalContent {
+  padding: 22px 24px 28px;
+  overflow-y: auto;
+}
+
+.clientsFormSection {
+  max-width: none;
+  display: grid;
+  gap: 16px;
+}
+
+.clientsFormSection h3 {
+  margin: 0;
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.clientsFormSection p {
+  margin: -10px 0 0;
+  color: #7c7268;
+}
+
+.clientsFormGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+.clientsFormGrid label,
+.clientsTextareaWrap {
+  display: grid;
+  gap: 8px;
+}
+
+.clientsFormGrid label span,
+.clientsTextareaWrap span {
+  font-weight: 600;
+  color: #191511;
+}
+
+.clientsSettingsList {
+  display: grid;
+  gap: 18px;
+}
+
+.clientsSettingRow {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: 12px;
+  align-items: flex-start;
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid #e8e0d7;
+  background: #fff;
+}
+
+.clientsDrawerFooter {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 18px 24px 24px;
+  border-top: 1px solid #eee7df;
+  background: rgba(255, 253, 249, 0.94);
+}
+
+.clientsSettingRow input {
+  width: 24px;
+  height: 24px;
+  accent-color: #6f5cff;
+}
+
+.clientsSettingRow strong {
+  display: block;
+}
+
+.clientsSettingRow span {
+  display: block;
+  margin-top: 4px;
+  color: #7e7368;
+}
+
+.placeholderShell {
+  min-height: 100vh;
+  background: #fff;
+  display: grid;
+  place-items: center;
+  padding: 40px;
+}
+
+.placeholderCard {
+  max-width: 680px;
+  padding: 36px;
+  border-radius: 28px;
+  border: 1px solid #ece5db;
+  background: #fcfaf7;
+}
+
+.placeholderCard h1 {
+  margin: 0 0 12px;
+  font-size: 2.6rem;
+  line-height: 1;
+}
+
+.placeholderCard p {
+  margin: 0;
+  color: #756c63;
+  line-height: 1.7;
+}
+
+.workspaceMain {
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  background: #fff;
+  border-right: 1px solid #ebe8e2;
+  min-height: 0;
+}
+
+.workspaceTopBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 20px;
+  border-bottom: 1px solid #ebe8e2;
+}
+
+.workspaceControls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.pillControl {
+  min-height: 42px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1px solid #d9d0c6;
+  background: #fff;
+  color: #171411;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+}
+
+.pillControlActive {
+  background: #111111;
+  color: #fff;
+  border-color: #111111;
+}
+
+.workspaceProfile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #1091d1;
+  border: 2px solid #97d5f8;
+  background: #f2fbff;
+  font-weight: 700;
+}
+
+.workspaceHeader {
+  padding: 18px 20px;
+  border-bottom: 1px solid #ebe8e2;
+}
+
+.dateNavigator {
+  display: inline-grid;
+  grid-template-columns: 42px minmax(120px, 1fr) 42px;
+  min-height: 42px;
+  border: 1px solid #d9d0c6;
+  border-radius: 999px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.dateNavigatorArrow {
+  border: 0;
+  background: transparent;
+  font: inherit;
+  color: #171411;
+}
+
+.dateNavigatorLabel {
+  display: grid;
+  place-items: center;
+  border-left: 1px solid #eee5db;
+  border-right: 1px solid #eee5db;
+  color: #171411;
+  font-weight: 600;
+  text-transform: lowercase;
+}
+
+.workspaceGrid {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  min-height: 780px;
+}
+
+.hourColumn {
+  position: relative;
+  border-right: 1px solid #ebe8e2;
+  background: linear-gradient(180deg, #fff 0%, #faf9f7 100%);
+}
+
+.hourLabel {
+  position: absolute;
+  left: 12px;
+  font-size: 0.86rem;
+  color: #4f4740;
+  transform: translateY(-50%);
+}
+
+.calendarBody {
+  position: relative;
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      #ffffff 0,
+      #ffffff 75px,
+      #ece7e1 76px,
+      #ffffff 76px,
+      #ffffff 151px,
+      #ece7e1 152px
+    );
+}
+
+.calendarPageHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 20px;
+  border-bottom: 1px solid #ebe8e2;
+}
+
+.calendarScrollFrame {
+  height: calc(100vh - 184px);
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.calendarPageGrid {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  min-height: 2328px;
+}
+
+.calendarDayBody {
+  position: relative;
+  min-height: 2328px;
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent 15px,
+      #eceef2 15px,
+      #eceef2 16px
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent 95px,
+      #e3e4e6 95px,
+      #e3e4e6 96px
+    ),
+    #ffffff;
+}
+
+.nonWorkingZone {
+  position: absolute;
+  left: 0;
+  right: 0;
+  background:
+    repeating-linear-gradient(
+      135deg,
+      rgba(94, 99, 117, 0.07) 0,
+      rgba(94, 99, 117, 0.07) 4px,
+      rgba(255, 255, 255, 0.02) 4px,
+      rgba(255, 255, 255, 0.02) 10px
+    ),
+    rgba(237, 238, 243, 0.7);
+  border-top: 1px solid rgba(199, 201, 209, 0.6);
+  border-bottom: 1px solid rgba(199, 201, 209, 0.6);
+}
+
+.calendarSlotButton {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 16px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  padding-left: 16px;
+  color: transparent;
+  cursor: pointer;
+  z-index: 1;
+}
+
+.calendarSlotButton:hover,
+.calendarSlotActive {
+  background: rgba(111, 92, 255, 0.08);
+  color: #6f5cff;
+}
+
+.calendarSlotOffHours.calendarSlotActive,
+.calendarSlotOffHours:hover {
+  background: rgba(255, 188, 120, 0.16);
+  color: #a15e14;
+}
+
+.nowLine {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: #ef4152;
+}
+
+.nowBadge {
+  position: absolute;
+  left: -38px;
+  top: -11px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: #fff;
+  color: #ef4152;
+  border: 1px solid #ef4152;
+  font-size: 0.72rem;
+}
+
+.bookingBlock {
+  position: absolute;
+  left: 0;
+  right: 16px;
+  border-radius: 0 16px 16px 0;
+  padding: 11px 14px;
+  background: #9dd9f7;
+  color: #10222d;
+  box-shadow: inset 0 0 0 1px rgba(84, 136, 164, 0.12);
+  cursor: grab;
+  z-index: 2;
+  overflow: hidden;
+}
+
+.bookingDragging {
+  cursor: grabbing;
+  opacity: 0.9;
+}
+
+.bookingPast {
+  background: #d9dde4;
+  color: #46515d;
+  box-shadow: inset 0 0 0 1px rgba(107, 121, 137, 0.18);
+}
+
+.bookingBlocked {
+  background:
+    repeating-linear-gradient(
+      135deg,
+      rgba(112, 117, 128, 0.18) 0,
+      rgba(112, 117, 128, 0.18) 8px,
+      rgba(255, 255, 255, 0.05) 8px,
+      rgba(255, 255, 255, 0.05) 16px
+    ),
+    #eceef3;
+  color: #545c66;
+  box-shadow: inset 0 0 0 1px rgba(126, 132, 141, 0.22);
+  cursor: grab;
+}
+
+.bookingResizeHandle {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 6px;
+  height: 10px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  cursor: ns-resize;
+}
+
+.bookingResizeHandle::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 36px;
+  height: 4px;
+  border-radius: 999px;
+  background: rgba(16, 34, 45, 0.28);
+  transform: translate(-50%, -50%);
+}
+
+.calendarSidePanel {
+  padding: 0;
+  background: #fbfaf8;
+  display: grid;
+  align-content: start;
+  gap: 16px;
+  overflow: hidden;
+  opacity: 0;
+  pointer-events: none;
+  border-left: 1px solid transparent;
+}
+
+.calendarActionCard {
+  border: 1px solid #e8dfd4;
+  border-radius: 22px;
+  background: #fff;
+  padding: 18px;
+}
+
+.calendarQuickMenu {
+  position: absolute;
+  z-index: 6;
+  width: 260px;
+  border: 1px solid #e5ddd3;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 20px 42px rgba(41, 28, 14, 0.14);
+  overflow: hidden;
+}
+
+.calendarQuickMenuTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid #eee8e0;
+  font-size: 1.1rem;
+}
+
+.calendarQuickMenuClose,
+.calendarComposerClose {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid #e1d7cc;
+  background: #fff;
+  color: #1c1813;
+  font: inherit;
+}
+
+.calendarQuickMenuAction {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 16px;
+  border: 0;
+  background: #fff;
+  text-align: left;
+  font: inherit;
+  color: #171411;
+}
+
+.calendarQuickMenuAction:hover {
+  background: #f8f5f0;
+}
+
+.calendarActionTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.calendarActionTop strong {
+  font-size: 1.6rem;
+  line-height: 1;
+}
+
+.calendarActionTop span {
+  color: #7a7065;
+}
+
+.calendarHint {
+  margin: 0 0 14px;
+  color: #6e655c;
+  line-height: 1.55;
+}
+
+.calendarWarning {
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(255, 239, 217, 0.8);
+  color: #9a5b12;
+  border: 1px solid rgba(240, 193, 136, 0.9);
+}
+
+.calendarOverlapWarning {
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(237, 236, 255, 0.78);
+  color: #5746d7;
+  border: 1px solid rgba(161, 151, 255, 0.7);
+}
+
+.calendarPastWarning {
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(255, 231, 231, 0.92);
+  color: #c0392b;
+  border: 1px solid rgba(233, 128, 117, 0.8);
+}
+
+.quickActionList {
+  display: grid;
+  gap: 10px;
+}
+
+.quickActionButton {
+  min-height: 46px;
+  padding: 0 14px;
+  border-radius: 14px;
+  border: 1px solid #e3dbd0;
+  background: #fff;
+  text-align: left;
+  color: #171411;
+  font: inherit;
+}
+
+.calendarSidePanelOpen {
+  background: #fff;
+  padding: 20px;
+  overflow-y: auto;
+  opacity: 1;
+  pointer-events: auto;
+  border-left-color: #ebe8e2;
+}
+
+.calendarComposer {
+  height: 100%;
+  display: grid;
+  grid-template-rows: auto auto 1fr auto;
+  gap: 16px;
+}
+
+.calendarComposerHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.calendarComposerHeader strong {
+  display: block;
+  font-size: 1.7rem;
+  line-height: 1;
+}
+
+.calendarComposerHeader span {
+  display: block;
+  margin-top: 6px;
+  color: #7c7268;
+}
+
+.calendarComposerGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 0;
+  min-height: 0;
+  border: 1px solid #ebe4db;
+  border-radius: 22px;
+  overflow: hidden;
+  background: #fff;
+}
+
+.calendarComposerColumn {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  padding: 20px;
+  min-height: 0;
+}
+
+.calendarComposerColumn + .calendarComposerColumn {
+  border-left: 1px solid #eee6dd;
+}
+
+.calendarComposerTitle {
+  margin: 0;
+  font-size: 1.05rem;
+  line-height: 1.2;
+}
+
+.calendarEntityList,
+.calendarServiceList {
+  display: grid;
+  gap: 12px;
+}
+
+.calendarEntityCard,
+.calendarServiceCard {
+  width: 100%;
+  border: 1px solid #e6ddd3;
+  border-radius: 18px;
+  background: #fff;
+  padding: 14px;
+  text-align: left;
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  color: #171411;
+}
+
+.calendarEntityCardActive,
+.calendarServiceCardActive {
+  border-color: #6f5cff;
+  box-shadow: inset 0 0 0 1px rgba(111, 92, 255, 0.25);
+  background: rgba(111, 92, 255, 0.03);
+}
+
+.calendarEntityAvatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #eeebff;
+  color: #6452ea;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.calendarEntityCard strong,
+.calendarServiceCard strong {
+  display: block;
+  font-size: 1rem;
+}
+
+.calendarEntityCard span,
+.calendarServiceCard span {
+  display: block;
+  margin-top: 4px;
+  color: #7d736a;
+}
+
+.calendarCreateService {
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 14px;
+  border: 1px dashed #6f5cff;
+  background: rgba(111, 92, 255, 0.05);
+  color: #5746d7;
+  text-align: left;
+  font: inherit;
+  font-weight: 600;
+}
+
+.calendarCreateClient {
+  min-height: 44px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  border: 1px solid #ded4ff;
+  background: #f7f4ff;
+  color: #5746d7;
+  text-align: left;
+  font: inherit;
+  box-shadow: 0 12px 28px rgba(97, 80, 224, 0.08);
+}
+
+.calendarCreateClient strong {
+  font-weight: 700;
+}
+
+.calendarServiceGroup {
+  display: grid;
+  gap: 12px;
+}
+
+.calendarServiceGroupTitle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.98rem;
+  font-weight: 700;
+}
+
+.calendarServiceGroupTitle span {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #f0ebe5;
+  color: #7f7469;
+  font-size: 0.8rem;
+}
+
+.calendarComposerFooter {
+  display: grid;
+  gap: 10px;
+}
+
+.bookingTime {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.12;
+  opacity: 0.92;
+}
+
+.bookingTitle {
+  display: block;
+  margin-top: 3px;
+  font-weight: 700;
+  line-height: 1.08;
+}
+
+.bookingService {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.96rem;
+  line-height: 1.12;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.workspaceAside {
+  padding: 24px;
+  background: #fbfaf8;
+  display: grid;
+  align-content: start;
+  gap: 14px;
+}
+
+.asideCard {
+  border: 1px solid #e7dfd5;
+  border-radius: 22px;
+  background: #fff;
+  padding: 18px;
+}
+
+.scheduleHeader {
+  display: grid;
+  gap: 14px;
+}
+
+.schedulePageBody {
+  display: grid;
+  gap: 20px;
+  padding: 20px;
+  background:
+    radial-gradient(circle at top left, rgba(255, 238, 210, 0.65), transparent 26%),
+    linear-gradient(180deg, #fffdfa 0%, #f8f5f0 100%);
+  min-height: calc(100vh - 92px);
+}
+
+.scheduleHero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(280px, 0.8fr);
+  gap: 18px;
+  align-items: stretch;
+}
+
+.scheduleHeroCopy,
+.scheduleHeroStats {
+  border: 1px solid #ebe2d7;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 18px 40px rgba(86, 62, 36, 0.08);
+}
+
+.scheduleHeroCopy {
+  padding: 28px 30px;
+}
+
+.scheduleHeroStats {
+  padding: 18px;
+  display: grid;
+  gap: 14px;
+}
+
+.schedulePageTitle {
+  margin: 10px 0 0;
+  font-size: clamp(2rem, 4vw, 3.4rem);
+  line-height: 1.03;
+  letter-spacing: -0.04em;
+  color: #151311;
+}
+
+.schedulePageText {
+  margin: 14px 0 0;
+  color: #756c63;
+  font-size: 1rem;
+  line-height: 1.7;
+  max-width: 66ch;
+}
+
+.scheduleStat {
+  padding: 18px;
+  border-radius: 22px;
+  background:
+    linear-gradient(145deg, rgba(255, 246, 236, 0.96), rgba(246, 237, 225, 0.9));
+  border: 1px solid #ebe2d7;
+  display: grid;
+  gap: 6px;
+}
+
+.scheduleStat strong {
+  font-size: 1.45rem;
+  line-height: 1;
+  color: #171411;
+}
+
+.scheduleStat span {
+  color: #756c63;
+}
+
+.schedulePageCard {
+  padding: 26px;
+  border-radius: 30px;
+  border: 1px solid #ebe2d7;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 22px 48px rgba(86, 62, 36, 0.08);
+}
+
+.scheduleHint {
+  margin: 8px 0 0;
+  color: #7a7065;
+  line-height: 1.55;
+}
+
+.scheduleModeSwitch {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px;
+  border-radius: 999px;
+  background: #f6f2ec;
+}
+
+.scheduleModeButton {
+  min-height: 38px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #655c54;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.scheduleModeButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.56;
+}
+
+.scheduleModeActive {
+  background: #111111;
+  color: #fff;
+}
+
+.scheduleDays {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.scheduleDayButton {
+  min-height: 46px;
+  border-radius: 14px;
+  border: 1px solid #ddd3c7;
+  background: #fff;
+  color: #171411;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.scheduleDayButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.56;
+}
+
+.scheduleDayActive {
+  border-color: #7a61ff;
+  background: rgba(122, 97, 255, 0.1);
+  color: #5b45da;
+}
+
+.scheduleEditorList {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.scheduleEditorCard {
+  border: 1px solid #e8dfd4;
+  border-radius: 18px;
+  padding: 16px;
+  background: #fcfaf6;
+}
+
+.scheduleEditorTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.scheduleEditorBadge {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(122, 97, 255, 0.1);
+  color: #5f49dd;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.scheduleFields {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.scheduleFieldStack {
+  display: grid;
+  gap: 10px;
+}
+
+.scheduleFieldRow {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.scheduleBreakCard {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 16px;
+  border: 1px solid #ebe2d7;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.scheduleField {
+  display: grid;
+  gap: 8px;
+  color: #5d554d;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.scheduleNoBreakToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: #5d554d;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.scheduleNoBreakToggle input {
+  width: 18px;
+  height: 18px;
+  accent-color: #6f4cff;
+}
+
+.scheduleEmpty {
+  margin-top: 16px;
+  padding: 18px;
+  border-radius: 18px;
+  background: #f8f5f0;
+  color: #7b7167;
+  line-height: 1.55;
+}
+
+.flexScheduleWrap {
+  display: grid;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.scheduleExperience {
+  display: grid;
+  gap: 18px;
+  margin-top: 16px;
+}
+
+.scheduleControlsRow {
+  display: grid;
+  grid-template-columns: minmax(220px, 260px) 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+.rangeApplyCard {
+  border: 1px solid #e8dfd4;
+  border-radius: 22px;
+  background: linear-gradient(180deg, #fffdfa, #faf6f0);
+  padding: 18px;
+  display: grid;
+  gap: 12px;
+}
+
+.rangeApplyFields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.rangeCheckbox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #6c635a;
+}
+
+.rangeApplyActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.calendarNavigator {
+  display: inline-grid;
+  grid-template-columns: 52px minmax(180px, 1fr) 52px;
+  align-items: center;
+  gap: 0;
+  border: 1px solid #ddd3c7;
+  border-radius: 18px;
+  overflow: hidden;
+  background: #fff;
+  min-height: 52px;
+}
+
+.navigatorArrow {
+  height: 100%;
+  border: 0;
+  background: transparent;
+  color: #2c2722;
+  font: inherit;
+  font-size: 1.2rem;
+}
+
+.navigatorLabel {
+  height: 100%;
+  display: grid;
+  place-items: center;
+  border-left: 1px solid #eee4d8;
+  border-right: 1px solid #eee4d8;
+  color: #2c2722;
+  font-weight: 600;
+  text-transform: lowercase;
+}
+
+.scheduleCanvas {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(320px, 0.85fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.calendarPanel {
+  border: 1px solid #e8dfd4;
+  border-radius: 26px;
+  background: linear-gradient(180deg, #fff, #fcf9f4);
+  padding: 20px;
+  box-shadow: 0 18px 36px rgba(86, 62, 36, 0.06);
+}
+
+.scheduleSidePanel {
+  display: grid;
+  gap: 16px;
+}
+
+.calendarWeekdays {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.calendarWeekdays span {
+  text-align: center;
+  color: #7b7167;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.calendarGrid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.calendarQuickRange {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.quickRangeButton {
+  min-height: 42px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1px solid #ddd3c7;
+  background: #fff;
+  color: #171411;
+  font: inherit;
+}
+
+.calendarBlank {
+  min-height: 72px;
+}
+
+.calendarDay {
+  min-height: 88px;
+  padding: 12px 10px;
+  border-radius: 20px;
+  border: 1px solid #ddd3c7;
+  background: linear-gradient(180deg, #fff, #fdfbf8);
+  color: #171411;
+  display: grid;
+  align-content: space-between;
+  gap: 8px;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+  min-width: 0;
+}
+
+.calendarDay:disabled {
+  cursor: not-allowed;
+  opacity: 0.56;
+}
+
+.calendarDay span {
+  font-weight: 700;
+}
+
+.calendarDay small {
+  display: block;
+  max-width: 100%;
+  color: #7b7167;
+  font-size: 0.74rem;
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: clip;
+  text-align: center;
+}
+
+.calendarDayActive {
+  border-color: #7a61ff;
+  background: rgba(122, 97, 255, 0.08);
+}
+
+.calendarHoliday {
+  border-color: #f0c188;
+  background: linear-gradient(180deg, rgba(255, 245, 230, 0.98), rgba(255, 238, 214, 0.96));
+}
+
+.calendarDaySelected {
+  box-shadow: 0 0 0 3px rgba(122, 97, 255, 0.14);
+}
+
+.dayTypeTabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.dayTypeButton {
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid #ddd3c7;
+  background: #fff;
+  color: #171411;
+  font: inherit;
+  font-weight: 600;
+}
+
+.dayTypeActive {
+  border-color: #7a61ff;
+  background: rgba(122, 97, 255, 0.1);
+  color: #5f49dd;
+}
+
+.dayTypeHoliday {
+  border-color: #f0c188;
+  background: rgba(255, 233, 201, 0.7);
+  color: #9a5b12;
+}
+
+.slotGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.slotChip {
+  padding: 9px 12px;
+  border-radius: 999px;
+  background: #f3efe8;
+  border: 1px solid #e3d8ca;
+  color: #3f372f;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.scheduleActions {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.scheduleStatus {
+  color: #5f574f;
+  font-size: 0.92rem;
+}
+
+.scheduleReadOnly {
+  margin-top: 18px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: #f8f5f0;
+  color: #7b7167;
+  line-height: 1.55;
+}
+
+.asideHero {
+  position: relative;
+  overflow: hidden;
+  border-radius: 24px;
+  padding: 22px;
+  color: #f8f3eb;
+  background:
+    radial-gradient(circle at top left, rgba(255, 232, 190, 0.22), transparent 30%),
+    radial-gradient(circle at bottom right, rgba(222, 171, 105, 0.14), transparent 32%),
+    linear-gradient(145deg, #1f1a17 0%, #2a231e 45%, #4a3526 100%);
+  box-shadow: 0 22px 45px rgba(61, 38, 20, 0.18);
+}
+
+.asideHero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08), transparent 42%);
+  pointer-events: none;
+}
+
+.asideHeroTop,
+.asideHeroMeta {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.asideHeroLabel {
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: rgba(248, 243, 235, 0.7);
+}
+
+.asideHeroPill {
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 232, 200, 0.16);
+  background: rgba(255, 248, 240, 0.08);
+  color: #f7d7a7;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.asideHeroTitle,
+.asideHeroText {
+  position: relative;
+  z-index: 1;
+}
+
+.asideHeroTitle {
+  margin: 18px 0 10px;
+  font-size: 2rem;
+  line-height: 0.98;
+  letter-spacing: -0.05em;
+}
+
+.asideHeroText {
+  margin: 0;
+  color: rgba(248, 243, 235, 0.82);
+  line-height: 1.6;
+}
+
+.asideHeroMeta {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+
+.asideHeroMeta span {
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(255, 248, 240, 0.08);
+  border: 1px solid rgba(255, 232, 200, 0.12);
+  color: rgba(248, 243, 235, 0.88);
+  font-size: 0.82rem;
+}
+
+.checklist {
+  display: grid;
+  gap: 10px;
+}
+
+.checkItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid #ede8e1;
+}
+
+.checkDone {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #effcf4;
+  color: #189d4b;
+  border: 1px solid #b8ebc8;
+}
+
+.checkPending {
+  color: #8a8177;
+}
+
+.miniList {
+  display: grid;
+  gap: 12px;
+}
+
+.miniList strong {
+  display: block;
+}
+
+.calendarV2Shell {
+  grid-template-columns: 68px 248px minmax(0, 1fr) 0;
+  height: 100vh;
+  min-height: 100vh;
+  overflow: hidden;
+  background: #f6f5f1;
+}
+
+.calendarV2Expanded {
+  grid-template-columns: 68px 248px minmax(0, 1fr) 460px;
+}
+
+.calendarLeftPanel {
+  border-right: 1px solid #dfddd7;
+  background: #f3f2ee;
+  padding: 26px 12px 18px;
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  overflow-y: auto;
+}
+
+.calendarCenterShell {
+  min-width: 0;
+  display: grid;
+  grid-template-rows: auto auto auto minmax(0, 1fr);
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.calendarTopBarV2 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 16px 20px 14px;
+  border-bottom: 1px solid #e6e6e2;
+  background: rgba(255, 255, 255, 0.86);
+  backdrop-filter: blur(10px);
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+.calendarTopBarV2 .calendarTopLeft {
+  width: auto;
+}
+
+.calendarTopLeft,
+.calendarTopRight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.calendarViewSelector {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.calendarTopMobileSelector {
+  display: none;
+}
+
+.calendarTopMobileModeButton {
+  min-height: 46px;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.calendarTopMobileMenu {
+  width: 100%;
+  min-width: 132px;
+}
+
+.calendarSquareButton,
+.calendarTodayButton,
+.calendarTeamButton,
+.calendarViewPill,
+.calendarSearchButton,
+.calendarIconButton {
+  min-height: 46px;
+  border-radius: 8px;
+  border: 1px solid #d7d9df;
+  background: #fff;
+  color: #171411;
+  font: inherit;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 2px 0 rgba(17, 17, 17, 0.02);
+}
+
+.calendarSquareButton {
+  width: 48px;
+  font-size: 1.2rem;
+}
+
+.calendarTodayButton,
+.calendarTeamButton,
+.calendarViewPill {
+  padding: 0 16px;
+  font-weight: 600;
+}
+
+.calendarDatePill {
+  min-height: 46px;
+  min-width: 200px;
+  padding: 0 20px;
+  border: 1px solid #d7d9df;
+  border-radius: 8px;
+  background: #fff;
+  display: grid;
+  align-content: center;
+  text-align: center;
+}
+
+.calendarDatePill strong {
+  font-size: 1.05rem;
+  line-height: 1.1;
+}
+
+.calendarDatePill span {
+  color: #867d72;
+  font-size: 0.82rem;
+}
+
+.calendarIconButton {
+  width: 46px;
+  font-size: 1.15rem;
+}
+
+.calendarIconButtonActive {
+  background: linear-gradient(135deg, #e8defd, #cdbdff);
+  color: #5f49dd;
+  border-color: #d7c8ff;
+}
+
+.calendarSearchButton {
+  width: 120px;
+  justify-content: flex-start;
+  padding: 0 16px;
+  color: #888074;
+}
+
+.calendarTitleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 20px 14px;
+  border-bottom: 1px solid #f0f0ee;
+  flex-wrap: wrap;
+}
+
+.calendarTitleMeta {
+  min-width: 0;
+}
+
+.calendarTitleRow strong {
+  display: block;
+  font-size: 1.05rem;
+}
+
+.calendarTitleRow span {
+  display: block;
+  margin-top: 2px;
+  color: #6f685e;
+}
+
+.calendarStatsStrip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(132px, 1fr));
+  gap: 10px;
+  min-width: min(560px, 100%);
+}
+
+.calendarStatsStrip div {
+  padding: 10px 12px;
+  border: 1px solid #e8dfd4;
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at top right, rgba(122, 97, 255, 0.1), transparent 38%),
+    #fff;
+  box-shadow: 0 8px 18px rgba(75, 54, 31, 0.045);
+}
+
+.calendarStatsStrip span {
+  margin: 0 0 4px;
+  color: #857c72;
+  font-size: 0.8rem;
+}
+
+.calendarStatsStrip strong {
+  font-size: 0.98rem;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+
+.calendarInlineStatus {
+  margin: 14px 20px 0;
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: #f1ecff;
+  color: #5643d0;
+  border: 1px solid #d8ccff;
+}
+
+.calendarMobileActionBar {
+  display: none;
+}
+
+.calendarMobileJumpNow,
+.calendarMobileCreateButton {
+  min-height: 54px;
+  border-radius: 16px;
+  font: inherit;
+  font-weight: 800;
+}
+
+.calendarMobileJumpNow {
+  border: 1px solid #ddd7ce;
+  background: rgba(255, 255, 255, 0.96);
+  color: #171411;
+}
+
+.calendarMobileCreateButton {
+  border: 0;
+  background: linear-gradient(135deg, #171411 0%, #6c5dff 175%);
+  color: #fff;
+  box-shadow: 0 18px 34px rgba(107, 92, 196, 0.28);
+}
+
+.calendarV2ScrollFrame {
+  height: auto;
+  overflow: auto;
+}
+
+.calendarV2Grid {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  min-height: 2328px;
+}
+
+.calendarV2HourColumn {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  background: #ffffff;
+  border-right: 1px solid #e4e5e7;
+}
+
+.calendarV2HourLabel {
+  position: absolute;
+  left: 12px;
+  transform: translateY(-50%);
+  color: #514941;
+  font-size: 0.92rem;
+}
+
+.calendarV2Body {
+  position: relative;
+  min-height: 2328px;
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent 15px,
+      #eceef2 15px,
+      #eceef2 16px
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent 95px,
+      #e3e4e6 95px,
+      #e3e4e6 96px
+    ),
+    #ffffff;
+}
+
+.calendarViewRail {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+}
+
+.calendarViewDropdown {
+  position: relative;
+  min-width: 0;
+}
+
+.calendarPanelBack,
+.calendarViewModeButton {
+  min-height: 42px;
+  border-radius: 6px;
+  border: 1px solid #d7d9df;
+  background: #fff;
+  color: #191919;
+  font: inherit;
+  font-weight: 800;
+}
+
+.calendarPanelBack {
+  font-size: 1.35rem;
+}
+
+.calendarViewModeButton {
+  text-align: left;
+  padding: 0 14px;
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.calendarViewModeButton > span:first-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.calendarViewClose {
+  color: #c0bab2;
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+.calendarViewChevron {
+  color: #595047;
+  font-size: 0.95rem;
+}
+
+.calendarViewMenu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 184px;
+  padding: 8px 0;
+  border: 1px solid #ece8df;
+  border-radius: 14px;
+  background: #fff;
+  box-shadow: 0 22px 50px rgba(30, 24, 18, 0.16);
+  z-index: 30;
+  overflow: hidden;
+}
+
+.calendarViewMenu button {
+  width: 100%;
+  min-height: 42px;
+  padding: 0 16px;
+  border: 0;
+  background: transparent;
+  color: #443d35;
+  font: inherit;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+}
+
+.calendarViewMenu button:hover,
+.calendarViewMenuActive {
+  background: #f0eee9 !important;
+  color: #171411 !important;
+}
+
+.miniCalendarCard {
+  border: 1px solid rgba(220, 212, 200, 0.92);
+  border-radius: 22px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.94), rgba(250, 247, 241, 0.92)),
+    #fff;
+  padding: 18px 14px 16px;
+  display: grid;
+  gap: 14px;
+  box-shadow: 0 18px 45px rgba(55, 43, 29, 0.08);
+}
+
+.miniCalendarHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 0;
+}
+
+.miniCalendarHeader strong {
+  text-transform: capitalize;
+  max-width: 132px;
+  font-size: 1.05rem;
+  line-height: 1.08;
+  letter-spacing: 0;
+  color: #171411;
+}
+
+.miniCalendarHeader strong span {
+  display: block;
+}
+
+.miniCalendarNav {
+  display: flex;
+  gap: 8px;
+}
+
+.miniCalendarNav button {
+  width: 34px;
+  height: 34px;
+  border-radius: 12px;
+  border: 1px solid #e8dfd4;
+  background: rgba(255, 255, 255, 0.74);
+  font: inherit;
+  font-size: 1.1rem;
+  color: #211c17;
+  box-shadow: 0 8px 18px rgba(55, 43, 29, 0.06);
+  cursor: pointer;
+}
+
+.miniCalendarWeekdays,
+.miniCalendarGrid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 7px 5px;
+}
+
+.miniCalendarWeekdays span {
+  text-align: center;
+  color: #9a9288;
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.miniCalendarDay {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+  height: 32px;
+  justify-self: center;
+  border-radius: 12px;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  color: #241f1a;
+  cursor: pointer;
+  display: grid;
+  align-content: center;
+  gap: 0;
+  padding: 0;
+  transition: background 140ms ease, color 140ms ease, box-shadow 140ms ease, transform 140ms ease;
+}
+
+.miniCalendarDay span {
+  font-size: 0.9rem;
+  line-height: 1;
+  font-weight: 700;
+}
+
+.miniCalendarDay small {
+  display: none;
+}
+
+.miniCalendarDay:hover {
+  background: #ffffff;
+  box-shadow: 0 10px 20px rgba(55, 43, 29, 0.08);
+  transform: translateY(-1px);
+}
+
+.miniCalendarDayWork {
+  color: #171411;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.84), rgba(250, 246, 238, 0.52));
+  box-shadow: inset 0 -1px 0 rgba(34, 29, 23, 0.1);
+}
+
+.miniCalendarDayWork small {
+  color: #3d8160;
+}
+
+.miniCalendarDayWork::before {
+  display: none;
+}
+
+.miniCalendarDayOff {
+  color: #b7afa4;
+  background: transparent;
+}
+
+.miniCalendarDayOff small {
+  color: #a0978c;
+}
+
+.miniCalendarDayOutside {
+  color: #beb6aa;
+  opacity: 0.58;
+}
+
+.miniCalendarDayToday {
+  background: #fff1f3;
+  color: #eb4962;
+  font-weight: 700;
+  box-shadow: inset 0 0 0 1px rgba(235, 73, 98, 0.18);
+}
+
+.miniCalendarDayToday::after {
+  display: none;
+}
+
+.miniCalendarDayActive {
+  background: #14110f;
+  color: #ffffff;
+  font-weight: 700;
+  box-shadow: 0 14px 28px rgba(17, 17, 17, 0.2);
+}
+
+.miniCalendarDayActive::before {
+  display: none;
+}
+
+.miniCalendarDayActive small {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.miniCalendarDayActive::after {
+  display: none;
+}
+
+.calendarOverviewPanel {
+  min-height: 0;
+  overflow: auto;
+  padding: 20px;
+  background: #fbfaf7;
+}
+
+.calendarWeekOverviewGrid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(140px, 1fr));
+  gap: 12px;
+  min-width: 980px;
+}
+
+.calendarWeekOverviewDay,
+.calendarMonthOverviewDay {
+  border: 1px solid #e7ded2;
+  border-radius: 20px;
+  background: #fff;
+  color: #171411;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+}
+
+.calendarWeekOverviewDay {
+  min-height: 168px;
+  padding: 16px;
+  display: grid;
+  align-content: start;
+  gap: 10px;
+}
+
+.calendarWeekOverviewDay span,
+.calendarMonthOverviewDay span {
+  color: #71685e;
+  font-size: 0.82rem;
+  text-transform: capitalize;
+}
+
+.calendarWeekOverviewDay strong {
+  font-size: 1.15rem;
+}
+
+.calendarWeekOverviewDay small,
+.calendarMonthOverviewDay small {
+  color: #6256d9;
+  font-weight: 800;
+}
+
+.calendarMonthOverviewGrid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(116px, 1fr));
+  gap: 10px;
+  min-width: 860px;
+}
+
+.calendarMonthOverviewDay {
+  min-height: 112px;
+  padding: 12px;
+  display: grid;
+  align-content: start;
+  gap: 8px;
+}
+
+.calendarMonthOverviewDay strong {
+  font-size: 1.05rem;
+}
+
+.calendarOverviewWorking {
+  background:
+    linear-gradient(135deg, rgba(41, 177, 107, 0.13), transparent 54%),
+    #ffffff;
+  border-color: #bfe8cd;
+}
+
+.calendarOverviewClosed {
+  background:
+    repeating-linear-gradient(135deg, rgba(20, 20, 20, 0.035) 0, rgba(20, 20, 20, 0.035) 4px, transparent 4px, transparent 8px),
+    #f5f3ef;
+  color: #81786e;
+}
+
+.calendarOverviewToday {
+  box-shadow: inset 0 0 0 2px #ff6b83;
+}
+
+.calendarMonthOverviewOutside {
+  opacity: 0.45;
+}
+
+.calendarWeekOverviewDay:hover,
+.calendarMonthOverviewDay:hover {
+  transform: translateY(-2px);
+  border-color: #171411;
+  box-shadow: 0 16px 34px rgba(57, 45, 31, 0.11);
+}
+
+.weekJumpBlock,
+.sideFilterBlock {
+  display: grid;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid #dedbd3;
+}
+
+.weekJumpBlock strong,
+.sideFilterHeader strong {
+  font-size: 0.98rem;
+}
+
+.weekJumpGrid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0;
+}
+
+.weekJumpGrid button {
+  height: 34px;
+  border-radius: 0;
+  border: 0;
+  border-right: 1px solid #dedbd3;
+  border-bottom: 1px solid #dedbd3;
+  background: transparent;
+  font: inherit;
+}
+
+.sideFilterHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.sideFilterRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #60584f;
+}
+
+.sideFilterGhost,
+.sideFilterApply {
+  min-height: 42px;
+  border-radius: 14px;
+  font: inherit;
+  font-weight: 600;
+}
+
+.sideFilterGhost {
+  border: 1px solid #ddd7ce;
+  background: #fff;
+}
+
+.sideFilterApply {
+  border: 0;
+  background: #111111;
+  color: #fff;
+}
+
+.calendarV2Drawer {
+  width: 0;
+  background: #fff;
+  border-left: 1px solid transparent;
+  overflow: hidden;
+  transition: width 180ms ease, border-color 180ms ease;
+}
+
+.calendarV2DrawerOpen {
+  width: 460px;
+  border-left-color: #ebe8e2;
+}
+
+.calendarV2Panel {
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.calendarV2PanelHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 18px 20px;
+  border-bottom: 1px solid #ece8e1;
+}
+
+.calendarV2PanelHeader strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.calendarV2PanelHeader strong {
+  font-size: 1.4rem;
+}
+
+.calendarV2Panel > .fieldStack {
+  padding: 20px;
+  overflow-y: auto;
+}
+
+.calendarV2Panel .field {
+  min-width: 0;
+}
+
+.calendarDrawerBack {
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  border: 1px solid #e2dbd1;
+  background: #fff;
+  font: inherit;
+  font-size: 1.2rem;
+}
+
+.calendarDrawerPlaceholder {
+  height: 100vh;
+}
+
+.calendarCustomerCard {
+  margin: 18px 20px 0;
+  padding: 14px;
+  border-radius: 20px;
+  border: 1px dashed #d8d1c7;
+  background:
+    radial-gradient(circle at top right, rgba(122, 97, 255, 0.1), transparent 36%),
+    #fcfbf8;
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) 24px;
+  gap: 14px;
+  text-align: left;
+  align-items: center;
+}
+
+.calendarCustomerAvatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #f1ebff;
+  color: #5f49dd;
+  font-weight: 700;
+}
+
+.calendarCustomerCard strong {
+  display: block;
+  font-size: 0.98rem;
+  line-height: 1.2;
+}
+
+.calendarCustomerCard span {
+  color: #7d756b;
+  display: block;
+  font-size: 0.82rem;
+  margin-bottom: 3px;
+}
+
+.calendarCustomerCard small {
+  display: block;
+  margin-top: 4px;
+  color: #8c8378;
+  font-size: 0.82rem;
+}
+
+.calendarCustomerPlus {
+  align-self: center;
+  justify-self: end;
+  font-size: 1.8rem;
+  color: #2d2823;
+}
+
+.calendarDrawerTabs {
+  display: flex;
+  gap: 24px;
+  padding: 14px 20px 0;
+  border-bottom: 1px solid #ece8e1;
+}
+
+.calendarDrawerTab,
+.calendarDrawerTabActive {
+  padding: 0 0 14px;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 0.88rem;
+  color: #7c7369;
+}
+
+.calendarDrawerTabActive {
+  color: #111;
+  border-bottom: 2px solid #111;
+}
+
+.calendarDrawerDateRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 16px 20px;
+}
+
+.calendarVisitList {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  padding: 0 20px 14px;
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow-y: auto;
+}
+
+.calendarVisitCard {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 10px;
+  padding: 0;
+}
+
+.calendarVisitDrag {
+  display: none;
+}
+
+.calendarVisitContent {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #eee6dd;
+  border-radius: 18px;
+  background: #fffdfa;
+}
+
+.calendarVisitServicePicker {
+  min-height: 52px;
+  padding: 0 14px;
+  border-radius: 16px;
+  border: 1px solid #e4ddd4;
+  background: #fff;
+  text-align: left;
+  font: inherit;
+  font-weight: 800;
+}
+
+.calendarVisitTimeGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.calendarVisitTimeGrid label {
+  display: grid;
+  gap: 8px;
+}
+
+.calendarVisitTimeGrid span {
+  color: #7c7369;
+  font-size: 0.9rem;
+}
+
+.calendarVisitMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid #eee6dd;
+  border-radius: 16px;
+  background: #fbfaf7;
+}
+
+.calendarAddServiceButton {
+  margin: 0 20px 14px;
+  min-height: 44px;
+  border-radius: 14px;
+  border: 1px solid #ddd7ce;
+  background: #fff;
+  font: inherit;
+  font-weight: 600;
+}
+
+.calendarTotals {
+  margin-top: auto;
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 20px 10px;
+  border-top: 1px solid #ece8e1;
+}
+
+.calendarTotals span {
+  color: #857c72;
+  font-size: 0.86rem;
+}
+
+.calendarTotals strong {
+  font-size: 0.95rem;
+}
+
+.calendarDrawerFooter {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
+  padding: 0 20px 18px;
+  padding-bottom: calc(18px + env(safe-area-inset-bottom));
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.72), #fff 30%);
+  border-top: 1px solid #ece8e1;
+}
+
+.calendarSecondaryAction {
+  min-height: 52px;
+  border-radius: 16px;
+  border: 1px solid #ddd7ce;
+  background: #fff;
+  font: inherit;
+  font-weight: 600;
+}
+
+.calendarSearchLabel {
+  padding: 0 20px;
+  color: #7d756b;
+}
+
+.calendarSearchField {
+  margin: 16px 20px 0;
+  min-height: 52px;
+  padding: 0 16px;
+  border-radius: 16px;
+  border: 1px solid #e4ddd4;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.calendarClientQuickActions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  padding: 14px 20px 0;
+}
+
+.calendarClientQuickActions button {
+  min-height: 86px;
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid #e6ddd4;
+  background: #fffdfa;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.calendarClientQuickActions strong,
+.calendarClientQuickActions span {
+  display: block;
+}
+
+.calendarClientQuickActions strong {
+  margin-bottom: 6px;
+}
+
+.calendarClientQuickActions span {
+  color: #7d756b;
+  font-size: 0.86rem;
+  line-height: 1.35;
+}
+
+.calendarQuickClientForm {
+  margin: 14px 20px 0;
+  padding: 16px;
+  border: 1px solid #e6ddd4;
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at top right, rgba(111, 92, 255, 0.1), transparent 42%),
+    #fbf8f2;
+  display: grid;
+  gap: 12px;
+}
+
+.calendarQuickClientForm > div:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+.calendarQuickClientForm > div:first-child strong {
+  font-size: 1rem;
+}
+
+.calendarQuickClientForm > div:first-child span {
+  color: #7c7369;
+  font-size: 0.9rem;
+}
+
+.calendarQuickClientForm label {
+  display: grid;
+  gap: 7px;
+}
+
+.calendarQuickClientForm label span {
+  color: #5f574f;
+  font-weight: 800;
+  font-size: 0.88rem;
+}
+
+.calendarQuickClientForm .input {
+  min-height: 48px;
+  padding: 12px 14px;
+}
+
+.calendarQuickClientForm .primaryButton {
+  min-height: 48px;
+}
+
+.calendarSearchField input {
+  flex: 1;
+  border: 0;
+  outline: none;
+  font: inherit;
+  background: transparent;
+}
+
+.calendarPanelHint {
+  margin: 10px 20px 0;
+  color: #7c7369;
+  line-height: 1.45;
+  font-size: 0.92rem;
+}
+
+.calendarServiceDrawerList,
+.calendarClientResults {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  padding: 14px 20px 20px;
+  overflow-y: auto;
+}
+
+.calendarClientResultsBlock {
+  min-height: 0;
+  flex: 1;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.calendarClientSectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 18px 20px 0;
+}
+
+.calendarClientSectionHeader strong {
+  font-size: 1rem;
+}
+
+.calendarClientSectionHeader span {
+  min-width: 28px;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: #f1edff;
+  color: #5f49dd;
+  display: inline-grid;
+  place-items: center;
+  font-weight: 800;
+}
+
+.calendarServiceDrawerItem,
+.calendarClientResultItem,
+.calendarClientAddButton {
+  width: 100%;
+  min-height: 72px;
+  border-radius: 18px;
+  border: 1px solid #e6ddd4;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 16px;
+  text-align: left;
+  font: inherit;
+}
+
+.calendarServiceDrawerItem {
+  display: grid;
+  grid-template-columns: 6px minmax(0, 1fr) auto;
+  min-height: 82px;
+}
+
+.calendarServiceDrawerItem > div {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+}
+
+.calendarServiceDrawerItem > div strong {
+  display: block;
+  overflow-wrap: anywhere;
+  line-height: 1.2;
+}
+
+.calendarServiceDrawerItem > div span {
+  color: #7b7269;
+  font-size: 0.92rem;
+}
+
+.calendarServiceTone {
+  width: 6px;
+  height: 48px;
+  border-radius: 999px;
+  flex-shrink: 0;
+}
+
+.calendarServiceDrawerItem strong:last-child {
+  margin-left: 0;
+  white-space: nowrap;
+  align-self: center;
+}
+
+.calendarBlockedInfo {
+  padding: 16px;
+  border: 1px solid #e6ddd4;
+  border-radius: 18px;
+  background:
+    repeating-linear-gradient(
+      135deg,
+      rgba(112, 117, 128, 0.13) 0,
+      rgba(112, 117, 128, 0.13) 8px,
+      rgba(255, 255, 255, 0.4) 8px,
+      rgba(255, 255, 255, 0.4) 16px
+    ),
+    #f5f6f8;
+  display: grid;
+  gap: 6px;
+}
+
+.calendarBlockedInfo span {
+  color: #71685f;
+}
+
+.calendarClientAddButton {
+  margin: 16px 20px 0;
+  min-height: 48px;
+  color: #2e2721;
+}
+
+.calendarClientResultItem {
+  min-height: 68px;
+  justify-content: flex-start;
+}
+
+.calendarClientResultItem > div:last-child {
+  min-width: 0;
+}
+
+.calendarClientResultItem strong,
+.calendarClientResultItem span {
+  display: block;
+}
+
+.calendarClientResultItem span {
+  margin-top: 3px;
+  color: #82786d;
+  font-size: 0.9rem;
+}
+
+.calendarClientEmpty {
+  padding: 28px 20px;
+  text-align: center;
+  color: #8d857a;
+  display: grid;
+  gap: 8px;
+}
+
+.calendarModalBackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 15, 18, 0.45);
+  display: grid;
+  place-items: center;
+  z-index: 30;
+}
+
+.calendarModalCard {
+  width: min(420px, calc(100vw - 32px));
+  border-radius: 28px;
+  background: #fff;
+  padding: 28px;
+  box-shadow: 0 24px 60px rgba(20, 16, 10, 0.22);
+  text-align: center;
+  display: grid;
+  gap: 16px;
+}
+
+.calendarModalCard p {
+  margin: 0;
+  color: #6f685e;
+  line-height: 1.6;
+}
+
+.calendarModalAvatar {
+  width: 82px;
+  height: 82px;
+  border-radius: 50%;
+  margin: 0 auto;
+  display: grid;
+  place-items: center;
+  background: #f7f4ff;
+  color: #5f49dd;
+  font-size: 2rem;
+}
+
+.servicesShell {
+  grid-template-columns: 72px minmax(0, 1fr);
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(245, 230, 196, 0.35), transparent 28%),
+    linear-gradient(180deg, #fffdfa 0%, #f5f2ec 100%);
+}
+
+.servicesPage {
+  min-width: 0;
+  padding: 26px;
+  display: grid;
+  gap: 16px;
+}
+
+.servicesHeroCompact {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 20px 22px;
+  border: 1px solid #e8dfd4;
+  border-radius: 26px;
+  background:
+    radial-gradient(circle at top right, rgba(122, 97, 255, 0.13), transparent 30%),
+    linear-gradient(135deg, #fff 0%, #fbf7ef 100%);
+  box-shadow: 0 18px 42px rgba(75, 54, 31, 0.07);
+}
+
+.servicesHeroCompact h1 {
+  margin: 4px 0 4px;
+  font-size: clamp(1.8rem, 3vw, 2.7rem);
+  line-height: 0.98;
+  letter-spacing: -0.05em;
+}
+
+.servicesHeroCompact p {
+  margin: 0;
+  color: #756c63;
+  max-width: 820px;
+}
+
+.servicesHeroActions {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.servicesHeroActions span {
+  padding: 11px 14px;
+  border-radius: 999px;
+  background: #f1ecff;
+  color: #604be0;
+  font-weight: 800;
+}
+
+.servicesCompactGrid {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.servicesCategoryPanel,
+.servicesMenuPanel,
+.servicesAddPanel {
+  border: 1px solid #e8dfd4;
+  border-radius: 26px;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 18px 38px rgba(75, 54, 31, 0.055);
+}
+
+.servicesCategoryPanel {
+  position: sticky;
+  top: 18px;
+  padding: 18px;
+  display: grid;
+  gap: 14px;
+}
+
+.servicesCategoryPanel h2,
+.servicesMenuPanel h2 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.servicesCategoryList {
+  display: grid;
+  gap: 6px;
+}
+
+.servicesCategoryList button {
+  border: 0;
+  border-radius: 14px;
+  padding: 11px 12px;
+  background: transparent;
+  color: #211d19;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font: inherit;
+  font-weight: 750;
+  text-align: left;
+  cursor: pointer;
+}
+
+.servicesCategoryList button:hover,
+.servicesCategoryActive {
+  background: #f0edff !important;
+  color: #5742d8 !important;
+}
+
+.servicesCategoryList em {
+  min-width: 25px;
+  height: 25px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #fff;
+  border: 1px solid #e3d9cd;
+  color: #756c63;
+  font-style: normal;
+  font-size: 0.82rem;
+}
+
+.servicesCategoryAddCompact {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 44px;
+  gap: 8px;
+}
+
+.servicesMenuPanel {
+  padding: 14px;
+  display: grid;
+  gap: 12px;
+}
+
+.servicesMenuToolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.servicesMenuToolbar .input {
+  min-height: 44px;
+}
+
+.servicesMenuList {
+  display: grid;
+  gap: 8px;
+}
+
+.serviceMenuRow {
+  position: relative;
+  min-height: 64px;
+  display: grid;
+  grid-template-columns: 28px 8px minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid #e7ded3;
+  border-radius: 18px;
+  background: #fff;
+  transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+}
+
+.serviceMenuRow:hover {
+  border-color: #d5cabc;
+  box-shadow: 0 14px 28px rgba(75, 54, 31, 0.08);
+}
+
+.serviceMenuRowDragging {
+  opacity: 0.55;
+  transform: scale(0.992);
+}
+
+.serviceDragHandle {
+  color: #b0a79d;
+  cursor: grab;
+  font-weight: 900;
+  letter-spacing: -0.35em;
+  user-select: none;
+}
+
+.serviceColorRail {
+  align-self: stretch;
+  border-radius: 999px;
+}
+
+.serviceMenuMain {
+  min-width: 0;
+}
+
+.serviceMenuMain strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.serviceMenuMain span {
+  display: block;
+  margin-top: 4px;
+  color: #7b7269;
+  font-size: 0.9rem;
+}
+
+.serviceMenuPrice {
+  white-space: nowrap;
+}
+
+.serviceRowActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.serviceRowActions button,
+.dangerTextButton {
+  min-height: 36px;
+  border: 1px solid #e2d8cc;
+  border-radius: 999px;
+  background: #fff;
+  color: #211d19;
+  padding: 0 12px;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.serviceRowActions button:disabled {
+  opacity: 0.36;
+  cursor: not-allowed;
+}
+
+.serviceRowActions .primaryButton {
+  border-color: #111;
+  background: #111;
+  color: #fff;
+}
+
+.dangerTextButton {
+  color: #d12f42 !important;
+}
+
+.dangerButton {
+  min-height: 48px;
+  border: 0;
+  border-radius: 999px;
+  padding: 0 20px;
+  background: #d12f42;
+  color: #fff;
+  font: inherit;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.dangerButton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.servicesModalOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(20, 17, 14, 0.46);
+  backdrop-filter: blur(8px);
+}
+
+.servicesDeleteModal {
+  width: min(520px, 100%);
+  border: 1px solid rgba(255, 255, 255, 0.64);
+  border-radius: 30px;
+  padding: 24px;
+  background:
+    radial-gradient(circle at top right, rgba(122, 97, 255, 0.14), transparent 34%),
+    #fffdfa;
+  box-shadow: 0 32px 90px rgba(0, 0, 0, 0.24);
+  display: grid;
+  gap: 18px;
+}
+
+.servicesDeleteModal h2 {
+  margin: 6px 0 8px;
+  font-size: 2rem;
+  letter-spacing: -0.045em;
+}
+
+.servicesDeleteModal p {
+  margin: 0;
+  color: #70675e;
+  line-height: 1.55;
+}
+
+.servicesDeletePreview {
+  display: grid;
+  grid-template-columns: 8px minmax(0, 1fr);
+  gap: 4px 12px;
+  padding: 14px;
+  border: 1px solid #e8dfd4;
+  border-radius: 18px;
+  background: #fff;
+}
+
+.servicesDeletePreview span {
+  grid-row: 1 / span 2;
+  border-radius: 999px;
+}
+
+.servicesDeletePreview strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.servicesDeletePreview em {
+  color: #756c63;
+  font-style: normal;
+}
+
+.servicesDeleteActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.serviceEditGrid {
+  grid-column: 3 / -1;
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(150px, 0.75fr) 112px 112px;
+  gap: 8px;
+  align-items: center;
+}
+
+.serviceMiniField {
+  position: relative;
+  display: block;
+}
+
+.serviceMiniField span {
+  position: absolute;
+  top: 6px;
+  left: 13px;
+  z-index: 1;
+  color: #857b70;
+  font-size: 0.72rem;
+  font-weight: 850;
+  line-height: 1;
+}
+
+.serviceMiniField .input {
+  padding-top: 18px;
+}
+
+.serviceColorPicker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.serviceColorPicker button {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px #ddd2c6;
+  cursor: pointer;
+}
+
+.serviceColorActive {
+  box-shadow: 0 0 0 3px #111 !important;
+}
+
+.servicesAddPanel {
+  padding: 18px;
+  display: grid;
+  gap: 14px;
+}
+
+.servicesAddGrid {
+  display: grid;
+  grid-template-columns: minmax(300px, 340px) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.servicesCompactFields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.servicesCatalogCompact {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+}
+
+.servicesCatalogGroups {
+  max-height: 520px;
+  overflow: auto;
+  display: grid;
+  gap: 10px;
+  padding-right: 4px;
+}
+
+.catalogCategoryGroup {
+  border: 1px solid #e7ded3;
+  border-radius: 20px;
+  background: #fff;
+  overflow: visible;
+}
+
+.catalogCategoryHeader {
+  width: 100%;
+  min-height: 58px;
+  border: 0;
+  padding: 13px 14px;
+  background: linear-gradient(135deg, #fff 0%, #fbf7ef 100%);
+  color: #211d19;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 26px;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.catalogCategoryHeader span {
+  font-weight: 900;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.catalogCategoryHeader em {
+  color: #736a61;
+  font-style: normal;
+  font-size: 0.88rem;
+}
+
+.catalogCategoryHeader strong {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #eee9ff;
+  color: #5f49dd;
+}
+
+.servicesCatalogList {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 8px;
+  padding: 12px;
+  border-top: 1px solid #eee5da;
+}
+
+.catalogServiceLine {
+  min-height: 62px;
+  padding: 10px 12px;
+  border: 1px solid #e7ded3;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #fff, #fbf8f2);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 4px 10px;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.catalogServiceLine span {
+  font-weight: 850;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.catalogServiceLine em {
+  grid-column: 1;
+  color: #7e756b;
+  font-style: normal;
+  font-size: 0.86rem;
+}
+
+.catalogServiceLine strong {
+  grid-row: 1 / span 2;
+  grid-column: 2;
+  align-self: center;
+  color: #5f49dd;
+}
+
+.catalogServiceLine:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.servicesHero {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 28px;
+  border: 1px solid #e8dfd4;
+  border-radius: 30px;
+  background:
+    radial-gradient(circle at top right, rgba(122, 97, 255, 0.12), transparent 26%),
+    linear-gradient(145deg, #ffffff 0%, #fbf7ef 100%);
+  box-shadow: 0 24px 56px rgba(75, 54, 31, 0.08);
+}
+
+.servicesHero h1 {
+  margin: 8px 0 10px;
+  font-size: clamp(2rem, 4vw, 3.4rem);
+  line-height: 1.03;
+  letter-spacing: -0.04em;
+}
+
+.servicesHero p {
+  margin: 0;
+  color: #71685f;
+  line-height: 1.6;
+  max-width: 760px;
+}
+
+.servicesHeroStats {
+  min-width: 180px;
+  border-radius: 24px;
+  padding: 22px;
+  background: #111;
+  color: #fff;
+  display: grid;
+  align-content: center;
+  gap: 8px;
+}
+
+.servicesHeroStats strong {
+  font-size: 2.8rem;
+  line-height: 1;
+}
+
+.servicesHeroStats span {
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.servicesLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(360px, 0.45fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.servicesListCard,
+.servicesToolCard,
+.servicesCatalogCard {
+  border: 1px solid #e8dfd4;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 20px 44px rgba(75, 54, 31, 0.06);
+}
+
+.servicesListCard,
+.servicesCatalogCard {
+  padding: 22px;
+}
+
+.servicesTools {
+  display: grid;
+  gap: 18px;
+}
+
+.servicesToolCard {
+  padding: 20px;
+  display: grid;
+  gap: 14px;
+}
+
+.servicesToolCard h2,
+.servicesCardHeader h2 {
+  margin: 0;
+  font-size: 1.35rem;
+  letter-spacing: -0.03em;
+}
+
+.servicesToolCard label {
+  display: grid;
+  gap: 8px;
+}
+
+.servicesToolCard label span {
+  color: #5d554d;
+  font-weight: 700;
+  font-size: 0.92rem;
+}
+
+.servicesCardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.servicesCardHeader p {
+  margin: 6px 0 0;
+  color: #776e65;
+  line-height: 1.55;
+}
+
+.servicesGroupedList,
+.servicesGroup {
+  display: grid;
+  gap: 14px;
+}
+
+.servicesGroup {
+  padding: 16px;
+  border-radius: 22px;
+  background: #fbf8f2;
+  border: 1px solid #eee5da;
+}
+
+.servicesGroupTitle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.servicesGroupTitle span {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #eee9ff;
+  color: #5f49dd;
+  font-weight: 800;
+}
+
+.serviceRow {
+  min-height: 70px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid #e7ded3;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.serviceRow strong {
+  display: block;
+}
+
+.serviceRow span {
+  display: block;
+  margin-top: 4px;
+  color: #7e756b;
+}
+
+.servicesInlineFields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.servicesCategoryAdd {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+}
+
+.servicesCatalogCard {
+  display: grid;
+  gap: 16px;
+}
+
+.servicesCatalogGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.catalogServiceCard {
+  min-height: 146px;
+  padding: 16px;
+  border-radius: 22px;
+  border: 1px solid #e7ded3;
+  background: linear-gradient(180deg, #fff, #fbf8f2);
+  color: #171411;
+  text-align: left;
+  display: grid;
+  align-content: space-between;
+  gap: 10px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.catalogServiceCard:disabled {
+  cursor: not-allowed;
+  opacity: 0.56;
+}
+
+.catalogServiceCard span {
+  color: #7d746a;
+  font-size: 0.82rem;
+}
+
+.catalogServiceCard strong {
+  font-size: 1.02rem;
+}
+
+.catalogServiceCard small {
+  color: #665e55;
+}
+
+.catalogServiceCard em {
+  font-style: normal;
+  color: #5f49dd;
+  font-weight: 800;
+}
+
+.catalogServiceSelected {
+  border-color: #7a61ff;
+  background: linear-gradient(180deg, #f5f1ff, #fff);
+  box-shadow: inset 0 0 0 1px rgba(122, 97, 255, 0.22);
+}
+
+@media (max-width: 1180px) {
+  .splitShell,
+  .workspaceShell {
+    grid-template-columns: 1fr;
+  }
+
+  .visualSide,
+  .workspaceAside {
+    display: none;
+  }
+
+  .workspaceSidebar {
+    display: none;
+  }
+
+  .mobileWorkspaceNav {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: calc(12px + env(safe-area-inset-bottom));
+    z-index: 85;
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 6px;
+    padding: 8px;
+    border: 1px solid rgba(223, 219, 212, 0.96);
+    border-radius: 22px;
+    background: rgba(255, 255, 255, 0.95);
+    box-shadow: 0 18px 42px rgba(32, 26, 20, 0.14);
+    backdrop-filter: blur(18px);
+  }
+
+  .workspaceMain,
+  .clientsMain,
+  .servicesPage,
+  .settingsShell,
+  .calendarCenterShell,
+  .schedulePageBody {
+    padding-bottom: calc(104px + env(safe-area-inset-bottom));
+  }
+
+  .calendarV2ScrollFrame {
+    padding-bottom: calc(104px + env(safe-area-inset-bottom));
+    box-sizing: border-box;
+  }
+
+  .supportFloatingButton {
+    right: 12px;
+    top: calc(78px + env(safe-area-inset-top));
+    bottom: auto;
+    width: 44px;
+    height: 44px;
+  }
+
+  .scheduleHero {
+    grid-template-columns: 1fr;
+  }
+
+  .scheduleFields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .scheduleControlsRow,
+  .scheduleCanvas,
+  .calendarShell,
+  .calendarV2Shell,
+  .calendarV2Expanded {
+    grid-template-columns: 1fr;
+  }
+
+  .calendarShell {
+    height: auto;
+    overflow: visible;
+  }
+
+  .calendarScrollFrame,
+  .calendarSidePanel,
+  .calendarV2ScrollFrame,
+  .calendarV2Drawer {
+    height: auto;
+    overflow: visible;
+  }
+
+  .calendarLeftPanel,
+  .calendarV2Drawer {
+    display: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .formSide {
+    padding: 28px 18px;
+  }
+
+  .panel {
+    min-height: auto;
+  }
+
+  .createAccountGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .createAccountActions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .createAccountActions .primaryButton {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 880px) {
+  .choiceGrid,
+  .categoryGrid,
+  .wizardFooter,
+  .phoneRow,
+  .workspaceGrid,
+  .calendarPageGrid,
+  .rangeApplyFields,
+  .scheduleFields {
+    grid-template-columns: 1fr;
+  }
+
+  .wizardFooter,
+  .workspaceTopBar,
+  .workspaceProfile,
+  .workspaceControls,
+  .topActions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .progressRail {
+    order: 2;
+  }
+
+  .workspaceGrid {
+    display: block;
+  }
+
+  .hourColumn {
+    display: none;
+  }
+}
+
+.settingsShell {
+  min-height: 100vh;
+  padding: 32px clamp(22px, 4vw, 58px) 48px;
+  background:
+    radial-gradient(circle at 88% 0%, rgba(111, 76, 255, 0.1), transparent 28%),
+    linear-gradient(180deg, #fffdf9 0%, #f8f5ef 100%);
+  overflow: auto;
+}
+
+.settingsHero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 30px;
+  border: 1px solid #e6ddd1;
+  border-radius: 30px;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(250, 245, 237, 0.82)),
+    radial-gradient(circle at 80% 20%, rgba(111, 76, 255, 0.1), transparent 34%);
+  box-shadow: 0 18px 55px rgba(72, 56, 38, 0.08);
+}
+
+.settingsHero h1 {
+  margin: 8px 0 12px;
+  max-width: 760px;
+  font-size: clamp(2.4rem, 5vw, 4.8rem);
+  line-height: 1.02;
+  letter-spacing: -0.05em;
+  color: #171411;
+}
+
+.settingsHero .primaryButton {
+  flex: 0 0 auto;
+}
+
+.settingsHero p {
+  max-width: 820px;
+  margin: 0;
+  color: #746a60;
+  font-size: 1.04rem;
+  line-height: 1.6;
+}
+
+.settingsStatus {
+  margin-top: 16px;
+  padding: 14px 18px;
+  border: 1px solid #d9cbff;
+  border-radius: 18px;
+  background: #f2edff;
+  color: #5740d9;
+  font-weight: 700;
+}
+
+.settingsGrid {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.9fr) minmax(0, 1.1fr);
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.settingsCard {
+  padding: 24px;
+  border: 1px solid #e4dacd;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.76);
+  box-shadow: 0 14px 44px rgba(64, 47, 28, 0.06);
+}
+
+.settingsCreditsCard {
+  background:
+    linear-gradient(145deg, #171411, #2e2445 58%, #6f4cff);
+  color: #fff;
+}
+
+.settingsCardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.settingsCardHeader span {
+  color: #8f857a;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.settingsCreditsCard .settingsCardHeader span {
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.settingsCardHeader h2 {
+  margin: 6px 0 0;
+  font-size: clamp(1.5rem, 2.4vw, 2.15rem);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+}
+
+.settingsCardHeader > strong {
+  padding: 9px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  font-size: 0.94rem;
+}
+
+.settingsProgressTrack {
+  height: 12px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.settingsProgressTrack span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #7ed6bd, #ffd166);
+}
+
+.settingsMetrics {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin: 20px 0;
+}
+
+.settingsMetrics div {
+  padding: 14px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.11);
+}
+
+.settingsMetrics span {
+  display: block;
+  margin-bottom: 7px;
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.8rem;
+}
+
+.settingsMetrics strong {
+  font-size: 1.4rem;
+}
+
+.settingsCreditsCard .ghostButton {
+  width: 100%;
+  border-color: rgba(255, 255, 255, 0.24);
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-weight: 800;
+}
+
+.settingsFormGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.settingsFormGrid label {
+  display: grid;
+  gap: 9px;
+  color: #211c17;
+  font-weight: 800;
+}
+
+.settingsWideField {
+  grid-column: 1 / -1;
+}
+
+.settingsCardHint {
+  margin: -6px 0 18px;
+  color: #746a60;
+  line-height: 1.6;
+}
+
+.settingsPhotoGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.settingsPhotoCard {
+  overflow: hidden;
+  border: 1px solid #e4dacd;
+  border-radius: 20px;
+  background: #fff;
+  box-shadow: 0 10px 28px rgba(64, 47, 28, 0.06);
+}
+
+.settingsPhotoImage {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  background: #f3efe8;
+}
+
+.settingsPhotoActions {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+}
+
+.settingsPhotoBadge,
+.settingsPhotoBadgePrimary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 8px;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.settingsPhotoBadge {
+  background: #f4efe7;
+  color: #6f6559;
+}
+
+.settingsPhotoBadgePrimary {
+  background: #efe9ff;
+  color: #5f49dd;
+}
+
+.settingsPhotoButtons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.photoActionButton {
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid #ddd1c3;
+  border-radius: 8px;
+  background: #fff;
+  color: #171411;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.photoActionButton:hover {
+  border-color: #7a61ff;
+  color: #5f49dd;
+}
+
+.settingsPhotoUploader {
+  position: relative;
+  min-height: 100%;
+  padding: 18px;
+  border: 1px dashed #cbbde8;
+  border-radius: 20px;
+  background: linear-gradient(180deg, #faf7ff, #fff);
+  display: grid;
+  align-content: center;
+  justify-items: start;
+  gap: 6px;
+  cursor: pointer;
+  color: #171411;
+}
+
+.settingsPhotoUploader span {
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.settingsPhotoUploader small {
+  color: #746a60;
+  font-size: 0.88rem;
+}
+
+.settingsPhotoUploader input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.settingsEmptyText {
+  margin: 16px 0 0;
+  color: #8a8177;
+}
+
+.settingsAddressSearchList {
+  display: grid;
+  gap: 10px;
+}
+
+.settingsAddressSearchList .addressSearchText span {
+  color: #6f675f;
+  font-size: 0.92rem;
+}
+
+.settingsAddressSearchList .addressSearchText {
+  display: grid;
+  min-width: 0;
+  gap: 5px;
+}
+
+.settingsAddressSearchList .addressSearchText strong {
+  color: #171411;
+}
+
+.settingsAddressSearchList .addressSearchAction {
+  flex: 0 0 auto;
+  padding: 10px 14px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #171411 0%, #6c5dff 165%);
+  color: #fff;
+  font-size: 0.82rem;
+  font-weight: 900;
+  box-shadow: 0 10px 20px rgba(107, 92, 196, 0.22);
+}
+
+.settingsAddressSummary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.settingsAddressSummary div {
+  padding: 14px;
+  border-radius: 18px;
+  border: 1px solid #e4dacd;
+  background: #fbf8f3;
+  min-width: 0;
+}
+
+.settingsAddressSummary span {
+  display: block;
+  margin-bottom: 7px;
+  color: #8f857a;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.settingsAddressSummary strong {
+  display: block;
+  overflow-wrap: anywhere;
+  color: #181512;
+}
+
+.settingsMapFrame {
+  grid-column: 1 / -1;
+  min-height: 360px;
+}
+
+@media (max-width: 1080px) {
+  .settingsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .settingsHero {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 720px) {
+  .settingsFormGrid,
+  .settingsMetrics,
+  .settingsAddressSummary,
+  .settingsPhotoGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 1180px) {
+  .calendarV2Drawer {
+    display: block;
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(420px, 100vw);
+    transform: translateX(100%);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 90;
+    border-left: 1px solid #ebe8e2;
+    background: #fff;
+    box-shadow: -24px 0 46px rgba(24, 18, 12, 0.18);
+    transition: transform 180ms ease, opacity 180ms ease;
+  }
+
+  .calendarV2DrawerOpen {
+    width: min(420px, 100vw);
+    transform: translateX(0);
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+
+@media (max-width: 980px) {
+  .calendarTopBarV2 {
+    display: grid;
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .calendarTopLeft {
+    display: grid;
+    width: 100%;
+    grid-template-columns: 110px 48px minmax(0, 1fr) 48px;
+    gap: 8px;
+    align-items: stretch;
+  }
+
+  .calendarTodayButton {
+    width: 110px;
+    min-width: 0;
+    padding: 0 12px;
+  }
+
+  .calendarSquareButton {
+    width: 48px;
+    min-width: 0;
+  }
+
+  .calendarDatePill {
+    min-width: 0;
+    padding: 0 12px;
+  }
+
+  .calendarDatePill strong {
+    font-size: 0.98rem;
+  }
+
+  .calendarDatePill span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .calendarTopMobileSelector {
+    display: none;
+  }
+
+  .calendarTitleRow {
+    display: grid;
+    gap: 10px;
+    padding: 8px 12px 10px;
+  }
+
+  .calendarTitleMeta strong {
+    font-size: 1rem;
+    line-height: 1.1;
+  }
+
+  .calendarTitleMeta span {
+    font-size: 0.86rem;
+    line-height: 1.35;
+  }
+
+  .calendarStatsStrip {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px;
+    min-width: 0;
+    overflow: hidden;
+    padding-bottom: 1px;
+    scrollbar-width: none;
+  }
+
+  .calendarStatsStrip::-webkit-scrollbar {
+    display: none;
+  }
+
+  .calendarStatsStrip div {
+    min-height: 52px;
+    padding: 5px 6px;
+    border-radius: 9px;
+  }
+
+  .calendarStatsStrip strong {
+    white-space: normal;
+    font-size: 0.76rem;
+    line-height: 1.05;
+    word-break: break-word;
+  }
+
+  .calendarStatsStrip span {
+    font-size: 0.68rem;
+  }
+
+  .calendarV2ScrollFrame {
+    min-height: 0;
+    height: 100%;
+    overflow: auto;
+    overscroll-behavior: contain;
+    padding-bottom: calc(170px + env(safe-area-inset-bottom));
+  }
+
+  .calendarMobileActionBar {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: calc(118px + env(safe-area-inset-bottom));
+    z-index: 84;
+    display: grid;
+    grid-template-columns: 108px minmax(0, 1fr);
+    gap: 10px;
+  }
+
+  .calendarQuickMenu {
+    display: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .servicesCompactGrid,
+  .servicesAddGrid,
+  .servicesLayout,
+  .servicesCatalogGrid,
+  .servicesCompactFields,
+  .servicesInlineFields {
+    grid-template-columns: 1fr;
+  }
+
+  .servicesPage,
+  .clientsMain {
+    padding: 18px 14px 28px;
+  }
+
+  .servicesHeroCompact,
+  .servicesHero {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 18px;
+    border-radius: 20px;
+  }
+
+  .servicesHeroActions,
+  .servicesMenuToolbar,
+  .servicesDeleteActions,
+  .scheduleActions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .servicesHeroActions span,
+  .servicesHeroActions .primaryButton,
+  .servicesMenuToolbar .input,
+  .servicesMenuToolbar .calendarSecondaryAction,
+  .scheduleActions .primaryButton,
+  .servicesDeleteActions .calendarSecondaryAction,
+  .servicesDeleteActions .dangerButton {
+    width: 100%;
+  }
+
+  .servicesCategoryPanel {
+    position: static;
+    top: auto;
+  }
+
+  .serviceMenuRow {
+    grid-template-columns: 20px 8px minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .serviceMenuPrice {
+    grid-column: 3;
+  }
+
+  .serviceRowActions {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .serviceEditGrid {
+    grid-column: 1 / -1;
+    grid-template-columns: 1fr;
+  }
+
+  .servicesCatalogList {
+    grid-template-columns: 1fr;
+  }
+
+  .clientsHeader {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
+  }
+
+  .clientsActions,
+  .clientsToolbarLeft,
+  .clientsSearch,
+  .clientsPrimaryAddButton {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .clientsToolbar {
+    padding: 12px;
+    border-radius: 18px;
+  }
+
+  .clientsTable {
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    overflow: visible;
+  }
+
+  .clientsTableHead {
+    display: none;
+  }
+
+  .clientsRows {
+    gap: 12px;
+  }
+
+  .clientsRow {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    min-height: auto;
+    padding: 16px;
+    border: 1px solid #eee6dc;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: 0 12px 30px rgba(47, 37, 26, 0.06);
+  }
+
+  .clientsCheckboxCell {
+    display: none;
+  }
+
+  .clientIdentity {
+    padding-bottom: 12px;
+    border-bottom: 1px solid #efe9e0;
+  }
+
+  .clientsRow > div[data-label] {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-width: 0;
+  }
+
+  .clientsRow > div[data-label]::before {
+    content: attr(data-label);
+    color: #857a6d;
+    font-weight: 700;
+    flex: 0 0 auto;
+  }
+
+  .clientsModalBackdrop {
+    justify-content: stretch;
+    align-items: flex-end;
+  }
+
+  .clientsModal {
+    width: 100%;
+    height: min(88dvh, 100vh);
+    border-left: 0;
+    border-radius: 24px 24px 0 0;
+  }
+
+  .clientsDrawerHeader,
+  .clientsModalContent,
+  .clientsDrawerFooter {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .clientsDrawerTabs {
+    margin: 12px 16px 0;
+  }
+
+  .clientsDrawerFooter {
+    grid-template-columns: 1fr;
+    padding-top: 14px;
+    padding-bottom: 16px;
+  }
+
+  .workspaceTopBar,
+  .workspaceHeader,
+  .calendarPageHeader {
+    padding: 14px 12px;
+  }
+
+  .workspaceControls {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .workspaceControls .pillControl {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .workspaceProfile {
+    width: 100%;
+    justify-content: space-between;
+    flex-wrap: wrap;
+  }
+
+  .scheduleActions {
+    gap: 10px;
+  }
+
+  .scheduleStatus {
+    text-align: center;
+  }
+
+  .calendarTopBarV2 {
+    align-items: stretch;
+    justify-content: flex-start;
+  }
+
+  .calendarTopLeft,
+  .calendarTopRight,
+  .calendarViewSelector {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .calendarOverviewPanel {
+    padding: 12px;
+  }
+
+  .calendarWeekOverviewGrid {
+    min-width: 0;
+    grid-template-columns: 1fr;
+  }
+
+  .calendarMonthOverviewGrid {
+    min-width: 0;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .calendarClientQuickActions,
+  .calendarDrawerFooter {
+    grid-template-columns: 1fr;
+  }
+
+  .calendarDrawerTabs {
+    overflow-x: auto;
+    gap: 10px;
+    padding: 8px 12px 0;
+  }
+
+  .calendarV2PanelHeader,
+  .calendarDrawerDateRow {
+    padding: 10px 12px;
+  }
+
+  .calendarVisitList {
+    gap: 8px;
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .calendarCustomerCard,
+  .calendarAddServiceButton,
+  .calendarSearchField,
+  .calendarClientQuickActions,
+  .calendarTotals,
+  .calendarDrawerFooter {
+    margin-left: 12px;
+    margin-right: 12px;
+  }
+
+  .calendarV2Panel {
+    height: 100dvh;
+  }
+
+  .calendarCustomerCard {
+    margin-top: 8px;
+    gap: 8px;
+    padding: 8px 10px;
+  }
+
+  .calendarDrawerTabs {
+    gap: 10px;
+  }
+
+  .calendarDrawerDateRow {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .calendarVisitContent {
+    gap: 6px;
+    padding: 8px;
+    border-radius: 14px;
+  }
+
+  .calendarVisitServicePicker {
+    min-height: 42px;
+    padding: 0 10px;
+    font-size: 0.94rem;
+  }
+
+  .calendarVisitTimeGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .calendarVisitTimeGrid label {
+    gap: 4px;
+  }
+
+  .calendarVisitTimeGrid .select {
+    min-height: 40px;
+    padding: 8px 10px;
+    border-radius: 14px;
+    background: rgba(248, 248, 252, 0.96);
+    border-color: rgba(17, 17, 17, 0.1);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
+    font-size: 0.94rem;
+    font-weight: 600;
+  }
+
+  .calendarVisitMeta {
+    padding: 8px 10px;
+  }
+
+  .calendarAddServiceButton {
+    min-height: 42px;
+    margin-top: 0;
+    margin-bottom: 8px;
+  }
+
+  .calendarTotals {
+    gap: 6px;
+    padding: 6px 12px 8px;
+  }
+
+  .calendarDrawerFooter {
+    position: sticky;
+    bottom: 0;
+    gap: 8px;
+    padding-top: 8px;
+    padding-bottom: calc(10px + env(safe-area-inset-bottom));
+  }
+
+  .calendarSearchLabel {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  .calendarCustomerCard {
+    grid-template-columns: 34px minmax(0, 1fr);
+  }
+
+  .calendarCustomerPlus {
+    display: none;
+  }
+
+  .calendarV2PanelHeader {
+    gap: 10px;
+  }
+
+  .calendarV2PanelHeader strong {
+    font-size: 1.08rem;
+  }
+
+  .calendarDrawerBack {
+    width: 36px;
+    height: 36px;
+    border-radius: 12px;
+  }
+
+  .calendarCustomerAvatar {
+    width: 34px;
+    height: 34px;
+    font-size: 0.84rem;
+  }
+
+  .calendarCustomerCard strong {
+    font-size: 0.92rem;
+  }
+
+  .calendarCustomerCard span,
+  .calendarCustomerCard small,
+  .calendarDrawerDateRow span,
+  .calendarVisitTimeGrid span {
+    font-size: 0.76rem;
+  }
+
+  .calendarDrawerDateRow strong {
+    font-size: 0.92rem;
+  }
+
+  .calendarDrawerTab,
+  .calendarDrawerTabActive {
+    padding-bottom: 10px;
+    font-size: 0.78rem;
+  }
+
+  .calendarTotals span {
+    font-size: 0.72rem;
+  }
+
+  .calendarTotals strong {
+    font-size: 0.82rem;
+  }
+
+  .calendarV2Grid,
+  .calendarPageGrid {
+    grid-template-columns: 52px minmax(0, 1fr);
+  }
+
+  .calendarV2HourLabel,
+  .hourLabel {
+    left: 8px;
+    font-size: 0.78rem;
+  }
+
+  .nowBadge {
+    left: -28px;
+    font-size: 0.64rem;
+  }
+
+  .bookingBlock {
+    right: 8px;
+    padding: 10px 10px 12px;
+  }
+
+  .calendarV2Drawer,
+  .calendarV2DrawerOpen {
+    width: 100vw;
+  }
+
+  .scheduleCanvas {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .calendarPanel {
+    padding: 14px;
+    border-radius: 22px;
+  }
+
+  .calendarWeekdays {
+    gap: 6px;
+  }
+
+  .calendarWeekdays span {
+    font-size: 0.72rem;
+  }
+
+  .calendarGrid {
+    gap: 6px;
+  }
+
+  .calendarDay {
+    min-height: 74px;
+    padding: 10px 8px;
+    border-radius: 16px;
+  }
+
+  .calendarBlank {
+    min-height: 58px;
+  }
+
+  .rangeApplyActions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .rangeApplyActions .ghostButton {
+    width: 100%;
+  }
+
+  .scheduleEditorCard {
+    padding: 16px;
+    border-radius: 20px;
+  }
+
+  .scheduleDays {
+    gap: 6px;
+    margin-top: 12px;
+  }
+
+  .scheduleDayButton {
+    min-height: 42px;
+    padding: 0 2px;
+    border-radius: 12px;
+    font-size: 0.98rem;
+    line-height: 1;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 620px) {
+  .calendarTitleMeta {
+    display: none;
+  }
+
+  .splitShell {
+    min-height: auto;
+  }
+
+  .formSide {
+    padding: 18px 12px 28px;
+  }
+
+  .panel,
+  .compactPanel {
+    width: 100%;
+    min-height: auto;
+    gap: 16px;
+  }
+
+  .createTopLanguage {
+    top: 14px;
+    right: 12px;
+  }
+
+  .createTopLanguageMenu {
+    width: min(100vw - 24px, 280px);
+  }
+
+  .heroTitle,
+  .createHeroTitle,
+  .wizardHeader h1,
+  .clientsTitle,
+  .servicesHeroCompact h1,
+  .servicesHero h1,
+  .settingsHero h1 {
+    font-size: clamp(1.95rem, 10vw, 2.75rem);
+  }
+
+  .heroSubtitle,
+  .wizardHeader p,
+  .servicesHeroCompact p,
+  .servicesHero p,
+  .settingsHero p {
+    font-size: 1rem;
+    line-height: 1.55;
+  }
+
+  .onboardingTop {
+    align-items: stretch;
+    padding: 16px 12px 0;
+  }
+
+  .progressRail {
+    width: 100%;
+  }
+
+  .topActions {
+    width: 100%;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .topActions .ghostButton,
+  .topActions .primaryButton {
+    flex: 1 1 calc(50% - 6px);
+    min-width: 0;
+  }
+
+  .wizardFrame {
+    padding: 18px 12px 36px;
+  }
+
+  .wizardCard,
+  .templateModal,
+  .templateFormModal,
+  .servicesDeleteModal,
+  .settingsCard,
+  .settingsHero,
+  .choiceCard,
+  .categoryCard,
+  .serviceOption,
+  .generatedBlock,
+  .mapCard {
+    border-radius: 20px;
+  }
+
+  .choiceCard,
+  .categoryCard,
+  .serviceOption,
+  .generatedBlock,
+  .mapCard,
+  .settingsCard {
+    padding: 18px;
+  }
+
+  .templateModalBackdrop,
+  .servicesModalOverlay {
+    padding: 12px;
+  }
+
+  .templateModal,
+  .templateFormModal,
+  .servicesDeleteModal {
+    padding: 18px;
+  }
+
+  .templateModalHeader {
+    grid-template-columns: 1fr;
+  }
+
+  .templateModalHeader h2,
+  .servicesDeleteModal h2 {
+    font-size: 1.7rem;
+  }
+
+  .templateServiceRow {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .templateSelectButton,
+  .templateModalFooter .primaryButton,
+  .templateModalFooter .ghostButton,
+  .calendarSecondaryAction,
+  .dangerButton,
+  .photoActionButton {
+    width: 100%;
+  }
+
+  .wizardFooter,
+  .createAccountActions,
+  .servicesDeleteActions,
+  .settingsPhotoButtons {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .phoneRow {
+    grid-template-columns: 82px minmax(0, 1fr);
+  }
+
+  .onboardingShell .input,
+  .onboardingShell .select,
+  .onboardingShell .phoneCodeSelect,
+  .phoneInput,
+  .clientsModal .input,
+  .clientsModal .textarea,
+  .servicesPage .input,
+  .servicesPage .select,
+  .servicesPage .phoneCodeSelect,
+  .settingsShell .input,
+  .settingsShell .select,
+  .settingsShell .phoneCodeSelect,
+  .workspaceShell .select,
+  .workspaceShell .phoneCodeSelect {
+    min-height: 52px;
+    padding: 12px 14px;
+    border-radius: 16px;
+    font-size: 17px;
+    line-height: 1.2;
+  }
+
+  .onboardingShell .select option,
+  .onboardingShell .phoneCodeSelect option,
+  .servicesPage .select option,
+  .servicesPage .phoneCodeSelect option,
+  .settingsShell .select option,
+  .settingsShell .phoneCodeSelect option,
+  .workspaceShell .select option,
+  .workspaceShell .phoneCodeSelect option {
+    font-size: 16px;
+    line-height: 1.35;
+  }
+
+  .languageTrigger {
+    min-height: 48px;
+    font-size: 1rem;
+  }
+
+  .settingsShell {
+    padding: 16px 12px 28px;
+  }
+
+  .settingsHero {
+    padding: 20px 16px;
+  }
+
+  .settingsHero .primaryButton {
+    width: 100%;
+  }
+
+  .addressSearchItem,
+  .settingsAddressSearchList .addressSearchItem {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .addressSearchAction,
+  .settingsAddressSearchList .addressSearchAction {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .settingsMapFrame {
+    min-height: 260px;
+  }
+
+  .calendarMobileActionBar {
+    left: 8px;
+    right: 8px;
+    bottom: calc(114px + env(safe-area-inset-bottom));
+    grid-template-columns: 92px minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .calendarMobileJumpNow,
+  .calendarMobileCreateButton {
+    min-height: 50px;
+    border-radius: 14px;
+  }
+
+  .supportFloatingButton {
+    right: 8px;
+    top: calc(66px + env(safe-area-inset-top));
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+  }
+
+  .calendarMonthOverviewGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .calendarTitleRow {
+    padding-top: 6px;
+    padding-bottom: 8px;
+  }
+
+  .calendarStatsStrip {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px;
+  }
+
+  .calendarStatsStrip div {
+    min-height: 44px;
+    padding: 4px 5px;
+  }
+
+  .calendarStatsStrip strong {
+    font-size: 0.7rem;
+  }
+
+  .calendarStatsStrip span {
+    margin-bottom: 2px;
+    font-size: 0.58rem;
+  }
+
+  .calendarTopLeft {
+    grid-template-columns: 96px 44px minmax(0, 1fr) 44px;
+  }
+
+  .calendarTodayButton,
+  .calendarTopMobileModeButton,
+  .calendarSquareButton,
+  .calendarDatePill {
+    min-height: 44px;
+  }
+
+  .calendarTodayButton,
+  .calendarTopMobileModeButton {
+    width: 96px;
+    padding: 0 10px;
+  }
+
+  .calendarSquareButton {
+    width: 44px;
+  }
+
+  .calendarDatePill {
+    padding: 0 10px;
+  }
+
+  .calendarDatePill strong {
+    font-size: 0.92rem;
+  }
+
+  .calendarDatePill span {
+    font-size: 0.76rem;
+  }
+
+  .calendarWeekdays span {
+    font-size: 0.68rem;
+  }
+
+  .calendarDay {
+    min-height: 66px;
+    padding: 9px 7px;
+  }
+
+  .calendarDay small {
+    font-size: 0.62rem;
+    line-height: 1.15;
+  }
+}
+
+@media (max-width: 420px) {
+  .mobileWorkspaceNav {
+    left: 8px;
+    right: 8px;
+    gap: 4px;
+    padding: 7px 6px;
+  }
+
+  .mobileWorkspaceNavLabel {
+    font-size: 0.64rem;
+  }
+
+  .topActions {
+    gap: 8px;
+  }
+
+  .topActions .ghostButton,
+  .topActions .primaryButton {
+    flex-basis: 100%;
+  }
+
+  .clientsTitle,
+  .settingsHero h1,
+  .servicesHeroCompact h1 {
+    font-size: clamp(1.8rem, 10vw, 2.35rem);
+  }
+
+  .workspaceControls {
+    grid-template-columns: 1fr;
+  }
+
+  .clientIdentity {
+    align-items: flex-start;
+  }
+
+  .calendarTopLeft {
+    gap: 8px;
+  }
+
+  .scheduleDays {
+    gap: 4px;
+  }
+
+  .scheduleDayButton {
+    min-height: 40px;
+    padding: 0 1px;
+    font-size: 0.92rem;
+    border-radius: 11px;
+  }
+
+  .calendarDay {
+    padding: 8px 4px;
+  }
+
+  .calendarDay small {
+    font-size: 0.56rem;
+    line-height: 1.1;
+  }
+}
