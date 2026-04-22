@@ -10,10 +10,10 @@
     "migrate:supabase": "node scripts/migrate-local-data-to-supabase.mjs"
   },
   "dependencies": {
-    "next": "15.3.0",
+    "@supabase/supabase-js": "2.49.8",
+    "next": "^15.3.8",
     "react": "19.0.0",
-    "react-dom": "19.0.0",
-    "@supabase/supabase-js": "2.49.8"
+    "react-dom": "19.0.0"
   },
   "devDependencies": {
     "@types/node": "22.14.0",
