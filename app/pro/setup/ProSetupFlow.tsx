@@ -24,6 +24,78 @@ const serviceModes = [
 
 type ServiceMode = (typeof serviceModes)[number];
 
+const categoryNameTranslations: Record<string, Record<ProLanguage, string>> = {
+  "Парикмахерская": {
+    ru: "Парикмахерская",
+    uk: "Перукарня",
+    en: "Hair salon"
+  },
+  "Ногти": {
+    ru: "Ногти",
+    uk: "Нігті",
+    en: "Nails"
+  },
+  "Брови и ресницы": {
+    ru: "Брови и ресницы",
+    uk: "Брови та вії",
+    en: "Brows and lashes"
+  },
+  "Салон красоты": {
+    ru: "Салон красоты",
+    uk: "Салон краси",
+    en: "Beauty salon"
+  },
+  "Медспа": {
+    ru: "Медспа",
+    uk: "Медспа",
+    en: "Medspa"
+  },
+  "Парикмахер": {
+    ru: "Парикмахер",
+    uk: "Перукар",
+    en: "Hairdresser"
+  },
+  "Массажный салон": {
+    ru: "Массажный салон",
+    uk: "Масажний салон",
+    en: "Massage studio"
+  },
+  "Спа-салон и сауна": {
+    ru: "Спа-салон и сауна",
+    uk: "Спа-салон і сауна",
+    en: "Spa and sauna"
+  },
+  "Салон депиляции": {
+    ru: "Салон депиляции",
+    uk: "Салон депіляції",
+    en: "Hair removal salon"
+  },
+  "Тату и пирсинг": {
+    ru: "Тату и пирсинг",
+    uk: "Тату та пірсинг",
+    en: "Tattoo and piercing"
+  },
+  "Студия загара": {
+    ru: "Студия загара",
+    uk: "Студія засмаги",
+    en: "Tanning studio"
+  },
+  "Физиотерапия": {
+    ru: "Физиотерапия",
+    uk: "Фізіотерапія",
+    en: "Physiotherapy"
+  },
+  "Другая": {
+    ru: "Другая",
+    uk: "Інша",
+    en: "Other"
+  }
+};
+
+function getLocalizedCategoryName(category: string, language: ProLanguage) {
+  return categoryNameTranslations[category]?.[language] ?? category;
+}
+
 const joinBusinessOptions = [
   {
     name: "Studio Aura",
@@ -136,7 +208,7 @@ const setupText = {
       addServiceText: "Добавьте основную информацию об услуге прямо сейчас. Позже можно будет настроить описание и дополнительные параметры.",
       serviceName: "Название услуги",
       serviceType: "Тип услуги",
-      otherCategory: "Інша",
+      otherCategory: "Другая",
       hours: "Часы",
       minutes: "Минут",
       price: "Цена",
@@ -221,7 +293,7 @@ const setupText = {
       addServiceText: "Додайте основну інформацію про послугу зараз. Пізніше можна буде налаштувати опис і додаткові параметри.",
       serviceName: "Назва послуги",
       serviceType: "Тип послуги",
-      otherCategory: "Other",
+      otherCategory: "Інша",
       hours: "Години",
       minutes: "Хвилин",
       price: "Ціна",
@@ -306,7 +378,7 @@ const setupText = {
       addServiceText: "Add the basic service information now. You can configure description and extra settings later.",
       serviceName: "Service name",
       serviceType: "Service type",
-      otherCategory: "Другая",
+      otherCategory: "Other",
       hours: "Hours",
       minutes: "Minutes",
       price: "Price",
@@ -430,22 +502,22 @@ export default function ProSetupFlow() {
   }, [draft.addressLat, draft.addressLon]);
 
   const previewSuggestion = addressSuggestions[0] ?? null;
-  const primaryCategory = draft.categories[0] ?? t.modal.otherCategory;
+  const primaryCategory = draft.categories[0] ?? "Другая";
   const primaryTemplate = useMemo(() => getCategoryTemplate(primaryCategory), [primaryCategory]);
   const allSuggestedServices = useMemo(
     () => [...primaryTemplate.topSuggestions, ...primaryTemplate.popularServices],
     [primaryTemplate]
   );
   const manualCategoryOptions = useMemo(
-    () => Array.from(new Set([t.modal.otherCategory, ...categoryOptions.filter((category) => category !== "Другая")])),
-    [t.modal.otherCategory]
+    () => Array.from(new Set(["Другая", ...categoryOptions.filter((category) => category !== "Другая")])),
+    []
   );
 
   useEffect(() => {
     setManualServiceCategory((current) =>
-      current === "Другая" || current === "Інша" || current === "Other" ? t.modal.otherCategory : current
+      current === "Інша" || current === "Other" ? "Другая" : current
     );
-  }, [t.modal.otherCategory]);
+  }, []);
 
   const previewMapEmbedUrl = useMemo(() => {
     if (!previewSuggestion) {
@@ -872,7 +944,7 @@ export default function ProSetupFlow() {
                   type="button"
                   className={styles.ghostButton}
                   onClick={() => {
-                    setManualServiceCategory(t.modal.otherCategory);
+                    setManualServiceCategory("Другая");
                     setShowManualService(true);
                   }}
                 >
@@ -910,7 +982,7 @@ export default function ProSetupFlow() {
                           : draft.categories.indexOf(category) + 1}
                       </span>
                     ) : null}
-                    <span className={styles.choiceTitle}>{category}</span>
+                    <span className={styles.choiceTitle}>{getLocalizedCategoryName(category, language)}</span>
                     <span className={styles.choiceText}>
                       {t.categories.categoryHint}
                     </span>
@@ -1073,7 +1145,7 @@ export default function ProSetupFlow() {
               <div>
                 <h2>{t.modal.chooseServices}</h2>
                 <p>
-                  {t.modal.templateText} «{primaryTemplate.title}» {t.modal.templateSuffix}
+                  {t.modal.templateText} «{getLocalizedCategoryName(primaryTemplate.title, language)}» {t.modal.templateSuffix}
                 </p>
               </div>
             </div>
@@ -1087,7 +1159,7 @@ export default function ProSetupFlow() {
                     <div key={service.name} className={styles.templateServiceRow}>
                       <div>
                         <strong>{service.name}</strong>
-                        <span>{service.durationMinutes ?? 60} мин · {service.price ?? 700} грн.</span>
+                        <span>{service.durationMinutes ?? 60} {t.modal.minutes} · {service.price ?? 700} UAH</span>
                       </div>
                       <button
                         type="button"
@@ -1108,7 +1180,7 @@ export default function ProSetupFlow() {
                     <div key={service.name} className={styles.templateServiceRow}>
                       <div>
                         <strong>{service.name}</strong>
-                        <span>{service.durationMinutes ?? 60} мин · {service.price ?? 700} грн.</span>
+                        <span>{service.durationMinutes ?? 60} {t.modal.minutes} · {service.price ?? 700} UAH</span>
                       </div>
                       <button
                         type="button"
@@ -1167,7 +1239,7 @@ export default function ProSetupFlow() {
                 >
                   {manualCategoryOptions.map((category) => (
                     <option key={category} value={category}>
-                      {category}
+                      {getLocalizedCategoryName(category, language)}
                     </option>
                   ))}
                 </select>
