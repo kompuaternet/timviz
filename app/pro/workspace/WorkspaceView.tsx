@@ -184,7 +184,7 @@ export default function WorkspaceView({ professionalId }: WorkspaceViewProps) {
       return "RZ";
     }
 
-    return `${snapshot.professional.firstName[0] ?? ""}${snapshot.professional.lastName[0] ?? ""}`.toUpperCase();
+    return `${snapshot.professional.firstName?.[0] ?? ""}${snapshot.professional.lastName?.[0] ?? ""}`.toUpperCase() || "RZ";
   }, [snapshot]);
 
   if (!snapshot) {
@@ -225,7 +225,7 @@ export default function WorkspaceView({ professionalId }: WorkspaceViewProps) {
         </div>
 
         <div className={styles.workspaceHeader}>
-          <strong>{snapshot.business.categories.join(" · ")}</strong>
+          <strong>{Array.isArray(snapshot.business.categories) ? snapshot.business.categories.join(" · ") : ""}</strong>
           <div>
             {isOwner
               ? `${snapshot.services.length} ${copy.servicesCount} · ${snapshot.business.serviceMode}`

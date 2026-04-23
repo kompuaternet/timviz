@@ -847,7 +847,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
     if (!snapshot) {
       return "RZ";
     }
-    return `${snapshot.workspace.professional.firstName[0] ?? ""}${snapshot.workspace.professional.lastName[0] ?? ""}`.toUpperCase();
+    return `${snapshot.workspace.professional.firstName?.[0] ?? ""}${snapshot.workspace.professional.lastName?.[0] ?? ""}`.toUpperCase() || "RZ";
   }, [snapshot]);
 
   const t = CALENDAR_TEXT[uiLanguage];

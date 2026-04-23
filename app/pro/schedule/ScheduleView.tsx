@@ -70,7 +70,7 @@ export default function ScheduleView({ professionalId }: ScheduleViewProps) {
       return "RZ";
     }
 
-    return `${snapshot.professional.firstName[0] ?? ""}${snapshot.professional.lastName[0] ?? ""}`.toUpperCase();
+    return `${snapshot.professional.firstName?.[0] ?? ""}${snapshot.professional.lastName?.[0] ?? ""}`.toUpperCase() || "RZ";
   }, [snapshot]);
 
   if (!snapshot) {
