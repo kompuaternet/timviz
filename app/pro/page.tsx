@@ -1,21 +1,71 @@
+"use client";
+
 import Link from "next/link";
 import BrandLogo from "../BrandLogo";
 import styles from "./pro.module.css";
+import { useProLanguage } from "./useProLanguage";
+
+const landingText = {
+  ru: {
+    brandSuffix: "для профессионалов",
+    title: "Создайте учетную запись для управления бизнесом",
+    subtitle: "Для мастера, частного специалиста или салона. Здесь начинается настройка расписания, услуг, команды и онлайн-записи клиентов.",
+    emailPlaceholder: "Введите ваш адрес электронной почты",
+    continue: "Продолжить",
+    login: "Уже есть аккаунт? Войти",
+    or: "или",
+    facebook: "Войти через Facebook",
+    google: "Войти через Google",
+    apple: "Войти через Apple",
+    clientPrompt: "Вы клиент и хотите записаться на прием?",
+    clientCatalog: "Перейти в каталог для клиентов"
+  },
+  uk: {
+    brandSuffix: "для професіоналів",
+    title: "Створіть акаунт для керування бізнесом",
+    subtitle: "Для майстра, приватного спеціаліста або салону. Саме тут починається налаштування графіка, послуг, команди та онлайн-запису клієнтів.",
+    emailPlaceholder: "Введіть вашу електронну пошту",
+    continue: "Продовжити",
+    login: "Вже є акаунт? Увійти",
+    or: "або",
+    facebook: "Увійти через Facebook",
+    google: "Увійти через Google",
+    apple: "Увійти через Apple",
+    clientPrompt: "Ви клієнт і хочете записатися на візит?",
+    clientCatalog: "Перейти в каталог для клієнтів"
+  },
+  en: {
+    brandSuffix: "for professionals",
+    title: "Create an account to manage your business",
+    subtitle: "For an independent specialist, private expert or salon. This is where schedule, services, team and online client bookings begin.",
+    emailPlaceholder: "Enter your email address",
+    continue: "Continue",
+    login: "Already have an account? Sign in",
+    or: "or",
+    facebook: "Continue with Facebook",
+    google: "Continue with Google",
+    apple: "Continue with Apple",
+    clientPrompt: "Are you a client and want to book a visit?",
+    clientCatalog: "Open the client catalog"
+  }
+} as const;
 
 export default function ProLandingPage() {
+  const { language } = useProLanguage();
+  const copy = landingText[language];
+
   return (
     <main className={styles.splitShell}>
       <section className={styles.formSide}>
         <div className={styles.panel}>
           <div className={styles.brand}>
             <BrandLogo className={styles.brandLogoInline} />
-            <span>для профессионалов</span>
+            <span>{copy.brandSuffix}</span>
           </div>
           <div>
-            <h1 className={styles.heroTitle}>Создайте учетную запись для управления бизнесом</h1>
+            <h1 className={styles.heroTitle}>{copy.title}</h1>
             <p className={styles.heroSubtitle}>
-              Для мастера, частного специалиста или салона. Здесь начинается
-              настройка расписания, услуг, команды и онлайн-записи клиентов.
+              {copy.subtitle}
             </p>
           </div>
 
@@ -25,39 +75,39 @@ export default function ProLandingPage() {
               <input
                 id="pro-email"
                 className={styles.input}
-                placeholder="Введите ваш адрес электронной почты"
+                placeholder={copy.emailPlaceholder}
                 defaultValue="info@comp.ua"
               />
             </div>
             <Link href="/pro/create-account" className={styles.primaryButton}>
-              Продолжить
+              {copy.continue}
             </Link>
             <Link href="/pro/login" className={styles.ghostButton}>
-              Уже есть аккаунт? Войти
+              {copy.login}
             </Link>
           </div>
 
-          <div className={styles.socialDivider}>или</div>
+          <div className={styles.socialDivider}>{copy.or}</div>
 
           <div className={styles.socialStack}>
             <button type="button" className={styles.socialButton}>
               <span className={`${styles.socialIcon} ${styles.facebook}`}>f</span>
-              Войти через Facebook
+              {copy.facebook}
             </button>
             <button type="button" className={styles.socialButton}>
               <span className={`${styles.socialIcon} ${styles.google}`}>G</span>
-              Войти через Google
+              {copy.google}
             </button>
             <button type="button" className={styles.socialButton}>
               <span className={`${styles.socialIcon} ${styles.apple}`}></span>
-              Войти через Apple
+              {copy.apple}
             </button>
           </div>
 
           <div className={styles.helperBlock}>
-            Вы клиент и хотите записаться на прием?{" "}
+            {copy.clientPrompt}{" "}
             <Link href="/catalog" className={styles.mutedLink}>
-              Перейти в каталог для клиентов
+              {copy.clientCatalog}
             </Link>
           </div>
         </div>

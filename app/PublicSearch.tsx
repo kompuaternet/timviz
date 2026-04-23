@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { PublicSearchIndex, PublicSearchSuggestion } from "../lib/public-search";
+import { getLocalizedPath } from "../lib/site-language";
 
 type SearchKind = "all" | "procedure" | "business" | "professional";
 type ActivePanel = "search" | "location" | "time" | null;
@@ -351,7 +352,7 @@ export default function PublicSearch({ index, language = "ru" }: PublicSearchPro
       params.set("lon", String(coords.lon));
     }
 
-    router.push(`/catalog${params.toString() ? `?${params.toString()}` : ""}`);
+    router.push(`${getLocalizedPath(language, "/catalog")}${params.toString() ? `?${params.toString()}` : ""}`);
   }
 
   function selectSuggestion(item: PublicSearchSuggestion) {

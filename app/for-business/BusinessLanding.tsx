@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { getLocalizedPath, type SiteLanguage } from "../../lib/site-language";
 import BrandLogo from "../BrandLogo";
 import GlobalLanguageSwitcher from "../GlobalLanguageSwitcher";
 
-type LandingLanguage = "ru" | "uk" | "en";
+type LandingLanguage = SiteLanguage;
 
 const copy = {
   ru: {
@@ -268,25 +269,30 @@ function getInitialLanguage(): LandingLanguage {
   return "ru";
 }
 
-export default function BusinessLanding() {
-  const [language, setLanguage] = useState<LandingLanguage>("ru");
+type BusinessLandingProps = {
+  initialLanguage?: LandingLanguage;
+};
+
+export default function BusinessLanding({ initialLanguage = "ru" }: BusinessLandingProps) {
+  const [language, setLanguage] = useState<LandingLanguage>(initialLanguage);
   const t = copy[language];
   const assets = screenAssets[language];
 
   useEffect(() => {
-    setLanguage(getInitialLanguage());
+    setLanguage(initialLanguage || getInitialLanguage());
+    window.localStorage.setItem("rezervo-pro-language", initialLanguage);
     const onLanguageChange = (event: Event) => {
       const next = (event as CustomEvent<LandingLanguage>).detail;
       if (next === "ru" || next === "uk" || next === "en") setLanguage(next);
     };
     window.addEventListener("rezervo-language-change", onLanguageChange);
     return () => window.removeEventListener("rezervo-language-change", onLanguageChange);
-  }, []);
+  }, [initialLanguage]);
 
   return (
     <main className="business-landing">
       <header className="business-header">
-        <a className="public-logo" href="/"><BrandLogo /></a>
+        <a className="public-logo" href={getLocalizedPath(language)}><BrandLogo /></a>
         <nav className="business-nav" aria-label={t.menu}>
           <a href="/pro/login" className="public-login">{t.login}</a>
           <a href="/pro/create-account" className="public-company-button">{t.create}</a>
@@ -297,7 +303,7 @@ export default function BusinessLanding() {
             </summary>
             <div className="public-menu-panel">
               <strong>{t.clients}</strong>
-              <a href="/catalog">{t.catalog}</a>
+              <a href={getLocalizedPath(language, "/catalog")}>{t.catalog}</a>
               <hr />
               <strong>{t.business}</strong>
               <a href="/pro/create-account">{t.create}</a>
@@ -392,7 +398,7 @@ export default function BusinessLanding() {
       </section>
 
       <footer className="business-footer">
-        <a className="public-logo" href="/"><BrandLogo /></a>
+        <a className="public-logo" href={getLocalizedPath(language)}><BrandLogo /></a>
         <span>{t.footer}</span>
       </footer>
     </main>

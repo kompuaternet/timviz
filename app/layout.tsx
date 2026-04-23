@@ -1,20 +1,34 @@
 import type { Metadata } from "next";
 import GlobalLanguageSwitcher from "./GlobalLanguageSwitcher";
+import { buildMetadata, getRequestLanguage, seoCopy, siteUrl } from "../lib/seo";
 import "./globals.css";
 
-export const metadata: Metadata = {
-  title: "Timviz",
-  description:
-    "Платформа онлайн-записи для салонов, барбершопов, мастеров и клиентов с будущей интеграцией Telegram-бота."
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const language = await getRequestLanguage();
+  const base = buildMetadata("/", seoCopy.home[language], language);
 
-export default function RootLayout({
+  return {
+    metadataBase: new URL(siteUrl),
+    title: {
+      default: "Timviz",
+      template: "%s | Timviz"
+    },
+    description: seoCopy.home[language].description,
+    applicationName: "Timviz",
+    category: "beauty and wellness booking platform",
+    ...base
+  };
+}
+
+export default async function RootLayout({
   children
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const language = await getRequestLanguage();
+
   return (
-    <html lang="ru">
+    <html lang={language}>
       <body>
         <GlobalLanguageSwitcher />
         {children}

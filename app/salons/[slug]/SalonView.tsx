@@ -5,12 +5,14 @@ import { getLocalizedSalon, type Salon } from "../../../data/mock-data";
 import type { BookingRecord } from "../../../lib/bookings";
 import { buildInternationalPhone, formatPhoneLocal, getPhoneRule, getPhoneValidationMessage, inferPhoneCountryFromAddress, inferPhoneCountryFromLocale, isPhoneValid, onlyPhoneDigits, phoneCountries } from "../../../lib/phone-format";
 import { findNextPublicBookingDate, getPublicBookingSlots } from "../../../lib/public-booking";
+import { type SiteLanguage } from "../../../lib/site-language";
 import { createBookingAction } from "./actions";
-import { useSiteLanguage, type SiteLanguage } from "../../useSiteLanguage";
+import { useSiteLanguage } from "../../useSiteLanguage";
 
 type SalonViewProps = {
   salon: Salon;
   bookings: BookingRecord[];
+  initialLanguage?: SiteLanguage;
 };
 
 type SalonCopy = {
@@ -101,8 +103,8 @@ function getPhoneErrorText(language: SiteLanguage, country: string) {
   return getPhoneValidationMessage(country);
 }
 
-export default function SalonView({ salon, bookings }: SalonViewProps) {
-  const language = useSiteLanguage();
+export default function SalonView({ salon, bookings, initialLanguage = "ru" }: SalonViewProps) {
+  const language = useSiteLanguage(initialLanguage, true);
   const t = salonCopy[language];
   const localizedSalon = getLocalizedSalon(salon, language);
   const [selectedServiceName, setSelectedServiceName] = useState(salon.services[0]?.name ?? "");

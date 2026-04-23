@@ -6,6 +6,8 @@ import styles from "../pro.module.css";
 import LogoutButton from "./LogoutButton";
 import ProSidebar from "../ProSidebar";
 import type { WorkSchedule, WorkScheduleMode } from "../../../lib/work-schedule";
+import { languageFromProfile } from "../i18n";
+import { useProLanguage } from "../useProLanguage";
 
 type WorkspaceSnapshot = {
   professional: {
@@ -39,15 +41,119 @@ type WorkspaceSnapshot = {
   }>;
 };
 
-const ownerBookings = [
-  { start: 165, height: 56, time: "11:00 - 11:45", client: "John Doe", service: "Стрижка" },
-  { start: 318, height: 92, time: "13:00 - 14:15", client: "Jane Doe", service: "Цвет волос" }
-];
-
-const memberBookings = [
-  { start: 170, height: 54, time: "11:15 - 12:00", client: "Anna K.", service: "Маникюр" },
-  { start: 330, height: 74, time: "13:15 - 14:15", client: "Ira M.", service: "Педикюр" }
-];
+const workspaceCopy = {
+  ru: {
+    loading: "Загружаем рабочее пространство...",
+    dateLabel: "чт 9 апр.",
+    settingsPill: "Настройки",
+    ownerRole: "Владелец бизнеса",
+    workingIn: (name: string) => `Работаю в составе ${name}`,
+    ownerWorkspace: "Кабинет владельца",
+    proWorkspace: "Кабинет мастера",
+    premium: "Премиум",
+    personal: "Персональный",
+    ownerHeroText: "Управление мастерами, услугами, ролями и всеми записями бизнеса в одном рабочем пространстве.",
+    memberHeroText: "Личный календарь мастера, свои записи, услуги и рабочая нагрузка внутри салона.",
+    team: "Команда",
+    solo: "Соло",
+    fullAccess: "Полный доступ",
+    limitedAccess: "Ограниченный доступ",
+    accountSaved: "Аккаунт сохранен в базе",
+    businessCreated: "Бизнес создан",
+    salonConnected: "Подключение к салону завершено",
+    setupMasters: "Настроить мастеров",
+    checkSchedule: "Проверить свой график",
+    servicesBase: "Услуги в базе",
+    businessAddress: "Адрес бизнеса",
+    links: "Переходы",
+    openCatalog: "Открыть клиентский каталог",
+    servicesCount: "услуг",
+    bookings: {
+      owner: [
+        { start: 165, height: 56, time: "11:00 - 11:45", client: "John Doe", service: "Стрижка" },
+        { start: 318, height: 92, time: "13:00 - 14:15", client: "Jane Doe", service: "Окрашивание" }
+      ],
+      member: [
+        { start: 170, height: 54, time: "11:15 - 12:00", client: "Anna K.", service: "Маникюр" },
+        { start: 330, height: 74, time: "13:15 - 14:15", client: "Ira M.", service: "Педикюр" }
+      ]
+    }
+  },
+  uk: {
+    loading: "Завантажуємо робочий кабінет...",
+    dateLabel: "чт 9 квіт.",
+    settingsPill: "Налаштування",
+    ownerRole: "Власник бізнесу",
+    workingIn: (name: string) => `Працюю у складі ${name}`,
+    ownerWorkspace: "Кабінет власника",
+    proWorkspace: "Кабінет майстра",
+    premium: "Преміум",
+    personal: "Персональний",
+    ownerHeroText: "Керування майстрами, послугами, ролями та всіма записами бізнесу в одному робочому просторі.",
+    memberHeroText: "Особистий календар майстра, свої записи, послуги й завантаження всередині салону.",
+    team: "Команда",
+    solo: "Соло",
+    fullAccess: "Повний доступ",
+    limitedAccess: "Обмежений доступ",
+    accountSaved: "Акаунт збережено в базі",
+    businessCreated: "Бізнес створено",
+    salonConnected: "Підключення до салону завершено",
+    setupMasters: "Налаштувати майстрів",
+    checkSchedule: "Перевірити свій графік",
+    servicesBase: "Послуги в базі",
+    businessAddress: "Адреса бізнесу",
+    links: "Переходи",
+    openCatalog: "Відкрити клієнтський каталог",
+    servicesCount: "послуг",
+    bookings: {
+      owner: [
+        { start: 165, height: 56, time: "11:00 - 11:45", client: "John Doe", service: "Стрижка" },
+        { start: 318, height: 92, time: "13:00 - 14:15", client: "Jane Doe", service: "Фарбування" }
+      ],
+      member: [
+        { start: 170, height: 54, time: "11:15 - 12:00", client: "Anna K.", service: "Манікюр" },
+        { start: 330, height: 74, time: "13:15 - 14:15", client: "Ira M.", service: "Педикюр" }
+      ]
+    }
+  },
+  en: {
+    loading: "Loading workspace...",
+    dateLabel: "Thu Apr 9",
+    settingsPill: "Settings",
+    ownerRole: "Business owner",
+    workingIn: (name: string) => `Working as part of ${name}`,
+    ownerWorkspace: "Owner workspace",
+    proWorkspace: "Pro workspace",
+    premium: "Premium",
+    personal: "Personal",
+    ownerHeroText: "Manage specialists, services, roles and all business bookings in one workspace.",
+    memberHeroText: "Personal specialist calendar, own bookings, services and workload inside the salon.",
+    team: "Team",
+    solo: "Solo",
+    fullAccess: "Full access",
+    limitedAccess: "Limited access",
+    accountSaved: "Account saved in the database",
+    businessCreated: "Business created",
+    salonConnected: "Salon connection completed",
+    setupMasters: "Set up specialists",
+    checkSchedule: "Check your schedule",
+    servicesBase: "Services in the database",
+    businessAddress: "Business address",
+    links: "Links",
+    openCatalog: "Open client catalog",
+    servicesCount: "services",
+    bookings: {
+      owner: [
+        { start: 165, height: 56, time: "11:00 - 11:45", client: "John Doe", service: "Haircut" },
+        { start: 318, height: 92, time: "13:00 - 14:15", client: "Jane Doe", service: "Hair coloring" }
+      ],
+      member: [
+        { start: 170, height: 54, time: "11:15 - 12:00", client: "Anna K.", service: "Manicure" },
+        { start: 330, height: 74, time: "13:15 - 14:15", client: "Ira M.", service: "Pedicure" }
+      ]
+    }
+  }
+} as const;
 
 type WorkspaceViewProps = {
   professionalId: string;
@@ -55,6 +161,7 @@ type WorkspaceViewProps = {
 
 export default function WorkspaceView({ professionalId }: WorkspaceViewProps) {
   const [snapshot, setSnapshot] = useState<WorkspaceSnapshot | null>(null);
+  const { t, language } = useProLanguage(languageFromProfile(snapshot?.professional.language));
 
   useEffect(() => {
     if (!professionalId) {
@@ -69,7 +176,8 @@ export default function WorkspaceView({ professionalId }: WorkspaceViewProps) {
   }, [professionalId]);
 
   const isOwner = snapshot?.membership.scope === "owner";
-  const bookings = isOwner ? ownerBookings : memberBookings;
+  const copy = workspaceCopy[language];
+  const bookings = isOwner ? copy.bookings.owner : copy.bookings.member;
 
   const initials = useMemo(() => {
     if (!snapshot) {
@@ -84,7 +192,7 @@ export default function WorkspaceView({ professionalId }: WorkspaceViewProps) {
       <main className={styles.workspaceShell}>
         <section className={styles.workspaceMain}>
           <div className={styles.workspaceTopBar}>
-            <strong>Загружаем рабочее пространство...</strong>
+            <strong>{copy.loading}</strong>
           </div>
         </section>
       </main>
@@ -98,19 +206,19 @@ export default function WorkspaceView({ professionalId }: WorkspaceViewProps) {
       <section className={styles.workspaceMain}>
         <div className={styles.workspaceTopBar}>
           <div className={styles.workspaceControls}>
-            <div className={styles.pillControl}>Сегодня</div>
-            <div className={styles.pillControl}>чт 9 апр.</div>
+            <div className={styles.pillControl}>{t.schedule.today}</div>
+            <div className={styles.pillControl}>{copy.dateLabel}</div>
             <Link href="/pro/schedule" className={styles.pillControl}>
-              Мой график
+              {t.schedule.mySchedule}
             </Link>
-            <div className={styles.pillControl}>⚙︎</div>
+            <div className={styles.pillControl}>{copy.settingsPill}</div>
           </div>
 
           <div className={styles.workspaceProfile}>
             <div className={styles.avatar}>{initials}</div>
             <div>
               <strong>{snapshot.business.name}</strong>
-              <div>{isOwner ? "Владелец бизнеса" : snapshot.membership.role}</div>
+              <div>{isOwner ? copy.ownerRole : snapshot.membership.role}</div>
             </div>
             <LogoutButton />
           </div>
@@ -120,8 +228,8 @@ export default function WorkspaceView({ professionalId }: WorkspaceViewProps) {
           <strong>{snapshot.business.categories.join(" · ")}</strong>
           <div>
             {isOwner
-              ? `${snapshot.services.length} услуг · ${snapshot.business.serviceMode}`
-              : `Работаю в составе ${snapshot.business.name}`}
+              ? `${snapshot.services.length} ${copy.servicesCount} · ${snapshot.business.serviceMode}`
+              : copy.workingIn(snapshot.business.name)}
           </div>
         </div>
 
@@ -165,10 +273,10 @@ export default function WorkspaceView({ professionalId }: WorkspaceViewProps) {
         <div className={styles.asideHero}>
           <div className={styles.asideHeroTop}>
             <span className={styles.asideHeroLabel}>
-              {isOwner ? "Owner Workspace" : "Pro Workspace"}
+              {isOwner ? copy.ownerWorkspace : copy.proWorkspace}
             </span>
             <span className={styles.asideHeroPill}>
-              {isOwner ? "Premium" : "Personal"}
+              {isOwner ? copy.premium : copy.personal}
             </span>
           </div>
           <h3 className={styles.asideHeroTitle}>
@@ -176,28 +284,28 @@ export default function WorkspaceView({ professionalId }: WorkspaceViewProps) {
           </h3>
           <p className={styles.asideHeroText}>
             {isOwner
-              ? "Управление мастерами, услугами, ролями и всеми записями бизнеса в одном рабочем пространстве."
-              : "Личный календарь мастера, свои записи, услуги и рабочая нагрузка в составе салона."}
+              ? copy.ownerHeroText
+              : copy.memberHeroText}
           </p>
           <div className={styles.asideHeroMeta}>
-            <span>{snapshot.business.accountType === "team" ? "Команда" : "Solo"}</span>
-            <span>{snapshot.services.length} услуг</span>
-            <span>{isOwner ? "Полный доступ" : "Ограниченный доступ"}</span>
+            <span>{snapshot.business.accountType === "team" ? copy.team : copy.solo}</span>
+            <span>{snapshot.services.length} {copy.servicesCount}</span>
+            <span>{isOwner ? copy.fullAccess : copy.limitedAccess}</span>
           </div>
         </div>
 
         <div className={styles.asideCard}>
           <div className={styles.checklist}>
             <div className={styles.checkItem}>
-              <span>Аккаунт сохранен в базе</span>
+              <span>{copy.accountSaved}</span>
               <span className={styles.checkDone}>✓</span>
             </div>
             <div className={styles.checkItem}>
-              <span>{isOwner ? "Бизнес создан" : "Подключение к салону завершено"}</span>
+              <span>{isOwner ? copy.businessCreated : copy.salonConnected}</span>
               <span className={styles.checkDone}>✓</span>
             </div>
             <div className={styles.checkItem}>
-              <span>{isOwner ? "Настроить мастеров" : "Проверить свой график"}</span>
+              <span>{isOwner ? copy.setupMasters : copy.checkSchedule}</span>
               <span className={styles.checkPending}>→</span>
             </div>
           </div>
@@ -206,7 +314,7 @@ export default function WorkspaceView({ professionalId }: WorkspaceViewProps) {
         <div className={styles.asideCard}>
           <div className={styles.miniList}>
             <div>
-              <strong>Услуги в базе</strong>
+              <strong>{copy.servicesBase}</strong>
               <div className={styles.generatedList}>
                 {snapshot.services.map((service) => (
                   <span key={service.id} className={styles.generatedChip}>
@@ -217,14 +325,14 @@ export default function WorkspaceView({ professionalId }: WorkspaceViewProps) {
             </div>
             {snapshot.business.addressDetails ? (
               <div>
-                <strong>Адрес бизнеса</strong>
+                <strong>{copy.businessAddress}</strong>
                 <span className={styles.addressPreview}>{snapshot.business.addressDetails}</span>
               </div>
             ) : null}
             <div>
-              <strong>Переходы</strong>
+              <strong>{copy.links}</strong>
               <Link href="/catalog" className={styles.mutedLink}>
-                Открыть клиентский каталог
+                {copy.openCatalog}
               </Link>
             </div>
           </div>

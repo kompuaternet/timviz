@@ -6,18 +6,21 @@ import styles from "../pro.module.css";
 
 const visualCopy = {
   ru: {
+    badge: "Бизнес",
     title: "График, клиенты и услуги сразу под рукой",
     text: "Владелец видит записи, свободные слоты и загрузку дня в одном рабочем экране."
   },
   uk: {
+    badge: "Бізнес",
     title: "Графік, клієнти й послуги завжди під рукою",
     text: "Власник бачить записи, вільні слоти й завантаження дня в одному робочому екрані."
   },
   en: {
+    badge: "Business",
     title: "Schedule, clients and services in one place",
     text: "Business owners see bookings, free slots and daily workload in one workspace."
   }
-} satisfies Record<ProLanguage, { title: string; text: string }>;
+} satisfies Record<ProLanguage, { badge: string; title: string; text: string }>;
 
 function getSavedLanguage(): ProLanguage {
   if (typeof window === "undefined") return "ru";
@@ -64,7 +67,7 @@ export default function CreateAccountVisual() {
           height={385}
           className={styles.createVisualBadgeLogoImage}
         />
-        <span>Business</span>
+        <span>{copy.badge}</span>
       </div>
       <div className={styles.createVisualPhotoCard}>
         <div className={styles.createPerson}>

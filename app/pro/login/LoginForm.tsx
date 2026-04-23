@@ -2,10 +2,61 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useProLanguage } from "../useProLanguage";
 import styles from "../pro.module.css";
+
+const loginText = {
+  ru: {
+    googleConfigError: "Google вход временно недоступен: не настроены ключи.",
+    googleLoginError: "Не удалось выполнить вход через Google. Повторите попытку.",
+    loginFailed: "Не удалось войти.",
+    eyebrow: "Вход для профессионалов",
+    title: "Войдите в свой бизнес-аккаунт",
+    subtitle: "Для владельца бизнеса, администратора или мастера, который уже зарегистрирован в системе.",
+    password: "Пароль",
+    passwordPlaceholder: "Введите пароль",
+    google: "Войти через Google",
+    loading: "Входим...",
+    submit: "Войти",
+    noAccount: "Нет аккаунта?",
+    createProfile: "Создать профессиональный профиль"
+  },
+  uk: {
+    googleConfigError: "Google вхід тимчасово недоступний: ключі не налаштовані.",
+    googleLoginError: "Не вдалося виконати вхід через Google. Спробуйте ще раз.",
+    loginFailed: "Не вдалося увійти.",
+    eyebrow: "Вхід для професіоналів",
+    title: "Увійдіть у свій бізнес-акаунт",
+    subtitle: "Для власника бізнесу, адміністратора або майстра, який уже зареєстрований у системі.",
+    password: "Пароль",
+    passwordPlaceholder: "Введіть пароль",
+    google: "Увійти через Google",
+    loading: "Входимо...",
+    submit: "Увійти",
+    noAccount: "Немає акаунта?",
+    createProfile: "Створити професійний профіль"
+  },
+  en: {
+    googleConfigError: "Google sign-in is temporarily unavailable: keys are not configured.",
+    googleLoginError: "Could not sign in with Google. Please try again.",
+    loginFailed: "Could not sign in.",
+    eyebrow: "Professional sign in",
+    title: "Sign in to your business account",
+    subtitle: "For the business owner, administrator or specialist who is already registered in the system.",
+    password: "Password",
+    passwordPlaceholder: "Enter your password",
+    google: "Continue with Google",
+    loading: "Signing in...",
+    submit: "Sign in",
+    noAccount: "No account yet?",
+    createProfile: "Create a professional profile"
+  }
+} as const;
 
 export default function LoginForm() {
   const router = useRouter();
+  const { language } = useProLanguage();
+  const copy = loginText[language];
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -17,12 +68,12 @@ export default function LoginForm() {
     const googleError = params.get("google_error");
     const nextText =
       googleError === "config"
-        ? "Google вход временно недоступен: не настроены ключи."
+        ? copy.googleConfigError
         : googleError
-          ? "Не удалось выполнить вход через Google. Повторите попытку."
+          ? copy.googleLoginError
           : "";
     setOauthErrorText(nextText);
-  }, []);
+  }, [copy.googleConfigError, copy.googleLoginError]);
 
   async function handleLogin() {
     setIsLoading(true);
@@ -39,7 +90,7 @@ export default function LoginForm() {
     const result = await response.json();
 
     if (!response.ok) {
-      setError(result.error || "Не удалось войти.");
+      setError(result.error || copy.loginFailed);
       setIsLoading(false);
       return;
     }
@@ -51,10 +102,10 @@ export default function LoginForm() {
   return (
     <div className={styles.panel}>
       <div>
-        <p className={styles.eyebrow}>Вход для профессионалов</p>
-        <h1 className={styles.heroTitle}>Войдите в свой бизнес-аккаунт</h1>
+        <p className={styles.eyebrow}>{copy.eyebrow}</p>
+        <h1 className={styles.heroTitle}>{copy.title}</h1>
         <p className={styles.heroSubtitle}>
-          Для владельца бизнеса, администратора или мастера, который уже зарегистрирован в системе.
+          {copy.subtitle}
         </p>
       </div>
 
@@ -71,12 +122,12 @@ export default function LoginForm() {
           />
         </div>
         <div className={styles.field}>
-          <label htmlFor="loginPassword">Пароль</label>
+          <label htmlFor="loginPassword">{copy.password}</label>
           <input
             id="loginPassword"
             type="password"
             className={styles.input}
-            placeholder="Введите пароль"
+            placeholder={copy.passwordPlaceholder}
             value={password}
             onChange={(event) => setPassword(event.target.value)}
           />
@@ -87,7 +138,7 @@ export default function LoginForm() {
       {!error && oauthErrorText ? <div className={styles.addressWarning}>{oauthErrorText}</div> : null}
 
       <a href="/api/pro/auth/google/start?mode=login" className={styles.ghostButton}>
-        Войти через Google
+        {copy.google}
       </a>
 
       <button
@@ -98,13 +149,13 @@ export default function LoginForm() {
           void handleLogin();
         }}
       >
-        {isLoading ? "Входим..." : "Войти"}
+        {isLoading ? copy.loading : copy.submit}
       </button>
 
       <div className={styles.helperBlock}>
-        Нет аккаунта?{" "}
+        {copy.noAccount}{" "}
         <a href="/pro/create-account" className={styles.mutedLink}>
-          Создать профессиональный профиль
+          {copy.createProfile}
         </a>
       </div>
     </div>

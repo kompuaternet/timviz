@@ -1,12 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-
-export type SiteLanguage = "ru" | "uk" | "en";
-
-export function isSiteLanguage(value: string | null | undefined): value is SiteLanguage {
-  return value === "ru" || value === "uk" || value === "en";
-}
+import { isSiteLanguage, type SiteLanguage } from "../lib/site-language";
 
 function detectSiteLanguage(defaultLanguage: SiteLanguage) {
   if (typeof window === "undefined") {
@@ -33,12 +28,13 @@ function detectSiteLanguage(defaultLanguage: SiteLanguage) {
   return defaultLanguage;
 }
 
-export function useSiteLanguage(defaultLanguage: SiteLanguage = "ru") {
+export function useSiteLanguage(defaultLanguage: SiteLanguage = "ru", lockToDefault = false) {
   const [language, setLanguage] = useState<SiteLanguage>(defaultLanguage);
 
   useEffect(() => {
-    const nextLanguage = detectSiteLanguage(defaultLanguage);
+    const nextLanguage = lockToDefault ? defaultLanguage : detectSiteLanguage(defaultLanguage);
     setLanguage(nextLanguage);
+    window.localStorage.setItem("rezervo-pro-language", nextLanguage);
     document.documentElement.lang = nextLanguage;
 
     const handleLanguageChange = (event: Event) => {

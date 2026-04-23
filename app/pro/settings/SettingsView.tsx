@@ -124,11 +124,52 @@ const timezones = [
   { value: "Asia/Magadan", label: "UTC+11 · Magadan" },
   { value: "Asia/Kamchatka", label: "UTC+12 · Kamchatka" }
 ];
-const serviceModes = [
-  "Клиенты приходят в мое физическое заведение",
-  "Я работаю с выездом к клиенту",
-  "Я предоставляю услуги онлайн"
-];
+const serviceModeGroups = [
+  {
+    ru: "Клиенты приходят в мое физическое заведение",
+    uk: "Клієнти приходять до мого фізичного закладу",
+    en: "Clients come to my physical location"
+  },
+  {
+    ru: "Я работаю с выездом к клиенту",
+    uk: "Я працюю з виїздом до клієнта",
+    en: "I work on-site at the client's location"
+  },
+  {
+    ru: "Я предоставляю услуги онлайн",
+    uk: "Я надаю послуги онлайн",
+    en: "I provide services online"
+  }
+] as const;
+
+const settingsExtras = {
+  ru: {
+    readFileFailed: "Не удалось прочитать файл.",
+    uploadPhotoFailed: "Не удалось загрузить фото.",
+    saveFailed: "Не удалось сохранить настройки.",
+    categoriesPlaceholder: "Ногти, Брови и ресницы"
+  },
+  uk: {
+    readFileFailed: "Не вдалося прочитати файл.",
+    uploadPhotoFailed: "Не вдалося завантажити фото.",
+    saveFailed: "Не вдалося зберегти налаштування.",
+    categoriesPlaceholder: "Нігті, Брови й вії"
+  },
+  en: {
+    readFileFailed: "Could not read the file.",
+    uploadPhotoFailed: "Could not upload the photo.",
+    saveFailed: "Could not save settings.",
+    categoriesPlaceholder: "Nails, Brows and lashes"
+  }
+} as const;
+
+function localizeServiceMode(value: string, language: ProLanguage) {
+  const match = serviceModeGroups.find((mode) =>
+    Object.values(mode).some((label) => label.toLowerCase() === value.toLowerCase())
+  );
+
+  return match ? match[language] : value;
+}
 
 function inferCurrency(country: string) {
   const lower = country.toLowerCase();
@@ -161,7 +202,7 @@ function normalizePhotos(photos: BusinessPhoto[] = []) {
   }));
 }
 
-function readFileAsDataUrl(file: File) {
+function readFileAsDataUrl(file: File, errorText: string) {
   return new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => {
@@ -170,17 +211,20 @@ function readFileAsDataUrl(file: File) {
         return;
       }
 
-      reject(new Error("Не удалось прочитать файл."));
+      reject(new Error(errorText));
     };
-    reader.onerror = () => reject(new Error("Не удалось прочитать файл."));
+    reader.onerror = () => reject(new Error(errorText));
     reader.readAsDataURL(file);
   });
 }
 
 export default function SettingsView({ initialData }: SettingsViewProps) {
   const initialLanguage = languageFromProfile(initialData.professional.language);
-  const { t } = useProLanguage(initialLanguage);
+  const { t, language } = useProLanguage(initialLanguage);
+  const copy = settingsExtras[language];
+  const serviceModes = serviceModeGroups.map((mode) => mode[language]);
   const [data, setData] = useState(initialData);
+  const selectedServiceMode = localizeServiceMode(data.business.serviceMode, language);
   const [password, setPassword] = useState("");
   const [status, setStatus] = useState("");
   const [isSaving, setIsSaving] = useState(false);
@@ -257,7 +301,7 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
       const uploaded = await Promise.all(
         filesToRead.map(async (file, index) => ({
           id: crypto.randomUUID(),
-          url: await readFileAsDataUrl(file),
+          url: await readFileAsDataUrl(file, copy.readFileFailed),
           isPrimary: currentPhotos.length === 0 && index === 0,
           createdAt: new Date().toISOString()
         }))
@@ -266,7 +310,7 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
       updateBusinessPhotos([...currentPhotos, ...uploaded]);
       setStatus("");
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : "Не удалось загрузить фото.");
+      setStatus(error instanceof Error ? error.message : copy.uploadPhotoFailed);
     }
   }
 
@@ -513,7 +557,7 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
       const payload = await response.json();
 
       if (!response.ok) {
-        throw new Error(payload.error || "Не удалось сохранить настройки.");
+        throw new Error(payload.error || copy.saveFailed);
       }
 
       const next = payload as {
@@ -569,7 +613,7 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
       window.localStorage.setItem("rezervo-pro-language", languageCode);
       window.dispatchEvent(new CustomEvent("rezervo-language-change", { detail: languageCode }));
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : "Не удалось сохранить настройки.");
+      setStatus(error instanceof Error ? error.message : copy.saveFailed);
     } finally {
       setIsSaving(false);
       setIsTopUpLoading(false);
@@ -688,7 +732,7 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
               </label>
               <label>
                 {t.settings.serviceModel}
-                <select className={styles.select} value={data.business.serviceMode} onChange={(event) => updateBusiness("serviceMode", event.target.value)}>
+                <select className={styles.select} value={selectedServiceMode} onChange={(event) => updateBusiness("serviceMode", event.target.value)}>
                   {serviceModes.map((mode) => (
                     <option key={mode} value={mode}>{mode}</option>
                   ))}
@@ -700,7 +744,7 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
                   className={styles.input}
                   value={data.business.categories.join(", ")}
                   onChange={(event) => updateBusiness("categories", event.target.value.split(","))}
-                  placeholder="Ногти, Брови и ресницы"
+                  placeholder={copy.categoriesPlaceholder}
                 />
               </label>
             </div>

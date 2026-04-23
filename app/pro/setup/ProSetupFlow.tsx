@@ -27,21 +27,33 @@ type ServiceMode = (typeof serviceModes)[number];
 const joinBusinessOptions = [
   {
     name: "Studio Aura",
-    city: "Киев",
-    role: "Мастер",
-    description: "Салон красоты · 4 мастера · онлайн-запись и календарь"
+    city: { ru: "Киев", uk: "Київ", en: "Kyiv" },
+    role: { ru: "Мастер", uk: "Майстер", en: "Specialist" },
+    description: {
+      ru: "Салон красоты · 4 мастера · онлайн-запись и календарь",
+      uk: "Салон краси · 4 майстри · онлайн-запис і календар",
+      en: "Beauty salon · 4 specialists · online booking and calendar"
+    }
   },
   {
     name: "Barber Drive",
-    city: "Львов",
-    role: "Барбер",
-    description: "Барбершоп · командное расписание · подтверждение визитов"
+    city: { ru: "Львов", uk: "Львів", en: "Lviv" },
+    role: { ru: "Барбер", uk: "Барбер", en: "Barber" },
+    description: {
+      ru: "Барбершоп · командное расписание · подтверждение визитов",
+      uk: "Барбершоп · командний розклад · підтвердження візитів",
+      en: "Barbershop · team schedule · visit confirmations"
+    }
   },
   {
     name: "Nail Yard",
-    city: "Одесса",
-    role: "Нейл-мастер",
-    description: "Ногтевая студия · общий салонный аккаунт · личный график"
+    city: { ru: "Одесса", uk: "Одеса", en: "Odesa" },
+    role: { ru: "Нейл-мастер", uk: "Нейл-майстер", en: "Nail specialist" },
+    description: {
+      ru: "Ногтевая студия · общий салонный аккаунт · личный график",
+      uk: "Нігтьова студія · спільний салонний акаунт · особистий графік",
+      en: "Nail studio · shared salon account · personal schedule"
+    }
   }
 ];
 
@@ -124,7 +136,7 @@ const setupText = {
       addServiceText: "Добавьте основную информацию об услуге прямо сейчас. Позже можно будет настроить описание и дополнительные параметры.",
       serviceName: "Название услуги",
       serviceType: "Тип услуги",
-      otherCategory: "Другая",
+      otherCategory: "Інша",
       hours: "Часы",
       minutes: "Минут",
       price: "Цена",
@@ -209,7 +221,7 @@ const setupText = {
       addServiceText: "Додайте основну інформацію про послугу зараз. Пізніше можна буде налаштувати опис і додаткові параметри.",
       serviceName: "Назва послуги",
       serviceType: "Тип послуги",
-      otherCategory: "Другая",
+      otherCategory: "Other",
       hours: "Години",
       minutes: "Хвилин",
       price: "Ціна",
@@ -376,6 +388,7 @@ export default function ProSetupFlow() {
   const [manualServicePrice, setManualServicePrice] = useState("");
   const [suggestedSelection, setSuggestedSelection] = useState<SuggestedSelection>({});
   const t = setupText[language];
+  const physicalVenueMode = serviceModes[0];
 
   const totalSteps = draft.ownerMode === "owner" ? 5 : 2;
 
@@ -397,7 +410,7 @@ export default function ProSetupFlow() {
     (draft.ownerMode === "owner" &&
       step === 4 &&
       Boolean(draft.serviceMode) &&
-      (draft.serviceMode !== "Клиенты приходят в мое физическое заведение" ||
+      (draft.serviceMode !== physicalVenueMode ||
         (draft.addressDetails.trim().length > 0 &&
           draft.addressLat !== null &&
           draft.addressLon !== null)));
@@ -417,16 +430,22 @@ export default function ProSetupFlow() {
   }, [draft.addressLat, draft.addressLon]);
 
   const previewSuggestion = addressSuggestions[0] ?? null;
-  const primaryCategory = draft.categories[0] ?? "Другая";
+  const primaryCategory = draft.categories[0] ?? t.modal.otherCategory;
   const primaryTemplate = useMemo(() => getCategoryTemplate(primaryCategory), [primaryCategory]);
   const allSuggestedServices = useMemo(
     () => [...primaryTemplate.topSuggestions, ...primaryTemplate.popularServices],
     [primaryTemplate]
   );
   const manualCategoryOptions = useMemo(
-    () => Array.from(new Set(["Другая", ...categoryOptions.filter((category) => category !== "Другая")])),
-    []
+    () => Array.from(new Set([t.modal.otherCategory, ...categoryOptions.filter((category) => category !== "Другая")])),
+    [t.modal.otherCategory]
   );
+
+  useEffect(() => {
+    setManualServiceCategory((current) =>
+      current === "Другая" || current === "Інша" || current === "Other" ? t.modal.otherCategory : current
+    );
+  }, [t.modal.otherCategory]);
 
   const previewMapEmbedUrl = useMemo(() => {
     if (!previewSuggestion) {
@@ -460,7 +479,7 @@ export default function ProSetupFlow() {
   useEffect(() => {
     if (
       step !== 4 ||
-      draft.serviceMode !== "Клиенты приходят в мое физическое заведение" ||
+      draft.serviceMode !== physicalVenueMode ||
       draft.address.trim().length < 3
     ) {
       setAddressSuggestions([]);
@@ -519,7 +538,7 @@ export default function ProSetupFlow() {
       controller.abort();
       window.clearTimeout(timeoutId);
     };
-  }, [draft.address, draft.serviceMode, step]);
+  }, [draft.address, draft.serviceMode, physicalVenueMode, step]);
 
   function goBack() {
     if (step === 0) {
@@ -798,13 +817,13 @@ export default function ProSetupFlow() {
                     setDraft((current) => ({
                       ...current,
                       joinBusinessName: item.name,
-                      joinBusinessRole: item.role
+                      joinBusinessRole: item.role[language]
                     }))
                   }
                 >
                   <span className={styles.choiceTitle}>{item.name}</span>
-                  <span className={styles.choiceText}>{`${item.city} · ${item.role}`}</span>
-                  <span className={styles.choiceText}>{item.description}</span>
+                  <span className={styles.choiceText}>{`${item.city[language]} · ${item.role[language]}`}</span>
+                  <span className={styles.choiceText}>{item.description[language]}</span>
                 </button>
               ))}
             </div>
@@ -853,7 +872,7 @@ export default function ProSetupFlow() {
                   type="button"
                   className={styles.ghostButton}
                   onClick={() => {
-                    setManualServiceCategory("Другая");
+                    setManualServiceCategory(t.modal.otherCategory);
                     setShowManualService(true);
                   }}
                 >
@@ -959,7 +978,7 @@ export default function ProSetupFlow() {
               ))}
             </div>
 
-            {draft.serviceMode === "Клиенты приходят в мое физическое заведение" ? (
+            {draft.serviceMode === physicalVenueMode ? (
               <div className={styles.mapCard}>
                 <div className={styles.field}>
                   <label htmlFor="address">{t.place.findAddress}</label>
@@ -1004,7 +1023,7 @@ export default function ProSetupFlow() {
                   <>
                     {mapEmbedUrl ? (
                       <iframe
-                        title="Business address map"
+                        title={t.place.openGoogle}
                         className={styles.mapFrame}
                         src={mapEmbedUrl}
                       />
@@ -1027,7 +1046,7 @@ export default function ProSetupFlow() {
                     </div>
                     {previewMapEmbedUrl ? (
                       <iframe
-                        title="Address preview map"
+                        title={t.place.selectAddress}
                         className={styles.mapFrame}
                         src={previewMapEmbedUrl}
                       />

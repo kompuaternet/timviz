@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import type { BookingRecord } from "../../../lib/bookings";
-import { useSiteLanguage, type SiteLanguage } from "../../useSiteLanguage";
+import type { SiteLanguage } from "../../../lib/site-language";
+import { useSiteLanguage } from "../../useSiteLanguage";
 
 type BookingSuccessViewProps = {
   booking: BookingRecord;

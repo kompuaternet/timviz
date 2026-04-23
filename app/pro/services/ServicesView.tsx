@@ -22,6 +22,30 @@ type DraftService = {
 
 const colorPalette = ["#8bd7e8", "#ffd166", "#7ed6bd", "#b794f4", "#f6729a", "#a5d76e", "#ff9f80", "#90cdf4"];
 
+const serviceExtras = {
+  ru: {
+    addFromCatalogFailed: "Не удалось добавить услугу из каталога.",
+    addedNamed: (name: string) => `"${name}" добавлена в ваш рабочий список.`,
+    colorLabel: (color: string) => `Цвет ${color}`,
+    moveUp: "Выше",
+    moveDown: "Ниже"
+  },
+  uk: {
+    addFromCatalogFailed: "Не вдалося додати послугу з каталогу.",
+    addedNamed: (name: string) => `"${name}" додано до вашого робочого списку.`,
+    colorLabel: (color: string) => `Колір ${color}`,
+    moveUp: "Вище",
+    moveDown: "Нижче"
+  },
+  en: {
+    addFromCatalogFailed: "Could not add the service from the catalog.",
+    addedNamed: (name: string) => `"${name}" added to your working list.`,
+    colorLabel: (color: string) => `Color ${color}`,
+    moveUp: "Move up",
+    moveDown: "Move down"
+  }
+} as const;
+
 const emptyDraft = (category = "Без категории"): DraftService => ({
   name: "",
   category,
@@ -69,6 +93,7 @@ function formatServicePrice(value: number, language: "ru" | "uk" | "en", currenc
 
 export default function ServicesView({ initialWorkspace, catalog }: ServicesViewProps) {
   const { t, language } = useProLanguage();
+  const copy = serviceExtras[language];
   const accountCurrency = initialWorkspace.professional.currency || "USD";
   const [services, setServices] = useState<ServiceRecord[]>(() => normalizeServices(initialWorkspace.services));
   const [activeCategory, setActiveCategory] = useState<string>(t.common.allCategories);
@@ -275,13 +300,13 @@ export default function ServicesView({ initialWorkspace, catalog }: ServicesView
     const payload = await response.json();
 
     if (!response.ok) {
-      setStatusText(payload.error || "Не удалось добавить услугу из каталога.");
+      setStatusText(payload.error || copy.addFromCatalogFailed);
       setIsSaving(false);
       return;
     }
 
     await reloadServices();
-    setStatusText(`"${service.name}" добавлена в ваш рабочий список.`);
+    setStatusText(copy.addedNamed(service.name));
     setIsSaving(false);
   }
 
@@ -474,7 +499,7 @@ export default function ServicesView({ initialWorkspace, catalog }: ServicesView
                               className={editDraft.color === color ? styles.serviceColorActive : ""}
                               style={{ background: color }}
                               onClick={() => setEditDraft((current) => ({ ...current, color }))}
-                              aria-label={`Цвет ${color}`}
+                              aria-label={copy.colorLabel(color)}
                             />
                           ))}
                         </div>
@@ -495,8 +520,8 @@ export default function ServicesView({ initialWorkspace, catalog }: ServicesView
                         </div>
                         <strong className={styles.serviceMenuPrice}>{formatServicePrice(service.price || 0, language, accountCurrency)}</strong>
                         <div className={styles.serviceRowActions}>
-                          <button type="button" onClick={() => void moveService(service.id, -1)} disabled={index === 0} title="Выше">↑</button>
-                          <button type="button" onClick={() => void moveService(service.id, 1)} disabled={index === visibleServices.length - 1} title="Ниже">↓</button>
+                          <button type="button" onClick={() => void moveService(service.id, -1)} disabled={index === 0} title={copy.moveUp}>↑</button>
+                          <button type="button" onClick={() => void moveService(service.id, 1)} disabled={index === visibleServices.length - 1} title={copy.moveDown}>↓</button>
                           <button type="button" onClick={() => startEdit(service)}>{t.common.edit}</button>
                           <button type="button" className={styles.dangerTextButton} disabled={isSaving} onClick={() => setServiceToDelete(service)}>
                             {t.common.delete}
@@ -578,7 +603,7 @@ export default function ServicesView({ initialWorkspace, catalog }: ServicesView
                     className={draft.color === color ? styles.serviceColorActive : ""}
                     style={{ background: color }}
                     onClick={() => setDraft((current) => ({ ...current, color }))}
-                    aria-label={`Цвет ${color}`}
+                    aria-label={copy.colorLabel(color)}
                   />
                 ))}
               </div>

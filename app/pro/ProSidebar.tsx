@@ -83,11 +83,11 @@ function HelpIcon() {
 }
 
 const mainLinks = [
-  { key: "workspace", href: "/pro/calendar", label: "Главная", icon: <HomeIcon /> },
-  { key: "calendar", href: "/pro/calendar", label: "Календарь", icon: <CalendarIcon /> },
-  { key: "services", href: "/pro/services", label: "Услуги", icon: <TagIcon /> },
-  { key: "clients", href: "/pro/clients", label: "Клиенты", icon: <ClientIcon /> },
-  { key: "schedule", href: "/pro/schedule", label: "График", icon: <ScheduleIcon /> }
+  { key: "workspace", href: "/pro/calendar", icon: <HomeIcon /> },
+  { key: "calendar", href: "/pro/calendar", icon: <CalendarIcon /> },
+  { key: "services", href: "/pro/services", icon: <TagIcon /> },
+  { key: "clients", href: "/pro/clients", icon: <ClientIcon /> },
+  { key: "schedule", href: "/pro/schedule", icon: <ScheduleIcon /> }
 ] as const;
 
 export default function ProSidebar({ active, professionalId = "" }: ProSidebarProps) {

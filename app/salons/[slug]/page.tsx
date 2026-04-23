@@ -1,7 +1,6 @@
-import { notFound } from "next/navigation";
-import { getSalonBySlug } from "../../../data/mock-data";
-import { getAllBookings } from "../../../lib/bookings";
-import SalonView from "./SalonView";
+import { redirect } from "next/navigation";
+import { getRequestLanguage } from "../../../lib/seo";
+import { getLocalizedPath } from "../../../lib/site-language";
 
 export const dynamic = "force-dynamic";
 
@@ -13,13 +12,6 @@ type SalonPageProps = {
 
 export default async function SalonPage({ params }: SalonPageProps) {
   const { slug } = await params;
-  const salon = getSalonBySlug(slug);
-
-  if (!salon) {
-    notFound();
-  }
-
-  const bookings = (await getAllBookings()).filter((booking) => booking.salonSlug === slug);
-
-  return <SalonView salon={salon} bookings={bookings} />;
+  const language = await getRequestLanguage();
+  redirect(getLocalizedPath(language, `/salons/${slug}`));
 }

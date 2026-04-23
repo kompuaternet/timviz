@@ -1,7 +1,19 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { updateBookingStatusAction } from "./actions";
 import { getAllBookings } from "../../lib/bookings";
 import type { BookingRecord, BookingStatus } from "../../lib/bookings";
+import { buildMetadata } from "../../lib/seo";
+
+export const metadata: Metadata = buildMetadata(
+  "/dashboard",
+  {
+    title: "Кабинет",
+    description: "Внутренний рабочий кабинет Timviz."
+  },
+  "ru",
+  { noIndex: true }
+);
 
 function formatDateLabel(value: string) {
   return new Intl.DateTimeFormat("ru-RU", {

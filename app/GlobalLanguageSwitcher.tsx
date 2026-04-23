@@ -1,9 +1,8 @@
 "use client";
 
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-
-type SiteLanguage = "ru" | "uk" | "en";
+import { getLanguageFromPathname, isSiteLanguage, switchLocalizedPath, type SiteLanguage } from "../lib/site-language";
 
 const languages: Array<{ code: SiteLanguage; short: string; label: string }> = [
   { code: "ru", short: "RU", label: "Русский" },
@@ -16,10 +15,6 @@ const switcherLabels: Record<SiteLanguage, string> = {
   uk: "Вибір мови інтерфейсу",
   en: "Choose interface language"
 };
-
-function isSiteLanguage(value: string | null | undefined): value is SiteLanguage {
-  return value === "ru" || value === "uk" || value === "en";
-}
 
 function getBrowserLanguage(): SiteLanguage {
   if (typeof window === "undefined") return "ru";
@@ -42,12 +37,14 @@ type GlobalLanguageSwitcherProps = {
 
 export default function GlobalLanguageSwitcher({ mode = "fixed" }: GlobalLanguageSwitcherProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const [language, setLanguage] = useState<SiteLanguage>("ru");
   const [isOpen, setIsOpen] = useState(false);
+  const routeLanguage = getLanguageFromPathname(pathname);
 
   useEffect(() => {
-    const initialLanguage = getBrowserLanguage();
+    const initialLanguage = routeLanguage ?? getBrowserLanguage();
     setLanguage(initialLanguage);
     window.localStorage.setItem("rezervo-pro-language", initialLanguage);
     document.documentElement.lang = initialLanguage;
@@ -74,7 +71,7 @@ export default function GlobalLanguageSwitcher({ mode = "fixed" }: GlobalLanguag
       window.removeEventListener("rezervo-language-change", handleLanguageChange);
       document.removeEventListener("mousedown", closeOnOutsideClick);
     };
-  }, []);
+  }, [routeLanguage]);
 
   function changeLanguage(nextLanguage: SiteLanguage) {
     setLanguage(nextLanguage);
@@ -82,6 +79,10 @@ export default function GlobalLanguageSwitcher({ mode = "fixed" }: GlobalLanguag
     window.localStorage.setItem("rezervo-pro-language", nextLanguage);
     document.documentElement.lang = nextLanguage;
     window.dispatchEvent(new CustomEvent("rezervo-language-change", { detail: nextLanguage }));
+
+    if (routeLanguage && pathname) {
+      router.push(switchLocalizedPath(pathname, nextLanguage));
+    }
   }
 
   const activeLanguage = languages.find((item) => item.code === language) ?? languages[0];
@@ -89,6 +90,12 @@ export default function GlobalLanguageSwitcher({ mode = "fixed" }: GlobalLanguag
   const hasInlinePublicHeader =
     pathname === "/" ||
     pathname === "/for-business" ||
+    pathname === "/ru" ||
+    pathname === "/uk" ||
+    pathname === "/en" ||
+    pathname === "/ru/for-business" ||
+    pathname === "/uk/for-business" ||
+    pathname === "/en/for-business" ||
     pathname?.startsWith("/pro/create-account") ||
     pathname?.startsWith("/pro/setup");
 

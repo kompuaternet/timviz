@@ -2,24 +2,21 @@
 
 import { useEffect, useState } from "react";
 import type { PublicSearchIndex } from "../lib/public-search";
+import { getLocalizedPath, isSiteLanguage, type SiteLanguage } from "../lib/site-language";
 import BrandLogo from "./BrandLogo";
 import GlobalLanguageSwitcher from "./GlobalLanguageSwitcher";
 import PublicSearch from "./PublicSearch";
-
-type PublicLanguage = "ru" | "uk" | "en";
+type PublicLanguage = SiteLanguage;
 
 type PublicHomeProps = {
   searchIndex: PublicSearchIndex;
+  initialLanguage?: PublicLanguage;
 };
-
-function isPublicLanguage(value: string | null | undefined): value is PublicLanguage {
-  return value === "ru" || value === "uk" || value === "en";
-}
 
 function getInitialLanguage(): PublicLanguage {
   if (typeof window === "undefined") return "ru";
   const saved = window.localStorage.getItem("rezervo-pro-language");
-  if (isPublicLanguage(saved)) return saved;
+  if (isSiteLanguage(saved)) return saved;
 
   const candidates = [navigator.language, ...(navigator.languages ?? [])]
     .filter(Boolean)
@@ -255,32 +252,33 @@ const dashboardServices = {
   en: ["Haircut", "Color", "Massage", "Manicure"]
 } satisfies Record<PublicLanguage, string[]>;
 
-export default function PublicHome({ searchIndex }: PublicHomeProps) {
-  const [language, setLanguage] = useState<PublicLanguage>("ru");
+export default function PublicHome({ searchIndex, initialLanguage = "ru" }: PublicHomeProps) {
+  const [language, setLanguage] = useState<PublicLanguage>(initialLanguage);
   const t = copy[language];
 
   useEffect(() => {
-    setLanguage(getInitialLanguage());
+    setLanguage(initialLanguage || getInitialLanguage());
+    window.localStorage.setItem("rezervo-pro-language", initialLanguage);
     const handleLanguageChange = (event: Event) => {
       const nextLanguage = (event as CustomEvent<PublicLanguage>).detail;
-      if (isPublicLanguage(nextLanguage)) {
+      if (isSiteLanguage(nextLanguage)) {
         setLanguage(nextLanguage);
       }
     };
 
     window.addEventListener("rezervo-language-change", handleLanguageChange);
     return () => window.removeEventListener("rezervo-language-change", handleLanguageChange);
-  }, []);
+  }, [initialLanguage]);
 
   const reviews = t.reviewsList as string[][];
 
   return (
     <main className="public-home">
       <header className="public-header">
-        <a className="public-logo" href="/"><BrandLogo /></a>
+        <a className="public-logo" href={getLocalizedPath(language)}><BrandLogo /></a>
         <nav className="public-nav" aria-label={String(t.navAria)}>
           <a href="/pro/login" className="public-login">{String(t.login)}</a>
-          <a href="/for-business" className="public-company-button">{String(t.create)}</a>
+          <a href={getLocalizedPath(language, "/for-business")} className="public-company-button">{String(t.create)}</a>
           <details className="public-menu">
             <summary>
               <span>{String(t.menu)}</span>
@@ -288,15 +286,15 @@ export default function PublicHome({ searchIndex }: PublicHomeProps) {
             </summary>
             <div className="public-menu-panel">
               <strong>{String(t.clients)}</strong>
-              <a href="/catalog">{String(t.browse)}</a>
-              <a href="/catalog">{String(t.clientAuth)}</a>
+              <a href={getLocalizedPath(language, "/catalog")}>{String(t.browse)}</a>
+              <a href={getLocalizedPath(language, "/catalog")}>{String(t.clientAuth)}</a>
               <a href="#app">{String(t.app)}</a>
               <a href="#reviews">{String(t.reviews)}</a>
               <hr />
               <strong>{String(t.business)}</strong>
-              <a href="/for-business">{String(t.create)}</a>
+              <a href={getLocalizedPath(language, "/for-business")}>{String(t.create)}</a>
               <a href="/pro/login">{String(t.dashboard)}</a>
-              <a href="/for-business">{String(t.features)}</a>
+              <a href={getLocalizedPath(language, "/for-business")}>{String(t.features)}</a>
             </div>
           </details>
           <GlobalLanguageSwitcher mode="inline" />
@@ -318,11 +316,11 @@ export default function PublicHome({ searchIndex }: PublicHomeProps) {
       <section className="public-section public-carousel-section">
         <div className="public-section-head">
           <h2>{String(t.recommended)}</h2>
-          <a href="/catalog">{String(t.seeAll)}</a>
+          <a href={getLocalizedPath(language, "/catalog")}>{String(t.seeAll)}</a>
         </div>
         <div className="public-business-grid">
           {businesses.map((business) => (
-            <a className="public-business-card" href="/catalog" key={business.name}>
+            <a className="public-business-card" href={getLocalizedPath(language, "/catalog")} key={business.name}>
               <img src={business.image} alt={business.name} />
               <div>
                 <h3>{business.name}</h3>
@@ -397,7 +395,7 @@ export default function PublicHome({ searchIndex }: PublicHomeProps) {
         <div>
           <h2>{String(t.businessTitle)}</h2>
           <p>{String(t.businessText)}</p>
-          <a href="/for-business">{String(t.more)}</a>
+          <a href={getLocalizedPath(language, "/for-business")}>{String(t.more)}</a>
           <div className="public-business-rating">
             <strong>{String(t.rating)}</strong>
             <span>★★★★★</span>
@@ -430,7 +428,7 @@ export default function PublicHome({ searchIndex }: PublicHomeProps) {
             <div key={city.city.en}>
               <h3>{city.city[language]}</h3>
               {city.links[language].map((link) => (
-                <a href="/catalog" key={link}>{link} {String(t.cityIn)} {city.city[language]}</a>
+                <a href={getLocalizedPath(language, "/catalog")} key={link}>{link} {String(t.cityIn)} {city.city[language]}</a>
               ))}
             </div>
           ))}
@@ -439,20 +437,20 @@ export default function PublicHome({ searchIndex }: PublicHomeProps) {
 
       <footer className="public-footer">
         <div>
-          <a className="public-logo" href="/"><BrandLogo /></a>
+          <a className="public-logo" href={getLocalizedPath(language)}><BrandLogo /></a>
           <button type="button" className="public-download-button">{String(t.appButton)}</button>
         </div>
         <div>
           <h3>{String(t.about)}</h3>
           <a href="#reviews">{String(t.reviews)}</a>
           <a href="#app">{String(t.app)}</a>
-          <a href="/catalog">{String(t.catalog)}</a>
+          <a href={getLocalizedPath(language, "/catalog")}>{String(t.catalog)}</a>
         </div>
         <div>
           <h3>{String(t.business)}</h3>
-          <a href="/for-business">{String(t.create)}</a>
+          <a href={getLocalizedPath(language, "/for-business")}>{String(t.create)}</a>
           <a href="/pro/login">{String(t.login)}</a>
-          <a href="/for-business">{String(t.features)}</a>
+          <a href={getLocalizedPath(language, "/for-business")}>{String(t.features)}</a>
         </div>
         <div>
           <h3>{String(t.legal)}</h3>

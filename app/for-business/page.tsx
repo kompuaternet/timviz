@@ -1,25 +1,19 @@
 import type { Metadata } from "next";
-import BusinessLanding from "./BusinessLanding";
+import { redirect } from "next/navigation";
+import { getRequestLanguage } from "../../lib/seo";
+import { getLocalizedPath } from "../../lib/site-language";
 
-export const metadata: Metadata = {
-  title: "Timviz для бизнеса: онлайн-запись клиентов, CRM и календарь мастеров",
-  description:
-    "Зарегистрируйте бизнес в Timviz: онлайн-запись клиентов, график мастеров, услуги, база клиентов, напоминания, аналитика и поддержка салонов, мастеров и студий.",
-  alternates: {
-    canonical: "/for-business"
-  },
-  keywords: [
-    "онлайн запись клиентов",
-    "система записи для салона",
-    "CRM для салона красоты",
-    "календарь мастеров",
-    "запись клиентов онлайн",
-    "программа для барбершопа",
-    "запись на услуги",
-    "Timviz для бизнеса"
-  ]
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const language = await getRequestLanguage();
+  return {
+    robots: {
+      index: false,
+      follow: true
+    }
+  };
+}
 
-export default function ForBusinessPage() {
-  return <BusinessLanding />;
+export default async function ForBusinessPage() {
+  const language = await getRequestLanguage();
+  redirect(getLocalizedPath(language, "/for-business"));
 }

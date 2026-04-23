@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import styles from "../pro.module.css";
 import ProSidebar from "../ProSidebar";
+import { languageFromProfile } from "../i18n";
 import {
   getDayBreaks,
   getDaySchedule as resolveDaySchedule,
@@ -144,6 +145,86 @@ const CALENDAR_TEXT: Record<AppLanguage, {
   dailyCalendar: string;
   visits: string;
   selected: string;
+  masterFallback: string;
+  back: string;
+  quickNewVisit: string;
+  quickBlockBusy: string;
+  quickAddOffTime: string;
+  blockedBusySaved: string;
+  blockedOffTimeSaved: string;
+  outsideScheduleWarning: string;
+  chooseTimeAndService: string;
+  chooseServiceForEveryBlock: string;
+  partBlocked: string;
+  pastTimeBlocked: string;
+  saveVisitFailed: string;
+  enterClientName: string;
+  addClientFailed: string;
+  blockTimeFailed: string;
+  blockedRemoved: string;
+  visitRemoved: string;
+  visitUpdated: string;
+  blockedSaveFailed: string;
+  blockedUpdated: string;
+  visitSaved: string;
+  visitSavedOverlap: string;
+  deleteBlockFailed: string;
+  newVisitTitle: string;
+  customer: string;
+  quickBookingWithoutClient: string;
+  chooseClientLater: string;
+  visitTab: string;
+  currentDay: string;
+  chooseService: string;
+  start: string;
+  end: string;
+  addAnotherService: string;
+  overlapWarning: string;
+  total: string;
+  payable: string;
+  cancelUpper: string;
+  saveUpper: string;
+  savingUpper: string;
+  searchPlaceholder: string;
+  serviceDurationMinutes: string;
+  addNewService: (name: string) => string;
+  chooseClient: string;
+  clientNameOrPhone: string;
+  clientSearchHint: string;
+  withoutClient: string;
+  withoutClientHint: string;
+  newClient: string;
+  hideForm: string;
+  newClientHint: string;
+  addClientTitle: string;
+  addClientText: string;
+  clientName: string;
+  phone: string;
+  exampleName: string;
+  addAndChoose: string;
+  clients: string;
+  noPhone: string;
+  visitsCountLabel: (count: number) => string;
+  clientNotFound: string;
+  clientsEmpty: string;
+  clientNotFoundHint: string;
+  clientsEmptyHint: string;
+  addNamedClient: (name: string) => string;
+  blockedTimeFallback: string;
+  walkInClient: string;
+  saveTime: string;
+  deleteBlock: string;
+  service: string;
+  attendanceStatus: string;
+  attendancePending: string;
+  attendanceArrived: string;
+  attendanceNoShow: string;
+  price: string;
+  saveVisit: string;
+  newClientModalTitle: string;
+  newClientModalText: string;
+  addClientDataUpper: string;
+  notNowUpper: string;
 }> = {
   ru: {
     today: "Сегодня",
@@ -158,7 +239,87 @@ const CALENDAR_TEXT: Record<AppLanguage, {
     services: "услуг",
     dailyCalendar: "дневной календарь",
     visits: "визитов",
-    selected: "Выбрано"
+    selected: "Выбрано",
+    masterFallback: "Мастер",
+    back: "Назад",
+    quickNewVisit: "Новый визит",
+    quickBlockBusy: "Забронировать время",
+    quickAddOffTime: "Добавить нерабочее время",
+    blockedBusySaved: "Время забронировано.",
+    blockedOffTimeSaved: "Нерабочее время добавлено.",
+    outsideScheduleWarning: "Вы создаете визит вне рабочего графика.",
+    chooseTimeAndService: "Сначала выбери время и услугу.",
+    chooseServiceForEveryBlock: "Выбери услугу для каждого блока визита.",
+    partBlocked: "Часть времени уже заблокирована.",
+    pastTimeBlocked: "Нельзя сохранить визит на прошедшее время.",
+    saveVisitFailed: "Не удалось сохранить визит.",
+    enterClientName: "Введите имя клиента.",
+    addClientFailed: "Не удалось добавить клиента.",
+    blockTimeFailed: "Не удалось заблокировать время.",
+    blockedRemoved: "Блок времени удален.",
+    visitRemoved: "Визит удален.",
+    visitUpdated: "Визит обновлен.",
+    blockedSaveFailed: "Не удалось сохранить блок времени.",
+    blockedUpdated: "Блок времени обновлен.",
+    visitSaved: "Визит сохранен.",
+    visitSavedOverlap: "Визит сохранен с наложением по времени.",
+    deleteBlockFailed: "Не удалось удалить блок.",
+    newVisitTitle: "Новый визит",
+    customer: "Клиент",
+    quickBookingWithoutClient: "Быстрая запись без клиента",
+    chooseClientLater: "Можно выбрать клиента позже",
+    visitTab: "ВИЗИТ",
+    currentDay: "Сегодня",
+    chooseService: "Выбрать услугу",
+    start: "Начало",
+    end: "Конец",
+    addAnotherService: "ДОБАВИТЬ ЕЩЕ УСЛУГУ ＋",
+    overlapWarning: "Есть наложение на существующие записи, но сохранить можно.",
+    total: "Итого",
+    payable: "К оплате",
+    cancelUpper: "ОТМЕНИТЬ",
+    saveUpper: "СОХРАНИТЬ",
+    savingUpper: "СОХРАНЯЕМ",
+    searchPlaceholder: "Поиск",
+    serviceDurationMinutes: "мин.",
+    addNewService: (name) => `Добавить новую услугу "${name}"`,
+    chooseClient: "Выбрать клиента",
+    clientNameOrPhone: "Имя или телефон",
+    clientSearchHint: "Найди клиента из базы, добавь нового за пару секунд или оставь визит без клиента.",
+    withoutClient: "Без клиента",
+    withoutClientHint: "Быстрая запись, в календаре будет показано “Клиент”",
+    newClient: "Новый клиент",
+    hideForm: "Скрыть форму",
+    newClientHint: "Имя обязательно, телефон можно добавить позже",
+    addClientTitle: "Добавить клиента",
+    addClientText: "После сохранения клиент сразу привяжется к визиту.",
+    clientName: "Имя клиента",
+    phone: "Телефон",
+    exampleName: "Например, Иван",
+    addAndChoose: "Добавить и выбрать",
+    clients: "Клиенты",
+    noPhone: "Без телефона",
+    visitsCountLabel: (count) => `${count} визитов`,
+    clientNotFound: "Клиент не найден",
+    clientsEmpty: "Список клиентов пустой",
+    clientNotFoundHint: "Можно добавить нового клиента прямо здесь или сохранить запись без клиента.",
+    clientsEmptyHint: "Добавьте первого клиента или сделайте быструю запись без клиента.",
+    addNamedClient: (name) => `Добавить “${name}”`,
+    blockedTimeFallback: "Забронированное время",
+    walkInClient: "Клиент без бронирования",
+    saveTime: "Сохранить время",
+    deleteBlock: "Удалить блок",
+    service: "Услуга",
+    attendanceStatus: "Статус визита",
+    attendancePending: "Ожидается",
+    attendanceArrived: "Пришел",
+    attendanceNoShow: "Не пришел",
+    price: "Цена",
+    saveVisit: "Сохранить визит",
+    newClientModalTitle: "Новый клиент?",
+    newClientModalText: "Добавь данные клиента, чтобы отправлять напоминания о визитах и мотивировать его на повторные записи.",
+    addClientDataUpper: "ДОБАВИТЬ ДАННЫЕ КЛИЕНТА",
+    notNowUpper: "НЕ СЕЙЧАС"
   },
   uk: {
     today: "Сьогодні",
@@ -173,7 +334,87 @@ const CALENDAR_TEXT: Record<AppLanguage, {
     services: "послуг",
     dailyCalendar: "денний календар",
     visits: "візитів",
-    selected: "Вибрано"
+    selected: "Вибрано",
+    masterFallback: "Майстер",
+    back: "Назад",
+    quickNewVisit: "Новий візит",
+    quickBlockBusy: "Забронювати час",
+    quickAddOffTime: "Додати неробочий час",
+    blockedBusySaved: "Час заброньовано.",
+    blockedOffTimeSaved: "Неробочий час додано.",
+    outsideScheduleWarning: "Ви створюєте візит поза робочим графіком.",
+    chooseTimeAndService: "Спочатку оберіть час і послугу.",
+    chooseServiceForEveryBlock: "Оберіть послугу для кожного блоку візиту.",
+    partBlocked: "Частину часу вже заблоковано.",
+    pastTimeBlocked: "Не можна зберегти візит на минулий час.",
+    saveVisitFailed: "Не вдалося зберегти візит.",
+    enterClientName: "Введіть ім'я клієнта.",
+    addClientFailed: "Не вдалося додати клієнта.",
+    blockTimeFailed: "Не вдалося заблокувати час.",
+    blockedRemoved: "Блок часу видалено.",
+    visitRemoved: "Візит видалено.",
+    visitUpdated: "Візит оновлено.",
+    blockedSaveFailed: "Не вдалося зберегти блок часу.",
+    blockedUpdated: "Блок часу оновлено.",
+    visitSaved: "Візит збережено.",
+    visitSavedOverlap: "Візит збережено з накладанням у часі.",
+    deleteBlockFailed: "Не вдалося видалити блок.",
+    newVisitTitle: "Новий візит",
+    customer: "Клієнт",
+    quickBookingWithoutClient: "Швидкий запис без клієнта",
+    chooseClientLater: "Можна вибрати клієнта пізніше",
+    visitTab: "ВІЗИТ",
+    currentDay: "Сьогодні",
+    chooseService: "Оберіть послугу",
+    start: "Початок",
+    end: "Кінець",
+    addAnotherService: "ДОДАТИ ЩЕ ПОСЛУГУ ＋",
+    overlapWarning: "Є накладення на наявні записи, але зберегти можна.",
+    total: "Разом",
+    payable: "До оплати",
+    cancelUpper: "СКАСУВАТИ",
+    saveUpper: "ЗБЕРЕГТИ",
+    savingUpper: "ЗБЕРІГАЄМО",
+    searchPlaceholder: "Пошук",
+    serviceDurationMinutes: "хв.",
+    addNewService: (name) => `Додати нову послугу "${name}"`,
+    chooseClient: "Оберіть клієнта",
+    clientNameOrPhone: "Ім'я або телефон",
+    clientSearchHint: "Знайдіть клієнта з бази, додайте нового за пару секунд або залиште візит без клієнта.",
+    withoutClient: "Без клієнта",
+    withoutClientHint: "Швидкий запис, у календарі буде показано “Клієнт”",
+    newClient: "Новий клієнт",
+    hideForm: "Сховати форму",
+    newClientHint: "Ім'я обов'язкове, телефон можна додати пізніше",
+    addClientTitle: "Додати клієнта",
+    addClientText: "Після збереження клієнт одразу прив'яжеться до візиту.",
+    clientName: "Ім'я клієнта",
+    phone: "Телефон",
+    exampleName: "Наприклад, Іван",
+    addAndChoose: "Додати та вибрати",
+    clients: "Клієнти",
+    noPhone: "Без телефону",
+    visitsCountLabel: (count) => `${count} візитів`,
+    clientNotFound: "Клієнта не знайдено",
+    clientsEmpty: "Список клієнтів порожній",
+    clientNotFoundHint: "Можна додати нового клієнта прямо тут або зберегти запис без клієнта.",
+    clientsEmptyHint: "Додайте першого клієнта або зробіть швидкий запис без клієнта.",
+    addNamedClient: (name) => `Додати “${name}”`,
+    blockedTimeFallback: "Заброньований час",
+    walkInClient: "Клієнт без бронювання",
+    saveTime: "Зберегти час",
+    deleteBlock: "Видалити блок",
+    service: "Послуга",
+    attendanceStatus: "Статус візиту",
+    attendancePending: "Очікується",
+    attendanceArrived: "Прийшов",
+    attendanceNoShow: "Не прийшов",
+    price: "Ціна",
+    saveVisit: "Зберегти візит",
+    newClientModalTitle: "Новий клієнт?",
+    newClientModalText: "Додайте дані клієнта, щоб надсилати нагадування про візити й мотивувати його на повторні записи.",
+    addClientDataUpper: "ДОДАТИ ДАНІ КЛІЄНТА",
+    notNowUpper: "НЕ ЗАРАЗ"
   },
   en: {
     today: "Today",
@@ -188,7 +429,87 @@ const CALENDAR_TEXT: Record<AppLanguage, {
     services: "services",
     dailyCalendar: "day calendar",
     visits: "visits",
-    selected: "Selected"
+    selected: "Selected",
+    masterFallback: "Professional",
+    back: "Back",
+    quickNewVisit: "New visit",
+    quickBlockBusy: "Block this time",
+    quickAddOffTime: "Add unavailable time",
+    blockedBusySaved: "Time has been blocked.",
+    blockedOffTimeSaved: "Unavailable time added.",
+    outsideScheduleWarning: "You are creating a visit outside working hours.",
+    chooseTimeAndService: "Choose a time and service first.",
+    chooseServiceForEveryBlock: "Choose a service for each visit block.",
+    partBlocked: "Part of the selected time is already blocked.",
+    pastTimeBlocked: "You cannot save a visit in the past.",
+    saveVisitFailed: "Failed to save the visit.",
+    enterClientName: "Enter the client name.",
+    addClientFailed: "Failed to add the client.",
+    blockTimeFailed: "Failed to block the time.",
+    blockedRemoved: "Time block deleted.",
+    visitRemoved: "Visit deleted.",
+    visitUpdated: "Visit updated.",
+    blockedSaveFailed: "Failed to save the time block.",
+    blockedUpdated: "Time block updated.",
+    visitSaved: "Visit saved.",
+    visitSavedOverlap: "Visit saved with a time overlap.",
+    deleteBlockFailed: "Failed to delete the block.",
+    newVisitTitle: "New visit",
+    customer: "Client",
+    quickBookingWithoutClient: "Quick booking without a client",
+    chooseClientLater: "You can choose a client later",
+    visitTab: "VISIT",
+    currentDay: "Today",
+    chooseService: "Choose a service",
+    start: "Start",
+    end: "End",
+    addAnotherService: "ADD ANOTHER SERVICE ＋",
+    overlapWarning: "There is an overlap with existing bookings, but saving is allowed.",
+    total: "Total",
+    payable: "To pay",
+    cancelUpper: "CANCEL",
+    saveUpper: "SAVE",
+    savingUpper: "SAVING",
+    searchPlaceholder: "Search",
+    serviceDurationMinutes: "min.",
+    addNewService: (name) => `Add a new service "${name}"`,
+    chooseClient: "Choose a client",
+    clientNameOrPhone: "Name or phone",
+    clientSearchHint: "Find a client from your database, add a new one in seconds, or keep the visit without a client.",
+    withoutClient: "Without client",
+    withoutClientHint: "Quick booking, the calendar will show “Client”",
+    newClient: "New client",
+    hideForm: "Hide form",
+    newClientHint: "Name is required, phone can be added later",
+    addClientTitle: "Add client",
+    addClientText: "After saving, the client will be linked to the visit immediately.",
+    clientName: "Client name",
+    phone: "Phone",
+    exampleName: "For example, John",
+    addAndChoose: "Add and choose",
+    clients: "Clients",
+    noPhone: "No phone",
+    visitsCountLabel: (count) => `${count} visits`,
+    clientNotFound: "Client not found",
+    clientsEmpty: "Client list is empty",
+    clientNotFoundHint: "You can add a new client right here or save the booking without a client.",
+    clientsEmptyHint: "Add your first client or create a quick booking without one.",
+    addNamedClient: (name) => `Add “${name}”`,
+    blockedTimeFallback: "Blocked time",
+    walkInClient: "Walk-in client",
+    saveTime: "Save time",
+    deleteBlock: "Delete block",
+    service: "Service",
+    attendanceStatus: "Visit status",
+    attendancePending: "Pending",
+    attendanceArrived: "Arrived",
+    attendanceNoShow: "No-show",
+    price: "Price",
+    saveVisit: "Save visit",
+    newClientModalTitle: "New client?",
+    newClientModalText: "Add client details to send visit reminders and encourage repeat bookings.",
+    addClientDataUpper: "ADD CLIENT DETAILS",
+    notNowUpper: "NOT NOW"
   }
 };
 
@@ -280,9 +601,9 @@ function formatDisplayTime(time: string) {
   return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
 }
 
-function getScheduleLabel(schedule: WorkDaySchedule | null) {
+function getScheduleLabel(schedule: WorkDaySchedule | null, closedLabel: string) {
   if (!schedule || !schedule.enabled) {
-    return "Выходной";
+    return closedLabel;
   }
 
   return `${formatDisplayTime(schedule.startTime)}-${formatDisplayTime(schedule.endTime)}`;
@@ -466,6 +787,14 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
     window.addEventListener("rezervo-language-change", handleLanguageChange);
     return () => window.removeEventListener("rezervo-language-change", handleLanguageChange);
   }, []);
+
+  useEffect(() => {
+    if (!snapshot?.workspace.professional.language) {
+      return;
+    }
+
+    setUiLanguage(languageFromProfile(snapshot.workspace.professional.language));
+  }, [snapshot?.workspace.professional.language]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -756,6 +1085,18 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
     () => getAppointmentLayouts(snapshot?.appointments ?? []),
     [snapshot?.appointments]
   );
+  const miniCalendarWeekdays = useMemo(
+    () => {
+      const sundayFirst = Array.from({ length: 7 }, (_, index) => {
+        const date = new Date(Date.UTC(2024, 0, 7 + index));
+        return new Intl.DateTimeFormat(locale, { weekday: "short", timeZone: "UTC" })
+          .format(date)
+          .replace(".", "");
+      });
+      return sundayFirst;
+    },
+    [locale]
+  );
 
   useEffect(() => {
     function handlePointerMove(event: PointerEvent) {
@@ -854,7 +1195,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
     setServiceQuery("");
     setClientQuery("");
     setShowClientPrompt(false);
-    setStatusText(isWithinWorkingWindow(slot, daySchedule) ? "" : "Вы создаете визит вне рабочего графика.");
+    setStatusText(isWithinWorkingWindow(slot, daySchedule) ? "" : t.outsideScheduleWarning);
     setDrawerStage("visit");
   }
 
@@ -910,17 +1251,17 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
 
   async function saveVisit(saveWithoutClient = false) {
     if (visitItems.length === 0) {
-      setStatusText("Сначала выбери время и услугу.");
+      setStatusText(t.chooseTimeAndService);
       return;
     }
 
     if (visitItems.some((item) => !item.serviceName.trim())) {
-      setStatusText("Выбери услугу для каждого блока визита.");
+      setStatusText(t.chooseServiceForEveryBlock);
       return;
     }
 
     if (blockedSelection) {
-      setStatusText("Часть времени уже заблокирована.");
+      setStatusText(t.partBlocked);
       return;
     }
 
@@ -929,7 +1270,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
       selectedDate === todayDate &&
       visitItems.some((item) => getDateTimeValue(selectedDate, item.startTime) < now)
     ) {
-      setStatusText("Нельзя сохранить визит на прошедшее время.");
+      setStatusText(t.pastTimeBlocked);
       return;
     }
 
@@ -964,7 +1305,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
 
       const payload = await response.json();
       if (!response.ok) {
-        setStatusText(payload.error || "Не удалось сохранить визит.");
+        setStatusText(payload.error || t.saveVisitFailed);
         setIsSavingVisit(false);
         return;
       }
@@ -974,7 +1315,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
     setIsSavingVisit(false);
     setVisitItems([]);
     setSelectedCustomer(null);
-    setStatusText(visitHasOverlap ? "Визит сохранен с наложением по времени." : "Визит сохранен.");
+    setStatusText(visitHasOverlap ? t.visitSavedOverlap : t.visitSaved);
 
     if (firstVisitStartTime) {
       window.setTimeout(() => {
@@ -987,7 +1328,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
     const name = newClientName.trim() || clientQuery.trim();
 
     if (!name) {
-      setStatusText("Введите имя клиента.");
+      setStatusText(t.enterClientName);
       return;
     }
 
@@ -1015,7 +1356,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
     const payload = await response.json();
 
     if (!response.ok) {
-      setStatusText(payload.error || "Не удалось добавить клиента.");
+      setStatusText(payload.error || t.addClientFailed);
       return;
     }
 
@@ -1045,7 +1386,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
 
     const payload = await response.json();
     if (!response.ok) {
-      setStatusText(payload.error || "Не удалось заблокировать время.");
+      setStatusText(payload.error || t.blockTimeFailed);
       return;
     }
 
@@ -1065,14 +1406,14 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
     const payload = await response.json();
 
     if (!response.ok) {
-      setStatusText(payload.error || "Не удалось удалить блок.");
+      setStatusText(payload.error || t.deleteBlockFailed);
       return;
     }
 
     await refreshSnapshot();
     setDrawerStage("closed");
     setSelectedAppointmentId(null);
-    setStatusText(selectedAppointment.kind === "blocked" ? "Блок времени удален." : "Визит удален.");
+    setStatusText(selectedAppointment.kind === "blocked" ? t.blockedRemoved : t.visitRemoved);
   }
 
   async function saveAppointmentMeta() {
@@ -1092,14 +1433,14 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
     });
     const payload = await response.json();
     if (!response.ok) {
-      setStatusText(payload.error || "Не удалось сохранить визит.");
+      setStatusText(payload.error || t.saveVisitFailed);
       return;
     }
 
     await refreshSnapshot();
     setDrawerStage("closed");
     setSelectedAppointmentId(null);
-    setStatusText("Визит обновлен.");
+    setStatusText(t.visitUpdated);
   }
 
   async function saveBlockedTime() {
@@ -1119,14 +1460,14 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
     const payload = await response.json();
 
     if (!response.ok) {
-      setStatusText(payload.error || "Не удалось сохранить блок времени.");
+      setStatusText(payload.error || t.blockedSaveFailed);
       return;
     }
 
     await refreshSnapshot();
     setDrawerStage("closed");
     setSelectedAppointmentId(null);
-    setStatusText("Блок времени обновлен.");
+    setStatusText(t.blockedUpdated);
   }
 
   function updateSelectedBlockedTime(patch: Partial<Pick<CalendarAppointment, "startTime" | "endTime">>) {
@@ -1180,7 +1521,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
 
       <aside className={styles.calendarLeftPanel}>
         <div className={styles.calendarViewRail}>
-          <button type="button" className={styles.calendarPanelBack} aria-label="Назад">‹</button>
+          <button type="button" className={styles.calendarPanelBack} aria-label={t.back}>‹</button>
           <div className={styles.calendarViewDropdown}>
             <button
               type="button"
@@ -1226,7 +1567,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
           </div>
 
           <div className={styles.miniCalendarWeekdays}>
-            {["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"].map((day) => (
+            {miniCalendarWeekdays.map((day) => (
               <span key={day}>{day}</span>
             ))}
           </div>
@@ -1235,7 +1576,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
             {monthGrid.map((day) => {
               const schedule = monthSchedules.get(day.key) ?? null;
               const isWorkingDay = Boolean(schedule?.enabled);
-              const scheduleLabel = getScheduleLabel(schedule);
+              const scheduleLabel = getScheduleLabel(schedule, t.closed);
 
               return (
                 <button
@@ -1318,10 +1659,10 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
 
         <div className={styles.calendarTitleRow}>
           <div className={styles.calendarTitleMeta}>
-            <strong>{snapshot?.workspace.professional.firstName || "Мастер"}</strong>
+            <strong>{snapshot?.workspace.professional.firstName || t.masterFallback}</strong>
             <span>{`${snapshot?.workspace.services.length ?? 0} ${t.services} · ${viewMode === "day" ? t.dailyCalendar : viewModeOptions.find((option) => option.value === viewMode)?.label}`}</span>
           </div>
-          <div className={styles.calendarStatsStrip} aria-label="Статистика записей">
+          <div className={styles.calendarStatsStrip} aria-label={t.dailyCalendar}>
             <div>
               <span>{t.today}</span>
               <strong>{calendarStats.day.visitsCount} / {formatMoney(calendarStats.day.revenue, accountCurrency, locale)}</strong>
@@ -1436,21 +1777,21 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
                       openNewVisit(quickMenu.time);
                     }}
                   >
-                    Новый визит
+                    {t.quickNewVisit}
                   </button>
                   <button
                     type="button"
                     className={styles.calendarQuickMenuAction}
-                    onClick={() => void createBlocked("Время забронировано.", "Забронированное время")}
+                    onClick={() => void createBlocked(t.blockedBusySaved, t.blockedTimeFallback)}
                   >
-                    Забронировать время
+                    {t.quickBlockBusy}
                   </button>
                   <button
                     type="button"
                     className={styles.calendarQuickMenuAction}
-                    onClick={() => void createBlocked("Нерабочее время добавлено.", "Нерабочее время")}
+                    onClick={() => void createBlocked(t.blockedOffTimeSaved, t.quickAddOffTime)}
                   >
-                    Добавить нерабочее время
+                    {t.quickAddOffTime}
                   </button>
                 </div>
               ) : null}
@@ -1504,7 +1845,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
                   >
                     <span className={styles.bookingTime}>{`${formatDisplayTime(appointment.startTime)} - ${formatDisplayTime(appointment.endTime)}`}</span>
                     <strong className={styles.bookingTitle}>
-                      {isBlocked ? appointment.serviceName || "Забронированное время" : appointment.customerName || "Клиент без бронирования"}
+                      {isBlocked ? appointment.serviceName || t.blockedTimeFallback : appointment.customerName || t.walkInClient}
                     </strong>
                     {!isBlocked ? <span className={styles.bookingService}>{appointment.serviceName}</span> : null}
                     <button
@@ -1549,7 +1890,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
                     <span>
                       {new Date(`${dayKey}T00:00:00`).toLocaleDateString(locale, { weekday: "short", day: "numeric" })}
                     </span>
-                    <strong>{schedule?.enabled ? getScheduleLabel(schedule) : t.closedBySchedule}</strong>
+                    <strong>{schedule?.enabled ? getScheduleLabel(schedule, t.closed) : t.closedBySchedule}</strong>
                     <small>{dayAppointments.length} {t.visits}</small>
                   </button>
                 );
@@ -1574,7 +1915,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
                     }}
                   >
                     <strong>{day.day}</strong>
-                    <span>{isWorkingDay ? getScheduleLabel(schedule) : t.closed}</span>
+                    <span>{isWorkingDay ? getScheduleLabel(schedule, t.closed) : t.closed}</span>
                     {dayAppointments.length ? <small>{dayAppointments.length} {t.visits}</small> : null}
                   </button>
                 );
@@ -1589,25 +1930,25 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
           <div className={styles.calendarV2Panel}>
             <div className={styles.calendarV2PanelHeader}>
               <button type="button" className={styles.calendarDrawerBack} onClick={() => setDrawerStage("closed")}>←</button>
-              <strong>Новый визит</strong>
+              <strong>{t.newVisitTitle}</strong>
             </div>
 
             <button type="button" className={styles.calendarCustomerCard} onClick={() => setDrawerStage("client-search")}>
               <div className={styles.calendarCustomerAvatar}>{selectedCustomer ? selectedCustomer.name[0]?.toUpperCase() : "◌"}</div>
               <div>
-                <span>Клиент</span>
-                <strong>{selectedCustomer ? selectedCustomer.name : "Быстрая запись без клиента"}</strong>
-                <small>{selectedCustomer?.phone || "Можно выбрать клиента позже"}</small>
+                <span>{t.customer}</span>
+                <strong>{selectedCustomer ? selectedCustomer.name : t.quickBookingWithoutClient}</strong>
+                <small>{selectedCustomer?.phone || t.chooseClientLater}</small>
               </div>
               <span className={styles.calendarCustomerPlus}>＋</span>
             </button>
 
             <div className={styles.calendarDrawerTabs}>
-              <button type="button" className={styles.calendarDrawerTabActive}>ВИЗИТ</button>
+              <button type="button" className={styles.calendarDrawerTabActive}>{t.visitTab}</button>
             </div>
 
             <div className={styles.calendarDrawerDateRow}>
-              <strong>Сегодня</strong>
+              <strong>{t.currentDay}</strong>
               <span>{selectedDateLabel}</span>
             </div>
 
@@ -1624,12 +1965,12 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
                         setDrawerStage("service-picker");
                       }}
                     >
-                      {item.serviceName || "Выбрать услугу"} →
+                      {item.serviceName || t.chooseService} →
                     </button>
 
                     <div className={styles.calendarVisitTimeGrid}>
                       <label>
-                        <span>Начало</span>
+                        <span>{t.start}</span>
                         <select
                           className={styles.select}
                           value={item.startTime}
@@ -1646,7 +1987,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
                         </select>
                       </label>
                       <label>
-                        <span>Конец</span>
+                        <span>{t.end}</span>
                         <select
                           className={styles.select}
                           value={item.endTime}
@@ -1676,25 +2017,25 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
             </div>
 
             <button type="button" className={styles.calendarAddServiceButton} onClick={addAnotherService}>
-              ДОБАВИТЬ ЕЩЕ УСЛУГУ ＋
+              {t.addAnotherService}
             </button>
 
-            {visitHasOverlap ? <div className={styles.calendarOverlapWarning}>Есть наложение на существующие записи, но сохранить можно.</div> : null}
-            {blockedSelection ? <div className={styles.calendarPastWarning}>Часть выбранного времени уже заблокирована.</div> : null}
+            {visitHasOverlap ? <div className={styles.calendarOverlapWarning}>{t.overlapWarning}</div> : null}
+            {blockedSelection ? <div className={styles.calendarPastWarning}>{t.partBlocked}</div> : null}
 
             <div className={styles.calendarTotals}>
-              <span>Итого</span>
+              <span>{t.total}</span>
               <strong>{formatMoney(visitTotal, accountCurrency, locale)}</strong>
-              <span>К оплате</span>
+              <span>{t.payable}</span>
               <strong>{formatMoney(visitTotal, accountCurrency, locale)}</strong>
             </div>
 
             <div className={styles.calendarDrawerFooter}>
               <button type="button" className={styles.calendarSecondaryAction} onClick={() => setDrawerStage("closed")}>
-                ОТМЕНИТЬ
+                {t.cancelUpper}
               </button>
               <button type="button" className={styles.primaryButton} disabled={isSavingVisit} onClick={() => void saveVisit()}>
-                {isSavingVisit ? "СОХРАНЯЕМ" : "СОХРАНИТЬ"}
+                {isSavingVisit ? t.savingUpper : t.saveUpper}
               </button>
             </div>
           </div>
@@ -1702,7 +2043,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
           <div className={styles.calendarV2Panel}>
             <div className={styles.calendarV2PanelHeader}>
               <button type="button" className={styles.calendarDrawerBack} onClick={() => setDrawerStage("visit")}>←</button>
-              <strong>Выбрать услугу</strong>
+              <strong>{t.chooseService}</strong>
             </div>
 
             <div className={styles.calendarSearchField}>
@@ -1710,7 +2051,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
               <input
                 value={serviceQuery}
                 onChange={(event) => setServiceQuery(event.target.value)}
-                placeholder="Поиск"
+                placeholder={t.searchPlaceholder}
               />
             </div>
 
@@ -1725,7 +2066,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
                   <span className={styles.calendarServiceTone} style={{ background: getServiceColor(service.name, snapshot?.workspace.services ?? []) }} />
                   <div>
                     <strong>{service.name}</strong>
-                    <span>{service.durationMinutes || getServiceDurationMinutes(service.name, snapshot?.workspace.services ?? [])} мин.</span>
+                    <span>{service.durationMinutes || getServiceDurationMinutes(service.name, snapshot?.workspace.services ?? [])} {t.serviceDurationMinutes}</span>
                   </div>
                   <strong>{formatMoney(service.price, accountCurrency, locale)}</strong>
                 </button>
@@ -1737,7 +2078,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
                   className={styles.calendarCreateService}
                   onClick={() => selectService(serviceQuery.trim(), 50, 60)}
                 >
-                  Добавить новую услугу "{serviceQuery.trim()}"
+                  {t.addNewService(serviceQuery.trim())}
                 </button>
               ) : null}
             </div>
@@ -1746,7 +2087,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
           <div className={styles.calendarV2Panel}>
             <div className={styles.calendarV2PanelHeader}>
               <button type="button" className={styles.calendarDrawerBack} onClick={() => setDrawerStage("visit")}>←</button>
-              <strong>Выбрать клиента</strong>
+              <strong>{t.chooseClient}</strong>
             </div>
 
             <div className={styles.calendarSearchField}>
@@ -1754,11 +2095,11 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
               <input
                 value={clientQuery}
                 onChange={(event) => setClientQuery(event.target.value)}
-                placeholder="Имя или телефон"
+                placeholder={t.clientNameOrPhone}
               />
             </div>
             <p className={styles.calendarPanelHint}>
-              Найди клиента из базы, добавь нового за пару секунд или оставь визит без клиента.
+              {t.clientSearchHint}
             </p>
 
             <div className={styles.calendarClientQuickActions}>
@@ -1770,35 +2111,35 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
                   setDrawerStage("visit");
                 }}
               >
-                <strong>Без клиента</strong>
-                <span>Быстрая запись, в календаре будет показано “Клиент”</span>
+                <strong>{t.withoutClient}</strong>
+                <span>{t.withoutClientHint}</span>
               </button>
               <button type="button" onClick={() => {
                 setShowNewClientForm((value) => !value);
                 setNewClientName(clientQuery.trim());
               }}>
-                <strong>{showNewClientForm ? "Скрыть форму" : "Новый клиент"}</strong>
-                <span>Имя обязательно, телефон можно добавить позже</span>
+                <strong>{showNewClientForm ? t.hideForm : t.newClient}</strong>
+                <span>{t.newClientHint}</span>
               </button>
             </div>
 
             {showNewClientForm ? (
               <div className={styles.calendarQuickClientForm}>
                 <div>
-                  <strong>Добавить клиента</strong>
-                  <span>После сохранения клиент сразу привяжется к визиту.</span>
+                  <strong>{t.addClientTitle}</strong>
+                  <span>{t.addClientText}</span>
                 </div>
                 <label>
-                  <span>Имя клиента</span>
+                  <span>{t.clientName}</span>
                   <input
                     className={styles.input}
                     value={newClientName}
                     onChange={(event) => setNewClientName(event.target.value)}
-                    placeholder="Например, Иван"
+                    placeholder={t.exampleName}
                   />
                 </label>
                 <label>
-                  <span>Телефон</span>
+                  <span>{t.phone}</span>
                   <div className={styles.phoneRow}>
                     <div className={styles.phoneCode}>{phoneRule.prefix}</div>
                     <input
@@ -1811,7 +2152,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
                   </div>
                 </label>
                 <button type="button" className={styles.primaryButton} onClick={() => void createAndSelectClient()}>
-                  Добавить и выбрать
+                  {t.addAndChoose}
                 </button>
               </div>
             ) : null}
@@ -1819,7 +2160,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
             {filteredClients.length > 0 ? (
               <div className={styles.calendarClientResultsBlock}>
                 <div className={styles.calendarClientSectionHeader}>
-                  <strong>Клиенты</strong>
+                  <strong>{t.clients}</strong>
                   <span>{filteredClients.length}</span>
                 </div>
                 <div className={styles.calendarClientResults}>
@@ -1834,10 +2175,10 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
                         setDrawerStage("visit");
                       }}
                     >
-                      <div className={styles.calendarEntityAvatar}>{client.name[0]?.toUpperCase() ?? "К"}</div>
+                      <div className={styles.calendarEntityAvatar}>{client.name[0]?.toUpperCase() ?? t.customer[0]?.toUpperCase() ?? "C"}</div>
                       <div>
                         <strong>{client.name}</strong>
-                        <span>{client.phone || "Без телефона"}{client.visitsCount ? ` · ${client.visitsCount} визитов` : ""}</span>
+                        <span>{client.phone || t.noPhone}{client.visitsCount ? ` · ${t.visitsCountLabel(client.visitsCount)}` : ""}</span>
                       </div>
                     </button>
                   ))}
@@ -1845,8 +2186,8 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
               </div>
             ) : (
               <div className={styles.calendarClientEmpty}>
-                <strong>{clientQuery.trim() ? "Клиент не найден" : "Список клиентов пустой"}</strong>
-                <span>{clientQuery.trim() ? "Можно добавить нового клиента прямо здесь или сохранить запись без клиента." : "Добавьте первого клиента или сделайте быструю запись без клиента."}</span>
+                <strong>{clientQuery.trim() ? t.clientNotFound : t.clientsEmpty}</strong>
+                <span>{clientQuery.trim() ? t.clientNotFoundHint : t.clientsEmptyHint}</span>
                 {clientQuery.trim() && !showNewClientForm ? (
                   <button
                     type="button"
@@ -1856,7 +2197,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
                       setNewClientName(clientQuery.trim());
                     }}
                   >
-                    Добавить “{clientQuery.trim()}”
+                    {t.addNamedClient(clientQuery.trim())}
                   </button>
                 ) : null}
               </div>
@@ -1866,7 +2207,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
           <div className={styles.calendarV2Panel}>
             <div className={styles.calendarV2PanelHeader}>
               <button type="button" className={styles.calendarDrawerBack} onClick={() => setDrawerStage("closed")}>←</button>
-              <strong>{selectedAppointment.kind === "blocked" ? selectedAppointment.serviceName : selectedAppointment.customerName || "Клиент"}</strong>
+              <strong>{selectedAppointment.kind === "blocked" ? selectedAppointment.serviceName : selectedAppointment.customerName || t.customer}</strong>
             </div>
 
             {selectedAppointment.kind === "blocked" ? (
@@ -1877,7 +2218,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
                 </div>
                 <div className={styles.calendarVisitTimeGrid}>
                   <label>
-                    <span>Начало</span>
+                    <span>{t.start}</span>
                     <select
                       className={styles.select}
                       value={selectedAppointment.startTime}
@@ -1894,7 +2235,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
                     </select>
                   </label>
                   <label>
-                    <span>Конец</span>
+                    <span>{t.end}</span>
                     <select
                       className={styles.select}
                       value={selectedAppointment.endTime}
@@ -1912,37 +2253,37 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
                   </label>
                 </div>
                 <button type="button" className={styles.primaryButton} onClick={() => void saveBlockedTime()}>
-                  Сохранить время
+                  {t.saveTime}
                 </button>
                 <button type="button" className={styles.dangerButton} onClick={() => void deleteSelectedAppointment()}>
-                  Удалить блок
+                  {t.deleteBlock}
                 </button>
               </div>
             ) : (
             <div className={styles.fieldStack}>
               <div className={styles.field}>
-                <label>Услуга</label>
+                <label>{t.service}</label>
                 <div className={styles.select}>{selectedAppointment.serviceName}</div>
               </div>
               <div className={styles.field}>
-                <label>Клиент</label>
-                <div className={styles.select}>{selectedAppointment.customerName || "Клиент без бронирования"}</div>
+                <label>{t.customer}</label>
+                <div className={styles.select}>{selectedAppointment.customerName || t.walkInClient}</div>
               </div>
               <div className={styles.field}>
-                <label htmlFor="attendanceStatus">Статус визита</label>
+                <label htmlFor="attendanceStatus">{t.attendanceStatus}</label>
                 <select
                   id="attendanceStatus"
                   className={styles.select}
                   value={attendanceDraft}
                   onChange={(event) => setAttendanceDraft(event.target.value as "pending" | "arrived" | "no_show")}
                 >
-                  <option value="pending">Ожидается</option>
-                  <option value="arrived">Пришел</option>
-                  <option value="no_show">Не пришел</option>
+                  <option value="pending">{t.attendancePending}</option>
+                  <option value="arrived">{t.attendanceArrived}</option>
+                  <option value="no_show">{t.attendanceNoShow}</option>
                 </select>
               </div>
               <div className={styles.field}>
-                <label htmlFor="priceAmount">Цена</label>
+                <label htmlFor="priceAmount">{t.price}</label>
                 <input
                   id="priceAmount"
                   className={styles.input}
@@ -1951,7 +2292,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
                 />
               </div>
               <button type="button" className={styles.primaryButton} onClick={() => void saveAppointmentMeta()}>
-                Сохранить визит
+                {t.saveVisit}
               </button>
             </div>
             )}
@@ -1965,13 +2306,13 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
         <div className={styles.calendarModalBackdrop}>
           <div className={styles.calendarModalCard}>
             <div className={styles.calendarModalAvatar}>◌</div>
-            <h3>Новый клиент?</h3>
-            <p>Добавь данные клиента, чтобы отправлять напоминания о визитах и мотивировать его на повторные записи.</p>
+            <h3>{t.newClientModalTitle}</h3>
+            <p>{t.newClientModalText}</p>
             <button type="button" className={styles.primaryButton} onClick={() => { setShowClientPrompt(false); setDrawerStage("client-search"); }}>
-              ДОБАВИТЬ ДАННЫЕ КЛИЕНТА
+              {t.addClientDataUpper}
             </button>
             <button type="button" className={styles.ghostButton} onClick={() => void saveVisit(true)}>
-              НЕ СЕЙЧАС
+              {t.notNowUpper}
             </button>
           </div>
         </div>

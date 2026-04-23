@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import type { PublicSearchResult } from "../../lib/public-search";
-import { useSiteLanguage, type SiteLanguage } from "../useSiteLanguage";
+import { getLocalizedPath, type SiteLanguage } from "../../lib/site-language";
+import { useSiteLanguage } from "../useSiteLanguage";
 
 type CatalogViewProps = {
   results: PublicSearchResult[];
@@ -12,6 +13,7 @@ type CatalogViewProps = {
   time: string;
   location: string;
   hasCoords: boolean;
+  initialLanguage?: SiteLanguage;
 };
 
 type CatalogCopy = {
@@ -214,9 +216,10 @@ export default function CatalogView({
   date,
   time,
   location,
-  hasCoords
+  hasCoords,
+  initialLanguage = "ru"
 }: CatalogViewProps) {
-  const language = useSiteLanguage();
+  const language = useSiteLanguage(initialLanguage, true);
   const t = catalogCopy[language];
 
   return (
@@ -272,7 +275,7 @@ export default function CatalogView({
               ))}
             </div>
 
-            <Link href={result.id.startsWith("mock_") ? `/salons/${result.id.replace("mock_", "")}` : `/catalog?business=${result.id}`} className="primary-button">
+            <Link href={result.id.startsWith("mock_") ? getLocalizedPath(language, `/salons/${result.id.replace("mock_", "")}`) : getLocalizedPath(language, `/catalog?business=${result.id}`)} className="primary-button">
               {t.action}
             </Link>
           </article>
@@ -281,7 +284,7 @@ export default function CatalogView({
           <div className="catalog-empty">
             <h2>{t.emptyTitle}</h2>
             <p>{t.emptyText}</p>
-            <Link href="/" className="primary-button">{t.backToSearch}</Link>
+            <Link href={getLocalizedPath(language)} className="primary-button">{t.backToSearch}</Link>
           </div>
         ) : null}
       </section>
