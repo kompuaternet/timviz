@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import GoogleTag from "./GoogleTag";
 import GlobalLanguageSwitcher from "./GlobalLanguageSwitcher";
 import { buildMetadata, getRequestLanguage, seoCopy, siteUrl } from "../lib/seo";
 import "./globals.css";
@@ -6,6 +7,7 @@ import "./globals.css";
 export async function generateMetadata(): Promise<Metadata> {
   const language = await getRequestLanguage();
   const base = buildMetadata("/", seoCopy.home[language], language);
+  const googleSiteVerification = process.env.GOOGLE_SITE_VERIFICATION?.trim();
 
   return {
     metadataBase: new URL(siteUrl),
@@ -16,6 +18,11 @@ export async function generateMetadata(): Promise<Metadata> {
     description: seoCopy.home[language].description,
     applicationName: "Timviz",
     category: "beauty and wellness booking platform",
+    verification: googleSiteVerification
+      ? {
+          google: googleSiteVerification
+        }
+      : undefined,
     ...base
   };
 }
@@ -30,6 +37,7 @@ export default async function RootLayout({
   return (
     <html lang={language}>
       <body>
+        <GoogleTag />
         <GlobalLanguageSwitcher />
         {children}
       </body>

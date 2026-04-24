@@ -23,6 +23,18 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified: now,
       changeFrequency: "weekly",
       priority: 0.9
+    },
+    {
+      url: `${siteUrl}${getLocalizedPath(language, "/privacy")}`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.4
+    },
+    {
+      url: `${siteUrl}${getLocalizedPath(language, "/terms")}`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.4
     }
   ]);
 
