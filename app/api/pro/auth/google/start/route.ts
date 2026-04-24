@@ -1,10 +1,15 @@
 import { randomBytes } from "crypto";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { buildGoogleAuthUrl, getGoogleOAuthSettings } from "../../../../../../lib/google-oauth";
+import {
+  buildGoogleAuthUrl,
+  createGooglePkcePair,
+  getGoogleOAuthSettings
+} from "../../../../../../lib/google-oauth";
 
 const GOOGLE_OAUTH_STATE_COOKIE = "rezervo_google_oauth_state";
 const GOOGLE_OAUTH_MODE_COOKIE = "rezervo_google_oauth_mode";
+const GOOGLE_OAUTH_PKCE_COOKIE = "rezervo_google_oauth_pkce";
 
 export async function GET(request: Request) {
   try {
@@ -14,6 +19,7 @@ export async function GET(request: Request) {
     const isSecure = url.protocol === "https:";
     const settings = getGoogleOAuthSettings(origin);
     const state = randomBytes(24).toString("hex");
+    const { codeVerifier, codeChallenge } = createGooglePkcePair();
 
     const cookieStore = await cookies();
     cookieStore.set(GOOGLE_OAUTH_STATE_COOKIE, state, {
@@ -30,11 +36,19 @@ export async function GET(request: Request) {
       secure: isSecure,
       maxAge: 60 * 10
     });
+    cookieStore.set(GOOGLE_OAUTH_PKCE_COOKIE, codeVerifier, {
+      httpOnly: true,
+      sameSite: "lax",
+      path: "/",
+      secure: isSecure,
+      maxAge: 60 * 10
+    });
 
     const authUrl = buildGoogleAuthUrl({
       clientId: settings.clientId,
       redirectUri: settings.redirectUri,
-      state
+      state,
+      codeChallenge
     });
 
     return NextResponse.redirect(authUrl);

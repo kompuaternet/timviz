@@ -6,6 +6,7 @@ import { getProfessionalIdByEmail } from "../../../../../../lib/pro-data";
 
 const GOOGLE_OAUTH_STATE_COOKIE = "rezervo_google_oauth_state";
 const GOOGLE_OAUTH_MODE_COOKIE = "rezervo_google_oauth_mode";
+const GOOGLE_OAUTH_PKCE_COOKIE = "rezervo_google_oauth_pkce";
 
 function clearOAuthCookies(cookieStore: Awaited<ReturnType<typeof cookies>>, isSecure: boolean) {
   cookieStore.set(GOOGLE_OAUTH_STATE_COOKIE, "", {
@@ -22,6 +23,13 @@ function clearOAuthCookies(cookieStore: Awaited<ReturnType<typeof cookies>>, isS
     secure: isSecure,
     maxAge: 0
   });
+  cookieStore.set(GOOGLE_OAUTH_PKCE_COOKIE, "", {
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/",
+    secure: isSecure,
+    maxAge: 0
+  });
 }
 
 export async function GET(request: Request) {
@@ -31,9 +39,10 @@ export async function GET(request: Request) {
   const state = url.searchParams.get("state")?.trim() || "";
   const cookieStore = await cookies();
   const expectedState = cookieStore.get(GOOGLE_OAUTH_STATE_COOKIE)?.value || "";
+  const codeVerifier = cookieStore.get(GOOGLE_OAUTH_PKCE_COOKIE)?.value || "";
   const mode = cookieStore.get(GOOGLE_OAUTH_MODE_COOKIE)?.value === "register" ? "register" : "login";
 
-  if (!code || !state || !expectedState || state !== expectedState) {
+  if (!code || !state || !expectedState || !codeVerifier || state !== expectedState) {
     clearOAuthCookies(cookieStore, isSecure);
     return NextResponse.redirect(new URL("/pro/login?google_error=state", request.url));
   }
@@ -44,7 +53,8 @@ export async function GET(request: Request) {
       code,
       clientId: settings.clientId,
       clientSecret: settings.clientSecret,
-      redirectUri: settings.redirectUri
+      redirectUri: settings.redirectUri,
+      codeVerifier
     });
     const professionalId = await getProfessionalIdByEmail(profile.email);
 

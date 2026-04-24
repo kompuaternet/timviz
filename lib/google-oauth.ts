@@ -1,3 +1,5 @@
+import { createHash, randomBytes } from "crypto";
+
 type GoogleUserProfile = {
   email: string;
   givenName: string;
@@ -30,6 +32,7 @@ export function buildGoogleAuthUrl(input: {
   clientId: string;
   redirectUri: string;
   state: string;
+  codeChallenge: string;
 }) {
   const params = new URLSearchParams({
     client_id: input.clientId,
@@ -39,10 +42,30 @@ export function buildGoogleAuthUrl(input: {
     access_type: "offline",
     include_granted_scopes: "true",
     prompt: "select_account",
-    state: input.state
+    state: input.state,
+    code_challenge: input.codeChallenge,
+    code_challenge_method: "S256"
   });
 
   return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
+}
+
+function base64UrlEncode(value: Buffer) {
+  return value
+    .toString("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/g, "");
+}
+
+export function createGooglePkcePair() {
+  const codeVerifier = base64UrlEncode(randomBytes(64));
+  const codeChallenge = base64UrlEncode(createHash("sha256").update(codeVerifier).digest());
+
+  return {
+    codeVerifier,
+    codeChallenge
+  };
 }
 
 export async function exchangeCodeForGoogleProfile(input: {
@@ -50,6 +73,7 @@ export async function exchangeCodeForGoogleProfile(input: {
   clientId: string;
   clientSecret: string;
   redirectUri: string;
+  codeVerifier: string;
 }): Promise<GoogleUserProfile> {
   const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
     method: "POST",
@@ -61,6 +85,7 @@ export async function exchangeCodeForGoogleProfile(input: {
       client_id: input.clientId,
       client_secret: input.clientSecret,
       redirect_uri: input.redirectUri,
+      code_verifier: input.codeVerifier,
       grant_type: "authorization_code"
     })
   });
