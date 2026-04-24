@@ -1,5 +1,10 @@
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import {
+  buildAdminLoginThrottleKey,
+  clearAdminLoginFailures,
+  getAdminLoginLock,
+  registerAdminLoginFailure
+} from "../../../../lib/admin-login-rate-limit";
 import {
   getSuperadminSessionCookieName,
   isSuperadminConfigured,
@@ -19,13 +24,55 @@ export async function POST(request: Request) {
     const body = await request.json();
     const email = String(body.email || "");
     const password = String(body.password || "");
+    const forwardedFor = request.headers.get("x-forwarded-for") || "";
+    const ip = forwardedFor.split(",")[0]?.trim() || request.headers.get("x-real-ip") || "unknown";
+    const throttleKey = buildAdminLoginThrottleKey(email, ip);
+    const lock = getAdminLoginLock(throttleKey);
 
-    if (!verifySuperadminCredentials(email, password)) {
-      return NextResponse.json({ error: "Неверный логин или пароль." }, { status: 401 });
+    if (lock.isLocked) {
+      return NextResponse.json(
+        {
+          error: `Слишком много неверных попыток. Повторите через ${lock.remainingMinutes} мин.`,
+          retryAfterSeconds: lock.remainingSeconds
+        },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(lock.remainingSeconds)
+          }
+        }
+      );
     }
 
-    const cookieStore = await cookies();
-    cookieStore.set({
+    if (!verifySuperadminCredentials(email, password)) {
+      const failure = registerAdminLoginFailure(throttleKey);
+      if (failure.isLocked) {
+        return NextResponse.json(
+          {
+            error: "Слишком много неверных попыток. Вход заблокирован на 3 минуты.",
+            retryAfterSeconds: Math.ceil(failure.lockoutMs / 1000)
+          },
+          {
+            status: 429,
+            headers: {
+              "Retry-After": String(Math.ceil(failure.lockoutMs / 1000))
+            }
+          }
+        );
+      }
+
+      return NextResponse.json(
+        {
+          error: `Неверный логин или пароль. Осталось попыток: ${Math.max(0, 3 - failure.failedAttempts)}`
+        },
+        { status: 401 }
+      );
+    }
+
+    clearAdminLoginFailures(throttleKey);
+
+    const response = NextResponse.json({ ok: true });
+    response.cookies.set({
       name: getSuperadminSessionCookieName(),
       value: signSuperadminSession(email),
       httpOnly: true,
@@ -35,7 +82,7 @@ export async function POST(request: Request) {
       maxAge: 60 * 60 * 24 * 7
     });
 
-    return NextResponse.json({ ok: true });
+    return response;
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Не удалось выполнить вход." },

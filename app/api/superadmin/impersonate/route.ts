@@ -1,4 +1,3 @@
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { getProfessionalWorkspaceForAdmin } from "../../../../lib/admin-data";
 import { requireSuperadminSession } from "../../../../lib/admin-auth";
@@ -15,8 +14,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Пользователь не найден." }, { status: 404 });
     }
 
-    const cookieStore = await cookies();
-    cookieStore.set({
+    const response = NextResponse.json({ ok: true, redirectTo: "/pro/calendar" });
+    response.cookies.set({
       name: getSessionCookieName(),
       value: signSessionValue(professionalId),
       httpOnly: true,
@@ -26,7 +25,7 @@ export async function POST(request: Request) {
       maxAge: 60 * 60 * 24 * 30
     });
 
-    return NextResponse.json({ ok: true, redirectTo: "/pro/calendar" });
+    return response;
   } catch (error) {
     const message = error instanceof Error ? error.message : "Не удалось войти под пользователем.";
     const status = message === "SUPERADMIN_UNAUTHORIZED" ? 401 : 400;

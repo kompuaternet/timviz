@@ -1,10 +1,9 @@
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { getSuperadminSessionCookieName } from "../../../../lib/admin-auth";
 
 export async function POST() {
-  const cookieStore = await cookies();
-  cookieStore.set({
+  const response = NextResponse.json({ ok: true });
+  response.cookies.set({
     name: getSuperadminSessionCookieName(),
     value: "",
     httpOnly: true,
@@ -14,5 +13,5 @@ export async function POST() {
     maxAge: 0
   });
 
-  return NextResponse.json({ ok: true });
+  return response;
 }
