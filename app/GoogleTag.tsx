@@ -32,7 +32,7 @@ export default function GoogleTag() {
     <>
       <Script
         id="google-tag-manager"
-        strategy="afterInteractive"
+        strategy="beforeInteractive"
       >
         {`
           window.dataLayer = window.dataLayer || [];
