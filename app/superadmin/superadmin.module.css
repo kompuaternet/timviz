@@ -144,6 +144,86 @@
   padding: 24px;
 }
 
+.entityLayout {
+  display: grid;
+  grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+  gap: 16px;
+}
+
+.entityList,
+.entityDetail,
+.accordion,
+.emptyState {
+  border: 1px solid rgba(19, 17, 28, 0.08);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 14px 32px rgba(64, 48, 120, 0.06);
+}
+
+.entityList {
+  max-height: 760px;
+  overflow: auto;
+  padding: 10px;
+  display: grid;
+  gap: 10px;
+}
+
+.entityListItem {
+  width: 100%;
+  display: grid;
+  gap: 4px;
+  padding: 14px 16px;
+  border: 1px solid rgba(19, 17, 28, 0.08);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.84);
+  color: #171411;
+  text-align: left;
+  cursor: pointer;
+}
+
+.entityListItem strong {
+  font-size: 1rem;
+}
+
+.entityListItem span {
+  color: #6d6673;
+  font-size: 0.9rem;
+}
+
+.entityListItemActive {
+  border-color: rgba(112, 88, 255, 0.42);
+  box-shadow: 0 0 0 4px rgba(112, 88, 255, 0.08);
+  background: rgba(244, 240, 255, 0.94);
+}
+
+.entityDetail {
+  padding: 18px;
+}
+
+.entityDetailHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.entityDetailHeader h3 {
+  margin: 0;
+  font-size: 1.3rem;
+  color: #171411;
+}
+
+.entityDetailHeader p {
+  margin: 6px 0 0;
+  color: #6d6673;
+}
+
+.emptyState {
+  padding: 24px;
+  color: #6d6673;
+}
+
 .sectionHeader {
   display: flex;
   align-items: flex-end;
@@ -220,6 +300,45 @@
 .tableLike {
   display: grid;
   gap: 12px;
+}
+
+.accordionList {
+  display: grid;
+  gap: 12px;
+}
+
+.accordion {
+  padding: 0;
+  overflow: hidden;
+}
+
+.accordionSummary {
+  list-style: none;
+  cursor: pointer;
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.accordionSummary::-webkit-details-marker {
+  display: none;
+}
+
+.accordionSummary strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.accordionSummary span {
+  color: #6d6673;
+  font-size: 0.92rem;
+}
+
+.accordion :global(.tableLike),
+.accordion .tableLike,
+.accordion .photoGrid {
+  padding: 0 16px 16px;
 }
 
 .tableRow {
@@ -360,7 +479,8 @@
   .metrics,
   .catalogComposer,
   .balanceRow,
-  .tableRow {
+  .tableRow,
+  .entityLayout {
     grid-template-columns: 1fr;
   }
 }
@@ -372,7 +492,8 @@
 
   .hero,
   .sectionHeader,
-  .userHeader {
+  .userHeader,
+  .entityDetailHeader {
     grid-template-columns: 1fr;
     display: grid;
   }

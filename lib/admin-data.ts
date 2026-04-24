@@ -227,6 +227,68 @@ export async function setProfessionalBalances(input: {
   return { ok: true };
 }
 
+export async function deleteProfessionalAsSuperadmin(professionalId: string) {
+  const directory = await getBusinessDirectorySnapshot();
+  const membership = directory.memberships.find((item) => item.professionalId === professionalId);
+
+  if (!membership) {
+    throw new Error("Пользователь не найден.");
+  }
+
+  const businessMembers = directory.memberships.filter((item) => item.businessId === membership.businessId);
+  const otherMembers = businessMembers.filter((item) => item.professionalId !== professionalId);
+  const isOwner = membership.scope === "owner";
+
+  if (isOwner && otherMembers.length > 0) {
+    throw new Error("Нельзя удалить владельца, пока в бизнесе ещё есть сотрудники. Сначала уберите остальных пользователей из этого бизнеса.");
+  }
+
+  if (isSupabaseConfigured()) {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      throw new Error("Supabase is not available.");
+    }
+
+    if (isOwner) {
+      const { error: businessError } = await supabase.from("businesses").delete().eq("id", membership.businessId);
+      if (businessError) {
+        throw new Error(businessError.message);
+      }
+    }
+
+    const { error } = await supabase.from("professionals").delete().eq("id", professionalId);
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return { ok: true };
+  }
+
+  const store = await readLocalStore() as {
+    professionals: ProfessionalRecord[];
+    businesses: Array<Record<string, unknown>>;
+    services: Array<Record<string, unknown>>;
+    memberships?: Array<Record<string, unknown>>;
+  };
+
+  store.professionals = store.professionals.filter((item) => item.id !== professionalId);
+
+  if (Array.isArray(store.memberships)) {
+    store.memberships = store.memberships.filter((item) => String(item.professionalId) !== professionalId);
+  }
+
+  if (isOwner) {
+    store.businesses = store.businesses.filter((item) => String(item.id) !== membership.businessId);
+    store.services = store.services.filter((item) => String(item.businessId) !== membership.businessId);
+    if (Array.isArray(store.memberships)) {
+      store.memberships = store.memberships.filter((item) => String(item.businessId) !== membership.businessId);
+    }
+  }
+
+  await writeLocalStore(store);
+  return { ok: true };
+}
+
 export async function getSuperadminServices(search = ""): Promise<SuperadminServiceRecord[]> {
   const directory = await getBusinessDirectorySnapshot();
   const query = normalize(search);

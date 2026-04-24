@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import styles from "./superadmin.module.css";
 import type {
   SuperadminPhotoRecord,
@@ -28,6 +28,18 @@ type CatalogDraft = {
   sortOrder: number;
 };
 
+type GroupedServices = {
+  businessId: string;
+  businessName: string;
+  items: SuperadminServiceRecord[];
+};
+
+type GroupedPhotos = {
+  businessId: string;
+  businessName: string;
+  items: SuperadminPhotoRecord[];
+};
+
 const defaultCatalogDraft: CatalogDraft = {
   category: categoryOptions[0] || "Другая",
   groupKey: "topSuggestions",
@@ -39,6 +51,34 @@ const defaultCatalogDraft: CatalogDraft = {
 
 async function readJson(response: Response) {
   return response.json().catch(() => ({}));
+}
+
+function groupServices(items: SuperadminServiceRecord[]): GroupedServices[] {
+  const map = new Map<string, GroupedServices>();
+  for (const item of items) {
+    const existing = map.get(item.businessId) ?? {
+      businessId: item.businessId,
+      businessName: item.businessName,
+      items: []
+    };
+    existing.items.push(item);
+    map.set(item.businessId, existing);
+  }
+  return Array.from(map.values()).sort((left, right) => left.businessName.localeCompare(right.businessName));
+}
+
+function groupPhotos(items: SuperadminPhotoRecord[]): GroupedPhotos[] {
+  const map = new Map<string, GroupedPhotos>();
+  for (const item of items) {
+    const existing = map.get(item.businessId) ?? {
+      businessId: item.businessId,
+      businessName: item.businessName,
+      items: []
+    };
+    existing.items.push(item);
+    map.set(item.businessId, existing);
+  }
+  return Array.from(map.values()).sort((left, right) => left.businessName.localeCompare(right.businessName));
 }
 
 export default function SuperadminView({
@@ -58,6 +98,7 @@ export default function SuperadminView({
   const [catalogQuery, setCatalogQuery] = useState("");
   const [status, setStatus] = useState("");
   const [isBusy, setIsBusy] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState(initialUsers[0]?.professionalId || "");
   const [balanceDrafts, setBalanceDrafts] = useState<Record<string, { bookingCreditsTotal: string; walletBalance: string }>>(
     () =>
       Object.fromEntries(
@@ -83,6 +124,17 @@ export default function SuperadminView({
     );
   }, [userQuery, users]);
 
+  useEffect(() => {
+    if (!filteredUsers.some((user) => user.professionalId === selectedUserId)) {
+      setSelectedUserId(filteredUsers[0]?.professionalId || "");
+    }
+  }, [filteredUsers, selectedUserId]);
+
+  const selectedUser =
+    filteredUsers.find((user) => user.professionalId === selectedUserId) ??
+    users.find((user) => user.professionalId === selectedUserId) ??
+    null;
+
   const filteredServices = useMemo(() => {
     const query = serviceQuery.trim().toLowerCase();
     if (!query) return services;
@@ -94,6 +146,8 @@ export default function SuperadminView({
     );
   }, [serviceQuery, services]);
 
+  const groupedServices = useMemo(() => groupServices(filteredServices), [filteredServices]);
+
   const filteredPhotos = useMemo(() => {
     const query = photoQuery.trim().toLowerCase();
     if (!query) return photos;
@@ -104,6 +158,8 @@ export default function SuperadminView({
         .includes(query)
     );
   }, [photoQuery, photos]);
+
+  const groupedPhotos = useMemo(() => groupPhotos(filteredPhotos), [filteredPhotos]);
 
   const filteredCatalog = useMemo(() => {
     const query = catalogQuery.trim().toLowerCase();
@@ -169,6 +225,38 @@ export default function SuperadminView({
         )
       );
     }, `Баланс пользователя ${user.fullName} обновлен.`);
+  }
+
+  async function deleteUser(user: SuperadminUserRecord) {
+    await withStatus(async () => {
+      const response = await fetch(
+        `/api/superadmin/users?professionalId=${encodeURIComponent(user.professionalId)}`,
+        { method: "DELETE" }
+      );
+      const payload = await readJson(response);
+      if (!response.ok) {
+        throw new Error(payload.error || "Не удалось удалить пользователя.");
+      }
+
+      setUsers((current) => current.filter((item) => item.professionalId !== user.professionalId));
+      setServices((current) =>
+        current.filter(
+          (item) =>
+            item.addedByProfessionalId !== user.professionalId && item.businessId !== user.businessId
+        )
+      );
+      setPhotos((current) =>
+        current.filter(
+          (item) =>
+            item.addedByProfessionalId !== user.professionalId && item.businessId !== user.businessId
+        )
+      );
+      setBalanceDrafts((current) => {
+        const next = { ...current };
+        delete next[user.professionalId];
+        return next;
+      });
+    }, `Пользователь ${user.fullName} удалён.`);
   }
 
   async function toggleServiceBlocked(service: SuperadminServiceRecord, nextBlocked: boolean) {
@@ -291,7 +379,7 @@ export default function SuperadminView({
           <p className={styles.kicker}>Timviz Superadmin</p>
           <h1>Управление платформой</h1>
           <p className={styles.heroText}>
-            Пользователи, вход под аккаунтом, модерация услуг и фото, плюс корневой каталог услуг в одном месте.
+            Большие списки без хаоса: быстрый поиск пользователей, отдельная карточка действий, сгруппированные услуги и фото.
           </p>
         </div>
         <div className={styles.heroActions}>
@@ -309,7 +397,7 @@ export default function SuperadminView({
         </article>
         <article className={styles.metricCard}>
           <strong>{services.length}</strong>
-          <span>Услуг в бизнесах</span>
+          <span>Услуг</span>
         </article>
         <article className={styles.metricCard}>
           <strong>{photos.length}</strong>
@@ -317,7 +405,7 @@ export default function SuperadminView({
         </article>
         <article className={styles.metricCard}>
           <strong>{catalog.length}</strong>
-          <span>Элементов в root-каталоге</span>
+          <span>Элементов root-каталога</span>
         </article>
       </section>
 
@@ -327,7 +415,7 @@ export default function SuperadminView({
         <div className={styles.sectionHeader}>
           <div>
             <h2>Пользователи</h2>
-            <p>Найти любого пользователя, поправить балансы и зайти под ним в рабочий кабинет.</p>
+            <p>Слева быстрый список, справа карточка, где уже можно менять балансы, входить под пользователем или удалить его.</p>
           </div>
           <input
             className={styles.searchInput}
@@ -336,77 +424,114 @@ export default function SuperadminView({
             onChange={(event) => setUserQuery(event.target.value)}
           />
         </div>
-        <div className={styles.cardGrid}>
-          {filteredUsers.map((user) => (
-            <article key={user.professionalId} className={styles.userCard}>
-              <div className={styles.userHeader}>
-                <div>
-                  <h3>{user.fullName}</h3>
-                  <p>{user.businessName}</p>
+
+        <div className={styles.entityLayout}>
+          <div className={styles.entityList}>
+            {filteredUsers.map((user) => (
+              <button
+                key={user.professionalId}
+                type="button"
+                className={`${styles.entityListItem} ${
+                  user.professionalId === selectedUserId ? styles.entityListItemActive : ""
+                }`}
+                onClick={() => setSelectedUserId(user.professionalId)}
+              >
+                <strong>{user.fullName}</strong>
+                <span>{user.businessName}</span>
+                <span>{user.email}</span>
+              </button>
+            ))}
+          </div>
+
+          <div className={styles.entityDetail}>
+            {selectedUser ? (
+              <>
+                <div className={styles.entityDetailHeader}>
+                  <div>
+                    <h3>{selectedUser.fullName}</h3>
+                    <p>{selectedUser.businessName}</p>
+                  </div>
+                  <div className={styles.rowActions}>
+                    <button
+                      type="button"
+                      className={styles.primaryButton}
+                      onClick={() => void impersonate(selectedUser.professionalId)}
+                      disabled={isBusy}
+                    >
+                      Войти как пользователь
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.dangerButton}
+                      onClick={() => void deleteUser(selectedUser)}
+                      disabled={isBusy}
+                    >
+                      Удалить пользователя
+                    </button>
+                  </div>
                 </div>
-                <button
-                  type="button"
-                  className={styles.primaryButton}
-                  onClick={() => void impersonate(user.professionalId)}
-                  disabled={isBusy}
-                >
-                  Войти как пользователь
-                </button>
-              </div>
-              <div className={styles.metaGrid}>
-                <span>Email: {user.email}</span>
-                <span>Телефон: {user.phone || "—"}</span>
-                <span>Роль: {user.role}</span>
-                <span>Язык: {user.language}</span>
-                <span>Валюта: {user.currency}</span>
-                <span>Услуг: {user.servicesCount}</span>
-              </div>
-              <div className={styles.balanceRow}>
-                <label className={styles.field}>
-                  <span>Баланс записей</span>
-                  <input
-                    className={styles.input}
-                    value={balanceDrafts[user.professionalId]?.bookingCreditsTotal ?? ""}
-                    onChange={(event) =>
-                      setBalanceDrafts((current) => ({
-                        ...current,
-                        [user.professionalId]: {
-                          bookingCreditsTotal: event.target.value,
-                          walletBalance:
-                            current[user.professionalId]?.walletBalance ?? String(user.walletBalance)
-                        }
-                      }))
-                    }
-                  />
-                </label>
-                <label className={styles.field}>
-                  <span>Денежный баланс</span>
-                  <input
-                    className={styles.input}
-                    value={balanceDrafts[user.professionalId]?.walletBalance ?? ""}
-                    onChange={(event) =>
-                      setBalanceDrafts((current) => ({
-                        ...current,
-                        [user.professionalId]: {
-                          bookingCreditsTotal:
-                            current[user.professionalId]?.bookingCreditsTotal ?? String(user.bookingCreditsTotal),
-                          walletBalance: event.target.value
-                        }
-                      }))
-                    }
-                  />
-                </label>
-                <button
-                  type="button"
-                  className={styles.secondaryButton}
-                  onClick={() => void saveBalances(user)}
-                  disabled={isBusy}
-                >
-                  Сохранить балансы
-                </button>
-              </div>
-            </article>
-          ))}
+
+                <div className={styles.metaGrid}>
+                  <span>Email: {selectedUser.email}</span>
+                  <span>Телефон: {selectedUser.phone || "—"}</span>
+                  <span>Роль: {selectedUser.role}</span>
+                  <span>Статус: {selectedUser.scope === "owner" ? "Владелец" : "Сотрудник"}</span>
+                  <span>Язык: {selectedUser.language}</span>
+                  <span>Валюта: {selectedUser.currency}</span>
+                  <span>Услуг: {selectedUser.servicesCount}</span>
+                  <span>Фото: {selectedUser.photosCount}</span>
+                </div>
+
+                <div className={styles.balanceRow}>
+                  <label className={styles.field}>
+                    <span>Баланс записей</span>
+                    <input
+                      className={styles.input}
+                      value={balanceDrafts[selectedUser.professionalId]?.bookingCreditsTotal ?? ""}
+                      onChange={(event) =>
+                        setBalanceDrafts((current) => ({
+                          ...current,
+                          [selectedUser.professionalId]: {
+                            bookingCreditsTotal: event.target.value,
+                            walletBalance:
+                              current[selectedUser.professionalId]?.walletBalance ?? String(selectedUser.walletBalance)
+                          }
+                        }))
+                      }
+                    />
+                  </label>
+                  <label className={styles.field}>
+                    <span>Денежный баланс</span>
+                    <input
+                      className={styles.input}
+                      value={balanceDrafts[selectedUser.professionalId]?.walletBalance ?? ""}
+                      onChange={(event) =>
+                        setBalanceDrafts((current) => ({
+                          ...current,
+                          [selectedUser.professionalId]: {
+                            bookingCreditsTotal:
+                              current[selectedUser.professionalId]?.bookingCreditsTotal ??
+                              String(selectedUser.bookingCreditsTotal),
+                            walletBalance: event.target.value
+                          }
+                        }))
+                      }
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    className={styles.secondaryButton}
+                    onClick={() => void saveBalances(selectedUser)}
+                    disabled={isBusy}
+                  >
+                    Сохранить балансы
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className={styles.emptyState}>Найди пользователя слева, и здесь откроется его карточка.</div>
+            )}
+          </div>
         </div>
       </section>
 
@@ -414,7 +539,7 @@ export default function SuperadminView({
         <div className={styles.sectionHeader}>
           <div>
             <h2>Услуги пользователей</h2>
-            <p>Смотреть, кто добавил услугу, блокировать или удалять её на корневом уровне бизнеса.</p>
+            <p>Сгруппированы по бизнесам. Блоки можно сворачивать, чтобы большие объёмы не превращались в простыню.</p>
           </div>
           <input
             className={styles.searchInput}
@@ -423,47 +548,59 @@ export default function SuperadminView({
             onChange={(event) => setServiceQuery(event.target.value)}
           />
         </div>
-        <div className={styles.tableLike}>
-          {filteredServices.map((service) => (
-            <div key={service.id} className={styles.tableRow}>
-              <div>
-                <strong>{service.name}</strong>
-                <div className={styles.rowMeta}>
-                  {service.category} · {service.durationMinutes} мин · {service.price}
+
+        <div className={styles.accordionList}>
+          {groupedServices.map((group) => (
+            <details key={group.businessId} className={styles.accordion} open={serviceQuery.length > 0}>
+              <summary className={styles.accordionSummary}>
+                <div>
+                  <strong>{group.businessName}</strong>
+                  <span>{group.items.length} услуг</span>
                 </div>
+              </summary>
+              <div className={styles.tableLike}>
+                {group.items.map((service) => (
+                  <div key={service.id} className={styles.tableRow}>
+                    <div>
+                      <strong>{service.name}</strong>
+                      <div className={styles.rowMeta}>
+                        {service.category} · {service.durationMinutes} мин · {service.price}
+                      </div>
+                    </div>
+                    <div>
+                      <button
+                        type="button"
+                        className={styles.linkButton}
+                        onClick={() => void impersonate(service.addedByProfessionalId)}
+                      >
+                        {service.addedByName}
+                      </button>
+                    </div>
+                    <div className={styles.rowActions}>
+                      <span className={service.isBlocked ? styles.badgeBlocked : styles.badgeActive}>
+                        {service.isBlocked ? "Заблокирована" : "Активна"}
+                      </span>
+                      <button
+                        type="button"
+                        className={styles.secondaryButton}
+                        onClick={() => void toggleServiceBlocked(service, !service.isBlocked)}
+                        disabled={isBusy}
+                      >
+                        {service.isBlocked ? "Разблокировать" : "Блокировать"}
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.dangerButton}
+                        onClick={() => void deleteService(service.id)}
+                        disabled={isBusy}
+                      >
+                        Удалить
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
-              <div>
-                <strong>{service.businessName}</strong>
-                <button
-                  type="button"
-                  className={styles.linkButton}
-                  onClick={() => void impersonate(service.addedByProfessionalId)}
-                >
-                  {service.addedByName}
-                </button>
-              </div>
-              <div className={styles.rowActions}>
-                <span className={service.isBlocked ? styles.badgeBlocked : styles.badgeActive}>
-                  {service.isBlocked ? "Заблокирована" : "Активна"}
-                </span>
-                <button
-                  type="button"
-                  className={styles.secondaryButton}
-                  onClick={() => void toggleServiceBlocked(service, !service.isBlocked)}
-                  disabled={isBusy}
-                >
-                  {service.isBlocked ? "Разблокировать" : "Блокировать"}
-                </button>
-                <button
-                  type="button"
-                  className={styles.dangerButton}
-                  onClick={() => void deleteService(service.id)}
-                  disabled={isBusy}
-                >
-                  Удалить
-                </button>
-              </div>
-            </div>
+            </details>
           ))}
         </div>
       </section>
@@ -472,7 +609,7 @@ export default function SuperadminView({
         <div className={styles.sectionHeader}>
           <div>
             <h2>Фотографии компаний</h2>
-            <p>Фото можно открывать, сразу видеть автора и по одному клику входить под ним.</p>
+            <p>Тоже сгруппированы по бизнесам. Можно быстро сворачивать и открывать только нужную компанию.</p>
           </div>
           <input
             className={styles.searchInput}
@@ -481,49 +618,62 @@ export default function SuperadminView({
             onChange={(event) => setPhotoQuery(event.target.value)}
           />
         </div>
-        <div className={styles.photoGrid}>
-          {filteredPhotos.map((photo) => (
-            <article key={`${photo.businessId}:${photo.id}`} className={styles.photoCard}>
-              <button
-                type="button"
-                className={styles.photoButton}
-                onClick={() => void impersonate(photo.addedByProfessionalId)}
-              >
-                <img src={photo.url} alt={photo.caption || photo.businessName} className={styles.photoImage} />
-              </button>
-              <div className={styles.photoBody}>
-                <strong>{photo.businessName}</strong>
-                <button
-                  type="button"
-                  className={styles.linkButton}
-                  onClick={() => void impersonate(photo.addedByProfessionalId)}
-                >
-                  {photo.caption || "Открыть автора фото"} · {photo.addedByName}
-                </button>
-                <div className={styles.rowMeta}>
-                  {photo.isPrimary ? "Главное фото" : "Дополнительное"} ·{" "}
-                  {photo.status === "blocked" ? "Заблокировано" : "Активно"}
+
+        <div className={styles.accordionList}>
+          {groupedPhotos.map((group) => (
+            <details key={group.businessId} className={styles.accordion} open={photoQuery.length > 0}>
+              <summary className={styles.accordionSummary}>
+                <div>
+                  <strong>{group.businessName}</strong>
+                  <span>{group.items.length} фото</span>
                 </div>
+              </summary>
+              <div className={styles.photoGrid}>
+                {group.items.map((photo) => (
+                  <article key={`${photo.businessId}:${photo.id}`} className={styles.photoCard}>
+                    <button
+                      type="button"
+                      className={styles.photoButton}
+                      onClick={() => void impersonate(photo.addedByProfessionalId)}
+                    >
+                      <img src={photo.url} alt={photo.caption || photo.businessName} className={styles.photoImage} />
+                    </button>
+                    <div className={styles.photoBody}>
+                      <strong>{photo.caption || photo.businessName}</strong>
+                      <button
+                        type="button"
+                        className={styles.linkButton}
+                        onClick={() => void impersonate(photo.addedByProfessionalId)}
+                      >
+                        {photo.addedByName}
+                      </button>
+                      <div className={styles.rowMeta}>
+                        {photo.isPrimary ? "Главное фото" : "Дополнительное"} ·{" "}
+                        {photo.status === "blocked" ? "Заблокировано" : "Активно"}
+                      </div>
+                    </div>
+                    <div className={styles.rowActions}>
+                      <button
+                        type="button"
+                        className={styles.secondaryButton}
+                        onClick={() => void togglePhotoBlocked(photo, photo.status !== "blocked")}
+                        disabled={isBusy}
+                      >
+                        {photo.status === "blocked" ? "Разблокировать" : "Блокировать"}
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.dangerButton}
+                        onClick={() => void deletePhoto(photo)}
+                        disabled={isBusy}
+                      >
+                        Удалить
+                      </button>
+                    </div>
+                  </article>
+                ))}
               </div>
-              <div className={styles.rowActions}>
-                <button
-                  type="button"
-                  className={styles.secondaryButton}
-                  onClick={() => void togglePhotoBlocked(photo, photo.status !== "blocked")}
-                  disabled={isBusy}
-                >
-                  {photo.status === "blocked" ? "Разблокировать" : "Блокировать"}
-                </button>
-                <button
-                  type="button"
-                  className={styles.dangerButton}
-                  onClick={() => void deletePhoto(photo)}
-                  disabled={isBusy}
-                >
-                  Удалить
-                </button>
-              </div>
-            </article>
+            </details>
           ))}
         </div>
       </section>
@@ -532,7 +682,7 @@ export default function SuperadminView({
         <div className={styles.sectionHeader}>
           <div>
             <h2>Корневой каталог услуг</h2>
-            <p>Это базовый список услуг, из которого потом подтягиваются предложения в настройке бизнеса и каталоге услуг.</p>
+            <p>Редактируется отдельно, чтобы менять базу предложений для всего сайта в одном месте.</p>
           </div>
           <input
             className={styles.searchInput}

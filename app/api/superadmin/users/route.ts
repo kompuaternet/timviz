@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
-import { getSuperadminUsers, setProfessionalBalances } from "../../../../lib/admin-data";
+import {
+  deleteProfessionalAsSuperadmin,
+  getSuperadminUsers,
+  setProfessionalBalances
+} from "../../../../lib/admin-data";
 import { requireSuperadminSession } from "../../../../lib/admin-auth";
 
 export async function GET(request: Request) {
@@ -32,6 +36,19 @@ export async function PATCH(request: Request) {
     return NextResponse.json(result);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Не удалось обновить баланс.";
+    const status = message === "SUPERADMIN_UNAUTHORIZED" ? 401 : 400;
+    return NextResponse.json({ error: message }, { status });
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    await requireSuperadminSession();
+    const { searchParams } = new URL(request.url);
+    const result = await deleteProfessionalAsSuperadmin(String(searchParams.get("professionalId") || ""));
+    return NextResponse.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Не удалось удалить пользователя.";
     const status = message === "SUPERADMIN_UNAUTHORIZED" ? 401 : 400;
     return NextResponse.json({ error: message }, { status });
   }
