@@ -76,7 +76,9 @@ const copy = {
     finalTitle: "Начните принимать записи уже сегодня",
     finalText:
       "Создайте бизнес-профиль, настройте услуги и график. Дальше мы подключим монетизацию, Telegram-бота и приложение, но уже сейчас можно отрабатывать основной процесс записи.",
-    footer: "Timviz для бизнеса · онлайн-запись клиентов и управление услугами"
+    footer: "Timviz для бизнеса · онлайн-запись клиентов и управление услугами",
+    privacy: "Политика конфиденциальности",
+    terms: "Условия использования"
   },
   uk: {
     logo: "timviz",
@@ -146,7 +148,9 @@ const copy = {
     finalTitle: "Почніть приймати записи вже сьогодні",
     finalText:
       "Створіть бізнес-профіль, налаштуйте послуги і графік. Далі ми підключимо монетизацію, Telegram-бота і застосунок, але вже зараз можна відпрацювати основний процес запису.",
-    footer: "Timviz для бізнесу · онлайн-запис клієнтів і керування послугами"
+    footer: "Timviz для бізнесу · онлайн-запис клієнтів і керування послугами",
+    privacy: "Політика конфіденційності",
+    terms: "Умови використання"
   },
   en: {
     logo: "timviz",
@@ -216,7 +220,9 @@ const copy = {
     finalTitle: "Start accepting bookings today",
     finalText:
       "Create a business profile, set services and working hours. Monetization, Telegram bot and the app will come next, while the core booking process already works now.",
-    footer: "Timviz for business · online booking and service management"
+    footer: "Timviz for business · online booking and service management",
+    privacy: "Privacy policy",
+    terms: "Terms of use"
   }
 } satisfies Record<LandingLanguage, {
   logo: string;
@@ -248,6 +254,8 @@ const copy = {
   finalTitle: string;
   finalText: string;
   footer: string;
+  privacy: string;
+  terms: string;
 }>;
 
 const screenAssets: Record<LandingLanguage, string[]> = {
@@ -400,6 +408,10 @@ export default function BusinessLanding({ initialLanguage = "ru" }: BusinessLand
       <footer className="business-footer">
         <a className="public-logo" href={getLocalizedPath(language)}><BrandLogo /></a>
         <span>{t.footer}</span>
+        <div className="business-footer-links">
+          <a href={getLocalizedPath(language, "/privacy")}>{t.privacy}</a>
+          <a href={getLocalizedPath(language, "/terms")}>{t.terms}</a>
+        </div>
       </footer>
     </main>
   );

@@ -454,8 +454,8 @@ export default function PublicHome({ searchIndex, initialLanguage = "ru" }: Publ
         </div>
         <div>
           <h3>{String(t.legal)}</h3>
-          <a href="#">{String(t.privacy)}</a>
-          <a href="#">{String(t.terms)}</a>
+          <a href={getLocalizedPath(language, "/privacy")}>{String(t.privacy)}</a>
+          <a href={getLocalizedPath(language, "/terms")}>{String(t.terms)}</a>
         </div>
       </footer>
     </main>
