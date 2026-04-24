@@ -23,7 +23,9 @@ export function verifySuperadminSession(value: string | undefined) {
     return null;
   }
 
-  const [email, signature] = value.split(".");
+  const separatorIndex = value.lastIndexOf(".");
+  const email = separatorIndex > 0 ? value.slice(0, separatorIndex) : "";
+  const signature = separatorIndex > 0 ? value.slice(separatorIndex + 1) : "";
   if (!email || !signature) {
     return null;
   }
