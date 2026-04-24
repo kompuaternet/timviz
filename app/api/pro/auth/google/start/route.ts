@@ -11,6 +11,7 @@ export async function GET(request: Request) {
     const url = new URL(request.url);
     const mode = url.searchParams.get("mode") === "register" ? "register" : "login";
     const origin = url.origin;
+    const isSecure = url.protocol === "https:";
     const settings = getGoogleOAuthSettings(origin);
     const state = randomBytes(24).toString("hex");
 
@@ -19,14 +20,14 @@ export async function GET(request: Request) {
       httpOnly: true,
       sameSite: "lax",
       path: "/",
-      secure: false,
+      secure: isSecure,
       maxAge: 60 * 10
     });
     cookieStore.set(GOOGLE_OAUTH_MODE_COOKIE, mode, {
       httpOnly: true,
       sameSite: "lax",
       path: "/",
-      secure: false,
+      secure: isSecure,
       maxAge: 60 * 10
     });
 

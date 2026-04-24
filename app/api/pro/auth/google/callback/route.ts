@@ -7,25 +7,26 @@ import { getProfessionalIdByEmail } from "../../../../../../lib/pro-data";
 const GOOGLE_OAUTH_STATE_COOKIE = "rezervo_google_oauth_state";
 const GOOGLE_OAUTH_MODE_COOKIE = "rezervo_google_oauth_mode";
 
-function clearOAuthCookies(cookieStore: Awaited<ReturnType<typeof cookies>>) {
+function clearOAuthCookies(cookieStore: Awaited<ReturnType<typeof cookies>>, isSecure: boolean) {
   cookieStore.set(GOOGLE_OAUTH_STATE_COOKIE, "", {
     httpOnly: true,
     sameSite: "lax",
     path: "/",
-    secure: false,
+    secure: isSecure,
     maxAge: 0
   });
   cookieStore.set(GOOGLE_OAUTH_MODE_COOKIE, "", {
     httpOnly: true,
     sameSite: "lax",
     path: "/",
-    secure: false,
+    secure: isSecure,
     maxAge: 0
   });
 }
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
+  const isSecure = url.protocol === "https:";
   const code = url.searchParams.get("code")?.trim() || "";
   const state = url.searchParams.get("state")?.trim() || "";
   const cookieStore = await cookies();
@@ -33,7 +34,7 @@ export async function GET(request: Request) {
   const mode = cookieStore.get(GOOGLE_OAUTH_MODE_COOKIE)?.value === "register" ? "register" : "login";
 
   if (!code || !state || !expectedState || state !== expectedState) {
-    clearOAuthCookies(cookieStore);
+    clearOAuthCookies(cookieStore, isSecure);
     return NextResponse.redirect(new URL("/pro/login?google_error=state", request.url));
   }
 
@@ -47,14 +48,14 @@ export async function GET(request: Request) {
     });
     const professionalId = await getProfessionalIdByEmail(profile.email);
 
-    clearOAuthCookies(cookieStore);
+    clearOAuthCookies(cookieStore, isSecure);
 
     if (professionalId) {
       cookieStore.set(getSessionCookieName(), signSessionValue(professionalId), {
         httpOnly: true,
         sameSite: "lax",
         path: "/",
-        secure: false,
+        secure: isSecure,
         maxAge: 60 * 60 * 24 * 7
       });
       return NextResponse.redirect(new URL("/pro/calendar", request.url));
@@ -78,7 +79,7 @@ export async function GET(request: Request) {
 
     return NextResponse.redirect(createAccountUrl);
   } catch {
-    clearOAuthCookies(cookieStore);
+    clearOAuthCookies(cookieStore, isSecure);
     return NextResponse.redirect(new URL("/pro/login?google_error=oauth", request.url));
   }
 }
