@@ -309,18 +309,29 @@ export const SERVICE_TEMPLATE_CATALOG: CategoryTemplate[] = [
 
 export const categoryOptions = SERVICE_TEMPLATE_CATALOG.map((item) => item.title);
 
-export function getCategoryTemplate(category: string) {
+export function getCategoryOptions(catalog: CategoryTemplate[] = SERVICE_TEMPLATE_CATALOG) {
+  return catalog.map((item) => item.title);
+}
+
+export function getCategoryTemplate(
+  category: string,
+  catalog: CategoryTemplate[] = SERVICE_TEMPLATE_CATALOG
+) {
   return (
-    SERVICE_TEMPLATE_CATALOG.find((item) => item.title === category) ??
+    catalog.find((item) => item.title === category) ??
+    catalog.find((item) => item.key === "Другая") ??
     SERVICE_TEMPLATE_CATALOG.find((item) => item.key === "Другая")!
   );
 }
 
-export function getServicesForCategories(categories: string[]) {
+export function getServicesForCategories(
+  categories: string[],
+  catalog: CategoryTemplate[] = SERVICE_TEMPLATE_CATALOG
+) {
   return Array.from(
     new Set(
       categories.flatMap((category) => {
-        const template = getCategoryTemplate(category);
+        const template = getCategoryTemplate(category, catalog);
         return [...template.topSuggestions, ...template.popularServices].map((service) => service.name);
       })
     )

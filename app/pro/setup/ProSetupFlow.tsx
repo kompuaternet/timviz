@@ -11,8 +11,9 @@ import {
   markScheduleReminderPending
 } from "../../../lib/schedule-reminder";
 import {
-  categoryOptions,
+  getCategoryOptions,
   getCategoryTemplate,
+  type CategoryTemplate,
   getServicesForCategories
 } from "../../../lib/service-templates";
 
@@ -443,7 +444,7 @@ const initialDraft: Draft = {
   addressLon: null
 };
 
-export default function ProSetupFlow() {
+export default function ProSetupFlow({ catalog }: { catalog: CategoryTemplate[] }) {
   const router = useRouter();
   const [language, setLanguage] = useState<ProLanguage>("ru");
   const [step, setStep] = useState(0);
@@ -502,15 +503,19 @@ export default function ProSetupFlow() {
   }, [draft.addressLat, draft.addressLon]);
 
   const previewSuggestion = addressSuggestions[0] ?? null;
+  const categoryOptions = useMemo(() => getCategoryOptions(catalog), [catalog]);
   const primaryCategory = draft.categories[0] ?? "Другая";
-  const primaryTemplate = useMemo(() => getCategoryTemplate(primaryCategory), [primaryCategory]);
+  const primaryTemplate = useMemo(
+    () => getCategoryTemplate(primaryCategory, catalog),
+    [catalog, primaryCategory]
+  );
   const allSuggestedServices = useMemo(
     () => [...primaryTemplate.topSuggestions, ...primaryTemplate.popularServices],
     [primaryTemplate]
   );
   const manualCategoryOptions = useMemo(
     () => Array.from(new Set(["Другая", ...categoryOptions.filter((category) => category !== "Другая")])),
-    []
+    [categoryOptions]
   );
 
   useEffect(() => {
@@ -704,7 +709,7 @@ export default function ProSetupFlow() {
       return {
         ...current,
         categories: nextCategories,
-        services: getServicesForCategories(nextCategories)
+        services: getServicesForCategories(nextCategories, catalog)
       };
     });
   }

@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { getServiceTemplateCatalog } from "../../../../lib/global-service-catalog";
 import { getSessionCookieName, verifySessionValue } from "../../../../lib/pro-auth";
 import {
   addServicesForProfessional,
@@ -9,7 +10,6 @@ import {
   reorderServicesForProfessional,
   updateServiceForProfessional
 } from "../../../../lib/pro-data";
-import { SERVICE_TEMPLATE_CATALOG } from "../../../../lib/service-templates";
 
 type ServiceInput = {
   name?: string;
@@ -38,7 +38,7 @@ export async function GET() {
 
     return NextResponse.json({
       workspace,
-      catalog: SERVICE_TEMPLATE_CATALOG
+      catalog: await getServiceTemplateCatalog()
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to load services.";

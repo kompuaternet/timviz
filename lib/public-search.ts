@@ -249,6 +249,9 @@ export async function getPublicSearchIndex(params: PublicSearchParams = {}): Pro
   const lon = params.lon ?? null;
 
   for (const service of store.services) {
+    if (service.isBlocked === true) {
+      continue;
+    }
     const list = servicesByBusiness.get(service.businessId) ?? [];
     list.push(service);
     servicesByBusiness.set(service.businessId, list);

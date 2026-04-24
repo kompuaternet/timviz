@@ -50,6 +50,10 @@ export type BusinessPhoto = {
   url: string;
   isPrimary: boolean;
   createdAt: string;
+  createdByProfessionalId?: string;
+  caption?: string;
+  status?: "active" | "blocked";
+  blockedAt?: string;
 };
 
 export type BusinessRecord = {
@@ -83,6 +87,7 @@ export type ProfessionalRecord = {
   language: string;
   currency?: string;
   bookingCreditsTotal?: number;
+  walletBalance?: number;
   ownerMode: "owner" | "member";
   createdAt: string;
 };
@@ -105,6 +110,8 @@ export type ServiceRecord = {
   durationMinutes?: number;
   color?: string;
   sortOrder?: number;
+  createdByProfessionalId?: string;
+  isBlocked?: boolean;
   createdAt: string;
 };
 
@@ -177,7 +184,11 @@ function normalizeProfessionalRecord(professional: ProfessionalRecord): Professi
     bookingCreditsTotal:
       typeof professional.bookingCreditsTotal === "number"
         ? Math.max(0, professional.bookingCreditsTotal)
-        : DEFAULT_BOOKING_CREDITS
+        : DEFAULT_BOOKING_CREDITS,
+    walletBalance:
+      typeof professional.walletBalance === "number"
+        ? Math.max(0, professional.walletBalance)
+        : 0
   };
 }
 
@@ -186,8 +197,8 @@ export function normalizeBusinessPhotos(input: unknown): BusinessPhoto[] {
     return [];
   }
 
-  const photos = input
-    .map((item, index) => {
+  const rows = input
+    .map((item, index): BusinessPhoto | null => {
       if (!item || typeof item !== "object") {
         return null;
       }
@@ -209,11 +220,24 @@ export function normalizeBusinessPhotos(input: unknown): BusinessPhoto[] {
         createdAt:
           typeof candidate.createdAt === "string" && candidate.createdAt.trim()
             ? candidate.createdAt.trim()
-            : new Date(0).toISOString()
+            : new Date(0).toISOString(),
+        createdByProfessionalId:
+          typeof candidate.createdByProfessionalId === "string" && candidate.createdByProfessionalId.trim()
+            ? candidate.createdByProfessionalId.trim()
+            : undefined,
+        caption:
+          typeof candidate.caption === "string" && candidate.caption.trim()
+            ? candidate.caption.trim()
+            : undefined,
+        status: candidate.status === "blocked" ? "blocked" : "active",
+        blockedAt:
+          typeof candidate.blockedAt === "string" && candidate.blockedAt.trim()
+            ? candidate.blockedAt.trim()
+            : undefined
       } satisfies BusinessPhoto;
-    })
-    .filter((photo): photo is BusinessPhoto => Boolean(photo))
-    .slice(0, 5);
+    });
+
+  const photos = rows.filter((photo): photo is BusinessPhoto => photo !== null).slice(0, 5);
 
   if (photos.length === 0) {
     return [];
@@ -228,7 +252,7 @@ export function normalizeBusinessPhotos(input: unknown): BusinessPhoto[] {
 }
 
 export function getPrimaryBusinessPhoto(business: Pick<BusinessRecord, "photos">) {
-  const photos = normalizeBusinessPhotos(business.photos);
+  const photos = normalizeBusinessPhotos(business.photos).filter((photo) => photo.status !== "blocked");
   return photos.find((photo) => photo.isPrimary)?.url ?? photos[0]?.url ?? "";
 }
 
@@ -244,6 +268,7 @@ function mapSupabaseProfessionalRow(row: {
   language: string;
   currency?: string | null;
   booking_credits_total?: number | null;
+  wallet_balance?: number | null;
   owner_mode: string;
   created_at: string;
 }): ProfessionalRecord {
@@ -260,6 +285,7 @@ function mapSupabaseProfessionalRow(row: {
     currency: row.currency ?? undefined,
     bookingCreditsTotal:
       typeof row.booking_credits_total === "number" ? row.booking_credits_total : undefined,
+    walletBalance: typeof row.wallet_balance === "number" ? row.wallet_balance : undefined,
     ownerMode: row.owner_mode === "member" ? "member" : "owner",
     createdAt: row.created_at
   });
@@ -330,6 +356,8 @@ function mapSupabaseServiceRow(row: {
   duration_minutes?: number | null;
   color?: string | null;
   sort_order?: number | null;
+  created_by_professional_id?: string | null;
+  is_blocked?: boolean | null;
   created_at: string;
 }): ServiceRecord {
   return {
@@ -342,6 +370,8 @@ function mapSupabaseServiceRow(row: {
       typeof row.duration_minutes === "number" ? row.duration_minutes : inferServiceDuration(row.name),
     color: row.color || getDefaultServiceColor(row.name),
     sortOrder: typeof row.sort_order === "number" ? row.sort_order : 0,
+    createdByProfessionalId: row.created_by_professional_id ?? undefined,
+    isBlocked: row.is_blocked === true,
     createdAt: row.created_at
   };
 }
@@ -541,27 +571,10 @@ export async function getBusinessDirectorySnapshot(): Promise<BusinessDirectoryS
       { data: memberships, error: membershipsError },
       { data: services, error: servicesError }
     ] = await Promise.all([
-      supabase
-        .from("businesses")
-        .select(
-          "id, name, website, categories, account_type, service_mode, address, address_details, address_lat, address_lon, work_schedule_mode, work_schedule, custom_schedule, photos, owner_professional_id, created_at"
-        )
-        .order("created_at", { ascending: true }),
-      supabase
-        .from("professionals")
-        .select(
-          "id, first_name, last_name, email, password_hash, phone, country, timezone, language, currency, booking_credits_total, owner_mode, created_at"
-        )
-        .order("created_at", { ascending: true }),
-      supabase
-        .from("business_memberships")
-        .select("id, business_id, professional_id, role, scope, created_at")
-        .order("created_at", { ascending: true }),
-      supabase
-        .from("business_services")
-        .select("id, business_id, name, price, category, duration_minutes, color, sort_order, created_at")
-        .order("sort_order", { ascending: true })
-        .order("created_at", { ascending: true })
+      supabase.from("businesses").select("*").order("created_at", { ascending: true }),
+      supabase.from("professionals").select("*").order("created_at", { ascending: true }),
+      supabase.from("business_memberships").select("*").order("created_at", { ascending: true }),
+      supabase.from("business_services").select("*").order("sort_order", { ascending: true }).order("created_at", { ascending: true })
     ]);
 
     if (businessesError) {
@@ -684,19 +697,26 @@ export async function createProfessionalSetup(input: {
       }
 
       if (input.setup.services.length > 0) {
-        const { error: servicesError } = await supabase.from("business_services").insert(
-          input.setup.services.map((service, index) => ({
-            id: makeId("svc"),
-            business_id: businessId,
-            name: service,
-            price: inferServicePrice(service),
-            category: input.setup.categories[0] || "Без категории",
-            duration_minutes: inferServiceDuration(service),
-            color: getDefaultServiceColor(service, index),
-            sort_order: index,
-            created_at: createdAt
-          }))
-        );
+        const servicesPayload = input.setup.services.map((service, index) => ({
+          id: makeId("svc"),
+          business_id: businessId,
+          name: service,
+          price: inferServicePrice(service),
+          category: input.setup.categories[0] || "Без категории",
+          duration_minutes: inferServiceDuration(service),
+          color: getDefaultServiceColor(service, index),
+          sort_order: index,
+          created_by_professional_id: professionalId,
+          is_blocked: false,
+          created_at: createdAt
+        }));
+        let { error: servicesError } = await supabase.from("business_services").insert(servicesPayload);
+
+        if (servicesError && /created_by_professional_id|is_blocked/i.test(servicesError.message)) {
+          ({ error: servicesError } = await supabase.from("business_services").insert(
+            servicesPayload.map(({ created_by_professional_id, is_blocked, ...service }) => service)
+          ));
+        }
 
         if (servicesError) {
           throw new Error(servicesError.message);
@@ -791,6 +811,8 @@ export async function createProfessionalSetup(input: {
         price: inferServicePrice(service),
         category: input.setup.categories[0] || "Без категории",
         durationMinutes: inferServiceDuration(service),
+        createdByProfessionalId: professionalId,
+        isBlocked: false,
         createdAt
       }))
     );
@@ -844,7 +866,7 @@ export async function getWorkspaceSnapshot(
   }
 
   const services = directory.services
-    .filter((item) => item.businessId === business.id)
+    .filter((item) => item.businessId === business.id && item.isBlocked !== true)
     .sort((left, right) => {
       const orderDiff = (left.sortOrder ?? 0) - (right.sortOrder ?? 0);
       return orderDiff || left.createdAt.localeCompare(right.createdAt);
@@ -1052,6 +1074,7 @@ export async function updateWorkspaceSettingsForProfessional(
       ? Math.max(0, Math.floor(input.topUpCredits))
       : 0;
   const password = input.newPassword?.trim() ?? "";
+  const existingPhotos = normalizeBusinessPhotos(workspace.business.photos);
 
   if (password && password.length < 6) {
     throw new Error("Password must be at least 6 characters.");
@@ -1096,7 +1119,17 @@ export async function updateWorkspaceSettingsForProfessional(
       if (typeof nextBusiness.addressDetails === "string") businessUpdates.address_details = nextBusiness.addressDetails.trim();
       if (typeof nextBusiness.addressLat === "number" || nextBusiness.addressLat === null) businessUpdates.address_lat = nextBusiness.addressLat;
       if (typeof nextBusiness.addressLon === "number" || nextBusiness.addressLon === null) businessUpdates.address_lon = nextBusiness.addressLon;
-      if (Array.isArray(nextBusiness.photos)) businessUpdates.photos = normalizeBusinessPhotos(nextBusiness.photos);
+      if (Array.isArray(nextBusiness.photos)) {
+        businessUpdates.photos = normalizeBusinessPhotos(nextBusiness.photos).map((photo) => {
+          const existing = existingPhotos.find((item) => item.id === photo.id);
+          return {
+            ...photo,
+            createdByProfessionalId: photo.createdByProfessionalId || existing?.createdByProfessionalId || professionalId,
+            status: photo.status || existing?.status || "active",
+            blockedAt: photo.blockedAt || existing?.blockedAt
+          };
+        });
+      }
 
       if (Object.keys(businessUpdates).length > 0) {
         const { error } = await supabase.from("businesses").update(businessUpdates).eq("id", workspace.business.id);
@@ -1150,7 +1183,17 @@ export async function updateWorkspaceSettingsForProfessional(
     if (typeof nextBusiness.addressDetails === "string") business.addressDetails = nextBusiness.addressDetails.trim();
     if (typeof nextBusiness.addressLat === "number" || nextBusiness.addressLat === null) business.addressLat = nextBusiness.addressLat;
     if (typeof nextBusiness.addressLon === "number" || nextBusiness.addressLon === null) business.addressLon = nextBusiness.addressLon;
-    if (Array.isArray(nextBusiness.photos)) business.photos = normalizeBusinessPhotos(nextBusiness.photos);
+    if (Array.isArray(nextBusiness.photos)) {
+      business.photos = normalizeBusinessPhotos(nextBusiness.photos).map((photo) => {
+        const existing = existingPhotos.find((item) => item.id === photo.id);
+        return {
+          ...photo,
+          createdByProfessionalId: photo.createdByProfessionalId || existing?.createdByProfessionalId || professionalId,
+          status: photo.status || existing?.status || "active",
+          blockedAt: photo.blockedAt || existing?.blockedAt
+        };
+      });
+    }
   }
 
   await writeStore(store);
@@ -1210,10 +1253,26 @@ export async function ensureServiceForProfessional(input: {
           : inferServiceDuration(serviceName),
       color,
       sort_order: sortOrder,
+      created_by_professional_id: input.professionalId,
+      is_blocked: false,
       created_at: createdAt
     };
 
-    const { error } = await supabase.from("business_services").insert(service);
+    let { error } = await supabase.from("business_services").insert(service);
+
+    if (error && /created_by_professional_id|is_blocked/i.test(error.message)) {
+      ({ error } = await supabase.from("business_services").insert({
+        id: service.id,
+        business_id: service.business_id,
+        name: service.name,
+        price: service.price,
+        category: service.category,
+        duration_minutes: service.duration_minutes,
+        color: service.color,
+        sort_order: service.sort_order,
+        created_at: service.created_at
+      }));
+    }
 
     if (error) {
       throw new Error(error.message);
@@ -1228,6 +1287,8 @@ export async function ensureServiceForProfessional(input: {
       durationMinutes: service.duration_minutes,
       color: service.color,
       sortOrder: service.sort_order,
+      createdByProfessionalId: input.professionalId,
+      isBlocked: false,
       createdAt: service.created_at
     };
   }
@@ -1248,6 +1309,8 @@ export async function ensureServiceForProfessional(input: {
         : inferServiceDuration(serviceName),
     color,
     sortOrder,
+    createdByProfessionalId: input.professionalId,
+    isBlocked: false,
     createdAt
   };
 

@@ -1,0 +1,387 @@
+.page,
+.loginShell {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 14% 14%, rgba(112, 88, 255, 0.14), transparent 20%),
+    radial-gradient(circle at 88% 70%, rgba(255, 191, 232, 0.34), transparent 24%),
+    linear-gradient(180deg, #ffffff 0%, #fbf9ff 54%, #ffffff 100%);
+}
+
+.page {
+  padding: 32px;
+}
+
+.loginShell {
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.loginCard,
+.section,
+.metricCard,
+.statusBar {
+  border: 1px solid rgba(19, 17, 28, 0.08);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 22px 58px rgba(64, 48, 120, 0.08);
+  backdrop-filter: blur(18px);
+}
+
+.loginCard {
+  width: min(100%, 460px);
+  padding: 28px;
+  display: grid;
+  gap: 18px;
+}
+
+.loginLogo {
+  width: 140px;
+}
+
+.loginHeader h1,
+.sectionHeader h2,
+.hero h1 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: var(--font-display-weight);
+  letter-spacing: -0.04em;
+  color: #171411;
+}
+
+.loginHeader p,
+.heroText,
+.sectionHeader p,
+.rowMeta {
+  color: #6d6673;
+}
+
+.kicker {
+  margin: 0 0 8px;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: #7058ff;
+  font-weight: 900;
+}
+
+.hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 20px;
+}
+
+.heroText {
+  max-width: 760px;
+  font-size: 1rem;
+  line-height: 1.55;
+}
+
+.heroActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.adminBadge,
+.badgeActive,
+.badgeBlocked {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 999px;
+  font-weight: 850;
+}
+
+.adminBadge,
+.badgeActive {
+  background: rgba(112, 88, 255, 0.12);
+  color: #4f3df1;
+}
+
+.badgeBlocked {
+  background: rgba(183, 66, 66, 0.12);
+  color: #b74242;
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.metricCard {
+  padding: 18px 20px;
+  display: grid;
+  gap: 6px;
+}
+
+.metricCard strong {
+  font-size: 2rem;
+  line-height: 1;
+  color: #171411;
+}
+
+.metricCard span {
+  color: #6d6673;
+  font-weight: 700;
+}
+
+.statusBar {
+  margin-bottom: 20px;
+  padding: 14px 18px;
+  font-weight: 750;
+}
+
+.section {
+  margin-bottom: 18px;
+  padding: 24px;
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.cardGrid,
+.photoGrid {
+  display: grid;
+  gap: 14px;
+}
+
+.cardGrid {
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+}
+
+.photoGrid {
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+}
+
+.userCard,
+.photoCard {
+  border: 1px solid rgba(19, 17, 28, 0.08);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 18px;
+  box-shadow: 0 14px 32px rgba(64, 48, 120, 0.06);
+}
+
+.userHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.userHeader h3 {
+  margin: 0;
+  font-size: 1.12rem;
+}
+
+.userHeader p,
+.photoBody strong,
+.photoBody button {
+  margin: 0;
+}
+
+.metaGrid,
+.balanceRow,
+.rowActions,
+.catalogComposer {
+  display: grid;
+  gap: 12px;
+}
+
+.metaGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin-bottom: 14px;
+}
+
+.metaGrid span,
+.rowMeta {
+  font-size: 0.92rem;
+}
+
+.balanceRow {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  align-items: end;
+}
+
+.tableLike {
+  display: grid;
+  gap: 12px;
+}
+
+.tableRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) auto;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid rgba(19, 17, 28, 0.08);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.86);
+}
+
+.tableRow strong {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.photoButton {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.photoImage {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  border-radius: 18px;
+  border: 1px solid rgba(19, 17, 28, 0.08);
+}
+
+.photoBody {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.catalogComposer {
+  grid-template-columns: repeat(5, minmax(0, 1fr)) auto;
+  margin-bottom: 16px;
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+}
+
+.field span {
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: #1c1820;
+}
+
+.input,
+.searchInput,
+.select {
+  width: 100%;
+  min-height: 50px;
+  padding: 12px 14px;
+  border: 1px solid rgba(19, 17, 28, 0.12);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.94);
+  color: #171411;
+  font: inherit;
+}
+
+.searchInput {
+  max-width: 420px;
+}
+
+.input:focus,
+.searchInput:focus,
+.select:focus {
+  outline: none;
+  border-color: #7058ff;
+  box-shadow: 0 0 0 4px rgba(112, 88, 255, 0.12);
+}
+
+.primaryButton,
+.secondaryButton,
+.dangerButton,
+.linkButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 0 18px;
+  border-radius: 999px;
+  font: inherit;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.primaryButton {
+  border: 1px solid rgba(95, 73, 221, 0.12);
+  background: linear-gradient(135deg, #6f4cff 0%, #4f46e5 52%, #171411 100%);
+  color: #fff;
+  box-shadow: 0 18px 40px rgba(95, 73, 221, 0.24);
+}
+
+.secondaryButton {
+  border: 1px solid rgba(19, 17, 28, 0.12);
+  background: rgba(255, 255, 255, 0.92);
+  color: #171411;
+}
+
+.dangerButton {
+  border: 1px solid rgba(183, 66, 66, 0.18);
+  background: rgba(255, 240, 240, 0.92);
+  color: #b74242;
+}
+
+.linkButton {
+  min-height: auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  justify-content: flex-start;
+  color: #4f46e5;
+}
+
+.primaryButton:disabled,
+.secondaryButton:disabled,
+.dangerButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.errorText {
+  margin: 0;
+  color: #b74242;
+  font-weight: 700;
+}
+
+@media (max-width: 1180px) {
+  .metrics,
+  .catalogComposer,
+  .balanceRow,
+  .tableRow {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .page {
+    padding: 18px;
+  }
+
+  .hero,
+  .sectionHeader,
+  .userHeader {
+    grid-template-columns: 1fr;
+    display: grid;
+  }
+
+  .searchInput {
+    max-width: 100%;
+  }
+
+  .metaGrid {
+    grid-template-columns: 1fr;
+  }
+}

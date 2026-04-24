@@ -24,6 +24,7 @@ create table if not exists public.professionals (
   language text not null,
   currency text not null default 'USD',
   booking_credits_total integer not null default 500,
+  wallet_balance integer not null default 0,
   owner_mode text not null,
   created_at timestamptz not null default timezone('utc', now())
 );
@@ -55,6 +56,19 @@ create table if not exists public.business_services (
   category text not null default '',
   duration_minutes integer not null default 60,
   color text,
+  sort_order integer not null default 0,
+  created_by_professional_id text references public.professionals(id) on delete set null,
+  is_blocked boolean not null default false,
+  created_at timestamptz not null default timezone('utc', now())
+);
+
+create table if not exists public.global_service_catalog (
+  id text primary key,
+  category text not null,
+  group_key text not null,
+  name text not null,
+  duration_minutes integer not null default 60,
+  price integer not null default 0,
   sort_order integer not null default 0,
   created_at timestamptz not null default timezone('utc', now())
 );
@@ -127,6 +141,7 @@ create table if not exists public.support_messages (
 
 alter table public.professionals add column if not exists currency text not null default 'USD';
 alter table public.professionals add column if not exists booking_credits_total integer not null default 500;
+alter table public.professionals add column if not exists wallet_balance integer not null default 0;
 
 alter table public.businesses add column if not exists photos jsonb not null default '[]'::jsonb;
 
@@ -135,12 +150,16 @@ alter table public.business_services add column if not exists category text not 
 alter table public.business_services add column if not exists duration_minutes integer not null default 60;
 alter table public.business_services add column if not exists color text;
 alter table public.business_services add column if not exists sort_order integer not null default 0;
+alter table public.business_services add column if not exists created_by_professional_id text references public.professionals(id) on delete set null;
+alter table public.business_services add column if not exists is_blocked boolean not null default false;
 
 create index if not exists bookings_salon_date_idx on public.bookings (salon_slug, appointment_date, appointment_time);
 create index if not exists business_memberships_professional_idx on public.business_memberships (professional_id);
 create index if not exists business_services_business_idx on public.business_services (business_id, sort_order, created_at);
+create index if not exists business_services_blocked_idx on public.business_services (is_blocked, created_at desc);
 create index if not exists calendar_appointments_professional_day_idx on public.calendar_appointments (professional_id, appointment_date, start_time);
 create index if not exists calendar_appointments_business_day_idx on public.calendar_appointments (business_id, appointment_date, start_time);
+create index if not exists global_service_catalog_category_idx on public.global_service_catalog (category, group_key, sort_order);
 create index if not exists pro_clients_professional_idx on public.pro_clients (professional_id, created_at desc);
 create index if not exists support_messages_ticket_idx on public.support_messages (ticket_id, created_at);
 create unique index if not exists support_messages_telegram_update_uidx on public.support_messages (telegram_update_id) where telegram_update_id is not null;

@@ -1,8 +1,8 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { getServiceTemplateCatalog } from "../../../lib/global-service-catalog";
 import { getSessionCookieName, verifySessionValue } from "../../../lib/pro-auth";
 import { getWorkspaceSnapshot } from "../../../lib/pro-data";
-import { SERVICE_TEMPLATE_CATALOG } from "../../../lib/service-templates";
 import ServicesView from "./ServicesView";
 
 export default async function ProServicesPage() {
@@ -13,7 +13,10 @@ export default async function ProServicesPage() {
     redirect("/pro/login");
   }
 
-  const workspace = await getWorkspaceSnapshot(professionalId);
+  const [workspace, catalog] = await Promise.all([
+    getWorkspaceSnapshot(professionalId),
+    getServiceTemplateCatalog()
+  ]);
 
   if (!workspace) {
     redirect("/pro/login");
@@ -22,7 +25,7 @@ export default async function ProServicesPage() {
   return (
     <ServicesView
       initialWorkspace={workspace}
-      catalog={SERVICE_TEMPLATE_CATALOG}
+      catalog={catalog}
     />
   );
 }
