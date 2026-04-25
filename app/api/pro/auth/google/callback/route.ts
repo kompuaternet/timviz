@@ -48,7 +48,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const settings = getGoogleOAuthSettings(url.origin);
+    const settings = getGoogleOAuthSettings(request);
     const profile = await exchangeCodeForGoogleProfile({
       code,
       clientId: settings.clientId,

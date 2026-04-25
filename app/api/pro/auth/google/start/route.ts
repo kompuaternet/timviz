@@ -15,9 +15,8 @@ export async function GET(request: Request) {
   try {
     const url = new URL(request.url);
     const mode = url.searchParams.get("mode") === "register" ? "register" : "login";
-    const origin = url.origin;
     const isSecure = url.protocol === "https:";
-    const settings = getGoogleOAuthSettings(origin);
+    const settings = getGoogleOAuthSettings(request);
     const state = randomBytes(24).toString("hex");
     const { codeVerifier, codeChallenge } = createGooglePkcePair();
 
