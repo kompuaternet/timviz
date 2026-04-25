@@ -1734,6 +1734,113 @@
   color: #5f5851;
 }
 
+.business-footer-links {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 16px 22px;
+}
+
+.business-footer-links a {
+  color: #5f5851;
+  font-weight: 750;
+}
+
+.business-footer-links a:hover {
+  color: #6047ff;
+}
+
+.legal-page {
+  min-height: 100vh;
+}
+
+.legal-hero,
+.legal-content,
+.legal-footer {
+  width: min(1240px, calc(100% - 48px));
+  margin: 0 auto;
+}
+
+.legal-hero {
+  position: relative;
+  padding: 92px 0 40px;
+}
+
+.legal-hero-glow {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 78% 26%, rgba(123, 111, 255, 0.18), transparent 28%),
+    radial-gradient(circle at 18% 40%, rgba(255, 218, 243, 0.32), transparent 28%);
+  pointer-events: none;
+}
+
+.legal-hero-copy {
+  position: relative;
+  max-width: 860px;
+}
+
+.legal-hero-copy > span {
+  display: inline-flex;
+  margin-bottom: 16px;
+  color: #7058ff;
+  font-size: 0.86rem;
+  font-weight: 950;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.legal-hero-copy h1 {
+  margin: 0;
+  font-size: clamp(2.8rem, 5vw, 4.8rem);
+  line-height: 1.02;
+  letter-spacing: -0.05em;
+}
+
+.legal-hero-copy p {
+  max-width: 780px;
+  margin: 18px 0 0;
+  color: #4b5661;
+  font-size: 1.1rem;
+  line-height: 1.7;
+}
+
+.legal-content {
+  display: grid;
+  gap: 24px;
+  padding: 12px 0 42px;
+}
+
+.legal-card {
+  padding: 28px;
+  border: 1px solid rgba(17, 17, 17, 0.08);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 24px 70px rgba(32, 22, 68, 0.08);
+  backdrop-filter: blur(18px);
+}
+
+.legal-card h2 {
+  margin: 0 0 14px;
+  font-size: clamp(1.45rem, 2vw, 2rem);
+  line-height: 1.12;
+}
+
+.legal-card-body {
+  display: grid;
+  gap: 12px;
+}
+
+.legal-card-body p {
+  margin: 0;
+  color: #4b5661;
+  font-size: 1.02rem;
+  line-height: 1.75;
+}
+
+.legal-footer {
+  padding-top: 8px;
+}
+
 @media (max-width: 980px) {
   .public-header {
     padding: 0 16px;
@@ -1892,6 +1999,26 @@
   .business-footer {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .business-footer-links {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .legal-hero,
+  .legal-content,
+  .legal-footer {
+    width: min(100% - 28px, 1240px);
+  }
+
+  .legal-hero {
+    padding: 68px 0 28px;
+  }
+
+  .legal-card {
+    padding: 22px;
+    border-radius: 20px;
   }
 }
 
@@ -3293,6 +3420,15 @@ a {
   .business-footer {
     gap: 14px;
     padding-top: 28px;
+  }
+
+  .legal-hero-copy h1 {
+    font-size: 2.3rem;
+  }
+
+  .legal-hero-copy p,
+  .legal-card-body p {
+    font-size: 0.97rem;
   }
 
   .field input,
