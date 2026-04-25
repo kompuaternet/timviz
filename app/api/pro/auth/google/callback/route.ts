@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { getPublicAppUrl } from "../../../../../../lib/app-url";
 import { getSessionCookieName, signSessionValue } from "../../../../../../lib/pro-auth";
 import { exchangeCodeForGoogleProfile, getGoogleOAuthSettings } from "../../../../../../lib/google-oauth";
 import { getProfessionalIdByEmail } from "../../../../../../lib/pro-data";
@@ -34,6 +35,7 @@ function clearOAuthCookies(cookieStore: Awaited<ReturnType<typeof cookies>>, isS
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
+  const appUrl = getPublicAppUrl(request);
   const isSecure = url.protocol === "https:";
   const code = url.searchParams.get("code")?.trim() || "";
   const state = url.searchParams.get("state")?.trim() || "";
@@ -44,7 +46,7 @@ export async function GET(request: Request) {
 
   if (!code || !state || !expectedState || !codeVerifier || state !== expectedState) {
     clearOAuthCookies(cookieStore, isSecure);
-    return NextResponse.redirect(new URL("/pro/login?google_error=state", request.url));
+    return NextResponse.redirect(new URL("/pro/login?google_error=state", appUrl));
   }
 
   try {
@@ -68,10 +70,10 @@ export async function GET(request: Request) {
         secure: isSecure,
         maxAge: 60 * 60 * 24 * 7
       });
-      return NextResponse.redirect(new URL("/pro/calendar", request.url));
+      return NextResponse.redirect(new URL("/pro/calendar", appUrl));
     }
 
-    const createAccountUrl = new URL("/pro/create-account", request.url);
+    const createAccountUrl = new URL("/pro/create-account", appUrl);
     createAccountUrl.searchParams.set("google", "1");
     createAccountUrl.searchParams.set("email", profile.email);
     if (profile.givenName) {
@@ -90,6 +92,6 @@ export async function GET(request: Request) {
     return NextResponse.redirect(createAccountUrl);
   } catch {
     clearOAuthCookies(cookieStore, isSecure);
-    return NextResponse.redirect(new URL("/pro/login?google_error=oauth", request.url));
+    return NextResponse.redirect(new URL("/pro/login?google_error=oauth", appUrl));
   }
 }

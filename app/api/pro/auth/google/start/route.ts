@@ -1,6 +1,7 @@
 import { randomBytes } from "crypto";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { getPublicAppUrl } from "../../../../../../lib/app-url";
 import {
   buildGoogleAuthUrl,
   createGooglePkcePair,
@@ -52,6 +53,6 @@ export async function GET(request: Request) {
 
     return NextResponse.redirect(authUrl);
   } catch {
-    return NextResponse.redirect(new URL("/pro/login?google_error=config", request.url));
+    return NextResponse.redirect(new URL("/pro/login?google_error=config", getPublicAppUrl(request)));
   }
 }
