@@ -105,6 +105,8 @@ export const proText = {
     settings: {
       kicker: "Настройки аккаунта",
       title: "Профиль и параметры бизнеса",
+      logout: "Выйти",
+      logoutLoading: "Выходим...",
       credits: "Баланс записей",
       remaining: "осталось",
       total: "всего",
@@ -292,6 +294,8 @@ export const proText = {
     settings: {
       kicker: "Налаштування акаунта",
       title: "Профіль і параметри бізнесу",
+      logout: "Вийти",
+      logoutLoading: "Виходимо...",
       credits: "Баланс записів",
       remaining: "залишилось",
       total: "усього",
@@ -479,6 +483,8 @@ export const proText = {
     settings: {
       kicker: "Account settings",
       title: "Profile and business settings",
+      logout: "Log out",
+      logoutLoading: "Logging out...",
       credits: "Booking balance",
       remaining: "remaining",
       total: "total",

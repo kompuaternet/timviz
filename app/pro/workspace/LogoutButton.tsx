@@ -3,10 +3,12 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import styles from "../pro.module.css";
+import { useProLanguage } from "../useProLanguage";
 
 export default function LogoutButton() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const { t } = useProLanguage();
 
   async function handleLogout() {
     setIsLoading(true);
@@ -28,7 +30,7 @@ export default function LogoutButton() {
         void handleLogout();
       }}
     >
-      {isLoading ? "Выходим..." : "Выйти"}
+      {isLoading ? t.settings.logoutLoading : t.settings.logout}
     </button>
   );
 }

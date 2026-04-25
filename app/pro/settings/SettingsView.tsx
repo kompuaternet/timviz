@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import ProSidebar from "../ProSidebar";
+import LogoutButton from "../workspace/LogoutButton";
 import styles from "../pro.module.css";
 import { languageFromProfile, languageLabels, type ProLanguage } from "../i18n";
 import { useProLanguage } from "../useProLanguage";
@@ -235,11 +236,6 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
   const autoSaveTimerRef = useRef<number | null>(null);
   const lastSavedSnapshotRef = useRef("");
   const latestSnapshotRef = useRef("");
-
-  const creditsPercent = useMemo(() => {
-    if (!data.bookingCredits.total) return 0;
-    return Math.min(100, Math.round((data.bookingCredits.used / data.bookingCredits.total) * 100));
-  }, [data.bookingCredits.total, data.bookingCredits.used]);
 
   useEffect(() => {
     window.localStorage.setItem("rezervo-pro-language", initialLanguage);
@@ -629,53 +625,22 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
             <p className={styles.eyebrow}>{t.settings.kicker}</p>
             <h1>{t.settings.title}</h1>
           </div>
-          <button
-            type="button"
-            className={styles.primaryButton}
-            onClick={() => void saveSettings()}
-            disabled={isSaving}
-          >
-            {isSaving ? t.common.autosaving : autosaveSnapshot === lastSavedSnapshotRef.current ? t.common.savedAuto : t.common.saveNow}
-          </button>
+          <div className={styles.rowActions}>
+            <LogoutButton />
+            <button
+              type="button"
+              className={styles.primaryButton}
+              onClick={() => void saveSettings()}
+              disabled={isSaving}
+            >
+              {isSaving ? t.common.autosaving : autosaveSnapshot === lastSavedSnapshotRef.current ? t.common.savedAuto : t.common.saveNow}
+            </button>
+          </div>
         </header>
 
         {status ? <div className={styles.settingsStatus}>{status}</div> : null}
 
         <div className={styles.settingsGrid}>
-          <section className={`${styles.settingsCard} ${styles.settingsCreditsCard}`}>
-            <div className={styles.settingsCardHeader}>
-              <div>
-                <span>{t.settings.credits}</span>
-                <h2>{data.bookingCredits.remaining} {t.settings.remaining}</h2>
-              </div>
-              <strong>{data.bookingCredits.total} {t.settings.total}</strong>
-            </div>
-            <div className={styles.settingsProgressTrack}>
-              <span style={{ width: `${creditsPercent}%` }} />
-            </div>
-            <div className={styles.settingsMetrics}>
-              <div>
-                <span>{t.settings.used}</span>
-                <strong>{data.bookingCredits.used}</strong>
-              </div>
-              <div>
-                <span>{t.settings.available}</span>
-                <strong>{data.bookingCredits.remaining}</strong>
-              </div>
-              <div>
-                <span>{t.settings.starterPack}</span>
-                <strong>500</strong>
-              </div>
-            </div>
-              <button
-                type="button"
-                className={styles.ghostButton}
-              disabled
-            >
-              {isTopUpLoading ? t.settings.toppingUp : t.settings.topUp}
-            </button>
-          </section>
-
           <section className={styles.settingsCard}>
             <div className={styles.settingsCardHeader}>
               <div>
