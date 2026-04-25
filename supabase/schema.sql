@@ -58,6 +58,9 @@ create table if not exists public.business_services (
   color text,
   sort_order integer not null default 0,
   created_by_professional_id text references public.professionals(id) on delete set null,
+  source text not null default 'catalog',
+  moderation_status text not null default 'approved',
+  moderated_at timestamptz,
   is_blocked boolean not null default false,
   created_at timestamptz not null default timezone('utc', now())
 );
@@ -151,12 +154,16 @@ alter table public.business_services add column if not exists duration_minutes i
 alter table public.business_services add column if not exists color text;
 alter table public.business_services add column if not exists sort_order integer not null default 0;
 alter table public.business_services add column if not exists created_by_professional_id text references public.professionals(id) on delete set null;
+alter table public.business_services add column if not exists source text not null default 'catalog';
+alter table public.business_services add column if not exists moderation_status text not null default 'approved';
+alter table public.business_services add column if not exists moderated_at timestamptz;
 alter table public.business_services add column if not exists is_blocked boolean not null default false;
 
 create index if not exists bookings_salon_date_idx on public.bookings (salon_slug, appointment_date, appointment_time);
 create index if not exists business_memberships_professional_idx on public.business_memberships (professional_id);
 create index if not exists business_services_business_idx on public.business_services (business_id, sort_order, created_at);
 create index if not exists business_services_blocked_idx on public.business_services (is_blocked, created_at desc);
+create index if not exists business_services_source_idx on public.business_services (source, moderation_status, is_blocked, created_at desc);
 create index if not exists calendar_appointments_professional_day_idx on public.calendar_appointments (professional_id, appointment_date, start_time);
 create index if not exists calendar_appointments_business_day_idx on public.calendar_appointments (business_id, appointment_date, start_time);
 create index if not exists global_service_catalog_category_idx on public.global_service_catalog (category, group_key, sort_order);

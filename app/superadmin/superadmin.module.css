@@ -88,7 +88,8 @@
 
 .adminBadge,
 .badgeActive,
-.badgeBlocked {
+.badgeBlocked,
+.badgePending {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -109,11 +110,42 @@
   color: #b74242;
 }
 
+.badgePending {
+  background: rgba(255, 191, 71, 0.18);
+  color: #9a5d00;
+}
+
 .metrics {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
   margin-bottom: 20px;
+}
+
+.metricsMini {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.metricCardMini {
+  padding: 16px 18px;
+  border: 1px solid rgba(19, 17, 28, 0.08);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.9);
+  display: grid;
+  gap: 6px;
+}
+
+.metricCardMini strong {
+  font-size: 1.5rem;
+  color: #171411;
+}
+
+.metricCardMini span {
+  color: #6d6673;
+  font-weight: 700;
 }
 
 .metricCard {
@@ -198,6 +230,15 @@
 
 .entityDetail {
   padding: 18px;
+}
+
+.entityDetailCompact {
+  padding: 18px;
+  margin-bottom: 16px;
+  border: 1px solid rgba(19, 17, 28, 0.08);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 14px 32px rgba(64, 48, 120, 0.06);
 }
 
 .entityDetailHeader {
@@ -351,6 +392,26 @@
   background: rgba(255, 255, 255, 0.86);
 }
 
+.serviceBadges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.serviceMetaColumn {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+}
+
+.catalogInlineControls {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(160px, 1fr);
+  gap: 10px;
+  width: 100%;
+}
+
 .tableRow strong {
   display: block;
   margin-bottom: 6px;
@@ -477,10 +538,15 @@
 
 @media (max-width: 1180px) {
   .metrics,
+  .metricsMini,
   .catalogComposer,
   .balanceRow,
   .tableRow,
   .entityLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .catalogInlineControls {
     grid-template-columns: 1fr;
   }
 }

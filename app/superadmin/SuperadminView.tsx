@@ -28,6 +28,11 @@ type CatalogDraft = {
   sortOrder: number;
 };
 
+type ServiceCatalogMoveDraft = {
+  category: string;
+  groupKey: "topSuggestions" | "popularServices";
+};
+
 type GroupedServices = {
   businessId: string;
   businessName: string;
@@ -112,6 +117,17 @@ export default function SuperadminView({
       )
   );
   const [catalogDraft, setCatalogDraft] = useState<CatalogDraft>(defaultCatalogDraft);
+  const [serviceCatalogDrafts, setServiceCatalogDrafts] = useState<Record<string, ServiceCatalogMoveDraft>>(() =>
+    Object.fromEntries(
+      initialServices.map((service) => [
+        service.id,
+        {
+          category: service.category || categoryOptions[0] || "Другая",
+          groupKey: "topSuggestions"
+        }
+      ])
+    )
+  );
 
   const filteredUsers = useMemo(() => {
     const query = userQuery.trim().toLowerCase();
@@ -147,6 +163,18 @@ export default function SuperadminView({
   }, [serviceQuery, services]);
 
   const groupedServices = useMemo(() => groupServices(filteredServices), [filteredServices]);
+  const pendingServices = useMemo(
+    () => filteredServices.filter((service) => service.moderationStatus === "pending" && !service.isBlocked),
+    [filteredServices]
+  );
+  const approvedServices = useMemo(
+    () => filteredServices.filter((service) => service.moderationStatus === "approved" && !service.isBlocked),
+    [filteredServices]
+  );
+  const blockedServices = useMemo(
+    () => filteredServices.filter((service) => service.isBlocked),
+    [filteredServices]
+  );
 
   const filteredPhotos = useMemo(() => {
     const query = photoQuery.trim().toLowerCase();
@@ -271,9 +299,192 @@ export default function SuperadminView({
         throw new Error(payload.error || "Не удалось обновить статус услуги.");
       }
       setServices((current) =>
-        current.map((item) => (item.id === service.id ? { ...item, isBlocked: nextBlocked } : item))
+        current.map((item) =>
+          item.id === service.id
+            ? {
+                ...item,
+                isBlocked: nextBlocked
+              }
+            : item
+        )
       );
     }, nextBlocked ? "Услуга заблокирована." : "Блокировка услуги снята.");
+  }
+
+  async function setServiceModeration(service: SuperadminServiceRecord, moderationStatus: "pending" | "approved") {
+    await withStatus(async () => {
+      const response = await fetch("/api/superadmin/services", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "moderate",
+          serviceId: service.id,
+          moderationStatus
+        })
+      });
+      const payload = await readJson(response);
+      if (!response.ok) {
+        throw new Error(payload.error || "Не удалось обновить модерацию услуги.");
+      }
+      setServices((current) =>
+        current.map((item) =>
+          item.id === service.id
+            ? {
+                ...item,
+                moderationStatus,
+                moderatedAt: moderationStatus === "approved" ? new Date().toISOString() : undefined
+              }
+            : item
+        )
+      );
+    }, moderationStatus === "approved" ? "Услуга одобрена для публичного сайта." : "Услуга снова отправлена на модерацию.");
+  }
+
+  async function promoteServiceToCatalog(service: SuperadminServiceRecord) {
+    const draft = serviceCatalogDrafts[service.id] ?? {
+      category: service.category || categoryOptions[0] || "Другая",
+      groupKey: "topSuggestions" as const
+    };
+
+    await withStatus(async () => {
+      const response = await fetch("/api/superadmin/services", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "promote_to_catalog",
+          serviceId: service.id,
+          category: draft.category,
+          groupKey: draft.groupKey
+        })
+      });
+      const payload = await readJson(response);
+      if (!response.ok) {
+        throw new Error(payload.error || "Не удалось перенести услугу в шаблонный каталог.");
+      }
+
+      const catalogResponse = await fetch("/api/superadmin/catalog");
+      const catalogPayload = await readJson(catalogResponse);
+      if (catalogResponse.ok && Array.isArray(catalogPayload.items)) {
+        setCatalog(catalogPayload.items);
+      }
+
+      setServices((current) =>
+        current.map((item) =>
+          item.id === service.id
+            ? {
+                ...item,
+                moderationStatus: "approved",
+                moderatedAt: new Date().toISOString()
+              }
+            : item
+        )
+      );
+    }, "Услуга добавлена в шаблонный каталог и одобрена для публичного сайта.");
+  }
+
+  function renderServiceRow(service: SuperadminServiceRecord) {
+    const catalogDraft = serviceCatalogDrafts[service.id] ?? {
+      category: service.category || categoryOptions[0] || "Другая",
+      groupKey: "topSuggestions" as const
+    };
+
+    return (
+      <div key={service.id} className={styles.tableRow}>
+        <div>
+          <strong>{service.name}</strong>
+          <div className={styles.rowMeta}>
+            {service.category} · {service.durationMinutes} мин · {service.price}
+          </div>
+          <div className={styles.serviceBadges}>
+            <span className={service.moderationStatus === "pending" ? styles.badgePending : styles.badgeActive}>
+              {service.moderationStatus === "pending" ? "Ждёт модерации" : "Публично одобрена"}
+            </span>
+            {service.isBlocked ? <span className={styles.badgeBlocked}>Заблокирована</span> : null}
+          </div>
+        </div>
+        <div className={styles.serviceMetaColumn}>
+          <button
+            type="button"
+            className={styles.linkButton}
+            onClick={() => void impersonate(service.addedByProfessionalId)}
+          >
+            {service.addedByName}
+          </button>
+          <span className={styles.rowMeta}>{service.businessName}</span>
+        </div>
+        <div className={styles.rowActions}>
+          <div className={styles.catalogInlineControls}>
+            <select
+              className={styles.select}
+              value={catalogDraft.category}
+              onChange={(event) =>
+                setServiceCatalogDrafts((current) => ({
+                  ...current,
+                  [service.id]: {
+                    ...catalogDraft,
+                    category: event.target.value
+                  }
+                }))
+              }
+            >
+              {categoryOptions.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+            <select
+              className={styles.select}
+              value={catalogDraft.groupKey}
+              onChange={(event) =>
+                setServiceCatalogDrafts((current) => ({
+                  ...current,
+                  [service.id]: {
+                    ...catalogDraft,
+                    groupKey: event.target.value === "popularServices" ? "popularServices" : "topSuggestions"
+                  }
+                }))
+              }
+            >
+              <option value="topSuggestions">Основные</option>
+              <option value="popularServices">Популярные</option>
+            </select>
+          </div>
+          <button
+            type="button"
+            className={styles.primaryButton}
+            onClick={() => void setServiceModeration(service, "approved")}
+            disabled={isBusy || (service.moderationStatus === "approved" && !service.isBlocked)}
+          >
+            Утвердить
+          </button>
+          <button
+            type="button"
+            className={styles.secondaryButton}
+            onClick={() => void promoteServiceToCatalog(service)}
+            disabled={isBusy}
+          >
+            В шаблон
+          </button>
+          <button
+            type="button"
+            className={styles.secondaryButton}
+            onClick={() => void toggleServiceBlocked(service, !service.isBlocked)}
+            disabled={isBusy}
+          >
+            {service.isBlocked ? "Разблокировать" : "Блокировать"}
+          </button>
+          <button
+            type="button"
+            className={styles.dangerButton}
+            onClick={() => void deleteService(service.id)}
+            disabled={isBusy}
+          >
+            Удалить
+          </button>
+        </div>
+      </div>
+    );
   }
 
   async function deleteService(serviceId: string) {
@@ -539,7 +750,7 @@ export default function SuperadminView({
         <div className={styles.sectionHeader}>
           <div>
             <h2>Услуги пользователей</h2>
-            <p>Сгруппированы по бизнесам. Блоки можно сворачивать, чтобы большие объёмы не превращались в простыню.</p>
+            <p>Здесь только пользовательские услуги. Сначала очередь на модерацию, ниже сгруппированные списки для уже одобренных и заблокированных.</p>
           </div>
           <input
             className={styles.searchInput}
@@ -549,56 +760,52 @@ export default function SuperadminView({
           />
         </div>
 
+        <div className={styles.metricsMini}>
+          <article className={styles.metricCardMini}>
+            <strong>{pendingServices.length}</strong>
+            <span>Ждут модерации</span>
+          </article>
+          <article className={styles.metricCardMini}>
+            <strong>{approvedServices.length}</strong>
+            <span>Одобрены</span>
+          </article>
+          <article className={styles.metricCardMini}>
+            <strong>{blockedServices.length}</strong>
+            <span>Заблокированы</span>
+          </article>
+        </div>
+
+        <div className={styles.entityDetailCompact}>
+          <div className={styles.entityDetailHeader}>
+            <div>
+              <h3>Очередь модерации</h3>
+              <p>По умолчанию здесь самые важные услуги: пользователь уже работает с ними внутри кабинета, но на сайт они выйдут только после утверждения.</p>
+            </div>
+          </div>
+          <div className={styles.tableLike}>
+            {pendingServices.length > 0 ? (
+              pendingServices.map((service) => renderServiceRow(service))
+            ) : (
+              <div className={styles.emptyState}>Сейчас в очереди модерации нет услуг.</div>
+            )}
+          </div>
+        </div>
+
         <div className={styles.accordionList}>
           {groupedServices.map((group) => (
             <details key={group.businessId} className={styles.accordion} open={serviceQuery.length > 0}>
               <summary className={styles.accordionSummary}>
                 <div>
                   <strong>{group.businessName}</strong>
-                  <span>{group.items.length} услуг</span>
+                  <span>
+                    {group.items.filter((item) => item.moderationStatus === "pending" && !item.isBlocked).length} ждут ·{" "}
+                    {group.items.filter((item) => item.moderationStatus === "approved" && !item.isBlocked).length} одобрены ·{" "}
+                    {group.items.filter((item) => item.isBlocked).length} заблокированы
+                  </span>
                 </div>
               </summary>
               <div className={styles.tableLike}>
-                {group.items.map((service) => (
-                  <div key={service.id} className={styles.tableRow}>
-                    <div>
-                      <strong>{service.name}</strong>
-                      <div className={styles.rowMeta}>
-                        {service.category} · {service.durationMinutes} мин · {service.price}
-                      </div>
-                    </div>
-                    <div>
-                      <button
-                        type="button"
-                        className={styles.linkButton}
-                        onClick={() => void impersonate(service.addedByProfessionalId)}
-                      >
-                        {service.addedByName}
-                      </button>
-                    </div>
-                    <div className={styles.rowActions}>
-                      <span className={service.isBlocked ? styles.badgeBlocked : styles.badgeActive}>
-                        {service.isBlocked ? "Заблокирована" : "Активна"}
-                      </span>
-                      <button
-                        type="button"
-                        className={styles.secondaryButton}
-                        onClick={() => void toggleServiceBlocked(service, !service.isBlocked)}
-                        disabled={isBusy}
-                      >
-                        {service.isBlocked ? "Разблокировать" : "Блокировать"}
-                      </button>
-                      <button
-                        type="button"
-                        className={styles.dangerButton}
-                        onClick={() => void deleteService(service.id)}
-                        disabled={isBusy}
-                      >
-                        Удалить
-                      </button>
-                    </div>
-                  </div>
-                ))}
+                {group.items.map((service) => renderServiceRow(service))}
               </div>
             </details>
           ))}

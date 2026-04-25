@@ -51,6 +51,9 @@ export type SuperadminServiceRecord = {
   sortOrder: number;
   createdAt: string;
   isBlocked: boolean;
+  source: "catalog" | "custom";
+  moderationStatus: "pending" | "approved";
+  moderatedAt?: string;
   addedByProfessionalId: string;
   addedByName: string;
 };
@@ -297,6 +300,9 @@ export async function getSuperadminServices(search = ""): Promise<SuperadminServ
 
   const rows = directory.services
     .map((service): SuperadminServiceRecord | null => {
+      if (service.source !== "custom") {
+        return null;
+      }
       const business = businessesById.get(service.businessId);
       if (!business) {
         return null;
@@ -319,6 +325,9 @@ export async function getSuperadminServices(search = ""): Promise<SuperadminServ
         sortOrder: service.sortOrder || 0,
         createdAt: service.createdAt,
         isBlocked: service.isBlocked === true,
+        source: service.source === "custom" ? "custom" : "catalog",
+        moderationStatus: service.moderationStatus === "pending" ? "pending" : "approved",
+        moderatedAt: service.moderatedAt,
         addedByProfessionalId,
         addedByName: addedByProfessional ? getFullName(addedByProfessional) : "Неизвестно"
       } satisfies SuperadminServiceRecord;
@@ -358,6 +367,66 @@ export async function setServiceBlocked(serviceId: string, isBlocked: boolean) {
   }
   service.isBlocked = isBlocked;
   await writeLocalStore(store);
+  return { ok: true };
+}
+
+export async function setServiceModerationStatus(serviceId: string, moderationStatus: "pending" | "approved") {
+  const moderatedAt = moderationStatus === "approved" ? new Date().toISOString() : null;
+
+  if (isSupabaseConfigured()) {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      throw new Error("Supabase is not available.");
+    }
+    const { error } = await supabase
+      .from("business_services")
+      .update({
+        moderation_status: moderationStatus,
+        moderated_at: moderatedAt
+      })
+      .eq("id", serviceId);
+    if (error) {
+      if (/moderation_status|moderated_at/i.test(error.message)) {
+        throw new Error("В базе ещё нет полей moderation_status и moderated_at. Нужно применить обновлённый schema.sql.");
+      }
+      throw new Error(error.message);
+    }
+    return { ok: true };
+  }
+
+  const store = await readLocalStore();
+  const service = (store.services as Array<Record<string, unknown>>).find((item) => item.id === serviceId);
+  if (!service) {
+    throw new Error("Услуга не найдена.");
+  }
+  service.moderationStatus = moderationStatus;
+  service.moderatedAt = moderatedAt ?? undefined;
+  await writeLocalStore(store);
+  return { ok: true };
+}
+
+export async function promoteServiceToRootCatalog(input: {
+  serviceId: string;
+  category: string;
+  groupKey: GlobalCatalogGroupKey;
+}) {
+  const directory = await getBusinessDirectorySnapshot();
+  const service = directory.services.find((item) => item.id === input.serviceId);
+
+  if (!service) {
+    throw new Error("Услуга не найдена.");
+  }
+
+  await upsertRootCatalogItem({
+    category: input.category.trim() || service.category || "Без категории",
+    groupKey: input.groupKey,
+    name: service.name,
+    durationMinutes: service.durationMinutes || 60,
+    price: service.price || 0,
+    sortOrder: 0
+  });
+
+  await setServiceModerationStatus(service.id, "approved");
   return { ok: true };
 }
 

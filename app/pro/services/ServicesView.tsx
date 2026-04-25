@@ -199,7 +199,7 @@ export default function ServicesView({ initialWorkspace, catalog }: ServicesView
     const response = await fetch("/api/pro/services", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(draft)
+      body: JSON.stringify({ ...draft, source: "custom" })
     });
     const payload = await response.json();
 
@@ -294,7 +294,8 @@ export default function ServicesView({ initialWorkspace, catalog }: ServicesView
         category: service.category,
         durationMinutes: service.durationMinutes || 60,
         price: service.price || 0,
-        color: colorPalette[services.length % colorPalette.length]
+        color: colorPalette[services.length % colorPalette.length],
+        source: "catalog"
       })
     });
     const payload = await response.json();

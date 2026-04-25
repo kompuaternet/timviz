@@ -252,6 +252,9 @@ export async function getPublicSearchIndex(params: PublicSearchParams = {}): Pro
     if (service.isBlocked === true) {
       continue;
     }
+    if ((service.source === "custom" || (!service.source && service.createdByProfessionalId)) && service.moderationStatus === "pending") {
+      continue;
+    }
     const list = servicesByBusiness.get(service.businessId) ?? [];
     list.push(service);
     servicesByBusiness.set(service.businessId, list);

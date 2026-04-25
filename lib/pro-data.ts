@@ -111,6 +111,9 @@ export type ServiceRecord = {
   color?: string;
   sortOrder?: number;
   createdByProfessionalId?: string;
+  source?: "catalog" | "custom";
+  moderationStatus?: "pending" | "approved";
+  moderatedAt?: string;
   isBlocked?: boolean;
   createdAt: string;
 };
@@ -150,6 +153,36 @@ const defaultServiceColors = [
 ];
 
 export const DEFAULT_BOOKING_CREDITS = 500;
+
+function normalizeServiceSource(value: unknown): "catalog" | "custom" {
+  return value === "custom" ? "custom" : "catalog";
+}
+
+function normalizeServiceModerationStatus(value: unknown): "pending" | "approved" {
+  return value === "pending" ? "pending" : "approved";
+}
+
+function normalizeServiceRecord(service: ServiceRecord): ServiceRecord {
+  const source = normalizeServiceSource(service.source);
+
+  return {
+    ...service,
+    price: typeof service.price === "number" ? service.price : inferServicePrice(service.name),
+    category: service.category || "Без категории",
+    durationMinutes:
+      typeof service.durationMinutes === "number"
+        ? service.durationMinutes
+        : inferServiceDuration(service.name),
+    color: service.color || getDefaultServiceColor(service.name),
+    sortOrder: typeof service.sortOrder === "number" ? service.sortOrder : 0,
+    source,
+    moderationStatus: normalizeServiceModerationStatus(service.moderationStatus),
+    moderatedAt:
+      typeof service.moderatedAt === "string" && service.moderatedAt.trim()
+        ? service.moderatedAt.trim()
+        : undefined
+  };
+}
 
 export function inferCurrencyFromCountry(country = "") {
   const normalized = country.toLowerCase();
@@ -357,10 +390,13 @@ function mapSupabaseServiceRow(row: {
   color?: string | null;
   sort_order?: number | null;
   created_by_professional_id?: string | null;
+  source?: string | null;
+  moderation_status?: string | null;
+  moderated_at?: string | null;
   is_blocked?: boolean | null;
   created_at: string;
 }): ServiceRecord {
-  return {
+  return normalizeServiceRecord({
     id: row.id,
     businessId: row.business_id,
     name: row.name,
@@ -371,9 +407,12 @@ function mapSupabaseServiceRow(row: {
     color: row.color || getDefaultServiceColor(row.name),
     sortOrder: typeof row.sort_order === "number" ? row.sort_order : 0,
     createdByProfessionalId: row.created_by_professional_id ?? undefined,
+    source: row.source === "custom" ? "custom" : "catalog",
+    moderationStatus: row.moderation_status === "pending" ? "pending" : "approved",
+    moderatedAt: row.moderated_at ?? undefined,
     isBlocked: row.is_blocked === true,
     createdAt: row.created_at
-  };
+  });
 }
 
 function getDefaultServiceColor(serviceName: string, index = 0) {
@@ -514,15 +553,7 @@ async function ensureDemoBusinessesInLocalStore() {
     return nextProfessional;
   });
 
-  store.services = store.services.map((service) => ({
-    ...service,
-    price: typeof service.price === "number" ? service.price : inferServicePrice(service.name),
-    category: service.category || "Без категории",
-    durationMinutes:
-      typeof service.durationMinutes === "number"
-        ? service.durationMinutes
-        : inferServiceDuration(service.name)
-  }));
+  store.services = store.services.map((service) => normalizeServiceRecord(service));
 
   for (const item of demoBusinesses) {
     const exists = store.businesses.find((business) => business.name === item.name);
@@ -610,17 +641,7 @@ export async function getBusinessDirectorySnapshot(): Promise<BusinessDirectoryS
     })),
     professionals: store.professionals.map(normalizeProfessionalRecord),
     memberships: [...store.memberships],
-    services: store.services.map((service) => ({
-      ...service,
-      price: typeof service.price === "number" ? service.price : inferServicePrice(service.name),
-      category: service.category || "Без категории",
-      durationMinutes:
-        typeof service.durationMinutes === "number"
-          ? service.durationMinutes
-          : inferServiceDuration(service.name),
-      color: service.color || getDefaultServiceColor(service.name),
-      sortOrder: typeof service.sortOrder === "number" ? service.sortOrder : 0
-    }))
+    services: store.services.map((service) => normalizeServiceRecord(service))
   };
 }
 
@@ -707,14 +728,20 @@ export async function createProfessionalSetup(input: {
           color: getDefaultServiceColor(service, index),
           sort_order: index,
           created_by_professional_id: professionalId,
+          source: "catalog",
+          moderation_status: "approved",
+          moderated_at: createdAt,
           is_blocked: false,
           created_at: createdAt
         }));
         let { error: servicesError } = await supabase.from("business_services").insert(servicesPayload);
 
-        if (servicesError && /created_by_professional_id|is_blocked/i.test(servicesError.message)) {
+        if (servicesError && /created_by_professional_id|is_blocked|source|moderation_status|moderated_at/i.test(servicesError.message)) {
           ({ error: servicesError } = await supabase.from("business_services").insert(
-            servicesPayload.map(({ created_by_professional_id, is_blocked, ...service }) => service)
+            servicesPayload.map(
+              ({ created_by_professional_id, source, moderation_status, moderated_at, is_blocked, ...service }) =>
+                service
+            )
           ));
         }
 
@@ -812,6 +839,9 @@ export async function createProfessionalSetup(input: {
         category: input.setup.categories[0] || "Без категории",
         durationMinutes: inferServiceDuration(service),
         createdByProfessionalId: professionalId,
+        source: "catalog" as const,
+        moderationStatus: "approved" as const,
+        moderatedAt: createdAt,
         isBlocked: false,
         createdAt
       }))
@@ -1207,6 +1237,7 @@ export async function ensureServiceForProfessional(input: {
   durationMinutes?: number;
   price?: number;
   color?: string;
+  source?: "catalog" | "custom";
 }) {
   const serviceName = input.serviceName.trim();
 
@@ -1231,6 +1262,9 @@ export async function ensureServiceForProfessional(input: {
   const createdAt = new Date().toISOString();
   const sortOrder = workspace.services.length;
   const color = input.color || getDefaultServiceColor(serviceName, sortOrder);
+  const source = input.source === "catalog" ? "catalog" : "custom";
+  const moderationStatus = source === "custom" ? "pending" : "approved";
+  const moderatedAt = source === "custom" ? null : createdAt;
 
   if (isSupabaseConfigured()) {
     const supabase = getSupabaseAdmin();
@@ -1254,13 +1288,16 @@ export async function ensureServiceForProfessional(input: {
       color,
       sort_order: sortOrder,
       created_by_professional_id: input.professionalId,
+      source,
+      moderation_status: moderationStatus,
+      moderated_at: moderatedAt,
       is_blocked: false,
       created_at: createdAt
     };
 
     let { error } = await supabase.from("business_services").insert(service);
 
-    if (error && /created_by_professional_id|is_blocked/i.test(error.message)) {
+    if (error && /created_by_professional_id|is_blocked|source|moderation_status|moderated_at/i.test(error.message)) {
       ({ error } = await supabase.from("business_services").insert({
         id: service.id,
         business_id: service.business_id,
@@ -1278,7 +1315,7 @@ export async function ensureServiceForProfessional(input: {
       throw new Error(error.message);
     }
 
-    return {
+    const createdService: ServiceRecord = {
       id: service.id,
       businessId: service.business_id,
       name: service.name,
@@ -1288,9 +1325,13 @@ export async function ensureServiceForProfessional(input: {
       color: service.color,
       sortOrder: service.sort_order,
       createdByProfessionalId: input.professionalId,
+      source,
+      moderationStatus,
+      moderatedAt: moderatedAt ?? undefined,
       isBlocked: false,
       createdAt: service.created_at
     };
+    return normalizeServiceRecord(createdService);
   }
 
   const store = await ensureDemoBusinessesInLocalStore();
@@ -1310,6 +1351,9 @@ export async function ensureServiceForProfessional(input: {
     color,
     sortOrder,
     createdByProfessionalId: input.professionalId,
+    source,
+    moderationStatus,
+    moderatedAt: moderatedAt ?? undefined,
     isBlocked: false,
     createdAt
   };
@@ -1317,7 +1361,7 @@ export async function ensureServiceForProfessional(input: {
   store.services.push(service);
   await writeStore(store);
 
-  return service;
+  return normalizeServiceRecord(service);
 }
 
 export async function addServicesForProfessional(input: {
@@ -1328,6 +1372,7 @@ export async function addServicesForProfessional(input: {
     durationMinutes?: number;
     price?: number;
     color?: string;
+    source?: "catalog" | "custom";
   }>;
 }) {
   const created = [];
@@ -1340,7 +1385,8 @@ export async function addServicesForProfessional(input: {
         category: service.category,
         durationMinutes: service.durationMinutes,
         price: service.price,
-        color: service.color
+        color: service.color,
+        source: service.source
       })
     );
   }
@@ -1388,6 +1434,12 @@ export async function updateServiceForProfessional(input: {
         : existing.durationMinutes || inferServiceDuration(nextName),
     color: input.color || existing.color || getDefaultServiceColor(nextName)
   };
+  const shouldResetModeration =
+    normalizeServiceSource(existing.source) === "custom" &&
+    (existing.name !== updates.name ||
+      (existing.category || "Без категории") !== updates.category ||
+      (existing.durationMinutes || inferServiceDuration(existing.name)) !== updates.durationMinutes ||
+      existing.price !== updates.price);
 
   if (isSupabaseConfigured()) {
     const supabase = getSupabaseAdmin();
@@ -1402,7 +1454,13 @@ export async function updateServiceForProfessional(input: {
         category: updates.category,
         price: updates.price,
         duration_minutes: updates.durationMinutes,
-        color: updates.color
+        color: updates.color,
+        ...(shouldResetModeration
+          ? {
+              moderation_status: "pending",
+              moderated_at: null
+            }
+          : {})
       })
       .eq("id", input.serviceId)
       .eq("business_id", workspace.business.id);
@@ -1411,7 +1469,12 @@ export async function updateServiceForProfessional(input: {
       throw new Error(error.message);
     }
 
-    return { ...existing, ...updates };
+    return {
+      ...existing,
+      ...updates,
+      moderationStatus: shouldResetModeration ? "pending" : existing.moderationStatus,
+      moderatedAt: shouldResetModeration ? undefined : existing.moderatedAt
+    };
   }
 
   const store = await ensureDemoBusinessesInLocalStore();
@@ -1424,9 +1487,13 @@ export async function updateServiceForProfessional(input: {
   }
 
   Object.assign(service, updates);
+  if (shouldResetModeration) {
+    service.moderationStatus = "pending";
+    delete service.moderatedAt;
+  }
   await writeStore(store);
 
-  return service;
+  return normalizeServiceRecord(service as ServiceRecord);
 }
 
 export async function deleteServiceForProfessional(input: {

@@ -17,6 +17,7 @@ type ServiceInput = {
   durationMinutes?: number;
   price?: number;
   color?: string;
+  source?: "catalog" | "custom";
 };
 
 export async function GET() {
@@ -77,7 +78,8 @@ export async function POST(request: Request) {
         category: services[0].category,
         durationMinutes: Number(services[0].durationMinutes || 60),
         price: Number(services[0].price || 0),
-        color: services[0].color
+        color: services[0].color,
+        source: services[0].source
       });
 
       return NextResponse.json(created);
@@ -90,7 +92,8 @@ export async function POST(request: Request) {
         category: service.category,
         durationMinutes: Number(service.durationMinutes || 60),
         price: Number(service.price || 0),
-        color: service.color
+        color: service.color,
+        source: service.source
       }))
     });
 

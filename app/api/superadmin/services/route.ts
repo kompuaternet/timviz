@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import {
   deleteServiceAsSuperadmin,
   getSuperadminServices,
+  promoteServiceToRootCatalog,
+  setServiceModerationStatus,
   setServiceBlocked
 } from "../../../../lib/admin-data";
 import { requireSuperadminSession } from "../../../../lib/admin-auth";
@@ -24,6 +26,21 @@ export async function PATCH(request: Request) {
   try {
     await requireSuperadminSession();
     const body = await request.json();
+    if (body.action === "moderate") {
+      const result = await setServiceModerationStatus(
+        String(body.serviceId || ""),
+        body.moderationStatus === "pending" ? "pending" : "approved"
+      );
+      return NextResponse.json(result);
+    }
+    if (body.action === "promote_to_catalog") {
+      const result = await promoteServiceToRootCatalog({
+        serviceId: String(body.serviceId || ""),
+        category: String(body.category || ""),
+        groupKey: body.groupKey === "popularServices" ? "popularServices" : "topSuggestions"
+      });
+      return NextResponse.json(result);
+    }
     const result = await setServiceBlocked(String(body.serviceId || ""), body.isBlocked === true);
     return NextResponse.json(result);
   } catch (error) {
