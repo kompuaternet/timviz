@@ -1404,6 +1404,7 @@ export default function BusinessView({
                         <input type="hidden" name="appointmentDate" value={selectedDate} />
                         <input type="hidden" name="appointmentTime" value={selectedTime} />
                         <input type="hidden" name="customerName" value={authState.customer.fullName || authState.customer.email} />
+                        <input type="hidden" name="customerEmail" value={authState.customer.email} />
                         <input type="hidden" name="customerPhone" value={fullPhone} />
                         <input type="hidden" name="customerPhoneCountry" value={phoneCountry} />
                         <input type="hidden" name="customerPhoneLocal" value={localPhone} />

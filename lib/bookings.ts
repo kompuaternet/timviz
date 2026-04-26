@@ -17,6 +17,7 @@ export type BookingRecord = {
   appointmentDate: string;
   appointmentTime: string;
   customerName: string;
+  customerEmail?: string;
   customerPhone: string;
   customerNotes: string;
   status: BookingStatus;
@@ -42,6 +43,7 @@ export type PublicBusinessBookingInput = {
   appointmentDate: string;
   appointmentTime: string;
   customerName: string;
+  customerEmail?: string;
   customerPhone: string;
   customerNotes: string;
 };
@@ -129,6 +131,7 @@ export async function createBooking(input: BookingInput) {
     appointmentDate: input.appointmentDate,
     appointmentTime: input.appointmentTime,
     customerName: input.customerName.trim(),
+    customerEmail: "",
     customerPhone: input.customerPhone.trim(),
     customerNotes: input.customerNotes.trim(),
     status: "confirmed",
@@ -139,7 +142,7 @@ export async function createBooking(input: BookingInput) {
   const supabase = getSupabaseAdmin();
 
   if (supabase) {
-    const { error } = await supabase.from("bookings").insert({
+    let { error } = await supabase.from("bookings").insert({
       id: booking.id,
       salon_slug: booking.salonSlug,
       salon_name: booking.salonName,
@@ -147,11 +150,28 @@ export async function createBooking(input: BookingInput) {
       appointment_date: booking.appointmentDate,
       appointment_time: booking.appointmentTime,
       customer_name: booking.customerName,
+      customer_email: booking.customerEmail,
       customer_phone: booking.customerPhone,
       customer_notes: booking.customerNotes,
       status: booking.status,
       created_at: booking.createdAt
     });
+
+    if (error && /customer_email/i.test(error.message)) {
+      ({ error } = await supabase.from("bookings").insert({
+        id: booking.id,
+        salon_slug: booking.salonSlug,
+        salon_name: booking.salonName,
+        service_name: booking.serviceName,
+        appointment_date: booking.appointmentDate,
+        appointment_time: booking.appointmentTime,
+        customer_name: booking.customerName,
+        customer_phone: booking.customerPhone,
+        customer_notes: booking.customerNotes,
+        status: booking.status,
+        created_at: booking.createdAt
+      }));
+    }
 
     if (error) {
       throw new Error(error.message);
@@ -317,6 +337,7 @@ export async function createBusinessBooking(input: PublicBusinessBookingInput) {
     appointmentDate: input.appointmentDate,
     appointmentTime: input.appointmentTime,
     customerName: input.customerName.trim(),
+    customerEmail: input.customerEmail?.trim().toLowerCase() || "",
     customerPhone: input.customerPhone.trim(),
     customerNotes: input.customerNotes.trim(),
     status: "pending",
@@ -327,7 +348,7 @@ export async function createBusinessBooking(input: PublicBusinessBookingInput) {
   const supabase = getSupabaseAdmin();
 
   if (supabase) {
-    const { error } = await supabase.from("bookings").insert({
+    let { error } = await supabase.from("bookings").insert({
       id: booking.id,
       salon_slug: booking.salonSlug,
       salon_name: booking.salonName,
@@ -335,11 +356,28 @@ export async function createBusinessBooking(input: PublicBusinessBookingInput) {
       appointment_date: booking.appointmentDate,
       appointment_time: booking.appointmentTime,
       customer_name: booking.customerName,
+      customer_email: booking.customerEmail,
       customer_phone: booking.customerPhone,
       customer_notes: booking.customerNotes,
       status: booking.status,
       created_at: booking.createdAt
     });
+
+    if (error && /customer_email/i.test(error.message)) {
+      ({ error } = await supabase.from("bookings").insert({
+        id: booking.id,
+        salon_slug: booking.salonSlug,
+        salon_name: booking.salonName,
+        service_name: booking.serviceName,
+        appointment_date: booking.appointmentDate,
+        appointment_time: booking.appointmentTime,
+        customer_name: booking.customerName,
+        customer_phone: booking.customerPhone,
+        customer_notes: booking.customerNotes,
+        status: booking.status,
+        created_at: booking.createdAt
+      }));
+    }
 
     if (error) {
       throw new Error(error.message);
@@ -371,35 +409,51 @@ export async function getBookingById(id: string) {
   const supabase = getSupabaseAdmin();
 
   if (supabase) {
-    const { data, error } = await supabase
+    const primaryResult = await supabase
       .from("bookings")
       .select(
-        "id, salon_slug, salon_name, service_name, appointment_date, appointment_time, customer_name, customer_phone, customer_notes, status, created_at"
+        "id, salon_slug, salon_name, service_name, appointment_date, appointment_time, customer_name, customer_email, customer_phone, customer_notes, status, created_at"
       )
       .eq("id", id)
       .maybeSingle();
+
+    let bookingRow = primaryResult.data as Record<string, unknown> | null;
+    let error = primaryResult.error;
+
+    if (error && /customer_email/i.test(error.message)) {
+      const fallbackResult = await supabase
+        .from("bookings")
+        .select(
+          "id, salon_slug, salon_name, service_name, appointment_date, appointment_time, customer_name, customer_phone, customer_notes, status, created_at"
+        )
+        .eq("id", id)
+        .maybeSingle();
+      bookingRow = fallbackResult.data as Record<string, unknown> | null;
+      error = fallbackResult.error;
+    }
 
     if (error) {
       throw new Error(error.message);
     }
 
-    if (!data) {
+    if (!bookingRow) {
       return null;
     }
 
     return {
-      id: data.id,
-      salonSlug: data.salon_slug,
-      salonName: data.salon_name,
-      serviceName: data.service_name,
-      appointmentDate: data.appointment_date,
-      appointmentTime: data.appointment_time,
-      customerName: data.customer_name,
-      customerPhone: data.customer_phone,
-      customerNotes: data.customer_notes ?? "",
-      status: (data.status as BookingStatus) ?? "confirmed",
+      id: String(bookingRow.id ?? ""),
+      salonSlug: String(bookingRow.salon_slug ?? ""),
+      salonName: String(bookingRow.salon_name ?? ""),
+      serviceName: String(bookingRow.service_name ?? ""),
+      appointmentDate: String(bookingRow.appointment_date ?? ""),
+      appointmentTime: String(bookingRow.appointment_time ?? ""),
+      customerName: String(bookingRow.customer_name ?? ""),
+      customerEmail: String(bookingRow.customer_email ?? ""),
+      customerPhone: String(bookingRow.customer_phone ?? ""),
+      customerNotes: String(bookingRow.customer_notes ?? ""),
+      status: (bookingRow.status as BookingStatus) ?? "confirmed",
       source: "supabase",
-      createdAt: data.created_at
+      createdAt: String(bookingRow.created_at ?? "")
     } satisfies BookingRecord;
   }
 
@@ -411,31 +465,47 @@ export async function getAllBookings() {
   const supabase = getSupabaseAdmin();
 
   if (supabase) {
-    const { data, error } = await supabase
+    const primaryResult = await supabase
       .from("bookings")
       .select(
-        "id, salon_slug, salon_name, service_name, appointment_date, appointment_time, customer_name, customer_phone, customer_notes, status, created_at"
+        "id, salon_slug, salon_name, service_name, appointment_date, appointment_time, customer_name, customer_email, customer_phone, customer_notes, status, created_at"
       )
       .order("appointment_date", { ascending: true })
       .order("appointment_time", { ascending: true });
+
+    let rows = (primaryResult.data as Array<Record<string, unknown>> | null) ?? [];
+    let error = primaryResult.error;
+
+    if (error && /customer_email/i.test(error.message)) {
+      const fallbackResult = await supabase
+        .from("bookings")
+        .select(
+          "id, salon_slug, salon_name, service_name, appointment_date, appointment_time, customer_name, customer_phone, customer_notes, status, created_at"
+        )
+        .order("appointment_date", { ascending: true })
+        .order("appointment_time", { ascending: true });
+      rows = (fallbackResult.data as Array<Record<string, unknown>> | null) ?? [];
+      error = fallbackResult.error;
+    }
 
     if (error) {
       throw new Error(error.message);
     }
 
-    return (data ?? []).map((item) => ({
-      id: item.id,
-      salonSlug: item.salon_slug,
-      salonName: item.salon_name,
-      serviceName: item.service_name,
-      appointmentDate: item.appointment_date,
-      appointmentTime: item.appointment_time,
-      customerName: item.customer_name,
-      customerPhone: item.customer_phone,
-      customerNotes: item.customer_notes ?? "",
+    return rows.map((item) => ({
+      id: String(item.id ?? ""),
+      salonSlug: String(item.salon_slug ?? ""),
+      salonName: String(item.salon_name ?? ""),
+      serviceName: String(item.service_name ?? ""),
+      appointmentDate: String(item.appointment_date ?? ""),
+      appointmentTime: String(item.appointment_time ?? ""),
+      customerName: String(item.customer_name ?? ""),
+      customerEmail: String(item.customer_email ?? ""),
+      customerPhone: String(item.customer_phone ?? ""),
+      customerNotes: String(item.customer_notes ?? ""),
       status: (item.status as BookingStatus) ?? "confirmed",
       source: "supabase" as const,
-      createdAt: item.created_at
+      createdAt: String(item.created_at ?? "")
     }));
   }
 

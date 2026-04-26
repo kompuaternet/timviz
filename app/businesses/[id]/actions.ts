@@ -34,6 +34,7 @@ export async function createBusinessBookingAction(formData: FormData) {
     appointmentDate: String(formData.get("appointmentDate") ?? ""),
     appointmentTime: String(formData.get("appointmentTime") ?? ""),
     customerName: String(formData.get("customerName") ?? ""),
+    customerEmail: String(formData.get("customerEmail") ?? ""),
     customerPhone,
     customerNotes: String(formData.get("customerNotes") ?? "")
   });

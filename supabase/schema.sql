@@ -6,10 +6,26 @@ create table if not exists public.bookings (
   appointment_date date not null,
   appointment_time text not null,
   customer_name text not null,
+  customer_email text not null default '',
   customer_phone text not null,
   customer_notes text not null default '',
   status text not null default 'confirmed',
   created_at timestamptz not null default timezone('utc', now())
+);
+
+create table if not exists public.customer_accounts (
+  email text primary key,
+  given_name text not null default '',
+  family_name text not null default '',
+  full_name text not null default '',
+  phone text not null default '',
+  birthday text not null default '',
+  gender text not null default '',
+  addresses jsonb not null default '[]'::jsonb,
+  favorite_business_ids jsonb not null default '[]'::jsonb,
+  notifications jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now())
 );
 
 create table if not exists public.professionals (
@@ -149,6 +165,7 @@ alter table public.professionals add column if not exists wallet_balance integer
 
 alter table public.businesses add column if not exists photos jsonb not null default '[]'::jsonb;
 alter table public.businesses add column if not exists allow_online_booking boolean not null default false;
+alter table public.bookings add column if not exists customer_email text not null default '';
 
 alter table public.business_services add column if not exists price integer not null default 0;
 alter table public.business_services add column if not exists category text not null default '';
@@ -162,12 +179,14 @@ alter table public.business_services add column if not exists moderated_at times
 alter table public.business_services add column if not exists is_blocked boolean not null default false;
 
 create index if not exists bookings_salon_date_idx on public.bookings (salon_slug, appointment_date, appointment_time);
+create index if not exists bookings_customer_email_idx on public.bookings (customer_email, created_at desc);
 create index if not exists business_memberships_professional_idx on public.business_memberships (professional_id);
 create index if not exists business_services_business_idx on public.business_services (business_id, sort_order, created_at);
 create index if not exists business_services_blocked_idx on public.business_services (is_blocked, created_at desc);
 create index if not exists business_services_source_idx on public.business_services (source, moderation_status, is_blocked, created_at desc);
 create index if not exists calendar_appointments_professional_day_idx on public.calendar_appointments (professional_id, appointment_date, start_time);
 create index if not exists calendar_appointments_business_day_idx on public.calendar_appointments (business_id, appointment_date, start_time);
+create index if not exists customer_accounts_updated_idx on public.customer_accounts (updated_at desc);
 create index if not exists global_service_catalog_category_idx on public.global_service_catalog (category, group_key, sort_order);
 create index if not exists pro_clients_professional_idx on public.pro_clients (professional_id, created_at desc);
 create index if not exists support_messages_ticket_idx on public.support_messages (ticket_id, created_at);

@@ -32,6 +32,16 @@ export function getPublicCustomerCookieName() {
   return PUBLIC_CUSTOMER_COOKIE;
 }
 
+export function clearPublicCustomerSessionCookieOptions(isSecure: boolean) {
+  return {
+    httpOnly: true as const,
+    sameSite: "lax" as const,
+    path: "/",
+    secure: isSecure,
+    maxAge: 0
+  };
+}
+
 export function signPublicCustomerSession(session: PublicCustomerSession) {
   const payload = toBase64Url(JSON.stringify(session));
   const signature = createHmac("sha256", getSessionSecret()).update(payload).digest("hex");
