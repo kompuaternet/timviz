@@ -8,7 +8,6 @@ import {
   formatPhoneLocal,
   getPhoneRule,
   inferPhoneCountryFromAddress,
-  inferPhoneCountryFromLocale,
   isPhoneValid,
   onlyPhoneDigits,
   phoneCountries
@@ -374,23 +373,6 @@ function buildMonthDays(month: Date) {
   });
 }
 
-function getBrowserPhoneCountry() {
-  if (typeof window === "undefined") {
-    return "";
-  }
-
-  const candidates = [navigator.language, ...(navigator.languages ?? [])].filter(Boolean);
-
-  for (const candidate of candidates) {
-    const country = inferPhoneCountryFromLocale(candidate);
-    if (country) {
-      return country;
-    }
-  }
-
-  return "";
-}
-
 function formatMoney(value: number, locale: string) {
   return new Intl.NumberFormat(locale, {
     style: "currency",
@@ -581,8 +563,7 @@ export default function BusinessView({
   }, [serviceCategory, serviceGroups]);
 
   useEffect(() => {
-    const browserPhoneCountry = getBrowserPhoneCountry();
-    setPhoneCountry(browserPhoneCountry || companyPhoneCountry);
+    setPhoneCountry(companyPhoneCountry);
   }, [companyPhoneCountry]);
 
   useEffect(() => {

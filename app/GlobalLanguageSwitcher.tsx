@@ -90,12 +90,24 @@ export default function GlobalLanguageSwitcher({ mode = "fixed" }: GlobalLanguag
   const hasInlinePublicHeader =
     pathname === "/" ||
     pathname === "/for-business" ||
+    pathname === "/privacy" ||
+    pathname === "/terms" ||
     pathname === "/ru" ||
     pathname === "/uk" ||
     pathname === "/en" ||
     pathname === "/ru/for-business" ||
     pathname === "/uk/for-business" ||
     pathname === "/en/for-business" ||
+    pathname === "/ru/privacy" ||
+    pathname === "/uk/privacy" ||
+    pathname === "/en/privacy" ||
+    pathname === "/ru/terms" ||
+    pathname === "/uk/terms" ||
+    pathname === "/en/terms" ||
+    pathname?.startsWith("/businesses/") ||
+    pathname?.startsWith("/ru/businesses/") ||
+    pathname?.startsWith("/uk/businesses/") ||
+    pathname?.startsWith("/en/businesses/") ||
     pathname?.startsWith("/pro/create-account") ||
     pathname?.startsWith("/pro/setup");
 

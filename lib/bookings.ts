@@ -281,7 +281,10 @@ export async function createBusinessBooking(input: PublicBusinessBookingInput) {
     const candidateBookings = publicAppointments
       .filter(
         (appointment) =>
-          appointment.businessId === business.id && appointment.professionalId === candidateId
+          appointment.businessId === business.id &&
+          appointment.professionalId === candidateId &&
+          (appointment.kind === "blocked" ||
+            (appointment.kind === "appointment" && appointment.attendance !== "pending"))
       )
       .map((appointment) => ({
         appointmentDate: appointment.appointmentDate,

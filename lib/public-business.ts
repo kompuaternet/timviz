@@ -153,7 +153,8 @@ export async function getPublicBusinessProfile(
       .filter(
         (appointment) =>
           appointment.businessId === business.id &&
-          (appointment.kind === "appointment" || appointment.kind === "blocked")
+          (appointment.kind === "blocked" ||
+            (appointment.kind === "appointment" && appointment.attendance !== "pending"))
       )
       .map((appointment) => ({
         appointmentDate: appointment.appointmentDate,

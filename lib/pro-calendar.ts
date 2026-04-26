@@ -45,7 +45,7 @@ export type ClientDirectoryEntry = {
 
 export type PublicCalendarAppointment = Pick<
   CalendarAppointment,
-  "businessId" | "professionalId" | "appointmentDate" | "startTime" | "endTime" | "kind"
+  "businessId" | "professionalId" | "appointmentDate" | "startTime" | "endTime" | "kind" | "attendance"
 >;
 
 type CalendarStore = {
@@ -230,7 +230,7 @@ export async function getPublicCalendarAppointments(): Promise<PublicCalendarApp
 
     const { data, error } = await supabase
       .from("calendar_appointments")
-      .select("business_id, professional_id, appointment_date, start_time, end_time, kind")
+      .select("business_id, professional_id, appointment_date, start_time, end_time, kind, attendance")
       .order("appointment_date", { ascending: true })
       .order("start_time", { ascending: true });
 
@@ -244,7 +244,8 @@ export async function getPublicCalendarAppointments(): Promise<PublicCalendarApp
       appointmentDate: row.appointment_date,
       startTime: row.start_time,
       endTime: row.end_time,
-      kind: normalizeKind(row.kind)
+      kind: normalizeKind(row.kind),
+      attendance: normalizeAttendance(row.attendance)
     }));
   }
 
@@ -255,7 +256,8 @@ export async function getPublicCalendarAppointments(): Promise<PublicCalendarApp
     appointmentDate: appointment.appointmentDate,
     startTime: appointment.startTime,
     endTime: appointment.endTime,
-    kind: appointment.kind
+    kind: appointment.kind,
+    attendance: appointment.attendance
   }));
 }
 
