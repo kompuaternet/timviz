@@ -35,6 +35,7 @@ type SettingsData = {
     addressDetails: string;
     addressLat: number | null;
     addressLon: number | null;
+    allowOnlineBooking?: boolean;
   };
   membership: {
     scope: "owner" | "member";
@@ -255,7 +256,7 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
 
   function updateBusiness(
     field: Exclude<keyof SettingsData["business"], "photos">,
-    value: string | string[] | number | null | "solo" | "team"
+    value: string | string[] | number | null | boolean | "solo" | "team"
   ) {
     setData((current) => ({
       ...current,
@@ -425,7 +426,8 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
           address: data.business.address,
           addressDetails: data.business.addressDetails,
           addressLat: data.business.addressLat,
-          addressLon: data.business.addressLon
+          addressLon: data.business.addressLon,
+          allowOnlineBooking: data.business.allowOnlineBooking === true
         }
       }),
     [data]
@@ -457,7 +459,8 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
         address: initialData.business.address,
         addressDetails: initialData.business.addressDetails,
         addressLat: initialData.business.addressLat,
-        addressLon: initialData.business.addressLon
+        addressLon: initialData.business.addressLon,
+        allowOnlineBooking: initialData.business.allowOnlineBooking === true
       }
     });
     isHydratedRef.current = true;
@@ -543,7 +546,8 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
             address: data.business.address,
             addressDetails: data.business.addressDetails,
             addressLat: data.business.addressLat,
-            addressLon: data.business.addressLon
+            addressLon: data.business.addressLon,
+            allowOnlineBooking: data.business.allowOnlineBooking === true
           },
           newPassword: password,
           topUpCredits
@@ -599,7 +603,8 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
           address: next.workspace.business.address,
           addressDetails: next.workspace.business.addressDetails,
           addressLat: next.workspace.business.addressLat,
-          addressLon: next.workspace.business.addressLon
+          addressLon: next.workspace.business.addressLon,
+          allowOnlineBooking: next.workspace.business.allowOnlineBooking === true
         }
       });
       setPassword("");
@@ -712,6 +717,27 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
                   placeholder={copy.categoriesPlaceholder}
                 />
               </label>
+              {data.membership.scope === "owner" ? (
+                <label className={styles.settingsWideField}>
+                  <span>{t.settings.onlineBooking}</span>
+                  <button
+                    type="button"
+                    className={`${styles.settingsToggle} ${data.business.allowOnlineBooking ? styles.settingsToggleActive : ""}`}
+                    onClick={() =>
+                      updateBusiness("allowOnlineBooking", !(data.business.allowOnlineBooking === true))
+                    }
+                    aria-pressed={data.business.allowOnlineBooking === true}
+                  >
+                    <span className={styles.settingsToggleText}>
+                      {data.business.allowOnlineBooking ? t.settings.onlineBookingEnabled : t.settings.onlineBookingDisabled}
+                    </span>
+                    <span className={styles.settingsToggleTrack}>
+                      <span className={styles.settingsToggleThumb} />
+                    </span>
+                  </button>
+                  <small className={styles.settingsInlineHint}>{t.settings.onlineBookingHint}</small>
+                </label>
+              ) : null}
             </div>
           </section>
 

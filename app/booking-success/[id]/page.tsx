@@ -8,6 +8,7 @@ type BookingSuccessPageProps = {
   params: Promise<{
     id: string;
   }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
 export const metadata: Metadata = buildMetadata(
@@ -21,14 +22,19 @@ export const metadata: Metadata = buildMetadata(
 );
 
 export default async function BookingSuccessPage({
-  params
+  params,
+  searchParams
 }: BookingSuccessPageProps) {
   const { id } = await params;
+  const paramsMap = (await searchParams) ?? {};
   const booking = await getBookingById(id);
 
   if (!booking) {
     notFound();
   }
 
-  return <BookingSuccessView booking={booking} />;
+  const back = Array.isArray(paramsMap.back) ? paramsMap.back[0] : paramsMap.back;
+  const pending = Array.isArray(paramsMap.pending) ? paramsMap.pending[0] : paramsMap.pending;
+
+  return <BookingSuccessView booking={booking} backPath={back} pending={pending === "1" || booking.status === "pending"} />;
 }

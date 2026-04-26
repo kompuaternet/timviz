@@ -5,7 +5,7 @@ import type { ServiceRecord } from "./pro-data";
 import { getSupabaseAdmin, isSupabaseConfigured } from "./supabase";
 
 export type CalendarAppointmentKind = "appointment" | "blocked";
-export type CalendarAttendanceStatus = "pending" | "arrived" | "no_show";
+export type CalendarAttendanceStatus = "pending" | "confirmed" | "arrived" | "no_show";
 
 export type CalendarAppointment = {
   id: string;
@@ -80,7 +80,7 @@ function normalizeKind(value: unknown): CalendarAppointmentKind {
 }
 
 function normalizeAttendance(value: unknown): CalendarAttendanceStatus {
-  return value === "arrived" || value === "no_show" ? value : "pending";
+  return value === "confirmed" || value === "arrived" || value === "no_show" ? value : "pending";
 }
 
 function normalizeAppointment(
@@ -292,6 +292,7 @@ function summarizeAppointments(
   const visits = appointments.filter(
     (appointment) =>
       appointment.kind === "appointment" &&
+      appointment.attendance !== "pending" &&
       appointment.appointmentDate >= startDate &&
       appointment.appointmentDate <= endDate
   );
@@ -382,6 +383,7 @@ export async function createCalendarAppointment(input: {
   serviceName: string;
   notes: string;
   priceAmount?: number;
+  attendance?: CalendarAttendanceStatus;
 }) {
   const workspace = await getWorkspaceSnapshot(input.professionalId);
 
@@ -419,7 +421,7 @@ export async function createCalendarAppointment(input: {
     customerPhone: input.customerPhone.trim(),
     serviceName: service.name,
     notes: input.notes.trim(),
-    attendance: "pending",
+    attendance: input.attendance ?? "confirmed",
     priceAmount:
       typeof input.priceAmount === "number" && Number.isFinite(input.priceAmount)
         ? Math.max(0, input.priceAmount)
@@ -468,6 +470,7 @@ export async function getClientDirectory(professionalId: string): Promise<Client
   const appointments = (await readAppointmentsForProfessional(professionalId)).filter(
     (appointment) =>
       appointment.kind === "appointment" &&
+      appointment.attendance !== "pending" &&
       appointment.customerName.trim() &&
       appointment.customerName.trim().toLowerCase() !== "клиент"
   );

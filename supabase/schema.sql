@@ -43,6 +43,7 @@ create table if not exists public.businesses (
   work_schedule_mode text not null default 'fixed',
   work_schedule jsonb not null default '{}'::jsonb,
   custom_schedule jsonb not null default '{}'::jsonb,
+  allow_online_booking boolean not null default false,
   photos jsonb not null default '[]'::jsonb,
   owner_professional_id text,
   created_at timestamptz not null default timezone('utc', now())
@@ -147,6 +148,7 @@ alter table public.professionals add column if not exists booking_credits_total 
 alter table public.professionals add column if not exists wallet_balance integer not null default 0;
 
 alter table public.businesses add column if not exists photos jsonb not null default '[]'::jsonb;
+alter table public.businesses add column if not exists allow_online_booking boolean not null default false;
 
 alter table public.business_services add column if not exists price integer not null default 0;
 alter table public.business_services add column if not exists category text not null default '';

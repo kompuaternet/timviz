@@ -2537,6 +2537,13 @@
   box-shadow: inset 0 0 0 1px rgba(107, 121, 137, 0.18);
 }
 
+.bookingPending {
+  opacity: 0.72;
+  box-shadow:
+    inset 0 0 0 2px rgba(92, 59, 224, 0.32),
+    inset 0 0 0 1px rgba(84, 136, 164, 0.12);
+}
+
 .bookingBlocked {
   background:
     repeating-linear-gradient(
@@ -5847,6 +5854,76 @@
 
 .settingsWideField {
   grid-column: 1 / -1;
+}
+
+.settingsToggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-height: 58px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid #e4dacd;
+  background: #fff;
+  color: #201b16;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.settingsToggle:hover {
+  border-color: #cfc3b6;
+}
+
+.settingsToggleActive {
+  border-color: rgba(96, 70, 255, 0.3);
+  background: rgba(118, 95, 255, 0.06);
+  box-shadow: 0 12px 24px rgba(68, 41, 191, 0.08);
+}
+
+.settingsToggleText {
+  display: block;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.settingsToggleTrack {
+  position: relative;
+  flex: 0 0 auto;
+  width: 52px;
+  height: 30px;
+  border-radius: 999px;
+  background: #d9d1c6;
+  transition: background 0.2s ease;
+}
+
+.settingsToggleActive .settingsToggleTrack {
+  background: linear-gradient(135deg, #6f4bff 0%, #27244f 100%);
+}
+
+.settingsToggleThumb {
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 4px 10px rgba(31, 26, 47, 0.16);
+  transition: transform 0.2s ease;
+}
+
+.settingsToggleActive .settingsToggleThumb {
+  transform: translateX(22px);
+}
+
+.settingsInlineHint {
+  display: block;
+  margin-top: 6px;
+  color: #746a60;
+  font-size: 0.92rem;
+  line-height: 1.55;
 }
 
 .settingsCardHint {

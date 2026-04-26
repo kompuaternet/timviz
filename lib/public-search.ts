@@ -58,6 +58,7 @@ export type PublicSearchResult = {
   localizedCategory?: LocalizedText;
   localizedAddress?: LocalizedText;
   localizedAvailabilityLabel?: LocalizedText;
+  onlineBookingEnabled: boolean;
 };
 
 export type PublicSearchIndex = {
@@ -89,6 +90,11 @@ const genericCopy = {
   services: { ru: "Услуги", uk: "Послуги", en: "Services" },
   noAddress: { ru: "Адрес пока не указан", uk: "Адресу ще немає", en: "Address not added yet" },
   chooseTime: { ru: "Можно выбрать время", uk: "Можна вибрати час", en: "Choose a time" },
+  onlineBookingDisabled: {
+    ru: "Онлайн-запись выключена",
+    uk: "Онлайн-запис вимкнено",
+    en: "Online booking is off"
+  },
   noWorkingHours: { ru: "Нет рабочего времени", uk: "Немає робочого часу", en: "No working hours" },
   busyAtTime: { ru: "На это время занято", uk: "На цей час зайнято", en: "Busy at this time" }
 } satisfies Record<string, LocalizedText>;
@@ -193,7 +199,23 @@ function isBusinessAvailable(input: {
   query?: string;
 }) {
   if (!input.date || !input.time) {
+    if (input.business.allowOnlineBooking !== true) {
+      return {
+        available: false,
+        label: genericCopy.onlineBookingDisabled.ru,
+        localizedLabel: genericCopy.onlineBookingDisabled
+      };
+    }
+
     return { available: true, label: genericCopy.chooseTime.ru, localizedLabel: genericCopy.chooseTime };
+  }
+
+  if (input.business.allowOnlineBooking !== true) {
+    return {
+      available: false,
+      label: genericCopy.onlineBookingDisabled.ru,
+      localizedLabel: genericCopy.onlineBookingDisabled
+    };
   }
 
   const workSchedule = normalizeWorkSchedule(input.business.workSchedule);
@@ -339,7 +361,8 @@ export async function getPublicSearchIndex(params: PublicSearchParams = {}): Pro
       localizedCategory,
       localizedAddress,
       localizedAvailabilityLabel: availability.localizedLabel,
-      image: getPrimaryBusinessPhoto(normalizedBusiness) || fallbackImages[index % fallbackImages.length]
+      image: getPrimaryBusinessPhoto(normalizedBusiness) || fallbackImages[index % fallbackImages.length],
+      onlineBookingEnabled: normalizedBusiness.allowOnlineBooking === true
     };
   });
 
@@ -379,7 +402,8 @@ export async function getPublicSearchIndex(params: PublicSearchParams = {}): Pro
       localizedCategory: salon.category,
       localizedAddress,
       localizedAvailabilityLabel,
-      image: fallbackImages[(registeredResults.length + index) % fallbackImages.length]
+      image: fallbackImages[(registeredResults.length + index) % fallbackImages.length],
+      onlineBookingEnabled: true
     };
   });
 

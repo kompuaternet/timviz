@@ -70,6 +70,7 @@ export type BusinessRecord = {
   workScheduleMode: WorkScheduleMode;
   workSchedule: WorkSchedule;
   customSchedule: CustomSchedule;
+  allowOnlineBooking?: boolean;
   photos?: BusinessPhoto[];
   ownerProfessionalId: string | null;
   createdAt: string;
@@ -156,6 +157,17 @@ export const DEFAULT_BOOKING_CREDITS = 500;
 
 function normalizeServiceSource(value: unknown): "catalog" | "custom" {
   return value === "custom" ? "custom" : "catalog";
+}
+
+function normalizeBusinessRecord(business: BusinessRecord): BusinessRecord {
+  return {
+    ...business,
+    workScheduleMode: normalizeWorkScheduleMode(business.workScheduleMode),
+    workSchedule: normalizeWorkSchedule(business.workSchedule),
+    customSchedule: normalizeCustomSchedule(business.customSchedule),
+    allowOnlineBooking: business.allowOnlineBooking === true,
+    photos: normalizeBusinessPhotos(business.photos)
+  };
 }
 
 function normalizeServiceModerationStatus(value: unknown): "pending" | "approved" {
@@ -338,11 +350,12 @@ function mapSupabaseBusinessRow(row: {
   work_schedule_mode?: WorkScheduleMode | null;
   work_schedule?: unknown;
   custom_schedule?: unknown;
+  allow_online_booking?: boolean | null;
   photos?: unknown;
   owner_professional_id?: string | null;
   created_at: string;
 }): BusinessRecord {
-  return {
+  return normalizeBusinessRecord({
     id: row.id,
     name: row.name,
     website: row.website ?? "",
@@ -356,10 +369,11 @@ function mapSupabaseBusinessRow(row: {
     workScheduleMode: normalizeWorkScheduleMode(row.work_schedule_mode),
     workSchedule: normalizeWorkSchedule(row.work_schedule),
     customSchedule: normalizeCustomSchedule(row.custom_schedule),
+    allowOnlineBooking: row.allow_online_booking === true,
     photos: normalizeBusinessPhotos(row.photos),
     ownerProfessionalId: row.owner_professional_id ?? null,
     createdAt: row.created_at
-  };
+  });
 }
 
 function mapSupabaseMembershipRow(row: {
@@ -526,18 +540,19 @@ async function ensureDemoBusinessesInLocalStore() {
     if (
       business.workScheduleMode !== nextMode ||
       business.workSchedule !== nextSchedule ||
-      JSON.stringify(business.photos ?? []) !== JSON.stringify(nextPhotos)
+      JSON.stringify(business.photos ?? []) !== JSON.stringify(nextPhotos) ||
+      business.allowOnlineBooking !== (business.allowOnlineBooking === true)
     ) {
       changed = true;
     }
 
-    return {
+    return normalizeBusinessRecord({
       ...business,
       workScheduleMode: nextMode,
       workSchedule: nextSchedule,
       customSchedule: normalizeCustomSchedule(business.customSchedule),
       photos: nextPhotos
-    };
+    });
   });
 
   store.professionals = store.professionals.map((professional) => {
@@ -575,6 +590,7 @@ async function ensureDemoBusinessesInLocalStore() {
       workScheduleMode: item.workScheduleMode,
       workSchedule: item.workSchedule,
       customSchedule: item.customSchedule,
+      allowOnlineBooking: false,
       photos: [],
       ownerProfessionalId: null,
       createdAt: new Date().toISOString()
@@ -633,11 +649,7 @@ export async function getBusinessDirectorySnapshot(): Promise<BusinessDirectoryS
 
   return {
     businesses: store.businesses.map((business) => ({
-      ...business,
-      workScheduleMode: normalizeWorkScheduleMode(business.workScheduleMode),
-      workSchedule: normalizeWorkSchedule(business.workSchedule),
-      customSchedule: normalizeCustomSchedule(business.customSchedule),
-      photos: normalizeBusinessPhotos(business.photos)
+      ...normalizeBusinessRecord(business)
     })),
     professionals: store.professionals.map(normalizeProfessionalRecord),
     memberships: [...store.memberships],
@@ -708,6 +720,7 @@ export async function createProfessionalSetup(input: {
         work_schedule_mode: initialWorkScheduleMode,
         work_schedule: initialWorkSchedule,
         custom_schedule: initialCustomSchedule,
+        allow_online_booking: false,
         photos: [],
         owner_professional_id: professionalId,
         created_at: createdAt
@@ -821,10 +834,11 @@ export async function createProfessionalSetup(input: {
       addressLon: input.setup.addressLon,
       workScheduleMode: initialWorkScheduleMode,
       workSchedule: initialWorkSchedule,
-      customSchedule: initialCustomSchedule,
-      photos: [],
-      ownerProfessionalId: professionalId,
-      createdAt
+        customSchedule: initialCustomSchedule,
+        allowOnlineBooking: false,
+        photos: [],
+        ownerProfessionalId: professionalId,
+        createdAt
     };
 
     store.businesses.push(business);
@@ -1078,6 +1092,7 @@ export type WorkspaceSettingsUpdate = {
     addressDetails?: string;
     addressLat?: number | null;
     addressLon?: number | null;
+    allowOnlineBooking?: boolean;
     photos?: BusinessPhoto[];
   };
   newPassword?: string;
@@ -1139,7 +1154,10 @@ export async function updateWorkspaceSettingsForProfessional(
     }
 
     if (workspace.membership.scope === "owner") {
-      const businessUpdates: Record<string, string | string[] | number | null | BusinessPhoto[]> = {};
+      const businessUpdates: Record<
+        string,
+        string | string[] | number | null | boolean | BusinessPhoto[]
+      > = {};
       if (typeof nextBusiness.name === "string") businessUpdates.name = nextBusiness.name.trim();
       if (typeof nextBusiness.website === "string") businessUpdates.website = nextBusiness.website.trim();
       if (nextCategories) businessUpdates.categories = nextCategories;
@@ -1149,6 +1167,7 @@ export async function updateWorkspaceSettingsForProfessional(
       if (typeof nextBusiness.addressDetails === "string") businessUpdates.address_details = nextBusiness.addressDetails.trim();
       if (typeof nextBusiness.addressLat === "number" || nextBusiness.addressLat === null) businessUpdates.address_lat = nextBusiness.addressLat;
       if (typeof nextBusiness.addressLon === "number" || nextBusiness.addressLon === null) businessUpdates.address_lon = nextBusiness.addressLon;
+      if (typeof nextBusiness.allowOnlineBooking === "boolean") businessUpdates.allow_online_booking = nextBusiness.allowOnlineBooking;
       if (Array.isArray(nextBusiness.photos)) {
         businessUpdates.photos = normalizeBusinessPhotos(nextBusiness.photos).map((photo) => {
           const existing = existingPhotos.find((item) => item.id === photo.id);
@@ -1213,6 +1232,7 @@ export async function updateWorkspaceSettingsForProfessional(
     if (typeof nextBusiness.addressDetails === "string") business.addressDetails = nextBusiness.addressDetails.trim();
     if (typeof nextBusiness.addressLat === "number" || nextBusiness.addressLat === null) business.addressLat = nextBusiness.addressLat;
     if (typeof nextBusiness.addressLon === "number" || nextBusiness.addressLon === null) business.addressLon = nextBusiness.addressLon;
+    if (typeof nextBusiness.allowOnlineBooking === "boolean") business.allowOnlineBooking = nextBusiness.allowOnlineBooking;
     if (Array.isArray(nextBusiness.photos)) {
       business.photos = normalizeBusinessPhotos(nextBusiness.photos).map((photo) => {
         const existing = existingPhotos.find((item) => item.id === photo.id);

@@ -31,6 +31,9 @@ type CatalogCopy = {
   emptyText: string;
   backToSearch: string;
   action: string;
+  viewProfile: string;
+  onlineBookingEnabled: string;
+  onlineBookingDisabled: string;
   distanceUnknown: string;
   distanceUnderOne: string;
   kindLabel: (kind: string) => string;
@@ -59,6 +62,9 @@ const catalogCopy: Record<SiteLanguage, CatalogCopy> = {
     emptyText: "Попробуйте выбрать другое время, убрать тип результата или искать по более короткому названию услуги.",
     backToSearch: "Вернуться к поиску",
     action: "Открыть и записаться",
+    viewProfile: "Открыть карточку",
+    onlineBookingEnabled: "Онлайн-запись доступна",
+    onlineBookingDisabled: "Онлайн-запись выключена",
     distanceUnknown: "Расстояние после геолокации",
     distanceUnderOne: "Меньше 1 км",
     kindLabel: (kind) =>
@@ -92,6 +98,9 @@ const catalogCopy: Record<SiteLanguage, CatalogCopy> = {
     emptyText: "Спробуйте вибрати інший час, прибрати тип результату або шукати за коротшою назвою послуги.",
     backToSearch: "Повернутися до пошуку",
     action: "Відкрити і записатися",
+    viewProfile: "Відкрити картку",
+    onlineBookingEnabled: "Онлайн-запис доступний",
+    onlineBookingDisabled: "Онлайн-запис вимкнено",
     distanceUnknown: "Відстань після геолокації",
     distanceUnderOne: "Менше 1 км",
     kindLabel: (kind) =>
@@ -125,6 +134,9 @@ const catalogCopy: Record<SiteLanguage, CatalogCopy> = {
     emptyText: "Try another time, remove the result type, or search with a shorter service name.",
     backToSearch: "Back to search",
     action: "Open and book",
+    viewProfile: "Open profile",
+    onlineBookingEnabled: "Online booking available",
+    onlineBookingDisabled: "Online booking is off",
     distanceUnknown: "Distance after geolocation",
     distanceUnderOne: "Less than 1 km",
     kindLabel: (kind) =>
@@ -266,7 +278,10 @@ export default function CatalogView({
 
             <div className="chip-row">
               <span className={`chip ${result.available ? "chip-success" : "chip-muted"}`}>
-                {time ? t.availableAt(time) : t.chooseTime}
+                {getLocalizedText(result.availabilityLabel, result.localizedAvailabilityLabel, language) || (time ? t.availableAt(time) : t.chooseTime)}
+              </span>
+              <span className={`chip ${result.onlineBookingEnabled ? "chip-success" : "chip-muted"}`}>
+                {result.onlineBookingEnabled ? t.onlineBookingEnabled : t.onlineBookingDisabled}
               </span>
               {result.services.slice(0, 4).map((service) => (
                 <span key={service.id} className="chip">
@@ -275,8 +290,15 @@ export default function CatalogView({
               ))}
             </div>
 
-            <Link href={result.id.startsWith("mock_") ? getLocalizedPath(language, `/salons/${result.id.replace("mock_", "")}`) : getLocalizedPath(language, `/catalog?business=${result.id}`)} className="primary-button">
-              {t.action}
+            <Link
+              href={
+                result.id.startsWith("mock_")
+                  ? getLocalizedPath(language, `/salons/${result.id.replace("mock_", "")}`)
+                  : getLocalizedPath(language, `/businesses/${result.id}`)
+              }
+              className="primary-button"
+            >
+              {result.onlineBookingEnabled ? t.action : t.viewProfile}
             </Link>
           </article>
         ))}

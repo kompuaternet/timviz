@@ -2,9 +2,11 @@ import { promises as fs } from "fs";
 import path from "path";
 import { getSalonBySlug } from "../data/mock-data";
 import { getPublicBookingSlots } from "./public-booking";
+import { getBusinessDirectorySnapshot, type BusinessRecord, type ServiceRecord } from "./pro-data";
+import { createCalendarAppointment, getPublicCalendarAppointments } from "./pro-calendar";
 import { getSupabaseAdmin, isSupabaseConfigured } from "./supabase";
 
-export type BookingStatus = "confirmed" | "completed" | "cancelled";
+export type BookingStatus = "pending" | "confirmed" | "completed" | "cancelled";
 
 export type BookingRecord = {
   id: string;
@@ -23,6 +25,16 @@ export type BookingRecord = {
 
 export type BookingInput = {
   salonSlug: string;
+  serviceName: string;
+  appointmentDate: string;
+  appointmentTime: string;
+  customerName: string;
+  customerPhone: string;
+  customerNotes: string;
+};
+
+export type PublicBusinessBookingInput = {
+  businessId: string;
   serviceName: string;
   appointmentDate: string;
   appointmentTime: string;
@@ -148,6 +160,147 @@ export async function createBooking(input: BookingInput) {
   const bookings = await readLocalBookings();
   bookings.unshift(booking);
   await writeLocalBookings(bookings);
+  return booking;
+}
+
+function getOwnerProfessionalId(business: BusinessRecord, ownerProfessionalIds: string[]) {
+  return business.ownerProfessionalId || ownerProfessionalIds[0] || "";
+}
+
+function isServicePubliclyVisible(service: ServiceRecord) {
+  if (service.isBlocked === true) {
+    return false;
+  }
+
+  if (service.source === "custom") {
+    return service.moderationStatus === "approved";
+  }
+
+  return true;
+}
+
+export async function createBusinessBooking(input: PublicBusinessBookingInput) {
+  const directory = await getBusinessDirectorySnapshot();
+  const business = directory.businesses.find((item) => item.id === input.businessId);
+
+  if (!business) {
+    throw new Error("Business not found.");
+  }
+
+  if (business.allowOnlineBooking !== true) {
+    throw new Error("Online booking is not enabled for this business.");
+  }
+
+  const businessServices = directory.services
+    .filter((service) => service.businessId === business.id)
+    .filter(isServicePubliclyVisible);
+  const service = businessServices.find((item) => item.name === input.serviceName.trim());
+
+  if (!service) {
+    throw new Error("Service not found.");
+  }
+
+  const ownerProfessionalIds = directory.memberships
+    .filter((membership) => membership.businessId === business.id && membership.scope === "owner")
+    .map((membership) => membership.professionalId);
+  const professionalId = getOwnerProfessionalId(business, ownerProfessionalIds);
+
+  if (!professionalId) {
+    throw new Error("Business owner not found.");
+  }
+
+  if (!input.customerName.trim()) {
+    throw new Error("Customer name is required.");
+  }
+
+  if (!input.customerPhone.trim()) {
+    throw new Error("Customer phone is required.");
+  }
+
+  if (!input.appointmentDate.trim()) {
+    throw new Error("Appointment date is required.");
+  }
+
+  const publicAppointments = (await getPublicCalendarAppointments())
+    .filter((appointment) => appointment.businessId === business.id && appointment.professionalId === professionalId)
+    .map((appointment) => ({
+      appointmentDate: appointment.appointmentDate,
+      appointmentTime: appointment.startTime,
+      serviceName: ""
+    }));
+
+  const availableSlots = getPublicBookingSlots({
+    config: {
+      workSchedule: business.workSchedule,
+      customSchedule: business.customSchedule,
+      bookingIntervalMinutes: 15,
+      services: businessServices.map((item) => ({
+        name: item.name,
+        durationMinutes: item.durationMinutes ?? 60
+      }))
+    },
+    date: input.appointmentDate,
+    serviceName: service.name,
+    bookings: publicAppointments
+  });
+
+  if (!availableSlots.includes(input.appointmentTime)) {
+    throw new Error("Time slot not found.");
+  }
+
+  const booking: BookingRecord = {
+    id: createBookingId(),
+    salonSlug: `business:${business.id}`,
+    salonName: business.name,
+    serviceName: service.name,
+    appointmentDate: input.appointmentDate,
+    appointmentTime: input.appointmentTime,
+    customerName: input.customerName.trim(),
+    customerPhone: input.customerPhone.trim(),
+    customerNotes: input.customerNotes.trim(),
+    status: "pending",
+    source: isSupabaseConfigured() ? "supabase" : "local",
+    createdAt: new Date().toISOString()
+  };
+
+  const supabase = getSupabaseAdmin();
+
+  if (supabase) {
+    const { error } = await supabase.from("bookings").insert({
+      id: booking.id,
+      salon_slug: booking.salonSlug,
+      salon_name: booking.salonName,
+      service_name: booking.serviceName,
+      appointment_date: booking.appointmentDate,
+      appointment_time: booking.appointmentTime,
+      customer_name: booking.customerName,
+      customer_phone: booking.customerPhone,
+      customer_notes: booking.customerNotes,
+      status: booking.status,
+      created_at: booking.createdAt
+    });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+  } else {
+    const bookings = await readLocalBookings();
+    bookings.unshift(booking);
+    await writeLocalBookings(bookings);
+  }
+
+  await createCalendarAppointment({
+    professionalId,
+    appointmentDate: input.appointmentDate,
+    startTime: input.appointmentTime,
+    customerName: input.customerName,
+    customerPhone: input.customerPhone,
+    serviceName: service.name,
+    notes: input.customerNotes,
+    priceAmount: service.price,
+    attendance: "pending"
+  });
+
   return booking;
 }
 

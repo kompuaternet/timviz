@@ -66,7 +66,8 @@ export async function POST(request: Request) {
       customerPhone: body.customerPhone,
       serviceName: body.serviceName,
       notes: body.notes ?? "",
-      priceAmount: typeof body.priceAmount === "number" ? body.priceAmount : undefined
+      priceAmount: typeof body.priceAmount === "number" ? body.priceAmount : undefined,
+      attendance: body.attendance
     });
 
     return NextResponse.json(appointment);

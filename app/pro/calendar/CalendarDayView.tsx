@@ -31,7 +31,7 @@ type CalendarAppointment = {
   customerPhone: string;
   serviceName: string;
   notes: string;
-  attendance: "pending" | "arrived" | "no_show";
+  attendance: "pending" | "confirmed" | "arrived" | "no_show";
   priceAmount: number;
 };
 
@@ -217,6 +217,7 @@ const CALENDAR_TEXT: Record<AppLanguage, {
   service: string;
   attendanceStatus: string;
   attendancePending: string;
+  attendanceConfirmed: string;
   attendanceArrived: string;
   attendanceNoShow: string;
   price: string;
@@ -312,6 +313,7 @@ const CALENDAR_TEXT: Record<AppLanguage, {
     service: "Услуга",
     attendanceStatus: "Статус визита",
     attendancePending: "Ожидается",
+    attendanceConfirmed: "Подтверждена",
     attendanceArrived: "Пришел",
     attendanceNoShow: "Не пришел",
     price: "Цена",
@@ -407,6 +409,7 @@ const CALENDAR_TEXT: Record<AppLanguage, {
     service: "Послуга",
     attendanceStatus: "Статус візиту",
     attendancePending: "Очікується",
+    attendanceConfirmed: "Підтверджено",
     attendanceArrived: "Прийшов",
     attendanceNoShow: "Не прийшов",
     price: "Ціна",
@@ -502,6 +505,7 @@ const CALENDAR_TEXT: Record<AppLanguage, {
     service: "Service",
     attendanceStatus: "Visit status",
     attendancePending: "Pending",
+    attendanceConfirmed: "Confirmed",
     attendanceArrived: "Arrived",
     attendanceNoShow: "No-show",
     price: "Price",
@@ -744,7 +748,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
   const [statusText, setStatusText] = useState("");
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null);
-  const [attendanceDraft, setAttendanceDraft] = useState<"pending" | "arrived" | "no_show">("pending");
+  const [attendanceDraft, setAttendanceDraft] = useState<"pending" | "confirmed" | "arrived" | "no_show">("pending");
   const [priceAmountDraft, setPriceAmountDraft] = useState("0");
   const [visitItems, setVisitItems] = useState<VisitServiceDraft[]>([]);
   const [editingServiceIndex, setEditingServiceIndex] = useState(0);
@@ -1801,6 +1805,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
                 const height = Math.max(MIN_BOOKING_CARD_HEIGHT, (timeToMinutes(appointment.endTime) - timeToMinutes(appointment.startTime)) * minuteHeight);
                 const isPastAppointment = getDateTimeValue(appointment.appointmentDate, appointment.endTime) < Date.now();
                 const isBlocked = appointment.kind === "blocked";
+                const isPendingApproval = appointment.attendance === "pending";
                 const bookingColor = isBlocked
                   ? "#d9dce4"
                   : getServiceColor(appointment.serviceName, snapshot?.workspace.services ?? []);
@@ -1810,7 +1815,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
                 return (
                   <article
                     key={appointment.id}
-                    className={`${styles.bookingBlock} ${draggingId === appointment.id ? styles.bookingDragging : ""} ${isBlocked ? styles.bookingBlocked : ""} ${isPastAppointment && !isBlocked ? styles.bookingPast : ""}`}
+                    className={`${styles.bookingBlock} ${draggingId === appointment.id ? styles.bookingDragging : ""} ${isBlocked ? styles.bookingBlocked : ""} ${isPastAppointment && !isBlocked ? styles.bookingPast : ""} ${isPendingApproval && !isBlocked ? styles.bookingPending : ""}`}
                     style={{
                       top: `${top}px`,
                       height: `${height}px`,
@@ -2275,9 +2280,10 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
                   id="attendanceStatus"
                   className={styles.select}
                   value={attendanceDraft}
-                  onChange={(event) => setAttendanceDraft(event.target.value as "pending" | "arrived" | "no_show")}
+                  onChange={(event) => setAttendanceDraft(event.target.value as "pending" | "confirmed" | "arrived" | "no_show")}
                 >
                   <option value="pending">{t.attendancePending}</option>
+                  <option value="confirmed">{t.attendanceConfirmed}</option>
                   <option value="arrived">{t.attendanceArrived}</option>
                   <option value="no_show">{t.attendanceNoShow}</option>
                 </select>
