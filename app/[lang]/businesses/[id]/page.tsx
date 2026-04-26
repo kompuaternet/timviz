@@ -40,7 +40,7 @@ export async function generateMetadata({
 
   return {
     ...buildMetadata(
-      `/${lang}/businesses/${id}`,
+      `/${lang}/businesses/${profile.publicPathId}`,
       {
         title:
           lang === "uk"
@@ -57,7 +57,7 @@ export async function generateMetadata({
       },
       lang
     ),
-    alternates: buildLanguageAlternates(`/businesses/${id}`, lang)
+    alternates: buildLanguageAlternates(`/businesses/${profile.publicPathId}`, lang)
   };
 }
 
@@ -84,7 +84,7 @@ export default async function LocalizedBusinessPage({
       photos={profile.photos}
       team={profile.team}
       initialLanguage={lang as SiteLanguage}
-      returnPath={getLocalizedPath(lang as SiteLanguage, `/businesses/${id}`)}
+      returnPath={getLocalizedPath(lang as SiteLanguage, `/businesses/${profile.publicPathId}`)}
     />
   );
 }

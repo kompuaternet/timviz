@@ -1163,10 +1163,7 @@
 }
 
 .company-hero {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 320px;
-  gap: 28px;
-  align-items: start;
+  display: block;
   margin-top: 22px;
 }
 
@@ -1237,12 +1234,6 @@
   aspect-ratio: 1.08;
 }
 
-.company-booking-rail {
-  position: sticky;
-  top: 24px;
-}
-
-.company-booking-rail-card,
 .company-booking-summary-card,
 .company-panel,
 .company-auth-card {
@@ -1250,35 +1241,6 @@
   border-radius: 24px;
   background: rgba(255, 252, 248, 0.94);
   box-shadow: 0 30px 76px rgba(69, 51, 117, 0.08);
-}
-
-.company-booking-rail-card {
-  display: grid;
-  gap: 18px;
-  padding: 24px;
-}
-
-.company-booking-rail-card strong {
-  font-size: 2rem;
-  line-height: 1.05;
-  letter-spacing: -0.04em;
-}
-
-.company-booking-rail-card > span {
-  color: #665d55;
-}
-
-.company-booking-rail-info {
-  display: grid;
-  gap: 12px;
-  padding-top: 18px;
-  border-top: 1px solid rgba(214, 201, 188, 0.76);
-}
-
-.company-booking-rail-info p,
-.company-booking-rail-info a {
-  margin: 0;
-  color: #6d645d;
 }
 
 .company-section-tabs,
@@ -1476,6 +1438,13 @@
   line-height: 1.7;
 }
 
+.company-route-link {
+  display: inline-flex;
+  margin-top: 14px;
+  color: #4b3de0;
+  font-weight: 700;
+}
+
 .company-hours-list {
   display: grid;
   gap: 10px;
@@ -1502,6 +1471,21 @@
   display: grid;
   gap: 18px;
   padding: 24px;
+}
+
+.company-booking-summary-empty {
+  display: grid;
+  gap: 6px;
+  padding: 6px 0 2px;
+}
+
+.company-booking-summary-empty strong {
+  font-size: 1.02rem;
+}
+
+.company-booking-summary-empty span {
+  color: #776d67;
+  line-height: 1.5;
 }
 
 .company-booking-summary-brand {
@@ -1559,6 +1543,26 @@
 
 .company-booking-summary-total strong {
   font-size: 1.3rem;
+}
+
+.company-summary-cta,
+.company-time-cta {
+  margin-top: 4px;
+}
+
+.company-map-card {
+  margin-top: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(214, 201, 188, 0.72);
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: 0 24px 58px rgba(63, 46, 116, 0.08);
+}
+
+.company-map-card iframe {
+  width: 100%;
+  height: 340px;
+  border: 0;
 }
 
 .company-booking-modal {
@@ -1830,7 +1834,6 @@
     grid-template-columns: 1fr;
   }
 
-  .company-booking-rail,
   .company-booking-summary {
     position: static;
   }

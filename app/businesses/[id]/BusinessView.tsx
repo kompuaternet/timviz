@@ -415,6 +415,32 @@ function getDraftStorageKey(businessId: string) {
   return `timviz-public-booking-${businessId}`;
 }
 
+function formatWebsiteLabel(value: string) {
+  if (!value.trim()) {
+    return "";
+  }
+
+  try {
+    const url = value.startsWith("http://") || value.startsWith("https://") ? new URL(value) : new URL(`https://${value}`);
+    return url.hostname.replace(/^www\./, "");
+  } catch {
+    return value.replace(/^https?:\/\//, "").replace(/^www\./, "").split("/")[0] ?? value;
+  }
+}
+
+function buildMapEmbedUrl(lat: number | null, lon: number | null) {
+  if (lat === null || lon === null) {
+    return "";
+  }
+
+  const delta = 0.008;
+  const left = lon - delta;
+  const right = lon + delta;
+  const top = lat + delta;
+  const bottom = lat - delta;
+  return `https://www.openstreetmap.org/export/embed.html?bbox=${left}%2C${bottom}%2C${right}%2C${top}&layer=mapnik&marker=${lat}%2C${lon}`;
+}
+
 function parseBookingDraft(value: string | null) {
   if (!value) {
     return null;
@@ -542,6 +568,11 @@ export default function BusinessView({
   const primaryService = selectedServices[0] ?? null;
   const selectedProfessional = teamMembers.find((member) => member.id === selectedProfessionalId) ?? null;
   const phoneRule = getPhoneRule(phoneCountry);
+  const mapEmbedUrl = useMemo(
+    () => buildMapEmbedUrl(business.addressLat, business.addressLon),
+    [business.addressLat, business.addressLon]
+  );
+  const websiteLabel = useMemo(() => formatWebsiteLabel(business.website), [business.website]);
 
   useEffect(() => {
     if (serviceGroups.length && !serviceCategory) {
@@ -562,16 +593,13 @@ export default function BusinessView({
     const draft = parseBookingDraft(window.localStorage.getItem(getDraftStorageKey(business.id)));
 
     if (!draft) {
-      if (services[0]) {
-        setSelectedServiceIds([services[0].id]);
-      }
       return;
     }
 
     if (draft.selectedServiceIds.length) {
       setSelectedServiceIds(draft.selectedServiceIds.filter((id) => services.some((service) => service.id === id)));
-    } else if (services[0]) {
-      setSelectedServiceIds([services[0].id]);
+    } else {
+      setSelectedServiceIds([]);
     }
 
     setSelectedProfessionalId(draft.selectedProfessionalId);
@@ -795,8 +823,6 @@ export default function BusinessView({
   function openBookingFlow(serviceId?: string) {
     if (serviceId) {
       setSelectedServiceIds([serviceId]);
-    } else if (!selectedServiceIds.length && services[0]) {
-      setSelectedServiceIds([services[0].id]);
     }
 
     setBookingStep("services");
@@ -811,10 +837,6 @@ export default function BusinessView({
   function toggleService(serviceId: string) {
     setSelectedServiceIds((current) => {
       if (current.includes(serviceId)) {
-        if (current.length === 1) {
-          return current;
-        }
-
         return current.filter((item) => item !== serviceId);
       }
 
@@ -859,7 +881,9 @@ export default function BusinessView({
   const returnToUrl =
     typeof window !== "undefined" ? `${window.location.pathname}${window.location.search}` : returnPath;
 
-  function renderSummary() {
+  function renderSummary(mode: "page" | "modal" = "modal") {
+    const hasSelection = selectedServices.length > 0;
+
     return (
       <aside className="company-booking-summary">
         <div className="company-booking-summary-card">
@@ -871,44 +895,64 @@ export default function BusinessView({
             </div>
           </div>
 
-          <div className="company-booking-summary-list">
-            {selectedServices.map((service) => (
-              <div key={service.id} className="company-booking-summary-line">
-                <div>
-                  <strong>{service.name}</strong>
-                  <span>
-                    {service.durationMinutes ?? 60} {t.minuteShort}
-                  </span>
-                </div>
-                <strong>{formatMoney(service.price, locale)}</strong>
+          {hasSelection ? (
+            <>
+              <div className="company-booking-summary-list">
+                {selectedServices.map((service) => (
+                  <div key={service.id} className="company-booking-summary-line">
+                    <div>
+                      <strong>{service.name}</strong>
+                      <span>
+                        {service.durationMinutes ?? 60} {t.minuteShort}
+                      </span>
+                    </div>
+                    <strong>{formatMoney(service.price, locale)}</strong>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
 
-          <div className="company-booking-summary-total">
-            <span>{t.total}</span>
-            <strong>{formatMoney(totalPrice, locale)}</strong>
-          </div>
+              <div className="company-booking-summary-total">
+                <span>{t.total}</span>
+                <strong>{formatMoney(totalPrice, locale)}</strong>
+              </div>
 
-          {selectedProfessional ? (
-            <div className="company-booking-summary-meta">
-              <span>{t.specialist}</span>
-              <strong>{fullName(selectedProfessional)}</strong>
+              {selectedProfessional ? (
+                <div className="company-booking-summary-meta">
+                  <span>{t.specialist}</span>
+                  <strong>{fullName(selectedProfessional)}</strong>
+                </div>
+              ) : null}
+              {selectedDate ? (
+                <div className="company-booking-summary-meta">
+                  <span>{t.date}</span>
+                  <strong>{formatSelectedDate(selectedDate, locale)}</strong>
+                </div>
+              ) : null}
+              {selectedTime ? (
+                <div className="company-booking-summary-meta">
+                  <span>{t.time}</span>
+                  <strong>
+                    {selectedTime} - {addMinutesToTime(selectedTime, totalDurationMinutes)}
+                  </strong>
+                </div>
+              ) : null}
+            </>
+          ) : (
+            <div className="company-booking-summary-empty">
+              <strong>{t.chooseService}</strong>
+              <span>{t.verifiedRequest}</span>
             </div>
-          ) : null}
-          {selectedDate ? (
-            <div className="company-booking-summary-meta">
-              <span>{t.date}</span>
-              <strong>{formatSelectedDate(selectedDate, locale)}</strong>
-            </div>
-          ) : null}
-          {selectedTime ? (
-            <div className="company-booking-summary-meta">
-              <span>{t.time}</span>
-              <strong>
-                {selectedTime} - {addMinutesToTime(selectedTime, totalDurationMinutes)}
-              </strong>
-            </div>
+          )}
+
+          {mode === "page" ? (
+            <button
+              type="button"
+              className="primary-button company-summary-cta"
+              onClick={() => openBookingFlow()}
+              disabled={business.allowOnlineBooking !== true}
+            >
+              {t.bookNow}
+            </button>
           ) : null}
         </div>
       </aside>
@@ -957,7 +1001,11 @@ export default function BusinessView({
               <div className="company-hero-meta">
                 <span>{t.openUntil} 18:00</span>
                 <span>{business.address}</span>
-                {business.website ? <a href={business.website}>{t.website}</a> : null}
+                {business.website ? (
+                  <a href={business.website} target="_blank" rel="noreferrer">
+                    {websiteLabel || t.website}
+                  </a>
+                ) : null}
               </div>
             </div>
 
@@ -974,34 +1022,6 @@ export default function BusinessView({
               </div>
             </div>
           </div>
-
-          <aside className="company-booking-rail">
-            <div className="company-booking-rail-card">
-              <strong>{business.name}</strong>
-              <span>{t.verifiedRequest}</span>
-              <button
-                type="button"
-                className="primary-button"
-                onClick={() => openBookingFlow()}
-                disabled={business.allowOnlineBooking !== true}
-              >
-                {t.bookNow}
-              </button>
-              <div className="company-booking-rail-info">
-                <p>{t.openUntil} 18:00</p>
-                <p>{business.address}</p>
-                {business.address ? (
-                  <a
-                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(business.address)}`}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    {t.route}
-                  </a>
-                ) : null}
-              </div>
-            </div>
-          </aside>
         </section>
 
         <div className="company-section-tabs">
@@ -1093,6 +1113,16 @@ export default function BusinessView({
                 <div className="company-info-card">
                   <strong>{t.address}</strong>
                   <p>{business.address || "—"}</p>
+                  {business.address ? (
+                    <a
+                      className="company-route-link"
+                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(business.address)}`}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      {t.route}
+                    </a>
+                  ) : null}
                 </div>
                 <div className="company-info-card">
                   <strong>{t.workingHours}</strong>
@@ -1110,10 +1140,21 @@ export default function BusinessView({
                   </div>
                 </div>
               </div>
+
+              {mapEmbedUrl ? (
+                <div className="company-map-card">
+                  <iframe
+                    title={`${business.name} map`}
+                    src={mapEmbedUrl}
+                    loading="lazy"
+                    referrerPolicy="no-referrer-when-downgrade"
+                  />
+                </div>
+              ) : null}
             </section>
           </div>
 
-          <div className="company-side-rail">{renderSummary()}</div>
+          <div className="company-side-rail">{renderSummary("page")}</div>
         </section>
       </section>
 
@@ -1306,6 +1347,15 @@ export default function BusinessView({
                     </div>
 
                     {!availableSlots.length ? <p className="company-empty-hint">{t.noTimeForDay}</p> : null}
+
+                    <button
+                      type="button"
+                      className="primary-button company-time-cta"
+                      onClick={goNext}
+                      disabled={!canGoToNextStep()}
+                    >
+                      {t.goToConfirm}
+                    </button>
                   </section>
                 ) : null}
 
@@ -1432,18 +1482,18 @@ export default function BusinessView({
                 ) : null}
               </div>
 
-              {renderSummary()}
+              {renderSummary("modal")}
             </div>
 
             <div className="company-booking-modal-footer">
-              {bookingStep !== "confirm" ? (
+              {bookingStep !== "confirm" && bookingStep !== "time" ? (
                 <button
                   type="button"
                   className="primary-button company-modal-next"
                   onClick={goNext}
                   disabled={!canGoToNextStep()}
                 >
-                  {bookingStep === "time" ? t.goToConfirm : t.continue}
+                  {t.continue}
                 </button>
               ) : null}
             </div>

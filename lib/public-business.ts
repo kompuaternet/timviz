@@ -5,11 +5,13 @@ import {
   type ServiceRecord
 } from "./pro-data";
 import { getPublicCalendarAppointments } from "./pro-calendar";
+import { getBusinessPublicCode, getPublicBusinessPathId } from "./public-business-path";
 
 export type PublicBusinessProfile = {
   business: BusinessRecord;
   services: ServiceRecord[];
   ownerProfessionalId: string;
+  publicPathId: string;
   image: string;
   photos: string[];
   team: Array<{
@@ -28,6 +30,25 @@ export type PublicBusinessProfile = {
   }[];
 };
 
+function findBusinessByToken(
+  token: string,
+  directory: Awaited<ReturnType<typeof getBusinessDirectorySnapshot>>
+) {
+  const direct = directory.businesses.find((item) => item.id === token);
+  if (direct) {
+    return direct;
+  }
+
+  const shortCode = token.split("-").pop()?.toLowerCase() || "";
+  if (!shortCode) {
+    return null;
+  }
+
+  return (
+    directory.businesses.find((item) => getBusinessPublicCode(item.id) === shortCode) ?? null
+  );
+}
+
 function isServicePubliclyVisible(service: ServiceRecord) {
   if (service.isBlocked === true) {
     return false;
@@ -44,7 +65,7 @@ export async function getPublicBusinessProfile(
   businessId: string
 ): Promise<PublicBusinessProfile | null> {
   const directory = await getBusinessDirectorySnapshot();
-  const business = directory.businesses.find((item) => item.id === businessId);
+  const business = findBusinessByToken(businessId, directory);
 
   if (!business) {
     return null;
@@ -115,6 +136,7 @@ export async function getPublicBusinessProfile(
     business,
     services,
     ownerProfessionalId,
+    publicPathId: getPublicBusinessPathId(business),
     image:
       getPrimaryBusinessPhoto(business) ||
       "https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=1200&q=80",
