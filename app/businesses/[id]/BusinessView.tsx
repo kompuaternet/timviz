@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { PublicCustomerSession } from "../../../lib/public-customer-auth";
 import type { BusinessRecord, ServiceRecord } from "../../../lib/pro-data";
 import {
@@ -423,6 +423,18 @@ function buildMapEmbedUrl(lat: number | null, lon: number | null) {
   return `https://www.openstreetmap.org/export/embed.html?bbox=${left}%2C${bottom}%2C${right}%2C${top}&layer=mapnik&marker=${lat}%2C${lon}`;
 }
 
+function buildRouteUrl(address: string, lat: number | null, lon: number | null) {
+  if (lat !== null && lon !== null) {
+    return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(`${lat},${lon}`)}`;
+  }
+
+  if (address.trim()) {
+    return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`;
+  }
+
+  return "";
+}
+
 function parseBookingDraft(value: string | null) {
   if (!value) {
     return null;
@@ -486,6 +498,9 @@ export default function BusinessView({
     authenticated: false,
     customer: null
   });
+  const servicesSectionRef = useRef<HTMLElement | null>(null);
+  const teamSectionRef = useRef<HTMLElement | null>(null);
+  const detailsSectionRef = useRef<HTMLElement | null>(null);
 
   const allPhotos = useMemo(() => {
     const ordered = [image, ...photos].filter(Boolean);
@@ -555,6 +570,10 @@ export default function BusinessView({
     [business.addressLat, business.addressLon]
   );
   const websiteLabel = useMemo(() => formatWebsiteLabel(business.website), [business.website]);
+  const routeUrl = useMemo(
+    () => buildRouteUrl(business.address, business.addressLat, business.addressLon),
+    [business.address, business.addressLat, business.addressLon]
+  );
 
   useEffect(() => {
     if (serviceGroups.length && !serviceCategory) {
@@ -858,6 +877,22 @@ export default function BusinessView({
     closeBookingFlow();
   }
 
+  function scrollToSection(section: StepKey) {
+    setActiveSection(section);
+
+    const sectionRef =
+      section === "services"
+        ? servicesSectionRef
+        : section === "team"
+          ? teamSectionRef
+          : detailsSectionRef;
+
+    sectionRef.current?.scrollIntoView({
+      behavior: "smooth",
+      block: "start"
+    });
+  }
+
   const fullPhone = buildInternationalPhone(phoneCountry, localPhone);
   const returnToUrl =
     typeof window !== "undefined" ? `${window.location.pathname}${window.location.search}` : returnPath;
@@ -967,9 +1002,33 @@ export default function BusinessView({
               <span className="public-burger" aria-hidden="true" />
             </summary>
             <div className="public-menu-panel">
-              <a href="#services">{t.services}</a>
-              <a href="#team">{t.team}</a>
-              <a href="#details">{t.details}</a>
+              <a
+                href="#services"
+                onClick={(event) => {
+                  event.preventDefault();
+                  scrollToSection("services");
+                }}
+              >
+                {t.services}
+              </a>
+              <a
+                href="#team"
+                onClick={(event) => {
+                  event.preventDefault();
+                  scrollToSection("team");
+                }}
+              >
+                {t.team}
+              </a>
+              <a
+                href="#details"
+                onClick={(event) => {
+                  event.preventDefault();
+                  scrollToSection("details");
+                }}
+              >
+                {t.details}
+              </a>
             </div>
           </details>
           <GlobalLanguageSwitcher mode="inline" />
@@ -1017,20 +1076,28 @@ export default function BusinessView({
         </section>
 
         <div className="company-section-tabs">
-          <button type="button" className={activeSection === "services" ? "active" : ""} onClick={() => setActiveSection("services")}>
+          <button
+            type="button"
+            className={activeSection === "services" ? "active" : ""}
+            onClick={() => scrollToSection("services")}
+          >
             {t.services}
           </button>
-          <button type="button" className={activeSection === "team" ? "active" : ""} onClick={() => setActiveSection("team")}>
+          <button type="button" className={activeSection === "team" ? "active" : ""} onClick={() => scrollToSection("team")}>
             {t.team}
           </button>
-          <button type="button" className={activeSection === "details" ? "active" : ""} onClick={() => setActiveSection("details")}>
+          <button
+            type="button"
+            className={activeSection === "details" ? "active" : ""}
+            onClick={() => scrollToSection("details")}
+          >
             {t.details}
           </button>
         </div>
 
         <section className="company-layout">
           <div className="company-content">
-            <section className="company-panel" id="services">
+            <section className="company-panel" id="services" ref={servicesSectionRef}>
               <div className="company-panel-head">
                 <h2>{t.services}</h2>
                 {!business.allowOnlineBooking ? <span className="company-status-pill">{t.onlineBookingOff}</span> : null}
@@ -1074,7 +1141,7 @@ export default function BusinessView({
               </div>
             </section>
 
-            <section className="company-panel" id="team">
+            <section className="company-panel" id="team" ref={teamSectionRef}>
               <div className="company-panel-head">
                 <h2>{t.team}</h2>
               </div>
@@ -1096,7 +1163,7 @@ export default function BusinessView({
               </div>
             </section>
 
-            <section className="company-panel" id="details">
+            <section className="company-panel" id="details" ref={detailsSectionRef}>
               <div className="company-panel-head">
                 <h2>{t.companyInfo}</h2>
               </div>
@@ -1105,10 +1172,10 @@ export default function BusinessView({
                 <div className="company-info-card">
                   <strong>{t.address}</strong>
                   <p>{business.address || "—"}</p>
-                  {business.address ? (
+                  {routeUrl ? (
                     <a
                       className="company-route-link"
-                      href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(business.address)}`}
+                      href={routeUrl}
                       target="_blank"
                       rel="noreferrer"
                     >

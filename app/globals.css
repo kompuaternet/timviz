@@ -1160,8 +1160,11 @@
 }
 
 .company-header {
-  width: min(1320px, calc(100% - 36px));
-  margin: 0 auto;
+  width: 100%;
+}
+
+.company-header .public-nav {
+  margin-left: auto;
 }
 
 .company-shell {
@@ -1307,6 +1310,7 @@
 
 .company-panel {
   padding: 28px;
+  scroll-margin-top: 108px;
 }
 
 .company-panel-head {
