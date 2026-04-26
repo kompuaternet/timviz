@@ -27,6 +27,12 @@ import styles from "./customer-account.module.css";
 
 type AccountSection = "profile" | "activity" | "wallet" | "favorites" | "forms" | "settings";
 type ActivityFilter = "all" | "upcoming" | "history";
+type AddressSuggestion = {
+  label: string;
+  details: string;
+  lat: number;
+  lon: number;
+};
 
 type AccountCopy = {
   profile: string;
@@ -58,6 +64,14 @@ type AccountCopy = {
   other: string;
   title: string;
   address: string;
+  findAddress: string;
+  addressPlaceholder: string;
+  searchingAddress: string;
+  chooseAddress: string;
+  saveAddress: string;
+  openMap: string;
+  addressHint: string;
+  addressWarning: string;
   upcoming: string;
   bookingHistory: string;
   all: string;
@@ -121,6 +135,14 @@ const copy: Record<SiteLanguage, AccountCopy> = {
     other: "Другое",
     title: "Название",
     address: "Адрес",
+    findAddress: "Найти адрес на карте",
+    addressPlaceholder: "Введите адрес",
+    searchingAddress: "Ищем адрес…",
+    chooseAddress: "Выбрать адрес",
+    saveAddress: "Сохранить адрес",
+    openMap: "Открыть на карте",
+    addressHint: "Выберите найденный адрес и сохраните его в кабинет.",
+    addressWarning: "Введите адрес и выберите подходящий вариант из поиска.",
     upcoming: "Предстоящие",
     bookingHistory: "История",
     all: "Все",
@@ -182,6 +204,14 @@ const copy: Record<SiteLanguage, AccountCopy> = {
     other: "Інше",
     title: "Назва",
     address: "Адреса",
+    findAddress: "Знайти адресу на карті",
+    addressPlaceholder: "Введіть адресу",
+    searchingAddress: "Шукаємо адресу…",
+    chooseAddress: "Обрати адресу",
+    saveAddress: "Зберегти адресу",
+    openMap: "Відкрити на карті",
+    addressHint: "Оберіть знайдену адресу та збережіть її в кабінеті.",
+    addressWarning: "Введіть адресу та оберіть відповідний варіант із пошуку.",
     upcoming: "Майбутні",
     bookingHistory: "Історія",
     all: "Усі",
@@ -243,6 +273,14 @@ const copy: Record<SiteLanguage, AccountCopy> = {
     other: "Other",
     title: "Title",
     address: "Address",
+    findAddress: "Find address on map",
+    addressPlaceholder: "Enter an address",
+    searchingAddress: "Searching address…",
+    chooseAddress: "Choose address",
+    saveAddress: "Save address",
+    openMap: "Open on map",
+    addressHint: "Choose a found address and save it to your account.",
+    addressWarning: "Enter an address and choose a matching search result.",
     upcoming: "Upcoming",
     bookingHistory: "History",
     all: "All",
@@ -298,6 +336,15 @@ function getStatusLabel(status: string, t: AccountCopy) {
   return t.confirmed;
 }
 
+function buildMapEmbedUrl(lat: number, lon: number) {
+  const delta = 0.008;
+  const left = lon - delta;
+  const right = lon + delta;
+  const top = lat + delta;
+  const bottom = lat - delta;
+  return `https://www.openstreetmap.org/export/embed.html?bbox=${left}%2C${bottom}%2C${right}%2C${top}&layer=mapnik&marker=${lat}%2C${lon}`;
+}
+
 export default function CustomerAccountView({
   language,
   session,
@@ -321,7 +368,13 @@ export default function CustomerAccountView({
   const [phoneCountry, setPhoneCountry] = useState("Ukraine");
   const [localPhone, setLocalPhone] = useState("");
   const [phoneMenuOpen, setPhoneMenuOpen] = useState(false);
+  const [addressSuggestionsById, setAddressSuggestionsById] = useState<Record<string, AddressSuggestion[]>>({});
+  const [addressPreviewById, setAddressPreviewById] = useState<Record<string, AddressSuggestion | null>>({});
+  const [addressSearchingId, setAddressSearchingId] = useState("");
+  const [addressSavingId, setAddressSavingId] = useState("");
   const phoneMenuRef = useRef<HTMLDivElement | null>(null);
+  const addressSearchTimersRef = useRef<Record<string, number>>({});
+  const addressSearchControllersRef = useRef<Record<string, AbortController>>({});
 
   const nowKey = new Date().toISOString().slice(0, 16);
   const phoneRule = getPhoneRule(phoneCountry);
@@ -362,6 +415,13 @@ export default function CustomerAccountView({
     };
   }, []);
 
+  useEffect(() => {
+    return () => {
+      Object.values(addressSearchTimersRef.current).forEach((timerId) => window.clearTimeout(timerId));
+      Object.values(addressSearchControllersRef.current).forEach((controller) => controller.abort());
+    };
+  }, []);
+
   const filteredBookings = useMemo(() => {
     if (activityFilter === "all") {
       return bookings;
@@ -398,6 +458,108 @@ export default function CustomerAccountView({
     const payload = (await response.json()) as { account: CustomerAccountRecord };
     setAccount(payload.account);
     setStatusText(t.saved);
+  }
+
+  function updateAddress(id: string, updater: (current: CustomerAddress) => CustomerAddress) {
+    setAccount((current) => {
+      if (!current) {
+        return current;
+      }
+
+      return {
+        ...current,
+        addresses: current.addresses.map((item) => (item.id === id ? updater(item) : item))
+      };
+    });
+  }
+
+  function queueAddressSearch(id: string, query: string) {
+    const currentTimer = addressSearchTimersRef.current[id];
+    if (currentTimer) {
+      window.clearTimeout(currentTimer);
+    }
+
+    const currentController = addressSearchControllersRef.current[id];
+    if (currentController) {
+      currentController.abort();
+    }
+
+    if (query.trim().length < 3) {
+      setAddressSuggestionsById((current) => ({ ...current, [id]: [] }));
+      setAddressSearchingId((current) => (current === id ? "" : current));
+      return;
+    }
+
+    const controller = new AbortController();
+    addressSearchControllersRef.current[id] = controller;
+    addressSearchTimersRef.current[id] = window.setTimeout(async () => {
+      try {
+        setAddressSearchingId(id);
+        const response = await fetch(`/api/address/search?q=${encodeURIComponent(query)}`, {
+          signal: controller.signal,
+          headers: { Accept: "application/json" }
+        });
+        const payload = (await response.json()) as {
+          results?: Array<{
+            display_name: string;
+            lat: string;
+            lon: string;
+            address?: Record<string, string>;
+          }>;
+        };
+        const result = Array.isArray(payload.results) ? payload.results : [];
+        setAddressSuggestionsById((current) => ({
+          ...current,
+          [id]: result.map((item) => {
+            const address = item.address ?? {};
+            const house = address.house_number ?? "";
+            const street = address.road ?? address.pedestrian ?? address.footway ?? address.neighbourhood ?? "";
+            const city = address.city ?? address.town ?? address.village ?? address.municipality ?? "";
+            const region = address.state ?? address.region ?? address.county ?? "";
+            const country = address.country ?? "";
+            const postcode = address.postcode ?? "";
+            const primaryLine =
+              [street, house].filter(Boolean).join(", ") ||
+              item.display_name.split(",")[0]?.trim() ||
+              item.display_name;
+
+            return {
+              label: item.display_name,
+              details: [primaryLine, city, region, postcode, country].filter(Boolean).join("\n"),
+              lat: Number(item.lat),
+              lon: Number(item.lon)
+            };
+          })
+        }));
+      } catch {
+        setAddressSuggestionsById((current) => ({ ...current, [id]: [] }));
+      } finally {
+        setAddressSearchingId((current) => (current === id ? "" : current));
+      }
+    }, 350);
+  }
+
+  function applyAddressSuggestion(id: string, suggestion: AddressSuggestion) {
+    updateAddress(id, (current) => ({
+      ...current,
+      address: suggestion.label,
+      title: current.title || suggestion.details.split("\n")[0] || current.title
+    }));
+    setAddressPreviewById((current) => ({ ...current, [id]: suggestion }));
+    setAddressSuggestionsById((current) => ({ ...current, [id]: [] }));
+  }
+
+  async function saveAddress(id: string) {
+    if (!account) {
+      return;
+    }
+
+    setAddressSavingId(id);
+    try {
+      await saveAccount(account);
+    } finally {
+      setAddressSavingId("");
+    }
   }
 
   async function logout() {
@@ -594,20 +756,23 @@ export default function CustomerAccountView({
                     <button
                       type="button"
                       className={styles.ghostButton}
-                      onClick={() =>
+                      onClick={() => {
+                        const nextId = `addr_${crypto.randomUUID()}`;
                         setAccount({
                           ...account,
                           addresses: [
                             ...account.addresses,
                             {
-                              id: `addr_${crypto.randomUUID()}`,
+                              id: nextId,
                               label: "other",
                               title: "",
                               address: ""
                             }
                           ]
-                        })
-                      }
+                        });
+                        setAddressSuggestionsById((current) => ({ ...current, [nextId]: [] }));
+                        setAddressPreviewById((current) => ({ ...current, [nextId]: null }));
+                      }}
                     >
                       {t.addAddress}
                     </button>
@@ -631,18 +796,61 @@ export default function CustomerAccountView({
                               />
                             </label>
                             <label className={styles.fieldRow}>
-                              <span className={styles.fieldLabel}>{t.address}</span>
+                              <span className={styles.fieldLabel}>{t.findAddress}</span>
                               <input
                                 className={styles.input}
                                 value={address.address}
                                 onChange={(event) => {
-                                  const next = [...account.addresses];
-                                  next[index] = { ...address, address: event.target.value };
-                                  setAccount({ ...account, addresses: next });
+                                  const nextValue = event.target.value;
+                                  updateAddress(address.id, (current) => ({ ...current, address: nextValue }));
+                                  setAddressPreviewById((current) => ({ ...current, [address.id]: null }));
+                                  queueAddressSearch(address.id, nextValue);
                                 }}
+                                placeholder={t.addressPlaceholder}
                               />
                             </label>
                           </div>
+                          <div className={styles.addressSearchList}>
+                            {addressSearchingId === address.id ? (
+                              <div className={styles.addressHint}>{t.searchingAddress}</div>
+                            ) : null}
+                            {(addressSuggestionsById[address.id] ?? []).map((item) => (
+                              <button
+                                key={`${address.id}-${item.label}-${item.lat}-${item.lon}`}
+                                type="button"
+                                className={styles.addressSearchItem}
+                                onClick={() => applyAddressSuggestion(address.id, item)}
+                              >
+                                <span className={styles.addressSearchText}>
+                                  <strong>{item.details.split("\n")[0] ?? item.label}</strong>
+                                  <span>{item.label}</span>
+                                </span>
+                                <span className={styles.addressSearchAction}>{t.chooseAddress}</span>
+                              </button>
+                            ))}
+                          </div>
+                          {addressPreviewById[address.id] ? (
+                            <div className={styles.addressPreview}>
+                              <iframe
+                                title={`${t.address} map`}
+                                className={styles.addressMapFrame}
+                                src={buildMapEmbedUrl(addressPreviewById[address.id]!.lat, addressPreviewById[address.id]!.lon)}
+                              />
+                              <div className={styles.addressPreviewActions}>
+                                <span className={styles.addressHint}>{t.addressHint}</span>
+                                <a
+                                  href={`https://www.google.com/maps/search/?api=1&query=${addressPreviewById[address.id]!.lat},${addressPreviewById[address.id]!.lon}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className={styles.ghostButton}
+                                >
+                                  {t.openMap}
+                                </a>
+                              </div>
+                            </div>
+                          ) : address.address.trim().length < 3 ? (
+                            <div className={styles.addressWarning}>{t.addressWarning}</div>
+                          ) : null}
                           <div className={styles.addressActions}>
                             <select
                               className={styles.select}
@@ -659,8 +867,28 @@ export default function CustomerAccountView({
                             </select>
                             <button
                               type="button"
+                              className={styles.addressSaveButton}
+                              onClick={() => void saveAddress(address.id)}
+                              disabled={addressSavingId === address.id || !address.title.trim() || !address.address.trim()}
+                            >
+                              {addressSavingId === address.id ? "..." : t.saveAddress}
+                            </button>
+                            <button
+                              type="button"
                               className={styles.dangerButton}
-                              onClick={() => setAccount({ ...account, addresses: account.addresses.filter((item) => item.id !== address.id) })}
+                              onClick={() => {
+                                setAccount({ ...account, addresses: account.addresses.filter((item) => item.id !== address.id) });
+                                setAddressSuggestionsById((current) => {
+                                  const next = { ...current };
+                                  delete next[address.id];
+                                  return next;
+                                });
+                                setAddressPreviewById((current) => {
+                                  const next = { ...current };
+                                  delete next[address.id];
+                                  return next;
+                                });
+                              }}
                             >
                               {t.remove}
                             </button>
