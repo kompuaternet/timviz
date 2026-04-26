@@ -1,201 +1,338 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import type { ServiceRecord, BusinessRecord } from "../../../lib/pro-data";
+import type { PublicCustomerSession } from "../../../lib/public-customer-auth";
+import type { BusinessRecord, ServiceRecord } from "../../../lib/pro-data";
 import {
   buildInternationalPhone,
   formatPhoneLocal,
   getPhoneRule,
-  getPhoneValidationMessage,
   inferPhoneCountryFromAddress,
   inferPhoneCountryFromLocale,
   isPhoneValid,
   onlyPhoneDigits,
   phoneCountries
 } from "../../../lib/phone-format";
-import { findNextPublicBookingDate, getPublicBookingSlots } from "../../../lib/public-booking";
-import { getDaySchedule, normalizeCustomSchedule, normalizeWorkSchedule } from "../../../lib/work-schedule";
+import { getPublicBookingSlots } from "../../../lib/public-booking";
 import { getLocalizedPath, type SiteLanguage } from "../../../lib/site-language";
+import {
+  addMinutesToTime,
+  getDaySchedule,
+  normalizeCustomSchedule,
+  normalizeWorkSchedule,
+  workDays
+} from "../../../lib/work-schedule";
+import BrandLogo from "../../BrandLogo";
+import GlobalLanguageSwitcher from "../../GlobalLanguageSwitcher";
 import { createBusinessBookingAction } from "./actions";
-import { useSiteLanguage } from "../../useSiteLanguage";
+
+type TeamMember = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  role: string;
+  scope: "owner" | "member";
+};
+
+type BookingBusySlot = {
+  appointmentDate: string;
+  appointmentTime: string;
+  endTime: string;
+  serviceName: string;
+  professionalId?: string;
+};
 
 type BusinessViewProps = {
   business: BusinessRecord;
   services: ServiceRecord[];
-  bookings: {
-    appointmentDate: string;
-    appointmentTime: string;
-    endTime: string;
-    serviceName: string;
-  }[];
+  bookings: BookingBusySlot[];
   image: string;
+  photos: string[];
+  team: TeamMember[];
   initialLanguage: SiteLanguage;
   returnPath: string;
 };
 
+type CustomerSessionState = {
+  loading: boolean;
+  authenticated: boolean;
+  customer: PublicCustomerSession | null;
+};
+
+type BookingStep = "services" | "specialists" | "time" | "confirm";
+
+type StepKey = "photos" | "services" | "team" | "details";
+
 type BusinessCopy = {
-  eyebrow: string;
-  heroFallback: string;
-  bookingTitle: string;
-  bookingSubtitle: string;
-  servicePickerTitle: string;
-  selectedServices: string;
-  chooseService: string;
-  addAnotherService: string;
-  onlineBookingClosed: string;
-  onlineBookingClosedText: string;
-  requestPending: string;
-  requestPendingText: string;
-  date: string;
-  freeDays: string;
-  noFreeDays: string;
-  availableSlots: string;
-  noSlots: string;
-  noSlotsForDay: string;
-  chooseTimeError: string;
-  totalDuration: string;
-  totalPrice: string;
+  breadcrumbHome: string;
+  breadcrumbCatalog: string;
+  openUntil: string;
+  route: string;
+  services: string;
+  team: string;
+  details: string;
+  bookNow: string;
+  onlineBookingOff: string;
+  onlineBookingOffText: string;
+  bookingFlowTitle: string;
+  serviceStep: string;
+  specialistStep: string;
+  timeStep: string;
+  confirmStep: string;
+  noPreference: string;
+  noPreferenceText: string;
+  select: string;
+  selected: string;
+  chooseSpecialist: string;
+  chooseTime: string;
+  continue: string;
+  goToConfirm: string;
+  total: string;
+  close: string;
+  back: string;
+  duration: string;
   minuteShort: string;
-  name: string;
-  phone: string;
-  comment: string;
-  namePlaceholder: string;
-  commentPlaceholder: string;
-  submit: string;
-  backToCatalog: string;
+  date: string;
+  time: string;
+  specialist: string;
+  selectedServices: string;
+  addAnother: string;
+  signInGoogle: string;
+  signInHint: string;
+  phoneTitle: string;
+  phonePlaceholder: string;
+  confirmBooking: string;
+  pendingHint: string;
+  workingHours: string;
+  noTimeForDay: string;
+  noFreeDays: string;
+  freeTime: string;
+  freeDay: string;
   closedDay: string;
-  fullDay: string;
-  availableDay: string;
-  workDay: string;
+  fullyBooked: string;
+  dayAvailable: string;
+  summary: string;
+  chooseService: string;
+  fromPrice: string;
+  reviews: string;
+  verifiedRequest: string;
+  companyInfo: string;
+  address: string;
+  website: string;
+  signInAs: string;
+  phoneError: string;
+  photosTitle: string;
 };
 
 const businessCopy: Record<SiteLanguage, BusinessCopy> = {
   ru: {
-    eyebrow: "Онлайн-запись",
-    heroFallback: "Запись на услуги компании",
-    bookingTitle: "Выберите услуги и удобное окно",
-    bookingSubtitle: "Сначала соберите визит, затем выберите свободный день и время.",
-    servicePickerTitle: "Услуги визита",
-    selectedServices: "Выбрано",
-    chooseService: "Выбрать услугу",
-    addAnotherService: "Добавить ещё услугу",
-    onlineBookingClosed: "Онлайн-запись выключена",
-    onlineBookingClosedText:
-      "Владелец бизнеса пока не принимает записи с сайта. Карточка компании остаётся доступной для просмотра.",
-    requestPending: "Заявка на запись",
-    requestPendingText:
-      "После отправки заявка появится в календаре владельца и будет ждать подтверждения.",
-    date: "Дата",
-    freeDays: "Календарь записи",
-    noFreeDays: "На ближайшие дни нет свободных окон под выбранные услуги.",
-    availableSlots: "Свободное время",
-    noSlots: "Для выбранных услуг пока нет доступных окон.",
-    noSlotsForDay: "На этот день свободных окон нет.",
-    chooseTimeError: "Выберите время записи.",
-    totalDuration: "Длительность",
-    totalPrice: "Стоимость",
+    breadcrumbHome: "Главная",
+    breadcrumbCatalog: "Каталог",
+    openUntil: "Открыто до",
+    route: "Проложить маршрут",
+    services: "Услуги",
+    team: "Команда",
+    details: "Общие сведения",
+    bookNow: "Забронировать",
+    onlineBookingOff: "Онлайн-запись выключена",
+    onlineBookingOffText:
+      "Владелец компании пока не принимает онлайн-записи с сайта. Страница компании остаётся доступной для просмотра.",
+    bookingFlowTitle: "Бронирование",
+    serviceStep: "Услуги",
+    specialistStep: "Специалист",
+    timeStep: "Время",
+    confirmStep: "Подтверждение",
+    noPreference: "Нет предпочтений",
+    noPreferenceText: "Подберём первое свободное окно у команды",
+    select: "Выбрать",
+    selected: "Выбрано",
+    chooseSpecialist: "Выберите специалиста",
+    chooseTime: "Выберите время",
+    continue: "Продолжить",
+    goToConfirm: "Перейти к подтверждению",
+    total: "Всего к оплате",
+    close: "Закрыть",
+    back: "Назад",
+    duration: "Длительность",
     minuteShort: "мин",
-    name: "Имя",
-    phone: "Телефон",
-    comment: "Комментарий",
-    namePlaceholder: "Например, Анна",
-    commentPlaceholder: "Можно указать пожелания к визиту",
-    submit: "Отправить заявку",
-    backToCatalog: "Вернуться в каталог",
+    date: "Дата",
+    time: "Время",
+    specialist: "Специалист",
+    selectedServices: "Услуги визита",
+    addAnother: "Добавить ещё услугу",
+    signInGoogle: "Продолжить через Google",
+    signInHint: "Сначала войдите через Google, затем добавьте телефон и подтвердите запись.",
+    phoneTitle: "Телефон для подтверждения",
+    phonePlaceholder: "Ваш номер",
+    confirmBooking: "Подтвердить запись",
+    pendingHint: "После отправки запись появится в календаре владельца и будет ждать подтверждения.",
+    workingHours: "График работы",
+    noTimeForDay: "На этот день свободного времени нет.",
+    noFreeDays: "На ближайшие дни нет свободных окон.",
+    freeTime: "Свободное время",
+    freeDay: "Есть время",
     closedDay: "Выходной",
-    fullDay: "Все окна заняты",
-    availableDay: "Есть свободное время",
-    workDay: "Рабочий день"
+    fullyBooked: "Занято",
+    dayAvailable: "Рабочий день",
+    summary: "Ваш визит",
+    chooseService: "Выберите хотя бы одну услугу",
+    fromPrice: "от",
+    reviews: "Онлайн-запись",
+    verifiedRequest: "Заявка отправится владельцу на подтверждение",
+    companyInfo: "Информация о компании",
+    address: "Адрес",
+    website: "Сайт",
+    signInAs: "Вы вошли как",
+    phoneError: "Проверьте номер телефона.",
+    photosTitle: "Фотографии"
   },
   uk: {
-    eyebrow: "Онлайн-запис",
-    heroFallback: "Запис на послуги компанії",
-    bookingTitle: "Оберіть послуги та зручне вікно",
-    bookingSubtitle: "Спочатку зберіть візит, потім оберіть вільний день і час.",
-    servicePickerTitle: "Послуги візиту",
-    selectedServices: "Обрано",
-    chooseService: "Обрати послугу",
-    addAnotherService: "Додати ще послугу",
-    onlineBookingClosed: "Онлайн-запис вимкнено",
-    onlineBookingClosedText:
-      "Власник бізнесу поки що не приймає записи із сайту. Картка компанії лишається доступною для перегляду.",
-    requestPending: "Заявка на запис",
-    requestPendingText:
-      "Після відправлення заявка з’явиться в календарі власника й чекатиме на підтвердження.",
-    date: "Дата",
-    freeDays: "Календар запису",
-    noFreeDays: "На найближчі дні немає вільних вікон під обрані послуги.",
-    availableSlots: "Вільний час",
-    noSlots: "Для обраних послуг поки немає доступних вікон.",
-    noSlotsForDay: "На цей день вільних вікон немає.",
-    chooseTimeError: "Оберіть час запису.",
-    totalDuration: "Тривалість",
-    totalPrice: "Вартість",
+    breadcrumbHome: "Головна",
+    breadcrumbCatalog: "Каталог",
+    openUntil: "Відкрито до",
+    route: "Прокласти маршрут",
+    services: "Послуги",
+    team: "Команда",
+    details: "Загальна інформація",
+    bookNow: "Забронювати",
+    onlineBookingOff: "Онлайн-запис вимкнено",
+    onlineBookingOffText:
+      "Власник компанії поки що не приймає онлайн-записи із сайту. Сторінка компанії лишається доступною для перегляду.",
+    bookingFlowTitle: "Бронювання",
+    serviceStep: "Послуги",
+    specialistStep: "Спеціаліст",
+    timeStep: "Час",
+    confirmStep: "Підтвердження",
+    noPreference: "Без побажань",
+    noPreferenceText: "Підберемо перше вільне вікно в команди",
+    select: "Обрати",
+    selected: "Обрано",
+    chooseSpecialist: "Оберіть спеціаліста",
+    chooseTime: "Оберіть час",
+    continue: "Продовжити",
+    goToConfirm: "Перейти до підтвердження",
+    total: "Усього до оплати",
+    close: "Закрити",
+    back: "Назад",
+    duration: "Тривалість",
     minuteShort: "хв",
-    name: "Ім'я",
-    phone: "Телефон",
-    comment: "Коментар",
-    namePlaceholder: "Наприклад, Анна",
-    commentPlaceholder: "Можна вказати побажання до візиту",
-    submit: "Надіслати заявку",
-    backToCatalog: "Повернутися в каталог",
+    date: "Дата",
+    time: "Час",
+    specialist: "Спеціаліст",
+    selectedServices: "Послуги візиту",
+    addAnother: "Додати ще послугу",
+    signInGoogle: "Продовжити через Google",
+    signInHint: "Спершу увійдіть через Google, потім додайте телефон і підтвердьте запис.",
+    phoneTitle: "Телефон для підтвердження",
+    phonePlaceholder: "Ваш номер",
+    confirmBooking: "Підтвердити запис",
+    pendingHint: "Після відправлення запис з’явиться в календарі власника й чекатиме підтвердження.",
+    workingHours: "Графік роботи",
+    noTimeForDay: "На цей день вільного часу немає.",
+    noFreeDays: "На найближчі дні немає вільних вікон.",
+    freeTime: "Вільний час",
+    freeDay: "Є час",
     closedDay: "Вихідний",
-    fullDay: "Усі вікна зайняті",
-    availableDay: "Є вільний час",
-    workDay: "Робочий день"
+    fullyBooked: "Зайнято",
+    dayAvailable: "Робочий день",
+    summary: "Ваш візит",
+    chooseService: "Оберіть хоча б одну послугу",
+    fromPrice: "від",
+    reviews: "Онлайн-запис",
+    verifiedRequest: "Заявка піде власнику на підтвердження",
+    companyInfo: "Інформація про компанію",
+    address: "Адреса",
+    website: "Сайт",
+    signInAs: "Ви увійшли як",
+    phoneError: "Перевірте номер телефону.",
+    photosTitle: "Фотографії"
   },
   en: {
-    eyebrow: "Online booking",
-    heroFallback: "Business service booking",
-    bookingTitle: "Choose services and a time slot",
-    bookingSubtitle: "Build the visit first, then pick a working day and available time.",
-    servicePickerTitle: "Visit services",
-    selectedServices: "Selected",
-    chooseService: "Choose service",
-    addAnotherService: "Add another service",
-    onlineBookingClosed: "Online booking is turned off",
-    onlineBookingClosedText:
-      "The business owner does not accept bookings from the public site yet. The business page is still available for viewing.",
-    requestPending: "Booking request",
-    requestPendingText:
-      "After you send it, the request appears in the owner's calendar and waits for confirmation.",
-    date: "Date",
-    freeDays: "Booking calendar",
-    noFreeDays: "There are no free slots for the selected services in the coming days.",
-    availableSlots: "Available time",
-    noSlots: "No available slots for the selected services yet.",
-    noSlotsForDay: "There are no free slots on this day.",
-    chooseTimeError: "Choose a booking time.",
-    totalDuration: "Duration",
-    totalPrice: "Price",
+    breadcrumbHome: "Home",
+    breadcrumbCatalog: "Catalog",
+    openUntil: "Open until",
+    route: "Get directions",
+    services: "Services",
+    team: "Team",
+    details: "About",
+    bookNow: "Book now",
+    onlineBookingOff: "Online booking is turned off",
+    onlineBookingOffText:
+      "The owner is not accepting public bookings from the site yet. The company page is still available for viewing.",
+    bookingFlowTitle: "Booking",
+    serviceStep: "Services",
+    specialistStep: "Specialist",
+    timeStep: "Time",
+    confirmStep: "Confirm",
+    noPreference: "No preference",
+    noPreferenceText: "We’ll pick the first free time in the team schedule",
+    select: "Select",
+    selected: "Selected",
+    chooseSpecialist: "Choose a specialist",
+    chooseTime: "Choose a time",
+    continue: "Continue",
+    goToConfirm: "Go to confirmation",
+    total: "Total",
+    close: "Close",
+    back: "Back",
+    duration: "Duration",
     minuteShort: "min",
-    name: "Name",
-    phone: "Phone",
-    comment: "Comment",
-    namePlaceholder: "For example, Anna",
-    commentPlaceholder: "Add any notes for the visit",
-    submit: "Send request",
-    backToCatalog: "Back to catalog",
+    date: "Date",
+    time: "Time",
+    specialist: "Specialist",
+    selectedServices: "Visit services",
+    addAnother: "Add another service",
+    signInGoogle: "Continue with Google",
+    signInHint: "Sign in with Google first, then add your phone number and confirm the booking.",
+    phoneTitle: "Phone for confirmation",
+    phonePlaceholder: "Your phone number",
+    confirmBooking: "Confirm booking",
+    pendingHint: "After sending, the booking request appears in the owner calendar and waits for confirmation.",
+    workingHours: "Working hours",
+    noTimeForDay: "No free time on this day.",
+    noFreeDays: "There are no free slots in the coming days.",
+    freeTime: "Available time",
+    freeDay: "Free",
     closedDay: "Closed",
-    fullDay: "No free time",
-    availableDay: "Free time available",
-    workDay: "Working day"
+    fullyBooked: "Full",
+    dayAvailable: "Working day",
+    summary: "Your visit",
+    chooseService: "Choose at least one service",
+    fromPrice: "from",
+    reviews: "Online booking",
+    verifiedRequest: "The request will be sent to the owner for confirmation",
+    companyInfo: "Company details",
+    address: "Address",
+    website: "Website",
+    signInAs: "Signed in as",
+    phoneError: "Check the phone number.",
+    photosTitle: "Photos"
   }
 };
 
-type MonthDay = {
-  key: string;
-  day: number;
-  inMonth: boolean;
-  date: Date;
-};
+const bookingSteps: BookingStep[] = ["services", "specialists", "time", "confirm"];
 
 function formatDateKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
-function getTodayDateKey() {
-  return formatDateKey(new Date());
+function formatMonthTitle(date: Date, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
+    month: "long",
+    year: "numeric"
+  }).format(date);
+}
+
+function formatSelectedDate(dateKey: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
+    weekday: "long",
+    day: "numeric",
+    month: "long"
+  }).format(new Date(`${dateKey}T00:00:00`));
+}
+
+function formatWeekday(dateKey: string, locale: string) {
+  return new Intl.DateTimeFormat(locale, { weekday: "short" }).format(new Date(`${dateKey}T00:00:00`));
 }
 
 function addDays(dateKey: string, amount: number) {
@@ -208,22 +345,32 @@ function addMonths(month: Date, amount: number) {
   return new Date(month.getFullYear(), month.getMonth() + amount, 1);
 }
 
+function getTodayDateKey() {
+  return formatDateKey(new Date());
+}
+
+function getWeekStart(dateKey: string) {
+  const date = new Date(`${dateKey}T00:00:00`);
+  const shift = (date.getDay() + 6) % 7;
+  date.setDate(date.getDate() - shift);
+  return formatDateKey(date);
+}
+
 function buildMonthDays(month: Date) {
   const firstDay = new Date(month.getFullYear(), month.getMonth(), 1);
   const shift = (firstDay.getDay() + 6) % 7;
   const gridStart = new Date(firstDay);
   gridStart.setDate(firstDay.getDate() - shift);
 
-  return Array.from({ length: 42 }, (_, index) => {
+  return Array.from({ length: 35 }, (_, index) => {
     const date = new Date(gridStart);
     date.setDate(gridStart.getDate() + index);
 
     return {
       key: formatDateKey(date),
       day: date.getDate(),
-      inMonth: date.getMonth() === month.getMonth(),
-      date
-    } satisfies MonthDay;
+      inMonth: date.getMonth() === month.getMonth()
+    };
   });
 }
 
@@ -244,50 +391,54 @@ function getBrowserPhoneCountry() {
   return "";
 }
 
-function getPhoneErrorText(language: SiteLanguage, country: string) {
-  const digits = getPhoneRule(country).digits;
-
-  if (language === "uk") {
-    return `Перевірте номер: потрібно ${digits} цифр без коду країни.`;
-  }
-
-  if (language === "en") {
-    return `Check the number: ${digits} digits are required without the country code.`;
-  }
-
-  return getPhoneValidationMessage(country);
-}
-
-function formatMoney(value: number, locale: string, language: SiteLanguage) {
-  const currency = language === "en" ? "UAH" : "UAH";
+function formatMoney(value: number, locale: string) {
   return new Intl.NumberFormat(locale, {
     style: "currency",
-    currency,
+    currency: "UAH",
     maximumFractionDigits: 0
   }).format(value);
 }
 
-function formatMonthTitle(date: Date, locale: string) {
-  return new Intl.DateTimeFormat(locale, {
-    month: "long",
-    year: "numeric"
-  }).format(date);
+function getStepIndex(step: BookingStep) {
+  return bookingSteps.indexOf(step);
 }
 
-function formatSelectedDate(dateKey: string, locale: string) {
-  return new Intl.DateTimeFormat(locale, {
-    weekday: "long",
-    day: "numeric",
-    month: "long"
-  }).format(new Date(`${dateKey}T00:00:00`));
+function fullName(member: TeamMember) {
+  return `${member.firstName} ${member.lastName}`.trim();
 }
 
-function getTotalDuration(services: ServiceRecord[]) {
-  return services.reduce((sum, service) => sum + Math.max(5, service.durationMinutes ?? 60), 0);
+function getInitials(member: TeamMember) {
+  return `${member.firstName.trim().slice(0, 1)}${member.lastName.trim().slice(0, 1)}`.toUpperCase();
 }
 
-function getCombinedServiceName(services: ServiceRecord[]) {
-  return services.map((service) => service.name).join(" + ");
+function getDraftStorageKey(businessId: string) {
+  return `timviz-public-booking-${businessId}`;
+}
+
+function parseBookingDraft(value: string | null) {
+  if (!value) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(value) as {
+      selectedServiceIds?: string[];
+      selectedProfessionalId?: string;
+      selectedDate?: string;
+      selectedTime?: string;
+      step?: BookingStep;
+    };
+
+    return {
+      selectedServiceIds: Array.isArray(parsed.selectedServiceIds) ? parsed.selectedServiceIds : [],
+      selectedProfessionalId: typeof parsed.selectedProfessionalId === "string" ? parsed.selectedProfessionalId : "",
+      selectedDate: typeof parsed.selectedDate === "string" ? parsed.selectedDate : "",
+      selectedTime: typeof parsed.selectedTime === "string" ? parsed.selectedTime : "",
+      step: bookingSteps.includes(parsed.step as BookingStep) ? (parsed.step as BookingStep) : "services"
+    };
+  } catch {
+    return null;
+  }
 }
 
 export default function BusinessView({
@@ -295,88 +446,235 @@ export default function BusinessView({
   services,
   bookings,
   image,
+  photos,
+  team,
   initialLanguage,
   returnPath
 }: BusinessViewProps) {
-  const language = useSiteLanguage(initialLanguage, true);
+  const language = initialLanguage;
   const t = businessCopy[language];
   const locale = language === "uk" ? "uk-UA" : language === "en" ? "en-US" : "ru-RU";
-  const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>(services[0] ? [services[0].id] : []);
+  const normalizedWorkSchedule = useMemo(() => normalizeWorkSchedule(business.workSchedule), [business.workSchedule]);
+  const normalizedCustomSchedule = useMemo(
+    () => normalizeCustomSchedule(business.customSchedule),
+    [business.customSchedule]
+  );
+  const [activeSection, setActiveSection] = useState<StepKey>("services");
+  const [bookingOpen, setBookingOpen] = useState(false);
+  const [bookingStep, setBookingStep] = useState<BookingStep>("services");
+  const [serviceCategory, setServiceCategory] = useState("");
+  const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([]);
+  const [selectedProfessionalId, setSelectedProfessionalId] = useState("");
   const [selectedDate, setSelectedDate] = useState("");
-  const [visibleMonth, setVisibleMonth] = useState(() => new Date());
   const [selectedTime, setSelectedTime] = useState("");
+  const [visibleMonth, setVisibleMonth] = useState(() => new Date());
+  const [weekStart, setWeekStart] = useState(getWeekStart(getTodayDateKey()));
+  const [monthPickerOpen, setMonthPickerOpen] = useState(false);
   const [phoneCountry, setPhoneCountry] = useState("Ukraine");
   const [localPhone, setLocalPhone] = useState("");
   const [phoneError, setPhoneError] = useState("");
-  const [timeError, setTimeError] = useState("");
-  const [servicePickerOpen, setServicePickerOpen] = useState(false);
-  const weekdays = useMemo(
-    () =>
-      language === "uk"
-        ? ["пн", "вт", "ср", "чт", "пт", "сб", "нд"]
-        : language === "en"
-          ? ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
-          : ["пн", "вт", "ср", "чт", "пт", "сб", "вс"],
-    [language]
-  );
+  const [authState, setAuthState] = useState<CustomerSessionState>({
+    loading: true,
+    authenticated: false,
+    customer: null
+  });
+
+  const allPhotos = useMemo(() => {
+    const ordered = [image, ...photos].filter(Boolean);
+    return ordered.filter((item, index) => ordered.indexOf(item) === index).slice(0, 6);
+  }, [image, photos]);
+
+  const teamMembers = useMemo(() => {
+    if (team.length > 0) {
+      return team;
+    }
+
+    return business.ownerProfessionalId
+      ? [
+          {
+            id: business.ownerProfessionalId,
+            firstName: business.name,
+            lastName: "",
+            role: language === "en" ? "Owner" : language === "uk" ? "Власник" : "Владелец",
+            scope: "owner" as const
+          }
+        ]
+      : [];
+  }, [business.name, business.ownerProfessionalId, language, team]);
 
   const companyPhoneCountry = useMemo(
     () => inferPhoneCountryFromAddress(business.address) || "Ukraine",
     [business.address]
   );
 
-  useEffect(() => {
-    const browserPhoneCountry = getBrowserPhoneCountry();
-    setPhoneCountry(browserPhoneCountry || companyPhoneCountry);
-  }, [companyPhoneCountry]);
+  const serviceGroups = useMemo(() => {
+    const groups = new Map<string, ServiceRecord[]>();
+
+    for (const service of services) {
+      const category = service.category?.trim() || t.services;
+      const bucket = groups.get(category) ?? [];
+      bucket.push(service);
+      groups.set(category, bucket);
+    }
+
+    return Array.from(groups.entries()).map(([category, items]) => ({
+      category,
+      items
+    }));
+  }, [services, t.services]);
 
   const selectedServices = useMemo(
     () => services.filter((service) => selectedServiceIds.includes(service.id)),
     [services, selectedServiceIds]
   );
-  const totalDurationMinutes = useMemo(() => getTotalDuration(selectedServices), [selectedServices]);
+  const totalDurationMinutes = useMemo(
+    () => selectedServices.reduce((sum, item) => sum + Math.max(5, item.durationMinutes ?? 60), 0),
+    [selectedServices]
+  );
   const totalPrice = useMemo(
-    () => selectedServices.reduce((sum, service) => sum + Math.max(0, service.price || 0), 0),
+    () => selectedServices.reduce((sum, item) => sum + Math.max(0, item.price || 0), 0),
+    [selectedServices]
+  );
+  const summaryServiceName = useMemo(
+    () => selectedServices.map((service) => service.name).join(" + "),
     [selectedServices]
   );
   const primaryService = selectedServices[0] ?? null;
-  const combinedServiceName = useMemo(() => getCombinedServiceName(selectedServices), [selectedServices]);
+  const selectedProfessional = teamMembers.find((member) => member.id === selectedProfessionalId) ?? null;
+  const phoneRule = getPhoneRule(phoneCountry);
 
   useEffect(() => {
-    if (!primaryService) {
-      setSelectedDate("");
-      setSelectedTime("");
+    if (serviceGroups.length && !serviceCategory) {
+      setServiceCategory(serviceGroups[0].category);
+    }
+  }, [serviceCategory, serviceGroups]);
+
+  useEffect(() => {
+    const browserPhoneCountry = getBrowserPhoneCountry();
+    setPhoneCountry(browserPhoneCountry || companyPhoneCountry);
+  }, [companyPhoneCountry]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
       return;
     }
 
-    if (selectedDate) {
+    const draft = parseBookingDraft(window.localStorage.getItem(getDraftStorageKey(business.id)));
+
+    if (!draft) {
+      if (services[0]) {
+        setSelectedServiceIds([services[0].id]);
+      }
       return;
     }
 
-    const nextDate = findNextPublicBookingDate({
-      config: {
-        workSchedule: business.workSchedule,
-        customSchedule: business.customSchedule,
-        bookingIntervalMinutes: 15,
-        services: services.map((service) => ({
-          name: service.name,
-          durationMinutes: service.durationMinutes ?? 60
-        }))
-      },
-      serviceName: primaryService.name,
-      durationMinutesOverride: totalDurationMinutes,
-      bookings,
-      startDate: getTodayDateKey()
-    });
+    if (draft.selectedServiceIds.length) {
+      setSelectedServiceIds(draft.selectedServiceIds.filter((id) => services.some((service) => service.id === id)));
+    } else if (services[0]) {
+      setSelectedServiceIds([services[0].id]);
+    }
 
-    setSelectedDate(nextDate);
-    setVisibleMonth(new Date(`${nextDate}T00:00:00`));
-  }, [bookings, business.customSchedule, business.workSchedule, primaryService, selectedDate, services, totalDurationMinutes]);
+    setSelectedProfessionalId(draft.selectedProfessionalId);
+    setSelectedDate(draft.selectedDate);
+    setSelectedTime(draft.selectedTime);
+    setBookingStep(draft.step);
+    setBookingOpen(draft.selectedServiceIds.length > 0 || Boolean(draft.selectedDate) || Boolean(draft.selectedTime));
 
-  const availableSlots = useMemo(() => {
-    if (!selectedDate || !primaryService) {
+    if (draft.selectedDate) {
+      setVisibleMonth(new Date(`${draft.selectedDate}T00:00:00`));
+      setWeekStart(getWeekStart(draft.selectedDate));
+    }
+  }, [business.id, services]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    if (!selectedServiceIds.length && !selectedDate && !selectedTime) {
+      window.localStorage.removeItem(getDraftStorageKey(business.id));
+      return;
+    }
+
+    window.localStorage.setItem(
+      getDraftStorageKey(business.id),
+      JSON.stringify({
+        selectedServiceIds,
+        selectedProfessionalId,
+        selectedDate,
+        selectedTime,
+        step: bookingStep
+      })
+    );
+  }, [bookingStep, business.id, selectedDate, selectedProfessionalId, selectedServiceIds, selectedTime]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadSession() {
+      try {
+        const response = await fetch("/api/public/auth/session", { cache: "no-store" });
+        const payload = (await response.json()) as {
+          authenticated?: boolean;
+          customer?: PublicCustomerSession | null;
+        };
+
+        if (cancelled) {
+          return;
+        }
+
+        setAuthState({
+          loading: false,
+          authenticated: payload.authenticated === true,
+          customer: payload.customer ?? null
+        });
+      } catch {
+        if (cancelled) {
+          return;
+        }
+
+        setAuthState({
+          loading: false,
+          authenticated: false,
+          customer: null
+        });
+      }
+    }
+
+    loadSession();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const bookingsByProfessional = useMemo(() => {
+    const map = new Map<string, BookingBusySlot[]>();
+
+    for (const booking of bookings) {
+      const key = booking.professionalId || "";
+      const bucket = map.get(key) ?? [];
+      bucket.push(booking);
+      map.set(key, bucket);
+    }
+
+    return map;
+  }, [bookings]);
+
+  const professionalIdsForSlots = useMemo(() => {
+    if (selectedProfessionalId) {
+      return [selectedProfessionalId];
+    }
+
+    return teamMembers.map((member) => member.id);
+  }, [selectedProfessionalId, teamMembers]);
+
+  function getAvailableSlotsForDate(dateKey: string, professionalId: string) {
+    if (!primaryService || !dateKey) {
       return [];
     }
+
+    const professionalBookings = professionalId ? bookingsByProfessional.get(professionalId) ?? [] : bookings;
 
     return getPublicBookingSlots({
       config: {
@@ -388,96 +686,127 @@ export default function BusinessView({
           durationMinutes: service.durationMinutes ?? 60
         }))
       },
-      date: selectedDate,
+      date: dateKey,
       serviceName: primaryService.name,
       durationMinutesOverride: totalDurationMinutes,
-      bookings
+      bookings: professionalBookings
     });
-  }, [
-    bookings,
-    business.customSchedule,
-    business.workSchedule,
-    primaryService,
-    selectedDate,
-    services,
-    totalDurationMinutes
-  ]);
+  }
+
+  const availableSlots = useMemo(() => {
+    if (!selectedDate || !primaryService) {
+      return [];
+    }
+
+    const combined = new Set<string>();
+
+    for (const professionalId of professionalIdsForSlots) {
+      for (const slot of getAvailableSlotsForDate(selectedDate, professionalId)) {
+        combined.add(slot);
+      }
+    }
+
+    return Array.from(combined).sort();
+  }, [primaryService, professionalIdsForSlots, selectedDate, totalDurationMinutes]);
+
+  const monthDays = useMemo(() => buildMonthDays(visibleMonth), [visibleMonth]);
+  const availabilityByDate = useMemo(() => {
+    const map = new Map<string, { state: "closed" | "available" | "full"; slots: number }>();
+
+    for (const day of monthDays) {
+      const schedule = getDaySchedule(day.key, normalizedWorkSchedule, normalizedCustomSchedule);
+
+      if (!primaryService || !schedule?.enabled) {
+        map.set(day.key, { state: "closed", slots: 0 });
+        continue;
+      }
+
+      const slots = new Set<string>();
+      for (const professionalId of professionalIdsForSlots) {
+        for (const slot of getAvailableSlotsForDate(day.key, professionalId)) {
+          slots.add(slot);
+        }
+      }
+
+      map.set(day.key, {
+        state: slots.size > 0 ? "available" : "full",
+        slots: slots.size
+      });
+    }
+
+    return map;
+  }, [monthDays, normalizedCustomSchedule, normalizedWorkSchedule, primaryService, professionalIdsForSlots]);
 
   useEffect(() => {
-    if (!availableSlots.length) {
+    if (!primaryService) {
+      setSelectedDate("");
+      setSelectedTime("");
+      return;
+    }
+
+    const today = getTodayDateKey();
+
+    if (selectedDate && availableSlots.length > 0) {
+      return;
+    }
+
+    for (let offset = 0; offset < 60; offset += 1) {
+      const dateKey = addDays(today, offset);
+      const slots = new Set<string>();
+
+      for (const professionalId of professionalIdsForSlots) {
+        for (const slot of getAvailableSlotsForDate(dateKey, professionalId)) {
+          slots.add(slot);
+        }
+      }
+
+      if (slots.size > 0) {
+        setSelectedDate(dateKey);
+        setVisibleMonth(new Date(`${dateKey}T00:00:00`));
+        setWeekStart(getWeekStart(dateKey));
+        return;
+      }
+    }
+  }, [availableSlots.length, primaryService, professionalIdsForSlots, selectedDate]);
+
+  useEffect(() => {
+    if (!selectedDate) {
+      return;
+    }
+
+    if (availableSlots.length === 0) {
       setSelectedTime("");
       return;
     }
 
     setSelectedTime((current) => (current && availableSlots.includes(current) ? current : availableSlots[0]));
-    setTimeError("");
-  }, [availableSlots]);
+  }, [availableSlots, selectedDate]);
 
-  const monthDays = useMemo(() => buildMonthDays(visibleMonth), [visibleMonth]);
-  const normalizedWorkSchedule = useMemo(() => normalizeWorkSchedule(business.workSchedule), [business.workSchedule]);
-  const normalizedCustomSchedule = useMemo(
-    () => normalizeCustomSchedule(business.customSchedule),
-    [business.customSchedule]
-  );
-  const availabilityByDate = useMemo(() => {
-    const map = new Map<
-      string,
-      { working: boolean; hasSlots: boolean; label: string }
-    >();
+  const weekDays = useMemo(() => {
+    return Array.from({ length: 7 }, (_, index) => {
+      const dateKey = addDays(weekStart, index);
+      return {
+        dateKey,
+        availability: availabilityByDate.get(dateKey) ?? { state: "closed" as const, slots: 0 }
+      };
+    });
+  }, [availabilityByDate, weekStart]);
 
-    if (!primaryService) {
-      return map;
+  function openBookingFlow(serviceId?: string) {
+    if (serviceId) {
+      setSelectedServiceIds([serviceId]);
+    } else if (!selectedServiceIds.length && services[0]) {
+      setSelectedServiceIds([services[0].id]);
     }
 
-    for (const day of monthDays) {
-      const schedule = getDaySchedule(day.key, normalizedWorkSchedule, normalizedCustomSchedule);
+    setBookingStep("services");
+    setBookingOpen(true);
+  }
 
-      if (!schedule?.enabled) {
-        map.set(day.key, { working: false, hasSlots: false, label: t.closedDay });
-        continue;
-      }
-
-      const slots = getPublicBookingSlots({
-        config: {
-          workSchedule: business.workSchedule,
-          customSchedule: business.customSchedule,
-          bookingIntervalMinutes: 15,
-          services: services.map((service) => ({
-            name: service.name,
-            durationMinutes: service.durationMinutes ?? 60
-          }))
-        },
-        date: day.key,
-        serviceName: primaryService.name,
-        durationMinutesOverride: totalDurationMinutes,
-        bookings
-      });
-
-      map.set(day.key, {
-        working: true,
-        hasSlots: slots.length > 0,
-        label: slots.length > 0 ? t.availableDay : t.fullDay
-      });
-    }
-
-    return map;
-  }, [
-    bookings,
-    business.customSchedule,
-    business.workSchedule,
-    monthDays,
-    normalizedCustomSchedule,
-    normalizedWorkSchedule,
-    primaryService,
-    services,
-    t.availableDay,
-    t.closedDay,
-    t.fullDay,
-    totalDurationMinutes
-  ]);
-
-  const phoneRule = getPhoneRule(phoneCountry);
-  const fullPhone = buildInternationalPhone(phoneCountry, localPhone);
+  function closeBookingFlow() {
+    setBookingOpen(false);
+    setMonthPickerOpen(false);
+  }
 
   function toggleService(serviceId: string) {
     setSelectedServiceIds((current) => {
@@ -493,110 +822,353 @@ export default function BusinessView({
     });
   }
 
-  return (
-    <main className="salon-page">
-      <section className="salon-shell">
-        <section className="salon-hero">
-          <div className="salon-hero-copy">
-            <p className="eyebrow">{business.categories[0] || t.eyebrow}</p>
-            <h1>{business.name}</h1>
-            <p className="hero-text">{business.address || t.heroFallback}</p>
-            <div className="salon-facts">
-              {business.address ? <span>{business.address}</span> : null}
-              {business.website ? <span>{business.website}</span> : null}
-              {business.allowOnlineBooking ? <span>{t.requestPending}</span> : null}
+  function canGoToNextStep() {
+    if (bookingStep === "services") {
+      return selectedServices.length > 0;
+    }
+
+    if (bookingStep === "specialists") {
+      return true;
+    }
+
+    if (bookingStep === "time") {
+      return Boolean(selectedDate && selectedTime);
+    }
+
+    return authState.authenticated;
+  }
+
+  function goNext() {
+    const currentIndex = getStepIndex(bookingStep);
+    if (currentIndex < bookingSteps.length - 1 && canGoToNextStep()) {
+      setBookingStep(bookingSteps[currentIndex + 1]);
+    }
+  }
+
+  function goBack() {
+    const currentIndex = getStepIndex(bookingStep);
+    if (currentIndex > 0) {
+      setBookingStep(bookingSteps[currentIndex - 1]);
+      return;
+    }
+
+    closeBookingFlow();
+  }
+
+  const fullPhone = buildInternationalPhone(phoneCountry, localPhone);
+  const returnToUrl =
+    typeof window !== "undefined" ? `${window.location.pathname}${window.location.search}` : returnPath;
+
+  function renderSummary() {
+    return (
+      <aside className="company-booking-summary">
+        <div className="company-booking-summary-card">
+          <div className="company-booking-summary-brand">
+            <img src={allPhotos[0]} alt={business.name} />
+            <div>
+              <strong>{business.name}</strong>
+              <span>{business.address}</span>
             </div>
-            <img
-              src={image}
-              alt={business.name}
-              style={{
-                width: "100%",
-                maxWidth: 520,
-                borderRadius: 20,
-                marginTop: 24,
-                objectFit: "cover",
-                aspectRatio: "16 / 10"
-              }}
-            />
           </div>
 
-          <div className="booking-card">
-            <h2>{t.bookingTitle}</h2>
-            <p className="booking-note">{t.bookingSubtitle}</p>
-            {business.allowOnlineBooking ? (
-              <form
-                action={createBusinessBookingAction}
-                className="booking-form"
-                onSubmit={(event) => {
-                  if (!selectedTime) {
-                    event.preventDefault();
-                    setTimeError(t.chooseTimeError);
-                    return;
-                  }
+          <div className="company-booking-summary-list">
+            {selectedServices.map((service) => (
+              <div key={service.id} className="company-booking-summary-line">
+                <div>
+                  <strong>{service.name}</strong>
+                  <span>
+                    {service.durationMinutes ?? 60} {t.minuteShort}
+                  </span>
+                </div>
+                <strong>{formatMoney(service.price, locale)}</strong>
+              </div>
+            ))}
+          </div>
 
-                  if (!isPhoneValid(phoneCountry, localPhone)) {
-                    event.preventDefault();
-                    setPhoneError(getPhoneErrorText(language, phoneCountry));
-                    return;
-                  }
+          <div className="company-booking-summary-total">
+            <span>{t.total}</span>
+            <strong>{formatMoney(totalPrice, locale)}</strong>
+          </div>
 
-                  setPhoneError("");
-                  setTimeError("");
-                }}
+          {selectedProfessional ? (
+            <div className="company-booking-summary-meta">
+              <span>{t.specialist}</span>
+              <strong>{fullName(selectedProfessional)}</strong>
+            </div>
+          ) : null}
+          {selectedDate ? (
+            <div className="company-booking-summary-meta">
+              <span>{t.date}</span>
+              <strong>{formatSelectedDate(selectedDate, locale)}</strong>
+            </div>
+          ) : null}
+          {selectedTime ? (
+            <div className="company-booking-summary-meta">
+              <span>{t.time}</span>
+              <strong>
+                {selectedTime} - {addMinutesToTime(selectedTime, totalDurationMinutes)}
+              </strong>
+            </div>
+          ) : null}
+        </div>
+      </aside>
+    );
+  }
+
+  return (
+    <main className="company-page">
+      <header className="public-header company-header">
+        <a className="public-logo" href={getLocalizedPath(language)}>
+          <BrandLogo />
+        </a>
+        <nav className="public-nav" aria-label="Company page navigation">
+          <a href={getLocalizedPath(language, "/catalog")} className="public-login">
+            {t.breadcrumbCatalog}
+          </a>
+          <details className="public-menu">
+            <summary>
+              <span>{language === "en" ? "Menu" : language === "uk" ? "Меню" : "Меню"}</span>
+              <span className="public-burger" aria-hidden="true" />
+            </summary>
+            <div className="public-menu-panel">
+              <a href="#services">{t.services}</a>
+              <a href="#team">{t.team}</a>
+              <a href="#details">{t.details}</a>
+            </div>
+          </details>
+          <GlobalLanguageSwitcher mode="inline" />
+        </nav>
+      </header>
+
+      <section className="company-shell">
+        <nav className="company-breadcrumbs" aria-label="Breadcrumb">
+          <a href={getLocalizedPath(language)}>{t.breadcrumbHome}</a>
+          <span>•</span>
+          <a href={getLocalizedPath(language, "/catalog")}>{t.breadcrumbCatalog}</a>
+          <span>•</span>
+          <span>{business.name}</span>
+        </nav>
+
+        <section className="company-hero">
+          <div className="company-hero-main">
+            <div className="company-hero-copy">
+              <h1>{business.name}</h1>
+              <p>{business.categories[0] || t.reviews}</p>
+              <div className="company-hero-meta">
+                <span>{t.openUntil} 18:00</span>
+                <span>{business.address}</span>
+                {business.website ? <a href={business.website}>{t.website}</a> : null}
+              </div>
+            </div>
+
+            <div className="company-gallery-grid" id="photos">
+              <figure className="company-gallery-main">
+                <img src={allPhotos[0]} alt={business.name} />
+              </figure>
+              <div className="company-gallery-stack">
+                {allPhotos.slice(1, 3).map((photo, index) => (
+                  <figure key={`${photo}-${index}`}>
+                    <img src={photo} alt={`${business.name} ${index + 2}`} />
+                  </figure>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <aside className="company-booking-rail">
+            <div className="company-booking-rail-card">
+              <strong>{business.name}</strong>
+              <span>{t.verifiedRequest}</span>
+              <button
+                type="button"
+                className="primary-button"
+                onClick={() => openBookingFlow()}
+                disabled={business.allowOnlineBooking !== true}
               >
-                <input type="hidden" name="businessId" value={business.id} />
-                <input type="hidden" name="serviceName" value={combinedServiceName || primaryService?.name || ""} />
-                <input type="hidden" name="serviceNamesJson" value={JSON.stringify(selectedServices.map((service) => service.name))} />
-                <input type="hidden" name="appointmentDate" value={selectedDate} />
-                <input type="hidden" name="appointmentTime" value={selectedTime} />
-                <input type="hidden" name="customerPhone" value={fullPhone} />
-                <input type="hidden" name="customerPhoneCountry" value={phoneCountry} />
-                <input type="hidden" name="customerPhoneLocal" value={localPhone} />
-                <input type="hidden" name="returnPath" value={returnPath} />
+                {t.bookNow}
+              </button>
+              <div className="company-booking-rail-info">
+                <p>{t.openUntil} 18:00</p>
+                <p>{business.address}</p>
+                {business.address ? (
+                  <a
+                    href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(business.address)}`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    {t.route}
+                  </a>
+                ) : null}
+              </div>
+            </div>
+          </aside>
+        </section>
 
-                <p className="booking-note">{t.requestPendingText}</p>
+        <div className="company-section-tabs">
+          <button type="button" className={activeSection === "services" ? "active" : ""} onClick={() => setActiveSection("services")}>
+            {t.services}
+          </button>
+          <button type="button" className={activeSection === "team" ? "active" : ""} onClick={() => setActiveSection("team")}>
+            {t.team}
+          </button>
+          <button type="button" className={activeSection === "details" ? "active" : ""} onClick={() => setActiveSection("details")}>
+            {t.details}
+          </button>
+        </div>
 
-                <section className="booking-service-summary">
-                  <div className="booking-service-summary-head">
-                    <strong>{t.servicePickerTitle}</strong>
+        <section className="company-layout">
+          <div className="company-content">
+            <section className="company-panel" id="services">
+              <div className="company-panel-head">
+                <h2>{t.services}</h2>
+                {!business.allowOnlineBooking ? <span className="company-status-pill">{t.onlineBookingOff}</span> : null}
+              </div>
+
+              <div className="company-category-tabs">
+                {serviceGroups.map((group) => (
+                  <button
+                    key={group.category}
+                    type="button"
+                    className={serviceCategory === group.category ? "active" : ""}
+                    onClick={() => setServiceCategory(group.category)}
+                  >
+                    {group.category}
+                  </button>
+                ))}
+              </div>
+
+              <div className="company-service-list">
+                {(serviceGroups.find((group) => group.category === serviceCategory)?.items ?? services).map((service) => (
+                  <article className="company-service-card" key={service.id}>
+                    <div>
+                      <h3>{service.name}</h3>
+                      <p>
+                        {service.durationMinutes ?? 60} {t.minuteShort}
+                      </p>
+                      <span>
+                        {t.fromPrice} {formatMoney(service.price, locale)}
+                      </span>
+                    </div>
                     <button
                       type="button"
-                      className="secondary-button"
-                      onClick={() => setServicePickerOpen((value) => !value)}
+                      className="company-book-button"
+                      onClick={() => openBookingFlow(service.id)}
+                      disabled={business.allowOnlineBooking !== true}
                     >
-                      {selectedServices.length > 0 ? t.addAnotherService : t.chooseService}
+                      {t.bookNow}
                     </button>
-                  </div>
+                  </article>
+                ))}
+              </div>
+            </section>
 
-                  <div className="booking-selected-services">
-                    {selectedServices.map((service) => (
-                      <span key={service.id} className="booking-selected-chip">
-                        <strong>{service.name}</strong>
-                        <small>
-                          {service.durationMinutes ?? 60} {t.minuteShort} · {formatMoney(service.price, locale, language)}
-                        </small>
-                        <button type="button" onClick={() => toggleService(service.id)} aria-label={service.name}>
-                          ×
-                        </button>
+            <section className="company-panel" id="team">
+              <div className="company-panel-head">
+                <h2>{t.team}</h2>
+              </div>
+              <div className="company-team-grid">
+                {teamMembers.map((member) => (
+                  <article className="company-team-card" key={member.id}>
+                    <div className="company-team-avatar">{getInitials(member)}</div>
+                    <strong>{fullName(member)}</strong>
+                    <span>{member.role}</span>
+                    <button type="button" onClick={() => {
+                      setSelectedProfessionalId(member.id);
+                      openBookingFlow();
+                      setBookingStep("specialists");
+                    }}>
+                      {t.bookNow}
+                    </button>
+                  </article>
+                ))}
+              </div>
+            </section>
+
+            <section className="company-panel" id="details">
+              <div className="company-panel-head">
+                <h2>{t.companyInfo}</h2>
+              </div>
+
+              <div className="company-info-grid">
+                <div className="company-info-card">
+                  <strong>{t.address}</strong>
+                  <p>{business.address || "—"}</p>
+                </div>
+                <div className="company-info-card">
+                  <strong>{t.workingHours}</strong>
+                  <div className="company-hours-list">
+                    {workDays.map((day, index) => (
+                      <div key={day.key}>
+                        <span>{formatWeekday(addDays(getTodayDateKey(), index), locale)}</span>
+                        <strong>
+                          {normalizedWorkSchedule[day.key]?.enabled
+                            ? `${normalizedWorkSchedule[day.key].startTime} - ${normalizedWorkSchedule[day.key].endTime}`
+                            : t.closedDay}
+                        </strong>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <div className="company-side-rail">{renderSummary()}</div>
+        </section>
+      </section>
+
+      {bookingOpen ? (
+        <div className="company-booking-modal">
+          <div className="company-booking-modal-shell">
+            <button type="button" className="company-modal-close" onClick={closeBookingFlow}>
+              ×
+            </button>
+            <div className="company-booking-modal-content">
+              <div className="company-booking-flow">
+                <div className="company-booking-topbar">
+                  <button type="button" className="company-modal-back" onClick={goBack}>
+                    ←
+                  </button>
+                  <div className="company-booking-progress">
+                    {bookingSteps.map((step) => (
+                      <span
+                        key={step}
+                        className={getStepIndex(step) === getStepIndex(bookingStep) ? "active" : getStepIndex(step) < getStepIndex(bookingStep) ? "done" : ""}
+                      >
+                        {t[`${step}Step` as keyof BusinessCopy] as string}
                       </span>
                     ))}
                   </div>
+                </div>
 
-                  <div className="booking-inline-stats">
-                    <span>{t.selectedServices}: {selectedServices.length}</span>
-                    <span>{t.totalDuration}: {totalDurationMinutes} {t.minuteShort}</span>
-                    <span>{t.totalPrice}: {formatMoney(totalPrice, locale, language)}</span>
-                  </div>
+                {bookingStep === "services" ? (
+                  <section className="company-booking-step">
+                    <header className="company-booking-step-head">
+                      <h2>{t.selectedServices}</h2>
+                      <p>{t.addAnother}</p>
+                    </header>
 
-                  {servicePickerOpen || selectedServices.length === 0 ? (
-                    <div className="booking-service-catalog">
-                      {services.map((service) => {
+                    <div className="company-category-tabs booking-flow-category-tabs">
+                      {serviceGroups.map((group) => (
+                        <button
+                          key={group.category}
+                          type="button"
+                          className={serviceCategory === group.category ? "active" : ""}
+                          onClick={() => setServiceCategory(group.category)}
+                        >
+                          {group.category}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="company-flow-list">
+                      {(serviceGroups.find((group) => group.category === serviceCategory)?.items ?? services).map((service) => {
                         const active = selectedServiceIds.includes(service.id);
                         return (
                           <button
                             key={service.id}
                             type="button"
-                            className={`booking-service-tile ${active ? "booking-service-tile-active" : ""}`}
+                            className={`company-flow-card ${active ? "active" : ""}`}
                             onClick={() => toggleService(service.id)}
                           >
                             <div>
@@ -604,178 +1176,280 @@ export default function BusinessView({
                               <span>
                                 {service.durationMinutes ?? 60} {t.minuteShort}
                               </span>
+                              <small>{service.category || t.services}</small>
                             </div>
-                            <strong>{formatMoney(service.price, locale, language)}</strong>
+                            <div className="company-flow-card-side">
+                              <strong>{formatMoney(service.price, locale)}</strong>
+                              <span>{active ? "✓" : "+"}</span>
+                            </div>
                           </button>
                         );
                       })}
                     </div>
-                  ) : null}
-                </section>
+                  </section>
+                ) : null}
 
-                <section className="booking-month-card">
-                  <div className="booking-calendar-head">
-                    <div>
-                      <strong>{t.freeDays}</strong>
-                      <span>{selectedDate ? formatSelectedDate(selectedDate, locale) : t.noFreeDays}</span>
-                    </div>
-                    <div className="public-month-head">
-                      <button type="button" onClick={() => setVisibleMonth((current) => addMonths(current, -1))}>‹</button>
-                      <strong>{formatMonthTitle(visibleMonth, locale)}</strong>
-                      <button type="button" onClick={() => setVisibleMonth((current) => addMonths(current, 1))}>›</button>
-                    </div>
-                  </div>
+                {bookingStep === "specialists" ? (
+                  <section className="company-booking-step">
+                    <header className="company-booking-step-head">
+                      <h2>{t.chooseSpecialist}</h2>
+                    </header>
 
-                  <div className="booking-calendar-legend">
-                    <span className="booking-day-dot booking-day-dot-available">{t.availableDay}</span>
-                    <span className="booking-day-dot booking-day-dot-work">{t.workDay}</span>
-                    <span className="booking-day-dot booking-day-dot-full">{t.fullDay}</span>
-                    <span className="booking-day-dot booking-day-dot-closed">{t.closedDay}</span>
-                  </div>
+                    <div className="company-flow-list">
+                      <button
+                        type="button"
+                        className={`company-flow-card ${selectedProfessionalId === "" ? "active" : ""}`}
+                        onClick={() => setSelectedProfessionalId("")}
+                      >
+                        <div>
+                          <strong>{t.noPreference}</strong>
+                          <span>{t.noPreferenceText}</span>
+                        </div>
+                        <div className="company-flow-card-side">
+                          <span>{selectedProfessionalId === "" ? "✓" : t.select}</span>
+                        </div>
+                      </button>
 
-                  <div className="public-month-weekdays">
-                    {weekdays.map((day) => (
-                      <span key={day}>{day}</span>
-                    ))}
-                  </div>
-
-                  <div className="public-month-grid booking-month-grid">
-                    {monthDays.map((day) => {
-                      const availability = availabilityByDate.get(day.key);
-                      const classNames = [
-                        !day.inMonth ? "muted" : "",
-                        day.key === getTodayDateKey() ? "today" : "",
-                        day.key === selectedDate ? "active" : "",
-                        availability?.working
-                          ? availability.hasSlots
-                            ? "booking-day-available"
-                            : "booking-day-full"
-                          : "booking-day-closed"
-                      ]
-                        .filter(Boolean)
-                        .join(" ");
-
-                      return (
+                      {teamMembers.map((member) => (
                         <button
-                          key={day.key}
+                          key={member.id}
                           type="button"
-                          className={classNames}
-                          title={availability?.label || t.closedDay}
+                          className={`company-flow-card ${selectedProfessionalId === member.id ? "active" : ""}`}
+                          onClick={() => setSelectedProfessionalId(member.id)}
+                        >
+                          <div className="company-flow-member">
+                            <div className="company-team-avatar">{getInitials(member)}</div>
+                            <div>
+                              <strong>{fullName(member)}</strong>
+                              <span>{member.role}</span>
+                            </div>
+                          </div>
+                          <div className="company-flow-card-side">
+                            <span>{selectedProfessionalId === member.id ? "✓" : t.select}</span>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </section>
+                ) : null}
+
+                {bookingStep === "time" ? (
+                  <section className="company-booking-step">
+                    <header className="company-booking-step-head">
+                      <h2>{t.chooseTime}</h2>
+                      <button type="button" className="company-calendar-toggle" onClick={() => setMonthPickerOpen((value) => !value)}>
+                        🗓
+                      </button>
+                    </header>
+
+                    <div className="company-week-strip">
+                      {weekDays.map((day) => (
+                        <button
+                          key={day.dateKey}
+                          type="button"
+                          className={`company-week-day ${selectedDate === day.dateKey ? "active" : ""} ${day.availability.state}`}
                           onClick={() => {
-                            setSelectedDate(day.key);
-                            if (day.date.getMonth() !== visibleMonth.getMonth()) {
-                              setVisibleMonth(new Date(day.date.getFullYear(), day.date.getMonth(), 1));
-                            }
+                            setSelectedDate(day.dateKey);
+                            setVisibleMonth(new Date(`${day.dateKey}T00:00:00`));
                           }}
                         >
-                          {day.day}
+                          <strong>{new Date(`${day.dateKey}T00:00:00`).getDate()}</strong>
+                          <span>{formatWeekday(day.dateKey, locale)}</span>
                         </button>
-                      );
-                    })}
-                  </div>
-                </section>
+                      ))}
+                    </div>
 
-                <section className="booking-slots-panel">
-                  <div className="booking-calendar-headline">
-                    <strong>{t.availableSlots}</strong>
-                    <span>{selectedDate ? formatSelectedDate(selectedDate, locale) : t.noSlots}</span>
-                  </div>
+                    {monthPickerOpen ? (
+                      <div className="company-month-picker">
+                        <div className="public-month-head">
+                          <button type="button" onClick={() => setVisibleMonth((current) => addMonths(current, -1))}>
+                            ‹
+                          </button>
+                          <strong>{formatMonthTitle(visibleMonth, locale)}</strong>
+                          <button type="button" onClick={() => setVisibleMonth((current) => addMonths(current, 1))}>
+                            ›
+                          </button>
+                        </div>
+                        <div className="public-month-grid">
+                          {monthDays.map((day) => {
+                            const availability = availabilityByDate.get(day.key) ?? { state: "closed", slots: 0 };
+                            return (
+                              <button
+                                key={day.key}
+                                type="button"
+                                className={`${day.inMonth ? "" : "muted"} ${selectedDate === day.key ? "active" : ""} company-month-${availability.state}`}
+                                onClick={() => {
+                                  setSelectedDate(day.key);
+                                  setWeekStart(getWeekStart(day.key));
+                                  setMonthPickerOpen(false);
+                                }}
+                              >
+                                {day.day}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ) : null}
 
-                  <div className="slot-grid">
-                    {availableSlots.map((slot) => (
-                      <button
-                        key={slot}
-                        type="button"
-                        className={`slot-button ${selectedTime === slot ? "slot-button-active" : ""}`}
-                        onClick={() => {
-                          setSelectedTime(slot);
-                          setTimeError("");
-                        }}
-                      >
-                        {slot}
-                      </button>
-                    ))}
-                  </div>
+                    <div className="company-slot-list">
+                      {availableSlots.map((slot) => (
+                        <button
+                          key={slot}
+                          type="button"
+                          className={`company-slot-item ${selectedTime === slot ? "active" : ""}`}
+                          onClick={() => setSelectedTime(slot)}
+                        >
+                          {slot}
+                        </button>
+                      ))}
+                    </div>
 
-                  {primaryService && !availableSlots.length ? (
-                    <p className="booking-note">{selectedDate ? t.noSlotsForDay : t.noSlots}</p>
-                  ) : null}
-                  {timeError ? <p className="field-error">{timeError}</p> : null}
-                </section>
+                    {!availableSlots.length ? <p className="company-empty-hint">{t.noTimeForDay}</p> : null}
+                  </section>
+                ) : null}
 
-                <div className="booking-form-grid">
-                  <label className="field">
-                    <span>{t.name}</span>
-                    <input name="customerName" type="text" placeholder={t.namePlaceholder} required />
-                  </label>
+                {bookingStep === "confirm" ? (
+                  <section className="company-booking-step">
+                    <header className="company-booking-step-head">
+                      <h2>{t.confirmStep}</h2>
+                      <p>{t.pendingHint}</p>
+                    </header>
 
-                  <label className="field">
-                    <span>{t.phone}</span>
-                    <div className="salon-phone-row">
-                      <select
-                        className="salon-phone-prefix"
-                        value={phoneCountry}
-                        onChange={(event) => {
-                          const nextCountry = event.target.value;
-                          const nextRule = getPhoneRule(nextCountry);
-                          setPhoneCountry(nextCountry);
-                          setLocalPhone(formatPhoneLocal(onlyPhoneDigits(localPhone), nextRule));
-                          setPhoneError("");
-                        }}
-                      >
-                        {phoneCountries.map((country) => {
-                          const rule = getPhoneRule(country);
-                          return (
-                            <option key={country} value={country}>
-                              {`${rule.prefix} · ${country}`}
-                            </option>
-                          );
-                        })}
-                      </select>
-                      <input
-                        className="salon-phone-input"
-                        type="tel"
-                        inputMode="numeric"
-                        placeholder={phoneRule.placeholder}
-                        value={localPhone}
-                        onChange={(event) => {
-                          setLocalPhone(formatPhoneLocal(event.target.value, phoneRule));
-                          setPhoneError("");
-                        }}
-                        onBlur={() => {
-                          if (localPhone.trim() && !isPhoneValid(phoneCountry, localPhone)) {
-                            setPhoneError(getPhoneErrorText(language, phoneCountry));
+                    {!authState.loading && !authState.authenticated ? (
+                      <div className="company-auth-card">
+                        <strong>{t.signInGoogle}</strong>
+                        <p>{t.signInHint}</p>
+                        <a
+                          className="primary-button company-google-button"
+                          href={`/api/public/auth/google/start?returnTo=${encodeURIComponent(returnToUrl)}`}
+                        >
+                          {t.signInGoogle}
+                        </a>
+                      </div>
+                    ) : null}
+
+                    {authState.loading ? (
+                      <div className="company-auth-card">
+                        <p>Loading…</p>
+                      </div>
+                    ) : null}
+
+                    {authState.authenticated && authState.customer ? (
+                      <form
+                        action={createBusinessBookingAction}
+                        className="company-confirm-form"
+                        onSubmit={(event) => {
+                          if (!isPhoneValid(phoneCountry, localPhone)) {
+                            event.preventDefault();
+                            setPhoneError(t.phoneError);
+                            return;
+                          }
+
+                          if (typeof window !== "undefined") {
+                            window.localStorage.removeItem(getDraftStorageKey(business.id));
                           }
                         }}
-                        required
-                      />
-                    </div>
-                  </label>
-                </div>
+                      >
+                        <input type="hidden" name="businessId" value={business.id} />
+                        <input type="hidden" name="serviceName" value={summaryServiceName} />
+                        <input
+                          type="hidden"
+                          name="serviceNamesJson"
+                          value={JSON.stringify(selectedServices.map((service) => service.name))}
+                        />
+                        <input type="hidden" name="professionalId" value={selectedProfessionalId} />
+                        <input type="hidden" name="appointmentDate" value={selectedDate} />
+                        <input type="hidden" name="appointmentTime" value={selectedTime} />
+                        <input type="hidden" name="customerName" value={authState.customer.fullName || authState.customer.email} />
+                        <input type="hidden" name="customerPhone" value={fullPhone} />
+                        <input type="hidden" name="customerPhoneCountry" value={phoneCountry} />
+                        <input type="hidden" name="customerPhoneLocal" value={localPhone} />
+                        <input type="hidden" name="customerNotes" value="" />
+                        <input type="hidden" name="returnPath" value={returnPath} />
 
-                {phoneError ? <p className="field-error">{phoneError}</p> : null}
+                        <div className="company-auth-card company-auth-card-active">
+                          <span>{t.signInAs}</span>
+                          <strong>{authState.customer.fullName || authState.customer.email}</strong>
+                          <small>{authState.customer.email}</small>
+                        </div>
 
-                <label className="field">
-                  <span>{t.comment}</span>
-                  <textarea name="customerNotes" rows={4} placeholder={t.commentPlaceholder} />
-                </label>
+                        <label className="field">
+                          <span>{t.phoneTitle}</span>
+                          <div className="salon-phone-row">
+                            <select
+                              className="salon-phone-prefix"
+                              value={phoneCountry}
+                              onChange={(event) => {
+                                const nextCountry = event.target.value;
+                                const nextRule = getPhoneRule(nextCountry);
+                                setPhoneCountry(nextCountry);
+                                setLocalPhone(formatPhoneLocal(onlyPhoneDigits(localPhone), nextRule));
+                                setPhoneError("");
+                              }}
+                            >
+                              {phoneCountries.map((country) => {
+                                const rule = getPhoneRule(country);
+                                return (
+                                  <option key={country} value={country}>
+                                    {`${rule.prefix} · ${country}`}
+                                  </option>
+                                );
+                              })}
+                            </select>
+                            <input
+                              className="salon-phone-input"
+                              type="tel"
+                              inputMode="numeric"
+                              required
+                              placeholder={phoneRule.placeholder || t.phonePlaceholder}
+                              value={localPhone}
+                              onChange={(event) => {
+                                setLocalPhone(formatPhoneLocal(event.target.value, phoneRule));
+                                setPhoneError("");
+                              }}
+                              onBlur={() => {
+                                if (localPhone.trim() && !isPhoneValid(phoneCountry, localPhone)) {
+                                  setPhoneError(t.phoneError);
+                                }
+                              }}
+                            />
+                          </div>
+                        </label>
 
-                <button type="submit" className="primary-button submit-button" disabled={!primaryService || !selectedDate || !selectedTime}>
-                  {t.submit}
-                </button>
-              </form>
-            ) : (
-              <div className="booking-form">
-                <p className="booking-note"><strong>{t.onlineBookingClosed}</strong></p>
-                <p className="booking-note">{t.onlineBookingClosedText}</p>
-                <a href={getLocalizedPath(language, "/catalog")} className="secondary-button">
-                  {t.backToCatalog}
-                </a>
+                        {phoneError ? <p className="field-error">{phoneError}</p> : null}
+
+                        <button
+                          type="submit"
+                          className="primary-button submit-button"
+                          disabled={!selectedTime || !selectedDate || !selectedServices.length}
+                        >
+                          {t.confirmBooking}
+                        </button>
+                      </form>
+                    ) : null}
+                  </section>
+                ) : null}
               </div>
-            )}
+
+              {renderSummary()}
+            </div>
+
+            <div className="company-booking-modal-footer">
+              {bookingStep !== "confirm" ? (
+                <button
+                  type="button"
+                  className="primary-button company-modal-next"
+                  onClick={goNext}
+                  disabled={!canGoToNextStep()}
+                >
+                  {bookingStep === "time" ? t.goToConfirm : t.continue}
+                </button>
+              ) : null}
+            </div>
           </div>
-        </section>
-      </section>
+        </div>
+      ) : null}
     </main>
   );
 }

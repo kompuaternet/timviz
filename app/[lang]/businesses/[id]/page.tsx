@@ -81,6 +81,8 @@ export default async function LocalizedBusinessPage({
       services={profile.services}
       bookings={profile.bookings}
       image={profile.image}
+      photos={profile.photos}
+      team={profile.team}
       initialLanguage={lang as SiteLanguage}
       returnPath={getLocalizedPath(lang as SiteLanguage, `/businesses/${id}`)}
     />

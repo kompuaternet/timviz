@@ -17,10 +17,13 @@ function ensureEnv(name: string) {
   return value;
 }
 
-export function getGoogleOAuthSettings(request?: Request) {
+export function getGoogleOAuthSettings(
+  request?: Request,
+  callbackPath = "/api/pro/auth/google/callback"
+) {
   const clientId = ensureEnv("GOOGLE_CLIENT_ID");
   const clientSecret = ensureEnv("GOOGLE_CLIENT_SECRET");
-  const redirectUri = `${getPublicAppUrl(request)}/api/pro/auth/google/callback`;
+  const redirectUri = `${getPublicAppUrl(request)}${callbackPath}`;
 
   return {
     clientId,

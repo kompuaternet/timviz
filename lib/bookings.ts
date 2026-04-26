@@ -38,6 +38,7 @@ export type PublicBusinessBookingInput = {
   businessId: string;
   serviceName: string;
   serviceNames?: string[];
+  professionalId?: string;
   appointmentDate: string;
   appointmentTime: string;
   customerName: string;
@@ -169,6 +170,16 @@ function getOwnerProfessionalId(business: BusinessRecord, ownerProfessionalIds: 
   return business.ownerProfessionalId || ownerProfessionalIds[0] || "";
 }
 
+function getBusinessProfessionalIds(
+  businessId: string,
+  directory: Awaited<ReturnType<typeof getBusinessDirectorySnapshot>>
+) {
+  return directory.memberships
+    .filter((membership) => membership.businessId === businessId)
+    .map((membership) => membership.professionalId)
+    .filter(Boolean);
+}
+
 function isServicePubliclyVisible(service: ServiceRecord) {
   if (service.isBlocked === true) {
     return false;
@@ -227,10 +238,20 @@ export async function createBusinessBooking(input: PublicBusinessBookingInput) {
   const ownerProfessionalIds = directory.memberships
     .filter((membership) => membership.businessId === business.id && membership.scope === "owner")
     .map((membership) => membership.professionalId);
-  const professionalId = getOwnerProfessionalId(business, ownerProfessionalIds);
+  const requestedProfessionalId = input.professionalId?.trim() || "";
+  const allProfessionalIds = getBusinessProfessionalIds(business.id, directory);
+  const candidateProfessionalIds = requestedProfessionalId
+    ? allProfessionalIds.filter((item) => item === requestedProfessionalId)
+    : allProfessionalIds;
 
-  if (!professionalId) {
-    throw new Error("Business owner not found.");
+  if (!candidateProfessionalIds.length) {
+    const ownerProfessionalId = getOwnerProfessionalId(business, ownerProfessionalIds);
+
+    if (!ownerProfessionalId) {
+      throw new Error("Business owner not found.");
+    }
+
+    candidateProfessionalIds.push(ownerProfessionalId);
   }
 
   if (!input.customerName.trim()) {
@@ -245,32 +266,43 @@ export async function createBusinessBooking(input: PublicBusinessBookingInput) {
     throw new Error("Appointment date is required.");
   }
 
-  const publicAppointments = (await getPublicCalendarAppointments())
-    .filter((appointment) => appointment.businessId === business.id && appointment.professionalId === professionalId)
-    .map((appointment) => ({
-      appointmentDate: appointment.appointmentDate,
-      appointmentTime: appointment.startTime,
-      endTime: appointment.endTime,
-      serviceName: appointment.kind === "blocked" ? "blocked" : ""
-    }));
+  const bookingConfig = {
+    workSchedule: business.workSchedule,
+    customSchedule: business.customSchedule,
+    bookingIntervalMinutes: 15,
+    services: businessServices.map((item) => ({
+      name: item.name,
+      durationMinutes: item.durationMinutes ?? 60
+    }))
+  };
+  const publicAppointments = await getPublicCalendarAppointments();
 
-  const availableSlots = getPublicBookingSlots({
-    config: {
-      workSchedule: business.workSchedule,
-      customSchedule: business.customSchedule,
-      bookingIntervalMinutes: 15,
-      services: businessServices.map((item) => ({
-        name: item.name,
-        durationMinutes: item.durationMinutes ?? 60
-      }))
-    },
-    date: input.appointmentDate,
-    serviceName: primaryService.name,
-    durationMinutesOverride: totalDurationMinutes,
-    bookings: publicAppointments
+  const professionalId = candidateProfessionalIds.find((candidateId) => {
+    const candidateBookings = publicAppointments
+      .filter(
+        (appointment) =>
+          appointment.businessId === business.id && appointment.professionalId === candidateId
+      )
+      .map((appointment) => ({
+        appointmentDate: appointment.appointmentDate,
+        appointmentTime: appointment.startTime,
+        endTime: appointment.endTime,
+        serviceName: appointment.kind === "blocked" ? "blocked" : "",
+        professionalId: appointment.professionalId
+      }));
+
+    const availableSlots = getPublicBookingSlots({
+      config: bookingConfig,
+      date: input.appointmentDate,
+      serviceName: primaryService.name,
+      durationMinutesOverride: totalDurationMinutes,
+      bookings: candidateBookings
+    });
+
+    return availableSlots.includes(input.appointmentTime);
   });
 
-  if (!availableSlots.includes(input.appointmentTime)) {
+  if (!professionalId) {
     throw new Error("Time slot not found.");
   }
 
