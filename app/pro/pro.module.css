@@ -3777,6 +3777,10 @@
   box-shadow: 0 18px 34px rgba(107, 92, 196, 0.28);
 }
 
+.calendarMobilePlusButton {
+  display: none;
+}
+
 .calendarV2ScrollFrame {
   height: auto;
   overflow: auto;
@@ -3811,16 +3815,16 @@
     repeating-linear-gradient(
       to bottom,
       transparent 0,
-      transparent 15px,
-      #eceef2 15px,
-      #eceef2 16px
+      transparent calc(var(--calendar-slot-step-height, 16px) - 1px),
+      #eceef2 calc(var(--calendar-slot-step-height, 16px) - 1px),
+      #eceef2 var(--calendar-slot-step-height, 16px)
     ),
     repeating-linear-gradient(
       to bottom,
       transparent 0,
-      transparent 95px,
-      #e3e4e6 95px,
-      #e3e4e6 96px
+      transparent calc(var(--calendar-hour-block-height, 96px) - 1px),
+      #e3e4e6 calc(var(--calendar-hour-block-height, 96px) - 1px),
+      #e3e4e6 var(--calendar-hour-block-height, 96px)
     ),
     #ffffff;
 }
@@ -6676,6 +6680,26 @@
     font-size: 0.78rem;
   }
 
+  .calendarMobilePlusButton {
+    position: fixed;
+    left: 12px;
+    bottom: calc(90px + env(safe-area-inset-bottom));
+    z-index: 24;
+    width: 48px;
+    height: 48px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: 16px;
+    background: linear-gradient(90deg, #6d4dff 0%, #5f49f6 38%, #1d1838 100%);
+    color: #fff;
+    box-shadow: 0 18px 34px rgba(107, 92, 196, 0.28);
+    font-size: 2rem;
+    line-height: 1;
+    font-weight: 500;
+  }
+
   .nowBadge {
     left: -28px;
     font-size: 0.64rem;
@@ -6962,17 +6986,12 @@
   }
 
   .calendarMobileActionBar {
-    left: 8px;
-    right: 8px;
-    bottom: calc(114px + env(safe-area-inset-bottom));
-    grid-template-columns: 92px minmax(0, 1fr);
-    gap: 8px;
+    display: none;
   }
 
   .calendarMobileJumpNow,
   .calendarMobileCreateButton {
-    min-height: 50px;
-    border-radius: 14px;
+    display: none;
   }
 
   .supportFloatingButton {

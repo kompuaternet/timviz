@@ -2764,6 +2764,12 @@
     display: none;
   }
 
+  .public-entry-panel {
+    left: 0;
+    right: auto;
+    width: min(240px, calc(100vw - 32px));
+  }
+
   .public-menu-panel {
     right: -8px;
     width: min(286px, calc(100vw - 24px));

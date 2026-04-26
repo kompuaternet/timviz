@@ -782,34 +782,32 @@ export default function CustomerAccountView({
                     {account.addresses.length ? (
                       account.addresses.map((address, index) => (
                         <div className={styles.addressCard} key={address.id}>
-                          <div className={styles.inlineGrid}>
-                            <label className={styles.fieldRow}>
-                              <span className={styles.fieldLabel}>{t.title}</span>
-                              <input
-                                className={styles.input}
-                                value={address.title}
-                                onChange={(event) => {
-                                  const next = [...account.addresses];
-                                  next[index] = { ...address, title: event.target.value };
-                                  setAccount({ ...account, addresses: next });
-                                }}
-                              />
-                            </label>
-                            <label className={styles.fieldRow}>
-                              <span className={styles.fieldLabel}>{t.findAddress}</span>
-                              <input
-                                className={styles.input}
-                                value={address.address}
-                                onChange={(event) => {
-                                  const nextValue = event.target.value;
-                                  updateAddress(address.id, (current) => ({ ...current, address: nextValue }));
-                                  setAddressPreviewById((current) => ({ ...current, [address.id]: null }));
-                                  queueAddressSearch(address.id, nextValue);
-                                }}
-                                placeholder={t.addressPlaceholder}
-                              />
-                            </label>
-                          </div>
+                          <label className={styles.fieldRow}>
+                            <span className={styles.fieldLabel}>{t.title}</span>
+                            <input
+                              className={styles.input}
+                              value={address.title}
+                              onChange={(event) => {
+                                const next = [...account.addresses];
+                                next[index] = { ...address, title: event.target.value };
+                                setAccount({ ...account, addresses: next });
+                              }}
+                            />
+                          </label>
+                          <label className={styles.fieldRow}>
+                            <span className={styles.fieldLabel}>{t.findAddress}</span>
+                            <input
+                              className={styles.input}
+                              value={address.address}
+                              onChange={(event) => {
+                                const nextValue = event.target.value;
+                                updateAddress(address.id, (current) => ({ ...current, address: nextValue }));
+                                setAddressPreviewById((current) => ({ ...current, [address.id]: null }));
+                                queueAddressSearch(address.id, nextValue);
+                              }}
+                              placeholder={t.addressPlaceholder}
+                            />
+                          </label>
                           <div className={styles.addressSearchList}>
                             {addressSearchingId === address.id ? (
                               <div className={styles.addressHint}>{t.searchingAddress}</div>

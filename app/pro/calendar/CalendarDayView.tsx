@@ -127,9 +127,11 @@ const SERVICE_COLORS = [
 ];
 
 const CALENDAR_HOUR_HEIGHT = 96;
+const CALENDAR_MOBILE_HOUR_HEIGHT = 144;
 const CALENDAR_GRID_STEP_MINUTES = 10;
 const TIME_SELECT_STEP_MINUTES = 5;
 const MIN_BOOKING_CARD_HEIGHT = 64;
+const MOBILE_MIN_BOOKING_CARD_HEIGHT = 86;
 
 const CALENDAR_TEXT: Record<AppLanguage, {
   today: string;
@@ -728,8 +730,6 @@ function getAppointmentLayouts(appointments: CalendarAppointment[]) {
 }
 
 export default function CalendarDayView({ professionalId, initialDate }: CalendarDayViewProps) {
-  const minuteHeight = CALENDAR_HOUR_HEIGHT / 60;
-  const slotHeight = minuteHeight * CALENDAR_GRID_STEP_MINUTES;
   const topOffset = 24;
   const dayStartMinutes = 0;
   const dayEndMinutes = 24 * 60;
@@ -762,6 +762,11 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
   const [showClientPrompt, setShowClientPrompt] = useState(false);
   const [isSavingVisit, setIsSavingVisit] = useState(false);
   const [isMobileViewport, setIsMobileViewport] = useState(false);
+  const calendarHourHeight = isMobileViewport ? CALENDAR_MOBILE_HOUR_HEIGHT : CALENDAR_HOUR_HEIGHT;
+  const minuteHeight = calendarHourHeight / 60;
+  const slotHeight = minuteHeight * CALENDAR_GRID_STEP_MINUTES;
+  const calendarGridHeight = topOffset + dayEndMinutes * minuteHeight;
+  const bookingCardMinHeight = isMobileViewport ? MOBILE_MIN_BOOKING_CARD_HEIGHT : MIN_BOOKING_CARD_HEIGHT;
 
   const dragRef = useRef<
     | {
@@ -1701,33 +1706,35 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
 
         {statusText ? <div className={styles.calendarInlineStatus}>{statusText}</div> : null}
 
-        {viewMode === "day" && isMobileViewport && drawerStage === "closed" ? (
-          <div className={styles.calendarMobileActionBar}>
-            <button type="button" className={styles.calendarMobileJumpNow} onClick={jumpToCurrentTime}>
-              Сейчас
-            </button>
-            <button
-              type="button"
-              className={styles.calendarMobileCreateButton}
-              onClick={() => openNewVisit(getSuggestedVisitStartTime())}
-            >
-              + Запись
-            </button>
-          </div>
-        ) : null}
-
         {viewMode === "day" ? (
         <div ref={scrollFrameRef} className={styles.calendarV2ScrollFrame}>
-          <div className={styles.calendarV2Grid}>
+          <div className={styles.calendarV2Grid} style={{ minHeight: `${calendarGridHeight}px` }}>
             <div className={styles.calendarV2HourColumn}>
               {hours.map((hour) => (
-                <div key={hour} className={styles.calendarV2HourLabel} style={{ top: `${topOffset + hour * CALENDAR_HOUR_HEIGHT}px` }}>
+                <div key={hour} className={styles.calendarV2HourLabel} style={{ top: `${topOffset + hour * calendarHourHeight}px` }}>
                   {`${String(hour).padStart(2, "0")}:00`}
                 </div>
               ))}
+              {isMobileViewport && drawerStage === "closed" ? (
+                <button
+                  type="button"
+                  className={styles.calendarMobilePlusButton}
+                  onClick={() => openNewVisit(getSuggestedVisitStartTime())}
+                  aria-label={t.quickNewVisit}
+                >
+                  +
+                </button>
+              ) : null}
             </div>
 
-            <div className={styles.calendarV2Body}>
+            <div
+              className={styles.calendarV2Body}
+              style={{
+                minHeight: `${calendarGridHeight}px`,
+                ["--calendar-slot-step-height" as never]: `${slotHeight}px`,
+                ["--calendar-hour-block-height" as never]: `${calendarHourHeight}px`
+              }}
+            >
               {!selectedDayIsWorking ? (
                 <div
                   className={styles.nonWorkingZone}
@@ -1819,7 +1826,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
 
               {(snapshot?.appointments ?? []).map((appointment) => {
                 const top = topOffset + timeToMinutes(appointment.startTime) * minuteHeight;
-                const height = Math.max(MIN_BOOKING_CARD_HEIGHT, (timeToMinutes(appointment.endTime) - timeToMinutes(appointment.startTime)) * minuteHeight);
+                const height = Math.max(bookingCardMinHeight, (timeToMinutes(appointment.endTime) - timeToMinutes(appointment.startTime)) * minuteHeight);
                 const isPastAppointment = getDateTimeValue(appointment.appointmentDate, appointment.endTime) < Date.now();
                 const isBlocked = appointment.kind === "blocked";
                 const isPendingApproval = appointment.attendance === "pending";
