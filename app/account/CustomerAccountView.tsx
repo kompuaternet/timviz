@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import BrandLogo from "../BrandLogo";
 import GlobalLanguageSwitcher from "../GlobalLanguageSwitcher";
 import PublicSearch from "../PublicSearch";
@@ -320,6 +320,8 @@ export default function CustomerAccountView({
   const [statusText, setStatusText] = useState("");
   const [phoneCountry, setPhoneCountry] = useState("Ukraine");
   const [localPhone, setLocalPhone] = useState("");
+  const [phoneMenuOpen, setPhoneMenuOpen] = useState(false);
+  const phoneMenuRef = useRef<HTMLDivElement | null>(null);
 
   const nowKey = new Date().toISOString().slice(0, 16);
   const phoneRule = getPhoneRule(phoneCountry);
@@ -342,6 +344,23 @@ export default function CustomerAccountView({
     setPhoneCountry(matchedCountry);
     setLocalPhone(formatPhoneLocal(getPhoneLocalDigits(account.phone, nextRule), nextRule));
   }, [account?.phone, session?.locale]);
+
+  useEffect(() => {
+    function handlePointerDown(event: MouseEvent) {
+      if (!phoneMenuRef.current) {
+        return;
+      }
+
+      if (!phoneMenuRef.current.contains(event.target as Node)) {
+        setPhoneMenuOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+    };
+  }, []);
 
   const filteredBookings = useMemo(() => {
     if (activityFilter === "all") {
@@ -488,25 +507,44 @@ export default function CustomerAccountView({
                     <label className={styles.fieldRow}>
                       <span className={styles.fieldLabel}>{t.phone}</span>
                       <div className={styles.phoneRow}>
-                        <select
-                          className={`${styles.select} ${styles.phonePrefix}`}
-                          value={phoneCountry}
-                          onChange={(event) => {
-                            const nextCountry = event.target.value;
-                            const nextRule = getPhoneRule(nextCountry);
-                            setPhoneCountry(nextCountry);
-                            setLocalPhone(formatPhoneLocal(onlyPhoneDigits(localPhone), nextRule));
-                          }}
-                        >
-                          {phoneCountries.map((country) => {
-                            const rule = getPhoneRule(country);
-                            return (
-                              <option key={country} value={country}>
-                                {`${rule.prefix} · ${country}`}
-                              </option>
-                            );
-                          })}
-                        </select>
+                        <div className={styles.phonePrefixSelect} ref={phoneMenuRef}>
+                          <button
+                            type="button"
+                            className={styles.phonePrefixTrigger}
+                            onClick={() => setPhoneMenuOpen((value) => !value)}
+                            aria-haspopup="listbox"
+                            aria-expanded={phoneMenuOpen}
+                          >
+                            <span>{phoneRule.prefix}</span>
+                            <span className={styles.phonePrefixChevron} aria-hidden="true" />
+                          </button>
+                          {phoneMenuOpen ? (
+                            <div className={styles.phonePrefixMenu} role="listbox">
+                              {phoneCountries.map((country) => {
+                                const rule = getPhoneRule(country);
+                                const active = country === phoneCountry;
+                                return (
+                                  <button
+                                    key={country}
+                                    type="button"
+                                    className={`${styles.phonePrefixOption} ${active ? styles.phonePrefixOptionActive : ""}`}
+                                    onClick={() => {
+                                      const nextRule = getPhoneRule(country);
+                                      setPhoneCountry(country);
+                                      setLocalPhone(formatPhoneLocal(onlyPhoneDigits(localPhone), nextRule));
+                                      setPhoneMenuOpen(false);
+                                    }}
+                                    role="option"
+                                    aria-selected={active}
+                                  >
+                                    <strong>{rule.prefix}</strong>
+                                    <span>{country}</span>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          ) : null}
+                        </div>
                         <input
                           className={styles.input}
                           type="tel"
@@ -521,14 +559,23 @@ export default function CustomerAccountView({
                       <span className={styles.fieldLabel}>{t.email}</span>
                       <input className={styles.input} value={account.email} readOnly />
                     </label>
-                    <div className={styles.inlineGrid}>
+                    <div className={`${styles.inlineGrid} ${styles.dateGenderGrid}`}>
                       <label className={styles.fieldRow}>
                         <span className={styles.fieldLabel}>{t.birthday}</span>
-                        <input className={styles.input} type="date" value={account.birthday} onChange={(event) => setAccount({ ...account, birthday: event.target.value })} />
+                        <input
+                          className={`${styles.input} ${styles.compactControl}`}
+                          type="date"
+                          value={account.birthday}
+                          onChange={(event) => setAccount({ ...account, birthday: event.target.value })}
+                        />
                       </label>
                       <label className={styles.fieldRow}>
                         <span className={styles.fieldLabel}>{t.gender}</span>
-                        <select className={styles.select} value={account.gender} onChange={(event) => setAccount({ ...account, gender: event.target.value })}>
+                        <select
+                          className={`${styles.select} ${styles.compactControl}`}
+                          value={account.gender}
+                          onChange={(event) => setAccount({ ...account, gender: event.target.value })}
+                        >
                           <option value="">{t.genderUnspecified}</option>
                           <option value="female">{t.genderFemale}</option>
                           <option value="male">{t.genderMale}</option>

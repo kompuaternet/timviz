@@ -179,8 +179,86 @@
 
 .phoneRow {
   display: grid;
-  grid-template-columns: 180px minmax(0, 1fr);
+  grid-template-columns: 108px minmax(0, 1fr);
   gap: 10px;
+}
+
+.phonePrefixSelect {
+  position: relative;
+}
+
+.phonePrefixTrigger {
+  width: 100%;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 14px;
+  background: #fff;
+  color: #18181b;
+  font: inherit;
+  cursor: pointer;
+}
+
+.phonePrefixTrigger:focus {
+  outline: none;
+  border-color: rgba(109, 77, 255, 0.42);
+  box-shadow: 0 0 0 4px rgba(109, 77, 255, 0.14);
+}
+
+.phonePrefixChevron {
+  width: 9px;
+  height: 9px;
+  border-right: 1.5px solid #52525b;
+  border-bottom: 1.5px solid #52525b;
+  transform: rotate(45deg) translateY(-2px);
+  flex: 0 0 auto;
+}
+
+.phonePrefixMenu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 30;
+  width: min(260px, calc(100vw - 48px));
+  max-height: 280px;
+  overflow: auto;
+  padding: 8px;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 20px 44px rgba(15, 23, 42, 0.14);
+}
+
+.phonePrefixOption {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: #18181b;
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.phonePrefixOption strong {
+  min-width: 42px;
+}
+
+.phonePrefixOption span {
+  color: #52525b;
+}
+
+.phonePrefixOption:hover,
+.phonePrefixOptionActive {
+  background: #f5f3ff;
 }
 
 .fieldValue {
@@ -299,14 +377,21 @@
   background-repeat: no-repeat;
 }
 
-.phonePrefix {
-  white-space: nowrap;
-}
-
 .inlineGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 14px;
+}
+
+.dateGenderGrid {
+  grid-template-columns: minmax(0, 1.08fr) minmax(132px, 0.92fr);
+  gap: 10px;
+}
+
+.compactControl {
+  min-height: 44px;
+  padding: 10px 12px;
+  font-size: 0.96rem;
 }
 
 .status {
@@ -552,8 +637,15 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .inlineGrid,
-  .phoneRow {
+  .inlineGrid {
     grid-template-columns: 1fr;
+  }
+
+  .phoneRow {
+    grid-template-columns: 98px minmax(0, 1fr);
+  }
+
+  .dateGenderGrid {
+    grid-template-columns: minmax(0, 1fr) minmax(128px, 0.92fr);
   }
 }
