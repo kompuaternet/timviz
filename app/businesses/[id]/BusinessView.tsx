@@ -925,6 +925,17 @@ export default function BusinessView({
             </div>
           )}
 
+          {mode === "modal" && bookingStep === "time" ? (
+            <button
+              type="button"
+              className="primary-button company-booking-gradient-button company-summary-action"
+              onClick={goNext}
+              disabled={!canGoToNextStep()}
+            >
+              {t.goToConfirm}
+            </button>
+          ) : null}
+
           {mode === "page" ? (
             <button
               type="button"
@@ -1331,7 +1342,7 @@ export default function BusinessView({
 
                     <button
                       type="button"
-                      className="primary-button company-time-cta"
+                      className="primary-button company-booking-gradient-button company-time-cta"
                       onClick={goNext}
                       disabled={!canGoToNextStep()}
                     >
@@ -1352,7 +1363,7 @@ export default function BusinessView({
                         <strong>{t.signInGoogle}</strong>
                         <p>{t.signInHint}</p>
                         <a
-                          className="primary-button company-google-button"
+                          className="primary-button company-booking-gradient-button company-google-button"
                           href={`/api/public/auth/google/start?returnTo=${encodeURIComponent(returnToUrl)}`}
                         >
                           {t.signInGoogle}
@@ -1452,7 +1463,7 @@ export default function BusinessView({
 
                         <button
                           type="submit"
-                          className="primary-button submit-button"
+                          className="primary-button company-booking-gradient-button submit-button"
                           disabled={!selectedTime || !selectedDate || !selectedServices.length}
                         >
                           {t.confirmBooking}
@@ -1470,7 +1481,7 @@ export default function BusinessView({
               {bookingStep !== "confirm" && bookingStep !== "time" ? (
                 <button
                   type="button"
-                  className="primary-button company-modal-next"
+                  className="primary-button company-booking-gradient-button company-modal-next"
                   onClick={goNext}
                   disabled={!canGoToNextStep()}
                 >
