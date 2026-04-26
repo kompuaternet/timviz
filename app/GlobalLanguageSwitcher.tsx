@@ -108,6 +108,10 @@ export default function GlobalLanguageSwitcher({ mode = "fixed" }: GlobalLanguag
     pathname?.startsWith("/ru/businesses/") ||
     pathname?.startsWith("/uk/businesses/") ||
     pathname?.startsWith("/en/businesses/") ||
+    pathname?.startsWith("/account") ||
+    pathname?.startsWith("/ru/account") ||
+    pathname?.startsWith("/uk/account") ||
+    pathname?.startsWith("/en/account") ||
     pathname?.startsWith("/pro/create-account") ||
     pathname?.startsWith("/pro/setup");
 

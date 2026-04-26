@@ -1,15 +1,27 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import BrandLogo from "../BrandLogo";
+import GlobalLanguageSwitcher from "../GlobalLanguageSwitcher";
+import PublicSearch from "../PublicSearch";
 import type {
   CustomerAccountRecord,
   CustomerAddress,
   CustomerBookingSummary,
   CustomerNotifications
 } from "../../lib/customer-account";
+import type { PublicSearchIndex } from "../../lib/public-search";
 import type { PublicCustomerSession } from "../../lib/public-customer-auth";
+import {
+  buildInternationalPhone,
+  formatPhoneLocal,
+  getPhoneLocalDigits,
+  getPhoneRule,
+  inferPhoneCountryFromLocale,
+  onlyPhoneDigits,
+  phoneCountries
+} from "../../lib/phone-format";
 import { getLocalizedPath, type SiteLanguage } from "../../lib/site-language";
 import styles from "./customer-account.module.css";
 
@@ -290,12 +302,14 @@ export default function CustomerAccountView({
   language,
   session,
   initialAccount,
-  initialBookings
+  initialBookings,
+  searchIndex
 }: {
   language: SiteLanguage;
   session: PublicCustomerSession | null;
   initialAccount: CustomerAccountRecord | null;
   initialBookings: CustomerBookingSummary[];
+  searchIndex: PublicSearchIndex;
 }) {
   const t = copy[language];
   const [activeSection, setActiveSection] = useState<AccountSection>("profile");
@@ -304,8 +318,30 @@ export default function CustomerAccountView({
   const [bookings] = useState<CustomerBookingSummary[]>(initialBookings);
   const [selectedBookingId, setSelectedBookingId] = useState(initialBookings[0]?.id ?? "");
   const [statusText, setStatusText] = useState("");
+  const [phoneCountry, setPhoneCountry] = useState("Ukraine");
+  const [localPhone, setLocalPhone] = useState("");
 
   const nowKey = new Date().toISOString().slice(0, 16);
+  const phoneRule = getPhoneRule(phoneCountry);
+
+  useEffect(() => {
+    if (!account) {
+      return;
+    }
+
+    const digits = onlyPhoneDigits(account.phone);
+    const matchedCountry =
+      phoneCountries.find((country) => {
+        const prefixDigits = onlyPhoneDigits(getPhoneRule(country).prefix);
+        return digits.startsWith(prefixDigits);
+      }) ||
+      inferPhoneCountryFromLocale(session?.locale || "") ||
+      "Ukraine";
+
+    const nextRule = getPhoneRule(matchedCountry);
+    setPhoneCountry(matchedCountry);
+    setLocalPhone(formatPhoneLocal(getPhoneLocalDigits(account.phone, nextRule), nextRule));
+  }, [account?.phone, session?.locale]);
 
   const filteredBookings = useMemo(() => {
     if (activityFilter === "all") {
@@ -323,12 +359,16 @@ export default function CustomerAccountView({
     filteredBookings.find((item) => item.id === selectedBookingId) ?? filteredBookings[0] ?? null;
 
   async function saveAccount(nextAccount: CustomerAccountRecord) {
+    const nextPhone = localPhone.trim() ? buildInternationalPhone(phoneCountry, localPhone) : "";
     const response = await fetch("/api/public/account", {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json"
       },
-      body: JSON.stringify(nextAccount)
+      body: JSON.stringify({
+        ...nextAccount,
+        phone: nextPhone
+      })
     });
 
     if (!response.ok) {
@@ -372,14 +412,12 @@ export default function CustomerAccountView({
         <Link href={getLocalizedPath(language)} className={styles.brand}>
           <BrandLogo />
         </Link>
-        <div className={styles.searchBar} aria-hidden="true">
-          <div className={styles.searchCell}>{t.allServices}</div>
-          <div className={styles.searchCell}>{t.currentLocation}</div>
-          <div className={styles.searchCell}>{t.anyTime}</div>
-          <button type="button" className={styles.searchButton}>⌕</button>
+        <div className={styles.searchHost}>
+          <PublicSearch index={searchIndex} language={language} />
         </div>
         <div className={styles.headerActions}>
           <div className={styles.avatar}>{getInitials(account.fullName || session.fullName)}</div>
+          <GlobalLanguageSwitcher mode="inline" />
         </div>
       </header>
 
@@ -449,7 +487,35 @@ export default function CustomerAccountView({
                     </div>
                     <label className={styles.fieldRow}>
                       <span className={styles.fieldLabel}>{t.phone}</span>
-                      <input className={styles.input} value={account.phone} onChange={(event) => setAccount({ ...account, phone: event.target.value })} />
+                      <div className={styles.phoneRow}>
+                        <select
+                          className={`${styles.select} ${styles.phonePrefix}`}
+                          value={phoneCountry}
+                          onChange={(event) => {
+                            const nextCountry = event.target.value;
+                            const nextRule = getPhoneRule(nextCountry);
+                            setPhoneCountry(nextCountry);
+                            setLocalPhone(formatPhoneLocal(onlyPhoneDigits(localPhone), nextRule));
+                          }}
+                        >
+                          {phoneCountries.map((country) => {
+                            const rule = getPhoneRule(country);
+                            return (
+                              <option key={country} value={country}>
+                                {`${rule.prefix} · ${country}`}
+                              </option>
+                            );
+                          })}
+                        </select>
+                        <input
+                          className={styles.input}
+                          type="tel"
+                          inputMode="numeric"
+                          placeholder={phoneRule.placeholder}
+                          value={localPhone}
+                          onChange={(event) => setLocalPhone(formatPhoneLocal(event.target.value, phoneRule))}
+                        />
+                      </div>
                     </label>
                     <label className={styles.fieldRow}>
                       <span className={styles.fieldLabel}>{t.email}</span>

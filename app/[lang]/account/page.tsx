@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import CustomerAccountView from "../../account/CustomerAccountView";
 import { getCustomerDashboard } from "../../../lib/customer-account";
+import { getPublicSearchIndex } from "../../../lib/public-search";
 import { verifyPublicCustomerSession, getPublicCustomerCookieName } from "../../../lib/public-customer-auth";
 import { buildLanguageAlternates, buildMetadata } from "../../../lib/seo";
 import { isSiteLanguage, type SiteLanguage } from "../../../lib/site-language";
@@ -55,7 +56,10 @@ export default async function LocalizedAccountPage({ params }: LocalizedAccountP
 
   const cookieStore = await cookies();
   const session = verifyPublicCustomerSession(cookieStore.get(getPublicCustomerCookieName())?.value);
-  const dashboard = session ? await getCustomerDashboard(session) : null;
+  const [dashboard, searchIndex] = await Promise.all([
+    session ? getCustomerDashboard(session) : Promise.resolve(null),
+    getPublicSearchIndex()
+  ]);
 
   return (
     <CustomerAccountView
@@ -63,6 +67,7 @@ export default async function LocalizedAccountPage({ params }: LocalizedAccountP
       session={session}
       initialAccount={dashboard?.account ?? null}
       initialBookings={dashboard?.bookings ?? []}
+      searchIndex={searchIndex}
     />
   );
 }
