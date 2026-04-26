@@ -20,6 +20,7 @@ export type PublicBookingEntry = {
   appointmentDate: string;
   appointmentTime: string;
   serviceName: string;
+  endTime?: string;
 };
 
 export type PublicBookingConfig = {
@@ -41,6 +42,7 @@ export function getPublicBookingSlots(input: {
   config: PublicBookingConfig;
   date: string;
   serviceName: string;
+  durationMinutesOverride?: number;
   bookings?: PublicBookingEntry[];
 }) {
   if (!input.date.trim()) {
@@ -56,7 +58,10 @@ export function getPublicBookingSlots(input: {
   }
 
   const interval = Math.max(5, input.config.bookingIntervalMinutes ?? 15);
-  const duration = getServiceDuration(input.config.services, input.serviceName);
+  const duration = Math.max(
+    5,
+    input.durationMinutesOverride ?? getServiceDuration(input.config.services, input.serviceName)
+  );
   const dayStart = timeToMinutes(daySchedule.startTime);
   const dayEnd = timeToMinutes(daySchedule.endTime);
   const breaks = getDayBreaks(daySchedule);
@@ -64,13 +69,22 @@ export function getPublicBookingSlots(input: {
     .filter((booking) => booking.appointmentDate === input.date)
     .map((booking) => {
       const start = booking.appointmentTime;
-      const end = addMinutesToTime(start, getServiceDuration(input.config.services, booking.serviceName));
+      const end =
+        booking.endTime?.trim() ||
+        addMinutesToTime(start, getServiceDuration(input.config.services, booking.serviceName));
       return { start, end };
     });
 
   const slots: string[] = [];
+  const now = new Date();
+  const todayKey = formatDateKey(now);
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
   for (let minutes = dayStart; minutes + duration <= dayEnd; minutes += interval) {
+    if (input.date === todayKey && minutes < currentMinutes) {
+      continue;
+    }
+
     const start = minutesToTime(minutes);
     const end = minutesToTime(minutes + duration);
 
@@ -91,6 +105,7 @@ export function getPublicBookingSlots(input: {
 export function findNextPublicBookingDate(input: {
   config: PublicBookingConfig;
   serviceName: string;
+  durationMinutesOverride?: number;
   bookings?: PublicBookingEntry[];
   startDate: string;
   horizonDays?: number;
@@ -108,6 +123,7 @@ export function findNextPublicBookingDate(input: {
         config: input.config,
         date: dateKey,
         serviceName: input.serviceName,
+        durationMinutesOverride: input.durationMinutesOverride,
         bookings: input.bookings
       }).length > 0
     ) {

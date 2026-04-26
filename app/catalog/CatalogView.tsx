@@ -221,6 +221,21 @@ function formatDateTime(date: string, time: string, language: SiteLanguage) {
   return parts.join(" · ");
 }
 
+function shouldShowAvailabilityChip(result: PublicSearchResult, language: SiteLanguage) {
+  const disabledLabel = catalogCopy[language].onlineBookingDisabled;
+  const candidate = getLocalizedText(
+    result.availabilityLabel,
+    result.localizedAvailabilityLabel,
+    language
+  );
+
+  if (!candidate.trim()) {
+    return false;
+  }
+
+  return !(candidate === disabledLabel && !result.onlineBookingEnabled);
+}
+
 export default function CatalogView({
   results,
   query,
@@ -277,17 +292,22 @@ export default function CatalogView({
             </div>
 
             <div className="chip-row">
-              <span className={`chip ${result.available ? "chip-success" : "chip-muted"}`}>
-                {getLocalizedText(result.availabilityLabel, result.localizedAvailabilityLabel, language) || (time ? t.availableAt(time) : t.chooseTime)}
-              </span>
+              {shouldShowAvailabilityChip(result, language) ? (
+                <span className={`chip ${result.available ? "chip-success" : "chip-muted"}`}>
+                  {getLocalizedText(result.availabilityLabel, result.localizedAvailabilityLabel, language) || (time ? t.availableAt(time) : t.chooseTime)}
+                </span>
+              ) : null}
               <span className={`chip ${result.onlineBookingEnabled ? "chip-success" : "chip-muted"}`}>
                 {result.onlineBookingEnabled ? t.onlineBookingEnabled : t.onlineBookingDisabled}
               </span>
-              {result.services.slice(0, 4).map((service) => (
+              {result.services.slice(0, 5).map((service) => (
                 <span key={service.id} className="chip">
                   {getLocalizedText(service.name, service.localizedName, language)}
                 </span>
               ))}
+              {result.services.length > 5 ? (
+                <span className="chip">{`+${result.services.length - 5}`}</span>
+              ) : null}
             </div>
 
             <Link

@@ -14,6 +14,7 @@ export type PublicBusinessProfile = {
   bookings: {
     appointmentDate: string;
     appointmentTime: string;
+    endTime: string;
     serviceName: string;
   }[];
 };
@@ -78,6 +79,7 @@ export async function getPublicBusinessProfile(
       .map((appointment) => ({
         appointmentDate: appointment.appointmentDate,
         appointmentTime: appointment.startTime,
+        endTime: appointment.endTime,
         serviceName: ""
       }))
   };

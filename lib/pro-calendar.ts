@@ -384,6 +384,7 @@ export async function createCalendarAppointment(input: {
   notes: string;
   priceAmount?: number;
   attendance?: CalendarAttendanceStatus;
+  allowMissingService?: boolean;
 }) {
   const workspace = await getWorkspaceSnapshot(input.professionalId);
 
@@ -400,12 +401,15 @@ export async function createCalendarAppointment(input: {
     throw new Error("Service name is required.");
   }
 
+  const existingService = workspace.services.find((item) => item.name === serviceName);
   const service =
-    workspace.services.find((item) => item.name === serviceName) ??
-    (await ensureServiceForProfessional({
-      professionalId: input.professionalId,
-      serviceName
-    }));
+    existingService ??
+    (input.allowMissingService
+      ? null
+      : await ensureServiceForProfessional({
+          professionalId: input.professionalId,
+          serviceName
+        }));
 
   const appointment: CalendarAppointment = {
     id: makeId("cal"),
@@ -415,17 +419,20 @@ export async function createCalendarAppointment(input: {
     startTime: input.startTime,
     endTime:
       input.endTime ??
-      addMinutes(input.startTime, getDefaultDuration(service.name, [...workspace.services, service])),
+      addMinutes(
+        input.startTime,
+        getDefaultDuration(service?.name ?? serviceName, service ? [...workspace.services, service] : workspace.services)
+      ),
     kind: "appointment",
     customerName: input.customerName.trim() || "Клиент",
     customerPhone: input.customerPhone.trim(),
-    serviceName: service.name,
+    serviceName: service?.name ?? serviceName,
     notes: input.notes.trim(),
     attendance: input.attendance ?? "confirmed",
     priceAmount:
       typeof input.priceAmount === "number" && Number.isFinite(input.priceAmount)
         ? Math.max(0, input.priceAmount)
-        : service.price,
+        : service?.price ?? 0,
     createdAt: new Date().toISOString()
   };
 

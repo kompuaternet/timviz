@@ -1223,7 +1223,24 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
 
   function updateVisitItem(index: number, patch: Partial<VisitServiceDraft>) {
     setVisitItems((current) =>
-      current.map((item, itemIndex) => (itemIndex === index ? { ...item, ...patch } : item))
+      current.map((item, itemIndex) => {
+        if (itemIndex !== index) {
+          return item;
+        }
+
+        const nextItem = { ...item, ...patch };
+
+        if (patch.startTime && !patch.endTime) {
+          const originalDuration = Math.max(15, timeToMinutes(item.endTime) - timeToMinutes(item.startTime));
+          nextItem.endTime = minutesToTime(timeToMinutes(patch.startTime) + originalDuration);
+        }
+
+        if (patch.endTime && timeToMinutes(patch.endTime) <= timeToMinutes(nextItem.startTime)) {
+          nextItem.endTime = minutesToTime(timeToMinutes(nextItem.startTime) + 15);
+        }
+
+        return nextItem;
+      })
     );
   }
 

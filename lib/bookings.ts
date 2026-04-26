@@ -5,6 +5,7 @@ import { getPublicBookingSlots } from "./public-booking";
 import { getBusinessDirectorySnapshot, type BusinessRecord, type ServiceRecord } from "./pro-data";
 import { createCalendarAppointment, getPublicCalendarAppointments } from "./pro-calendar";
 import { getSupabaseAdmin, isSupabaseConfigured } from "./supabase";
+import { addMinutesToTime } from "./work-schedule";
 
 export type BookingStatus = "pending" | "confirmed" | "completed" | "cancelled";
 
@@ -36,6 +37,7 @@ export type BookingInput = {
 export type PublicBusinessBookingInput = {
   businessId: string;
   serviceName: string;
+  serviceNames?: string[];
   appointmentDate: string;
   appointmentTime: string;
   customerName: string;
@@ -194,11 +196,33 @@ export async function createBusinessBooking(input: PublicBusinessBookingInput) {
   const businessServices = directory.services
     .filter((service) => service.businessId === business.id)
     .filter(isServicePubliclyVisible);
-  const service = businessServices.find((item) => item.name === input.serviceName.trim());
+  const requestedServiceNames = Array.from(
+    new Set(
+      (input.serviceNames?.length ? input.serviceNames : [input.serviceName])
+        .map((item) => item.trim())
+        .filter(Boolean)
+    )
+  );
 
-  if (!service) {
+  if (requestedServiceNames.length === 0) {
     throw new Error("Service not found.");
   }
+
+  const selectedServices = requestedServiceNames
+    .map((name) => businessServices.find((item) => item.name === name))
+    .filter((item): item is ServiceRecord => Boolean(item));
+
+  if (selectedServices.length !== requestedServiceNames.length) {
+    throw new Error("Service not found.");
+  }
+
+  const primaryService = selectedServices[0];
+  const totalDurationMinutes = selectedServices.reduce(
+    (sum, item) => sum + Math.max(5, item.durationMinutes ?? 60),
+    0
+  );
+  const totalPrice = selectedServices.reduce((sum, item) => sum + Math.max(0, item.price || 0), 0);
+  const combinedServiceName = selectedServices.map((item) => item.name).join(" + ");
 
   const ownerProfessionalIds = directory.memberships
     .filter((membership) => membership.businessId === business.id && membership.scope === "owner")
@@ -226,7 +250,8 @@ export async function createBusinessBooking(input: PublicBusinessBookingInput) {
     .map((appointment) => ({
       appointmentDate: appointment.appointmentDate,
       appointmentTime: appointment.startTime,
-      serviceName: ""
+      endTime: appointment.endTime,
+      serviceName: appointment.kind === "blocked" ? "blocked" : ""
     }));
 
   const availableSlots = getPublicBookingSlots({
@@ -240,7 +265,8 @@ export async function createBusinessBooking(input: PublicBusinessBookingInput) {
       }))
     },
     date: input.appointmentDate,
-    serviceName: service.name,
+    serviceName: primaryService.name,
+    durationMinutesOverride: totalDurationMinutes,
     bookings: publicAppointments
   });
 
@@ -252,7 +278,7 @@ export async function createBusinessBooking(input: PublicBusinessBookingInput) {
     id: createBookingId(),
     salonSlug: `business:${business.id}`,
     salonName: business.name,
-    serviceName: service.name,
+    serviceName: combinedServiceName,
     appointmentDate: input.appointmentDate,
     appointmentTime: input.appointmentTime,
     customerName: input.customerName.trim(),
@@ -295,10 +321,12 @@ export async function createBusinessBooking(input: PublicBusinessBookingInput) {
     startTime: input.appointmentTime,
     customerName: input.customerName,
     customerPhone: input.customerPhone,
-    serviceName: service.name,
+    serviceName: combinedServiceName,
     notes: input.customerNotes,
-    priceAmount: service.price,
-    attendance: "pending"
+    priceAmount: totalPrice,
+    attendance: "pending",
+    endTime: addMinutesToTime(input.appointmentTime, totalDurationMinutes),
+    allowMissingService: selectedServices.length > 1
   });
 
   return booking;

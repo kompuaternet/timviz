@@ -5,6 +5,16 @@ import { buildInternationalPhone, isPhoneValid } from "../../../lib/phone-format
 import { createBusinessBooking } from "../../../lib/bookings";
 
 export async function createBusinessBookingAction(formData: FormData) {
+  const serviceNamesRaw = String(formData.get("serviceNamesJson") ?? "[]");
+  let serviceNames: string[] = [];
+
+  try {
+    const parsed = JSON.parse(serviceNamesRaw);
+    serviceNames = Array.isArray(parsed) ? parsed.filter((item): item is string => typeof item === "string") : [];
+  } catch {
+    serviceNames = [];
+  }
+
   const phoneCountry = String(formData.get("customerPhoneCountry") ?? "");
   const phoneLocal = String(formData.get("customerPhoneLocal") ?? "");
   const customerPhone =
@@ -19,6 +29,7 @@ export async function createBusinessBookingAction(formData: FormData) {
   const booking = await createBusinessBooking({
     businessId: String(formData.get("businessId") ?? ""),
     serviceName: String(formData.get("serviceName") ?? ""),
+    serviceNames,
     appointmentDate: String(formData.get("appointmentDate") ?? ""),
     appointmentTime: String(formData.get("appointmentTime") ?? ""),
     customerName: String(formData.get("customerName") ?? ""),
