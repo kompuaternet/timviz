@@ -9,6 +9,7 @@ const chromeCopy = {
   ru: {
     navAria: "Главное меню",
     login: "Войти",
+    clientLogin: "Вход для клиента",
     create: "Создать профиль компании",
     menu: "Меню",
     clients: "Для клиентов",
@@ -16,6 +17,7 @@ const chromeCopy = {
     clientAuth: "Вход или регистрация",
     business: "Для бизнеса",
     dashboard: "Войти в кабинет",
+    businessLogin: "Вход для бизнеса",
     features: "Возможности для бизнеса",
     about: "О Timviz",
     catalog: "Каталог",
@@ -26,6 +28,7 @@ const chromeCopy = {
   uk: {
     navAria: "Головне меню",
     login: "Увійти",
+    clientLogin: "Вхід для клієнта",
     create: "Створити профіль компанії",
     menu: "Меню",
     clients: "Для клієнтів",
@@ -33,6 +36,7 @@ const chromeCopy = {
     clientAuth: "Вхід або реєстрація",
     business: "Для бізнесу",
     dashboard: "Увійти в кабінет",
+    businessLogin: "Вхід для бізнесу",
     features: "Можливості для бізнесу",
     about: "Про Timviz",
     catalog: "Каталог",
@@ -43,6 +47,7 @@ const chromeCopy = {
   en: {
     navAria: "Main menu",
     login: "Log in",
+    clientLogin: "Client sign in",
     create: "Create company profile",
     menu: "Menu",
     clients: "For clients",
@@ -50,6 +55,7 @@ const chromeCopy = {
     clientAuth: "Log in or register",
     business: "For business",
     dashboard: "Open dashboard",
+    businessLogin: "Business sign in",
     features: "Business features",
     about: "About Timviz",
     catalog: "Catalog",
@@ -72,7 +78,13 @@ export default function PublicLegalPage({ copy, language }: PublicLegalPageProps
       <header className="public-header">
         <a className="public-logo" href={getLocalizedPath(language)}><BrandLogo /></a>
         <nav className="public-nav" aria-label={t.navAria}>
-          <a href="/pro/login" className="public-login">{t.login}</a>
+          <details className="public-menu public-entry-menu">
+            <summary className="public-login-entry">{t.login}</summary>
+            <div className="public-menu-panel public-entry-panel">
+              <a href={getLocalizedPath(language, "/account")}>{t.clientLogin}</a>
+              <a href="/pro/login">{t.businessLogin}</a>
+            </div>
+          </details>
           <a href={getLocalizedPath(language, "/for-business")} className="public-company-button">{t.create}</a>
           <details className="public-menu">
             <summary>
@@ -82,7 +94,7 @@ export default function PublicLegalPage({ copy, language }: PublicLegalPageProps
             <div className="public-menu-panel">
               <strong>{t.clients}</strong>
               <a href={getLocalizedPath(language, "/catalog")}>{t.browse}</a>
-              <a href={getLocalizedPath(language, "/catalog")}>{t.clientAuth}</a>
+              <a href={getLocalizedPath(language, "/account")}>{t.clientAuth}</a>
               <a href={getLocalizedPath(language, "/privacy")}>{t.privacy}</a>
               <a href={getLocalizedPath(language, "/terms")}>{t.terms}</a>
               <hr />

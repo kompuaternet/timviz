@@ -234,6 +234,26 @@
   font-weight: 850;
 }
 
+.public-login-entry {
+  min-height: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 14px;
+  border-radius: 999px;
+  font-weight: 850;
+  list-style: none;
+  cursor: pointer;
+}
+
+.public-entry-menu summary::-webkit-details-marker {
+  display: none;
+}
+
+.public-entry-panel {
+  width: 240px;
+}
+
 .public-company-button,
 .public-menu summary,
 .public-download-button {

@@ -66,6 +66,7 @@ const copy = {
   ru: {
     navAria: "Главное меню",
     login: "Войти",
+    clientLogin: "Вход для клиента",
     create: "Создать профиль компании",
     menu: "Меню",
     clients: "Для клиентов",
@@ -75,6 +76,7 @@ const copy = {
     reviews: "Отзывы",
     business: "Для бизнеса",
     dashboard: "Войти в кабинет",
+    businessLogin: "Вход для бизнеса",
     features: "Возможности для бизнеса",
     heroTitle: "Бронируйте услуги рядом",
     heroText: "Все услуги, которые нужны каждый день, теперь в одном месте.",
@@ -118,6 +120,7 @@ const copy = {
   uk: {
     navAria: "Головне меню",
     login: "Увійти",
+    clientLogin: "Вхід для клієнта",
     create: "Створити профіль компанії",
     menu: "Меню",
     clients: "Для клієнтів",
@@ -127,6 +130,7 @@ const copy = {
     reviews: "Відгуки",
     business: "Для бізнесу",
     dashboard: "Увійти в кабінет",
+    businessLogin: "Вхід для бізнесу",
     features: "Можливості для бізнесу",
     heroTitle: "Бронюйте послуги поруч",
     heroText: "Усі послуги, які потрібні щодня, тепер в одному місці.",
@@ -170,6 +174,7 @@ const copy = {
   en: {
     navAria: "Main menu",
     login: "Log in",
+    clientLogin: "Client sign in",
     create: "Create company profile",
     menu: "Menu",
     clients: "For clients",
@@ -179,6 +184,7 @@ const copy = {
     reviews: "Reviews",
     business: "For business",
     dashboard: "Open dashboard",
+    businessLogin: "Business sign in",
     features: "Business features",
     heroTitle: "Book services nearby",
     heroText: "Everyday services, all in one place.",
@@ -277,7 +283,13 @@ export default function PublicHome({ searchIndex, initialLanguage = "ru" }: Publ
       <header className="public-header">
         <a className="public-logo" href={getLocalizedPath(language)}><BrandLogo /></a>
         <nav className="public-nav" aria-label={String(t.navAria)}>
-          <a href="/pro/login" className="public-login">{String(t.login)}</a>
+          <details className="public-menu public-entry-menu">
+            <summary className="public-login-entry">{String(t.login)}</summary>
+            <div className="public-menu-panel public-entry-panel">
+              <a href={getLocalizedPath(language, "/account")}>{String(t.clientLogin)}</a>
+              <a href="/pro/login">{String(t.businessLogin)}</a>
+            </div>
+          </details>
           <a href={getLocalizedPath(language, "/for-business")} className="public-company-button">{String(t.create)}</a>
           <details className="public-menu">
             <summary>
@@ -287,7 +299,7 @@ export default function PublicHome({ searchIndex, initialLanguage = "ru" }: Publ
             <div className="public-menu-panel">
               <strong>{String(t.clients)}</strong>
               <a href={getLocalizedPath(language, "/catalog")}>{String(t.browse)}</a>
-              <a href={getLocalizedPath(language, "/catalog")}>{String(t.clientAuth)}</a>
+              <a href={getLocalizedPath(language, "/account")}>{String(t.clientAuth)}</a>
               <a href="#app">{String(t.app)}</a>
               <a href="#reviews">{String(t.reviews)}</a>
               <hr />

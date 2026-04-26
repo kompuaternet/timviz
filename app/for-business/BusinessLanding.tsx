@@ -11,6 +11,7 @@ const copy = {
   ru: {
     logo: "timviz",
     login: "Войти",
+    clientLogin: "Вход для клиента",
     create: "Создать профиль компании",
     menu: "Меню",
     clients: "Для клиентов",
@@ -83,6 +84,7 @@ const copy = {
   uk: {
     logo: "timviz",
     login: "Увійти",
+    clientLogin: "Вхід для клієнта",
     create: "Створити профіль компанії",
     menu: "Меню",
     clients: "Для клієнтів",
@@ -155,6 +157,7 @@ const copy = {
   en: {
     logo: "timviz",
     login: "Log in",
+    clientLogin: "Client sign in",
     create: "Create company profile",
     menu: "Menu",
     clients: "For clients",
@@ -227,6 +230,7 @@ const copy = {
 } satisfies Record<LandingLanguage, {
   logo: string;
   login: string;
+  clientLogin: string;
   create: string;
   menu: string;
   clients: string;
@@ -302,7 +306,13 @@ export default function BusinessLanding({ initialLanguage = "ru" }: BusinessLand
       <header className="business-header">
         <a className="public-logo" href={getLocalizedPath(language)}><BrandLogo /></a>
         <nav className="business-nav" aria-label={t.menu}>
-          <a href="/pro/login" className="public-login">{t.login}</a>
+          <details className="public-menu public-entry-menu">
+            <summary className="public-login-entry">{t.login}</summary>
+            <div className="public-menu-panel public-entry-panel">
+              <a href={getLocalizedPath(language, "/account")}>{t.clientLogin}</a>
+              <a href="/pro/login">{t.businessLogin}</a>
+            </div>
+          </details>
           <a href="/pro/create-account" className="public-company-button">{t.create}</a>
           <details className="public-menu">
             <summary>
@@ -312,6 +322,7 @@ export default function BusinessLanding({ initialLanguage = "ru" }: BusinessLand
             <div className="public-menu-panel">
               <strong>{t.clients}</strong>
               <a href={getLocalizedPath(language, "/catalog")}>{t.catalog}</a>
+              <a href={getLocalizedPath(language, "/account")}>{t.clientLogin}</a>
               <hr />
               <strong>{t.business}</strong>
               <a href="/pro/create-account">{t.create}</a>
