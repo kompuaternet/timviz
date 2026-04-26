@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { syncBookingStatusFromCalendarAppointment } from "../../../../lib/bookings";
 import { getSessionCookieName, verifySessionValue } from "../../../../lib/pro-auth";
 import {
   createBlockedCalendarTime,
@@ -119,6 +120,18 @@ export async function PATCH(request: Request) {
         attendance: body.attendance,
         priceAmount: Number(body.priceAmount ?? 0)
       });
+
+      if (appointment.kind === "appointment") {
+        await syncBookingStatusFromCalendarAppointment({
+          businessId: appointment.businessId,
+          appointmentDate: appointment.appointmentDate,
+          appointmentTime: appointment.startTime,
+          customerName: appointment.customerName,
+          customerPhone: appointment.customerPhone,
+          serviceName: appointment.serviceName,
+          attendance: appointment.attendance
+        });
+      }
 
       return NextResponse.json(appointment);
     }
