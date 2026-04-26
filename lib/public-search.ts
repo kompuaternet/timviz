@@ -1,4 +1,4 @@
-import { salons, type LocalizedText, type SiteLanguage } from "../data/mock-data";
+import type { LocalizedText, SiteLanguage } from "../data/mock-data";
 import {
   addMinutesToTime,
   getDayBreaks,
@@ -19,6 +19,7 @@ import {
   type ServiceRecord
 } from "./pro-data";
 import { getPublicCalendarAppointments, type PublicCalendarAppointment } from "./pro-calendar";
+import { buildPublicBusinessPathMap } from "./public-business-path";
 
 export type PublicSearchSuggestion = {
   id: string;
@@ -35,6 +36,7 @@ export type PublicSearchSuggestion = {
 
 export type PublicSearchResult = {
   id: string;
+  pathId: string;
   type: "business" | "professional";
   title: string;
   subtitle: string;
@@ -264,6 +266,7 @@ function isBusinessAvailable(input: {
 
 export async function getPublicSearchIndex(params: PublicSearchParams = {}): Promise<PublicSearchIndex> {
   const [store, calendarStore] = await Promise.all([readProStore(), readCalendarStore()]);
+  const publicPathMap = buildPublicBusinessPathMap(store.businesses);
   const businessesById = new Map(store.businesses.map((business) => [business.id, business]));
   const servicesByBusiness = new Map<string, ServiceRecord[]>();
   const membershipsByBusiness = new Map<string, MembershipRecord[]>();
@@ -335,6 +338,7 @@ export async function getPublicSearchIndex(params: PublicSearchParams = {}): Pro
 
     return {
       id: normalizedBusiness.id,
+      pathId: publicPathMap.get(normalizedBusiness.id) ?? normalizedBusiness.id,
       type,
       title,
       subtitle:
@@ -366,48 +370,7 @@ export async function getPublicSearchIndex(params: PublicSearchParams = {}): Pro
     };
   });
 
-  const mockResults: PublicSearchResult[] = salons.map((salon, index) => {
-    const localizedAddress = {
-      ru: `${salon.address.ru}, ${salon.city.ru}`,
-      uk: `${salon.address.uk}, ${salon.city.uk}`,
-      en: `${salon.address.en}, ${salon.city.en}`
-    } satisfies LocalizedText;
-    const localizedAvailabilityLabel = params.time
-      ? localizedTimeLabel(
-          { ru: "Есть окна на {time}", uk: "Є вікна на {time}", en: "Open slots at {time}" },
-          params.time
-        )
-      : genericCopy.chooseTime;
-
-    return {
-      id: `mock_${salon.slug}`,
-      type: salon.type,
-      title: salon.name,
-      subtitle: genericCopy.venue.ru,
-      category: salon.category.ru,
-      address: localizedAddress.ru,
-      distanceKm: null,
-      rating: String(salon.rating).replace(".", ","),
-      reviews: salon.reviews,
-      services: salon.services.map((service) => ({
-        id: service.id,
-        name: service.name,
-        localizedName: service.localizedName,
-        price: service.price,
-        durationMinutes: service.durationMinutes
-      })),
-      available: true,
-      availabilityLabel: localizedAvailabilityLabel.ru,
-      localizedSubtitle: genericCopy.venue,
-      localizedCategory: salon.category,
-      localizedAddress,
-      localizedAvailabilityLabel,
-      image: fallbackImages[(registeredResults.length + index) % fallbackImages.length],
-      onlineBookingEnabled: true
-    };
-  });
-
-  const results = [...registeredResults, ...mockResults].sort((left, right) => {
+  const results = [...registeredResults].sort((left, right) => {
     if (left.distanceKm === null && right.distanceKm === null) return left.title.localeCompare(right.title);
     if (left.distanceKm === null) return 1;
     if (right.distanceKm === null) return -1;

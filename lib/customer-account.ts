@@ -296,7 +296,7 @@ export async function getCustomerDashboard(session: PublicCustomerSession) {
         businessImage:
           (business ? getPrimaryBusinessPhoto(business) : "") ||
           "https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=800&q=80",
-        businessPath: business ? getPublicBusinessPathId(business) : "",
+        businessPath: business ? getPublicBusinessPathId(business, directory.businesses) : "",
         businessAddress: business?.address || "",
         serviceName: booking.serviceName,
         appointmentDate: booking.appointmentDate,

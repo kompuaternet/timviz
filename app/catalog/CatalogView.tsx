@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { getPublicBusinessPathId } from "../../lib/public-business-path";
 import type { PublicSearchResult } from "../../lib/public-search";
 import { getLocalizedPath, type SiteLanguage } from "../../lib/site-language";
 import { useSiteLanguage } from "../useSiteLanguage";
@@ -312,17 +311,7 @@ export default function CatalogView({
             </div>
 
             <Link
-              href={
-                result.id.startsWith("mock_")
-                  ? getLocalizedPath(language, `/salons/${result.id.replace("mock_", "")}`)
-                  : getLocalizedPath(
-                      language,
-                      `/businesses/${getPublicBusinessPathId({
-                        id: result.id,
-                        name: result.title
-                      })}`
-                    )
-              }
+              href={getLocalizedPath(language, `/businesses/${result.pathId}`)}
               className="primary-button"
             >
               {result.onlineBookingEnabled ? t.action : t.viewProfile}

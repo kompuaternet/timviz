@@ -483,6 +483,27 @@ const demoBusinesses = [
   }
 ];
 
+function isDemoBusinessRecord(input: {
+  name?: string | null;
+  website?: string | null;
+  address?: string | null;
+}) {
+  const normalizedName = String(input.name ?? "").trim().toLowerCase();
+  const normalizedWebsite = String(input.website ?? "").trim().toLowerCase();
+  const normalizedAddress = String(input.address ?? "").trim().toLowerCase();
+
+  if (normalizedWebsite.endsWith(".example") || normalizedWebsite.includes(".example/")) {
+    return true;
+  }
+
+  return demoBusinesses.some((item) => {
+    return (
+      normalizedName === item.name.trim().toLowerCase() &&
+      normalizedAddress === item.address.trim().toLowerCase()
+    );
+  });
+}
+
 function inferServicePrice(serviceName: string) {
   if (/балаяж|окраш|цвет/i.test(serviceName)) {
     return 1200;
@@ -570,34 +591,6 @@ async function ensureDemoBusinessesInLocalStore() {
 
   store.services = store.services.map((service) => normalizeServiceRecord(service));
 
-  for (const item of demoBusinesses) {
-    const exists = store.businesses.find((business) => business.name === item.name);
-    if (exists) {
-      continue;
-    }
-
-    store.businesses.push({
-      id: makeId("biz"),
-      name: item.name,
-      website: item.website,
-      categories: item.categories,
-      accountType: item.accountType,
-      serviceMode: item.serviceMode,
-      address: item.address,
-      addressDetails: item.addressDetails,
-      addressLat: item.addressLat,
-      addressLon: item.addressLon,
-      workScheduleMode: item.workScheduleMode,
-      workSchedule: item.workSchedule,
-      customSchedule: item.customSchedule,
-      allowOnlineBooking: false,
-      photos: [],
-      ownerProfessionalId: null,
-      createdAt: new Date().toISOString()
-    });
-    changed = true;
-  }
-
   if (changed) {
     await writeStore(store);
   }
@@ -638,7 +631,7 @@ export async function getBusinessDirectorySnapshot(): Promise<BusinessDirectoryS
     }
 
     return {
-      businesses: (businesses ?? []).map(mapSupabaseBusinessRow),
+      businesses: (businesses ?? []).map(mapSupabaseBusinessRow).filter((business) => !isDemoBusinessRecord(business)),
       professionals: (professionals ?? []).map(mapSupabaseProfessionalRow),
       memberships: (memberships ?? []).map(mapSupabaseMembershipRow),
       services: (services ?? []).map(mapSupabaseServiceRow)
@@ -648,9 +641,11 @@ export async function getBusinessDirectorySnapshot(): Promise<BusinessDirectoryS
   const store = await ensureDemoBusinessesInLocalStore();
 
   return {
-    businesses: store.businesses.map((business) => ({
-      ...normalizeBusinessRecord(business)
-    })),
+    businesses: store.businesses
+      .map((business) => ({
+        ...normalizeBusinessRecord(business)
+      }))
+      .filter((business) => !isDemoBusinessRecord(business)),
     professionals: store.professionals.map(normalizeProfessionalRecord),
     memberships: [...store.memberships],
     services: store.services.map((service) => normalizeServiceRecord(service))

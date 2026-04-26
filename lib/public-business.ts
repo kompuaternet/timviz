@@ -5,7 +5,7 @@ import {
   type ServiceRecord
 } from "./pro-data";
 import { getPublicCalendarAppointments } from "./pro-calendar";
-import { getBusinessPublicCode, getPublicBusinessPathId } from "./public-business-path";
+import { findBusinessIdByPublicPath, getPublicBusinessPathId } from "./public-business-path";
 
 export type PublicBusinessProfile = {
   business: BusinessRecord;
@@ -39,14 +39,12 @@ function findBusinessByToken(
     return direct;
   }
 
-  const shortCode = token.split("-").pop()?.toLowerCase() || "";
-  if (!shortCode) {
-    return null;
+  const resolvedBusinessId = findBusinessIdByPublicPath(token, directory.businesses);
+  if (resolvedBusinessId) {
+    return directory.businesses.find((item) => item.id === resolvedBusinessId) ?? null;
   }
 
-  return (
-    directory.businesses.find((item) => getBusinessPublicCode(item.id) === shortCode) ?? null
-  );
+  return null;
 }
 
 function isServicePubliclyVisible(service: ServiceRecord) {
@@ -136,7 +134,7 @@ export async function getPublicBusinessProfile(
     business,
     services,
     ownerProfessionalId,
-    publicPathId: getPublicBusinessPathId(business),
+    publicPathId: getPublicBusinessPathId(business, directory.businesses),
     image:
       getPrimaryBusinessPhoto(business) ||
       "https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=1200&q=80",

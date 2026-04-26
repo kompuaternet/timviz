@@ -1,10 +1,12 @@
 import type { MetadataRoute } from "next";
-import { salons } from "../data/mock-data";
+import { getBusinessDirectorySnapshot } from "../lib/pro-data";
+import { getPublicBusinessPathId } from "../lib/public-business-path";
 import { siteUrl } from "../lib/seo";
 import { getLocalizedPath, siteLanguages } from "../lib/site-language";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
+  const directory = await getBusinessDirectorySnapshot();
   const staticRoutes: MetadataRoute.Sitemap = siteLanguages.flatMap((language) => [
     {
       url: `${siteUrl}${getLocalizedPath(language)}`,
@@ -38,14 +40,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
     }
   ]);
 
-  const salonRoutes: MetadataRoute.Sitemap = siteLanguages.flatMap((language) =>
-    salons.map((salon) => ({
-      url: `${siteUrl}${getLocalizedPath(language, `/salons/${salon.slug}`)}`,
+  const businessRoutes: MetadataRoute.Sitemap = siteLanguages.flatMap((language) =>
+    directory.businesses.map((business) => ({
+      url: `${siteUrl}${getLocalizedPath(language, `/businesses/${getPublicBusinessPathId(business, directory.businesses)}`)}`,
       lastModified: now,
       changeFrequency: "weekly",
       priority: 0.8
     }))
   );
 
-  return [...staticRoutes, ...salonRoutes];
+  return [...staticRoutes, ...businessRoutes];
 }
