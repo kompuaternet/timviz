@@ -70,7 +70,7 @@ export async function GET(request: Request) {
         secure: isSecure,
         maxAge: 60 * 60 * 24 * 7
       });
-      return NextResponse.redirect(new URL("/pro/calendar", appUrl));
+      return NextResponse.redirect(new URL("/pro/workspace", appUrl));
     }
 
     const createAccountUrl = new URL("/pro/create-account", appUrl);

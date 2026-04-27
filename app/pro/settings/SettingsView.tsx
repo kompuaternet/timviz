@@ -41,6 +41,18 @@ type SettingsData = {
     scope: "owner" | "member";
     role: string;
   };
+  joinRequests: Array<{
+    id: string;
+    role: string;
+    createdAt: string;
+    professional: {
+      id: string;
+      firstName: string;
+      lastName: string;
+      email: string;
+      phone: string;
+    } | null;
+  }>;
   bookingCredits: {
     total: number;
     used: number;
@@ -149,19 +161,43 @@ const settingsExtras = {
     readFileFailed: "Не удалось прочитать файл.",
     uploadPhotoFailed: "Не удалось загрузить фото.",
     saveFailed: "Не удалось сохранить настройки.",
-    categoriesPlaceholder: "Ногти, Брови и ресницы"
+    categoriesPlaceholder: "Ногти, Брови и ресницы",
+    joinRequestsTitle: "Запросы на присоединение",
+    joinRequestsText: "Подтвердите сотрудников, которые запросили доступ к вашему бизнесу.",
+    joinApprove: "Подтвердить",
+    joinReject: "Отклонить",
+    joinEmpty: "Новых запросов пока нет.",
+    joinOwner: "Владелец бизнеса",
+    joinRole: "Роль",
+    joinRequestSaved: "Запрос обновлён."
   },
   uk: {
     readFileFailed: "Не вдалося прочитати файл.",
     uploadPhotoFailed: "Не вдалося завантажити фото.",
     saveFailed: "Не вдалося зберегти налаштування.",
-    categoriesPlaceholder: "Нігті, Брови й вії"
+    categoriesPlaceholder: "Нігті, Брови й вії",
+    joinRequestsTitle: "Запити на приєднання",
+    joinRequestsText: "Підтвердіть співробітників, які запросили доступ до вашого бізнесу.",
+    joinApprove: "Підтвердити",
+    joinReject: "Відхилити",
+    joinEmpty: "Нових запитів поки немає.",
+    joinOwner: "Власник бізнесу",
+    joinRole: "Роль",
+    joinRequestSaved: "Запит оновлено."
   },
   en: {
     readFileFailed: "Could not read the file.",
     uploadPhotoFailed: "Could not upload the photo.",
     saveFailed: "Could not save settings.",
-    categoriesPlaceholder: "Nails, Brows and lashes"
+    categoriesPlaceholder: "Nails, Brows and lashes",
+    joinRequestsTitle: "Join requests",
+    joinRequestsText: "Approve specialists who requested access to your business.",
+    joinApprove: "Approve",
+    joinReject: "Reject",
+    joinEmpty: "No new requests yet.",
+    joinOwner: "Business owner",
+    joinRole: "Role",
+    joinRequestSaved: "Request updated."
   }
 } as const;
 
@@ -231,6 +267,7 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
   const [status, setStatus] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isTopUpLoading, setIsTopUpLoading] = useState(false);
+  const [joinRequests, setJoinRequests] = useState(initialData.joinRequests);
   const [addressSuggestions, setAddressSuggestions] = useState<AddressSuggestion[]>([]);
   const [isSearchingAddress, setIsSearchingAddress] = useState(false);
   const isHydratedRef = useRef(false);
@@ -464,7 +501,28 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
       }
     });
     isHydratedRef.current = true;
+    setJoinRequests(initialData.joinRequests);
   }, [initialData]);
+
+  async function handleJoinRequestAction(requestId: string, action: "approve" | "reject") {
+    setStatus("");
+    try {
+      const response = await fetch("/api/pro/join-requests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ requestId, action })
+      });
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload.error || copy.saveFailed);
+      }
+
+      setJoinRequests((current) => current.filter((item) => item.id !== requestId));
+      setStatus(copy.joinRequestSaved);
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : copy.saveFailed);
+    }
+  }
 
   function applyAddress(suggestion: AddressSuggestion) {
     setData((current) => ({
@@ -580,6 +638,7 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
         },
         business: next.workspace.business,
         membership: next.workspace.membership,
+        joinRequests,
         bookingCredits: next.bookingCredits
       });
       lastSavedSnapshotRef.current = JSON.stringify({
@@ -646,6 +705,42 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
         {status ? <div className={styles.settingsStatus}>{status}</div> : null}
 
         <div className={styles.settingsGrid}>
+          {data.membership.scope === "owner" ? (
+            <section className={styles.settingsCard}>
+              <div className={styles.settingsCardHeader}>
+                <div>
+                  <span>{copy.joinOwner}</span>
+                  <h2>{copy.joinRequestsTitle}</h2>
+                  <p className={styles.choiceText}>{copy.joinRequestsText}</p>
+                </div>
+              </div>
+              <div className={styles.serviceStack}>
+                {joinRequests.length === 0 ? (
+                  <div className={styles.generatedBlock}>{copy.joinEmpty}</div>
+                ) : (
+                  joinRequests.map((request) => (
+                    <div key={request.id} className={styles.serviceOption}>
+                      <span className={styles.choiceTitle}>
+                        {request.professional ? `${request.professional.firstName} ${request.professional.lastName}`.trim() : copy.joinOwner}
+                      </span>
+                      <span className={styles.choiceText}>{request.professional?.email || ""}</span>
+                      <span className={styles.choiceText}>{request.professional?.phone || ""}</span>
+                      <span className={styles.choiceText}>{copy.joinRole}: {request.role}</span>
+                      <div className={styles.templateActions}>
+                        <button type="button" className={styles.primaryButton} onClick={() => void handleJoinRequestAction(request.id, "approve")}>
+                          {copy.joinApprove}
+                        </button>
+                        <button type="button" className={styles.ghostButton} onClick={() => void handleJoinRequestAction(request.id, "reject")}>
+                          {copy.joinReject}
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </section>
+          ) : null}
+
           <section className={styles.settingsCard}>
             <div className={styles.settingsCardHeader}>
               <div>

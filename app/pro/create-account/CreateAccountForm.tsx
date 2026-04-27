@@ -782,6 +782,7 @@ export default function CreateAccountForm() {
             ))}
           </select>
         </div>
+        <div className={styles.createFieldSpacer} aria-hidden="true" />
       </div>
 
       {googleNotice ? <div className={styles.addressWarning}>{googleNotice}</div> : null}

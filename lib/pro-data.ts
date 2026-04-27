@@ -2,6 +2,7 @@ import { promises as fs } from "fs";
 import path from "path";
 import { getSupabaseAdmin, isSupabaseConfigured } from "./supabase";
 import { hashPassword, verifyPassword } from "./pro-auth";
+import { getPublicBusinessPathId } from "./public-business-path";
 import {
   createEmptyCustomSchedule,
   createDefaultWorkSchedule,
@@ -28,6 +29,7 @@ export type AccountDraft = {
 
 export type SetupDraft = {
   ownerMode: "owner" | "member";
+  joinBusinessId?: string;
   joinBusinessName: string;
   joinBusinessRole: string;
   companyName: string;
@@ -102,6 +104,16 @@ export type MembershipRecord = {
   createdAt: string;
 };
 
+export type JoinRequestRecord = {
+  id: string;
+  businessId: string;
+  professionalId: string;
+  role: string;
+  status: "pending" | "approved" | "rejected";
+  createdAt: string;
+  resolvedAt?: string;
+};
+
 export type ServiceRecord = {
   id: string;
   businessId: string;
@@ -124,6 +136,7 @@ type ProDataStore = {
   professionals: ProfessionalRecord[];
   memberships: MembershipRecord[];
   services: ServiceRecord[];
+  joinRequests?: JoinRequestRecord[];
 };
 
 export type WorkspaceSnapshot = {
@@ -138,6 +151,19 @@ export type BusinessDirectorySnapshot = {
   professionals: ProfessionalRecord[];
   memberships: MembershipRecord[];
   services: ServiceRecord[];
+  joinRequests: JoinRequestRecord[];
+};
+
+export type JoinBusinessSearchResult = {
+  businessId: string;
+  businessPath: string;
+  businessName: string;
+  city: string;
+  ownerName: string;
+  ownerEmail: string;
+  ownerPhone: string;
+  categories: string[];
+  photoUrl: string;
 };
 
 const storePath = path.join(process.cwd(), "data", "pro-data.json");
@@ -394,6 +420,34 @@ function mapSupabaseMembershipRow(row: {
   };
 }
 
+function normalizeJoinRequestStatus(value: unknown): "pending" | "approved" | "rejected" {
+  if (value === "approved" || value === "rejected") {
+    return value;
+  }
+
+  return "pending";
+}
+
+function mapSupabaseJoinRequestRow(row: {
+  id: string;
+  business_id: string;
+  professional_id: string;
+  role: string;
+  status?: string | null;
+  created_at: string;
+  resolved_at?: string | null;
+}): JoinRequestRecord {
+  return {
+    id: row.id,
+    businessId: row.business_id,
+    professionalId: row.professional_id,
+    role: row.role,
+    status: normalizeJoinRequestStatus(row.status),
+    createdAt: row.created_at,
+    resolvedAt: row.resolved_at ?? undefined
+  };
+}
+
 function mapSupabaseServiceRow(row: {
   id: string;
   business_id: string;
@@ -542,7 +596,11 @@ function makeId(prefix: string) {
 
 async function readStore() {
   const file = await fs.readFile(storePath, "utf8");
-  return JSON.parse(file) as ProDataStore;
+  const parsed = JSON.parse(file) as ProDataStore;
+  return {
+    ...parsed,
+    joinRequests: Array.isArray(parsed.joinRequests) ? parsed.joinRequests : []
+  };
 }
 
 async function writeStore(data: ProDataStore) {
@@ -602,19 +660,21 @@ export async function getBusinessDirectorySnapshot(): Promise<BusinessDirectoryS
   if (isSupabaseConfigured()) {
     const supabase = getSupabaseAdmin();
     if (!supabase) {
-      return { businesses: [], professionals: [], memberships: [], services: [] };
+      return { businesses: [], professionals: [], memberships: [], services: [], joinRequests: [] };
     }
 
     const [
       { data: businesses, error: businessesError },
       { data: professionals, error: professionalsError },
       { data: memberships, error: membershipsError },
-      { data: services, error: servicesError }
+      { data: services, error: servicesError },
+      { data: joinRequests, error: joinRequestsError }
     ] = await Promise.all([
       supabase.from("businesses").select("*").order("created_at", { ascending: true }),
       supabase.from("professionals").select("*").order("created_at", { ascending: true }),
       supabase.from("business_memberships").select("*").order("created_at", { ascending: true }),
-      supabase.from("business_services").select("*").order("sort_order", { ascending: true }).order("created_at", { ascending: true })
+      supabase.from("business_services").select("*").order("sort_order", { ascending: true }).order("created_at", { ascending: true }),
+      supabase.from("business_join_requests").select("*").order("created_at", { ascending: false })
     ]);
 
     if (businessesError) {
@@ -629,12 +689,16 @@ export async function getBusinessDirectorySnapshot(): Promise<BusinessDirectoryS
     if (servicesError) {
       throw new Error(servicesError.message);
     }
+    if (joinRequestsError) {
+      throw new Error(joinRequestsError.message);
+    }
 
     return {
       businesses: (businesses ?? []).map(mapSupabaseBusinessRow).filter((business) => !isDemoBusinessRecord(business)),
       professionals: (professionals ?? []).map(mapSupabaseProfessionalRow),
       memberships: (memberships ?? []).map(mapSupabaseMembershipRow),
-      services: (services ?? []).map(mapSupabaseServiceRow)
+      services: (services ?? []).map(mapSupabaseServiceRow),
+      joinRequests: (joinRequests ?? []).map(mapSupabaseJoinRequestRow)
     };
   }
 
@@ -648,7 +712,11 @@ export async function getBusinessDirectorySnapshot(): Promise<BusinessDirectoryS
       .filter((business) => !isDemoBusinessRecord(business)),
     professionals: store.professionals.map(normalizeProfessionalRecord),
     memberships: [...store.memberships],
-    services: store.services.map((service) => normalizeServiceRecord(service))
+    services: store.services.map((service) => normalizeServiceRecord(service)),
+    joinRequests: (store.joinRequests ?? []).map((request) => ({
+      ...request,
+      status: normalizeJoinRequestStatus(request.status)
+    }))
   };
 }
 
@@ -758,10 +826,15 @@ export async function createProfessionalSetup(input: {
         }
       }
     } else {
+      const targetBusinessId = input.setup.joinBusinessId?.trim() || "";
+      if (!targetBusinessId) {
+        throw new Error("Business not selected for membership request.");
+      }
+
       const { data: business, error: businessError } = await supabase
         .from("businesses")
-        .select("id")
-        .eq("name", input.setup.joinBusinessName)
+        .select("id, name")
+        .eq("id", targetBusinessId)
         .maybeSingle();
 
       if (businessError) {
@@ -775,18 +848,33 @@ export async function createProfessionalSetup(input: {
       businessId = business.id;
     }
 
-    const membershipId = makeId("membership");
-    const { error: membershipError } = await supabase.from("business_memberships").insert({
-      id: membershipId,
-      business_id: businessId,
-      professional_id: professionalId,
-      role: input.setup.ownerMode === "owner" ? "owner" : input.setup.joinBusinessRole,
-      scope: input.setup.ownerMode,
-      created_at: createdAt
-    });
+    if (input.setup.ownerMode === "owner") {
+      const membershipId = makeId("membership");
+      const { error: membershipError } = await supabase.from("business_memberships").insert({
+        id: membershipId,
+        business_id: businessId,
+        professional_id: professionalId,
+        role: "owner",
+        scope: input.setup.ownerMode,
+        created_at: createdAt
+      });
 
-    if (membershipError) {
-      throw new Error(membershipError.message);
+      if (membershipError) {
+        throw new Error(membershipError.message);
+      }
+    } else {
+      const { error: joinRequestError } = await supabase.from("business_join_requests").insert({
+        id: makeId("join"),
+        business_id: businessId,
+        professional_id: professionalId,
+        role: input.setup.joinBusinessRole || "Specialist",
+        status: "pending",
+        created_at: createdAt
+      });
+
+      if (joinRequestError) {
+        throw new Error(joinRequestError.message);
+      }
     }
 
     return { professionalId };
@@ -857,7 +945,7 @@ export async function createProfessionalSetup(input: {
     );
   } else {
     const business = store.businesses.find(
-      (item) => item.name === input.setup.joinBusinessName
+      (item) => item.id === input.setup.joinBusinessId
     );
 
     if (!business) {
@@ -867,14 +955,25 @@ export async function createProfessionalSetup(input: {
     businessId = business.id;
   }
 
-  store.memberships.push({
-    id: makeId("membership"),
-    businessId,
-    professionalId,
-    role: input.setup.ownerMode === "owner" ? "owner" : input.setup.joinBusinessRole,
-    scope: input.setup.ownerMode,
-    createdAt
-  });
+  if (input.setup.ownerMode === "owner") {
+    store.memberships.push({
+      id: makeId("membership"),
+      businessId,
+      professionalId,
+      role: "owner",
+      scope: input.setup.ownerMode,
+      createdAt
+    });
+  } else {
+    store.joinRequests?.push({
+      id: makeId("join"),
+      businessId,
+      professionalId,
+      role: input.setup.joinBusinessRole || "Specialist",
+      status: "pending",
+      createdAt
+    });
+  }
 
   await writeStore(store);
   return { professionalId };
@@ -917,6 +1016,213 @@ export async function getWorkspaceSnapshot(
     membership,
     services
   };
+}
+
+export async function getPendingJoinRequestForProfessional(professionalId: string) {
+  const directory = await getBusinessDirectorySnapshot();
+  const request = directory.joinRequests.find(
+    (item) => item.professionalId === professionalId && item.status === "pending"
+  );
+
+  if (!request) {
+    return null;
+  }
+
+  const business = directory.businesses.find((item) => item.id === request.businessId) || null;
+  return business ? { request, business } : null;
+}
+
+export async function searchJoinableBusinesses(query: string): Promise<JoinBusinessSearchResult[]> {
+  const normalizedQuery = query.trim().toLowerCase();
+  const normalizedDigits = normalizedQuery.replace(/\D/g, "");
+  if (!normalizedQuery) {
+    return [];
+  }
+
+  const directory = await getBusinessDirectorySnapshot();
+  const pathBusinesses = directory.businesses.map((business) => ({
+    id: business.id,
+    name: business.name,
+    createdAt: business.createdAt
+  }));
+
+  return directory.businesses
+    .map((business) => {
+      const ownerMembership =
+        directory.memberships.find((item) => item.businessId === business.id && item.scope === "owner") || null;
+      const owner = ownerMembership
+        ? directory.professionals.find((item) => item.id === ownerMembership.professionalId) || null
+        : business.ownerProfessionalId
+          ? directory.professionals.find((item) => item.id === business.ownerProfessionalId) || null
+          : null;
+      const team = directory.memberships
+        .filter((item) => item.businessId === business.id)
+        .map((membership) => directory.professionals.find((item) => item.id === membership.professionalId))
+        .filter(Boolean) as ProfessionalRecord[];
+      const haystack = [
+        business.name,
+        business.address,
+        business.addressDetails,
+        owner?.firstName,
+        owner?.lastName,
+        owner?.email,
+        owner?.phone,
+        ...team.flatMap((item) => [item.firstName, item.lastName, item.email, item.phone])
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      const phoneDigits = [
+        owner?.phone,
+        ...team.map((item) => item.phone)
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .replace(/\D/g, "");
+
+      if (!haystack.includes(normalizedQuery) && (!normalizedDigits || !phoneDigits.includes(normalizedDigits))) {
+        return null;
+      }
+
+      const city =
+        business.addressDetails
+          .split("\n")
+          .map((item) => item.trim())
+          .filter(Boolean)[1] || business.address;
+
+      return {
+        businessId: business.id,
+        businessPath: getPublicBusinessPathId(
+          {
+            id: business.id,
+            name: business.name,
+            createdAt: business.createdAt
+          },
+          pathBusinesses
+        ),
+        businessName: business.name,
+        city,
+        ownerName: owner ? `${owner.firstName} ${owner.lastName}`.trim() : "",
+        ownerEmail: owner?.email || "",
+        ownerPhone: owner?.phone || "",
+        categories: business.categories,
+        photoUrl: getPrimaryBusinessPhoto(business)
+      } satisfies JoinBusinessSearchResult;
+    })
+    .filter((item): item is JoinBusinessSearchResult => Boolean(item))
+    .slice(0, 20);
+}
+
+export async function getJoinRequestsForOwner(ownerProfessionalId: string) {
+  const workspace = await getWorkspaceSnapshot(ownerProfessionalId);
+  if (!workspace || workspace.membership.scope !== "owner") {
+    return [];
+  }
+
+  const directory = await getBusinessDirectorySnapshot();
+  return directory.joinRequests
+    .filter((item) => item.businessId === workspace.business.id && item.status === "pending")
+    .map((request) => {
+      const professional = directory.professionals.find((item) => item.id === request.professionalId) || null;
+      return {
+        ...request,
+        professional
+      };
+    });
+}
+
+export async function resolveJoinRequestForOwner(input: {
+  ownerProfessionalId: string;
+  requestId: string;
+  action: "approve" | "reject";
+}) {
+  const workspace = await getWorkspaceSnapshot(input.ownerProfessionalId);
+  if (!workspace || workspace.membership.scope !== "owner") {
+    throw new Error("Only business owners can manage join requests.");
+  }
+
+  const resolvedAt = new Date().toISOString();
+
+  if (isSupabaseConfigured()) {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      throw new Error("Supabase is not available.");
+    }
+
+    const { data: request, error: requestError } = await supabase
+      .from("business_join_requests")
+      .select("*")
+      .eq("id", input.requestId)
+      .eq("business_id", workspace.business.id)
+      .maybeSingle();
+
+    if (requestError) {
+      throw new Error(requestError.message);
+    }
+    if (!request) {
+      throw new Error("Join request not found.");
+    }
+
+    if (input.action === "approve") {
+      const membershipPayload = {
+        id: makeId("membership"),
+        business_id: request.business_id,
+        professional_id: request.professional_id,
+        role: request.role,
+        scope: "member",
+        created_at: resolvedAt
+      };
+
+      const { error: membershipError } = await supabase.from("business_memberships").insert(membershipPayload);
+      if (membershipError && !/duplicate/i.test(membershipError.message)) {
+        throw new Error(membershipError.message);
+      }
+    }
+
+    const { error: updateError } = await supabase
+      .from("business_join_requests")
+      .update({
+        status: input.action === "approve" ? "approved" : "rejected",
+        resolved_at: resolvedAt
+      })
+      .eq("id", input.requestId);
+
+    if (updateError) {
+      throw new Error(updateError.message);
+    }
+
+    return { ok: true };
+  }
+
+  const store = await ensureDemoBusinessesInLocalStore();
+  const request = (store.joinRequests ?? []).find(
+    (item) => item.id === input.requestId && item.businessId === workspace.business.id
+  );
+
+  if (!request) {
+    throw new Error("Join request not found.");
+  }
+
+  if (input.action === "approve") {
+    const membershipExists = store.memberships.some(
+      (item) => item.businessId === request.businessId && item.professionalId === request.professionalId
+    );
+    if (!membershipExists) {
+      store.memberships.push({
+        id: makeId("membership"),
+        businessId: request.businessId,
+        professionalId: request.professionalId,
+        role: request.role,
+        scope: "member",
+        createdAt: resolvedAt
+      });
+    }
+  }
+
+  request.status = input.action === "approve" ? "approved" : "rejected";
+  request.resolvedAt = resolvedAt;
+  await writeStore(store);
+  return { ok: true };
 }
 
 export async function authenticateProfessional(email: string, password: string) {

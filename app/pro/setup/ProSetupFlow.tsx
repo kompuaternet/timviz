@@ -5,7 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import GlobalLanguageSwitcher from "../../GlobalLanguageSwitcher";
 import styles from "../pro.module.css";
 import { isProLanguage, profileLanguageFromCode, type ProLanguage } from "../i18n";
-import type { AccountDraft } from "../../../lib/pro-data";
+import type { AccountDraft, JoinBusinessSearchResult } from "../../../lib/pro-data";
 import {
   clearScheduleReminder,
   markScheduleReminderPending
@@ -97,39 +97,6 @@ function getLocalizedCategoryName(category: string, language: ProLanguage) {
   return categoryNameTranslations[category]?.[language] ?? category;
 }
 
-const joinBusinessOptions = [
-  {
-    name: "Studio Aura",
-    city: { ru: "Киев", uk: "Київ", en: "Kyiv" },
-    role: { ru: "Мастер", uk: "Майстер", en: "Specialist" },
-    description: {
-      ru: "Салон красоты · 4 мастера · онлайн-запись и календарь",
-      uk: "Салон краси · 4 майстри · онлайн-запис і календар",
-      en: "Beauty salon · 4 specialists · online booking and calendar"
-    }
-  },
-  {
-    name: "Barber Drive",
-    city: { ru: "Львов", uk: "Львів", en: "Lviv" },
-    role: { ru: "Барбер", uk: "Барбер", en: "Barber" },
-    description: {
-      ru: "Барбершоп · командное расписание · подтверждение визитов",
-      uk: "Барбершоп · командний розклад · підтвердження візитів",
-      en: "Barbershop · team schedule · visit confirmations"
-    }
-  },
-  {
-    name: "Nail Yard",
-    city: { ru: "Одесса", uk: "Одеса", en: "Odesa" },
-    role: { ru: "Нейл-мастер", uk: "Нейл-майстер", en: "Nail specialist" },
-    description: {
-      ru: "Ногтевая студия · общий салонный аккаунт · личный график",
-      uk: "Нігтьова студія · спільний салонний акаунт · особистий графік",
-      en: "Nail studio · shared salon account · personal schedule"
-    }
-  }
-];
-
 const setupText = {
   ru: {
     close: "Закрыть",
@@ -155,7 +122,21 @@ const setupText = {
     join: {
       eyebrow: "Подключение к салону",
       title: "К какому бизнесу вы хотите присоединиться?",
-      text: "Для мастера или сотрудника это отдельный путь: без создания своего бизнеса, но с собственным графиком и личными записями."
+      text: "Для мастера или сотрудника это отдельный путь: без создания своего бизнеса, но с собственным графиком и личными записями.",
+      searchPlaceholder: "Ищите по названию, email или телефону",
+      searchLabel: "Поиск организации",
+      searching: "Ищем подходящие бизнесы...",
+      searchHint: "Найдите бизнес и выберите его из списка, чтобы отправить владельцу запрос на присоединение.",
+      owner: "Владелец",
+      ownerContact: "Контакты",
+      selectProfile: "Профиль",
+      requestTitle: "Проверьте и отправьте запрос",
+      requestText: "Мы отправим владельцу бизнеса запрос на присоединение. После подтверждения вы получите доступ к рабочему кабинету.",
+      requestButton: "Отправить запрос",
+      selectedBusiness: "Выбранный бизнес",
+      selectedRole: "Роль после подтверждения",
+      requestNotice: "После отправки запроса вы попадёте на страницу ожидания. Владелец бизнеса подтвердит присоединение в настройках кабинета.",
+      noResults: "Ничего не найдено. Попробуйте другое название, email или телефон."
     },
     categories: {
       eyebrow: "Категория бизнеса",
@@ -240,7 +221,21 @@ const setupText = {
     join: {
       eyebrow: "Підключення до салону",
       title: "До якого бізнесу ви хочете приєднатися?",
-      text: "Для майстра або співробітника це окремий шлях: без створення свого бізнесу, але з власним графіком і особистими записами."
+      text: "Для майстра або співробітника це окремий шлях: без створення свого бізнесу, але з власним графіком і особистими записами.",
+      searchPlaceholder: "Шукайте за назвою, email або телефоном",
+      searchLabel: "Пошук організації",
+      searching: "Шукаємо відповідні бізнеси...",
+      searchHint: "Знайдіть бізнес і виберіть його зі списку, щоб надіслати власнику запит на приєднання.",
+      owner: "Власник",
+      ownerContact: "Контакти",
+      selectProfile: "Профіль",
+      requestTitle: "Перевірте та надішліть запит",
+      requestText: "Ми надішлемо власнику бізнесу запит на приєднання. Після підтвердження ви отримаєте доступ до робочого кабінету.",
+      requestButton: "Надіслати запит",
+      selectedBusiness: "Обраний бізнес",
+      selectedRole: "Роль після підтвердження",
+      requestNotice: "Після надсилання запиту ви потрапите на сторінку очікування. Власник бізнесу підтвердить приєднання в налаштуваннях кабінету.",
+      noResults: "Нічого не знайдено. Спробуйте іншу назву, email або телефон."
     },
     categories: {
       eyebrow: "Категорія бізнесу",
@@ -325,7 +320,21 @@ const setupText = {
     join: {
       eyebrow: "Join a salon",
       title: "Which business do you want to join?",
-      text: "For a specialist or employee this is a separate path: no own business account, but personal schedule and bookings."
+      text: "For a specialist or employee this is a separate path: no own business account, but personal schedule and bookings.",
+      searchPlaceholder: "Search by business name, email or phone",
+      searchLabel: "Find a business",
+      searching: "Looking for matching businesses...",
+      searchHint: "Find a business and select it from the list to send the owner a join request.",
+      owner: "Owner",
+      ownerContact: "Contact",
+      selectProfile: "Profile",
+      requestTitle: "Review and send request",
+      requestText: "We will send the business owner a join request. After approval you will get access to the workspace.",
+      requestButton: "Send request",
+      selectedBusiness: "Selected business",
+      selectedRole: "Role after approval",
+      requestNotice: "After the request is sent, you will land on a waiting page. The business owner will confirm the request in workspace settings.",
+      noResults: "No businesses found. Try another name, email or phone."
     },
     categories: {
       eyebrow: "Business category",
@@ -412,6 +421,7 @@ type AddressSuggestion = {
 
 type Draft = {
   ownerMode: "owner" | "member";
+  joinBusinessId: string;
   joinBusinessName: string;
   joinBusinessRole: string;
   companyName: string;
@@ -430,6 +440,7 @@ type SuggestedSelection = Record<string, boolean>;
 
 const initialDraft: Draft = {
   ownerMode: "owner",
+  joinBusinessId: "",
   joinBusinessName: "",
   joinBusinessRole: "",
   companyName: "",
@@ -451,6 +462,9 @@ export default function ProSetupFlow({ catalog }: { catalog: CategoryTemplate[] 
   const [draft, setDraft] = useState<Draft>(initialDraft);
   const [isSaving, setIsSaving] = useState(false);
   const [addressSuggestions, setAddressSuggestions] = useState<AddressSuggestion[]>([]);
+  const [joinQuery, setJoinQuery] = useState("");
+  const [joinResults, setJoinResults] = useState<JoinBusinessSearchResult[]>([]);
+  const [isSearchingJoin, setIsSearchingJoin] = useState(false);
   const [isSearchingAddress, setIsSearchingAddress] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [showManualService, setShowManualService] = useState(false);
@@ -463,7 +477,7 @@ export default function ProSetupFlow({ catalog }: { catalog: CategoryTemplate[] 
   const t = setupText[language];
   const physicalVenueMode = serviceModes[0];
 
-  const totalSteps = draft.ownerMode === "owner" ? 5 : 2;
+  const totalSteps = draft.ownerMode === "owner" ? 5 : 3;
 
   const progress = useMemo(
     () => Array.from({ length: totalSteps }, (_, index) => index <= step),
@@ -474,8 +488,9 @@ export default function ProSetupFlow({ catalog }: { catalog: CategoryTemplate[] 
     (step === 0 && Boolean(draft.ownerMode)) ||
     (step === 1 &&
       (draft.ownerMode === "member"
-        ? draft.joinBusinessName.trim().length > 1
+        ? draft.joinBusinessId.trim().length > 0
         : draft.companyName.trim().length > 1)) ||
+    (draft.ownerMode === "member" && step === 2 && draft.joinBusinessId.trim().length > 0) ||
     (draft.ownerMode === "owner" &&
       step === 2 &&
       (draft.categories.length > 0 || draft.services.length > 0)) ||
@@ -483,10 +498,12 @@ export default function ProSetupFlow({ catalog }: { catalog: CategoryTemplate[] 
     (draft.ownerMode === "owner" &&
       step === 4 &&
       Boolean(draft.serviceMode) &&
-      (draft.serviceMode !== physicalVenueMode ||
+        (draft.serviceMode !== physicalVenueMode ||
         (draft.addressDetails.trim().length > 0 &&
           draft.addressLat !== null &&
           draft.addressLon !== null)));
+  const continueLabel =
+    draft.ownerMode === "member" && step === 2 ? t.join.requestButton : t.continue;
 
   const mapEmbedUrl = useMemo(() => {
     if (draft.addressLat === null || draft.addressLon === null) {
@@ -617,6 +634,34 @@ export default function ProSetupFlow({ catalog }: { catalog: CategoryTemplate[] 
     };
   }, [draft.address, draft.serviceMode, physicalVenueMode, step]);
 
+  useEffect(() => {
+    if (draft.ownerMode !== "member" || step !== 1 || joinQuery.trim().length < 2) {
+      setJoinResults([]);
+      return;
+    }
+
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(async () => {
+      try {
+        setIsSearchingJoin(true);
+        const response = await fetch(`/api/pro/setup/business-search?q=${encodeURIComponent(joinQuery)}`, {
+          signal: controller.signal
+        });
+        const payload = (await response.json()) as { results?: JoinBusinessSearchResult[] };
+        setJoinResults(Array.isArray(payload.results) ? payload.results : []);
+      } catch {
+        setJoinResults([]);
+      } finally {
+        setIsSearchingJoin(false);
+      }
+    }, 250);
+
+    return () => {
+      controller.abort();
+      window.clearTimeout(timeoutId);
+    };
+  }, [draft.ownerMode, joinQuery, step]);
+
   function goBack() {
     if (step === 0) {
       router.push("/pro/create-account");
@@ -670,17 +715,17 @@ export default function ProSetupFlow({ catalog }: { catalog: CategoryTemplate[] 
       clearScheduleReminder(result.professionalId);
     }
 
-    router.push(`/pro/calendar?professionalId=${result.professionalId}`);
+    router.push(`/pro/workspace?professionalId=${result.professionalId}`);
   }
 
   async function handleContinue() {
     if (draft.ownerMode === "member") {
-      if (step === 1) {
+      if (step === 2) {
         await finishSetup();
         return;
       }
 
-      setStep(1);
+      setStep((current) => current + 1);
       return;
     }
 
@@ -693,8 +738,26 @@ export default function ProSetupFlow({ catalog }: { catalog: CategoryTemplate[] 
   }
 
   function selectOwnerMode(mode: "owner" | "member") {
-    setDraft((current) => ({ ...current, ownerMode: mode }));
+    setDraft((current) => ({
+      ...current,
+      ownerMode: mode,
+      joinBusinessId: "",
+      joinBusinessName: "",
+      joinBusinessRole: mode === "member" ? "Specialist" : ""
+    }));
+    setJoinQuery("");
+    setJoinResults([]);
     setStep(0);
+  }
+
+  function selectJoinBusiness(item: JoinBusinessSearchResult) {
+    setDraft((current) => ({
+      ...current,
+      joinBusinessId: item.businessId,
+      joinBusinessName: item.businessName,
+      joinBusinessRole: language === "en" ? "Specialist" : language === "uk" ? "Майстер" : "Мастер"
+    }));
+    setJoinQuery(item.businessName);
   }
 
   function toggleCategory(category: string) {
@@ -795,7 +858,7 @@ export default function ProSetupFlow({ catalog }: { catalog: CategoryTemplate[] 
               void handleContinue();
             }}
           >
-            {isSaving ? t.saving : t.continue}
+            {isSaving ? t.saving : continueLabel}
           </button>
           <GlobalLanguageSwitcher mode="inline" />
         </div>
@@ -882,27 +945,118 @@ export default function ProSetupFlow({ catalog }: { catalog: CategoryTemplate[] 
               <p>{t.join.text}</p>
             </div>
 
+            <div className={styles.fieldStack}>
+              <div className={styles.field}>
+                <label htmlFor="joinBusinessSearch">{t.join.searchLabel}</label>
+                <input
+                  id="joinBusinessSearch"
+                  className={styles.input}
+                  placeholder={t.join.searchPlaceholder}
+                  value={joinQuery}
+                  onChange={(event) => setJoinQuery(event.target.value)}
+                />
+              </div>
+            </div>
+
             <div className={styles.serviceStack}>
-              {joinBusinessOptions.map((item) => (
-                <button
-                  key={item.name}
-                  type="button"
-                  className={`${styles.serviceOption} ${
-                    draft.joinBusinessName === item.name ? styles.selectedCard : ""
+              {!isSearchingJoin && joinQuery.trim().length < 2 ? (
+                <div className={styles.generatedBlock}>
+                  <strong>{t.join.searchLabel}</strong>
+                  <p className={styles.choiceText}>{t.join.searchHint}</p>
+                </div>
+              ) : null}
+              {isSearchingJoin ? <div className={styles.generatedBlock}>{t.join.searching}</div> : null}
+              {joinResults.map((item) => (
+                <div
+                  key={item.businessId}
+                  className={`${styles.serviceOption} ${styles.joinBusinessCard} ${
+                    draft.joinBusinessId === item.businessId ? styles.selectedCard : ""
                   }`}
-                  onClick={() =>
-                    setDraft((current) => ({
-                      ...current,
-                      joinBusinessName: item.name,
-                      joinBusinessRole: item.role[language]
-                    }))
-                  }
                 >
-                  <span className={styles.choiceTitle}>{item.name}</span>
-                  <span className={styles.choiceText}>{`${item.city[language]} · ${item.role[language]}`}</span>
-                  <span className={styles.choiceText}>{item.description[language]}</span>
-                </button>
+                  <div className={styles.joinBusinessCardMain}>
+                    <div className={styles.joinBusinessCardThumb}>
+                      {item.photoUrl ? (
+                        <img src={item.photoUrl} alt="" className={styles.joinBusinessCardImage} />
+                      ) : (
+                        <span>{item.businessName.slice(0, 1).toUpperCase()}</span>
+                      )}
+                    </div>
+                    <div className={styles.joinBusinessCardBody}>
+                      <span className={styles.choiceTitle}>{item.businessName}</span>
+                      <span className={styles.choiceText}>{item.city}</span>
+                      <span className={styles.choiceText}>
+                        {`${t.join.owner}: ${item.ownerName || item.ownerEmail || item.ownerPhone}`}
+                      </span>
+                      {item.ownerEmail || item.ownerPhone ? (
+                        <span className={styles.choiceText}>
+                          {`${t.join.ownerContact}: ${item.ownerEmail || item.ownerPhone}`}
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
+                  <div className={styles.joinBusinessCardActions}>
+                    <a
+                      href={`/${language}/businesses/${item.businessPath}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className={styles.ghostButton}
+                    >
+                      {t.join.selectProfile}
+                    </a>
+                    <button
+                      type="button"
+                      className={styles.primaryButton}
+                      disabled={draft.joinBusinessId === item.businessId}
+                      onClick={() => selectJoinBusiness(item)}
+                    >
+                      {draft.joinBusinessId === item.businessId ? t.join.requestButton : t.continue}
+                    </button>
+                  </div>
+                </div>
               ))}
+              {!isSearchingJoin && joinQuery.trim().length >= 2 && joinResults.length === 0 ? (
+                <div className={styles.generatedBlock}>{t.join.noResults}</div>
+              ) : null}
+            </div>
+          </section>
+        ) : null}
+
+        {step === 2 && draft.ownerMode === "member" ? (
+          <section className={styles.wizardCard}>
+            <div className={styles.wizardHeader}>
+              <p className={styles.eyebrow}>{t.join.eyebrow}</p>
+              <h1>{t.join.requestTitle}</h1>
+              <p>{t.join.requestText}</p>
+            </div>
+
+            <div className={styles.generatedBlock}>
+              <strong>{t.join.selectedBusiness}</strong>
+              <div className={styles.serviceStack}>
+                <div className={`${styles.serviceOption} ${styles.selectedCard}`}>
+                  <span className={styles.choiceTitle}>{draft.joinBusinessName}</span>
+                  <span className={styles.choiceText}>{`${t.join.selectedRole}: ${draft.joinBusinessRole}`}</span>
+                </div>
+              </div>
+              <p className={styles.choiceText}>{t.join.requestNotice}</p>
+              <div className={styles.templateActions}>
+                <button
+                  type="button"
+                  className={styles.ghostButton}
+                  onClick={() => setStep(1)}
+                >
+                  {t.join.searchLabel}
+                </button>
+                <button
+                  type="button"
+                  className={styles.primaryButton}
+                  disabled={isSaving}
+                  onClick={() => {
+                    void handleContinue();
+                  }}
+                >
+                  {isSaving ? t.saving : t.join.requestButton}
+                </button>
+              </div>
             </div>
           </section>
         ) : null}

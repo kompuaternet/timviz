@@ -102,6 +102,16 @@ create table if not exists public.business_memberships (
   created_at timestamptz not null default timezone('utc', now())
 );
 
+create table if not exists public.business_join_requests (
+  id text primary key,
+  business_id text not null references public.businesses(id) on delete cascade,
+  professional_id text not null references public.professionals(id) on delete cascade,
+  role text not null default 'Specialist',
+  status text not null default 'pending',
+  created_at timestamptz not null default timezone('utc', now()),
+  resolved_at timestamptz
+);
+
 create table if not exists public.calendar_appointments (
   id text primary key,
   business_id text not null references public.businesses(id) on delete cascade,

@@ -102,7 +102,7 @@ export default function LoginForm() {
       return;
     }
 
-    router.push("/pro/calendar");
+    router.push("/pro/workspace");
     router.refresh();
   }
 
