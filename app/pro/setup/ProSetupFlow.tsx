@@ -96,6 +96,37 @@ function getLocalizedCategoryName(category: string, language: ProLanguage) {
   return categoryNameTranslations[category]?.[language] ?? category;
 }
 
+const categoryIconMap: Record<string, string> = {
+  "Парикмахерская": "✂",
+  "Ногти": "💅",
+  "Брови и ресницы": "✨",
+  "Салон красоты": "🪞",
+  "Медспа": "🧴",
+  "Парикмахер": "💇",
+  "Массажный салон": "💆",
+  "Спа-салон и сауна": "♨",
+  "Салон депиляции": "🪒",
+  "Тату и пирсинг": "🖋",
+  "Студия загара": "☀",
+  "Физиотерапия": "🩺",
+  "Другая": "●"
+};
+
+function getCategoryIcon(category: string) {
+  return categoryIconMap[category] ?? "●";
+}
+
+function getCategoryServicesMeta(category: string, catalog: CategoryTemplate[], language: ProLanguage) {
+  const count = getServicesForCategories([category], catalog).length;
+  if (language === "uk") {
+    return `${count} типових послуг`;
+  }
+  if (language === "en") {
+    return `${count} starter services`;
+  }
+  return `${count} типовых услуг`;
+}
+
 const setupText = {
   ru: {
     close: "Закрыть",
@@ -1077,9 +1108,12 @@ export default function ProSetupFlow({ catalog }: { catalog: CategoryTemplate[] 
                           : draft.categories.indexOf(category) + 1}
                       </span>
                     ) : null}
+                    <span className={styles.categoryIcon} aria-hidden="true">
+                      {getCategoryIcon(category)}
+                    </span>
                     <span className={styles.choiceTitle}>{getLocalizedCategoryName(category, language)}</span>
-                    <span className={styles.choiceText}>
-                      {t.categories.categoryHint}
+                    <span className={styles.categoryMeta}>
+                      {getCategoryServicesMeta(category, catalog, language)}
                     </span>
                   </button>
                 );
