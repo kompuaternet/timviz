@@ -15,12 +15,21 @@ export async function POST(request: Request) {
     const email = String(body.email ?? "").trim().toLowerCase();
     const language = String(body.language ?? "ru").trim().toLowerCase();
 
-    if (!email || !isMailerConfigured()) {
+    if (!email) {
       return NextResponse.json(responseMessage);
+    }
+
+    if (!isMailerConfigured()) {
+      console.warn("[pro-password-forgot] SMTP is not configured on the server.");
+      return NextResponse.json(
+        { error: "Восстановление пароля временно недоступно. Попробуйте чуть позже." },
+        { status: 503 }
+      );
     }
 
     const professional = await getProfessionalPasswordResetProfile(email);
     if (!professional) {
+      console.info(`[pro-password-forgot] No professional found for email: ${email}`);
       return NextResponse.json(responseMessage);
     }
 
@@ -73,9 +82,12 @@ export async function POST(request: Request) {
       text: `${copy.headline}\n\n${copy.body}\n\n${resetUrl}\n\n${copy.footnote}`
     });
 
+    console.info(`[pro-password-forgot] Reset email sent to ${professional.email}`);
+
     return NextResponse.json(responseMessage);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Could not send reset email.";
+    console.error("[pro-password-forgot] Failed to send reset email", error);
     return NextResponse.json({ error: message }, { status: 400 });
   }
 }
