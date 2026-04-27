@@ -1,5 +1,6 @@
 "use client";
 
+import type { SVGProps } from "react";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import GlobalLanguageSwitcher from "../../GlobalLanguageSwitcher";
@@ -96,24 +97,175 @@ function getLocalizedCategoryName(category: string, language: ProLanguage) {
   return categoryNameTranslations[category]?.[language] ?? category;
 }
 
-const categoryIconMap: Record<string, string> = {
-  "Парикмахерская": "✂",
-  "Ногти": "💅",
-  "Брови и ресницы": "✨",
-  "Салон красоты": "🪞",
-  "Медспа": "🧴",
-  "Парикмахер": "💇",
-  "Массажный салон": "💆",
-  "Спа-салон и сауна": "♨",
-  "Салон депиляции": "🪒",
-  "Тату и пирсинг": "🖋",
-  "Студия загара": "☀",
-  "Физиотерапия": "🩺",
-  "Другая": "●"
-};
+function CategoryScissorsIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <circle cx="6" cy="6.5" r="2.5" />
+      <circle cx="6" cy="17.5" r="2.5" />
+      <path d="M8 8l10 8" />
+      <path d="M8 16l10-8" />
+    </svg>
+  );
+}
+
+function CategoryNailsIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M8.2 5.2c1.3-.9 2.8-.5 3.5.9l3 6c.5 1 .2 2.2-.7 2.9L11 17.5c-1 .8-2.5.6-3.2-.5L5.5 13" />
+      <path d="M11.5 4.5l1.7 3.4" />
+      <path d="M14.9 7.2l1.5 3" />
+      <path d="M6 18.8c2.2-.4 4-.2 5.9 1.2" />
+    </svg>
+  );
+}
+
+function CategoryBrowsIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M4 9.5c2-2.2 4-3.3 6.2-3.3 2.1 0 3.7 1 5 3" />
+      <path d="M9.8 8.5l1.2 1.4" />
+      <path d="M14 8.5l1.2 1.4" />
+      <path d="M17 9.2c1.1-1.8 2-2.7 3-2.7" />
+    </svg>
+  );
+}
+
+function CategoryBeautyIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <rect x="7" y="9" width="10" height="10" rx="2.2" />
+      <path d="M9.5 9V7.6A2.5 2.5 0 0112 5h0a2.5 2.5 0 012.5 2.6V9" />
+      <path d="M10 13h4" />
+    </svg>
+  );
+}
+
+function CategorySparkleIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M12 4l1.7 4.3L18 10l-4.3 1.7L12 16l-1.7-4.3L6 10l4.3-1.7L12 4z" />
+      <path d="M18.5 4.5l.7 1.8 1.8.7-1.8.7-.7 1.8-.7-1.8-1.8-.7 1.8-.7.7-1.8z" />
+    </svg>
+  );
+}
+
+function CategoryChairIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M7 6h6v5H7z" />
+      <path d="M6 11h8l2 5H8z" />
+      <path d="M8 16v3" />
+      <path d="M15 16v3" />
+    </svg>
+  );
+}
+
+function CategoryMassageIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M4 11h13c1.7 0 3 1.3 3 3v1" />
+      <path d="M8 11V8.5A2.5 2.5 0 0110.5 6h1A2.5 2.5 0 0114 8.5V11" />
+      <path d="M5 15h7" />
+      <path d="M6 18h10" />
+    </svg>
+  );
+}
+
+function CategorySpaIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M8 18c-1.8 0-3-1.1-3-2.7 0-1.3.9-2.4 2.2-3 .1 2.1 1.2 3.8 3.3 5.7H8z" />
+      <path d="M12 18c-2.2-1.9-3.5-4.1-3.5-6.5 0-1.8.7-3.5 2.1-4.7.2 2.6 1.3 4.9 3.7 7.2" />
+      <path d="M16 18c-2.4-1.8-3.8-4-3.8-6.7 0-1.9.7-3.8 2.1-5.3.3 2.9 1.4 5.4 3.7 7.8" />
+    </svg>
+  );
+}
+
+function CategoryRazorIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M5 18l6-6" />
+      <path d="M10.8 6.2l7 7" />
+      <path d="M12.2 4.8l2.6-2.1 4.4 4.4-2.1 2.6" />
+      <path d="M6.7 16.3l1.9 1.9" />
+    </svg>
+  );
+}
+
+function CategoryTattooIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M7 17l8-8" />
+      <path d="M13 6l5 5" />
+      <path d="M6.5 17.5l-1 2.5 2.5-1" />
+      <path d="M15.5 3.8l4.7 4.7" />
+    </svg>
+  );
+}
+
+function CategorySunIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <circle cx="12" cy="12" r="3.3" />
+      <path d="M12 4v2.2M12 17.8V20M4 12h2.2M17.8 12H20M6.3 6.3l1.6 1.6M16.1 16.1l1.6 1.6M17.7 6.3l-1.6 1.6M7.9 16.1l-1.6 1.6" />
+    </svg>
+  );
+}
+
+function CategoryPhysioIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M8 5v14" />
+      <path d="M5 8h6" />
+      <path d="M15.5 6.5c1.9 0 3.5 1.6 3.5 3.5 0 4.3-4.1 7.3-5.8 8.4a1.3 1.3 0 01-1.4 0C10.1 17.3 6 14.3 6 10c0-1.9 1.6-3.5 3.5-3.5 1 0 2 .4 2.7 1.2.7-.8 1.7-1.2 2.8-1.2z" />
+    </svg>
+  );
+}
+
+function CategoryDefaultIcon(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <rect x="5" y="5" width="14" height="14" rx="3" />
+      <path d="M9 12h6" />
+      <path d="M12 9v6" />
+    </svg>
+  );
+}
 
 function getCategoryIcon(category: string) {
-  return categoryIconMap[category] ?? "●";
+  const iconProps = {
+    className: styles.categoryIconSvg,
+    "aria-hidden": "true" as const
+  };
+
+  switch (category) {
+    case "Парикмахерская":
+      return <CategoryScissorsIcon {...iconProps} />;
+    case "Ногти":
+      return <CategoryNailsIcon {...iconProps} />;
+    case "Брови и ресницы":
+      return <CategoryBrowsIcon {...iconProps} />;
+    case "Салон красоты":
+      return <CategoryBeautyIcon {...iconProps} />;
+    case "Медспа":
+      return <CategorySparkleIcon {...iconProps} />;
+    case "Парикмахер":
+      return <CategoryChairIcon {...iconProps} />;
+    case "Массажный салон":
+      return <CategoryMassageIcon {...iconProps} />;
+    case "Спа-салон и сауна":
+      return <CategorySpaIcon {...iconProps} />;
+    case "Салон депиляции":
+      return <CategoryRazorIcon {...iconProps} />;
+    case "Тату и пирсинг":
+      return <CategoryTattooIcon {...iconProps} />;
+    case "Студия загара":
+      return <CategorySunIcon {...iconProps} />;
+    case "Физиотерапия":
+      return <CategoryPhysioIcon {...iconProps} />;
+    default:
+      return <CategoryDefaultIcon {...iconProps} />;
+  }
 }
 
 function getCategoryServicesMeta(category: string, catalog: CategoryTemplate[], language: ProLanguage) {
