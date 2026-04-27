@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useEffect, useState } from "react";
 import { useProLanguage } from "../useProLanguage";
 import styles from "../pro.module.css";
 
@@ -13,6 +14,7 @@ const copy = {
     placeholder: "you@example.com",
     submit: "Отправить ссылку",
     loading: "Отправляем...",
+    timeout: "Запрос занял слишком много времени. Попробуйте ещё раз через несколько секунд.",
     back: "Вернуться ко входу",
     success: "Если аккаунт с таким email существует, мы отправили ссылку для восстановления пароля."
   },
@@ -24,6 +26,7 @@ const copy = {
     placeholder: "you@example.com",
     submit: "Надіслати посилання",
     loading: "Надсилаємо...",
+    timeout: "Запит триває надто довго. Спробуйте ще раз за кілька секунд.",
     back: "Повернутися до входу",
     success: "Якщо акаунт з таким email існує, ми надіслали посилання для відновлення пароля."
   },
@@ -35,6 +38,7 @@ const copy = {
     placeholder: "you@example.com",
     submit: "Send reset link",
     loading: "Sending...",
+    timeout: "This request is taking too long. Please try again in a few seconds.",
     back: "Back to sign in",
     success: "If an account with this email exists, we sent a password reset link."
   }
@@ -42,33 +46,54 @@ const copy = {
 
 export default function ForgotPasswordForm() {
   const { language } = useProLanguage();
+  const searchParams = useSearchParams();
   const t = copy[language];
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
+  useEffect(() => {
+    const prefilledEmail = searchParams.get("email")?.trim() || "";
+    if (prefilledEmail) {
+      setEmail(prefilledEmail);
+    }
+  }, [searchParams]);
+
   async function handleSubmit() {
     setIsLoading(true);
     setError("");
     setMessage("");
 
-    const response = await fetch("/api/pro/password/forgot", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, language })
-    });
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 20000);
 
-    const result = await response.json();
+    try {
+      const response = await fetch("/api/pro/password/forgot", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, language }),
+        signal: controller.signal
+      });
 
-    if (!response.ok) {
-      setError(result.error || "Request failed.");
+      const result = await response.json();
+
+      if (!response.ok) {
+        setError(result.error || "Request failed.");
+        return;
+      }
+
+      setMessage(result.message || t.success);
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        setError(t.timeout);
+      } else {
+        setError("Request failed.");
+      }
+    } finally {
+      window.clearTimeout(timeoutId);
       setIsLoading(false);
-      return;
     }
-
-    setMessage(result.message || t.success);
-    setIsLoading(false);
   }
 
   return (
