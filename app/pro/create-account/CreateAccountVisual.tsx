@@ -6,19 +6,19 @@ import styles from "../pro.module.css";
 
 const visualCopy = {
   ru: {
-    badge: "Бизнес",
-    title: "График, клиенты и услуги сразу под рукой",
-    text: "Владелец видит записи, свободные слоты и загрузку дня в одном рабочем экране."
+    badge: "Партнёры Timviz",
+    title: "Запуская бизнес, вы сразу получаете запись, календарь и клиентов",
+    text: "Рабочий кабинет открывается сразу после регистрации: бронирования, график и карточка компании уже собраны в одном месте."
   },
   uk: {
-    badge: "Бізнес",
-    title: "Графік, клієнти й послуги завжди під рукою",
-    text: "Власник бачить записи, вільні слоти й завантаження дня в одному робочому екрані."
+    badge: "Партнери Timviz",
+    title: "Запускаючи бізнес, ви одразу отримуєте запис, календар і клієнтів",
+    text: "Робочий кабінет відкривається одразу після реєстрації: бронювання, графік і картка компанії вже зібрані в одному місці."
   },
   en: {
-    badge: "Business",
-    title: "Schedule, clients and services in one place",
-    text: "Business owners see bookings, free slots and daily workload in one workspace."
+    badge: "Timviz partners",
+    title: "Launch with bookings, calendar and clients from day one",
+    text: "Your workspace opens right after signup, with bookings, schedule and company card already connected in one flow."
   }
 } satisfies Record<ProLanguage, { badge: string; title: string; text: string }>;
 
@@ -70,10 +70,16 @@ export default function CreateAccountVisual() {
         <span>{copy.badge}</span>
       </div>
       <div className={styles.createVisualPhotoCard}>
-        <div className={styles.createPerson}>
-          <span className={styles.createPersonHair} />
-          <span className={styles.createPersonFace} />
-          <span className={styles.createPersonBody} />
+        <div className={styles.createVisualPhotoGlow} />
+        <div className={styles.createVisualPhotoScene}>
+          <div className={styles.createVisualPhotoColumn} />
+          <div className={styles.createVisualPhotoColumn} />
+          <div className={styles.createVisualPhotoWindow} />
+          <div className={styles.createVisualPhotoWindow} />
+          <div className={styles.createVisualPhotoShelf} />
+          <div className={styles.createVisualPhotoDesk} />
+          <div className={styles.createVisualPhotoChairLeft} />
+          <div className={styles.createVisualPhotoChairRight} />
         </div>
         <div className={styles.createLaptop}>
           <div className={styles.createLaptopTop}>
@@ -81,7 +87,7 @@ export default function CreateAccountVisual() {
             <span />
             <span />
           </div>
-          <img src="/for-business/ru-day.png" alt="" />
+          <img src="/for-business/ru-schedule-wide.png" alt="" />
         </div>
       </div>
       <div className={styles.createVisualText}>

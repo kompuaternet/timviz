@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   buildInternationalPhone,
   formatPhoneLocal,
@@ -9,43 +9,51 @@ import {
   getPhoneRule,
   getPhoneValidationMessage,
   isPhoneValid,
-  onlyPhoneDigits
+  onlyPhoneDigits,
+  phoneCountries
 } from "../../../lib/phone-format";
 import { languageLabels, type ProLanguage } from "../i18n";
 import styles from "../pro.module.css";
 
-const countries = [
-  "Ukraine",
-  "Russia",
-  "Poland",
-  "United Kingdom",
-  "United States",
-  "Germany",
-  "France",
-  "Spain",
-  "Italy",
-  "Czech Republic",
-  "Slovakia",
-  "Moldova",
-  "Romania",
-  "Georgia",
-  "Armenia",
-  "Kazakhstan",
-  "Lithuania",
-  "Latvia",
-  "Estonia",
-  "Turkey",
-  "United Arab Emirates",
-  "Canada",
-  "International"
+type CountryConfig = {
+  country: string;
+  currency: string;
+  timezone: string;
+};
+
+const countryConfigs: CountryConfig[] = [
+  { country: "Ukraine", currency: "UAH", timezone: "Europe/Kiev" },
+  { country: "Poland", currency: "PLN", timezone: "Europe/Warsaw" },
+  { country: "United Kingdom", currency: "GBP", timezone: "Europe/London" },
+  { country: "United States", currency: "USD", timezone: "America/New_York" },
+  { country: "Canada", currency: "CAD", timezone: "America/Toronto" },
+  { country: "Germany", currency: "EUR", timezone: "Europe/Berlin" },
+  { country: "France", currency: "EUR", timezone: "Europe/Paris" },
+  { country: "Spain", currency: "EUR", timezone: "Europe/Madrid" },
+  { country: "Italy", currency: "EUR", timezone: "Europe/Rome" },
+  { country: "Czech Republic", currency: "EUR", timezone: "Europe/Prague" },
+  { country: "Slovakia", currency: "EUR", timezone: "Europe/Prague" },
+  { country: "Moldova", currency: "EUR", timezone: "Europe/Kiev" },
+  { country: "Romania", currency: "EUR", timezone: "Europe/Kiev" },
+  { country: "Georgia", currency: "GEL", timezone: "Asia/Tbilisi" },
+  { country: "Armenia", currency: "USD", timezone: "Asia/Yerevan" },
+  { country: "Kazakhstan", currency: "KZT", timezone: "Asia/Almaty" },
+  { country: "Lithuania", currency: "EUR", timezone: "Europe/Kiev" },
+  { country: "Latvia", currency: "EUR", timezone: "Europe/Kiev" },
+  { country: "Estonia", currency: "EUR", timezone: "Europe/Kiev" },
+  { country: "Turkey", currency: "USD", timezone: "Europe/Kiev" },
+  { country: "United Arab Emirates", currency: "AED", timezone: "Asia/Dubai" },
+  { country: "Russia", currency: "RUB", timezone: "Europe/Moscow" },
+  { country: "International", currency: "USD", timezone: "" }
 ];
 
-const phoneCountries = countries;
+const countries = countryConfigs.map((item) => item.country);
 const languages: ProLanguage[] = ["ru", "uk", "en"];
 const currencies = ["USD", "RUB", "UAH", "EUR", "PLN", "GBP", "KZT", "GEL", "AED", "CAD"];
 const liveDraftKey = "rezervo-pro-create-account-draft";
 const setupDraftKey = "rezervo-pro-account-draft";
 const timezones = [
+  { value: "", label: "" },
   { value: "Pacific/Honolulu", label: "UTC-10 · Honolulu" },
   { value: "America/Anchorage", label: "UTC-9 · Anchorage" },
   { value: "America/Los_Angeles", label: "UTC-8 · Los Angeles" },
@@ -80,32 +88,29 @@ const timezones = [
   { value: "Asia/Kamchatka", label: "UTC+12 · Kamchatka" }
 ];
 
+function getCountryConfig(country: string) {
+  return countryConfigs.find((item) => item.country === country) || countryConfigs[0];
+}
+
 function getBrowserLanguage(): ProLanguage {
   if (typeof window === "undefined") return "ru";
 
-  const browserLanguages = [
-    navigator.language,
-    ...(navigator.languages ?? [])
-  ]
+  const browserLanguages = [navigator.language, ...(navigator.languages ?? [])]
     .filter(Boolean)
     .map((value) => value.toLowerCase());
 
-  if (browserLanguages.some((value) => value.startsWith("uk") || value.includes("-ua"))) {
-    return "uk";
-  }
-
-  if (browserLanguages.some((value) => value.startsWith("en"))) {
-    return "en";
-  }
-
+  if (browserLanguages.some((value) => value.startsWith("uk") || value.includes("-ua"))) return "uk";
+  if (browserLanguages.some((value) => value.startsWith("en"))) return "en";
   return "ru";
 }
 
-function getBrowserCountry() {
-  if (typeof window === "undefined") return "Ukraine";
-
+function getBrowserRegion() {
+  if (typeof window === "undefined") return "";
   const locale = navigator.language || "";
-  const region = locale.split("-")[1]?.toUpperCase();
+  return locale.split("-")[1]?.toUpperCase() || "";
+}
+
+function getCountryFromRegion(region: string) {
   const countriesByRegion: Record<string, string> = {
     UA: "Ukraine",
     RU: "Russia",
@@ -130,43 +135,25 @@ function getBrowserCountry() {
     AE: "United Arab Emirates",
     CA: "Canada"
   };
-
   return countriesByRegion[region] || "Ukraine";
 }
 
-function getBrowserTimezone() {
-  if (typeof window === "undefined") return "Europe/Kiev";
+function getBrowserCountry() {
+  return getCountryFromRegion(getBrowserRegion());
+}
 
+function getBrowserTimezone() {
+  if (typeof window === "undefined") return "";
   const browserTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  return timezones.some((timezone) => timezone.value === browserTimezone)
-    ? browserTimezone
-    : "Europe/Kiev";
+  return timezones.some((timezone) => timezone.value === browserTimezone) ? browserTimezone : "";
 }
 
 function inferCurrency(country: string) {
-  const lower = country.toLowerCase();
-  if (lower.includes("ukraine")) return "UAH";
-  if (lower.includes("russia")) return "RUB";
-  if (lower.includes("poland")) return "PLN";
-  if (lower.includes("kingdom")) return "GBP";
-  if (lower.includes("kazakhstan")) return "KZT";
-  if (lower.includes("georgia")) return "GEL";
-  if (lower.includes("emirates")) return "AED";
-  if (lower.includes("canada")) return "CAD";
-  if (
-    lower.includes("germany") ||
-    lower.includes("france") ||
-    lower.includes("spain") ||
-    lower.includes("italy") ||
-    lower.includes("czech") ||
-    lower.includes("slovakia") ||
-    lower.includes("lithuania") ||
-    lower.includes("latvia") ||
-    lower.includes("estonia")
-  ) {
-    return "EUR";
-  }
-  return "USD";
+  return getCountryConfig(country).currency || "USD";
+}
+
+function inferTimezone(country: string) {
+  return getCountryConfig(country).timezone || "";
 }
 
 type CreateAccountLiveDraft = {
@@ -180,6 +167,7 @@ type CreateAccountLiveDraft = {
   timezone?: string;
   currency?: string;
   termsAccepted?: boolean;
+  step?: "entry" | "details";
 };
 
 type SetupAccountDraft = {
@@ -220,80 +208,117 @@ function formatPhoneForCountry(value: string, country: string) {
 
 function makeGeneratedPassword() {
   const randomPart = Math.random().toString(36).slice(2, 10);
-  return `G-${randomPart}-rezervo`;
+  return `G-${randomPart}-timviz`;
 }
 
 const formCopy = {
   ru: {
-    eyebrow: "Timviz для бизнеса",
-    title: "Создайте рабочий кабинет для записей",
+    introEyebrow: "Timviz для профессионалов",
+    introTitle: "Создайте аккаунт или войдите для управления бизнесом.",
+    introText: "Начните с Google или продолжите по email. На следующем шаге мы попросим только основные данные.",
+    introEmailPlaceholder: "Введите email",
+    introContinue: "Продолжить",
+    introOr: "или",
+    introGoogle: "Войти через Google",
+    introHelper: "Вы клиент и хотите записаться на услугу?",
+    introHelperLink: "Перейти к клиентскому каталогу",
+    detailsTitle: "Проверьте и подтвердите",
+    detailsText: "Имя, телефон, страна, валюта и часовой пояс можно изменить сейчас. Именно эти данные мы используем для первого рабочего кабинета.",
     firstName: "Имя",
     firstNamePlaceholder: "Введите свое имя",
     lastName: "Фамилия",
     lastNamePlaceholder: "Введите свою фамилию",
     password: "Пароль",
-    passwordPlaceholder: "Введите новый пароль",
+    passwordPlaceholder: "Создайте пароль",
     email: "Email",
-    phone: "Префикс и номер телефона",
+    phone: "Номер мобильного",
+    phonePlaceholder: "Введите номер мобильного телефона",
     prefixAria: "Выбрать телефонный префикс",
+    prefixSearch: "Поиск по стране или коду",
     country: "Страна",
     currency: "Валюта",
     timezone: "Часовой пояс",
+    timezonePlaceholder: "Выберите часовой пояс",
     terms: "Я принимаю политику конфиденциальности, условия предоставления услуг и условия сотрудничества.",
-    submit: "Создать аккаунт",
+    submit: "Продолжить",
     login: "Уже есть аккаунт?",
-    google: "Продолжить через Google",
-    googleFromLogin: "Аккаунт не найден. Завершите регистрацию бизнеса через Google."
+    loginLink: "Войти в кабинет",
+    googleNotice: "Аккаунт не найден. Завершите регистрацию бизнеса через Google.",
+    mobileRequired: "Номер мобильного требуется"
   },
   uk: {
-    eyebrow: "Timviz для бізнесу",
-    title: "Створіть робочий кабінет для записів",
+    introEyebrow: "Timviz для професіоналів",
+    introTitle: "Створіть акаунт або увійдіть для керування бізнесом.",
+    introText: "Почніть з Google або продовжіть за email. На наступному кроці ми попросимо лише основні дані.",
+    introEmailPlaceholder: "Введіть email",
+    introContinue: "Продовжити",
+    introOr: "або",
+    introGoogle: "Увійти через Google",
+    introHelper: "Ви клієнт і хочете записатися на послугу?",
+    introHelperLink: "Перейти до клієнтського каталогу",
+    detailsTitle: "Перевірте і підтвердіть",
+    detailsText: "Ім'я, телефон, країну, валюту і часовий пояс можна змінити зараз. Саме ці дані ми використаємо для першого робочого кабінету.",
     firstName: "Ім'я",
     firstNamePlaceholder: "Введіть своє ім'я",
     lastName: "Прізвище",
     lastNamePlaceholder: "Введіть своє прізвище",
     password: "Пароль",
-    passwordPlaceholder: "Введіть новий пароль",
+    passwordPlaceholder: "Створіть пароль",
     email: "Email",
-    phone: "Префікс і номер телефону",
+    phone: "Номер мобільного",
+    phonePlaceholder: "Введіть номер мобільного телефону",
     prefixAria: "Вибрати телефонний префікс",
+    prefixSearch: "Пошук за країною або кодом",
     country: "Країна",
     currency: "Валюта",
     timezone: "Часовий пояс",
+    timezonePlaceholder: "Виберіть часовий пояс",
     terms: "Я приймаю політику конфіденційності, умови надання послуг та умови співпраці.",
-    submit: "Створити акаунт",
+    submit: "Продовжити",
     login: "Вже є акаунт?",
-    google: "Продовжити через Google",
-    googleFromLogin: "Акаунт не знайдено. Завершіть реєстрацію бізнесу через Google."
+    loginLink: "Увійти в кабінет",
+    googleNotice: "Акаунт не знайдено. Завершіть реєстрацію бізнесу через Google.",
+    mobileRequired: "Номер мобільного обов'язковий"
   },
   en: {
-    eyebrow: "Timviz for business",
-    title: "Create a booking workspace",
+    introEyebrow: "Timviz for professionals",
+    introTitle: "Create an account or sign in to run your business.",
+    introText: "Start with Google or continue with email. On the next step we only ask for the essentials.",
+    introEmailPlaceholder: "Enter your email",
+    introContinue: "Continue",
+    introOr: "or",
+    introGoogle: "Continue with Google",
+    introHelper: "Are you a client looking to book a service?",
+    introHelperLink: "Go to the client catalog",
+    detailsTitle: "Review and confirm",
+    detailsText: "You can adjust your name, phone, country, currency and time zone now. We use these details to set up your first workspace.",
     firstName: "First name",
     firstNamePlaceholder: "Enter your first name",
     lastName: "Last name",
     lastNamePlaceholder: "Enter your last name",
     password: "Password",
-    passwordPlaceholder: "Enter a new password",
+    passwordPlaceholder: "Create a password",
     email: "Email",
-    phone: "Phone prefix and number",
+    phone: "Mobile number",
+    phonePlaceholder: "Enter your mobile number",
     prefixAria: "Choose phone prefix",
+    prefixSearch: "Search by country or code",
     country: "Country",
     currency: "Currency",
     timezone: "Time zone",
+    timezonePlaceholder: "Choose a time zone",
     terms: "I accept the privacy policy, terms of service and cooperation terms.",
-    submit: "Create account",
+    submit: "Continue",
     login: "Already have an account?",
-    google: "Continue with Google",
-    googleFromLogin: "Account not found. Complete business registration with Google."
+    loginLink: "Sign in",
+    googleNotice: "Account not found. Finish business registration with Google.",
+    mobileRequired: "Mobile number is required"
   }
 } satisfies Record<ProLanguage, Record<string, string>>;
 
 export default function CreateAccountForm() {
   const router = useRouter();
   const prefixMenuRef = useRef<HTMLDivElement | null>(null);
-  const countryMenuRef = useRef<HTMLDivElement | null>(null);
-  const timezoneMenuRef = useRef<HTMLDivElement | null>(null);
   const hasHydratedDraftRef = useRef(false);
   const [termsAccepted, setTermsAccepted] = useState(true);
   const [firstName, setFirstName] = useState("");
@@ -303,33 +328,42 @@ export default function CreateAccountForm() {
   const [phone, setPhone] = useState("");
   const [country, setCountry] = useState("Ukraine");
   const [phoneCountry, setPhoneCountry] = useState("Ukraine");
-  const [timezone, setTimezone] = useState("Europe/Kiev");
+  const [timezone, setTimezone] = useState("");
   const [language, setLanguage] = useState<ProLanguage>("ru");
   const [currency, setCurrency] = useState("UAH");
   const [phoneError, setPhoneError] = useState("");
   const [isPrefixOpen, setIsPrefixOpen] = useState(false);
-  const [isCountryOpen, setIsCountryOpen] = useState(false);
-  const [isTimezoneOpen, setIsTimezoneOpen] = useState(false);
+  const [prefixSearch, setPrefixSearch] = useState("");
   const [googleNotice, setGoogleNotice] = useState("");
+  const [step, setStep] = useState<"entry" | "details">("entry");
 
   const phoneRule = getPhoneRule(phoneCountry);
   const phoneIsValid = isPhoneValid(phoneCountry, phone);
-  const timezoneLabel = timezones.find((timezoneOption) => timezoneOption.value === timezone)?.label ?? timezone;
   const t = formCopy[language];
+
+  const filteredPhoneCountries = useMemo(() => {
+    const query = prefixSearch.trim().toLowerCase();
+    if (!query) return phoneCountries;
+    return phoneCountries.filter((optionCountry) => {
+      const optionRule = getPhoneRule(optionCountry);
+      return optionCountry.toLowerCase().includes(query) || optionRule.prefix.toLowerCase().includes(query);
+    });
+  }, [prefixSearch]);
 
   useEffect(() => {
     const savedLanguage = window.localStorage.getItem("rezervo-pro-language");
     const initialLanguage = languages.includes(savedLanguage as ProLanguage)
       ? (savedLanguage as ProLanguage)
       : getBrowserLanguage();
-    const initialCountry = getBrowserCountry();
+    const browserCountry = getBrowserCountry();
+    const browserTimezone = getBrowserTimezone();
     const liveDraft = readStoredJson<CreateAccountLiveDraft>(window.sessionStorage, liveDraftKey);
     const setupDraft = readStoredJson<SetupAccountDraft>(window.localStorage, setupDraftKey);
     const draftCountry = isKnownCountry(liveDraft?.country)
       ? liveDraft.country
       : isKnownCountry(setupDraft?.country)
         ? setupDraft.country
-        : initialCountry;
+        : browserCountry;
     const draftPhoneCountry = isKnownCountry(liveDraft?.phoneCountry)
       ? liveDraft.phoneCountry
       : draftCountry;
@@ -360,9 +394,10 @@ export default function CreateAccountForm() {
         ? liveDraft.timezone
         : isKnownTimezone(setupDraft?.timezone)
           ? setupDraft.timezone
-          : getBrowserTimezone()
+          : browserTimezone || inferTimezone(draftCountry)
     );
     setTermsAccepted(liveDraft?.termsAccepted ?? true);
+    setStep(liveDraft?.step === "details" || setupDraft?.email ? "details" : "entry");
     window.localStorage.setItem("rezervo-pro-language", initialLanguage);
     document.documentElement.lang = initialLanguage;
     window.dispatchEvent(new CustomEvent("rezervo-language-change", { detail: initialLanguage }));
@@ -370,54 +405,40 @@ export default function CreateAccountForm() {
   }, []);
 
   useEffect(() => {
-    if (!hasHydratedDraftRef.current) {
-      return;
-    }
+    if (!hasHydratedDraftRef.current) return;
 
     const params = new URLSearchParams(window.location.search);
-    if (params.get("google") !== "1") {
-      return;
-    }
+    if (params.get("google") !== "1") return;
 
     const emailFromGoogle = params.get("email")?.trim() || "";
     const firstNameFromGoogle = params.get("firstName")?.trim() || "";
     const lastNameFromGoogle = params.get("lastName")?.trim() || "";
     const localeFromGoogle = params.get("locale")?.toUpperCase() || "";
     const cameFromLogin = params.get("google_from") === "login";
+    const googleCountry = localeFromGoogle ? getCountryFromRegion(localeFromGoogle.split(/[-_]/).pop() || "") : "";
 
-    if (emailFromGoogle) {
-      setEmail(emailFromGoogle);
-    }
-    if (firstNameFromGoogle) {
-      setFirstName(firstNameFromGoogle);
-    }
-    if (lastNameFromGoogle) {
-      setLastName(lastNameFromGoogle);
-    }
+    if (emailFromGoogle) setEmail(emailFromGoogle);
+    if (firstNameFromGoogle) setFirstName(firstNameFromGoogle);
+    if (lastNameFromGoogle) setLastName(lastNameFromGoogle);
     setPassword((current) => current || makeGeneratedPassword());
     setTermsAccepted(true);
+    setStep("details");
 
-    if (localeFromGoogle.endsWith("UA")) {
-      setCountry("Ukraine");
-      setPhoneCountry("Ukraine");
-      setTimezone((current) => current || "Europe/Kiev");
-    } else if (localeFromGoogle.endsWith("US")) {
-      setCountry("United States");
-      setPhoneCountry("United States");
-      setTimezone((current) => current || "America/New_York");
+    if (googleCountry && googleCountry !== "Ukraine") {
+      setCountry(googleCountry);
+      setPhoneCountry(googleCountry);
+      setCurrency(inferCurrency(googleCountry));
+      setTimezone(inferTimezone(googleCountry));
     }
 
-    setGoogleNotice(cameFromLogin ? t.googleFromLogin : "");
-  }, [t.googleFromLogin]);
+    setGoogleNotice(cameFromLogin ? t.googleNotice : "");
+  }, [t.googleNotice]);
 
   useEffect(() => {
     const handleLanguageChange = (event: Event) => {
       const nextLanguage = (event as CustomEvent<ProLanguage>).detail;
-      if (languages.includes(nextLanguage)) {
-        setLanguage(nextLanguage);
-      }
+      if (languages.includes(nextLanguage)) setLanguage(nextLanguage);
     };
-
     window.addEventListener("rezervo-language-change", handleLanguageChange);
     return () => window.removeEventListener("rezervo-language-change", handleLanguageChange);
   }, []);
@@ -425,28 +446,16 @@ export default function CreateAccountForm() {
   useEffect(() => {
     function closeFloatingMenus(event: MouseEvent) {
       const target = event.target as Node;
-
       if (!prefixMenuRef.current?.contains(target)) {
         setIsPrefixOpen(false);
       }
-
-      if (!countryMenuRef.current?.contains(target)) {
-        setIsCountryOpen(false);
-      }
-
-      if (!timezoneMenuRef.current?.contains(target)) {
-        setIsTimezoneOpen(false);
-      }
     }
-
     document.addEventListener("mousedown", closeFloatingMenus);
     return () => document.removeEventListener("mousedown", closeFloatingMenus);
   }, []);
 
   useEffect(() => {
-    if (!hasHydratedDraftRef.current) {
-      return;
-    }
+    if (!hasHydratedDraftRef.current) return;
 
     window.sessionStorage.setItem(
       liveDraftKey,
@@ -460,19 +469,42 @@ export default function CreateAccountForm() {
         phoneCountry,
         timezone,
         currency,
-        termsAccepted
+        termsAccepted,
+        step
       } satisfies CreateAccountLiveDraft)
     );
-  }, [country, currency, email, firstName, lastName, password, phone, phoneCountry, termsAccepted, timezone]);
+  }, [country, currency, email, firstName, lastName, password, phone, phoneCountry, step, termsAccepted, timezone]);
+
+  function syncCountry(nextCountry: string, source: "country" | "prefix") {
+    setCountry(nextCountry);
+    setPhoneCountry(nextCountry);
+    setCurrency(inferCurrency(nextCountry));
+    setTimezone(inferTimezone(nextCountry));
+    setPhone((current) => formatPhoneForCountry(current, nextCountry));
+    setPhoneError("");
+    if (source === "prefix") {
+      setIsPrefixOpen(false);
+      setPrefixSearch("");
+    }
+  }
+
+  function moveToDetails() {
+    if (!email.trim()) return;
+    setStep("details");
+  }
 
   function continueToSetup() {
+    if (!phone.trim()) {
+      setPhoneError(t.mobileRequired);
+      return;
+    }
     if (!phoneIsValid) {
       setPhoneError(getPhoneValidationMessage(phoneCountry));
       return;
     }
 
     window.localStorage.setItem(
-      "rezervo-pro-account-draft",
+      setupDraftKey,
       JSON.stringify({
         firstName,
         lastName,
@@ -489,66 +521,88 @@ export default function CreateAccountForm() {
     router.push("/pro/setup");
   }
 
+  if (step === "entry") {
+    return (
+      <div className={`${styles.panel} ${styles.createEntryPanel}`}>
+        <div className={styles.createEntryIntro}>
+          <p className={styles.eyebrow}>{t.introEyebrow}</p>
+          <h1 className={`${styles.heroTitle} ${styles.createHeroTitle}`}>{t.introTitle}</h1>
+          <p className={styles.heroSubtitle}>{t.introText}</p>
+        </div>
+
+        <div className={styles.createEntryStack}>
+          <input
+            type="email"
+            className={`${styles.input} ${styles.createEntryInput}`}
+            placeholder={t.introEmailPlaceholder}
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                moveToDetails();
+              }
+            }}
+          />
+          <button type="button" className={`${styles.primaryButton} ${styles.createEntryPrimary}`} onClick={moveToDetails} disabled={!email.trim()}>
+            {t.introContinue}
+          </button>
+        </div>
+
+        <div className={styles.socialDivider}>{t.introOr}</div>
+
+        <div className={styles.socialStack}>
+          <a href="/api/pro/auth/google/start?mode=register" className={styles.socialButton}>
+            <span className={`${styles.socialIcon} ${styles.google}`}>G</span>
+            <span>{t.introGoogle}</span>
+          </a>
+        </div>
+
+        <div className={styles.helperBlock}>
+          <strong>{t.introHelper}</strong>
+          <div>
+            <a href={`/${language}/catalog`} className={styles.mutedLink}>{t.introHelperLink}</a>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <>
-    <div className={styles.panel}>
-      <div>
-        <p className={styles.eyebrow}>{t.eyebrow}</p>
-        <h1 className={`${styles.heroTitle} ${styles.createHeroTitle}`}>
-          {t.title}
-        </h1>
+    <div className={`${styles.panel} ${styles.createDetailsPanel}`}>
+      <button type="button" className={styles.createBackButton} onClick={() => setStep("entry")} aria-label="Back">
+        <span aria-hidden="true">←</span>
+      </button>
+
+      <div className={styles.createDetailsIntro}>
+        <h1 className={`${styles.heroTitle} ${styles.createHeroTitle}`}>{t.detailsTitle}</h1>
+        <p className={styles.heroSubtitle}>{t.detailsText}</p>
       </div>
 
       <div className={`${styles.fieldStack} ${styles.createAccountGrid}`}>
         <div className={styles.field}>
           <label htmlFor="firstName">{t.firstName}</label>
-          <input
-            id="firstName"
-            className={styles.input}
-            placeholder={t.firstNamePlaceholder}
-            value={firstName}
-            onChange={(event) => setFirstName(event.target.value)}
-          />
+          <input id="firstName" className={styles.input} placeholder={t.firstNamePlaceholder} value={firstName} onChange={(event) => setFirstName(event.target.value)} />
         </div>
         <div className={styles.field}>
           <label htmlFor="lastName">{t.lastName}</label>
-          <input
-            id="lastName"
-            className={styles.input}
-            placeholder={t.lastNamePlaceholder}
-            value={lastName}
-            onChange={(event) => setLastName(event.target.value)}
-          />
+          <input id="lastName" className={styles.input} placeholder={t.lastNamePlaceholder} value={lastName} onChange={(event) => setLastName(event.target.value)} />
         </div>
         <div className={styles.field}>
           <label htmlFor="password">{t.password}</label>
-          <input
-            id="password"
-            type="password"
-            className={styles.input}
-            placeholder={t.passwordPlaceholder}
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-          />
+          <input id="password" type="password" className={styles.input} placeholder={t.passwordPlaceholder} value={password} onChange={(event) => setPassword(event.target.value)} />
         </div>
         <div className={styles.field}>
           <label htmlFor="email">{t.email}</label>
-          <input
-            id="email"
-            type="email"
-            className={styles.input}
-            placeholder="you@example.com"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-          />
+          <input id="email" type="email" className={styles.input} placeholder="you@example.com" value={email} onChange={(event) => setEmail(event.target.value)} />
         </div>
-        <div className={styles.field}>
+        <div className={`${styles.field} ${styles.createFieldFull}`}>
           <label htmlFor="phone">{t.phone}</label>
-          <div className={`${styles.phoneRow} ${styles.createPhoneRow}`}>
+          <div className={`${styles.phoneRow} ${styles.createPhoneRowWide}`}>
             <div className={styles.phonePrefixPicker} ref={prefixMenuRef}>
               <button
                 type="button"
-                className={`${styles.phonePrefixButton} ${isPrefixOpen ? styles.phonePrefixButtonOpen : ""}`}
+                className={`${styles.phonePrefixButton} ${styles.phonePrefixButtonWide} ${isPrefixOpen ? styles.phonePrefixButtonOpen : ""}`}
                 aria-label={t.prefixAria}
                 aria-expanded={isPrefixOpen}
                 onClick={() => setIsPrefixOpen((value) => !value)}
@@ -557,26 +611,33 @@ export default function CreateAccountForm() {
                 <span aria-hidden="true">⌄</span>
               </button>
               {isPrefixOpen ? (
-                <div className={styles.phonePrefixMenu}>
-                  {phoneCountries.map((phoneCountryOption) => {
-                    const optionRule = getPhoneRule(phoneCountryOption);
-                    return (
-                      <button
-                        key={phoneCountryOption}
-                        type="button"
-                        className={phoneCountry === phoneCountryOption ? styles.phonePrefixOptionActive : ""}
-                        onClick={() => {
-                          setPhoneCountry(phoneCountryOption);
-                          setPhone((current) => formatPhoneForCountry(current, phoneCountryOption));
-                          setPhoneError("");
-                          setIsPrefixOpen(false);
-                        }}
-                      >
-                        <strong>{optionRule.prefix}</strong>
-                        <span>{phoneCountryOption}</span>
-                      </button>
-                    );
-                  })}
+                <div className={`${styles.phonePrefixMenu} ${styles.phonePrefixMenuRich}`}>
+                  <div className={styles.phonePrefixSearchWrap}>
+                    <input
+                      type="text"
+                      className={styles.phonePrefixSearch}
+                      placeholder={t.prefixSearch}
+                      value={prefixSearch}
+                      onChange={(event) => setPrefixSearch(event.target.value)}
+                    />
+                  </div>
+                  <div className={styles.phonePrefixList}>
+                    {filteredPhoneCountries.map((phoneCountryOption) => {
+                      const optionRule = getPhoneRule(phoneCountryOption);
+                      const active = phoneCountry === phoneCountryOption;
+                      return (
+                        <button
+                          key={phoneCountryOption}
+                          type="button"
+                          className={active ? styles.phonePrefixOptionActive : ""}
+                          onClick={() => syncCountry(phoneCountryOption, "prefix")}
+                        >
+                          <span>{phoneCountryOption}</span>
+                          <strong>{optionRule.prefix}</strong>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
               ) : null}
             </div>
@@ -584,7 +645,7 @@ export default function CreateAccountForm() {
               id="phone"
               className={styles.phoneInput}
               inputMode="numeric"
-              placeholder={phoneRule.placeholder}
+              placeholder={t.phonePlaceholder}
               value={phone}
               onChange={(event) => {
                 setPhone(formatPhoneLocal(event.target.value, phoneRule));
@@ -600,126 +661,55 @@ export default function CreateAccountForm() {
           {phoneError ? <span className={styles.fieldError}>{phoneError}</span> : null}
         </div>
         <div className={styles.field}>
-          <label id="country-label">{t.country}</label>
-          <div className={styles.createSelectPicker} ref={countryMenuRef}>
-            <button
-              type="button"
-              className={`${styles.createSelectButton} ${isCountryOpen ? styles.createSelectButtonOpen : ""}`}
-              aria-labelledby="country-label"
-              aria-expanded={isCountryOpen}
-              onClick={() => setIsCountryOpen((value) => !value)}
-            >
-              <span>{country}</span>
-              <span aria-hidden="true">⌄</span>
-            </button>
-            {isCountryOpen ? (
-              <div className={styles.createSelectMenu}>
-                {countries.map((countryOption) => (
-                  <button
-                    key={countryOption}
-                    type="button"
-                    className={country === countryOption ? styles.createSelectOptionActive : ""}
-                    onClick={() => {
-                      setCountry(countryOption);
-                      setPhoneCountry(countryOption);
-                      setCurrency(inferCurrency(countryOption));
-                      setPhone((current) => formatPhoneForCountry(current, countryOption));
-                      setPhoneError("");
-                      setIsCountryOpen(false);
-                    }}
-                  >
-                    {countryOption}
-                  </button>
-                ))}
-              </div>
-            ) : null}
-          </div>
-        </div>
-        <div className={styles.field}>
-          <label htmlFor="currency">{t.currency}</label>
+          <label htmlFor="country">{t.country}</label>
           <select
-            id="currency"
+            id="country"
             className={styles.select}
-            value={currency}
-            onChange={(event) => setCurrency(event.target.value)}
+            value={country}
+            onChange={(event) => syncCountry(event.target.value, "country")}
           >
-            {currencies.map((currencyOption) => (
-              <option key={currencyOption} value={currencyOption}>
-                {currencyOption}
-              </option>
+            {countries.map((countryOption) => (
+              <option key={countryOption} value={countryOption}>{countryOption}</option>
             ))}
           </select>
         </div>
         <div className={styles.field}>
-          <label id="timezone-label">{t.timezone}</label>
-          <div className={styles.createSelectPicker} ref={timezoneMenuRef}>
-            <button
-              type="button"
-              className={`${styles.createSelectButton} ${isTimezoneOpen ? styles.createSelectButtonOpen : ""}`}
-              aria-labelledby="timezone-label"
-              aria-expanded={isTimezoneOpen}
-              onClick={() => setIsTimezoneOpen((value) => !value)}
-            >
-              <span>{timezoneLabel}</span>
-              <span aria-hidden="true">⌄</span>
-            </button>
-            {isTimezoneOpen ? (
-              <div className={styles.createSelectMenu}>
-                {timezones.map((timezoneOption) => (
-                  <button
-                    key={timezoneOption.value}
-                    type="button"
-                    className={timezone === timezoneOption.value ? styles.createSelectOptionActive : ""}
-                    onClick={() => {
-                      setTimezone(timezoneOption.value);
-                      setIsTimezoneOpen(false);
-                    }}
-                  >
-                    {timezoneOption.label}
-                  </button>
-                ))}
-              </div>
-            ) : null}
-          </div>
+          <label htmlFor="currency">{t.currency}</label>
+          <select id="currency" className={styles.select} value={currency} onChange={(event) => setCurrency(event.target.value)}>
+            {currencies.map((currencyOption) => (
+              <option key={currencyOption} value={currencyOption}>{currencyOption}</option>
+            ))}
+          </select>
+        </div>
+        <div className={`${styles.field} ${styles.createFieldFull}`}>
+          <label htmlFor="timezone">{t.timezone}</label>
+          <select id="timezone" className={styles.select} value={timezone} onChange={(event) => setTimezone(event.target.value)}>
+            <option value="">{t.timezonePlaceholder}</option>
+            {timezones.filter((option) => option.value).map((timezoneOption) => (
+              <option key={timezoneOption.value} value={timezoneOption.value}>{timezoneOption.label}</option>
+            ))}
+          </select>
         </div>
       </div>
-
-      <a href="/api/pro/auth/google/start?mode=register" className={styles.ghostButton}>
-        {t.google}
-      </a>
 
       {googleNotice ? <div className={styles.addressWarning}>{googleNotice}</div> : null}
 
       <label className={styles.terms}>
-        <input
-          type="checkbox"
-          checked={termsAccepted}
-          onChange={(event) => setTermsAccepted(event.target.checked)}
-        />
-        <span>
-          {t.terms}
-        </span>
+        <input type="checkbox" checked={termsAccepted} onChange={(event) => setTermsAccepted(event.target.checked)} />
+        <span>{t.terms}</span>
       </label>
 
       <div className={styles.createAccountActions}>
         <button
           type="button"
           className={styles.primaryButton}
-          disabled={
-            !termsAccepted ||
-            !firstName.trim() ||
-            !lastName.trim() ||
-            !email.trim() ||
-            !password.trim() ||
-            !phoneIsValid
-          }
+          disabled={!termsAccepted || !firstName.trim() || !lastName.trim() || !email.trim() || !password.trim() || !phoneIsValid}
           onClick={continueToSetup}
         >
           {t.submit}
         </button>
-        <a className={styles.mutedLink} href="/pro/login">{t.login}</a>
+        <a className={styles.mutedLink} href="/pro/login">{t.loginLink}</a>
       </div>
     </div>
-    </>
   );
 }
