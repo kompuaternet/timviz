@@ -989,6 +989,103 @@ export async function getProfessionalIdByEmail(email: string) {
   return professional?.id || null;
 }
 
+export async function professionalExistsByEmail(email: string) {
+  return Boolean(await getProfessionalIdByEmail(email));
+}
+
+export async function getProfessionalPasswordResetProfile(email: string) {
+  const normalizedEmail = email.trim().toLowerCase();
+  if (!normalizedEmail) {
+    return null;
+  }
+
+  if (isSupabaseConfigured()) {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      return null;
+    }
+
+    const { data, error } = await supabase
+      .from("professionals")
+      .select("id, first_name, last_name, email, password_hash")
+      .ilike("email", normalizedEmail)
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    if (!data) {
+      return null;
+    }
+
+    return {
+      id: data.id,
+      firstName: data.first_name || "",
+      lastName: data.last_name || "",
+      email: data.email,
+      passwordHash: data.password_hash
+    };
+  }
+
+  const store = await ensureDemoBusinessesInLocalStore();
+  const professional = store.professionals.find(
+    (item) => item.email.trim().toLowerCase() === normalizedEmail
+  );
+
+  if (!professional) {
+    return null;
+  }
+
+  return {
+    id: professional.id,
+    firstName: professional.firstName,
+    lastName: professional.lastName,
+    email: professional.email,
+    passwordHash: professional.passwordHash
+  };
+}
+
+export async function updateProfessionalPasswordByEmail(email: string, nextPassword: string) {
+  const normalizedEmail = email.trim().toLowerCase();
+  if (!normalizedEmail) {
+    throw new Error("Email is required.");
+  }
+
+  const nextPasswordHash = hashPassword(nextPassword);
+
+  if (isSupabaseConfigured()) {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      throw new Error("Supabase is not available.");
+    }
+
+    const { error } = await supabase
+      .from("professionals")
+      .update({ password_hash: nextPasswordHash })
+      .ilike("email", normalizedEmail);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return { ok: true };
+  }
+
+  const store = await ensureDemoBusinessesInLocalStore();
+  const professional = store.professionals.find(
+    (item) => item.email.trim().toLowerCase() === normalizedEmail
+  );
+
+  if (!professional) {
+    throw new Error("Professional not found.");
+  }
+
+  professional.passwordHash = nextPasswordHash;
+  await writeStore(store);
+  return { ok: true };
+}
+
 export async function updateBusinessScheduleForProfessional(input: {
   professionalId: string;
   workScheduleMode: WorkScheduleMode;

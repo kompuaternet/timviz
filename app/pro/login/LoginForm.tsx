@@ -16,6 +16,7 @@ const loginText = {
     password: "Пароль",
     passwordPlaceholder: "Введите пароль",
     google: "Войти через Google",
+    forgotPassword: "Забыли пароль?",
     loading: "Входим...",
     submit: "Войти",
     noAccount: "Нет аккаунта?",
@@ -31,6 +32,7 @@ const loginText = {
     password: "Пароль",
     passwordPlaceholder: "Введіть пароль",
     google: "Увійти через Google",
+    forgotPassword: "Забули пароль?",
     loading: "Входимо...",
     submit: "Увійти",
     noAccount: "Немає акаунта?",
@@ -46,6 +48,7 @@ const loginText = {
     password: "Password",
     passwordPlaceholder: "Enter your password",
     google: "Continue with Google",
+    forgotPassword: "Forgot password?",
     loading: "Signing in...",
     submit: "Sign in",
     noAccount: "No account yet?",
@@ -66,12 +69,16 @@ export default function LoginForm() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const googleError = params.get("google_error");
+    const prefilledEmail = params.get("email")?.trim() || "";
     const nextText =
       googleError === "config"
         ? copy.googleConfigError
         : googleError
           ? copy.googleLoginError
           : "";
+    if (prefilledEmail) {
+      setEmail(prefilledEmail);
+    }
     setOauthErrorText(nextText);
   }, [copy.googleConfigError, copy.googleLoginError]);
 
@@ -132,6 +139,12 @@ export default function LoginForm() {
             onChange={(event) => setPassword(event.target.value)}
           />
         </div>
+      </div>
+
+      <div className={styles.inlineActionRow}>
+        <a href={`/pro/forgot-password${email.trim() ? `?email=${encodeURIComponent(email.trim())}` : ""}`} className={styles.mutedLink}>
+          {copy.forgotPassword}
+        </a>
       </div>
 
       {error ? <div className={styles.addressWarning}>{error}</div> : null}

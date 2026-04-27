@@ -220,6 +220,7 @@ const formCopy = {
     introContinue: "Продолжить",
     introOr: "или",
     introGoogle: "Войти через Google",
+    introChecking: "Проверяем...",
     introHelper: "Вы клиент и хотите записаться на услугу?",
     introHelperLink: "Перейти к клиентскому каталогу",
     detailsTitle: "Проверьте и подтвердите",
@@ -243,6 +244,9 @@ const formCopy = {
     submit: "Продолжить",
     login: "Уже есть аккаунт?",
     loginLink: "Войти в кабинет",
+    accountExistsTitle: "Этот email уже зарегистрирован",
+    accountExistsText: "Можно сразу войти в кабинет или восстановить пароль, чтобы не создавать второй аккаунт.",
+    forgotPassword: "Восстановить пароль",
     googleNotice: "Аккаунт не найден. Завершите регистрацию бизнеса через Google.",
     mobileRequired: "Номер мобильного требуется"
   },
@@ -254,6 +258,7 @@ const formCopy = {
     introContinue: "Продовжити",
     introOr: "або",
     introGoogle: "Увійти через Google",
+    introChecking: "Перевіряємо...",
     introHelper: "Ви клієнт і хочете записатися на послугу?",
     introHelperLink: "Перейти до клієнтського каталогу",
     detailsTitle: "Перевірте і підтвердіть",
@@ -277,6 +282,9 @@ const formCopy = {
     submit: "Продовжити",
     login: "Вже є акаунт?",
     loginLink: "Увійти в кабінет",
+    accountExistsTitle: "Цей email уже зареєстрований",
+    accountExistsText: "Можна одразу увійти в кабінет або відновити пароль, щоб не створювати другий акаунт.",
+    forgotPassword: "Відновити пароль",
     googleNotice: "Акаунт не знайдено. Завершіть реєстрацію бізнесу через Google.",
     mobileRequired: "Номер мобільного обов'язковий"
   },
@@ -288,6 +296,7 @@ const formCopy = {
     introContinue: "Continue",
     introOr: "or",
     introGoogle: "Continue with Google",
+    introChecking: "Checking...",
     introHelper: "Are you a client looking to book a service?",
     introHelperLink: "Go to the client catalog",
     detailsTitle: "Review and confirm",
@@ -311,6 +320,9 @@ const formCopy = {
     submit: "Continue",
     login: "Already have an account?",
     loginLink: "Sign in",
+    accountExistsTitle: "This email is already registered",
+    accountExistsText: "You can sign in right away or reset your password instead of creating a second account.",
+    forgotPassword: "Reset password",
     googleNotice: "Account not found. Finish business registration with Google.",
     mobileRequired: "Mobile number is required"
   }
@@ -335,6 +347,8 @@ export default function CreateAccountForm() {
   const [isPrefixOpen, setIsPrefixOpen] = useState(false);
   const [prefixSearch, setPrefixSearch] = useState("");
   const [googleNotice, setGoogleNotice] = useState("");
+  const [existingAccountEmail, setExistingAccountEmail] = useState("");
+  const [isCheckingEmail, setIsCheckingEmail] = useState(false);
   const [step, setStep] = useState<"entry" | "details">("entry");
 
   const phoneRule = getPhoneRule(phoneCountry);
@@ -475,6 +489,10 @@ export default function CreateAccountForm() {
     );
   }, [country, currency, email, firstName, lastName, password, phone, phoneCountry, step, termsAccepted, timezone]);
 
+  useEffect(() => {
+    setExistingAccountEmail("");
+  }, [email]);
+
   function syncCountry(nextCountry: string, source: "country" | "prefix") {
     setCountry(nextCountry);
     setPhoneCountry(nextCountry);
@@ -488,18 +506,50 @@ export default function CreateAccountForm() {
     }
   }
 
-  function moveToDetails() {
+  async function emailAlreadyExists(emailToCheck: string) {
+    const response = await fetch("/api/pro/account/check-email", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({ email: emailToCheck.trim() })
+    });
+    const result = await response.json().catch(() => ({ exists: false }));
+    return Boolean(result.exists);
+  }
+
+  async function moveToDetails() {
     if (!email.trim()) return;
+
+    setIsCheckingEmail(true);
+    const exists = await emailAlreadyExists(email);
+    setIsCheckingEmail(false);
+
+    if (exists) {
+      setExistingAccountEmail(email.trim());
+      return;
+    }
+
     setStep("details");
   }
 
-  function continueToSetup() {
+  async function continueToSetup() {
     if (!phone.trim()) {
       setPhoneError(t.mobileRequired);
       return;
     }
     if (!phoneIsValid) {
       setPhoneError(getPhoneValidationMessage(phoneCountry));
+      return;
+    }
+
+    setIsCheckingEmail(true);
+    const exists = await emailAlreadyExists(email);
+    setIsCheckingEmail(false);
+
+    if (exists) {
+      setExistingAccountEmail(email.trim());
+      setStep("entry");
       return;
     }
 
@@ -545,9 +595,24 @@ export default function CreateAccountForm() {
             }}
           />
           <button type="button" className={`${styles.primaryButton} ${styles.createEntryPrimary}`} onClick={moveToDetails} disabled={!email.trim()}>
-            {t.introContinue}
+            {isCheckingEmail ? t.introChecking : t.introContinue}
           </button>
         </div>
+
+        {existingAccountEmail ? (
+          <div className={styles.existingAccountNotice}>
+            <strong>{t.accountExistsTitle}</strong>
+            <p>{t.accountExistsText}</p>
+            <div className={styles.existingAccountActions}>
+              <a href={`/pro/login?email=${encodeURIComponent(existingAccountEmail)}`} className={styles.primaryButton}>
+                {t.loginLink}
+              </a>
+              <a href={`/pro/forgot-password?email=${encodeURIComponent(existingAccountEmail)}`} className={styles.ghostButton}>
+                {t.forgotPassword}
+              </a>
+            </div>
+          </div>
+        ) : null}
 
         <div className={styles.socialDivider}>{t.introOr}</div>
 
@@ -703,10 +768,10 @@ export default function CreateAccountForm() {
         <button
           type="button"
           className={styles.primaryButton}
-          disabled={!termsAccepted || !firstName.trim() || !lastName.trim() || !email.trim() || !password.trim() || !phoneIsValid}
-          onClick={continueToSetup}
+          disabled={!termsAccepted || !firstName.trim() || !lastName.trim() || !email.trim() || !password.trim() || !phoneIsValid || isCheckingEmail}
+          onClick={() => void continueToSetup()}
         >
-          {t.submit}
+          {isCheckingEmail ? t.introChecking : t.submit}
         </button>
         <a className={styles.mutedLink} href="/pro/login">{t.loginLink}</a>
       </div>
