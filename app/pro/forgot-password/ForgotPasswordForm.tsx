@@ -1,6 +1,5 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { useProLanguage } from "../useProLanguage";
 import styles from "../pro.module.css";
@@ -43,9 +42,8 @@ const copy = {
 
 export default function ForgotPasswordForm() {
   const { language } = useProLanguage();
-  const params = useSearchParams();
   const t = copy[language];
-  const [email, setEmail] = useState(() => params.get("email")?.trim() || "");
+  const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
