@@ -689,7 +689,10 @@ export async function getBusinessDirectorySnapshot(): Promise<BusinessDirectoryS
     if (servicesError) {
       throw new Error(servicesError.message);
     }
-    if (joinRequestsError) {
+    if (
+      joinRequestsError &&
+      !joinRequestsError.message.includes("Could not find the table 'public.business_join_requests' in the schema cache")
+    ) {
       throw new Error(joinRequestsError.message);
     }
 
