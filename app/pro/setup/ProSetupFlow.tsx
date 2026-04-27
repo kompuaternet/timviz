@@ -12,7 +12,6 @@ import {
 } from "../../../lib/schedule-reminder";
 import {
   getCategoryOptions,
-  getCategoryTemplate,
   type CategoryTemplate,
   getServicesForCategories
 } from "../../../lib/service-templates";
@@ -140,15 +139,22 @@ const setupText = {
     },
     categories: {
       eyebrow: "Категория бизнеса",
-      title: "Чем занимается ваш бизнес?",
-      text: "На основе категории мы сразу подготовим базовый набор услуг, на которые потом будет идти запись.",
-      added: "Будут добавлены услуги:",
-      suggestions: "✦ См. предложения",
-      addManual: "Добавить новую услугу",
-      skip: "Не сейчас",
+      title: "Чем вы занимаетесь?",
+      text: "Мы автоматически подготовим услуги для вашего профиля",
       primary: "Основной",
       categoryHint: "Услуги будут предложены автоматически на следующем шаге кабинета.",
       deleteService: "Удалить услугу"
+    },
+    servicesReview: {
+      eyebrow: "Подготовка услуг",
+      title: "Мы добавили услуги за вас",
+      text: "Вы сможете изменить цены, длительность и список услуг позже в кабинете",
+      continue: "Продолжить",
+      addManual: "Добавить свою услугу",
+      later: "Настрою позже",
+      showMore: "Показать ещё",
+      showLess: "Скрыть",
+      empty: "Пока список услуг пуст. Можно продолжить и настроить его позже в кабинете."
     },
     format: {
       eyebrow: "Формат бизнеса",
@@ -239,15 +245,22 @@ const setupText = {
     },
     categories: {
       eyebrow: "Категорія бізнесу",
-      title: "Чим займається ваш бізнес?",
-      text: "На основі категорії ми одразу підготуємо базовий набір послуг, на які потім буде йти запис.",
-      added: "Будуть додані послуги:",
-      suggestions: "✦ Переглянути пропозиції",
-      addManual: "Додати нову послугу",
-      skip: "Не зараз",
+      title: "Чим ви займаєтесь?",
+      text: "Ми автоматично підготуємо послуги для вашого профілю",
       primary: "Основна",
       categoryHint: "Послуги будуть запропоновані автоматично на наступному кроці кабінету.",
       deleteService: "Видалити послугу"
+    },
+    servicesReview: {
+      eyebrow: "Підготовка послуг",
+      title: "Ми додали послуги за вас",
+      text: "Ви зможете змінити ціни, тривалість і список послуг пізніше в кабінеті",
+      continue: "Продовжити",
+      addManual: "Додати свою послугу",
+      later: "Налаштую пізніше",
+      showMore: "Показати ще",
+      showLess: "Згорнути",
+      empty: "Поки список послуг порожній. Можна продовжити та налаштувати його пізніше в кабінеті."
     },
     format: {
       eyebrow: "Формат бізнесу",
@@ -338,15 +351,22 @@ const setupText = {
     },
     categories: {
       eyebrow: "Business category",
-      title: "What does your business do?",
-      text: "Based on the category we prepare starter services that clients can book later.",
-      added: "Services to add:",
-      suggestions: "✦ View suggestions",
-      addManual: "Add new service",
-      skip: "Not now",
+      title: "What do you do?",
+      text: "We will automatically prepare services for your profile",
       primary: "Primary",
       categoryHint: "Services will be suggested automatically on the next setup step.",
       deleteService: "Remove service"
+    },
+    servicesReview: {
+      eyebrow: "Service setup",
+      title: "We added services for you",
+      text: "You will be able to change prices, duration and the service list later in your workspace",
+      continue: "Continue",
+      addManual: "Add your own service",
+      later: "I will set it up later",
+      showMore: "Show more",
+      showLess: "Show less",
+      empty: "The service list is empty for now. You can continue and configure it later in the workspace."
     },
     format: {
       eyebrow: "Business format",
@@ -436,8 +456,6 @@ type Draft = {
   addressLon: number | null;
 };
 
-type SuggestedSelection = Record<string, boolean>;
-
 const initialDraft: Draft = {
   ownerMode: "owner",
   joinBusinessId: "",
@@ -466,18 +484,17 @@ export default function ProSetupFlow({ catalog }: { catalog: CategoryTemplate[] 
   const [joinResults, setJoinResults] = useState<JoinBusinessSearchResult[]>([]);
   const [isSearchingJoin, setIsSearchingJoin] = useState(false);
   const [isSearchingAddress, setIsSearchingAddress] = useState(false);
-  const [showSuggestions, setShowSuggestions] = useState(false);
   const [showManualService, setShowManualService] = useState(false);
+  const [showAllSuggestedServices, setShowAllSuggestedServices] = useState(false);
   const [manualServiceName, setManualServiceName] = useState("");
   const [manualServiceCategory, setManualServiceCategory] = useState("Другая");
   const [manualServiceHours, setManualServiceHours] = useState("0");
   const [manualServiceMinutes, setManualServiceMinutes] = useState("30");
   const [manualServicePrice, setManualServicePrice] = useState("");
-  const [suggestedSelection, setSuggestedSelection] = useState<SuggestedSelection>({});
   const t = setupText[language];
   const physicalVenueMode = serviceModes[0];
 
-  const totalSteps = draft.ownerMode === "owner" ? 5 : 3;
+  const totalSteps = draft.ownerMode === "owner" ? 6 : 3;
 
   const progress = useMemo(
     () => Array.from({ length: totalSteps }, (_, index) => index <= step),
@@ -491,12 +508,13 @@ export default function ProSetupFlow({ catalog }: { catalog: CategoryTemplate[] 
         ? draft.joinBusinessId.trim().length > 0
         : draft.companyName.trim().length > 1)) ||
     (draft.ownerMode === "member" && step === 2 && draft.joinBusinessId.trim().length > 0) ||
-    (draft.ownerMode === "owner" &&
-      step === 2 &&
-      (draft.categories.length > 0 || draft.services.length > 0)) ||
-    (draft.ownerMode === "owner" && step === 3 && Boolean(draft.accountType)) ||
+    (draft.ownerMode === "owner" && step === 2 && draft.categories.length > 0) ||
+    (draft.ownerMode === "owner" && step === 3) ||
     (draft.ownerMode === "owner" &&
       step === 4 &&
+      Boolean(draft.accountType)) ||
+    (draft.ownerMode === "owner" &&
+      step === 5 &&
       Boolean(draft.serviceMode) &&
         (draft.serviceMode !== physicalVenueMode ||
         (draft.addressDetails.trim().length > 0 &&
@@ -521,18 +539,14 @@ export default function ProSetupFlow({ catalog }: { catalog: CategoryTemplate[] 
 
   const previewSuggestion = addressSuggestions[0] ?? null;
   const categoryOptions = useMemo(() => getCategoryOptions(catalog), [catalog]);
-  const primaryCategory = draft.categories[0] ?? "Другая";
-  const primaryTemplate = useMemo(
-    () => getCategoryTemplate(primaryCategory, catalog),
-    [catalog, primaryCategory]
-  );
-  const allSuggestedServices = useMemo(
-    () => [...primaryTemplate.topSuggestions, ...primaryTemplate.popularServices],
-    [primaryTemplate]
-  );
   const manualCategoryOptions = useMemo(
     () => Array.from(new Set(["Другая", ...categoryOptions.filter((category) => category !== "Другая")])),
     [categoryOptions]
+  );
+  const hiddenSuggestedServicesCount = Math.max(0, draft.services.length - 10);
+  const visibleSuggestedServices = useMemo(
+    () => (showAllSuggestedServices ? draft.services : draft.services.slice(0, 10)),
+    [draft.services, showAllSuggestedServices]
   );
 
   useEffect(() => {
@@ -572,7 +586,7 @@ export default function ProSetupFlow({ catalog }: { catalog: CategoryTemplate[] 
 
   useEffect(() => {
     if (
-      step !== 4 ||
+      step !== 5 ||
       draft.serviceMode !== physicalVenueMode ||
       draft.address.trim().length < 3
     ) {
@@ -776,30 +790,6 @@ export default function ProSetupFlow({ catalog }: { catalog: CategoryTemplate[] 
         services: getServicesForCategories(nextCategories, catalog)
       };
     });
-  }
-
-  function toggleSuggestedService(serviceName: string) {
-    setSuggestedSelection((current) => ({
-      ...current,
-      [serviceName]: !current[serviceName]
-    }));
-  }
-
-  function applySuggestedServices() {
-    const selected = allSuggestedServices
-      .filter((service) => suggestedSelection[service.name])
-      .map((service) => service.name);
-
-    if (selected.length === 0) {
-      setShowSuggestions(false);
-      return;
-    }
-
-    setDraft((current) => ({
-      ...current,
-      services: Array.from(new Set([...current.services, ...selected]))
-    }));
-    setShowSuggestions(false);
   }
 
   function addManualService() {
@@ -1070,61 +1060,6 @@ export default function ProSetupFlow({ catalog }: { catalog: CategoryTemplate[] 
               <p>{t.categories.text}</p>
             </div>
 
-            <div className={styles.generatedBlock}>
-              <strong>{t.categories.added}</strong>
-              <div className={styles.generatedList}>
-                {draft.services.map((service) => (
-                  <button
-                    key={service}
-                    type="button"
-                    className={styles.generatedChipButton}
-                    onClick={() =>
-                      setDraft((current) => ({
-                        ...current,
-                        services: current.services.filter((item) => item !== service)
-                      }))
-                    }
-                    aria-label={`${t.categories.deleteService} ${service}`}
-                    title={t.categories.deleteService}
-                  >
-                    <span className={styles.generatedChip}>{service}</span>
-                    <span className={styles.generatedChipRemove}>×</span>
-                  </button>
-                ))}
-              </div>
-              <div className={styles.templateActions}>
-                <button
-                  type="button"
-                  className={styles.primaryButton}
-                  onClick={() => setShowSuggestions(true)}
-                >
-                  {t.categories.suggestions}
-                </button>
-                <button
-                  type="button"
-                  className={styles.ghostButton}
-                  onClick={() => {
-                    setManualServiceCategory("Другая");
-                    setShowManualService(true);
-                  }}
-                >
-                  {t.categories.addManual}
-                </button>
-                <button
-                  type="button"
-                  className={styles.ghostButton}
-                  onClick={() =>
-                    setDraft((current) => ({
-                      ...current,
-                      services: []
-                    }))
-                  }
-                >
-                  {t.categories.skip}
-                </button>
-              </div>
-            </div>
-
             <div className={styles.categoryGrid}>
               {categoryOptions.map((category) => {
                 const selected = draft.categories.includes(category);
@@ -1154,6 +1089,86 @@ export default function ProSetupFlow({ catalog }: { catalog: CategoryTemplate[] 
         ) : null}
 
         {step === 3 && draft.ownerMode === "owner" ? (
+          <section className={styles.wizardCard}>
+            <div className={styles.wizardHeader}>
+              <p className={styles.eyebrow}>{t.servicesReview.eyebrow}</p>
+              <h1>{t.servicesReview.title}</h1>
+              <p>{t.servicesReview.text}</p>
+            </div>
+
+            <div className={styles.generatedBlock}>
+              {draft.services.length > 0 ? (
+                <>
+                  <div className={styles.generatedList}>
+                    {visibleSuggestedServices.map((service) => (
+                      <button
+                        key={service}
+                        type="button"
+                        className={styles.generatedChipButton}
+                        onClick={() =>
+                          setDraft((current) => ({
+                            ...current,
+                            services: current.services.filter((item) => item !== service)
+                          }))
+                        }
+                        aria-label={`${t.categories.deleteService} ${service}`}
+                        title={t.categories.deleteService}
+                      >
+                        <span className={styles.generatedChip}>{service}</span>
+                        <span className={styles.generatedChipRemove}>×</span>
+                      </button>
+                    ))}
+                  </div>
+
+                  {hiddenSuggestedServicesCount > 0 ? (
+                    <button
+                      type="button"
+                      className={styles.inlineTextButton}
+                      onClick={() => setShowAllSuggestedServices((current) => !current)}
+                    >
+                      {showAllSuggestedServices ? t.servicesReview.showLess : t.servicesReview.showMore}
+                    </button>
+                  ) : null}
+                </>
+              ) : (
+                <p className={styles.choiceText}>{t.servicesReview.empty}</p>
+              )}
+
+              <div className={styles.templateActions}>
+                <button
+                  type="button"
+                  className={styles.primaryButton}
+                  onClick={() => {
+                    void handleContinue();
+                  }}
+                >
+                  {t.servicesReview.continue}
+                </button>
+                <button
+                  type="button"
+                  className={styles.ghostButton}
+                  onClick={() => {
+                    setManualServiceCategory(draft.categories[0] ?? "Другая");
+                    setShowManualService(true);
+                  }}
+                >
+                  {t.servicesReview.addManual}
+                </button>
+                <button
+                  type="button"
+                  className={styles.inlineTextButton}
+                  onClick={() => {
+                    void handleContinue();
+                  }}
+                >
+                  {t.servicesReview.later}
+                </button>
+              </div>
+            </div>
+          </section>
+        ) : null}
+
+        {step === 4 && draft.ownerMode === "owner" ? (
           <section className={styles.wizardCard}>
             <div className={styles.wizardHeader}>
               <p className={styles.eyebrow}>{t.format.eyebrow}</p>
@@ -1187,7 +1202,7 @@ export default function ProSetupFlow({ catalog }: { catalog: CategoryTemplate[] 
           </section>
         ) : null}
 
-        {step === 4 && draft.ownerMode === "owner" ? (
+        {step === 5 && draft.ownerMode === "owner" ? (
           <section className={styles.wizardCard}>
             <div className={styles.wizardHeader}>
               <p className={styles.eyebrow}>{t.place.eyebrow}</p>
@@ -1294,75 +1309,6 @@ export default function ProSetupFlow({ catalog }: { catalog: CategoryTemplate[] 
           </section>
         ) : null}
       </div>
-
-      {showSuggestions ? (
-        <div className={styles.templateModalBackdrop}>
-          <div className={styles.templateModal}>
-            <div className={styles.templateModalHeader}>
-              <button type="button" className={styles.circleButton} onClick={() => setShowSuggestions(false)}>
-                ×
-              </button>
-              <div>
-                <h2>{t.modal.chooseServices}</h2>
-                <p>
-                  {t.modal.templateText} «{getLocalizedCategoryName(primaryTemplate.title, language)}» {t.modal.templateSuffix}
-                </p>
-              </div>
-            </div>
-
-            <div className={styles.templateModalBody}>
-              <div className={styles.templateListBlock}>
-                <strong>{t.modal.best}</strong>
-                <span>{t.modal.bestText}</span>
-                <div className={styles.templateList}>
-                  {primaryTemplate.topSuggestions.map((service) => (
-                    <div key={service.name} className={styles.templateServiceRow}>
-                      <div>
-                        <strong>{service.name}</strong>
-                        <span>{service.durationMinutes ?? 60} {t.modal.minutes} · {service.price ?? 700} UAH</span>
-                      </div>
-                      <button
-                        type="button"
-                        className={`${styles.templateSelectButton} ${suggestedSelection[service.name] ? styles.templateSelectButtonActive : ""}`}
-                        onClick={() => toggleSuggestedService(service.name)}
-                      >
-                        {suggestedSelection[service.name] ? t.modal.selected : t.modal.choose}
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className={styles.templateListBlock}>
-                <strong>{t.modal.popular}</strong>
-                <div className={styles.templateList}>
-                  {primaryTemplate.popularServices.map((service) => (
-                    <div key={service.name} className={styles.templateServiceRow}>
-                      <div>
-                        <strong>{service.name}</strong>
-                        <span>{service.durationMinutes ?? 60} {t.modal.minutes} · {service.price ?? 700} UAH</span>
-                      </div>
-                      <button
-                        type="button"
-                        className={`${styles.templateSelectButton} ${suggestedSelection[service.name] ? styles.templateSelectButtonActive : ""}`}
-                        onClick={() => toggleSuggestedService(service.name)}
-                      >
-                        {suggestedSelection[service.name] ? t.modal.selected : t.modal.choose}
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className={styles.templateModalFooter}>
-              <button type="button" className={styles.primaryButton} onClick={applySuggestedServices}>
-                {t.modal.addServices} ({Object.values(suggestedSelection).filter(Boolean).length})
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
 
       {showManualService ? (
         <div className={styles.templateModalBackdrop}>

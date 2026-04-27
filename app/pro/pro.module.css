@@ -909,6 +909,23 @@
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
+  align-items: center;
+}
+
+.inlineTextButton {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  color: #6f4cff;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.inlineTextButton:hover {
+  color: #4f46e5;
+  text-decoration: underline;
 }
 
 .templateModalBackdrop {
