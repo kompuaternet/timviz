@@ -32,30 +32,35 @@ export async function sendMail(input: {
   }
 
   const isZoho = config.host.includes("zoho");
+  const zohoHosts = isZoho
+    ? Array.from(
+        new Set(
+          [
+            config.host,
+            config.host.includes(".eu") ? "smtp.zoho.eu" : null,
+            config.host.includes(".eu") ? "smtppro.zoho.eu" : null
+          ].filter(Boolean) as string[]
+        )
+      )
+    : [config.host];
+
   const attempts = isZoho
-    ? [
+    ? zohoHosts.flatMap((host) => [
         {
-          host: config.host,
+          host,
           port: 587,
           secure: false,
           requireTLS: true,
-          label: "zoho-587-starttls"
+          label: `zoho-587-starttls:${host}`
         },
         {
-          host: config.host,
-          port: config.port,
-          secure: config.secure,
-          requireTLS: config.requireTLS,
-          label: "configured"
-        },
-        {
-          host: config.host,
+          host,
           port: 465,
           secure: true,
           requireTLS: false,
-          label: "zoho-465-ssl"
+          label: `zoho-465-ssl:${host}`
         }
-      ]
+      ])
     : [
         {
           host: config.host,
