@@ -888,41 +888,64 @@
   box-shadow: 0 16px 44px rgba(107, 92, 196, 0.08);
 }
 
+.generatedHint {
+  margin: 0;
+  color: #6f675f;
+  font-size: 0.96rem;
+  line-height: 1.45;
+}
+
 .generatedList {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
 }
 
 .generatedChipButton {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   padding: 0;
   border: 0;
   background: transparent;
   cursor: pointer;
+  transition: transform 160ms ease;
+}
+
+.generatedChipButton:hover {
+  transform: translateY(-1px);
 }
 
 .generatedChip {
-  padding: 10px 14px;
+  padding: 8px 12px;
   border-radius: 999px;
   background: rgba(122, 97, 255, 0.1);
   color: #5f49dd;
-  font-size: 0.92rem;
+  font-size: 0.86rem;
   font-weight: 600;
+  transition: background-color 160ms ease, color 160ms ease;
 }
 
 .generatedChipRemove {
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
   display: inline-grid;
   place-items: center;
   background: rgba(122, 97, 255, 0.14);
   color: #5f49dd;
-  font-size: 1rem;
+  font-size: 0.92rem;
   font-weight: 700;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+.generatedChipButton:hover .generatedChip {
+  background: rgba(122, 97, 255, 0.16);
+}
+
+.generatedChipButton:hover .generatedChipRemove {
+  background: rgba(122, 97, 255, 0.24);
+  color: #4f46e5;
 }
 
 .templateActions {
@@ -930,6 +953,40 @@
   flex-wrap: wrap;
   gap: 12px;
   align-items: center;
+}
+
+.generatedTrustBlock {
+  display: grid;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+.generatedTrustBlock > strong {
+  font-size: 0.98rem;
+}
+
+.generatedTrustList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 6px;
+  color: #6f675f;
+}
+
+.generatedTrustList li {
+  position: relative;
+  padding-left: 16px;
+  line-height: 1.45;
+}
+
+.generatedTrustList li::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  top: 0;
+  color: #6f4cff;
+  font-weight: 800;
 }
 
 .inlineTextButton {

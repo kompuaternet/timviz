@@ -178,14 +178,21 @@ const setupText = {
     },
     servicesReview: {
       eyebrow: "Подготовка услуг",
-      title: "Мы добавили услуги за вас",
-      text: "Вы сможете изменить цены, длительность и список услуг позже в кабинете",
+      title: "Ваш профиль почти готов",
+      text: "Мы подготовили услуги за вас — проверьте и продолжайте",
+      selectOnly: "Выберите только те услуги, которые вы оказываете",
       continue: "Продолжить",
       addManual: "Добавить свою услугу",
-      later: "Настрою позже",
-      showMore: "Показать ещё",
-      showLess: "Скрыть",
+      showMore: "+ ещё {count} услуг",
+      showLess: "Скрыть список",
       empty: "Пока список услуг пуст. Можно продолжить и настроить его позже в кабинете."
+      ,
+      trustLead: "Дальше вы сможете:",
+      trustPoints: [
+        "установить цены",
+        "добавить график",
+        "начать принимать клиентов"
+      ]
     },
     format: {
       eyebrow: "Формат бизнеса",
@@ -284,14 +291,21 @@ const setupText = {
     },
     servicesReview: {
       eyebrow: "Підготовка послуг",
-      title: "Ми додали послуги за вас",
-      text: "Ви зможете змінити ціни, тривалість і список послуг пізніше в кабінеті",
+      title: "Ваш профіль майже готовий",
+      text: "Ми підготували послуги за вас — перевірте та продовжуйте",
+      selectOnly: "Оберіть тільки ті, які ви надаєте",
       continue: "Продовжити",
       addManual: "Додати свою послугу",
-      later: "Налаштую пізніше",
-      showMore: "Показати ще",
-      showLess: "Згорнути",
+      showMore: "+ ще {count} послуг",
+      showLess: "Згорнути список",
       empty: "Поки список послуг порожній. Можна продовжити та налаштувати його пізніше в кабінеті."
+      ,
+      trustLead: "Далі ви зможете:",
+      trustPoints: [
+        "встановити ціни",
+        "додати графік",
+        "почати приймати клієнтів"
+      ]
     },
     format: {
       eyebrow: "Формат бізнесу",
@@ -390,14 +404,21 @@ const setupText = {
     },
     servicesReview: {
       eyebrow: "Service setup",
-      title: "We added services for you",
-      text: "You will be able to change prices, duration and the service list later in your workspace",
+      title: "Your profile is almost ready",
+      text: "We prepared services for you — review them and keep going",
+      selectOnly: "Keep only the services you actually provide",
       continue: "Continue",
       addManual: "Add your own service",
-      later: "I will set it up later",
-      showMore: "Show more",
-      showLess: "Show less",
+      showMore: "+ {count} more services",
+      showLess: "Collapse list",
       empty: "The service list is empty for now. You can continue and configure it later in the workspace."
+      ,
+      trustLead: "Next you will be able to:",
+      trustPoints: [
+        "set prices",
+        "add a schedule",
+        "start accepting clients"
+      ]
     },
     format: {
       eyebrow: "Business format",
@@ -854,6 +875,10 @@ export default function ProSetupFlow({ catalog }: { catalog: CategoryTemplate[] 
     setAddressSuggestions([]);
   }
 
+  function formatShowMoreLabel(template: string, count: number) {
+    return template.replace("{count}", String(count));
+  }
+
   return (
     <div className={styles.onboardingShell}>
       <div className={styles.onboardingTop}>
@@ -1131,6 +1156,7 @@ export default function ProSetupFlow({ catalog }: { catalog: CategoryTemplate[] 
             </div>
 
             <div className={styles.generatedBlock}>
+              <p className={styles.generatedHint}>{t.servicesReview.selectOnly}</p>
               {draft.services.length > 0 ? (
                 <>
                   <div className={styles.generatedList}>
@@ -1160,7 +1186,9 @@ export default function ProSetupFlow({ catalog }: { catalog: CategoryTemplate[] 
                       className={styles.inlineTextButton}
                       onClick={() => setShowAllSuggestedServices((current) => !current)}
                     >
-                      {showAllSuggestedServices ? t.servicesReview.showLess : t.servicesReview.showMore}
+                      {showAllSuggestedServices
+                        ? t.servicesReview.showLess
+                        : formatShowMoreLabel(t.servicesReview.showMore, hiddenSuggestedServicesCount)}
                     </button>
                   ) : null}
                 </>
@@ -1188,15 +1216,15 @@ export default function ProSetupFlow({ catalog }: { catalog: CategoryTemplate[] 
                 >
                   {t.servicesReview.addManual}
                 </button>
-                <button
-                  type="button"
-                  className={styles.inlineTextButton}
-                  onClick={() => {
-                    void handleContinue();
-                  }}
-                >
-                  {t.servicesReview.later}
-                </button>
+              </div>
+
+              <div className={styles.generatedTrustBlock}>
+                <strong>{t.servicesReview.trustLead}</strong>
+                <ul className={styles.generatedTrustList}>
+                  {t.servicesReview.trustPoints.map((point) => (
+                    <li key={point}>{point}</li>
+                  ))}
+                </ul>
               </div>
             </div>
           </section>
