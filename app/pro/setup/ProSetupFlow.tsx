@@ -357,8 +357,15 @@ const setupText = {
     },
     place: {
       eyebrow: "Место оказания услуг",
-      title: "Где вы предоставляете услуги?",
-      text: "Если выбирается физическое заведение, адрес сохранится в аккаунте, чтобы потом бизнес можно было показывать на карте.",
+      title: "Добавьте адрес, чтобы клиенты могли вас найти",
+      text: "Профиль появится на карте и в поиске рядом",
+      helper: "Это займёт меньше 30 секунд",
+      addAddress: "📍 Добавить адрес",
+      skip: "Пропустить →",
+      withoutAddressTitle: "Без адреса",
+      withoutAddressText: "вас не видно на карте",
+      withAddressTitle: "С адресом",
+      withAddressText: "клиенты находят вас рядом",
       findAddress: "Найти адрес на карте",
       addressPlaceholder: "Начните вводить реальный адрес",
       searching: "Ищем адрес...",
@@ -470,8 +477,15 @@ const setupText = {
     },
     place: {
       eyebrow: "Місце надання послуг",
-      title: "Де ви надаєте послуги?",
-      text: "Якщо обрано фізичний заклад, адреса збережеться в акаунті, щоб потім бізнес можна було показувати на карті.",
+      title: "Додайте адресу, щоб клієнти могли вас знайти",
+      text: "Ваш профіль з’явиться на карті та в пошуку поруч",
+      helper: "Це займе менше 30 секунд",
+      addAddress: "📍 Додати адресу",
+      skip: "Пропустити →",
+      withoutAddressTitle: "Без адреси",
+      withoutAddressText: "вас не видно на карті",
+      withAddressTitle: "З адресою",
+      withAddressText: "клієнти знаходять вас поруч",
       findAddress: "Знайти адресу на карті",
       addressPlaceholder: "Почніть вводити реальну адресу",
       searching: "Шукаємо адресу...",
@@ -583,8 +597,15 @@ const setupText = {
     },
     place: {
       eyebrow: "Service location",
-      title: "Where do you provide services?",
-      text: "If you choose a physical venue, the address will be saved so the business can be shown on maps later.",
+      title: "Add an address so clients can find you",
+      text: "Your profile will appear on the map and in nearby search",
+      helper: "This takes less than 30 seconds",
+      addAddress: "📍 Add address",
+      skip: "Skip →",
+      withoutAddressTitle: "Without an address",
+      withoutAddressText: "you won't appear on the map",
+      withAddressTitle: "With an address",
+      withAddressText: "clients can find you nearby",
       findAddress: "Find address on map",
       addressPlaceholder: "Start typing a real address",
       searching: "Searching address...",
@@ -688,6 +709,7 @@ export default function ProSetupFlow({ catalog }: { catalog: CategoryTemplate[] 
   const [joinResults, setJoinResults] = useState<JoinBusinessSearchResult[]>([]);
   const [isSearchingJoin, setIsSearchingJoin] = useState(false);
   const [isSearchingAddress, setIsSearchingAddress] = useState(false);
+  const [showAddressForm, setShowAddressForm] = useState(false);
   const [showManualService, setShowManualService] = useState(false);
   const [showAllSuggestedServices, setShowAllSuggestedServices] = useState(false);
   const [manualServiceName, setManualServiceName] = useState("");
@@ -696,7 +718,6 @@ export default function ProSetupFlow({ catalog }: { catalog: CategoryTemplate[] 
   const [manualServiceMinutes, setManualServiceMinutes] = useState("30");
   const [manualServicePrice, setManualServicePrice] = useState("");
   const t = setupText[language];
-  const physicalVenueMode = serviceModes[0];
 
   const totalSteps = draft.ownerMode === "owner" ? 5 : 3;
 
@@ -714,13 +735,7 @@ export default function ProSetupFlow({ catalog }: { catalog: CategoryTemplate[] 
     (draft.ownerMode === "member" && step === 2 && draft.joinBusinessId.trim().length > 0) ||
     (draft.ownerMode === "owner" && step === 2 && draft.categories.length > 0) ||
     (draft.ownerMode === "owner" && step === 3) ||
-    (draft.ownerMode === "owner" &&
-      step === 4 &&
-      Boolean(draft.serviceMode) &&
-        (draft.serviceMode !== physicalVenueMode ||
-        (draft.addressDetails.trim().length > 0 &&
-          draft.addressLat !== null &&
-          draft.addressLon !== null)));
+    (draft.ownerMode === "owner" && step === 4);
   const continueLabel =
     draft.ownerMode === "member" && step === 2 ? t.join.requestButton : t.continue;
 
@@ -788,7 +803,6 @@ export default function ProSetupFlow({ catalog }: { catalog: CategoryTemplate[] 
   useEffect(() => {
     if (
       step !== 4 ||
-      draft.serviceMode !== physicalVenueMode ||
       draft.address.trim().length < 3
     ) {
       setAddressSuggestions([]);
@@ -847,7 +861,14 @@ export default function ProSetupFlow({ catalog }: { catalog: CategoryTemplate[] 
       controller.abort();
       window.clearTimeout(timeoutId);
     };
-  }, [draft.address, draft.serviceMode, physicalVenueMode, step]);
+  }, [draft.address, step]);
+
+  useEffect(() => {
+    if (draft.ownerMode !== "owner" || step !== 4) return;
+    if (draft.address.trim().length > 0 || draft.addressDetails.trim().length > 0) {
+      setShowAddressForm(true);
+    }
+  }, [draft.address, draft.addressDetails, draft.ownerMode, step]);
 
   useEffect(() => {
     if (draft.ownerMode !== "member" || step !== 1 || joinQuery.trim().length < 2) {
@@ -1387,22 +1408,41 @@ export default function ProSetupFlow({ catalog }: { catalog: CategoryTemplate[] 
               <p>{t.place.text}</p>
             </div>
 
-            <div className={styles.serviceStack}>
-              {serviceModes.map((mode) => (
+            <div className={styles.addressPrompt}>
+              <p className={styles.addressHelper}>{t.place.helper}</p>
+
+              <div className={styles.addressComparison}>
+                <div className={styles.addressComparisonCard}>
+                  <strong>{t.place.withoutAddressTitle}</strong>
+                  <span>{t.place.withoutAddressText}</span>
+                </div>
+                <div className={styles.addressComparisonCard}>
+                  <strong>{t.place.withAddressTitle}</strong>
+                  <span>{t.place.withAddressText}</span>
+                </div>
+              </div>
+
+              <div className={styles.addressPromptActions}>
                 <button
-                  key={mode}
                   type="button"
-                  className={`${styles.serviceOption} ${
-                    draft.serviceMode === mode ? styles.selectedCard : ""
-                  }`}
-                  onClick={() => setDraft((current) => ({ ...current, serviceMode: mode }))}
+                  className={styles.primaryButton}
+                  onClick={() => setShowAddressForm(true)}
                 >
-                  <span className={styles.choiceTitle}>{t.serviceModes[mode]}</span>
+                  {t.place.addAddress}
                 </button>
-              ))}
+                <button
+                  type="button"
+                  className={styles.secondaryButton}
+                  onClick={() => {
+                    void handleContinue();
+                  }}
+                >
+                  {t.place.skip}
+                </button>
+              </div>
             </div>
 
-            {draft.serviceMode === physicalVenueMode ? (
+            {showAddressForm ? (
               <div className={styles.mapCard}>
                 <div className={styles.field}>
                   <label htmlFor="address">{t.place.findAddress}</label>
@@ -1465,9 +1505,7 @@ export default function ProSetupFlow({ catalog }: { catalog: CategoryTemplate[] 
                   </>
                 ) : previewSuggestion ? (
                   <>
-                    <div className={styles.addressHint}>
-                      {t.place.preview}
-                    </div>
+                    <div className={styles.addressHint}>{t.place.preview}</div>
                     {previewMapEmbedUrl ? (
                       <iframe
                         title={t.place.selectAddress}
@@ -1477,9 +1515,7 @@ export default function ProSetupFlow({ catalog }: { catalog: CategoryTemplate[] 
                     ) : null}
                   </>
                 ) : (
-                  <div className={styles.addressWarning}>
-                    {t.place.warning}
-                  </div>
+                  <div className={styles.addressWarning}>{t.place.warning}</div>
                 )}
               </div>
             ) : null}

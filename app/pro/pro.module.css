@@ -1137,6 +1137,56 @@
   box-shadow: 0 18px 58px rgba(107, 92, 196, 0.1);
 }
 
+.addressPrompt {
+  display: grid;
+  gap: 18px;
+  padding: 24px;
+  border: 1px solid rgba(17, 17, 17, 0.08);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 18px 58px rgba(107, 92, 196, 0.08);
+}
+
+.addressHelper {
+  margin: 0;
+  color: #6f675f;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.addressComparison {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.addressComparisonCard {
+  display: grid;
+  gap: 8px;
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: rgba(246, 242, 255, 0.7);
+  border: 1px solid rgba(122, 97, 255, 0.12);
+}
+
+.addressComparisonCard strong {
+  color: #171411;
+  font-size: 0.95rem;
+}
+
+.addressComparisonCard span {
+  color: #6f675f;
+  font-size: 0.93rem;
+  line-height: 1.45;
+}
+
+.addressPromptActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+
 .addressPreview {
   color: #4f4740;
   line-height: 1.6;
@@ -7251,9 +7301,19 @@
   .categoryCard,
   .serviceOption,
   .generatedBlock,
+  .addressPrompt,
   .mapCard,
   .settingsCard {
     padding: 18px;
+  }
+
+  .addressComparison {
+    grid-template-columns: 1fr;
+  }
+
+  .addressPromptActions {
+    flex-direction: column;
+    align-items: stretch;
   }
 
   .templateModalBackdrop,
