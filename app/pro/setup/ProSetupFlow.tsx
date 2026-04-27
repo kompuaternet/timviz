@@ -759,9 +759,13 @@ export default function ProSetupFlow({ catalog }: { catalog: CategoryTemplate[] 
     () => Array.from(new Set(["Другая", ...categoryOptions.filter((category) => category !== "Другая")])),
     [categoryOptions]
   );
-  const hiddenSuggestedServicesCount = Math.max(0, draft.services.length - 10);
+  const initialSuggestedServicesCount = 8;
+  const hiddenSuggestedServicesCount = Math.max(0, draft.services.length - initialSuggestedServicesCount);
   const visibleSuggestedServices = useMemo(
-    () => (showAllSuggestedServices ? draft.services : draft.services.slice(0, 10)),
+    () =>
+      showAllSuggestedServices
+        ? draft.services
+        : draft.services.slice(0, initialSuggestedServicesCount),
     [draft.services, showAllSuggestedServices]
   );
 
