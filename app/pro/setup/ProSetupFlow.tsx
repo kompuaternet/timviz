@@ -711,11 +711,12 @@ export default function ProSetupFlow({ catalog }: { catalog: CategoryTemplate[] 
 
     if (draft.ownerMode === "owner") {
       markScheduleReminderPending(result.professionalId);
-    } else {
-      clearScheduleReminder(result.professionalId);
+      router.push(`/pro/workspace?professionalId=${result.professionalId}`);
+      return;
     }
 
-    router.push(`/pro/workspace?professionalId=${result.professionalId}`);
+    clearScheduleReminder(result.professionalId);
+    router.push("/pro/pending");
   }
 
   async function handleContinue() {
