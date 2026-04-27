@@ -27,7 +27,7 @@ export type SuperadminUserRecord = {
   phone: string;
   businessName: string;
   role: string;
-  scope: "owner" | "member";
+  scope: "owner" | "member" | "pending";
   country: string;
   timezone: string;
   language: string;
