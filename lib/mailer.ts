@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import { getZohoOAuthSettings } from "./zoho-mail";
 
 function readSmtpConfig() {
   const host = process.env.SMTP_HOST;
@@ -17,7 +18,87 @@ function readSmtpConfig() {
 }
 
 export function isMailerConfigured() {
-  return Boolean(readSmtpConfig());
+  return Boolean(readSmtpConfig()) || isZohoMailApiConfigured();
+}
+
+function readZohoApiConfig() {
+  const clientId = process.env.ZOHO_MAIL_CLIENT_ID;
+  const clientSecret = process.env.ZOHO_MAIL_CLIENT_SECRET;
+  const refreshToken = process.env.ZOHO_MAIL_REFRESH_TOKEN;
+  const accountId = process.env.ZOHO_MAIL_ACCOUNT_ID;
+  const from = process.env.ZOHO_MAIL_FROM || process.env.SMTP_FROM || process.env.SMTP_USER;
+
+  if (!clientId || !clientSecret || !refreshToken || !accountId || !from) {
+    return null;
+  }
+
+  return { clientId, clientSecret, refreshToken, accountId, from };
+}
+
+function isZohoMailApiConfigured() {
+  return Boolean(readZohoApiConfig());
+}
+
+async function sendViaZohoApi(input: {
+  to: string;
+  subject: string;
+  html: string;
+  text?: string;
+}) {
+  const config = readZohoApiConfig();
+  if (!config) {
+    throw new Error("Zoho Mail API is not configured.");
+  }
+
+  const settings = getZohoOAuthSettings();
+  const tokenBody = new URLSearchParams({
+    refresh_token: config.refreshToken,
+    client_id: config.clientId,
+    client_secret: config.clientSecret,
+    grant_type: "refresh_token"
+  });
+
+  const tokenResponse = await fetch(`https://${settings.accountsHost}/oauth/v2/token`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded"
+    },
+    body: tokenBody,
+    signal: AbortSignal.timeout(15000)
+  });
+
+  const tokenPayload = await tokenResponse.json();
+  if (!tokenResponse.ok || tokenPayload.error || !tokenPayload.access_token) {
+    throw new Error(tokenPayload.error_description || tokenPayload.error || "Zoho Mail token refresh failed.");
+  }
+
+  const sendResponse = await fetch(`${settings.mailApiBase}/accounts/${config.accountId}/messages`, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      Authorization: `Zoho-oauthtoken ${tokenPayload.access_token}`
+    },
+    body: JSON.stringify({
+      fromAddress: config.from,
+      toAddress: input.to,
+      subject: input.subject,
+      content: input.html,
+      mailFormat: "html",
+      askReceipt: "no"
+    }),
+    signal: AbortSignal.timeout(15000)
+  });
+
+  const sendPayload = await sendResponse.json();
+  if (!sendResponse.ok || sendPayload.status?.code >= 400 || sendPayload.data?.errorCode) {
+    throw new Error(
+      sendPayload?.status?.description ||
+        sendPayload?.data?.message ||
+        sendPayload?.data?.errorCode ||
+        "Zoho Mail API send failed."
+    );
+  }
 }
 
 export async function sendMail(input: {
@@ -26,6 +107,11 @@ export async function sendMail(input: {
   html: string;
   text?: string;
 }) {
+  if (isZohoMailApiConfigured()) {
+    await sendViaZohoApi(input);
+    return;
+  }
+
   const config = readSmtpConfig();
   if (!config) {
     throw new Error("SMTP is not configured.");
