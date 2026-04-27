@@ -240,6 +240,7 @@ const formCopy = {
     currency: "Валюта",
     timezone: "Часовой пояс",
     timezonePlaceholder: "Выберите часовой пояс",
+    cabinetLanguage: "Язык кабинета",
     terms: "Я принимаю политику конфиденциальности, условия предоставления услуг и условия сотрудничества.",
     submit: "Продолжить",
     login: "Уже есть аккаунт?",
@@ -278,6 +279,7 @@ const formCopy = {
     currency: "Валюта",
     timezone: "Часовий пояс",
     timezonePlaceholder: "Виберіть часовий пояс",
+    cabinetLanguage: "Мова кабінету",
     terms: "Я приймаю політику конфіденційності, умови надання послуг та умови співпраці.",
     submit: "Продовжити",
     login: "Вже є акаунт?",
@@ -316,6 +318,7 @@ const formCopy = {
     currency: "Currency",
     timezone: "Time zone",
     timezonePlaceholder: "Choose a time zone",
+    cabinetLanguage: "Workspace language",
     terms: "I accept the privacy policy, terms of service and cooperation terms.",
     submit: "Continue",
     login: "Already have an account?",
@@ -354,6 +357,15 @@ export default function CreateAccountForm() {
   const phoneRule = getPhoneRule(phoneCountry);
   const phoneIsValid = isPhoneValid(phoneCountry, phone);
   const t = formCopy[language];
+
+  function applyLanguage(nextLanguage: ProLanguage) {
+    setLanguage(nextLanguage);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("rezervo-pro-language", nextLanguage);
+      document.documentElement.lang = nextLanguage;
+      window.dispatchEvent(new CustomEvent("rezervo-language-change", { detail: nextLanguage }));
+    }
+  }
 
   const filteredPhoneCountries = useMemo(() => {
     const query = prefixSearch.trim().toLowerCase();
@@ -752,6 +764,21 @@ export default function CreateAccountForm() {
             <option value="">{t.timezonePlaceholder}</option>
             {timezones.filter((option) => option.value).map((timezoneOption) => (
               <option key={timezoneOption.value} value={timezoneOption.value}>{timezoneOption.label}</option>
+            ))}
+          </select>
+        </div>
+        <div className={styles.field}>
+          <label htmlFor="cabinetLanguage">{t.cabinetLanguage}</label>
+          <select
+            id="cabinetLanguage"
+            className={styles.select}
+            value={language}
+            onChange={(event) => applyLanguage(event.target.value as ProLanguage)}
+          >
+            {languages.map((languageOption) => (
+              <option key={languageOption} value={languageOption}>
+                {languageLabels[languageOption]}
+              </option>
             ))}
           </select>
         </div>

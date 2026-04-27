@@ -71,23 +71,36 @@ export default function CreateAccountVisual() {
       </div>
       <div className={styles.createVisualPhotoCard}>
         <div className={styles.createVisualPhotoGlow} />
-        <div className={styles.createVisualPhotoScene}>
-          <div className={styles.createVisualPhotoColumn} />
-          <div className={styles.createVisualPhotoColumn} />
-          <div className={styles.createVisualPhotoWindow} />
-          <div className={styles.createVisualPhotoWindow} />
-          <div className={styles.createVisualPhotoShelf} />
-          <div className={styles.createVisualPhotoDesk} />
-          <div className={styles.createVisualPhotoChairLeft} />
-          <div className={styles.createVisualPhotoChairRight} />
-        </div>
-        <div className={styles.createLaptop}>
-          <div className={styles.createLaptopTop}>
+        <div className={styles.createVisualFrame}>
+          <div className={styles.createVisualFrameTop}>
             <span />
             <span />
             <span />
           </div>
-          <img src="/for-business/ru-schedule-wide.png" alt="" />
+          <img src="/for-business/ru-schedule-wide.png" alt="" className={styles.createVisualFrameImage} />
+        </div>
+        <div className={styles.createVisualMetricCard}>
+          <strong>24/7</strong>
+          <span>
+            {language === "en"
+              ? "Clients can book online as soon as the workspace is live."
+              : language === "uk"
+                ? "Клієнти можуть записуватися онлайн одразу після запуску кабінету."
+                : "Клиенты смогут записываться онлайн сразу после запуска кабинета."}
+          </span>
+        </div>
+        <div className={styles.createVisualMiniCard}>
+          <div className={styles.createVisualMiniRow}>
+            <span>
+              {language === "en" ? "Calendar ready" : language === "uk" ? "Календар готовий" : "Календарь готов"}
+            </span>
+            <strong>09:00-18:00</strong>
+          </div>
+          <div className={styles.createVisualMiniDots}>
+            <span />
+            <span />
+            <span />
+          </div>
         </div>
       </div>
       <div className={styles.createVisualText}>
