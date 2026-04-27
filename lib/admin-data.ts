@@ -27,7 +27,7 @@ export type SuperadminUserRecord = {
   phone: string;
   businessName: string;
   role: string;
-  scope: "owner" | "member" | "pending";
+  scope: "owner" | "member" | "pending" | "unassigned";
   country: string;
   timezone: string;
   language: string;
@@ -133,16 +133,15 @@ export async function getSuperadminUsers(search = ""): Promise<SuperadminUserRec
     }
   }
 
-  return directory.memberships
-    .map((membership) => {
+  const membershipUsers = directory.memberships.flatMap((membership) => {
       const professional = directory.professionals.find(
         (item) => item.id === membership.professionalId
       );
       const business = businessesById.get(membership.businessId);
       if (!professional || !business) {
-        return null;
+        return [];
       }
-      return {
+      return [{
         professionalId: professional.id,
         businessId: business.id,
         membershipId: membership.id,
@@ -163,15 +162,37 @@ export async function getSuperadminUsers(search = ""): Promise<SuperadminUserRec
         servicesCount: servicesByBusiness.get(business.id) ?? 0,
         photosCount: normalizeBusinessPhotos(business.photos).filter((photo) => photo.status !== "blocked").length,
         createdAt: professional.createdAt
-      } satisfies SuperadminUserRecord;
-    })
-    .filter((item): item is SuperadminUserRecord => Boolean(item))
-    .filter((item) =>
-      matchesSearch(
-        [item.fullName, item.email, item.phone, item.businessName, item.role],
-        query
-      )
-    )
+      } satisfies SuperadminUserRecord];
+    });
+
+  const assignedProfessionalIds = new Set(membershipUsers.map((item) => item.professionalId));
+  const unassignedUsers = directory.professionals
+    .filter((professional) => !assignedProfessionalIds.has(professional.id))
+    .map((professional) => ({
+      professionalId: professional.id,
+      businessId: "",
+      membershipId: "",
+      fullName: getFullName(professional),
+      firstName: professional.firstName,
+      lastName: professional.lastName,
+      email: professional.email,
+      phone: professional.phone,
+      businessName: "Не подключен к бизнесу",
+      role: "Нет роли",
+      scope: "unassigned" as const,
+      country: professional.country,
+      timezone: professional.timezone,
+      language: professional.language,
+      currency: professional.currency || "USD",
+      bookingCreditsTotal: professional.bookingCreditsTotal ?? DEFAULT_BOOKING_CREDITS,
+      walletBalance: walletBalances.get(professional.id) ?? professional.walletBalance ?? 0,
+      servicesCount: 0,
+      photosCount: 0,
+      createdAt: professional.createdAt
+    } satisfies SuperadminUserRecord));
+
+  return [...membershipUsers, ...unassignedUsers]
+    .filter((item) => matchesSearch([item.fullName, item.email, item.phone, item.businessName, item.role], query))
     .sort((left, right) => left.fullName.localeCompare(right.fullName));
 }
 
@@ -235,7 +256,30 @@ export async function deleteProfessionalAsSuperadmin(professionalId: string) {
   const membership = directory.memberships.find((item) => item.professionalId === professionalId);
 
   if (!membership) {
-    throw new Error("Пользователь не найден.");
+    if (isSupabaseConfigured()) {
+      const supabase = getSupabaseAdmin();
+      if (!supabase) {
+        throw new Error("Supabase is not available.");
+      }
+
+      const { error } = await supabase.from("professionals").delete().eq("id", professionalId);
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      return { ok: true };
+    }
+
+    const store = (await readLocalStore()) as {
+      professionals: ProfessionalRecord[];
+      businesses: Array<Record<string, unknown>>;
+      services: Array<Record<string, unknown>>;
+      memberships?: Array<Record<string, unknown>>;
+    };
+
+    store.professionals = store.professionals.filter((item) => item.id !== professionalId);
+    await writeLocalStore(store);
+    return { ok: true };
   }
 
   const businessMembers = directory.memberships.filter((item) => item.businessId === membership.businessId);

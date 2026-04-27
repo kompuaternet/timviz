@@ -86,6 +86,21 @@ function groupPhotos(items: SuperadminPhotoRecord[]): GroupedPhotos[] {
   return Array.from(map.values()).sort((left, right) => left.businessName.localeCompare(right.businessName));
 }
 
+function getScopeLabel(scope: SuperadminUserRecord["scope"]) {
+  switch (scope) {
+    case "owner":
+      return "Владелец";
+    case "member":
+      return "Сотрудник";
+    case "pending":
+      return "Ожидает подтверждения";
+    case "unassigned":
+      return "Не завершил подключение";
+    default:
+      return scope;
+  }
+}
+
 export default function SuperadminView({
   adminEmail,
   initialUsers,
@@ -686,7 +701,7 @@ export default function SuperadminView({
                   <span>Email: {selectedUser.email}</span>
                   <span>Телефон: {selectedUser.phone || "—"}</span>
                   <span>Роль: {selectedUser.role}</span>
-                  <span>Статус: {selectedUser.scope === "owner" ? "Владелец" : "Сотрудник"}</span>
+                  <span>Статус: {getScopeLabel(selectedUser.scope)}</span>
                   <span>Язык: {selectedUser.language}</span>
                   <span>Валюта: {selectedUser.currency}</span>
                   <span>Услуг: {selectedUser.servicesCount}</span>
