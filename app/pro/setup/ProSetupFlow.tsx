@@ -911,7 +911,8 @@ export default function ProSetupFlow({ catalog }: { catalog: CategoryTemplate[] 
     setStep((current) => current - 1);
   }
 
-  async function finishSetup() {
+  async function finishSetup(overrideDraft?: Draft) {
+    const activeDraft = overrideDraft ?? draft;
     setIsSaving(true);
 
     const accountDraftRaw = window.localStorage.getItem("rezervo-pro-account-draft");
@@ -938,7 +939,7 @@ export default function ProSetupFlow({ catalog }: { catalog: CategoryTemplate[] 
       },
       body: JSON.stringify({
         account: accountDraft,
-        setup: draft
+        setup: activeDraft
       })
     });
 
@@ -949,7 +950,7 @@ export default function ProSetupFlow({ catalog }: { catalog: CategoryTemplate[] 
       throw new Error(result.error || "Failed to save professional setup.");
     }
 
-    if (draft.ownerMode === "owner") {
+    if (activeDraft.ownerMode === "owner") {
       markScheduleReminderPending(result.professionalId);
       router.push(`/pro/workspace?professionalId=${result.professionalId}`);
       return;
@@ -1039,14 +1040,19 @@ export default function ProSetupFlow({ catalog }: { catalog: CategoryTemplate[] 
   }
 
   function applyAddress(suggestion: AddressSuggestion) {
-    setDraft((current) => ({
-      ...current,
+    const nextDraft: Draft = {
+      ...draft,
       address: suggestion.label,
       addressDetails: suggestion.details,
       addressLat: suggestion.lat,
       addressLon: suggestion.lon
-    }));
+    };
+    setDraft(nextDraft);
     setAddressSuggestions([]);
+
+    if (draft.ownerMode === "owner" && step === totalSteps - 1) {
+      void finishSetup(nextDraft);
+    }
   }
 
   function formatShowMoreLabel(template: string, count: number) {
@@ -1436,7 +1442,7 @@ export default function ProSetupFlow({ catalog }: { catalog: CategoryTemplate[] 
                 </button>
                 <button
                   type="button"
-                  className={styles.secondaryButton}
+                  className={styles.tertiaryLinkButton}
                   onClick={() => {
                     void handleContinue();
                   }}

@@ -1187,6 +1187,27 @@
   align-items: center;
 }
 
+.tertiaryLinkButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #6f675f;
+  font: inherit;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  cursor: pointer;
+  transition: color 160ms ease, transform 160ms ease;
+}
+
+.tertiaryLinkButton:hover {
+  color: #4f46e5;
+  transform: translateX(1px);
+}
+
 .addressPreview {
   color: #4f4740;
   line-height: 1.6;
