@@ -698,7 +698,7 @@ export default function ProSetupFlow({ catalog }: { catalog: CategoryTemplate[] 
   const t = setupText[language];
   const physicalVenueMode = serviceModes[0];
 
-  const totalSteps = draft.ownerMode === "owner" ? 6 : 3;
+  const totalSteps = draft.ownerMode === "owner" ? 5 : 3;
 
   const progress = useMemo(
     () => Array.from({ length: totalSteps }, (_, index) => index <= step),
@@ -716,9 +716,6 @@ export default function ProSetupFlow({ catalog }: { catalog: CategoryTemplate[] 
     (draft.ownerMode === "owner" && step === 3) ||
     (draft.ownerMode === "owner" &&
       step === 4 &&
-      Boolean(draft.accountType)) ||
-    (draft.ownerMode === "owner" &&
-      step === 5 &&
       Boolean(draft.serviceMode) &&
         (draft.serviceMode !== physicalVenueMode ||
         (draft.addressDetails.trim().length > 0 &&
@@ -790,7 +787,7 @@ export default function ProSetupFlow({ catalog }: { catalog: CategoryTemplate[] 
 
   useEffect(() => {
     if (
-      step !== 5 ||
+      step !== 4 ||
       draft.serviceMode !== physicalVenueMode ||
       draft.address.trim().length < 3
     ) {
@@ -1383,40 +1380,6 @@ export default function ProSetupFlow({ catalog }: { catalog: CategoryTemplate[] 
         ) : null}
 
         {step === 4 && draft.ownerMode === "owner" ? (
-          <section className={styles.wizardCard}>
-            <div className={styles.wizardHeader}>
-              <p className={styles.eyebrow}>{t.format.eyebrow}</p>
-              <h1>{t.format.title}</h1>
-              <p>{t.format.text}</p>
-            </div>
-
-            <div className={styles.choiceGrid}>
-              <button
-                type="button"
-                className={`${styles.choiceCard} ${
-                  draft.accountType === "solo" ? styles.selectedCard : ""
-                }`}
-                onClick={() => setDraft((current) => ({ ...current, accountType: "solo" }))}
-              >
-                <span className={styles.choiceTitle}>{t.format.solo}</span>
-                <span className={styles.choiceText}>{t.format.soloText}</span>
-              </button>
-
-              <button
-                type="button"
-                className={`${styles.choiceCard} ${
-                  draft.accountType === "team" ? styles.selectedCard : ""
-                }`}
-                onClick={() => setDraft((current) => ({ ...current, accountType: "team" }))}
-              >
-                <span className={styles.choiceTitle}>{t.format.team}</span>
-                <span className={styles.choiceText}>{t.format.teamText}</span>
-              </button>
-            </div>
-          </section>
-        ) : null}
-
-        {step === 5 && draft.ownerMode === "owner" ? (
           <section className={styles.wizardCard}>
             <div className={styles.wizardHeader}>
               <p className={styles.eyebrow}>{t.place.eyebrow}</p>
