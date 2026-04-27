@@ -38,7 +38,7 @@ type SettingsData = {
     allowOnlineBooking?: boolean;
   };
   membership: {
-    scope: "owner" | "member";
+    scope: "owner" | "member" | "pending";
     role: string;
   };
   joinRequests: Array<{

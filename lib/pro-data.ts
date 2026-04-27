@@ -100,7 +100,7 @@ export type MembershipRecord = {
   businessId: string;
   professionalId: string;
   role: string;
-  scope: "owner" | "member";
+  scope: "owner" | "member" | "pending";
   createdAt: string;
 };
 
@@ -180,6 +180,13 @@ const defaultServiceColors = [
 ];
 
 export const DEFAULT_BOOKING_CREDITS = 500;
+
+function isMissingJoinRequestsTableError(message?: string) {
+  return (
+    typeof message === "string" &&
+    message.includes("Could not find the table 'public.business_join_requests' in the schema cache")
+  );
+}
 
 function normalizeServiceSource(value: unknown): "catalog" | "custom" {
   return value === "custom" ? "custom" : "catalog";
@@ -689,10 +696,7 @@ export async function getBusinessDirectorySnapshot(): Promise<BusinessDirectoryS
     if (servicesError) {
       throw new Error(servicesError.message);
     }
-    if (
-      joinRequestsError &&
-      !joinRequestsError.message.includes("Could not find the table 'public.business_join_requests' in the schema cache")
-    ) {
+    if (joinRequestsError && !isMissingJoinRequestsTableError(joinRequestsError.message)) {
       throw new Error(joinRequestsError.message);
     }
 
@@ -866,8 +870,9 @@ export async function createProfessionalSetup(input: {
         throw new Error(membershipError.message);
       }
     } else {
+      const joinRequestId = makeId("join");
       const { error: joinRequestError } = await supabase.from("business_join_requests").insert({
-        id: makeId("join"),
+        id: joinRequestId,
         business_id: businessId,
         professional_id: professionalId,
         role: input.setup.joinBusinessRole || "Specialist",
@@ -876,7 +881,22 @@ export async function createProfessionalSetup(input: {
       });
 
       if (joinRequestError) {
-        throw new Error(joinRequestError.message);
+        if (!isMissingJoinRequestsTableError(joinRequestError.message)) {
+          throw new Error(joinRequestError.message);
+        }
+
+        const { error: membershipError } = await supabase.from("business_memberships").insert({
+          id: joinRequestId,
+          business_id: businessId,
+          professional_id: professionalId,
+          role: input.setup.joinBusinessRole || "Specialist",
+          scope: "pending",
+          created_at: createdAt
+        });
+
+        if (membershipError) {
+          throw new Error(membershipError.message);
+        }
       }
     }
 
@@ -993,7 +1013,7 @@ export async function getWorkspaceSnapshot(
   }
 
   const membership = directory.memberships.find(
-    (item) => item.professionalId === professionalId
+    (item) => item.professionalId === professionalId && item.scope !== "pending"
   );
 
   if (!membership) {
@@ -1026,13 +1046,35 @@ export async function getPendingJoinRequestForProfessional(professionalId: strin
   const request = directory.joinRequests.find(
     (item) => item.professionalId === professionalId && item.status === "pending"
   );
+  if (request) {
+    const business = directory.businesses.find((item) => item.id === request.businessId) || null;
+    return business ? { request, business } : null;
+  }
 
-  if (!request) {
+  const pendingMembership = directory.memberships.find(
+    (item) => item.professionalId === professionalId && item.scope === "pending"
+  );
+
+  if (!pendingMembership) {
     return null;
   }
 
-  const business = directory.businesses.find((item) => item.id === request.businessId) || null;
-  return business ? { request, business } : null;
+  const business = directory.businesses.find((item) => item.id === pendingMembership.businessId) || null;
+  if (!business) {
+    return null;
+  }
+
+  return {
+    request: {
+      id: pendingMembership.id,
+      businessId: pendingMembership.businessId,
+      professionalId: pendingMembership.professionalId,
+      role: pendingMembership.role,
+      status: "pending" as const,
+      createdAt: pendingMembership.createdAt
+    },
+    business
+  };
 }
 
 export async function searchJoinableBusinesses(query: string): Promise<JoinBusinessSearchResult[]> {
@@ -1059,7 +1101,7 @@ export async function searchJoinableBusinesses(query: string): Promise<JoinBusin
           ? directory.professionals.find((item) => item.id === business.ownerProfessionalId) || null
           : null;
       const team = directory.memberships
-        .filter((item) => item.businessId === business.id)
+        .filter((item) => item.businessId === business.id && item.scope !== "pending")
         .map((membership) => directory.professionals.find((item) => item.id === membership.professionalId))
         .filter(Boolean) as ProfessionalRecord[];
       const haystack = [
@@ -1123,12 +1165,32 @@ export async function getJoinRequestsForOwner(ownerProfessionalId: string) {
   }
 
   const directory = await getBusinessDirectorySnapshot();
-  return directory.joinRequests
+  const tableRequests = directory.joinRequests
     .filter((item) => item.businessId === workspace.business.id && item.status === "pending")
     .map((request) => {
       const professional = directory.professionals.find((item) => item.id === request.professionalId) || null;
       return {
         ...request,
+        professional
+      };
+    });
+
+  if (tableRequests.length > 0) {
+    return tableRequests;
+  }
+
+  return directory.memberships
+    .filter((item) => item.businessId === workspace.business.id && item.scope === "pending")
+    .map((membership) => {
+      const professional =
+        directory.professionals.find((item) => item.id === membership.professionalId) || null;
+      return {
+        id: membership.id,
+        businessId: membership.businessId,
+        professionalId: membership.professionalId,
+        role: membership.role,
+        status: "pending" as const,
+        createdAt: membership.createdAt,
         professional
       };
     });
@@ -1159,11 +1221,50 @@ export async function resolveJoinRequestForOwner(input: {
       .eq("business_id", workspace.business.id)
       .maybeSingle();
 
-    if (requestError) {
+    const canUseJoinRequestsTable = !requestError || !isMissingJoinRequestsTableError(requestError.message);
+
+    if (requestError && !isMissingJoinRequestsTableError(requestError.message)) {
       throw new Error(requestError.message);
     }
-    if (!request) {
-      throw new Error("Join request not found.");
+
+    if (!canUseJoinRequestsTable || !request) {
+      const { data: pendingMembership, error: membershipLookupError } = await supabase
+        .from("business_memberships")
+        .select("*")
+        .eq("id", input.requestId)
+        .eq("business_id", workspace.business.id)
+        .eq("scope", "pending")
+        .maybeSingle();
+
+      if (membershipLookupError) {
+        throw new Error(membershipLookupError.message);
+      }
+
+      if (!pendingMembership) {
+        throw new Error("Join request not found.");
+      }
+
+      if (input.action === "approve") {
+        const { error: membershipUpdateError } = await supabase
+          .from("business_memberships")
+          .update({ scope: "member" })
+          .eq("id", pendingMembership.id);
+
+        if (membershipUpdateError) {
+          throw new Error(membershipUpdateError.message);
+        }
+      } else {
+        const { error: membershipDeleteError } = await supabase
+          .from("business_memberships")
+          .delete()
+          .eq("id", pendingMembership.id);
+
+        if (membershipDeleteError) {
+          throw new Error(membershipDeleteError.message);
+        }
+      }
+
+      return { ok: true };
     }
 
     if (input.action === "approve") {
