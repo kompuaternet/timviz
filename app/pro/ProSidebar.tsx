@@ -225,7 +225,11 @@ export default function ProSidebar({
         </div>
       </aside>
 
-      <nav className={styles.mobileWorkspaceNav} aria-label={t.nav.home}>
+      <nav
+        className={styles.mobileWorkspaceNav}
+        aria-label={t.nav.home}
+        style={{ gridTemplateColumns: `repeat(${mobileLinks.length + 1}, minmax(0, 1fr))` }}
+      >
         {mobileLinks.map((link) => (
           <Link
             key={link.key}

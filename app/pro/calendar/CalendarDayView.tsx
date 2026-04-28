@@ -26,6 +26,7 @@ import {
 
 type CalendarAppointment = {
   id: string;
+  professionalId: string;
   appointmentDate: string;
   startTime: string;
   endTime: string;
@@ -78,6 +79,21 @@ type CalendarSnapshot = {
     isViewer: boolean;
   }>;
   viewedProfessionalId: string;
+  memberCalendars: Array<{
+    professionalId: string;
+    firstName: string;
+    lastName: string;
+    avatarUrl?: string;
+    role: string;
+    scope: "owner" | "member";
+    isViewer: boolean;
+    memberSchedule: {
+      workScheduleMode: WorkScheduleMode;
+      workSchedule: WorkSchedule;
+      customSchedule: CustomSchedule;
+    };
+    appointments: CalendarAppointment[];
+  }>;
   workspace: {
     professional: {
       id: string;
@@ -146,6 +162,7 @@ type QuickMenuState = {
   x: number;
   y: number;
   time: string;
+  professionalId: string;
 };
 
 type DrawerStage = "closed" | "visit" | "service-picker" | "client-search" | "details" | "notifications";
@@ -247,6 +264,11 @@ const CALENDAR_TEXT: Record<AppLanguage, {
   addAndChoose: string;
   clients: string;
   noPhone: string;
+  allTeam: string;
+  chosenMasters: (count: number) => string;
+  showAllTeam: string;
+  selectedMasters: string;
+  myMarker: string;
   visitsCountLabel: (count: number) => string;
   clientNotFound: string;
   clientsEmpty: string;
@@ -355,6 +377,11 @@ const CALENDAR_TEXT: Record<AppLanguage, {
     addAndChoose: "Добавить и выбрать",
     clients: "Клиенты",
     noPhone: "Без телефона",
+    allTeam: "Вся команда",
+    chosenMasters: (count) => `Выбрано: ${count}`,
+    showAllTeam: "Показать всю команду",
+    selectedMasters: "Выбранные мастера",
+    myMarker: "(вы)",
     visitsCountLabel: (count) => `${count} визитов`,
     clientNotFound: "Клиент не найден",
     clientsEmpty: "Список клиентов пустой",
@@ -463,6 +490,11 @@ const CALENDAR_TEXT: Record<AppLanguage, {
     addAndChoose: "Додати та вибрати",
     clients: "Клієнти",
     noPhone: "Без телефону",
+    allTeam: "Вся команда",
+    chosenMasters: (count) => `Обрано: ${count}`,
+    showAllTeam: "Показати всю команду",
+    selectedMasters: "Обрані майстри",
+    myMarker: "(ви)",
     visitsCountLabel: (count) => `${count} візитів`,
     clientNotFound: "Клієнта не знайдено",
     clientsEmpty: "Список клієнтів порожній",
@@ -571,6 +603,11 @@ const CALENDAR_TEXT: Record<AppLanguage, {
     addAndChoose: "Add and choose",
     clients: "Clients",
     noPhone: "No phone",
+    allTeam: "All team",
+    chosenMasters: (count) => `Selected: ${count}`,
+    showAllTeam: "Show full team",
+    selectedMasters: "Selected specialists",
+    myMarker: "(you)",
     visitsCountLabel: (count) => `${count} visits`,
     clientNotFound: "Client not found",
     clientsEmpty: "Client list is empty",
@@ -862,11 +899,18 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
   const [selectedDate, setSelectedDate] = useState(initialDate);
   const [viewMode, setViewMode] = useState<CalendarViewMode>("day");
   const [selectedProfessionalId, setSelectedProfessionalId] = useState(professionalId);
+  const [visibleProfessionalIds, setVisibleProfessionalIds] = useState<string[]>([professionalId]);
   const [activeToolbarMenu, setActiveToolbarMenu] = useState<null | "view" | "team" | "account">(null);
   const [uiLanguage, setUiLanguage] = useState<AppLanguage>("ru");
   const [snapshot, setSnapshot] = useState<CalendarSnapshot | null>(null);
   const [selectedTime, setSelectedTime] = useState("");
-  const [quickMenu, setQuickMenu] = useState<QuickMenuState>({ visible: false, x: 0, y: 0, time: "" });
+  const [quickMenu, setQuickMenu] = useState<QuickMenuState>({
+    visible: false,
+    x: 0,
+    y: 0,
+    time: "",
+    professionalId
+  });
   const [drawerStage, setDrawerStage] = useState<DrawerStage>("closed");
   const [statusText, setStatusText] = useState("");
   const [draggingId, setDraggingId] = useState<string | null>(null);
@@ -885,6 +929,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
   const [showClientPrompt, setShowClientPrompt] = useState(false);
   const [isSavingVisit, setIsSavingVisit] = useState(false);
   const [isMobileViewport, setIsMobileViewport] = useState(false);
+  const [teamQuery, setTeamQuery] = useState("");
   const calendarHourHeight = isMobileViewport ? CALENDAR_MOBILE_HOUR_HEIGHT : CALENDAR_HOUR_HEIGHT;
   const minuteHeight = calendarHourHeight / 60;
   const slotHeight = minuteHeight * CALENDAR_GRID_STEP_MINUTES;
@@ -961,11 +1006,26 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
   async function loadSnapshot(dateKey = selectedDate, targetId = selectedProfessionalId) {
     const response = await fetch(buildCalendarUrl(dateKey, targetId));
     const data = (await response.json()) as CalendarSnapshot;
+    const allowedIds = (data.memberCalendars ?? []).map((member) => member.professionalId);
+    const nextVisibleIds =
+      visibleProfessionalIds.filter((memberId) => allowedIds.includes(memberId)) ||
+      [];
 
     setSnapshot(data);
     setSelectedProfessionalId(data.viewedProfessionalId || professionalId);
+    setVisibleProfessionalIds(
+      nextVisibleIds.length
+        ? nextVisibleIds
+        : [data.viewedProfessionalId || professionalId].filter(Boolean)
+    );
     setSelectedTime("");
-    setQuickMenu({ visible: false, x: 0, y: 0, time: "" });
+    setQuickMenu({
+      visible: false,
+      x: 0,
+      y: 0,
+      time: "",
+      professionalId: data.viewedProfessionalId || professionalId
+    });
     setActiveToolbarMenu(null);
     setDrawerStage("closed");
     setSelectedAppointmentId(null);
@@ -977,11 +1037,12 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
     setShowNewClientForm(false);
     setNewClientName("");
     setNewClientPhone("");
+    setTeamQuery("");
   }
 
   useEffect(() => {
     void loadSnapshot(selectedDate, selectedProfessionalId);
-  }, [selectedDate, selectedProfessionalId]);
+  }, [selectedDate]);
 
   useEffect(() => {
     if (drawerStage !== "client-search") {
@@ -1056,12 +1117,12 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
         return;
       }
 
-      setQuickMenu({ visible: false, x: 0, y: 0, time: "" });
+      setQuickMenu((current) => ({ ...current, visible: false, x: 0, y: 0, time: "" }));
     }
 
     function handleEscape(event: KeyboardEvent) {
       if (event.key === "Escape") {
-        setQuickMenu({ visible: false, x: 0, y: 0, time: "" });
+        setQuickMenu((current) => ({ ...current, visible: false, x: 0, y: 0, time: "" }));
       }
     }
 
@@ -1127,8 +1188,43 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
   );
   const viewerInitials = `${snapshot?.viewer.firstName?.[0] ?? ""}${snapshot?.viewer.lastName?.[0] ?? ""}`.toUpperCase() || viewedProfessionalInitials;
   const teamMembers = snapshot?.teamMembers ?? [];
+  const memberCalendars = snapshot?.memberCalendars ?? [];
   const recentActivity = snapshot?.recentActivity ?? [];
-  const canSwitchProfessional = teamMembers.length > 1;
+  const canSwitchProfessional = snapshot?.viewer.scope === "owner" && teamMembers.length > 1;
+  const filteredTeamMembers = useMemo(() => {
+    const query = teamQuery.trim().toLowerCase();
+
+    if (!query) {
+      return memberCalendars;
+    }
+
+    return memberCalendars.filter((member) =>
+      buildDisplayName(member.firstName, member.lastName, t.masterFallback).toLowerCase().includes(query)
+    );
+  }, [memberCalendars, teamQuery, t.masterFallback]);
+  const visibleCalendars = useMemo(() => {
+    const allowed = new Set(visibleProfessionalIds);
+    const calendars = memberCalendars.filter((member) => allowed.has(member.professionalId));
+    return calendars.length ? calendars : memberCalendars.filter((member) => member.professionalId === selectedProfessionalId);
+  }, [memberCalendars, selectedProfessionalId, visibleProfessionalIds]);
+  const visibleCalendarIds = useMemo(
+    () => visibleCalendars.map((member) => member.professionalId),
+    [visibleCalendars]
+  );
+  const isShowingAllTeam = memberCalendars.length > 1 && visibleCalendarIds.length === memberCalendars.length;
+  const allVisibleAppointments = useMemo(
+    () => visibleCalendars.flatMap((member) => member.appointments),
+    [visibleCalendars]
+  );
+  const focusedMemberCalendar =
+    memberCalendars.find((member) => member.professionalId === selectedProfessionalId) ??
+    memberCalendars[0] ??
+    null;
+  const calendarSelectorLabel = isShowingAllTeam
+    ? t.allTeam
+    : visibleCalendars.length === 1
+      ? buildDisplayName(visibleCalendars[0]?.firstName, visibleCalendars[0]?.lastName, t.masterFallback)
+      : t.chosenMasters(visibleCalendars.length);
   const selectedDateLabel = new Date(`${selectedDate}T00:00:00`).toLocaleDateString(locale, {
     weekday: "short",
     day: "numeric",
@@ -1152,43 +1248,46 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
   })}`;
   const activeDateLabel =
     viewMode === "month" ? selectedMonthLabel : viewMode === "week" ? selectedWeekLabel : selectedDateLong;
-  const viewModeOptions: Array<{ value: CalendarViewMode; label: string }> = [
-    { value: "day", label: t.day },
-    { value: "week", label: t.week },
-    { value: "month", label: t.month }
-  ];
+  const viewModeOptions: Array<{ value: CalendarViewMode; label: string }> =
+    visibleCalendarIds.length > 1
+      ? [{ value: "day", label: t.day }]
+      : [
+          { value: "day", label: t.day },
+          { value: "week", label: t.week },
+          { value: "month", label: t.month }
+        ];
   const monthGrid = useMemo(() => getMonthGrid(selectedDate), [selectedDate]);
   const hours = Array.from({ length: 24 }, (_, index) => index);
   const scheduleOverrides = useMemo<CustomSchedule>(() => {
-    if (!snapshot) {
+    if (!focusedMemberCalendar) {
       return {};
     }
 
-    return snapshot.workspace.memberSchedule.workScheduleMode === "flexible"
-      ? snapshot.workspace.memberSchedule.customSchedule
+    return focusedMemberCalendar.memberSchedule.workScheduleMode === "flexible"
+      ? focusedMemberCalendar.memberSchedule.customSchedule
       : {};
-  }, [snapshot]);
+  }, [focusedMemberCalendar]);
 
   const daySchedule = useMemo(() => {
-    if (!snapshot) {
+    if (!focusedMemberCalendar) {
       return null;
     }
 
-    return resolveDaySchedule(selectedDate, snapshot.workspace.memberSchedule.workSchedule, scheduleOverrides);
-  }, [scheduleOverrides, selectedDate, snapshot]);
+    return resolveDaySchedule(selectedDate, focusedMemberCalendar.memberSchedule.workSchedule, scheduleOverrides);
+  }, [focusedMemberCalendar, scheduleOverrides, selectedDate]);
 
   const monthSchedules = useMemo(() => {
-    if (!snapshot) {
+    if (!focusedMemberCalendar) {
       return new Map<string, WorkDaySchedule>();
     }
 
     return new Map(
       monthGrid.map((day) => [
         day.key,
-        resolveDaySchedule(day.key, snapshot.workspace.memberSchedule.workSchedule, scheduleOverrides)
+        resolveDaySchedule(day.key, focusedMemberCalendar.memberSchedule.workSchedule, scheduleOverrides)
       ])
     );
-  }, [monthGrid, scheduleOverrides, snapshot]);
+  }, [focusedMemberCalendar, monthGrid, scheduleOverrides]);
 
   const workStartMinutes = daySchedule ? timeToMinutes(daySchedule.startTime) : 9 * 60;
   const workEndMinutes = daySchedule ? timeToMinutes(daySchedule.endTime) : 18 * 60;
@@ -1202,6 +1301,27 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
     [daySchedule]
   );
   const selectedDayIsWorking = Boolean(daySchedule?.enabled);
+
+  useEffect(() => {
+    if (visibleCalendarIds.length > 1 && viewMode !== "day") {
+      setViewMode("day");
+    }
+  }, [viewMode, visibleCalendarIds.length]);
+
+  useEffect(() => {
+    if (!memberCalendars.length) {
+      return;
+    }
+
+    const allowedIds = new Set(memberCalendars.map((member) => member.professionalId));
+    setVisibleProfessionalIds((current) => {
+      const next = current.filter((memberId) => allowedIds.has(memberId));
+      if (next.length) {
+        return next;
+      }
+      return [selectedProfessionalId];
+    });
+  }, [memberCalendars, selectedProfessionalId]);
 
   useEffect(() => {
     const frame = scrollFrameRef.current;
@@ -1318,14 +1438,15 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
   }, [clientQuery, directoryClients, snapshot?.clients]);
 
   const selectedAppointment = useMemo(
-    () => (snapshot?.appointments ?? []).find((appointment) => appointment.id === selectedAppointmentId) ?? null,
-    [selectedAppointmentId, snapshot?.appointments]
+    () => allVisibleAppointments.find((appointment) => appointment.id === selectedAppointmentId) ?? null,
+    [allVisibleAppointments, selectedAppointmentId]
   );
   const calendarStats = snapshot?.stats ?? {
     day: { visitsCount: 0, revenue: 0 },
     week: { visitsCount: 0, revenue: 0 },
     month: { visitsCount: 0, revenue: 0 }
   };
+  const focusedAppointments = focusedMemberCalendar?.appointments ?? snapshot?.appointments ?? [];
 
   const visitTotal = useMemo(
     () => visitItems.reduce((sum, item) => sum + Number(item.priceAmount || 0), 0),
@@ -1333,7 +1454,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
   );
 
   const visitHasOverlap = useMemo(() => {
-    const appointments = snapshot?.appointments ?? [];
+    const appointments = focusedAppointments;
     return visitItems.some((item) =>
       appointments.some(
         (appointment) =>
@@ -1341,20 +1462,26 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
           appointmentsOverlap(item.startTime, item.endTime, appointment.startTime, appointment.endTime)
       )
     );
-  }, [snapshot?.appointments, visitItems]);
+  }, [focusedAppointments, visitItems]);
 
   const blockedSelection = useMemo(() => {
-    const blockedAppointments = (snapshot?.appointments ?? []).filter((appointment) => appointment.kind === "blocked");
+    const blockedAppointments = focusedAppointments.filter((appointment) => appointment.kind === "blocked");
     return visitItems.some((item) =>
       blockedAppointments.some((appointment) =>
         appointmentsOverlap(item.startTime, item.endTime, appointment.startTime, appointment.endTime)
       )
     );
-  }, [snapshot?.appointments, visitItems]);
+  }, [focusedAppointments, visitItems]);
 
-  const appointmentLayouts = useMemo(
-    () => getAppointmentLayouts(snapshot?.appointments ?? []),
-    [snapshot?.appointments]
+  const appointmentLayoutsByProfessional = useMemo(
+    () =>
+      new Map(
+        visibleCalendars.map((member) => [
+          member.professionalId,
+          getAppointmentLayouts(member.appointments)
+        ])
+      ),
+    [visibleCalendars]
   );
   useEffect(() => {
     function handlePointerMove(event: PointerEvent) {
@@ -1370,38 +1497,44 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
           return current;
         }
 
-        return {
-          ...current,
-          appointments: current.appointments.map((appointment) => {
-            if (appointment.id !== dragRef.current?.appointmentId) {
-              return appointment;
-            }
+        const patchAppointment = (appointment: CalendarAppointment) => {
+          if (appointment.id !== dragRef.current?.appointmentId) {
+            return appointment;
+          }
 
-            const originalDuration = dragRef.current.originalEndMinutes - dragRef.current.originalStartMinutes;
+          const originalDuration = dragRef.current.originalEndMinutes - dragRef.current.originalStartMinutes;
 
-            if (dragRef.current.mode === "resize") {
-              const nextEndMinutes = Math.min(
-                dayEndMinutes,
-                Math.max(
-                  dragRef.current.originalStartMinutes + minimumAppointmentDuration,
-                  dragRef.current.originalEndMinutes + deltaSteps * dragStepMinutes
-                )
-              );
-
-              return { ...appointment, endTime: minutesToTime(nextEndMinutes) };
-            }
-
-            const nextMinutes = Math.min(
-              dayEndMinutes - originalDuration,
-              Math.max(dayStartMinutes, dragRef.current.originalStartMinutes + deltaSteps * dragStepMinutes)
+          if (dragRef.current.mode === "resize") {
+            const nextEndMinutes = Math.min(
+              dayEndMinutes,
+              Math.max(
+                dragRef.current.originalStartMinutes + minimumAppointmentDuration,
+                dragRef.current.originalEndMinutes + deltaSteps * dragStepMinutes
+              )
             );
 
-            return {
-              ...appointment,
-              startTime: minutesToTime(nextMinutes),
-              endTime: minutesToTime(nextMinutes + originalDuration)
-            };
-          })
+            return { ...appointment, endTime: minutesToTime(nextEndMinutes) };
+          }
+
+          const nextMinutes = Math.min(
+            dayEndMinutes - originalDuration,
+            Math.max(dayStartMinutes, dragRef.current.originalStartMinutes + deltaSteps * dragStepMinutes)
+          );
+
+          return {
+            ...appointment,
+            startTime: minutesToTime(nextMinutes),
+            endTime: minutesToTime(nextMinutes + originalDuration)
+          };
+        };
+
+        return {
+          ...current,
+          appointments: current.appointments.map(patchAppointment),
+          memberCalendars: current.memberCalendars.map((member) => ({
+            ...member,
+            appointments: member.appointments.map(patchAppointment)
+          }))
         };
       });
     }
@@ -1413,13 +1546,15 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
         return;
       }
 
-      const appointment = snapshot.appointments.find((item) => item.id === dragRef.current?.appointmentId);
+      const appointment = snapshot.memberCalendars
+        .flatMap((member) => member.appointments)
+        .find((item) => item.id === dragRef.current?.appointmentId);
       if (appointment) {
         await fetch("/api/pro/calendar", {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            targetProfessionalId: selectedProfessionalId,
+            targetProfessionalId: appointment.professionalId,
             appointmentId: appointment.id,
             startTime: appointment.startTime,
             endTime: appointment.endTime
@@ -1438,39 +1573,51 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
       window.removeEventListener("pointermove", handlePointerMove);
       window.removeEventListener("pointerup", handlePointerUp);
     };
-  }, [minuteHeight, selectedProfessionalId, snapshot]);
+  }, [minuteHeight, snapshot]);
 
   async function refreshSnapshot() {
     await loadSnapshot(selectedDate, selectedProfessionalId);
   }
 
-  function openNewVisit(slot: string) {
+  function openNewVisit(slot: string, targetProfessionalId = selectedProfessionalId) {
+    const targetMember = memberCalendars.find((member) => member.professionalId === targetProfessionalId) ?? null;
+    const targetScheduleOverrides =
+      targetMember?.memberSchedule.workScheduleMode === "flexible"
+        ? targetMember.memberSchedule.customSchedule
+        : {};
+    const targetDaySchedule = targetMember
+      ? resolveDaySchedule(selectedDate, targetMember.memberSchedule.workSchedule, targetScheduleOverrides)
+      : daySchedule;
+
+    setSelectedProfessionalId(targetProfessionalId);
     const initialItem = createDraftService(slot);
     setSelectedTime(slot);
     setActiveToolbarMenu(null);
-    setQuickMenu({ visible: false, x: 0, y: 0, time: "" });
+    setQuickMenu({ visible: false, x: 0, y: 0, time: "", professionalId: targetProfessionalId });
     setVisitItems([initialItem]);
     setSelectedCustomer(null);
     setServiceQuery("");
     setClientQuery("");
     setShowClientPrompt(false);
-    setStatusText(isWithinWorkingWindow(slot, daySchedule) ? "" : t.outsideScheduleWarning);
+    setStatusText(isWithinWorkingWindow(slot, targetDaySchedule) ? "" : t.outsideScheduleWarning);
     setDrawerStage("visit");
   }
 
-  function handleSlotClick(slot: string, clientX: number, top: number, bodyWidth: number) {
+  function handleSlotClick(slot: string, clientX: number, top: number, bodyWidth: number, targetProfessionalId: string) {
     if (isMobileViewport) {
-      openNewVisit(slot);
+      openNewVisit(slot, targetProfessionalId);
       return;
     }
 
     const left = Math.min(Math.max(40, clientX - 140), bodyWidth - 280);
+    setSelectedProfessionalId(targetProfessionalId);
     setSelectedTime(slot);
     setQuickMenu({
       visible: true,
       x: left,
       y: top + 26,
-      time: slot
+      time: slot,
+      professionalId: targetProfessionalId
     });
     setDrawerStage("closed");
     setStatusText("");
@@ -1561,7 +1708,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
     const firstVisitStartTime = visitItems[0]?.startTime ?? "";
     setShowClientPrompt(false);
     setDrawerStage("closed");
-    setQuickMenu({ visible: false, x: 0, y: 0, time: "" });
+    setQuickMenu((current) => ({ ...current, visible: false, x: 0, y: 0, time: "" }));
 
     for (const item of visitItems) {
       const response = await fetch("/api/pro/calendar", {
@@ -1654,7 +1801,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         kind: "blocked",
-        targetProfessionalId: selectedProfessionalId,
+        targetProfessionalId: quickMenu.professionalId || selectedProfessionalId,
         appointmentDate: selectedDate,
         startTime: selectedTime,
         endTime: minutesToTime(timeToMinutes(selectedTime) + 30),
@@ -1669,7 +1816,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
     }
 
     await refreshSnapshot();
-    setQuickMenu({ visible: false, x: 0, y: 0, time: "" });
+    setQuickMenu((current) => ({ ...current, visible: false, x: 0, y: 0, time: "" }));
     setStatusText(kindLabel);
   }
 
@@ -1680,7 +1827,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
 
     const params = new URLSearchParams({
       appointmentId: selectedAppointment.id,
-      targetProfessionalId: selectedProfessionalId
+      targetProfessionalId: selectedAppointment.professionalId
     });
     const response = await fetch(`/api/pro/calendar?${params.toString()}`, {
       method: "DELETE"
@@ -1708,7 +1855,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         mode: "meta",
-        targetProfessionalId: selectedProfessionalId,
+        targetProfessionalId: selectedAppointment.professionalId,
         appointmentId: selectedAppointment.id,
         attendance: attendanceDraft,
         priceAmount: Number(priceAmountDraft || 0)
@@ -1735,7 +1882,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        targetProfessionalId: selectedProfessionalId,
+        targetProfessionalId: selectedAppointment.professionalId,
         appointmentId: selectedAppointment.id,
         startTime: selectedAppointment.startTime,
         endTime: selectedAppointment.endTime
@@ -1768,7 +1915,13 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
         ...current,
         appointments: current.appointments.map((appointment) =>
           appointment.id === selectedAppointment.id ? { ...appointment, ...patch } : appointment
-        )
+        ),
+        memberCalendars: current.memberCalendars.map((member) => ({
+          ...member,
+          appointments: member.appointments.map((appointment) =>
+            appointment.id === selectedAppointment.id ? { ...appointment, ...patch } : appointment
+          )
+        }))
       };
     });
   }
@@ -1799,6 +1952,46 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
     scrollCalendarToTime(Math.max(dayStartMinutes, now.getHours() * 60 + now.getMinutes() - 30));
   }
 
+  function getMemberSchedule(member: CalendarSnapshot["memberCalendars"][number]) {
+    const overrides =
+      member.memberSchedule.workScheduleMode === "flexible"
+        ? member.memberSchedule.customSchedule
+        : {};
+
+    return resolveDaySchedule(selectedDate, member.memberSchedule.workSchedule, overrides);
+  }
+
+  function getMemberInitials(member: CalendarSnapshot["memberCalendars"][number]) {
+    return `${member.firstName?.[0] ?? ""}${member.lastName?.[0] ?? ""}`.toUpperCase() || "RZ";
+  }
+
+  function toggleVisibleProfessional(memberId: string) {
+    setVisibleProfessionalIds((current) => {
+      const exists = current.includes(memberId);
+      if (exists && current.length === 1) {
+        return current;
+      }
+
+      const next = exists ? current.filter((id) => id !== memberId) : [...current, memberId];
+      if (!next.includes(selectedProfessionalId) && next[0]) {
+        setSelectedProfessionalId(next[0]);
+      }
+      return next;
+    });
+  }
+
+  function showWholeTeam() {
+    const ids = memberCalendars.map((member) => member.professionalId);
+    if (!ids.length) {
+      return;
+    }
+
+    setVisibleProfessionalIds(ids);
+    if (!ids.includes(selectedProfessionalId)) {
+      setSelectedProfessionalId(ids[0]);
+    }
+  }
+
   return (
     <main className={`${styles.workspaceShell} ${styles.calendarV2Shell} ${overlayActive ? styles.calendarV2Expanded : ""}`}>
       <ProSidebar
@@ -1821,7 +2014,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
               aria-label={t.notifications}
               onClick={() => {
                 setActiveToolbarMenu(null);
-                setQuickMenu({ visible: false, x: 0, y: 0, time: "" });
+                setQuickMenu((current) => ({ ...current, visible: false, x: 0, y: 0, time: "" }));
                 setDrawerStage((current) => (current === "notifications" ? "closed" : "notifications"));
               }}
             >
@@ -1965,7 +2158,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
                     setActiveToolbarMenu((current) => (current === "team" ? null : "team"));
                   }}
                 >
-                  <span>{viewedProfessionalName}</span>
+                  <span>{calendarSelectorLabel}</span>
                   <span className={styles.calendarToolbarChevron}>⌄</span>
                 </button>
 
@@ -1977,30 +2170,74 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
                   placement="bottom-start"
                   offset={12}
                 >
+                  <div className={styles.calendarToolbarMenuSearch}>
+                    <span>⌕</span>
+                    <input
+                      value={teamQuery}
+                      onChange={(event) => setTeamQuery(event.target.value)}
+                      placeholder={t.searchPlaceholder}
+                    />
+                  </div>
                   <div className={styles.calendarToolbarMenuSectionLabel}>{t.chooseSpecialist}</div>
                   <div className={styles.calendarToolbarMenuList}>
-                    {teamMembers.map((member) => {
+                    <button
+                      type="button"
+                      className={`${styles.calendarToolbarMenuItem} ${isShowingAllTeam ? styles.calendarToolbarMenuItemActive : ""}`}
+                      onClick={() => {
+                        showWholeTeam();
+                        setSelectedProfessionalId(memberCalendars[0]?.professionalId ?? selectedProfessionalId);
+                      }}
+                    >
+                      <span className={`${styles.calendarToolbarMenuCheck} ${isShowingAllTeam ? styles.calendarToolbarMenuCheckActive : ""}`}>
+                        {isShowingAllTeam ? "✓" : ""}
+                      </span>
+                      <div>
+                        <strong>{t.allTeam}</strong>
+                        <span>{t.showAllTeam}</span>
+                      </div>
+                    </button>
+                  </div>
+                  <div className={styles.calendarToolbarMenuSectionLabel}>{t.selectedMasters}</div>
+                  <div className={styles.calendarToolbarMenuList}>
+                    {filteredTeamMembers.map((member) => {
                       const memberLabel = buildDisplayName(member.firstName, member.lastName, t.masterFallback);
+                      const isVisible = visibleCalendarIds.includes(member.professionalId);
+                      const isFocused = selectedProfessionalId === member.professionalId;
                       return (
                         <button
-                          key={member.id}
+                          key={member.professionalId}
                           type="button"
-                          className={`${styles.calendarToolbarMenuItem} ${selectedProfessionalId === member.id ? styles.calendarToolbarMenuItemActive : ""}`}
+                          className={`${styles.calendarToolbarMenuItem} ${isFocused ? styles.calendarToolbarMenuItemActive : ""}`}
                           onClick={() => {
-                            setActiveToolbarMenu(null);
-                            setSelectedProfessionalId(member.id);
+                            if (!isVisible) {
+                              setVisibleProfessionalIds((current) => [...current, member.professionalId]);
+                              setSelectedProfessionalId(member.professionalId);
+                              return;
+                            }
+
+                            if (!isFocused) {
+                              void loadSnapshot(selectedDate, member.professionalId);
+                              return;
+                            }
+
+                            if (visibleCalendarIds.length > 1) {
+                              toggleVisibleProfessional(member.professionalId);
+                            }
                           }}
                         >
+                          <span className={`${styles.calendarToolbarMenuCheck} ${isVisible ? styles.calendarToolbarMenuCheckActive : ""}`}>
+                            {isVisible ? "✓" : ""}
+                          </span>
                           <ProfileAvatar
                             avatarUrl={member.avatarUrl}
-                            initials={`${member.firstName?.[0] ?? ""}${member.lastName?.[0] ?? ""}`.toUpperCase() || "RZ"}
+                            initials={getMemberInitials(member)}
                             label={memberLabel}
                             className={styles.calendarToolbarMenuAvatar}
                             imageClassName={styles.avatarImage}
                             fallbackClassName={styles.avatarFallback}
                           />
                           <div>
-                            <strong>{memberLabel}</strong>
+                            <strong>{memberLabel}{member.isViewer ? ` ${t.myMarker}` : ""}</strong>
                             <span>{member.scope === "owner" ? member.role || "Owner" : member.role}</span>
                           </div>
                         </button>
@@ -2013,19 +2250,22 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
           </div>
 
           <div className={styles.calendarTopRight}>
-            <button
-              type="button"
-              className={styles.calendarIconButton}
-              aria-label={t.refresh}
-              onClick={() => {
-                void refreshSnapshot();
-              }}
-            >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M20 11a8 8 0 1 0 2 5.3" />
-                <path d="M20 4v7h-7" />
-              </svg>
-            </button>
+            {visibleCalendarIds.length === 1 ? (
+              <div className={`${styles.calendarStatsStrip} ${styles.calendarStatsStripCompact}`} aria-label={t.dailyCalendar}>
+                <div>
+                  <span>{t.today}</span>
+                  <strong>{calendarStats.day.visitsCount} / {formatMoney(calendarStats.day.revenue, accountCurrency, locale)}</strong>
+                </div>
+                <div>
+                  <span>{t.week}</span>
+                  <strong>{calendarStats.week.visitsCount} / {formatMoney(calendarStats.week.revenue, accountCurrency, locale)}</strong>
+                </div>
+                <div>
+                  <span>{t.month}</span>
+                  <strong>{calendarStats.month.visitsCount} / {formatMoney(calendarStats.month.revenue, accountCurrency, locale)}</strong>
+                </div>
+              </div>
+            ) : null}
 
             <button
               ref={viewMenuButtonRef}
@@ -2079,43 +2319,40 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
           </div>
         </header>
 
-        <div className={styles.calendarTitleRow}>
-          <div className={styles.calendarTitleMeta}>
-            <div className={styles.calendarTitleProfile}>
-              <ProfileAvatar
-                avatarUrl={snapshot?.workspace.professional.avatarUrl}
-                initials={viewedProfessionalInitials}
-                label={viewedProfessionalName}
-                className={styles.calendarTitleAvatar}
-                imageClassName={styles.avatarImage}
-                fallbackClassName={styles.avatarFallback}
-              />
-              <div>
-                <strong>{viewedProfessionalName}</strong>
-                <span>{`${snapshot?.workspace.services.length ?? 0} ${t.services} · ${viewMode === "day" ? t.dailyCalendar : viewModeOptions.find((option) => option.value === viewMode)?.label}`}</span>
-              </div>
-            </div>
-          </div>
-          <div className={styles.calendarStatsStrip} aria-label={t.dailyCalendar}>
-            <div>
-              <span>{t.today}</span>
-              <strong>{calendarStats.day.visitsCount} / {formatMoney(calendarStats.day.revenue, accountCurrency, locale)}</strong>
-            </div>
-            <div>
-              <span>{t.week}</span>
-              <strong>{calendarStats.week.visitsCount} / {formatMoney(calendarStats.week.revenue, accountCurrency, locale)}</strong>
-            </div>
-            <div>
-              <span>{t.month}</span>
-              <strong>{calendarStats.month.visitsCount} / {formatMoney(calendarStats.month.revenue, accountCurrency, locale)}</strong>
-            </div>
-          </div>
-        </div>
-
         {statusText ? <div className={styles.calendarInlineStatus}>{statusText}</div> : null}
 
         {viewMode === "day" ? (
+        <>
         <div ref={scrollFrameRef} className={styles.calendarV2ScrollFrame}>
+          <div className={styles.calendarDayColumnsHeader}>
+            <div className={styles.calendarDayHourSpacer} />
+            <div
+              className={styles.calendarDayMemberHeaderGrid}
+              style={{ gridTemplateColumns: `repeat(${Math.max(1, visibleCalendars.length)}, minmax(${isMobileViewport ? 220 : 280}px, 1fr))` }}
+            >
+              {visibleCalendars.map((member) => {
+                const memberLabel = buildDisplayName(member.firstName, member.lastName, t.masterFallback);
+                return (
+                  <button
+                  key={member.professionalId}
+                  type="button"
+                  className={`${styles.calendarDayMemberHeaderCard} ${selectedProfessionalId === member.professionalId ? styles.calendarDayMemberHeaderCardActive : ""}`}
+                  onClick={() => setSelectedProfessionalId(member.professionalId)}
+                >
+                    <ProfileAvatar
+                      avatarUrl={member.avatarUrl}
+                      initials={getMemberInitials(member)}
+                      label={memberLabel}
+                      className={styles.calendarDayMemberHeaderAvatar}
+                      imageClassName={styles.avatarImage}
+                      fallbackClassName={styles.avatarFallback}
+                    />
+                    <strong>{memberLabel}</strong>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
           <div className={styles.calendarV2Grid} style={{ minHeight: `${calendarGridHeight}px` }}>
             <div className={styles.calendarV2HourColumn}>
               {hours.map((hour) => (
@@ -2127,7 +2364,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
                 <button
                   type="button"
                   className={styles.calendarMobilePlusButton}
-                  onClick={() => openNewVisit(getSuggestedVisitStartTime())}
+                  onClick={() => openNewVisit(getSuggestedVisitStartTime(), selectedProfessionalId)}
                   aria-label={t.quickNewVisit}
                 >
                   +
@@ -2136,180 +2373,213 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
             </div>
 
             <div
-              className={styles.calendarV2Body}
-              style={{
-                minHeight: `${calendarGridHeight}px`,
-                ["--calendar-slot-step-height" as never]: `${slotHeight}px`,
-                ["--calendar-hour-block-height" as never]: `${calendarHourHeight}px`
-              }}
+              className={styles.calendarDayMembersGrid}
+              style={{ gridTemplateColumns: `repeat(${Math.max(1, visibleCalendars.length)}, minmax(${isMobileViewport ? 220 : 280}px, 1fr))` }}
             >
-              {!selectedDayIsWorking ? (
-                <div
-                  className={styles.nonWorkingZone}
-                  style={{ top: `${topOffset}px`, height: `${dayEndMinutes * minuteHeight}px` }}
-                />
-              ) : (
-                <>
-                  <div
-                    className={styles.nonWorkingZone}
-                    style={{ top: `${topOffset}px`, height: `${Math.max(0, workStartMinutes) * minuteHeight}px` }}
-                  />
-                  <div
-                    className={styles.nonWorkingZone}
-                    style={{ top: `${topOffset + workEndMinutes * minuteHeight}px`, height: `${Math.max(0, dayEndMinutes - workEndMinutes) * minuteHeight}px` }}
-                  />
-                </>
-              )}
-              {selectedDayIsWorking
-                ? dayBreaks.map((breakItem) => (
-                    <div
-                      key={`${breakItem.startTime}-${breakItem.endTime}`}
-                      className={styles.nonWorkingZone}
-                      style={{
-                        top: `${topOffset + breakItem.startMinutes * minuteHeight}px`,
-                        height: `${(breakItem.endMinutes - breakItem.startMinutes) * minuteHeight}px`
-                      }}
-                    />
-                  ))
-                : null}
-
-              {nowLineTop !== null ? (
-                <div className={styles.nowLine} style={{ top: `${nowLineTop + topOffset}px` }}>
-                  <span className={styles.nowBadge}>
-                    {new Date().toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit", hourCycle: "h23" })}
-                  </span>
-                </div>
-              ) : null}
-
-              {Array.from({ length: (dayEndMinutes - dayStartMinutes) / CALENDAR_GRID_STEP_MINUTES }, (_, index) => {
-                const slotMinutes = dayStartMinutes + index * CALENDAR_GRID_STEP_MINUTES;
-                const slot = minutesToTime(slotMinutes);
-                const top = topOffset + index * slotHeight;
-                const inWorkingHours = isWithinWorkingWindow(slot, daySchedule);
+              {visibleCalendars.map((member) => {
+                const memberSchedule = getMemberSchedule(member);
+                const memberScheduleOverrides =
+                  member.memberSchedule.workScheduleMode === "flexible"
+                    ? member.memberSchedule.customSchedule
+                    : {};
+                const memberDaySchedule = resolveDaySchedule(selectedDate, member.memberSchedule.workSchedule, memberScheduleOverrides);
+                const memberBreaks = getDayBreaks(memberDaySchedule).map((breakItem) => ({
+                  ...breakItem,
+                  startMinutes: timeToMinutes(breakItem.startTime),
+                  endMinutes: timeToMinutes(breakItem.endTime)
+                }));
+                const memberWorkStartMinutes = memberDaySchedule ? timeToMinutes(memberDaySchedule.startTime) : 9 * 60;
+                const memberWorkEndMinutes = memberDaySchedule ? timeToMinutes(memberDaySchedule.endTime) : 18 * 60;
+                const memberIsWorking = Boolean(memberDaySchedule?.enabled);
+                const memberLayouts = appointmentLayoutsByProfessional.get(member.professionalId) ?? new Map();
 
                 return (
-                  <button
-                    key={slot}
-                    type="button"
-                    className={`${styles.calendarSlotButton} ${selectedTime === slot ? styles.calendarSlotActive : ""} ${!inWorkingHours ? styles.calendarSlotOffHours : ""}`}
-                    style={{ top: `${top}px`, height: `${slotHeight}px` }}
-                    onClick={(event) => {
-                      const bodyRect = (event.currentTarget.parentElement as HTMLDivElement).getBoundingClientRect();
-                      handleSlotClick(slot, event.clientX - bodyRect.left, top, bodyRect.width);
-                    }}
-                  >
-                    {slot}
-                  </button>
-                );
-              })}
-
-              {quickMenu.visible ? (
-                <div
-                  ref={quickMenuRef}
-                  className={styles.calendarQuickMenu}
-                  style={{ left: `${quickMenu.x}px`, top: `${quickMenu.y}px` }}
-                >
-                  <button
-                    type="button"
-                    className={styles.calendarQuickMenuAction}
-                    onClick={() => {
-                      setQuickMenu({ visible: false, x: 0, y: 0, time: "" });
-                      openNewVisit(quickMenu.time);
-                    }}
-                  >
-                    {t.quickNewVisit}
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.calendarQuickMenuAction}
-                    onClick={() => void createBlocked(t.blockedBusySaved, t.blockedTimeFallback)}
-                  >
-                    {t.quickBlockBusy}
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.calendarQuickMenuAction}
-                    onClick={() => void createBlocked(t.blockedOffTimeSaved, t.quickAddOffTime)}
-                  >
-                    {t.quickAddOffTime}
-                  </button>
-                </div>
-              ) : null}
-
-              {(snapshot?.appointments ?? []).map((appointment) => {
-                const top = topOffset + timeToMinutes(appointment.startTime) * minuteHeight;
-                const height = Math.max(bookingCardMinHeight, (timeToMinutes(appointment.endTime) - timeToMinutes(appointment.startTime)) * minuteHeight);
-                const isPastAppointment = getDateTimeValue(appointment.appointmentDate, appointment.endTime) < Date.now();
-                const isBlocked = appointment.kind === "blocked";
-                const isPendingApproval = appointment.attendance === "pending";
-                const bookingColor = isBlocked
-                  ? "#d9dce4"
-                  : getServiceColor(appointment.serviceName, snapshot?.workspace.services ?? []);
-                const layout = appointmentLayouts.get(appointment.id) ?? { lane: 0, laneCount: 1 };
-                const laneWidth = 100 / layout.laneCount;
-
-                return (
-                  <article
-                    key={appointment.id}
-                    className={`${styles.bookingBlock} ${draggingId === appointment.id ? styles.bookingDragging : ""} ${isBlocked ? styles.bookingBlocked : ""} ${isPastAppointment && !isBlocked ? styles.bookingPast : ""} ${isPendingApproval && !isBlocked ? styles.bookingPending : ""}`}
+                  <div
+                    key={member.professionalId}
+                    className={`${styles.calendarV2Body} ${styles.calendarDayMemberColumn} ${selectedProfessionalId === member.professionalId ? styles.calendarDayMemberColumnActive : ""}`}
                     style={{
-                      top: `${top}px`,
-                      height: `${height}px`,
-                      left: `calc(${layout.lane * laneWidth}% + 0px)`,
-                      width: `calc(${laneWidth}% - 8px)`,
-                      right: "auto",
-                      background: isBlocked ? undefined : bookingColor
-                    }}
-                    onPointerDown={(event) => {
-                      dragRef.current = {
-                        startY: event.clientY,
-                        originalStartMinutes: timeToMinutes(appointment.startTime),
-                        originalEndMinutes: timeToMinutes(appointment.endTime),
-                        appointmentId: appointment.id,
-                        mode: "move"
-                      };
-                      setDraggingId(appointment.id);
-                    }}
-                    onClick={() => {
-                      if (isBlocked) {
-                        setSelectedAppointmentId(appointment.id);
-                        setDrawerStage("details");
-                        setQuickMenu({ visible: false, x: 0, y: 0, time: "" });
-                        return;
-                      }
-                      setSelectedAppointmentId(appointment.id);
-                      setAttendanceDraft(appointment.attendance);
-                      setPriceAmountDraft(String(appointment.priceAmount ?? 0));
-                      setDrawerStage("details");
-                      setQuickMenu({ visible: false, x: 0, y: 0, time: "" });
+                      minHeight: `${calendarGridHeight}px`,
+                      ["--calendar-slot-step-height" as never]: `${slotHeight}px`,
+                      ["--calendar-hour-block-height" as never]: `${calendarHourHeight}px`
                     }}
                   >
-                    <span className={styles.bookingTime}>{`${formatDisplayTime(appointment.startTime)} - ${formatDisplayTime(appointment.endTime)}`}</span>
-                    <strong className={styles.bookingTitle}>
-                      {isBlocked ? appointment.serviceName || t.blockedTimeFallback : appointment.customerName || t.walkInClient}
-                    </strong>
-                    {!isBlocked ? <span className={styles.bookingService}>{appointment.serviceName}</span> : null}
-                    <button
-                      type="button"
-                      className={styles.bookingResizeHandle}
-                      onPointerDown={(event) => {
-                        event.stopPropagation();
-                        dragRef.current = {
-                          startY: event.clientY,
-                          originalStartMinutes: timeToMinutes(appointment.startTime),
-                          originalEndMinutes: timeToMinutes(appointment.endTime),
-                          appointmentId: appointment.id,
-                          mode: "resize"
-                        };
-                        setDraggingId(appointment.id);
-                      }}
-                    />
-                  </article>
+                    {!memberIsWorking ? (
+                      <div
+                        className={styles.nonWorkingZone}
+                        style={{ top: `${topOffset}px`, height: `${dayEndMinutes * minuteHeight}px` }}
+                      />
+                    ) : (
+                      <>
+                        <div
+                          className={styles.nonWorkingZone}
+                          style={{ top: `${topOffset}px`, height: `${Math.max(0, memberWorkStartMinutes) * minuteHeight}px` }}
+                        />
+                        <div
+                          className={styles.nonWorkingZone}
+                          style={{ top: `${topOffset + memberWorkEndMinutes * minuteHeight}px`, height: `${Math.max(0, dayEndMinutes - memberWorkEndMinutes) * minuteHeight}px` }}
+                        />
+                      </>
+                    )}
+
+                    {memberIsWorking
+                      ? memberBreaks.map((breakItem) => (
+                          <div
+                            key={`${member.professionalId}-${breakItem.startTime}-${breakItem.endTime}`}
+                            className={styles.nonWorkingZone}
+                            style={{
+                              top: `${topOffset + breakItem.startMinutes * minuteHeight}px`,
+                              height: `${(breakItem.endMinutes - breakItem.startMinutes) * minuteHeight}px`
+                            }}
+                          />
+                        ))
+                      : null}
+
+                    {nowLineTop !== null ? (
+                      <div className={styles.nowLine} style={{ top: `${nowLineTop + topOffset}px` }}>
+                        {selectedProfessionalId === member.professionalId ? (
+                          <span className={styles.nowBadge}>
+                            {new Date().toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit", hourCycle: "h23" })}
+                          </span>
+                        ) : null}
+                      </div>
+                    ) : null}
+
+                    {Array.from({ length: (dayEndMinutes - dayStartMinutes) / CALENDAR_GRID_STEP_MINUTES }, (_, index) => {
+                      const slotMinutes = dayStartMinutes + index * CALENDAR_GRID_STEP_MINUTES;
+                      const slot = minutesToTime(slotMinutes);
+                      const top = topOffset + index * slotHeight;
+                      const inWorkingHours = isWithinWorkingWindow(slot, memberSchedule);
+
+                      return (
+                        <button
+                          key={`${member.professionalId}-${slot}`}
+                          type="button"
+                          className={`${styles.calendarSlotButton} ${selectedTime === slot && selectedProfessionalId === member.professionalId ? styles.calendarSlotActive : ""} ${!inWorkingHours ? styles.calendarSlotOffHours : ""}`}
+                          style={{ top: `${top}px`, height: `${slotHeight}px` }}
+                          onClick={(event) => {
+                            const bodyRect = (event.currentTarget.parentElement as HTMLDivElement).getBoundingClientRect();
+                            handleSlotClick(slot, event.clientX - bodyRect.left, top, bodyRect.width, member.professionalId);
+                          }}
+                        >
+                          {slot}
+                        </button>
+                      );
+                    })}
+
+                    {quickMenu.visible && quickMenu.professionalId === member.professionalId ? (
+                      <div
+                        ref={quickMenuRef}
+                        className={styles.calendarQuickMenu}
+                        style={{ left: `${quickMenu.x}px`, top: `${quickMenu.y}px` }}
+                      >
+                        <button
+                          type="button"
+                          className={styles.calendarQuickMenuAction}
+                          onClick={() => {
+                            setQuickMenu((current) => ({ ...current, visible: false, x: 0, y: 0, time: "" }));
+                            openNewVisit(quickMenu.time, member.professionalId);
+                          }}
+                        >
+                          {t.quickNewVisit}
+                        </button>
+                        <button
+                          type="button"
+                          className={styles.calendarQuickMenuAction}
+                          onClick={() => void createBlocked(t.blockedBusySaved, t.blockedTimeFallback)}
+                        >
+                          {t.quickBlockBusy}
+                        </button>
+                        <button
+                          type="button"
+                          className={styles.calendarQuickMenuAction}
+                          onClick={() => void createBlocked(t.blockedOffTimeSaved, t.quickAddOffTime)}
+                        >
+                          {t.quickAddOffTime}
+                        </button>
+                      </div>
+                    ) : null}
+
+                    {member.appointments.map((appointment) => {
+                      const top = topOffset + timeToMinutes(appointment.startTime) * minuteHeight;
+                      const height = Math.max(bookingCardMinHeight, (timeToMinutes(appointment.endTime) - timeToMinutes(appointment.startTime)) * minuteHeight);
+                      const isPastAppointment = getDateTimeValue(appointment.appointmentDate, appointment.endTime) < Date.now();
+                      const isBlocked = appointment.kind === "blocked";
+                      const isPendingApproval = appointment.attendance === "pending";
+                      const bookingColor = isBlocked
+                        ? "#d9dce4"
+                        : getServiceColor(appointment.serviceName, snapshot?.workspace.services ?? []);
+                      const layout = memberLayouts.get(appointment.id) ?? { lane: 0, laneCount: 1 };
+                      const laneWidth = 100 / layout.laneCount;
+
+                      return (
+                        <article
+                          key={appointment.id}
+                          className={`${styles.bookingBlock} ${draggingId === appointment.id ? styles.bookingDragging : ""} ${isBlocked ? styles.bookingBlocked : ""} ${isPastAppointment && !isBlocked ? styles.bookingPast : ""} ${isPendingApproval && !isBlocked ? styles.bookingPending : ""}`}
+                          style={{
+                            top: `${top}px`,
+                            height: `${height}px`,
+                            left: `calc(${layout.lane * laneWidth}% + 0px)`,
+                            width: `calc(${laneWidth}% - 8px)`,
+                            right: "auto",
+                            background: isBlocked ? undefined : bookingColor
+                          }}
+                          onPointerDown={(event) => {
+                            setSelectedProfessionalId(member.professionalId);
+                            dragRef.current = {
+                              startY: event.clientY,
+                              originalStartMinutes: timeToMinutes(appointment.startTime),
+                              originalEndMinutes: timeToMinutes(appointment.endTime),
+                              appointmentId: appointment.id,
+                              mode: "move"
+                            };
+                            setDraggingId(appointment.id);
+                          }}
+                          onClick={() => {
+                            setSelectedProfessionalId(member.professionalId);
+                            if (isBlocked) {
+                              setSelectedAppointmentId(appointment.id);
+                              setDrawerStage("details");
+                              setQuickMenu((current) => ({ ...current, visible: false, x: 0, y: 0, time: "" }));
+                              return;
+                            }
+                            setSelectedAppointmentId(appointment.id);
+                            setAttendanceDraft(appointment.attendance);
+                            setPriceAmountDraft(String(appointment.priceAmount ?? 0));
+                            setDrawerStage("details");
+                            setQuickMenu((current) => ({ ...current, visible: false, x: 0, y: 0, time: "" }));
+                          }}
+                        >
+                          <span className={styles.bookingTime}>{`${formatDisplayTime(appointment.startTime)} - ${formatDisplayTime(appointment.endTime)}`}</span>
+                          <strong className={styles.bookingTitle}>
+                            {isBlocked ? appointment.serviceName || t.blockedTimeFallback : appointment.customerName || t.walkInClient}
+                          </strong>
+                          {!isBlocked ? <span className={styles.bookingService}>{appointment.serviceName}</span> : null}
+                          <button
+                            type="button"
+                            className={styles.bookingResizeHandle}
+                            onPointerDown={(event) => {
+                              event.stopPropagation();
+                              setSelectedProfessionalId(member.professionalId);
+                              dragRef.current = {
+                                startY: event.clientY,
+                                originalStartMinutes: timeToMinutes(appointment.startTime),
+                                originalEndMinutes: timeToMinutes(appointment.endTime),
+                                appointmentId: appointment.id,
+                                mode: "resize"
+                              };
+                              setDraggingId(appointment.id);
+                            }}
+                          />
+                        </article>
+                      );
+                    })}
+                  </div>
                 );
               })}
             </div>
           </div>
         </div>
+        </>
         ) : viewMode === "week" ? (
           <div className={styles.calendarOverviewPanel}>
             <div className={styles.calendarWeekOverviewGrid}>
@@ -2317,7 +2587,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
                 const schedule = snapshot
                   ? resolveDaySchedule(dayKey, snapshot.workspace.memberSchedule.workSchedule, scheduleOverrides)
                   : null;
-                const dayAppointments = dayKey === selectedDate ? snapshot?.appointments ?? [] : [];
+                const dayAppointments = dayKey === selectedDate ? focusedAppointments : [];
                 return (
                   <button
                     key={dayKey}
@@ -2344,7 +2614,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
               {monthGrid.map((day) => {
                 const schedule = monthSchedules.get(day.key) ?? null;
                 const isWorkingDay = Boolean(schedule?.enabled);
-                const dayAppointments = day.key === selectedDate ? snapshot?.appointments ?? [] : [];
+                const dayAppointments = day.key === selectedDate ? focusedAppointments : [];
                 return (
                   <button
                     key={day.key}

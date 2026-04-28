@@ -66,6 +66,18 @@ export type CalendarTeamMember = {
   isViewer: boolean;
 };
 
+export type CalendarMemberDaySnapshot = {
+  professionalId: string;
+  firstName: string;
+  lastName: string;
+  avatarUrl?: string;
+  role: string;
+  scope: "owner" | "member";
+  isViewer: boolean;
+  memberSchedule: WorkspaceSnapshot["memberSchedule"];
+  appointments: CalendarAppointment[];
+};
+
 export type CalendarRecentActivity = {
   id: string;
   appointmentDate: string;
@@ -513,6 +525,7 @@ async function resolveCalendarAccess(input: {
       scope: entry.membership.scope === "owner" ? "owner" : "member",
       isViewer: entry.professional.id === input.viewerProfessionalId
     })),
+    teamEntries,
     canManageTeam
   };
 }
@@ -527,6 +540,9 @@ export async function getCalendarDaySnapshot(input: {
     targetProfessionalId: input.targetProfessionalId
   });
   const professionalAppointments = await readAppointmentsForProfessional(access.targetWorkspace.professional.id);
+  const businessAppointments = access.canManageTeam
+    ? await getAppointmentsForBusiness(access.targetWorkspace.business.id)
+    : professionalAppointments;
   const existing = professionalAppointments.filter(
     (appointment) => appointment.appointmentDate === input.appointmentDate
   );
@@ -551,7 +567,7 @@ export async function getCalendarDaySnapshot(input: {
   ).sort((left, right) => left.name.localeCompare(right.name, "ru"));
 
   const activitySource = access.canManageTeam
-    ? await getAppointmentsForBusiness(access.targetWorkspace.business.id)
+    ? businessAppointments
     : [...professionalAppointments].sort((left, right) =>
         `${right.createdAt}${right.appointmentDate}${right.startTime}`.localeCompare(
           `${left.createdAt}${left.appointmentDate}${left.startTime}`
@@ -560,6 +576,34 @@ export async function getCalendarDaySnapshot(input: {
   const teamMemberLabels = new Map(
     access.teamMembers.map((member) => [member.id, `${member.firstName} ${member.lastName}`.trim() || member.role])
   );
+  const memberCalendars: CalendarMemberDaySnapshot[] = access.teamEntries
+    .filter((entry) => access.canManageTeam || entry.professional.id === access.targetWorkspace.professional.id)
+    .map((entry) => {
+      const memberWorkspace = buildWorkspaceSnapshotFromDirectory(
+        entry.professional,
+        entry.membership,
+        access.targetWorkspace.business,
+        access.targetWorkspace.services
+      );
+
+      return {
+        professionalId: entry.professional.id,
+        firstName: entry.professional.firstName,
+        lastName: entry.professional.lastName,
+        avatarUrl: entry.professional.avatarUrl,
+        role: entry.membership.role,
+        scope: entry.membership.scope === "owner" ? "owner" : "member",
+        isViewer: entry.professional.id === input.professionalId,
+        memberSchedule: memberWorkspace.memberSchedule,
+        appointments: businessAppointments
+          .filter(
+            (appointment) =>
+              appointment.professionalId === entry.professional.id &&
+              appointment.appointmentDate === input.appointmentDate
+          )
+          .sort((left, right) => left.startTime.localeCompare(right.startTime))
+      };
+    });
 
   return {
     viewer: {
@@ -575,6 +619,7 @@ export async function getCalendarDaySnapshot(input: {
     },
     teamMembers: access.teamMembers,
     viewedProfessionalId: access.targetWorkspace.professional.id,
+    memberCalendars,
     workspace: access.targetWorkspace,
     appointments: existing.sort((left, right) => left.startTime.localeCompare(right.startTime)),
     clients,
