@@ -3185,6 +3185,12 @@
   color: #dc3f57;
 }
 
+.staffControlMenuDivider {
+  height: 1px;
+  margin: 6px 2px;
+  background: #ebeff7;
+}
+
 .staffStudioBottomGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -3334,10 +3340,24 @@
 }
 
 .staffScheduleToolbar {
+  border-radius: 24px;
+  border: 1px solid #e2e7f2;
+  background: #ffffff;
+  padding: 14px;
+}
+
+.staffScheduleTopBar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
+  flex-wrap: wrap;
+}
+
+.staffScheduleToolbarRight {
+  display: flex;
+  align-items: center;
+  gap: 12px;
   flex-wrap: wrap;
 }
 
@@ -3352,6 +3372,41 @@
   gap: 12px;
 }
 
+.staffScheduleRangeBox {
+  position: relative;
+  min-height: 52px;
+  border-radius: 999px;
+  border: 1px solid #d9e0ee;
+  background: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  overflow: hidden;
+}
+
+.staffScheduleRangeButton {
+  width: 42px;
+  height: 52px;
+  border: 0;
+  background: #ffffff;
+  color: #1f2435;
+  font-size: 1.4rem;
+  cursor: pointer;
+}
+
+.staffScheduleRangeLabelButton {
+  min-width: 236px;
+  min-height: 52px;
+  padding: 0 18px;
+  border: 0;
+  border-left: 1px solid #ebeff7;
+  border-right: 1px solid #ebeff7;
+  background: #ffffff;
+  color: #1f2435;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
 .staffScheduleArrow {
   width: 38px;
   height: 38px;
@@ -3363,6 +3418,81 @@
   cursor: pointer;
 }
 
+.staffScheduleCalendarPopover {
+  position: absolute;
+  top: calc(100% + 14px);
+  right: 0;
+  width: min(350px, calc(100vw - 32px));
+  padding: 20px;
+  border-radius: 24px;
+  border: 1px solid #e2e7f2;
+  background: #ffffff;
+  box-shadow: 0 28px 56px rgba(26, 31, 44, 0.16);
+  z-index: 20;
+  display: grid;
+  gap: 16px;
+}
+
+.staffScheduleCalendarHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.staffScheduleCalendarHeader strong {
+  font-size: 1.15rem;
+  text-transform: capitalize;
+}
+
+.staffScheduleCalendarNav {
+  width: 40px;
+  height: 40px;
+  border: 1px solid #e4e8f2;
+  border-radius: 50%;
+  background: #ffffff;
+  font-size: 1.3rem;
+  cursor: pointer;
+}
+
+.staffScheduleCalendarWeekdays,
+.staffScheduleCalendarGrid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.staffScheduleCalendarWeekdays span {
+  text-align: center;
+  color: #9097ab;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: lowercase;
+}
+
+.staffScheduleCalendarEmpty,
+.staffScheduleCalendarDay {
+  min-height: 44px;
+}
+
+.staffScheduleCalendarDay {
+  border: 0;
+  border-radius: 14px;
+  background: #ffffff;
+  color: #1f2435;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.staffScheduleCalendarDayRange {
+  background: #f0f1ff;
+}
+
+.staffScheduleCalendarDayActive {
+  background: #6b5cff;
+  color: #ffffff;
+}
+
 .staffScheduleBoard {
   border-radius: 24px;
   border: 1px solid #e2e7f2;
@@ -3370,10 +3500,15 @@
   overflow: hidden;
 }
 
+.staffScheduleBoardScroller {
+  overflow-x: auto;
+}
+
 .staffScheduleHead,
 .staffScheduleRow {
+  min-width: 1200px;
   display: grid;
-  grid-template-columns: 300px repeat(7, minmax(120px, 1fr));
+  grid-template-columns: 300px repeat(7, minmax(140px, 1fr));
 }
 
 .staffScheduleHead {
@@ -3412,6 +3547,11 @@
   color: #7a8195;
 }
 
+.staffScheduleDayHead small {
+  color: #8a90a4;
+  font-size: 0.85rem;
+}
+
 .staffScheduleRows {
   display: grid;
 }
@@ -3426,9 +3566,11 @@
 
 .staffScheduleMemberCell {
   padding: 18px 16px;
-  text-decoration: none;
-  color: inherit;
   border-right: 1px solid #edf1f8;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
 }
 
 .staffScheduleMemberIdentity {
@@ -3441,10 +3583,23 @@
   display: block;
 }
 
+.staffScheduleMemberMeta span,
 .staffScheduleMemberIdentity span {
   display: block;
   margin-top: 4px;
   color: #73798d;
+}
+
+.staffScheduleMemberAction {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid #e1e6f1;
+  background: #ffffff;
+  color: #1f2435;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
 }
 
 .staffScheduleAvatar {
@@ -3464,6 +3619,22 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.staffScheduleShiftWrap {
+  position: relative;
+}
+
+.staffScheduleShiftButton {
+  width: calc(100% - 16px);
+  margin: 8px;
+  min-height: 56px;
+  border: 0;
+  border-radius: 14px;
+  text-align: center;
+  padding: 10px;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 .staffScheduleShiftCell {
@@ -3487,6 +3658,261 @@
 .staffScheduleShiftCellOff {
   background: #f4f6fa;
   color: #8b90a1;
+}
+
+.staffScheduleCellMenu {
+  top: calc(100% + 8px);
+  right: auto;
+  left: 8px;
+  width: 270px;
+}
+
+.staffScheduleMenuTitle {
+  padding: 10px 12px 4px;
+  color: #2a2f41;
+  font-size: 1rem;
+}
+
+.staffPlannerBackdrop,
+.staffDayModalBackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 20, 28, 0.38);
+  backdrop-filter: blur(6px);
+  z-index: 60;
+}
+
+.staffPlannerBackdrop {
+  overflow-y: auto;
+}
+
+.staffPlannerShell {
+  min-height: 100vh;
+  background: #f7f8fc;
+}
+
+.staffPlannerTopBar {
+  min-height: 84px;
+  border-bottom: 1px solid #e2e7f2;
+  background: #ffffff;
+  padding: 0 32px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.staffPlannerBody {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 32px;
+  display: grid;
+  gap: 28px;
+}
+
+.staffPlannerIntro {
+  display: grid;
+  gap: 8px;
+}
+
+.staffPlannerLayout {
+  display: grid;
+  grid-template-columns: 360px minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
+}
+
+.staffPlannerSidebar {
+  display: grid;
+  gap: 20px;
+}
+
+.staffPlannerInfoCard,
+.staffPlannerHintCard,
+.staffPlannerPanel {
+  border-radius: 24px;
+  border: 1px solid #e2e7f2;
+  background: #ffffff;
+}
+
+.staffPlannerInfoCard {
+  padding: 22px;
+  display: grid;
+  gap: 16px;
+}
+
+.staffPlannerInfoCard strong {
+  font-size: 1.12rem;
+}
+
+.staffPlannerInfoCard span,
+.staffPlannerInfoCard p {
+  color: #70778c;
+}
+
+.staffPlannerInfoCard p {
+  margin: 0;
+  line-height: 1.6;
+}
+
+.staffPlannerHintCard {
+  padding: 18px 20px;
+  color: #6d7386;
+  line-height: 1.6;
+}
+
+.staffPlannerPanel {
+  padding: 28px;
+  display: grid;
+  gap: 22px;
+}
+
+.staffPlannerPanelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.staffPlannerPanelHeader h2 {
+  margin: 0;
+  font-size: 1.85rem;
+  letter-spacing: -0.04em;
+}
+
+.staffPlannerPanelHeader span {
+  color: #747b90;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.staffPlannerDays {
+  display: grid;
+  gap: 16px;
+}
+
+.staffPlannerDayRow {
+  display: grid;
+  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  gap: 18px;
+  align-items: center;
+}
+
+.staffPlannerDayToggle {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.staffPlannerDayToggle input {
+  width: 24px;
+  height: 24px;
+  accent-color: #6b5cff;
+}
+
+.staffPlannerDayMeta strong,
+.staffPlannerDayMeta span {
+  display: block;
+}
+
+.staffPlannerDayMeta span {
+  margin-top: 4px;
+  color: #7a8195;
+}
+
+.staffPlannerTimeRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+}
+
+.staffPlannerTimeDivider {
+  color: #7c8398;
+  font-weight: 700;
+}
+
+.staffDayModalBackdrop {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.staffDayModal {
+  width: min(760px, 100%);
+  border-radius: 28px;
+  border: 1px solid #e2e7f2;
+  background: #ffffff;
+  box-shadow: 0 30px 70px rgba(17, 20, 28, 0.18);
+  padding: 28px;
+  display: grid;
+  gap: 22px;
+}
+
+.staffDayModalHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.staffDayModalHeader h2 {
+  margin: 0;
+  font-size: 1.7rem;
+  letter-spacing: -0.04em;
+}
+
+.staffDayModalHeader p {
+  margin: 8px 0 0;
+  color: #6d7386;
+  line-height: 1.6;
+}
+
+.staffDayToggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+}
+
+.staffDayToggle input {
+  width: 20px;
+  height: 20px;
+  accent-color: #6b5cff;
+}
+
+.staffDayModalGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.staffDayBreaks {
+  display: grid;
+  gap: 14px;
+}
+
+.staffDayBreakRow {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
+  gap: 14px;
+  align-items: end;
+}
+
+.staffDayModalActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.staffDayModalActionsRight {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .staffEditorShell {
@@ -3687,6 +4113,13 @@
     grid-template-columns: 1fr;
   }
 
+  .staffPlannerLayout,
+  .staffPlannerDayRow,
+  .staffDayModalGrid,
+  .staffDayBreakRow {
+    grid-template-columns: 1fr;
+  }
+
   .staffScheduleMemberCell {
     border-right: 0;
     border-bottom: 1px solid #edf1f8;
@@ -3706,16 +4139,29 @@
     align-items: stretch;
   }
 
+  .staffPlannerTopBar,
   .staffEditorTopBar {
     padding: 16px;
   }
 
-  .staffScheduleToolbar {
+  .staffPlannerBody,
+  .staffScheduleToolbar,
+  .staffScheduleTopBar {
     align-items: stretch;
   }
 
+  .staffScheduleToolbarRight,
   .staffScheduleRange {
     justify-content: space-between;
+  }
+
+  .staffScheduleRangeLabelButton {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .staffDayModal {
+    padding: 22px 18px;
   }
 }
 

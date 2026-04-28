@@ -17,6 +17,7 @@ import type {
 type StaffViewProps = {
   professionalId: string;
   snapshot: BusinessStaffSnapshot;
+  initialAddOpen?: boolean;
 };
 
 const staffText = {
@@ -353,14 +354,14 @@ function PendingInvitationCard({
   );
 }
 
-export default function StaffView({ professionalId, snapshot }: StaffViewProps) {
+export default function StaffView({ professionalId, snapshot, initialAddOpen = false }: StaffViewProps) {
   const router = useRouter();
   const { language } = useProLanguage();
   const copy = staffText[language];
   const locale = getLocale(language);
   const [query, setQuery] = useState("");
   const [statusText, setStatusText] = useState("");
-  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [isAddOpen, setIsAddOpen] = useState(initialAddOpen);
   const [fullName, setFullName] = useState("");
   const [role, setRole] = useState(language === "en" ? "Specialist" : language === "uk" ? "Майстер" : "Мастер");
   const [email, setEmail] = useState("");

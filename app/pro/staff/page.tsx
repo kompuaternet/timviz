@@ -4,7 +4,14 @@ import { getSessionCookieName, verifySessionValue } from "../../../lib/pro-auth"
 import { getBusinessStaffSnapshot } from "../../../lib/pro-staff";
 import StaffView from "./StaffView";
 
-export default async function ProStaffPage() {
+type ProStaffPageProps = {
+  searchParams?: Promise<{
+    openAdd?: string;
+  }>;
+};
+
+export default async function ProStaffPage({ searchParams }: ProStaffPageProps) {
+  const params = (await searchParams) ?? {};
   const cookieStore = await cookies();
   const professionalId = verifySessionValue(cookieStore.get(getSessionCookieName())?.value) || "";
 
@@ -18,5 +25,11 @@ export default async function ProStaffPage() {
     redirect("/pro/settings");
   }
 
-  return <StaffView professionalId={professionalId} snapshot={snapshot} />;
+  return (
+    <StaffView
+      professionalId={professionalId}
+      snapshot={snapshot}
+      initialAddOpen={params.openAdd === "1"}
+    />
+  );
 }
