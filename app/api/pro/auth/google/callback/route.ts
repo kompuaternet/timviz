@@ -64,7 +64,7 @@ export async function GET(request: Request) {
 
     if (professionalId) {
       if (profile.avatarUrl) {
-        void updateProfessionalAvatar(professionalId, profile.avatarUrl).catch(() => undefined);
+        await updateProfessionalAvatar(professionalId, profile.avatarUrl).catch(() => undefined);
       }
 
       cookieStore.set(getSessionCookieName(), signSessionValue(professionalId), {
