@@ -3682,8 +3682,18 @@
   width: 316px;
 }
 
+.staffScheduleCellMenuUp {
+  top: auto;
+  bottom: calc(100% + 8px);
+}
+
 .staffScheduleMemberMenu {
   width: 320px;
+}
+
+.staffScheduleMemberMenuUp {
+  top: auto;
+  bottom: calc(100% + 10px);
 }
 
 .staffScheduleMenuTitle {

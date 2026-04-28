@@ -1516,7 +1516,7 @@ export default function StaffScheduleView({ professionalId, snapshot }: StaffSch
                 </div>
 
                 <div className={styles.staffScheduleRows}>
-                  {sortedMembers.map((member) => {
+                  {sortedMembers.map((member, memberIndex) => {
                     const memberHours = weekDays.reduce((sum, day) => {
                       return (
                         sum +
@@ -1529,6 +1529,7 @@ export default function StaffScheduleView({ professionalId, snapshot }: StaffSch
                         )
                       );
                     }, 0);
+                    const shouldOpenMenuUp = memberIndex >= Math.max(0, sortedMembers.length - 2);
 
                     return (
                       <article key={member.professional.id} className={styles.staffScheduleRow}>
@@ -1562,7 +1563,11 @@ export default function StaffScheduleView({ professionalId, snapshot }: StaffSch
                             </button>
 
                             {rowMenuMemberId === member.professional.id ? (
-                              <div className={`${styles.staffControlMenu} ${styles.staffScheduleMemberMenu}`}>
+                              <div
+                                className={`${styles.staffControlMenu} ${styles.staffScheduleMemberMenu} ${
+                                  shouldOpenMenuUp ? styles.staffScheduleMemberMenuUp : ""
+                                }`}
+                              >
                                 <strong className={styles.staffScheduleMenuTitle}>{copy.planSection}</strong>
                                 <button
                                   type="button"
@@ -1623,7 +1628,11 @@ export default function StaffScheduleView({ professionalId, snapshot }: StaffSch
                               </button>
 
                               {isCellMenuOpen ? (
-                                <div className={`${styles.staffControlMenu} ${styles.staffScheduleCellMenu}`}>
+                                <div
+                                  className={`${styles.staffControlMenu} ${styles.staffScheduleCellMenu} ${
+                                    shouldOpenMenuUp ? styles.staffScheduleCellMenuUp : ""
+                                  }`}
+                                >
                                   <button
                                     type="button"
                                     className={styles.staffControlMenuItem}
