@@ -582,12 +582,14 @@ export default function StaffView({ professionalId, snapshot, initialAddOpen = f
                     </div>
 
                     <div className={styles.staffStudioContactCell}>
+                      <span className={styles.staffStudioMobileLabel}>{copy.contacts}</span>
                       {renderContact(member, copy).map((value) => (
                         <span key={`${member.professional.id}-${value}`}>{value}</span>
                       ))}
                     </div>
 
                     <div className={styles.staffStudioAccessCell}>
+                      <span className={styles.staffStudioMobileLabel}>{copy.access}</span>
                       <span
                         className={`${styles.staffStudioAccessBadge} ${
                           styles[`staffStudioAccessBadge${copy.accessTone[member.workspaceAccess][0].toUpperCase()}${copy.accessTone[member.workspaceAccess].slice(1)}`]
@@ -598,10 +600,12 @@ export default function StaffView({ professionalId, snapshot, initialAddOpen = f
                     </div>
 
                     <div className={styles.staffStudioStatsCell}>
+                      <span className={styles.staffStudioMobileLabel}>{copy.stats}</span>
                       {renderStats(member, locale, snapshot.business.currency, copy)}
                     </div>
 
                     <div className={styles.staffStudioActionCell}>
+                      <span className={styles.staffStudioMobileLabel}>{copy.actions}</span>
                       <StaffRowActions
                         member={member}
                         copy={copy}

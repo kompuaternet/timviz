@@ -3109,6 +3109,10 @@
   gap: 6px;
 }
 
+.staffStudioMobileLabel {
+  display: none;
+}
+
 .staffStudioAccessCell {
   display: flex;
   justify-content: flex-start;
@@ -4111,9 +4115,39 @@
 }
 
 @media (max-width: 1080px) {
-  .staffStudioTableHead,
   .staffStudioRow {
     grid-template-columns: 1fr;
+  }
+
+  .staffStudioTableHead {
+    display: none;
+  }
+
+  .staffStudioRows {
+    gap: 0;
+  }
+
+  .staffStudioRow {
+    gap: 14px;
+    padding: 18px 20px;
+  }
+
+  .staffStudioContactCell,
+  .staffStudioAccessCell,
+  .staffStudioStatsCell,
+  .staffStudioActionCell {
+    display: grid;
+    gap: 8px;
+  }
+
+  .staffStudioMobileLabel {
+    display: inline-flex;
+    align-items: center;
+    min-height: 18px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    color: #7b8399;
   }
 
   .staffStudioActionCell {
