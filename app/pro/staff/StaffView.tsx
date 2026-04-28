@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import ProfileAvatar from "../../ProfileAvatar";
 import ProSidebar from "../ProSidebar";
@@ -264,23 +264,28 @@ function renderStats(member: StaffMemberSnapshot, locale: string, currency: stri
 function StaffRowActions({
   member,
   copy,
+  open,
+  onToggle,
+  onClose,
   onInvite,
   onRevoke
 }: {
   member: StaffMemberSnapshot;
   copy: StaffCopy;
+  open: boolean;
+  onToggle: () => void;
+  onClose: () => void;
   onInvite: (member: StaffMemberSnapshot) => void;
   onRevoke: (member: StaffMemberSnapshot) => void;
 }) {
-  const [open, setOpen] = useState(false);
   const canInvite = Boolean(member.professional.email);
 
   return (
-    <div className={styles.staffControlMenuWrap}>
+    <div className={styles.staffControlMenuWrap} data-staff-row-menu-root>
       <button
         type="button"
         className={styles.staffRowActionButton}
-        onClick={() => setOpen((value) => !value)}
+        onClick={onToggle}
       >
         {copy.actions}
         <span aria-hidden="true">⌄</span>
@@ -288,12 +293,13 @@ function StaffRowActions({
 
       {open ? (
         <div className={styles.staffControlMenu}>
-          <Link href={`/pro/staff/${member.professional.id}`} className={styles.staffControlMenuItem}>
+          <Link href={`/pro/staff/${member.professional.id}`} className={styles.staffControlMenuItem} onClick={onClose}>
             {copy.edit}
           </Link>
           <Link
             href={`/pro/staff/${member.professional.id}?tab=schedule`}
             className={styles.staffControlMenuItem}
+            onClick={onClose}
           >
             {copy.openSchedule}
           </Link>
@@ -301,7 +307,7 @@ function StaffRowActions({
             type="button"
             className={styles.staffControlMenuItem}
             onClick={() => {
-              setOpen(false);
+              onClose();
               onInvite(member);
             }}
           >
@@ -316,7 +322,7 @@ function StaffRowActions({
               type="button"
               className={`${styles.staffControlMenuItem} ${styles.staffControlMenuDanger}`}
               onClick={() => {
-                setOpen(false);
+                onClose();
                 onRevoke(member);
               }}
             >
@@ -368,6 +374,21 @@ export default function StaffView({ professionalId, snapshot, initialAddOpen = f
   const [phone, setPhone] = useState("");
   const [sendInvitation, setSendInvitation] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [activeActionMemberId, setActiveActionMemberId] = useState<string | null>(null);
+
+  useEffect(() => {
+    function handlePointerDown(event: PointerEvent) {
+      const target = event.target as HTMLElement | null;
+      if (target?.closest("[data-staff-row-menu-root]")) {
+        return;
+      }
+
+      setActiveActionMemberId(null);
+    }
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => document.removeEventListener("pointerdown", handlePointerDown);
+  }, []);
 
   const filteredMembers = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -609,6 +630,13 @@ export default function StaffView({ professionalId, snapshot, initialAddOpen = f
                       <StaffRowActions
                         member={member}
                         copy={copy}
+                        open={activeActionMemberId === member.professional.id}
+                        onToggle={() =>
+                          setActiveActionMemberId((current) =>
+                            current === member.professional.id ? null : member.professional.id
+                          )
+                        }
+                        onClose={() => setActiveActionMemberId(null)}
                         onInvite={handleInvite}
                         onRevoke={handleRevokeInvite}
                       />
