@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import ProfileAvatar from "../../ProfileAvatar";
+import FloatingPopover from "../FloatingPopover";
 import ProSidebar from "../ProSidebar";
 import styles from "../pro.module.css";
 import { useProLanguage } from "../useProLanguage";
@@ -18,6 +19,11 @@ type StaffViewProps = {
   professionalId: string;
   snapshot: BusinessStaffSnapshot;
   initialAddOpen?: boolean;
+};
+
+type StaffActionMenuState = {
+  memberId: string;
+  anchorEl: HTMLElement;
 };
 
 const staffText = {
@@ -265,6 +271,7 @@ function StaffRowActions({
   member,
   copy,
   open,
+  anchorEl,
   onToggle,
   onClose,
   onInvite,
@@ -273,7 +280,8 @@ function StaffRowActions({
   member: StaffMemberSnapshot;
   copy: StaffCopy;
   open: boolean;
-  onToggle: () => void;
+  anchorEl: HTMLElement | null;
+  onToggle: (anchorEl: HTMLElement) => void;
   onClose: () => void;
   onInvite: (member: StaffMemberSnapshot) => void;
   onRevoke: (member: StaffMemberSnapshot) => void;
@@ -288,14 +296,18 @@ function StaffRowActions({
       <button
         type="button"
         className={styles.staffRowActionButton}
-        onClick={onToggle}
+        onClick={(event) => onToggle(event.currentTarget)}
       >
         {copy.actions}
         <span aria-hidden="true">⌄</span>
       </button>
 
-      {open ? (
-        <div className={styles.staffControlMenu}>
+      <FloatingPopover
+        open={open}
+        anchorEl={anchorEl}
+        className={styles.staffControlMenu}
+        placement="bottom-end"
+      >
           <Link href={`/pro/staff/${member.professional.id}`} className={styles.staffControlMenuItem} onClick={onClose}>
             {copy.edit}
           </Link>
@@ -332,8 +344,7 @@ function StaffRowActions({
               {copy.revokeInvite}
             </button>
           ) : null}
-        </div>
-      ) : null}
+      </FloatingPopover>
     </div>
   );
 }
@@ -377,20 +388,34 @@ export default function StaffView({ professionalId, snapshot, initialAddOpen = f
   const [phone, setPhone] = useState("");
   const [sendInvitation, setSendInvitation] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [activeActionMemberId, setActiveActionMemberId] = useState<string | null>(null);
+  const [activeActionMenu, setActiveActionMenu] = useState<StaffActionMenuState | null>(null);
 
   useEffect(() => {
+    function closeMenus() {
+      setActiveActionMenu(null);
+    }
+
     function handlePointerDown(event: PointerEvent) {
       const target = event.target as HTMLElement | null;
-      if (target?.closest("[data-staff-row-menu-root]")) {
+      if (target?.closest("[data-staff-floating-root]")) {
         return;
       }
 
-      setActiveActionMemberId(null);
+      closeMenus();
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        closeMenus();
+      }
     }
 
     document.addEventListener("pointerdown", handlePointerDown);
-    return () => document.removeEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
   }, []);
 
   const filteredMembers = useMemo(() => {
@@ -630,20 +655,21 @@ export default function StaffView({ professionalId, snapshot, initialAddOpen = f
 
                     <div
                       className={`${styles.staffStudioActionCell} ${
-                        activeActionMemberId === member.professional.id ? styles.staffStudioActionCellOpen : ""
+                        activeActionMenu?.memberId === member.professional.id ? styles.staffStudioActionCellOpen : ""
                       }`}
                     >
                       <span className={styles.staffStudioMobileLabel}>{copy.actions}</span>
                       <StaffRowActions
                         member={member}
                         copy={copy}
-                        open={activeActionMemberId === member.professional.id}
-                        onToggle={() =>
-                          setActiveActionMemberId((current) =>
-                            current === member.professional.id ? null : member.professional.id
+                        open={activeActionMenu?.memberId === member.professional.id}
+                        anchorEl={activeActionMenu?.memberId === member.professional.id ? activeActionMenu.anchorEl : null}
+                        onToggle={(anchorEl) =>
+                          setActiveActionMenu((current) =>
+                            current?.memberId === member.professional.id ? null : { memberId: member.professional.id, anchorEl }
                           )
                         }
-                        onClose={() => setActiveActionMemberId(null)}
+                        onClose={() => setActiveActionMenu(null)}
                         onInvite={handleInvite}
                         onRevoke={handleRevokeInvite}
                       />

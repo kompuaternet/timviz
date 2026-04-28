@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import ProfileAvatar from "../../ProfileAvatar";
+import FloatingPopover from "../FloatingPopover";
 import ProSidebar from "../ProSidebar";
 import styles from "../pro.module.css";
 import { useProLanguage } from "../useProLanguage";
@@ -114,6 +115,12 @@ type CalendarDayItem = {
 type CellMenuState = {
   memberId: string;
   dateKey: string;
+  anchorEl: HTMLElement;
+};
+
+type MemberMenuState = {
+  memberId: string;
+  anchorEl: HTMLElement;
 };
 
 type PlannerState = {
@@ -1110,16 +1117,25 @@ export default function StaffScheduleView({ professionalId, snapshot }: StaffSch
   const [members, setMembers] = useState(snapshot.members);
   const [weekDate, setWeekDate] = useState(() => startOfWeek(new Date()));
   const [sortMode, setSortMode] = useState<SortMode>("name");
-  const [sortMenuOpen, setSortMenuOpen] = useState(false);
-  const [optionsMenuOpen, setOptionsMenuOpen] = useState(false);
-  const [addMenuOpen, setAddMenuOpen] = useState(false);
-  const [calendarOpen, setCalendarOpen] = useState(false);
+  const [sortMenuAnchor, setSortMenuAnchor] = useState<HTMLElement | null>(null);
+  const [optionsMenuAnchor, setOptionsMenuAnchor] = useState<HTMLElement | null>(null);
+  const [addMenuAnchor, setAddMenuAnchor] = useState<HTMLElement | null>(null);
+  const [calendarAnchor, setCalendarAnchor] = useState<HTMLElement | null>(null);
   const [pickerMonthDate, setPickerMonthDate] = useState(() => startOfMonth(new Date()));
-  const [rowMenuMemberId, setRowMenuMemberId] = useState<string | null>(null);
+  const [rowMenuState, setRowMenuState] = useState<MemberMenuState | null>(null);
   const [cellMenu, setCellMenu] = useState<CellMenuState | null>(null);
   const [plannerState, setPlannerState] = useState<PlannerState | null>(null);
   const [dayEditorState, setDayEditorState] = useState<DayEditorState | null>(null);
   const [statusText, setStatusText] = useState("");
+
+  function closeFloatingMenus() {
+    setSortMenuAnchor(null);
+    setOptionsMenuAnchor(null);
+    setAddMenuAnchor(null);
+    setCalendarAnchor(null);
+    setRowMenuState(null);
+    setCellMenu(null);
+  }
 
   useEffect(() => {
     setMembers(snapshot.members);
@@ -1132,16 +1148,21 @@ export default function StaffScheduleView({ professionalId, snapshot }: StaffSch
         return;
       }
 
-      setSortMenuOpen(false);
-      setOptionsMenuOpen(false);
-      setAddMenuOpen(false);
-      setCalendarOpen(false);
-      setRowMenuMemberId(null);
-      setCellMenu(null);
+      closeFloatingMenus();
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        closeFloatingMenus();
+      }
     }
 
     document.addEventListener("pointerdown", handlePointerDown);
-    return () => document.removeEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
   }, []);
 
   const localizedWorkDays = useMemo<LocalizedWorkDay[]>(
@@ -1259,7 +1280,7 @@ export default function StaffScheduleView({ professionalId, snapshot }: StaffSch
       return;
     }
 
-    setRowMenuMemberId(null);
+    setRowMenuState(null);
     await persistMemberSchedule({
       memberId: member.professional.id,
       workScheduleMode: "fixed",
@@ -1300,17 +1321,22 @@ export default function StaffScheduleView({ professionalId, snapshot }: StaffSch
                 <button
                   type="button"
                   className={styles.staffStudioGhostButton}
-                  onClick={() => {
-                    setOptionsMenuOpen((value) => !value);
-                    setAddMenuOpen(false);
+                  onClick={(event) => {
+                    const nextAnchor = optionsMenuAnchor ? null : event.currentTarget;
+                    closeFloatingMenus();
+                    setOptionsMenuAnchor(nextAnchor);
                   }}
                 >
                   {copy.options}
                   <span aria-hidden="true">⌄</span>
                 </button>
 
-                {optionsMenuOpen ? (
-                  <div className={styles.staffControlMenu}>
+                <FloatingPopover
+                  open={Boolean(optionsMenuAnchor)}
+                  anchorEl={optionsMenuAnchor}
+                  className={styles.staffControlMenu}
+                  placement="bottom-end"
+                >
                     <Link href="/pro/staff" className={styles.staffControlMenuItem}>
                       {copy.membersList}
                     </Link>
@@ -1319,38 +1345,41 @@ export default function StaffScheduleView({ professionalId, snapshot }: StaffSch
                       className={styles.staffControlMenuItem}
                       onClick={() => {
                         setWeekDate(startOfWeek(new Date()));
-                        setOptionsMenuOpen(false);
+                        setOptionsMenuAnchor(null);
                       }}
                     >
                       {copy.openCurrentWeek}
                     </button>
-                  </div>
-                ) : null}
+                </FloatingPopover>
               </div>
 
               <div className={styles.staffControlMenuWrap} data-staff-floating-root>
                 <button
                   type="button"
                   className={styles.staffStudioPrimaryButton}
-                  onClick={() => {
-                    setAddMenuOpen((value) => !value);
-                    setOptionsMenuOpen(false);
+                  onClick={(event) => {
+                    const nextAnchor = addMenuAnchor ? null : event.currentTarget;
+                    closeFloatingMenus();
+                    setAddMenuAnchor(nextAnchor);
                   }}
                 >
                   {copy.add}
                   <span aria-hidden="true">⌄</span>
                 </button>
 
-                {addMenuOpen ? (
-                  <div className={styles.staffControlMenu}>
+                <FloatingPopover
+                  open={Boolean(addMenuAnchor)}
+                  anchorEl={addMenuAnchor}
+                  className={styles.staffControlMenu}
+                  placement="bottom-end"
+                >
                     <Link href="/pro/staff?openAdd=1" className={styles.staffControlMenuItem}>
                       {copy.addMember}
                     </Link>
                     <Link href="/pro/staff" className={styles.staffControlMenuItem}>
                       {copy.membersList}
                     </Link>
-                  </div>
-                ) : null}
+                </FloatingPopover>
               </div>
             </div>
           </div>
@@ -1363,23 +1392,28 @@ export default function StaffScheduleView({ professionalId, snapshot }: StaffSch
                 <button
                   type="button"
                   className={styles.staffStudioGhostButton}
-                  onClick={() => {
-                    setSortMenuOpen((value) => !value);
-                    setCalendarOpen(false);
+                  onClick={(event) => {
+                    const nextAnchor = sortMenuAnchor ? null : event.currentTarget;
+                    closeFloatingMenus();
+                    setSortMenuAnchor(nextAnchor);
                   }}
                 >
                   {copy.sort}
                   <span aria-hidden="true">⇅</span>
                 </button>
 
-                {sortMenuOpen ? (
-                  <div className={styles.staffControlMenu}>
+                <FloatingPopover
+                  open={Boolean(sortMenuAnchor)}
+                  anchorEl={sortMenuAnchor}
+                  className={styles.staffControlMenu}
+                  placement="bottom-start"
+                >
                     <button
                       type="button"
                       className={styles.staffControlMenuItem}
                       onClick={() => {
                         setSortMode("name");
-                        setSortMenuOpen(false);
+                        setSortMenuAnchor(null);
                       }}
                     >
                       {copy.sortByName}
@@ -1389,7 +1423,7 @@ export default function StaffScheduleView({ professionalId, snapshot }: StaffSch
                       className={styles.staffControlMenuItem}
                       onClick={() => {
                         setSortMode("hours-desc");
-                        setSortMenuOpen(false);
+                        setSortMenuAnchor(null);
                       }}
                     >
                       {copy.sortByHoursDesc}
@@ -1399,45 +1433,66 @@ export default function StaffScheduleView({ professionalId, snapshot }: StaffSch
                       className={styles.staffControlMenuItem}
                       onClick={() => {
                         setSortMode("hours-asc");
-                        setSortMenuOpen(false);
+                        setSortMenuAnchor(null);
                       }}
                     >
                       {copy.sortByHoursAsc}
                     </button>
-                  </div>
-                ) : null}
+                </FloatingPopover>
               </div>
 
               <div className={styles.staffScheduleToolbarRight}>
                 <button
                   type="button"
                   className={styles.staffStudioGhostButton}
-                  onClick={() => setWeekDate(startOfWeek(new Date()))}
+                  onClick={() => {
+                    closeFloatingMenus();
+                    setWeekDate(startOfWeek(new Date()));
+                  }}
                 >
                   {copy.today}
                 </button>
 
                 <div className={styles.staffScheduleRangeBox} data-staff-floating-root>
-                  <button type="button" className={styles.staffScheduleRangeButton} onClick={() => setWeekDate(addDays(weekDate, -7))}>
+                  <button
+                    type="button"
+                    className={styles.staffScheduleRangeButton}
+                    onClick={() => {
+                      closeFloatingMenus();
+                      setWeekDate(addDays(weekDate, -7));
+                    }}
+                  >
                     ‹
                   </button>
                   <button
                     type="button"
                     className={styles.staffScheduleRangeLabelButton}
-                    onClick={() => {
+                    onClick={(event) => {
+                      const nextAnchor = calendarAnchor ? null : event.currentTarget;
                       setPickerMonthDate(startOfMonth(weekDate));
-                      setCalendarOpen((value) => !value);
-                      setSortMenuOpen(false);
+                      closeFloatingMenus();
+                      setCalendarAnchor(nextAnchor);
                     }}
                   >
                     {rangeLabel}
                   </button>
-                  <button type="button" className={styles.staffScheduleRangeButton} onClick={() => setWeekDate(addDays(weekDate, 7))}>
+                  <button
+                    type="button"
+                    className={styles.staffScheduleRangeButton}
+                    onClick={() => {
+                      closeFloatingMenus();
+                      setWeekDate(addDays(weekDate, 7));
+                    }}
+                  >
                     ›
                   </button>
 
-                  {calendarOpen ? (
-                    <div className={styles.staffScheduleCalendarPopover}>
+                  <FloatingPopover
+                    open={Boolean(calendarAnchor)}
+                    anchorEl={calendarAnchor}
+                    className={styles.staffScheduleCalendarPopover}
+                    placement="bottom-end"
+                  >
                       <div className={styles.staffScheduleCalendarHeader}>
                         <button type="button" className={styles.staffScheduleCalendarNav} onClick={() => setPickerMonthDate(addMonths(pickerMonthDate, -1))}>
                           ‹
@@ -1478,7 +1533,7 @@ export default function StaffScheduleView({ professionalId, snapshot }: StaffSch
                               } ${isCurrentAnchor ? styles.staffScheduleCalendarDayActive : ""}`}
                               onClick={() => {
                                 setWeekDate(startOfWeek(item.date as Date));
-                                setCalendarOpen(false);
+                                setCalendarAnchor(null);
                               }}
                             >
                               {item.date.getDate()}
@@ -1486,8 +1541,7 @@ export default function StaffScheduleView({ professionalId, snapshot }: StaffSch
                           );
                         })}
                       </div>
-                    </div>
-                  ) : null}
+                  </FloatingPopover>
                 </div>
               </div>
             </div>
@@ -1516,7 +1570,7 @@ export default function StaffScheduleView({ professionalId, snapshot }: StaffSch
                 </div>
 
                 <div className={styles.staffScheduleRows}>
-                  {sortedMembers.map((member, memberIndex) => {
+                  {sortedMembers.map((member) => {
                     const memberHours = weekDays.reduce((sum, day) => {
                       return (
                         sum +
@@ -1529,7 +1583,7 @@ export default function StaffScheduleView({ professionalId, snapshot }: StaffSch
                         )
                       );
                     }, 0);
-                    const shouldOpenMenuUp = memberIndex >= Math.max(0, sortedMembers.length - 2);
+                    const isMemberMenuOpen = rowMenuState?.memberId === member.professional.id;
 
                     return (
                       <article key={member.professional.id} className={styles.staffScheduleRow}>
@@ -1551,35 +1605,38 @@ export default function StaffScheduleView({ professionalId, snapshot }: StaffSch
 
                           <div
                             className={`${styles.staffControlMenuWrap} ${
-                              rowMenuMemberId === member.professional.id ? styles.staffControlMenuWrapOpen : ""
+                              isMemberMenuOpen ? styles.staffControlMenuWrapOpen : ""
                             }`}
                             data-staff-floating-root
                           >
                             <button
                               type="button"
                               className={styles.staffScheduleMemberAction}
-                              onClick={() => {
-                                setRowMenuMemberId((value) => (value === member.professional.id ? null : member.professional.id));
-                                setCellMenu(null);
+                              onClick={(event) => {
+                                const anchorEl = event.currentTarget;
+                                const nextState =
+                                  isMemberMenuOpen ? null : { memberId: member.professional.id, anchorEl };
+                                closeFloatingMenus();
+                                setRowMenuState(nextState);
                               }}
                               aria-label={copy.editMember}
                             >
                               ✎
                             </button>
 
-                            {rowMenuMemberId === member.professional.id ? (
-                              <div
-                                className={`${styles.staffControlMenu} ${styles.staffScheduleMemberMenu} ${
-                                  shouldOpenMenuUp ? styles.staffScheduleMemberMenuUp : ""
-                                }`}
-                              >
+                            <FloatingPopover
+                              open={isMemberMenuOpen}
+                              anchorEl={isMemberMenuOpen ? rowMenuState?.anchorEl ?? null : null}
+                              className={`${styles.staffControlMenu} ${styles.staffScheduleMemberMenu}`}
+                              placement="bottom-end"
+                            >
                                 <strong className={styles.staffScheduleMenuTitle}>{copy.planSection}</strong>
                                 <button
                                   type="button"
                                   className={styles.staffControlMenuItem}
                                   onClick={() => {
                                     setPlannerState({ memberId: member.professional.id, anchorDateKey: weekDays[0]?.key });
-                                    setRowMenuMemberId(null);
+                                    setRowMenuState(null);
                                   }}
                                 >
                                   {copy.repeatingShifts}
@@ -1602,8 +1659,7 @@ export default function StaffScheduleView({ professionalId, snapshot }: StaffSch
                                 <Link href={`/pro/staff/${member.professional.id}?tab=access`} className={styles.staffControlMenuItem}>
                                   {copy.openAccess}
                                 </Link>
-                              </div>
-                            ) : null}
+                            </FloatingPopover>
                           </div>
                         </div>
 
@@ -1620,9 +1676,7 @@ export default function StaffScheduleView({ professionalId, snapshot }: StaffSch
                           return (
                             <div
                               key={`${member.professional.id}-${day.key}`}
-                              className={`${styles.staffScheduleShiftWrap} ${
-                                isCellMenuOpen ? styles.staffScheduleShiftWrapOpen : ""
-                              }`}
+                              className={styles.staffScheduleShiftWrap}
                               data-staff-floating-root
                             >
                               <button
@@ -1630,20 +1684,23 @@ export default function StaffScheduleView({ professionalId, snapshot }: StaffSch
                                 className={`${styles.staffScheduleShiftButton} ${
                                   daySchedule.enabled ? styles.staffScheduleShiftCellActive : styles.staffScheduleShiftCellOff
                                 }`}
-                                onClick={() => {
-                                  setCellMenu(isCellMenuOpen ? null : { memberId: member.professional.id, dateKey: day.key });
-                                  setRowMenuMemberId(null);
+                                onClick={(event) => {
+                                  const anchorEl = event.currentTarget;
+                                  const nextState =
+                                    isCellMenuOpen ? null : { memberId: member.professional.id, dateKey: day.key, anchorEl };
+                                  closeFloatingMenus();
+                                  setCellMenu(nextState);
                                 }}
                               >
                                 {label}
                               </button>
 
-                              {isCellMenuOpen ? (
-                                <div
-                                  className={`${styles.staffControlMenu} ${styles.staffScheduleCellMenu} ${
-                                    shouldOpenMenuUp ? styles.staffScheduleCellMenuUp : ""
-                                  }`}
-                                >
+                              <FloatingPopover
+                                open={isCellMenuOpen}
+                                anchorEl={isCellMenuOpen ? cellMenu?.anchorEl ?? null : null}
+                                className={`${styles.staffControlMenu} ${styles.staffScheduleCellMenu}`}
+                                placement="bottom-start"
+                              >
                                   <button
                                     type="button"
                                     className={styles.staffControlMenuItem}
@@ -1685,8 +1742,7 @@ export default function StaffScheduleView({ professionalId, snapshot }: StaffSch
                                   >
                                     {copy.deleteShift}
                                   </button>
-                                </div>
-                              ) : null}
+                              </FloatingPopover>
                             </div>
                           );
                         })}

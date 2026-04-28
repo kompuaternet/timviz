@@ -3170,10 +3170,9 @@
 }
 
 .staffControlMenu {
-  position: absolute;
-  top: calc(100% + 10px);
-  right: 0;
-  width: 240px;
+  width: min(240px, calc(100vw - 16px));
+  max-width: calc(100vw - 16px);
+  max-height: calc(100vh - 16px);
   padding: 10px;
   border-radius: 18px;
   border: 1px solid #e0e6f1;
@@ -3181,22 +3180,25 @@
   box-shadow: 0 26px 54px rgba(30, 34, 51, 0.16);
   display: grid;
   gap: 4px;
-  z-index: 10;
+  overflow: auto;
 }
 
 .staffControlMenuItem {
   width: 100%;
   min-height: 44px;
-  padding: 0 12px;
+  padding: 10px 12px;
   border: 0;
   border-radius: 12px;
   background: transparent;
   color: #1e2233;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: flex-start;
   text-decoration: none;
   font-size: 0.97rem;
+  line-height: 1.4;
+  text-align: left;
+  white-space: normal;
   cursor: pointer;
 }
 
@@ -3442,18 +3444,17 @@
 }
 
 .staffScheduleCalendarPopover {
-  position: absolute;
-  top: calc(100% + 14px);
-  right: 0;
-  width: min(350px, calc(100vw - 32px));
+  width: min(350px, calc(100vw - 16px));
+  max-width: calc(100vw - 16px);
+  max-height: calc(100vh - 16px);
   padding: 20px;
   border-radius: 24px;
   border: 1px solid #e2e7f2;
   background: #ffffff;
   box-shadow: 0 28px 56px rgba(26, 31, 44, 0.16);
-  z-index: 20;
   display: grid;
   gap: 16px;
+  overflow: auto;
 }
 
 .staffScheduleCalendarHeader {
@@ -3520,12 +3521,11 @@
   border-radius: 24px;
   border: 1px solid #e2e7f2;
   background: #ffffff;
-  overflow: visible;
+  overflow: hidden;
 }
 
 .staffScheduleBoardScroller {
   overflow-x: auto;
-  overflow-y: visible;
 }
 
 .staffScheduleHead,
@@ -3578,14 +3578,10 @@
 
 .staffScheduleRows {
   display: grid;
-  position: relative;
-  z-index: 0;
 }
 
 .staffScheduleRow {
   border-bottom: 1px solid #edf1f8;
-  position: relative;
-  z-index: 0;
 }
 
 .staffScheduleRow:last-child {
@@ -3651,11 +3647,6 @@
 
 .staffScheduleShiftWrap {
   position: relative;
-  z-index: 0;
-}
-
-.staffScheduleShiftWrapOpen {
-  z-index: 28;
 }
 
 .staffScheduleShiftButton {
@@ -3694,24 +3685,11 @@
 }
 
 .staffScheduleCellMenu {
-  top: calc(100% + 8px);
-  right: auto;
-  left: 8px;
-  width: 316px;
-}
-
-.staffScheduleCellMenuUp {
-  top: auto;
-  bottom: calc(100% + 8px);
+  width: min(316px, calc(100vw - 16px));
 }
 
 .staffScheduleMemberMenu {
-  width: 320px;
-}
-
-.staffScheduleMemberMenuUp {
-  top: auto;
-  bottom: calc(100% + 10px);
+  width: min(320px, calc(100vw - 16px));
 }
 
 .staffScheduleMenuTitle {
