@@ -2476,12 +2476,28 @@
   width: 56px;
   height: 56px;
   border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
   display: grid;
   place-items: center;
   background: #f0ecff;
   color: #5f49e8;
   font-weight: 700;
   font-size: 1.3rem;
+}
+
+.avatarImage {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.avatarFallback {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
 }
 
 .clientIdentity strong {
@@ -2510,6 +2526,320 @@
   background: #f5f2ff;
   color: #5b48e7;
   border: 1px solid #ddd6ff;
+}
+
+.staffShell {
+  display: block;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 100% 0%, rgba(255, 194, 92, 0.14), transparent 28%),
+    radial-gradient(circle at 0% 10%, rgba(106, 90, 255, 0.08), transparent 30%),
+    #fffdf9;
+}
+
+.staffMain {
+  padding: 40px clamp(24px, 5vw, 72px) 40px;
+  display: grid;
+  align-content: start;
+  gap: 20px;
+  min-width: 0;
+  max-width: 1480px;
+  margin: 0 auto;
+}
+
+.staffSummaryGrid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.staffSummaryCard,
+.staffPanel,
+.staffInvitePanel,
+.staffMemberCard {
+  border: 1px solid #eee6dc;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 18px 48px rgba(47, 37, 26, 0.055);
+}
+
+.staffSummaryCard {
+  border-radius: 22px;
+  padding: 18px;
+  display: grid;
+  gap: 10px;
+}
+
+.staffSummaryCard span {
+  color: #8a8073;
+  font-size: 0.92rem;
+}
+
+.staffSummaryCard strong {
+  font-size: 1.8rem;
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+.staffInvitePanel {
+  border-radius: 28px;
+  padding: 24px;
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(320px, 1.05fr);
+  gap: 22px;
+}
+
+.staffInvitePanel h2,
+.staffPanelHeader h2 {
+  margin: 0;
+  font-size: 1.45rem;
+  letter-spacing: -0.03em;
+}
+
+.staffInvitePanel p {
+  margin: 10px 0 0;
+  color: #7f756a;
+  line-height: 1.6;
+}
+
+.staffInviteForm {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(180px, 0.8fr) auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.staffField {
+  display: grid;
+  gap: 8px;
+}
+
+.staffField span {
+  font-size: 0.92rem;
+  color: #6d6256;
+}
+
+.staffTwoColumn {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.staffPanel {
+  border-radius: 28px;
+  padding: 22px;
+  display: grid;
+  gap: 18px;
+}
+
+.staffPanelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.staffEmpty {
+  min-height: 160px;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  color: #7f756a;
+  border-radius: 20px;
+  border: 1px dashed #e6dccf;
+  background: #fdfaf4;
+}
+
+.staffActionList,
+.staffCards,
+.staffAppointmentsList {
+  display: grid;
+  gap: 14px;
+}
+
+.staffActionCard {
+  border-radius: 20px;
+  border: 1px solid #efe8de;
+  background: #fffdf9;
+  padding: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.staffActionCard strong,
+.staffAppointmentRow strong {
+  display: block;
+}
+
+.staffActionCard p,
+.staffActionCard span,
+.staffAppointmentRow span,
+.staffMetaRow span,
+.staffServicesBlock p,
+.staffAppointmentsBlock p {
+  margin: 6px 0 0;
+  color: #7f756a;
+  line-height: 1.5;
+}
+
+.staffActionButtons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.staffCards {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.staffMemberCard {
+  border-radius: 28px;
+  padding: 22px;
+  display: grid;
+  gap: 18px;
+}
+
+.staffMemberTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.staffIdentity {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.staffIdentity strong {
+  display: block;
+  font-size: 1.08rem;
+}
+
+.staffIdentity span {
+  display: block;
+  margin-top: 4px;
+  color: #857a6d;
+}
+
+.staffBadgeStack {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.staffBadge,
+.staffBadgeMuted {
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.9rem;
+}
+
+.staffBadge {
+  background: #111111;
+  color: #ffffff;
+}
+
+.staffBadgeMuted {
+  background: #f2ede6;
+  color: #695f53;
+}
+
+.staffMetaRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.staffStatsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.staffStatsGrid div {
+  border-radius: 18px;
+  background: #f9f6f0;
+  padding: 14px;
+  display: grid;
+  gap: 6px;
+}
+
+.staffStatsGrid span {
+  color: #8a8073;
+  font-size: 0.9rem;
+}
+
+.staffStatsGrid strong {
+  font-size: 1.3rem;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+.staffServicesBlock,
+.staffAppointmentsBlock {
+  display: grid;
+  gap: 12px;
+}
+
+.staffServicesBlock strong,
+.staffAppointmentsBlock strong {
+  font-size: 1rem;
+}
+
+.staffAppointmentRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  padding: 14px 0;
+  border-top: 1px solid #f0e9df;
+}
+
+.staffAppointmentRow:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+@media (max-width: 1280px) {
+  .staffSummaryGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .staffCards {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 980px) {
+  .staffInvitePanel,
+  .staffTwoColumn,
+  .staffInviteForm,
+  .staffSummaryGrid,
+  .staffStatsGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .staffActionCard,
+  .staffMemberTop,
+  .staffAppointmentRow {
+    grid-template-columns: 1fr;
+    display: grid;
+  }
+
+  .staffBadgeStack {
+    justify-content: flex-start;
+  }
 }
 
 .clientsModalBackdrop {
@@ -2745,6 +3075,8 @@
   width: 52px;
   height: 52px;
   border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
   display: grid;
   place-items: center;
   color: #1091d1;
@@ -4113,6 +4445,27 @@
 
 .calendarTitleMeta {
   min-width: 0;
+}
+
+.calendarTitleProfile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.calendarTitleAvatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  color: #1091d1;
+  border: 2px solid #d4ebf9;
+  background: #f2fbff;
+  font-weight: 700;
 }
 
 .calendarTitleRow strong {
@@ -6660,6 +7013,15 @@
     line-height: 1.35;
   }
 
+  .calendarTitleProfile {
+    gap: 10px;
+  }
+
+  .calendarTitleAvatar {
+    width: 42px;
+    height: 42px;
+  }
+
   .calendarStatsStrip {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -7219,7 +7581,17 @@
 
 @media (max-width: 620px) {
   .calendarTitleMeta {
-    display: none;
+    display: block;
+  }
+
+  .calendarTitleProfile {
+    gap: 8px;
+  }
+
+  .calendarTitleAvatar {
+    width: 38px;
+    height: 38px;
+    border-width: 1px;
   }
 
   .splitShell {

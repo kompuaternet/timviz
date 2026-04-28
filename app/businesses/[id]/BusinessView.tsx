@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import ProfileAvatar from "../../ProfileAvatar";
 import type { PublicCustomerSession } from "../../../lib/public-customer-auth";
 import type { BusinessRecord, ServiceRecord } from "../../../lib/pro-data";
 import {
@@ -29,6 +30,7 @@ type TeamMember = {
   id: string;
   firstName: string;
   lastName: string;
+  avatarUrl?: string;
   role: string;
   scope: "owner" | "member";
 };
@@ -933,9 +935,19 @@ export default function BusinessView({
               </div>
 
               {selectedProfessional ? (
-                <div className="company-booking-summary-meta">
-                  <span>{t.specialist}</span>
-                  <strong>{fullName(selectedProfessional)}</strong>
+                <div className="company-booking-summary-specialist">
+                  <ProfileAvatar
+                    avatarUrl={selectedProfessional.avatarUrl}
+                    initials={getInitials(selectedProfessional)}
+                    label={fullName(selectedProfessional)}
+                    className="company-team-avatar"
+                    imageClassName="company-team-avatar-image"
+                    fallbackClassName="company-team-avatar-fallback"
+                  />
+                  <div className="company-booking-summary-meta">
+                    <span>{t.specialist}</span>
+                    <strong>{fullName(selectedProfessional)}</strong>
+                  </div>
                 </div>
               ) : null}
               {selectedDate ? (
@@ -1148,7 +1160,14 @@ export default function BusinessView({
               <div className="company-team-grid">
                 {teamMembers.map((member) => (
                   <article className="company-team-card" key={member.id}>
-                    <div className="company-team-avatar">{getInitials(member)}</div>
+                    <ProfileAvatar
+                      avatarUrl={member.avatarUrl}
+                      initials={getInitials(member)}
+                      label={fullName(member)}
+                      className="company-team-avatar"
+                      imageClassName="company-team-avatar-image"
+                      fallbackClassName="company-team-avatar-fallback"
+                    />
                     <strong>{fullName(member)}</strong>
                     <span>{member.role}</span>
                     <button type="button" onClick={() => {
@@ -1318,7 +1337,14 @@ export default function BusinessView({
                           onClick={() => setSelectedProfessionalId(member.id)}
                         >
                           <div className="company-flow-member">
-                            <div className="company-team-avatar">{getInitials(member)}</div>
+                            <ProfileAvatar
+                              avatarUrl={member.avatarUrl}
+                              initials={getInitials(member)}
+                              label={fullName(member)}
+                              className="company-team-avatar"
+                              imageClassName="company-team-avatar-image"
+                              fallbackClassName="company-team-avatar-fallback"
+                            />
                             <div>
                               <strong>{fullName(member)}</strong>
                               <span>{member.role}</span>

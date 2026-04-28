@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import ProfileAvatar from "../../ProfileAvatar";
 import styles from "../pro.module.css";
 import ProSidebar from "../ProSidebar";
 import { languageFromProfile } from "../i18n";
@@ -58,6 +59,7 @@ type CalendarSnapshot = {
     professional: {
       firstName: string;
       lastName: string;
+      avatarUrl?: string;
       language?: string;
       country?: string;
       currency?: string;
@@ -1685,8 +1687,20 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
 
         <div className={styles.calendarTitleRow}>
           <div className={styles.calendarTitleMeta}>
-            <strong>{snapshot?.workspace.professional.firstName || t.masterFallback}</strong>
-            <span>{`${snapshot?.workspace.services.length ?? 0} ${t.services} · ${viewMode === "day" ? t.dailyCalendar : viewModeOptions.find((option) => option.value === viewMode)?.label}`}</span>
+            <div className={styles.calendarTitleProfile}>
+              <ProfileAvatar
+                avatarUrl={snapshot?.workspace.professional.avatarUrl}
+                initials={initials}
+                label={`${snapshot?.workspace.professional.firstName ?? ""} ${snapshot?.workspace.professional.lastName ?? ""}`.trim() || t.masterFallback}
+                className={styles.calendarTitleAvatar}
+                imageClassName={styles.avatarImage}
+                fallbackClassName={styles.avatarFallback}
+              />
+              <div>
+                <strong>{snapshot?.workspace.professional.firstName || t.masterFallback}</strong>
+                <span>{`${snapshot?.workspace.services.length ?? 0} ${t.services} · ${viewMode === "day" ? t.dailyCalendar : viewModeOptions.find((option) => option.value === viewMode)?.label}`}</span>
+              </div>
+            </div>
           </div>
           <div className={styles.calendarStatsStrip} aria-label={t.dailyCalendar}>
             <div>

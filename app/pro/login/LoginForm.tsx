@@ -65,11 +65,13 @@ export default function LoginForm() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [oauthErrorText, setOauthErrorText] = useState("");
+  const [inviteToken, setInviteToken] = useState("");
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const googleError = params.get("google_error");
     const prefilledEmail = params.get("email")?.trim() || "";
+    const inviteFromQuery = params.get("invite")?.trim() || "";
     const nextText =
       googleError === "config"
         ? copy.googleConfigError
@@ -79,6 +81,7 @@ export default function LoginForm() {
     if (prefilledEmail) {
       setEmail(prefilledEmail);
     }
+    setInviteToken(inviteFromQuery);
     setOauthErrorText(nextText);
   }, [copy.googleConfigError, copy.googleLoginError]);
 
@@ -91,7 +94,7 @@ export default function LoginForm() {
       headers: {
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({ email, password })
+      body: JSON.stringify({ email, password, inviteToken })
     });
 
     const result = await response.json();
@@ -167,7 +170,16 @@ export default function LoginForm() {
 
       <div className={styles.helperBlock}>
         {copy.noAccount}{" "}
-        <a href="/pro/create-account" className={styles.mutedLink}>
+        <a
+          href={
+            inviteToken
+              ? `/pro/create-account?invite=${encodeURIComponent(inviteToken)}${
+                  email.trim() ? `&email=${encodeURIComponent(email.trim())}` : ""
+                }`
+              : "/pro/create-account"
+          }
+          className={styles.mutedLink}
+        >
           {copy.createProfile}
         </a>
       </div>

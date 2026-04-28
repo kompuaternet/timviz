@@ -34,6 +34,7 @@ create table if not exists public.professionals (
   last_name text not null,
   email text not null,
   password_hash text not null,
+  avatar_url text not null default '',
   phone text not null,
   country text not null,
   timezone text not null,
@@ -44,6 +45,9 @@ create table if not exists public.professionals (
   owner_mode text not null,
   created_at timestamptz not null default timezone('utc', now())
 );
+
+alter table if exists public.professionals
+  add column if not exists avatar_url text not null default '';
 
 create table if not exists public.businesses (
   id text primary key,
@@ -110,6 +114,20 @@ create table if not exists public.business_join_requests (
   status text not null default 'pending',
   created_at timestamptz not null default timezone('utc', now()),
   resolved_at timestamptz
+);
+
+create table if not exists public.business_staff_invitations (
+  id text primary key,
+  business_id text not null references public.businesses(id) on delete cascade,
+  email text not null,
+  role text not null default 'Specialist',
+  invited_by_professional_id text references public.professionals(id) on delete set null,
+  accepted_professional_id text references public.professionals(id) on delete set null,
+  token text not null,
+  status text not null default 'pending',
+  created_at timestamptz not null default timezone('utc', now()),
+  accepted_at timestamptz,
+  revoked_at timestamptz
 );
 
 create table if not exists public.calendar_appointments (
@@ -194,6 +212,8 @@ create index if not exists business_memberships_professional_idx on public.busin
 create index if not exists business_services_business_idx on public.business_services (business_id, sort_order, created_at);
 create index if not exists business_services_blocked_idx on public.business_services (is_blocked, created_at desc);
 create index if not exists business_services_source_idx on public.business_services (source, moderation_status, is_blocked, created_at desc);
+create index if not exists business_staff_invitations_business_idx on public.business_staff_invitations (business_id, created_at desc);
+create unique index if not exists business_staff_invitations_token_uidx on public.business_staff_invitations (token);
 create index if not exists calendar_appointments_professional_day_idx on public.calendar_appointments (professional_id, appointment_date, start_time);
 create index if not exists calendar_appointments_business_day_idx on public.calendar_appointments (business_id, appointment_date, start_time);
 create index if not exists customer_accounts_updated_idx on public.customer_accounts (updated_at desc);

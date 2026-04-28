@@ -18,6 +18,7 @@ export type PublicBusinessProfile = {
     id: string;
     firstName: string;
     lastName: string;
+    avatarUrl?: string;
     role: string;
     scope: "owner" | "member";
   }>;
@@ -73,8 +74,15 @@ export async function getPublicBusinessProfile(
     (membership) => membership.businessId === business.id && membership.scope === "owner"
   );
   const team = directory.memberships
-    .filter((membership) => membership.businessId === business.id)
-    .map((membership) => {
+    .filter((membership) => membership.businessId === business.id && membership.scope !== "pending")
+    .map<{
+      id: string;
+      firstName: string;
+      lastName: string;
+      avatarUrl?: string;
+      role: string;
+      scope: "owner" | "member";
+    } | null>((membership) => {
       const professional = directory.professionals.find(
         (item) => item.id === membership.professionalId
       );
@@ -87,8 +95,9 @@ export async function getPublicBusinessProfile(
         id: professional.id,
         firstName: professional.firstName,
         lastName: professional.lastName,
+        avatarUrl: professional.avatarUrl || undefined,
         role: membership.role,
-        scope: membership.scope
+        scope: membership.scope === "owner" ? "owner" : "member"
       };
     })
     .filter(
@@ -98,6 +107,7 @@ export async function getPublicBusinessProfile(
         id: string;
         firstName: string;
         lastName: string;
+        avatarUrl?: string;
         role: string;
         scope: "owner" | "member";
       } => Boolean(item)

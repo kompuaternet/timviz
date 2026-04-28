@@ -6,7 +6,11 @@ import { createProfessionalSetup } from "../../../../lib/pro-data";
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const result = await createProfessionalSetup(body);
+    const result = await createProfessionalSetup({
+      account: body.account,
+      setup: body.setup,
+      invitationToken: typeof body.invitationToken === "string" ? body.invitationToken : undefined
+    });
 
     const cookieStore = await cookies();
     cookieStore.set(getSessionCookieName(), signSessionValue(result.professionalId), {

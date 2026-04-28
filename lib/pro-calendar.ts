@@ -221,6 +221,44 @@ async function readAppointmentsForProfessional(professionalId: string) {
     );
 }
 
+export async function getAppointmentsForBusiness(businessId: string) {
+  if (!businessId.trim()) {
+    return [];
+  }
+
+  if (isSupabaseConfigured()) {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      return [];
+    }
+
+    const { data, error } = await supabase
+      .from("calendar_appointments")
+      .select(
+        "id, business_id, professional_id, appointment_date, start_time, end_time, kind, customer_name, customer_phone, service_name, notes, attendance, price_amount, created_at"
+      )
+      .eq("business_id", businessId)
+      .order("appointment_date", { ascending: false })
+      .order("start_time", { ascending: false })
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return (data ?? []).map((row) => mapSupabaseAppointment(row as CalendarAppointmentRow));
+  }
+
+  const store = await readStore();
+  return store.appointments
+    .filter((appointment) => appointment.businessId === businessId)
+    .sort((left, right) =>
+      `${right.appointmentDate}${right.startTime}${right.createdAt}`.localeCompare(
+        `${left.appointmentDate}${left.startTime}${left.createdAt}`
+      )
+    );
+}
+
 export async function getPublicCalendarAppointments(): Promise<PublicCalendarAppointment[]> {
   if (isSupabaseConfigured()) {
     const supabase = getSupabaseAdmin();

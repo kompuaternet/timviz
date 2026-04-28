@@ -1,13 +1,14 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { getSessionCookieName, signSessionValue } from "../../../../lib/pro-auth";
-import { authenticateProfessional } from "../../../../lib/pro-data";
+import { acceptStaffInvitation, authenticateProfessional } from "../../../../lib/pro-data";
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     const email = String(body.email ?? "").trim();
     const password = String(body.password ?? "");
+    const inviteToken = String(body.inviteToken ?? "").trim();
 
     const professionalId = await authenticateProfessional(email, password);
 
@@ -16,6 +17,13 @@ export async function POST(request: Request) {
         { error: "Неверный email или пароль." },
         { status: 401 }
       );
+    }
+
+    if (inviteToken) {
+      await acceptStaffInvitation({
+        professionalId,
+        invitationToken: inviteToken
+      });
     }
 
     const cookieStore = await cookies();

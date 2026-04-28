@@ -7,6 +7,7 @@ type GoogleUserProfile = {
   familyName: string;
   fullName: string;
   locale: string;
+  avatarUrl: string;
 };
 
 function ensureEnv(name: string) {
@@ -116,6 +117,7 @@ export async function exchangeCodeForGoogleProfile(input: {
     family_name?: string;
     name?: string;
     locale?: string;
+    picture?: string;
   };
 
   if (!userInfoResponse.ok || !profile.email) {
@@ -127,6 +129,7 @@ export async function exchangeCodeForGoogleProfile(input: {
     givenName: (profile.given_name || "").trim(),
     familyName: (profile.family_name || "").trim(),
     fullName: (profile.name || "").trim(),
-    locale: (profile.locale || "").trim()
+    locale: (profile.locale || "").trim(),
+    avatarUrl: (profile.picture || "").trim()
   };
 }

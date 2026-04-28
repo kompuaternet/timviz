@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import ProfileAvatar from "../../ProfileAvatar";
 import styles from "../pro.module.css";
 import LogoutButton from "./LogoutButton";
 import ProSidebar from "../ProSidebar";
@@ -15,6 +16,7 @@ type WorkspaceSnapshot = {
     firstName: string;
     lastName: string;
     email: string;
+    avatarUrl?: string;
     phone: string;
     country: string;
     timezone: string;
@@ -215,7 +217,14 @@ export default function WorkspaceView({ professionalId }: WorkspaceViewProps) {
           </div>
 
           <div className={styles.workspaceProfile}>
-            <div className={styles.avatar}>{initials}</div>
+            <ProfileAvatar
+              avatarUrl={snapshot.professional.avatarUrl}
+              initials={initials}
+              label={`${snapshot.professional.firstName} ${snapshot.professional.lastName}`.trim() || snapshot.business.name}
+              className={styles.avatar}
+              imageClassName={styles.avatarImage}
+              fallbackClassName={styles.avatarFallback}
+            />
             <div>
               <strong>{snapshot.business.name}</strong>
               <div>{isOwner ? copy.ownerRole : snapshot.membership.role}</div>

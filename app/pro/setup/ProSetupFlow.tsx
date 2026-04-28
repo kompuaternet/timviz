@@ -318,6 +318,10 @@ const setupText = {
       selectedBusiness: "Выбранный бизнес",
       selectedRole: "Роль после подтверждения",
       requestNotice: "После отправки запроса вы попадёте на страницу ожидания. Владелец бизнеса подтвердит присоединение в настройках кабинета.",
+      acceptInviteTitle: "Подтвердите приглашение",
+      acceptInviteText: "Бизнес уже пригласил вас в команду. После завершения регистрации вы сразу получите доступ к рабочему кабинету.",
+      acceptInviteButton: "Принять приглашение",
+      acceptInviteNotice: "Приглашение закреплено за этим email. После подтверждения вы сразу попадёте в кабинет сотрудника.",
       noResults: "Ничего не найдено. Попробуйте другое название, email или телефон."
     },
     categories: {
@@ -438,6 +442,10 @@ const setupText = {
       selectedBusiness: "Обраний бізнес",
       selectedRole: "Роль після підтвердження",
       requestNotice: "Після надсилання запиту ви потрапите на сторінку очікування. Власник бізнесу підтвердить приєднання в налаштуваннях кабінету.",
+      acceptInviteTitle: "Підтвердьте запрошення",
+      acceptInviteText: "Бізнес уже запросив вас до команди. Після завершення реєстрації ви одразу отримаєте доступ до робочого кабінету.",
+      acceptInviteButton: "Прийняти запрошення",
+      acceptInviteNotice: "Запрошення закріплене за цим email. Після підтвердження ви одразу потрапите до кабінету співробітника.",
       noResults: "Нічого не знайдено. Спробуйте іншу назву, email або телефон."
     },
     categories: {
@@ -558,6 +566,10 @@ const setupText = {
       selectedBusiness: "Selected business",
       selectedRole: "Role after approval",
       requestNotice: "After the request is sent, you will land on a waiting page. The business owner will confirm the request in workspace settings.",
+      acceptInviteTitle: "Confirm your invitation",
+      acceptInviteText: "This business already invited you to the team. After registration, you will get access to the workspace right away.",
+      acceptInviteButton: "Accept invitation",
+      acceptInviteNotice: "This invitation is locked to this email. After confirmation, you will go straight to the staff workspace.",
       noResults: "No businesses found. Try another name, email or phone."
     },
     categories: {
@@ -681,6 +693,15 @@ type Draft = {
   addressLon: number | null;
 };
 
+type SetupInvitation = {
+  token: string;
+  businessId: string;
+  businessName: string;
+  role: string;
+  email: string;
+  status: "pending" | "accepted" | "revoked";
+};
+
 const initialDraft: Draft = {
   ownerMode: "owner",
   joinBusinessId: "",
@@ -698,11 +719,27 @@ const initialDraft: Draft = {
   addressLon: null
 };
 
-export default function ProSetupFlow({ catalog }: { catalog: CategoryTemplate[] }) {
+export default function ProSetupFlow({
+  catalog,
+  invitation = null
+}: {
+  catalog: CategoryTemplate[];
+  invitation?: SetupInvitation | null;
+}) {
   const router = useRouter();
   const [language, setLanguage] = useState<ProLanguage>("ru");
   const [step, setStep] = useState(0);
-  const [draft, setDraft] = useState<Draft>(initialDraft);
+  const [draft, setDraft] = useState<Draft>(() =>
+    invitation?.status === "pending"
+      ? {
+          ...initialDraft,
+          ownerMode: "member",
+          joinBusinessId: invitation.businessId,
+          joinBusinessName: invitation.businessName,
+          joinBusinessRole: invitation.role
+        }
+      : initialDraft
+  );
   const [isSaving, setIsSaving] = useState(false);
   const [addressSuggestions, setAddressSuggestions] = useState<AddressSuggestion[]>([]);
   const [joinQuery, setJoinQuery] = useState("");
@@ -718,26 +755,32 @@ export default function ProSetupFlow({ catalog }: { catalog: CategoryTemplate[] 
   const [manualServiceMinutes, setManualServiceMinutes] = useState("30");
   const [manualServicePrice, setManualServicePrice] = useState("");
   const t = setupText[language];
+  const isInvitationFlow = invitation?.status === "pending";
 
-  const totalSteps = draft.ownerMode === "owner" ? 5 : 3;
+  const totalSteps = isInvitationFlow ? 1 : draft.ownerMode === "owner" ? 5 : 3;
 
   const progress = useMemo(
     () => Array.from({ length: totalSteps }, (_, index) => index <= step),
     [step, totalSteps]
   );
 
-  const canContinue =
-    (step === 0 && Boolean(draft.ownerMode)) ||
-    (step === 1 &&
-      (draft.ownerMode === "member"
-        ? draft.joinBusinessId.trim().length > 0
-        : draft.companyName.trim().length > 1)) ||
-    (draft.ownerMode === "member" && step === 2 && draft.joinBusinessId.trim().length > 0) ||
-    (draft.ownerMode === "owner" && step === 2 && draft.categories.length > 0) ||
-    (draft.ownerMode === "owner" && step === 3) ||
-    (draft.ownerMode === "owner" && step === 4);
+  const canContinue = isInvitationFlow
+    ? Boolean(invitation?.businessId)
+    : (step === 0 && Boolean(draft.ownerMode)) ||
+      (step === 1 &&
+        (draft.ownerMode === "member"
+          ? draft.joinBusinessId.trim().length > 0
+          : draft.companyName.trim().length > 1)) ||
+      (draft.ownerMode === "member" && step === 2 && draft.joinBusinessId.trim().length > 0) ||
+      (draft.ownerMode === "owner" && step === 2 && draft.categories.length > 0) ||
+      (draft.ownerMode === "owner" && step === 3) ||
+      (draft.ownerMode === "owner" && step === 4);
   const continueLabel =
-    draft.ownerMode === "member" && step === 2 ? t.join.requestButton : t.continue;
+    isInvitationFlow
+      ? t.join.acceptInviteButton
+      : draft.ownerMode === "member" && step === 2
+        ? t.join.requestButton
+        : t.continue;
 
   const mapEmbedUrl = useMemo(() => {
     if (draft.addressLat === null || draft.addressLon === null) {
@@ -902,7 +945,30 @@ export default function ProSetupFlow({ catalog }: { catalog: CategoryTemplate[] 
     };
   }, [draft.ownerMode, joinQuery, step]);
 
+  useEffect(() => {
+    if (!invitation || invitation.status !== "pending") {
+      return;
+    }
+
+    setDraft((current) => ({
+      ...current,
+      ownerMode: "member",
+      joinBusinessId: invitation.businessId,
+      joinBusinessName: invitation.businessName,
+      joinBusinessRole: invitation.role
+    }));
+    setJoinQuery(invitation.businessName);
+    setStep(0);
+  }, [invitation]);
+
   function goBack() {
+    if (isInvitationFlow && invitation) {
+      router.push(
+        `/pro/create-account?email=${encodeURIComponent(invitation.email)}&invite=${encodeURIComponent(invitation.token)}`
+      );
+      return;
+    }
+
     if (step === 0) {
       router.push("/pro/create-account");
       return;
@@ -923,6 +989,7 @@ export default function ProSetupFlow({ catalog }: { catalog: CategoryTemplate[] 
               lastName: "",
               email: "",
               password: "",
+              avatarUrl: "",
               phone: "",
               country: "Ukraine",
               timezone: "Europe/Kiev",
@@ -939,7 +1006,8 @@ export default function ProSetupFlow({ catalog }: { catalog: CategoryTemplate[] 
       },
       body: JSON.stringify({
         account: accountDraft,
-        setup: activeDraft
+        setup: activeDraft,
+        invitationToken: invitation?.status === "pending" ? invitation.token : undefined
       })
     });
 
@@ -956,11 +1024,22 @@ export default function ProSetupFlow({ catalog }: { catalog: CategoryTemplate[] 
       return;
     }
 
+    if (result.workspaceReady) {
+      clearScheduleReminder(result.professionalId);
+      router.push("/pro/calendar");
+      return;
+    }
+
     clearScheduleReminder(result.professionalId);
     router.push("/pro/pending");
   }
 
   async function handleContinue() {
+    if (isInvitationFlow) {
+      await finishSetup();
+      return;
+    }
+
     if (draft.ownerMode === "member") {
       if (step === 2) {
         await finishSetup();
@@ -1092,7 +1171,48 @@ export default function ProSetupFlow({ catalog }: { catalog: CategoryTemplate[] 
       </div>
 
       <div className={styles.wizardFrame}>
-        {step === 0 ? (
+        {isInvitationFlow && invitation ? (
+          <section className={styles.wizardCard}>
+            <div className={styles.wizardHeader}>
+              <p className={styles.eyebrow}>{t.join.eyebrow}</p>
+              <h1>{t.join.acceptInviteTitle}</h1>
+              <p>{t.join.acceptInviteText}</p>
+            </div>
+
+            <div className={styles.generatedBlock}>
+              <strong>{t.join.selectedBusiness}</strong>
+              <div className={styles.serviceStack}>
+                <div className={`${styles.serviceOption} ${styles.selectedCard}`}>
+                  <span className={styles.choiceTitle}>{invitation.businessName}</span>
+                  <span className={styles.choiceText}>{`${t.join.selectedRole}: ${invitation.role}`}</span>
+                  <span className={styles.choiceText}>{invitation.email}</span>
+                </div>
+              </div>
+              <p className={styles.choiceText}>{t.join.acceptInviteNotice}</p>
+              <div className={styles.templateActions}>
+                <button
+                  type="button"
+                  className={styles.ghostButton}
+                  onClick={goBack}
+                >
+                  ←
+                </button>
+                <button
+                  type="button"
+                  className={styles.primaryButton}
+                  disabled={isSaving}
+                  onClick={() => {
+                    void handleContinue();
+                  }}
+                >
+                  {isSaving ? t.saving : t.join.acceptInviteButton}
+                </button>
+              </div>
+            </div>
+          </section>
+        ) : null}
+
+        {!isInvitationFlow && step === 0 ? (
           <section className={styles.wizardCard}>
             <div className={styles.wizardHeader}>
               <p className={styles.eyebrow}>{t.ownerSetup.eyebrow}</p>

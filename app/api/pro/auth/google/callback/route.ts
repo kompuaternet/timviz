@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { getPublicAppUrl } from "../../../../../../lib/app-url";
 import { getSessionCookieName, signSessionValue } from "../../../../../../lib/pro-auth";
 import { exchangeCodeForGoogleProfile, getGoogleOAuthSettings } from "../../../../../../lib/google-oauth";
-import { getProfessionalIdByEmail } from "../../../../../../lib/pro-data";
+import { getProfessionalIdByEmail, updateProfessionalAvatar } from "../../../../../../lib/pro-data";
 
 const GOOGLE_OAUTH_STATE_COOKIE = "rezervo_google_oauth_state";
 const GOOGLE_OAUTH_MODE_COOKIE = "rezervo_google_oauth_mode";
@@ -63,6 +63,10 @@ export async function GET(request: Request) {
     clearOAuthCookies(cookieStore, isSecure);
 
     if (professionalId) {
+      if (profile.avatarUrl) {
+        void updateProfessionalAvatar(professionalId, profile.avatarUrl).catch(() => undefined);
+      }
+
       cookieStore.set(getSessionCookieName(), signSessionValue(professionalId), {
         httpOnly: true,
         sameSite: "lax",
@@ -84,6 +88,9 @@ export async function GET(request: Request) {
     }
     if (profile.locale) {
       createAccountUrl.searchParams.set("locale", profile.locale);
+    }
+    if (profile.avatarUrl) {
+      createAccountUrl.searchParams.set("avatarUrl", profile.avatarUrl);
     }
     if (mode === "login") {
       createAccountUrl.searchParams.set("google_from", "login");

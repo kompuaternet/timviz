@@ -10,7 +10,7 @@ import SupportWidget from "./SupportWidget";
 import styles from "./pro.module.css";
 import { useProLanguage } from "./useProLanguage";
 
-type SidebarSection = "workspace" | "calendar" | "services" | "clients" | "schedule" | "settings";
+type SidebarSection = "workspace" | "calendar" | "services" | "clients" | "staff" | "schedule" | "settings";
 
 type ProSidebarProps = {
   active: SidebarSection;
@@ -54,6 +54,17 @@ function ClientIcon() {
   );
 }
 
+function StaffIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="8" cy="9" r="2.6" />
+      <circle cx="16.2" cy="8.3" r="2.1" />
+      <path d="M4.8 18c.8-2.2 2.8-3.5 5.2-3.5s4.4 1.3 5.2 3.5" />
+      <path d="M14.6 17.1c.5-1.5 1.7-2.4 3.2-2.4 1 0 2 .4 2.7 1.2" />
+    </svg>
+  );
+}
+
 function ScheduleIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -87,6 +98,7 @@ const mainLinks = [
   { key: "calendar", href: "/pro/calendar", icon: <CalendarIcon /> },
   { key: "services", href: "/pro/services", icon: <TagIcon /> },
   { key: "clients", href: "/pro/clients", icon: <ClientIcon /> },
+  { key: "staff", href: "/pro/staff", icon: <StaffIcon /> },
   { key: "schedule", href: "/pro/schedule", icon: <ScheduleIcon /> }
 ] as const;
 
@@ -101,6 +113,7 @@ export default function ProSidebar({ active, professionalId = "" }: ProSidebarPr
     calendar: t.nav.calendar,
     services: t.nav.services,
     clients: t.nav.clients,
+    staff: t.nav.staff,
     schedule: t.nav.schedule
   };
 
@@ -123,6 +136,7 @@ export default function ProSidebar({ active, professionalId = "" }: ProSidebarPr
     { key: "calendar" as const, href: "/pro/calendar", label: t.nav.home, icon: <HomeIcon />, active: active === "workspace" || active === "calendar" },
     { key: "services" as const, href: "/pro/services", label: t.nav.services, icon: <TagIcon />, active: active === "services" },
     { key: "clients" as const, href: "/pro/clients", label: t.nav.clients, icon: <ClientIcon />, active: active === "clients" },
+    { key: "staff" as const, href: "/pro/staff", label: t.nav.staff, icon: <StaffIcon />, active: active === "staff" },
     { key: "schedule" as const, href: "/pro/schedule", label: t.nav.schedule, icon: <ScheduleIcon />, active: active === "schedule" },
     { key: "settings" as const, href: "/pro/settings", label: t.nav.settings, icon: <SettingsIcon />, active: active === "settings" }
   ];

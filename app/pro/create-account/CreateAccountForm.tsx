@@ -161,6 +161,7 @@ type CreateAccountLiveDraft = {
   lastName?: string;
   email?: string;
   password?: string;
+  avatarUrl?: string;
   phone?: string;
   country?: string;
   phoneCountry?: string;
@@ -175,6 +176,7 @@ type SetupAccountDraft = {
   lastName?: string;
   email?: string;
   password?: string;
+  avatarUrl?: string;
   phone?: string;
   country?: string;
   timezone?: string;
@@ -340,6 +342,7 @@ export default function CreateAccountForm() {
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState("");
   const [phone, setPhone] = useState("");
   const [country, setCountry] = useState("Ukraine");
   const [phoneCountry, setPhoneCountry] = useState("Ukraine");
@@ -352,6 +355,7 @@ export default function CreateAccountForm() {
   const [googleNotice, setGoogleNotice] = useState("");
   const [existingAccountEmail, setExistingAccountEmail] = useState("");
   const [isCheckingEmail, setIsCheckingEmail] = useState(false);
+  const [inviteToken, setInviteToken] = useState("");
   const [step, setStep] = useState<"entry" | "details">("entry");
 
   const phoneRule = getPhoneRule(phoneCountry);
@@ -383,6 +387,10 @@ export default function CreateAccountForm() {
       : getBrowserLanguage();
     const browserCountry = getBrowserCountry();
     const browserTimezone = getBrowserTimezone();
+    const params = new URLSearchParams(window.location.search);
+    const inviteFromQuery = params.get("invite")?.trim() || "";
+    const emailFromQuery = params.get("email")?.trim() || "";
+    const avatarFromQuery = params.get("avatarUrl")?.trim() || "";
     const liveDraft = readStoredJson<CreateAccountLiveDraft>(window.sessionStorage, liveDraftKey);
     const setupDraft = readStoredJson<SetupAccountDraft>(window.localStorage, setupDraftKey);
     const draftCountry = isKnownCountry(liveDraft?.country)
@@ -403,8 +411,9 @@ export default function CreateAccountForm() {
     setLanguage(initialLanguage);
     setFirstName(liveDraft?.firstName ?? setupDraft?.firstName ?? "");
     setLastName(liveDraft?.lastName ?? setupDraft?.lastName ?? "");
-    setEmail(liveDraft?.email ?? setupDraft?.email ?? "");
+    setEmail(emailFromQuery || liveDraft?.email || setupDraft?.email || "");
     setPassword(liveDraft?.password ?? setupDraft?.password ?? "");
+    setAvatarUrl(avatarFromQuery || liveDraft?.avatarUrl || setupDraft?.avatarUrl || "");
     setPhone(draftPhone);
     setCountry(draftCountry);
     setPhoneCountry(draftPhoneCountry);
@@ -424,6 +433,7 @@ export default function CreateAccountForm() {
     );
     setTermsAccepted(liveDraft?.termsAccepted ?? true);
     setStep(liveDraft?.step === "details" || setupDraft?.email ? "details" : "entry");
+    setInviteToken(inviteFromQuery);
     window.localStorage.setItem("rezervo-pro-language", initialLanguage);
     document.documentElement.lang = initialLanguage;
     window.dispatchEvent(new CustomEvent("rezervo-language-change", { detail: initialLanguage }));
@@ -439,6 +449,7 @@ export default function CreateAccountForm() {
     const emailFromGoogle = params.get("email")?.trim() || "";
     const firstNameFromGoogle = params.get("firstName")?.trim() || "";
     const lastNameFromGoogle = params.get("lastName")?.trim() || "";
+    const avatarFromGoogle = params.get("avatarUrl")?.trim() || "";
     const localeFromGoogle = params.get("locale")?.toUpperCase() || "";
     const cameFromLogin = params.get("google_from") === "login";
     const googleCountry = localeFromGoogle ? getCountryFromRegion(localeFromGoogle.split(/[-_]/).pop() || "") : "";
@@ -446,6 +457,7 @@ export default function CreateAccountForm() {
     if (emailFromGoogle) setEmail(emailFromGoogle);
     if (firstNameFromGoogle) setFirstName(firstNameFromGoogle);
     if (lastNameFromGoogle) setLastName(lastNameFromGoogle);
+    if (avatarFromGoogle) setAvatarUrl(avatarFromGoogle);
     setPassword((current) => current || makeGeneratedPassword());
     setTermsAccepted(true);
     setStep("details");
@@ -490,6 +502,7 @@ export default function CreateAccountForm() {
         lastName,
         email,
         password,
+        avatarUrl,
         phone,
         country,
         phoneCountry,
@@ -499,7 +512,7 @@ export default function CreateAccountForm() {
         step
       } satisfies CreateAccountLiveDraft)
     );
-  }, [country, currency, email, firstName, lastName, password, phone, phoneCountry, step, termsAccepted, timezone]);
+  }, [avatarUrl, country, currency, email, firstName, lastName, password, phone, phoneCountry, step, termsAccepted, timezone]);
 
   useEffect(() => {
     setExistingAccountEmail("");
@@ -572,6 +585,7 @@ export default function CreateAccountForm() {
         lastName,
         email,
         password,
+        avatarUrl,
         phone: buildInternationalPhone(phoneCountry, phone),
         country,
         timezone,
@@ -580,7 +594,7 @@ export default function CreateAccountForm() {
       })
     );
 
-    router.push("/pro/setup");
+    router.push(inviteToken ? `/pro/setup?invite=${encodeURIComponent(inviteToken)}` : "/pro/setup");
   }
 
   if (step === "entry") {
@@ -616,10 +630,18 @@ export default function CreateAccountForm() {
             <strong>{t.accountExistsTitle}</strong>
             <p>{t.accountExistsText}</p>
             <div className={styles.existingAccountActions}>
-              <a href={`/pro/login?email=${encodeURIComponent(existingAccountEmail)}`} className={styles.primaryButton}>
+              <a
+                href={`/pro/login?email=${encodeURIComponent(existingAccountEmail)}${
+                  inviteToken ? `&invite=${encodeURIComponent(inviteToken)}` : ""
+                }`}
+                className={styles.primaryButton}
+              >
                 {t.loginLink}
               </a>
-              <a href={`/pro/forgot-password?email=${encodeURIComponent(existingAccountEmail)}`} className={styles.ghostButton}>
+              <a
+                href={`/pro/forgot-password?email=${encodeURIComponent(existingAccountEmail)}`}
+                className={styles.ghostButton}
+              >
                 {t.forgotPassword}
               </a>
             </div>
@@ -801,7 +823,12 @@ export default function CreateAccountForm() {
         >
           {isCheckingEmail ? t.introChecking : t.submit}
         </button>
-        <a className={styles.mutedLink} href="/pro/login">{t.loginLink}</a>
+        <a
+          className={styles.mutedLink}
+          href={inviteToken ? `/pro/login?invite=${encodeURIComponent(inviteToken)}` : "/pro/login"}
+        >
+          {t.loginLink}
+        </a>
       </div>
     </div>
   );
