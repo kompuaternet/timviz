@@ -153,7 +153,12 @@ export default function LoginForm() {
       {error ? <div className={styles.addressWarning}>{error}</div> : null}
       {!error && oauthErrorText ? <div className={styles.addressWarning}>{oauthErrorText}</div> : null}
 
-      <a href="/api/pro/auth/google/start?mode=login" className={styles.ghostButton}>
+      <a
+        href={`/api/pro/auth/google/start?mode=login${
+          inviteToken ? `&invite=${encodeURIComponent(inviteToken)}` : ""
+        }`}
+        className={styles.ghostButton}
+      >
         {copy.google}
       </a>
 

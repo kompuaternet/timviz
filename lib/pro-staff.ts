@@ -5,25 +5,41 @@ import {
 } from "./pro-calendar";
 import {
   getBusinessDirectorySnapshot,
+  getProfessionalContactEmail,
   getJoinRequestsForOwner,
   getWorkspaceSnapshot,
+  resolveMembershipSchedule,
   type ProfessionalRecord
 } from "./pro-data";
+import type { CustomSchedule, WorkSchedule, WorkScheduleMode } from "./work-schedule";
 
 export type StaffMemberSource = "owner" | "join_request" | "email_invitation" | "member";
+export type StaffMemberWorkspaceAccess = "owner" | "active" | "invited" | "offline";
 
 export type StaffMemberSnapshot = {
   professional: Pick<
     ProfessionalRecord,
-    "id" | "firstName" | "lastName" | "email" | "phone" | "language" | "createdAt" | "avatarUrl"
-  >;
+    "id" | "firstName" | "lastName" | "phone" | "language" | "createdAt" | "avatarUrl"
+  > & {
+    email: string;
+    accountStatus: ProfessionalRecord["accountStatus"];
+  };
   membership: {
     id: string;
     role: string;
     scope: "owner" | "member";
     createdAt: string;
+    workScheduleMode: WorkScheduleMode;
+    workSchedule: WorkSchedule;
+    customSchedule: CustomSchedule;
   };
   source: StaffMemberSource;
+  workspaceAccess: StaffMemberWorkspaceAccess;
+  pendingInvitation: {
+    id: string;
+    email: string;
+    createdAt: string;
+  } | null;
   services: string[];
   createdServices: string[];
   performedServices: string[];
@@ -98,6 +114,16 @@ export type BusinessStaffSnapshot = {
   members: StaffMemberSnapshot[];
   joinRequests: PendingStaffJoinRequestSnapshot[];
   invitations: PendingStaffInvitationSnapshot[];
+};
+
+export type StaffMemberEditorSnapshot = {
+  business: BusinessStaffSnapshot["business"];
+  member: StaffMemberSnapshot;
+  allBusinessServices: Array<{
+    id: string;
+    name: string;
+    category: string;
+  }>;
 };
 
 function uniqueValues(values: string[]) {
@@ -179,6 +205,12 @@ export async function getBusinessStaffSnapshot(ownerProfessionalId: string): Pro
           item.professionalId === professional.id &&
           item.status === "approved"
       );
+      const pendingInvitation = directory.staffInvitations.find(
+        (item) =>
+          item.businessId === workspace.business.id &&
+          item.email === professional.email.trim().toLowerCase() &&
+          item.status === "pending"
+      );
       const services = uniqueValues([...performedServices, ...createdServices]);
       const upcomingAppointments = memberAppointments.filter((appointment) =>
         isUpcomingAppointment(appointment, nowDate, nowTime)
@@ -197,25 +229,46 @@ export async function getBusinessStaffSnapshot(ownerProfessionalId: string): Pro
             : approvedJoinRequest
               ? "join_request"
               : "member";
+      const resolvedSchedule = resolveMembershipSchedule(membership, workspace.business);
+      const workspaceAccess: StaffMemberWorkspaceAccess =
+        membership.scope === "owner"
+          ? "owner"
+          : professional.accountStatus === "active"
+            ? "active"
+            : pendingInvitation
+              ? "invited"
+              : "offline";
 
       return {
         professional: {
           id: professional.id,
           firstName: professional.firstName,
           lastName: professional.lastName,
-          email: professional.email,
+          email: getProfessionalContactEmail(professional),
           phone: professional.phone,
           language: professional.language,
           avatarUrl: professional.avatarUrl,
+          accountStatus: professional.accountStatus,
           createdAt: professional.createdAt
         },
         membership: {
           id: membership.id,
           role: membership.role,
           scope: membership.scope === "owner" ? "owner" : "member",
-          createdAt: membership.createdAt
+          createdAt: membership.createdAt,
+          workScheduleMode: resolvedSchedule.workScheduleMode,
+          workSchedule: resolvedSchedule.workSchedule,
+          customSchedule: resolvedSchedule.customSchedule
         },
         source,
+        workspaceAccess,
+        pendingInvitation: pendingInvitation
+          ? {
+              id: pendingInvitation.id,
+              email: pendingInvitation.email,
+              createdAt: pendingInvitation.createdAt
+            }
+          : null,
         services,
         createdServices,
         performedServices,
@@ -327,5 +380,28 @@ export async function getBusinessStaffSnapshot(ownerProfessionalId: string): Pro
         : null
     })),
     invitations: pendingInvitations
+  };
+}
+
+export async function getStaffMemberEditorSnapshot(
+  ownerProfessionalId: string,
+  memberProfessionalId: string
+): Promise<StaffMemberEditorSnapshot | null> {
+  const snapshot = await getBusinessStaffSnapshot(ownerProfessionalId);
+
+  if (!snapshot) {
+    return null;
+  }
+
+  const member = snapshot.members.find((item) => item.professional.id === memberProfessionalId) || null;
+
+  if (!member) {
+    return null;
+  }
+
+  return {
+    business: snapshot.business,
+    member,
+    allBusinessServices: snapshot.services
   };
 }

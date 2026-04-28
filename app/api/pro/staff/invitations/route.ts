@@ -21,6 +21,8 @@ export async function POST(request: Request) {
       ownerProfessionalId: professionalId,
       email: String(body.email || ""),
       role: String(body.role || ""),
+      memberProfessionalId:
+        typeof body.memberProfessionalId === "string" ? body.memberProfessionalId : undefined,
       request
     });
 

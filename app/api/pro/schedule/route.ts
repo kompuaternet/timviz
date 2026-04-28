@@ -18,6 +18,7 @@ export async function POST(request: Request) {
 
     await updateBusinessScheduleForProfessional({
       professionalId,
+      targetProfessionalId: typeof body.targetProfessionalId === "string" ? body.targetProfessionalId : undefined,
       workScheduleMode: body.workScheduleMode,
       workSchedule: body.workSchedule,
       customSchedule: body.customSchedule

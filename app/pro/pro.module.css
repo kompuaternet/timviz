@@ -2842,6 +2842,876 @@
   }
 }
 
+.staffStudioShell {
+  min-height: 100vh;
+  background: #f7f8fc;
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+}
+
+.staffStudioSidebar {
+  border-right: 1px solid #e6e9f2;
+  background: #ffffff;
+  padding: 24px 18px;
+}
+
+.staffStudioSidebarCard {
+  display: grid;
+  gap: 16px;
+}
+
+.staffStudioSidebarCard strong {
+  font-size: 1.35rem;
+  letter-spacing: -0.03em;
+}
+
+.staffStudioLocalNav {
+  display: grid;
+  gap: 8px;
+}
+
+.staffStudioLocalLink {
+  min-height: 48px;
+  padding: 0 16px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  color: #232532;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.staffStudioLocalLink:hover {
+  background: #f3f5fb;
+}
+
+.staffStudioLocalLinkActive {
+  background: #edf0ff;
+  color: #5c50f6;
+}
+
+.staffStudioMain {
+  padding: 32px 40px 48px;
+  display: grid;
+  align-content: start;
+  gap: 20px;
+}
+
+.staffStudioHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.staffStudioTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.staffStudioTitle {
+  margin: 0;
+  font-size: clamp(2rem, 3vw, 2.6rem);
+  letter-spacing: -0.05em;
+  line-height: 1;
+}
+
+.staffStudioCount {
+  min-width: 36px;
+  height: 36px;
+  padding: 0 10px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+  border: 1px solid #dfe3ef;
+  color: #5d6273;
+  font-weight: 700;
+}
+
+.staffStudioText {
+  margin: 10px 0 0;
+  max-width: 920px;
+  color: #6b7083;
+  line-height: 1.6;
+}
+
+.staffStudioTopActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.staffStudioGhostButton,
+.staffStudioPrimaryButton,
+.staffRowActionButton,
+.staffSecondaryButton {
+  min-height: 48px;
+  padding: 0 18px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font-size: 1rem;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    transform 0.18s ease,
+    background 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.staffStudioGhostButton,
+.staffRowActionButton,
+.staffSecondaryButton {
+  border: 1px solid #d8deec;
+  background: #ffffff;
+  color: #1e2233;
+}
+
+.staffStudioPrimaryButton {
+  border: 1px solid #111111;
+  background: #111111;
+  color: #ffffff;
+}
+
+.staffStudioGhostButton:hover,
+.staffStudioPrimaryButton:hover,
+.staffRowActionButton:hover,
+.staffSecondaryButton:hover {
+  transform: translateY(-1px);
+}
+
+.staffStudioNotice,
+.staffStudioStatus {
+  border-radius: 18px;
+  border: 1px solid #dde3f3;
+  background: #ffffff;
+  padding: 16px 18px;
+  color: #5f6679;
+  line-height: 1.6;
+}
+
+.staffStudioStatus {
+  border-color: #cdd5f3;
+  color: #343a53;
+}
+
+.staffStudioToolbar {
+  border-radius: 20px;
+  border: 1px solid #e2e7f2;
+  background: #ffffff;
+  padding: 16px;
+}
+
+.staffStudioSearch {
+  min-height: 56px;
+  border-radius: 999px;
+  border: 1px solid #dfe4f0;
+  background: #fbfcff;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 18px;
+  color: #98a0b3;
+}
+
+.staffStudioSearch input {
+  border: 0;
+  outline: none;
+  background: transparent;
+  width: 100%;
+  font-size: 1rem;
+  color: #1c2234;
+}
+
+.staffStudioTable {
+  border-radius: 24px;
+  border: 1px solid #e2e7f2;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.staffStudioTableHead,
+.staffStudioRow {
+  display: grid;
+  grid-template-columns: minmax(260px, 1.3fr) minmax(220px, 1fr) minmax(220px, 0.95fr) minmax(180px, 0.8fr) 148px;
+  gap: 18px;
+  align-items: center;
+}
+
+.staffStudioTableHead {
+  padding: 20px 24px;
+  color: #666d81;
+  font-size: 0.93rem;
+  font-weight: 700;
+  border-bottom: 1px solid #e8ecf6;
+}
+
+.staffStudioRows {
+  display: grid;
+}
+
+.staffStudioRow {
+  padding: 20px 24px;
+  border-bottom: 1px solid #edf1f8;
+}
+
+.staffStudioRow:last-child {
+  border-bottom: 0;
+}
+
+.staffStudioNameCell {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.staffStudioIdentity {
+  display: grid;
+  gap: 4px;
+}
+
+.staffStudioIdentity strong {
+  font-size: 1.05rem;
+}
+
+.staffStudioIdentity span,
+.staffStudioIdentity small,
+.staffStudioContactCell span,
+.staffStudioStatsCell {
+  color: #697086;
+}
+
+.staffStudioContactCell {
+  display: grid;
+  gap: 6px;
+}
+
+.staffStudioAccessCell {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.staffStudioAccessBadge {
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  background: #eef1f8;
+  color: #4a5166;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.staffStudioAccessBadgeOwner {
+  background: #111111;
+  color: #ffffff;
+}
+
+.staffStudioAccessBadgeActive {
+  background: #ebfff1;
+  color: #1b8f50;
+}
+
+.staffStudioAccessBadgeInvited {
+  background: #f3efff;
+  color: #6a4df5;
+}
+
+.staffStudioAccessBadgeOffline {
+  background: #f4f6fb;
+  color: #6d7385;
+}
+
+.staffStudioActionCell {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.staffControlMenuWrap {
+  position: relative;
+}
+
+.staffControlMenu {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 240px;
+  padding: 10px;
+  border-radius: 18px;
+  border: 1px solid #e0e6f1;
+  background: #ffffff;
+  box-shadow: 0 26px 54px rgba(30, 34, 51, 0.16);
+  display: grid;
+  gap: 4px;
+  z-index: 10;
+}
+
+.staffControlMenuItem {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: #1e2233;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  text-decoration: none;
+  font-size: 0.97rem;
+  cursor: pointer;
+}
+
+.staffControlMenuItem:hover {
+  background: #f5f7fd;
+}
+
+.staffControlMenuDanger {
+  color: #dc3f57;
+}
+
+.staffStudioBottomGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.staffStudioPanel {
+  border-radius: 24px;
+  border: 1px solid #e2e7f2;
+  background: #ffffff;
+  padding: 22px;
+  display: grid;
+  gap: 16px;
+}
+
+.staffStudioPanelHeader h2 {
+  margin: 0;
+  font-size: 1.35rem;
+  letter-spacing: -0.03em;
+}
+
+.staffStudioSideList {
+  display: grid;
+  gap: 14px;
+}
+
+.staffSideCard {
+  border-radius: 18px;
+  border: 1px solid #e7ebf5;
+  background: #fbfcff;
+  padding: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.staffSideCard strong {
+  display: block;
+}
+
+.staffSideCard p,
+.staffSideCard span {
+  display: block;
+  margin: 6px 0 0;
+  color: #6f7488;
+}
+
+.staffSideActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.staffStudioEmpty {
+  min-height: 180px;
+  border-radius: 20px;
+  border: 1px dashed #d9dfed;
+  background: #fafbff;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  color: #70778c;
+  padding: 20px;
+}
+
+.staffDrawerBackdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 19, 29, 0.32);
+  backdrop-filter: blur(6px);
+  display: flex;
+  justify-content: flex-end;
+  z-index: 50;
+}
+
+.staffDrawer {
+  width: min(520px, 100vw);
+  height: 100vh;
+  background: #ffffff;
+  border-left: 1px solid #e3e8f2;
+  padding: 28px;
+  display: grid;
+  align-content: start;
+  gap: 24px;
+  overflow-y: auto;
+}
+
+.staffDrawerHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.staffDrawerHeader h2 {
+  margin: 0;
+  font-size: 1.8rem;
+  letter-spacing: -0.04em;
+}
+
+.staffDrawerHeader p {
+  margin: 8px 0 0;
+  color: #6d7386;
+  line-height: 1.6;
+}
+
+.staffDrawerClose {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  border: 1px solid #dfe4ef;
+  background: #ffffff;
+  font-size: 1.7rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.staffDrawerForm {
+  display: grid;
+  gap: 16px;
+}
+
+.staffDrawerField {
+  display: grid;
+  gap: 8px;
+}
+
+.staffDrawerField span {
+  color: #52586b;
+  font-weight: 600;
+}
+
+.staffDrawerToggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #353b4f;
+}
+
+.staffDrawerActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.staffScheduleToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.staffScheduleRange {
+  min-height: 52px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid #d9e0ee;
+  background: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.staffScheduleArrow {
+  width: 38px;
+  height: 38px;
+  border: 0;
+  border-radius: 50%;
+  background: #f3f5fb;
+  color: #1f2435;
+  font-size: 1.4rem;
+  cursor: pointer;
+}
+
+.staffScheduleBoard {
+  border-radius: 24px;
+  border: 1px solid #e2e7f2;
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.staffScheduleHead,
+.staffScheduleRow {
+  display: grid;
+  grid-template-columns: 300px repeat(7, minmax(120px, 1fr));
+}
+
+.staffScheduleHead {
+  border-bottom: 1px solid #e8ecf6;
+  background: #fcfdff;
+}
+
+.staffScheduleMemberHead,
+.staffScheduleDayHead {
+  padding: 18px 16px;
+}
+
+.staffScheduleMemberHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.staffScheduleInlineLink {
+  color: #5c50f6;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.staffScheduleDayHead {
+  display: grid;
+  gap: 4px;
+  text-align: center;
+}
+
+.staffScheduleDayHead strong {
+  text-transform: capitalize;
+}
+
+.staffScheduleDayHead span {
+  color: #7a8195;
+}
+
+.staffScheduleRows {
+  display: grid;
+}
+
+.staffScheduleRow {
+  border-bottom: 1px solid #edf1f8;
+}
+
+.staffScheduleRow:last-child {
+  border-bottom: 0;
+}
+
+.staffScheduleMemberCell {
+  padding: 18px 16px;
+  text-decoration: none;
+  color: inherit;
+  border-right: 1px solid #edf1f8;
+}
+
+.staffScheduleMemberIdentity {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.staffScheduleMemberIdentity strong {
+  display: block;
+}
+
+.staffScheduleMemberIdentity span {
+  display: block;
+  margin-top: 4px;
+  color: #73798d;
+}
+
+.staffScheduleAvatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #edf0ff;
+  color: #594cf4;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  font-weight: 800;
+}
+
+.staffScheduleAvatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.staffScheduleShiftCell {
+  margin: 8px;
+  min-height: 56px;
+  border-radius: 14px;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 10px;
+  font-weight: 600;
+}
+
+.staffScheduleShiftCellActive {
+  background: #eef0ff;
+  color: #1e2233;
+}
+
+.staffScheduleShiftCellOff {
+  background: #f4f6fa;
+  color: #8b90a1;
+}
+
+.staffEditorShell {
+  min-height: 100vh;
+  background: #f7f8fc;
+}
+
+.staffEditorTopBar {
+  min-height: 88px;
+  border-bottom: 1px solid #e2e7f2;
+  background: #ffffff;
+  padding: 0 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.staffEditorTopTitle {
+  font-size: 1.85rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+}
+
+.staffEditorTopActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.staffEditorLayout {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 32px;
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 28px;
+}
+
+.staffEditorSidebar {
+  align-self: start;
+}
+
+.staffEditorSidebarBlock {
+  border-radius: 24px;
+  border: 1px solid #e2e7f2;
+  background: #ffffff;
+  padding: 20px;
+  display: grid;
+  gap: 10px;
+}
+
+.staffEditorSidebarBlock strong {
+  font-size: 1.18rem;
+  margin-bottom: 6px;
+}
+
+.staffEditorNavItem {
+  min-height: 48px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 14px;
+  background: transparent;
+  color: #1f2435;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.staffEditorNavItemActive {
+  background: #eef1ff;
+  color: #5d50f6;
+  font-weight: 700;
+}
+
+.staffEditorMain {
+  display: grid;
+  gap: 18px;
+}
+
+.staffEditorPanel {
+  border-radius: 28px;
+  border: 1px solid #e2e7f2;
+  background: #ffffff;
+  padding: 28px;
+  display: grid;
+  gap: 24px;
+}
+
+.staffEditorPanelHeader h1 {
+  margin: 0;
+  font-size: 2rem;
+  letter-spacing: -0.04em;
+}
+
+.staffEditorPanelHeader p {
+  margin: 8px 0 0;
+  color: #6d7386;
+  line-height: 1.6;
+}
+
+.staffEditorHero {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.staffEditorAvatar {
+  width: 140px;
+  height: 140px;
+}
+
+.staffEditorGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.staffEditorFieldWide {
+  grid-column: 1 / -1;
+}
+
+.staffEditorStats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.staffEditorStatCard {
+  border-radius: 18px;
+  background: #f6f8fe;
+  padding: 16px;
+  display: grid;
+  gap: 6px;
+}
+
+.staffEditorStatCard span {
+  color: #798095;
+}
+
+.staffEditorStatCard strong {
+  font-size: 1.35rem;
+  letter-spacing: -0.03em;
+}
+
+.staffEditorAccessCard {
+  border-radius: 20px;
+  border: 1px solid #e2e7f2;
+  background: #fbfcff;
+  padding: 18px;
+  display: grid;
+  gap: 10px;
+}
+
+.staffEditorAccessCard p {
+  margin: 0;
+  color: #70778c;
+}
+
+.staffEditorActionRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 1220px) {
+  .staffStudioShell,
+  .staffEditorLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .staffStudioSidebar,
+  .staffEditorSidebar {
+    border-right: 0;
+    padding: 0;
+    background: transparent;
+  }
+}
+
+@media (max-width: 1080px) {
+  .staffStudioTableHead,
+  .staffStudioRow {
+    grid-template-columns: 1fr;
+  }
+
+  .staffStudioActionCell {
+    justify-content: flex-start;
+  }
+
+  .staffStudioBottomGrid,
+  .staffEditorGrid,
+  .staffEditorStats,
+  .staffScheduleHead,
+  .staffScheduleRow {
+    grid-template-columns: 1fr;
+  }
+
+  .staffScheduleMemberCell {
+    border-right: 0;
+    border-bottom: 1px solid #edf1f8;
+  }
+}
+
+@media (max-width: 720px) {
+  .staffStudioMain,
+  .staffEditorLayout {
+    padding: 20px 16px 96px;
+  }
+
+  .staffStudioHeader,
+  .staffEditorTopBar,
+  .staffDrawerActions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .staffEditorTopBar {
+    padding: 16px;
+  }
+
+  .staffScheduleToolbar {
+    align-items: stretch;
+  }
+
+  .staffScheduleRange {
+    justify-content: space-between;
+  }
+}
+
 .clientsModalBackdrop {
   position: fixed;
   inset: 0;

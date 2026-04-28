@@ -20,7 +20,10 @@ import {
   getDaySchedule,
   normalizeCustomSchedule,
   normalizeWorkSchedule,
-  workDays
+  workDays,
+  type CustomSchedule,
+  type WorkSchedule,
+  type WorkScheduleMode
 } from "../../../lib/work-schedule";
 import BrandLogo from "../../BrandLogo";
 import GlobalLanguageSwitcher from "../../GlobalLanguageSwitcher";
@@ -33,6 +36,9 @@ type TeamMember = {
   avatarUrl?: string;
   role: string;
   scope: "owner" | "member";
+  workScheduleMode: WorkScheduleMode;
+  workSchedule: WorkSchedule;
+  customSchedule: CustomSchedule;
 };
 
 type BookingBusySlot = {
@@ -515,13 +521,16 @@ export default function BusinessView({
     }
 
     return business.ownerProfessionalId
-      ? [
+        ? [
           {
             id: business.ownerProfessionalId,
             firstName: business.name,
             lastName: "",
             role: language === "en" ? "Owner" : language === "uk" ? "Власник" : "Владелец",
-            scope: "owner" as const
+            scope: "owner" as const,
+            workScheduleMode: business.workScheduleMode,
+            workSchedule: business.workSchedule,
+            customSchedule: business.customSchedule
           }
         ]
       : [];
@@ -699,17 +708,27 @@ export default function BusinessView({
     return teamMembers.map((member) => member.id);
   }, [selectedProfessionalId, teamMembers]);
 
+  function getScheduleConfigForProfessional(professionalId: string) {
+    const member = teamMembers.find((item) => item.id === professionalId);
+
+    return {
+      workSchedule: member?.workSchedule ?? business.workSchedule,
+      customSchedule: member?.customSchedule ?? business.customSchedule
+    };
+  }
+
   function getAvailableSlotsForDate(dateKey: string, professionalId: string) {
     if (!primaryService || !dateKey) {
       return [];
     }
 
     const professionalBookings = professionalId ? bookingsByProfessional.get(professionalId) ?? [] : bookings;
+    const scheduleConfig = getScheduleConfigForProfessional(professionalId);
 
     return getPublicBookingSlots({
       config: {
-        workSchedule: business.workSchedule,
-        customSchedule: business.customSchedule,
+        workSchedule: scheduleConfig.workSchedule,
+        customSchedule: scheduleConfig.customSchedule,
         bookingIntervalMinutes: 15,
         services: services.map((service) => ({
           name: service.name,
@@ -744,18 +763,33 @@ export default function BusinessView({
     const map = new Map<string, { state: "closed" | "available" | "full"; slots: number }>();
 
     for (const day of monthDays) {
-      const schedule = getDaySchedule(day.key, normalizedWorkSchedule, normalizedCustomSchedule);
-
-      if (!primaryService || !schedule?.enabled) {
+      if (!primaryService) {
         map.set(day.key, { state: "closed", slots: 0 });
         continue;
       }
 
       const slots = new Set<string>();
+      let hasWorkingDay = false;
       for (const professionalId of professionalIdsForSlots) {
+        const scheduleConfig = getScheduleConfigForProfessional(professionalId);
+        const schedule = getDaySchedule(
+          day.key,
+          normalizeWorkSchedule(scheduleConfig.workSchedule),
+          normalizeCustomSchedule(scheduleConfig.customSchedule)
+        );
+
+        if (schedule?.enabled) {
+          hasWorkingDay = true;
+        }
+
         for (const slot of getAvailableSlotsForDate(day.key, professionalId)) {
           slots.add(slot);
         }
+      }
+
+      if (!hasWorkingDay) {
+        map.set(day.key, { state: "closed", slots: 0 });
+        continue;
       }
 
       map.set(day.key, {
@@ -765,7 +799,7 @@ export default function BusinessView({
     }
 
     return map;
-  }, [monthDays, normalizedCustomSchedule, normalizedWorkSchedule, primaryService, professionalIdsForSlots]);
+  }, [monthDays, primaryService, professionalIdsForSlots]);
 
   useEffect(() => {
     if (!primaryService) {

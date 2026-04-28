@@ -26,6 +26,7 @@ type WorkScheduleCardProps = {
   initialSchedule: WorkSchedule;
   initialCustomSchedule: CustomSchedule;
   layout?: "aside" | "page";
+  targetProfessionalId?: string;
 };
 
 type Template = typeof defaultWorkTemplate;
@@ -148,7 +149,8 @@ export default function WorkScheduleCard({
   initialMode,
   initialSchedule,
   initialCustomSchedule,
-  layout = "aside"
+  layout = "aside",
+  targetProfessionalId
 }: WorkScheduleCardProps) {
   const { t, language } = useProLanguage();
   const locale = language === "uk" ? "uk-UA" : language === "en" ? "en-US" : "ru-RU";
@@ -607,6 +609,7 @@ export default function WorkScheduleCard({
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
+        targetProfessionalId,
         workScheduleMode: scheduleMode,
         workSchedule: schedule,
         customSchedule

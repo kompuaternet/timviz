@@ -76,6 +76,11 @@ type CalendarSnapshot = {
       scope: "owner" | "member";
       role: string;
     };
+    memberSchedule: {
+      workScheduleMode: WorkScheduleMode;
+      workSchedule: WorkSchedule;
+      customSchedule: CustomSchedule;
+    };
     services: Array<{
       id: string;
       name: string;
@@ -904,8 +909,8 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
       return {};
     }
 
-    return snapshot.workspace.business.workScheduleMode === "flexible"
-      ? snapshot.workspace.business.customSchedule
+    return snapshot.workspace.memberSchedule.workScheduleMode === "flexible"
+      ? snapshot.workspace.memberSchedule.customSchedule
       : {};
   }, [snapshot]);
 
@@ -914,7 +919,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
       return null;
     }
 
-    return resolveDaySchedule(selectedDate, snapshot.workspace.business.workSchedule, scheduleOverrides);
+    return resolveDaySchedule(selectedDate, snapshot.workspace.memberSchedule.workSchedule, scheduleOverrides);
   }, [scheduleOverrides, selectedDate, snapshot]);
 
   const monthSchedules = useMemo(() => {
@@ -925,7 +930,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
     return new Map(
       monthGrid.map((day) => [
         day.key,
-        resolveDaySchedule(day.key, snapshot.workspace.business.workSchedule, scheduleOverrides)
+        resolveDaySchedule(day.key, snapshot.workspace.memberSchedule.workSchedule, scheduleOverrides)
       ])
     );
   }, [monthGrid, scheduleOverrides, snapshot]);
@@ -1917,7 +1922,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
             <div className={styles.calendarWeekOverviewGrid}>
               {weekKeys.map((dayKey) => {
                 const schedule = snapshot
-                  ? resolveDaySchedule(dayKey, snapshot.workspace.business.workSchedule, scheduleOverrides)
+                  ? resolveDaySchedule(dayKey, snapshot.workspace.memberSchedule.workSchedule, scheduleOverrides)
                   : null;
                 const dayAppointments = dayKey === selectedDate ? snapshot?.appointments ?? [] : [];
                 return (

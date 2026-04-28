@@ -1,6 +1,7 @@
 import {
   getPrimaryBusinessPhoto,
   getBusinessDirectorySnapshot,
+  resolveMembershipSchedule,
   type BusinessRecord,
   type ServiceRecord
 } from "./pro-data";
@@ -21,6 +22,9 @@ export type PublicBusinessProfile = {
     avatarUrl?: string;
     role: string;
     scope: "owner" | "member";
+    workScheduleMode: BusinessRecord["workScheduleMode"];
+    workSchedule: BusinessRecord["workSchedule"];
+    customSchedule: BusinessRecord["customSchedule"];
   }>;
   bookings: {
     appointmentDate: string;
@@ -79,10 +83,13 @@ export async function getPublicBusinessProfile(
       id: string;
       firstName: string;
       lastName: string;
-      avatarUrl?: string;
-      role: string;
-      scope: "owner" | "member";
-    } | null>((membership) => {
+        avatarUrl?: string;
+        role: string;
+        scope: "owner" | "member";
+        workScheduleMode: BusinessRecord["workScheduleMode"];
+        workSchedule: BusinessRecord["workSchedule"];
+        customSchedule: BusinessRecord["customSchedule"];
+      } | null>((membership) => {
       const professional = directory.professionals.find(
         (item) => item.id === membership.professionalId
       );
@@ -91,13 +98,18 @@ export async function getPublicBusinessProfile(
         return null;
       }
 
+      const resolvedSchedule = resolveMembershipSchedule(membership, business);
+
       return {
         id: professional.id,
         firstName: professional.firstName,
         lastName: professional.lastName,
         avatarUrl: professional.avatarUrl || undefined,
         role: membership.role,
-        scope: membership.scope === "owner" ? "owner" : "member"
+        scope: membership.scope === "owner" ? "owner" : "member",
+        workScheduleMode: resolvedSchedule.workScheduleMode,
+        workSchedule: resolvedSchedule.workSchedule,
+        customSchedule: resolvedSchedule.customSchedule
       };
     })
     .filter(
@@ -110,6 +122,9 @@ export async function getPublicBusinessProfile(
         avatarUrl?: string;
         role: string;
         scope: "owner" | "member";
+        workScheduleMode: BusinessRecord["workScheduleMode"];
+        workSchedule: BusinessRecord["workSchedule"];
+        customSchedule: BusinessRecord["customSchedule"];
       } => Boolean(item)
     )
     .sort((left, right) => {

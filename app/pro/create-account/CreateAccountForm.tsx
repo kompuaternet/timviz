@@ -651,7 +651,12 @@ export default function CreateAccountForm() {
         <div className={styles.socialDivider}>{t.introOr}</div>
 
         <div className={styles.socialStack}>
-          <a href="/api/pro/auth/google/start?mode=register" className={styles.socialButton}>
+          <a
+            href={`/api/pro/auth/google/start?mode=register${
+              inviteToken ? `&invite=${encodeURIComponent(inviteToken)}` : ""
+            }`}
+            className={styles.socialButton}
+          >
             <span className={`${styles.socialIcon} ${styles.google}`}>G</span>
             <span>{t.introGoogle}</span>
           </a>

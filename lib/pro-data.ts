@@ -81,6 +81,8 @@ export type BusinessRecord = {
   createdAt: string;
 };
 
+export type ProfessionalAccountStatus = "active" | "placeholder";
+
 export type ProfessionalRecord = {
   id: string;
   firstName: string;
@@ -96,6 +98,7 @@ export type ProfessionalRecord = {
   bookingCreditsTotal?: number;
   walletBalance?: number;
   ownerMode: "owner" | "member";
+  accountStatus?: ProfessionalAccountStatus;
   createdAt: string;
 };
 
@@ -105,6 +108,9 @@ export type MembershipRecord = {
   professionalId: string;
   role: string;
   scope: "owner" | "member" | "pending";
+  workScheduleMode?: WorkScheduleMode;
+  workSchedule?: WorkSchedule;
+  customSchedule?: CustomSchedule;
   createdAt: string;
 };
 
@@ -164,6 +170,11 @@ export type WorkspaceSnapshot = {
   professional: ProfessionalRecord;
   business: BusinessRecord;
   membership: MembershipRecord;
+  memberSchedule: {
+    workScheduleMode: WorkScheduleMode;
+    workSchedule: WorkSchedule;
+    customSchedule: CustomSchedule;
+  };
   services: ServiceRecord[];
 };
 
@@ -187,6 +198,8 @@ export type JoinBusinessSearchResult = {
   categories: string[];
   photoUrl: string;
 };
+
+const placeholderEmailDomain = "placeholder.timviz.local";
 
 const storePath = path.join(process.cwd(), "data", "pro-data.json");
 
@@ -220,6 +233,42 @@ function isMissingStaffInvitationsTableError(message?: string) {
 
 function normalizeServiceSource(value: unknown): "catalog" | "custom" {
   return value === "custom" ? "custom" : "catalog";
+}
+
+function normalizeProfessionalAccountStatus(value: unknown): ProfessionalAccountStatus {
+  return value === "placeholder" ? "placeholder" : "active";
+}
+
+function buildPlaceholderProfessionalEmail(professionalId: string) {
+  return `staff+${professionalId}@${placeholderEmailDomain}`;
+}
+
+export function isPlaceholderProfessionalEmail(email: string) {
+  const normalized = email.trim().toLowerCase();
+  return normalized.endsWith(`@${placeholderEmailDomain}`);
+}
+
+export function getProfessionalContactEmail(
+  professional: Pick<ProfessionalRecord, "email" | "accountStatus">
+) {
+  const normalizedEmail = professional.email.trim();
+
+  if (
+    normalizeProfessionalAccountStatus(professional.accountStatus) === "placeholder" &&
+    isPlaceholderProfessionalEmail(normalizedEmail)
+  ) {
+    return "";
+  }
+
+  return normalizedEmail;
+}
+
+function normalizeMembershipScope(value: unknown): MembershipRecord["scope"] {
+  if (value === "owner" || value === "member" || value === "pending") {
+    return value;
+  }
+
+  return "member";
 }
 
 function normalizeAvatarUrl(value: unknown) {
@@ -307,6 +356,7 @@ function normalizeProfessionalRecord(professional: ProfessionalRecord): Professi
   return {
     ...professional,
     avatarUrl: normalizeAvatarUrl(professional.avatarUrl),
+    accountStatus: normalizeProfessionalAccountStatus(professional.accountStatus),
     currency: professional.currency || inferCurrencyFromCountry(professional.country),
     bookingCreditsTotal:
       typeof professional.bookingCreditsTotal === "number"
@@ -316,6 +366,62 @@ function normalizeProfessionalRecord(professional: ProfessionalRecord): Professi
       typeof professional.walletBalance === "number"
         ? Math.max(0, professional.walletBalance)
         : 0
+  };
+}
+
+function normalizeMembershipRecord(membership: MembershipRecord): MembershipRecord {
+  return {
+    ...membership,
+    role: membership.role?.trim() || "Specialist",
+    scope: normalizeMembershipScope(membership.scope),
+    workScheduleMode:
+      typeof membership.workScheduleMode === "undefined"
+        ? undefined
+        : normalizeWorkScheduleMode(membership.workScheduleMode),
+    workSchedule:
+      typeof membership.workSchedule === "undefined"
+        ? undefined
+        : normalizeWorkSchedule(membership.workSchedule),
+    customSchedule:
+      typeof membership.customSchedule === "undefined"
+        ? undefined
+        : normalizeCustomSchedule(membership.customSchedule)
+  };
+}
+
+export function resolveMembershipSchedule(
+  membership: MembershipRecord,
+  business: Pick<BusinessRecord, "workScheduleMode" | "workSchedule" | "customSchedule">
+) {
+  return {
+    workScheduleMode: normalizeWorkScheduleMode(membership.workScheduleMode ?? business.workScheduleMode),
+    workSchedule: normalizeWorkSchedule(membership.workSchedule ?? business.workSchedule),
+    customSchedule: normalizeCustomSchedule(membership.customSchedule ?? business.customSchedule)
+  };
+}
+
+function buildMembershipScheduleFromBusiness(
+  business: Pick<BusinessRecord, "workScheduleMode" | "workSchedule" | "customSchedule">
+) {
+  const resolved = resolveMembershipSchedule(
+    {
+      id: "",
+      businessId: "",
+      professionalId: "",
+      role: "",
+      scope: "member",
+      createdAt: "",
+      workScheduleMode: business.workScheduleMode,
+      workSchedule: business.workSchedule,
+      customSchedule: business.customSchedule
+    },
+    business
+  );
+
+  return {
+    workScheduleMode: resolved.workScheduleMode,
+    workSchedule: resolved.workSchedule,
+    customSchedule: resolved.customSchedule
   };
 }
 
@@ -398,6 +504,7 @@ function mapSupabaseProfessionalRow(row: {
   booking_credits_total?: number | null;
   wallet_balance?: number | null;
   owner_mode: string;
+  account_status?: string | null;
   created_at: string;
 }): ProfessionalRecord {
   return normalizeProfessionalRecord({
@@ -416,6 +523,7 @@ function mapSupabaseProfessionalRow(row: {
       typeof row.booking_credits_total === "number" ? row.booking_credits_total : undefined,
     walletBalance: typeof row.wallet_balance === "number" ? row.wallet_balance : undefined,
     ownerMode: row.owner_mode === "member" ? "member" : "owner",
+    accountStatus: normalizeProfessionalAccountStatus(row.account_status),
     createdAt: row.created_at
   });
 }
@@ -465,17 +573,26 @@ function mapSupabaseMembershipRow(row: {
   business_id: string;
   professional_id: string;
   role: string;
-  scope: "owner" | "member";
+  scope: "owner" | "member" | "pending";
+  work_schedule_mode?: WorkScheduleMode | null;
+  work_schedule?: unknown;
+  custom_schedule?: unknown;
   created_at: string;
 }): MembershipRecord {
-  return {
+  return normalizeMembershipRecord({
     id: row.id,
     businessId: row.business_id,
     professionalId: row.professional_id,
     role: row.role,
-    scope: row.scope,
+    scope: normalizeMembershipScope(row.scope),
+    workScheduleMode: row.work_schedule_mode ?? undefined,
+    workSchedule: typeof row.work_schedule === "undefined" ? undefined : normalizeWorkSchedule(row.work_schedule),
+    customSchedule:
+      typeof row.custom_schedule === "undefined"
+        ? undefined
+        : normalizeCustomSchedule(row.custom_schedule),
     createdAt: row.created_at
-  };
+  });
 }
 
 function normalizeJoinRequestStatus(value: unknown): "pending" | "approved" | "rejected" {
@@ -742,6 +859,7 @@ async function ensureDemoBusinessesInLocalStore() {
     return nextProfessional;
   });
 
+  store.memberships = store.memberships.map((membership) => normalizeMembershipRecord(membership));
   store.services = store.services.map((service) => normalizeServiceRecord(service));
 
   if (changed) {
@@ -819,7 +937,7 @@ export async function getBusinessDirectorySnapshot(): Promise<BusinessDirectoryS
       }))
       .filter((business) => !isDemoBusinessRecord(business)),
     professionals: store.professionals.map(normalizeProfessionalRecord),
-    memberships: [...store.memberships],
+    memberships: store.memberships.map(normalizeMembershipRecord),
     services: store.services.map((service) => normalizeServiceRecord(service)),
     joinRequests: (store.joinRequests ?? []).map((request) => ({
       ...request,
@@ -840,11 +958,6 @@ export async function createProfessionalSetup(input: {
   invitationToken?: string;
 }) {
   const normalizedEmail = input.account.email.trim().toLowerCase();
-  const existingProfessionalId = await getProfessionalIdByEmail(normalizedEmail);
-  if (existingProfessionalId) {
-    throw new Error("Пользователь с таким email уже существует.");
-  }
-
   const invitationPreview = input.invitationToken
     ? await getStaffInvitationPreviewByToken(input.invitationToken)
     : null;
@@ -861,6 +974,16 @@ export async function createProfessionalSetup(input: {
     throw new Error("Приглашение можно принять только как сотрудник команды.");
   }
 
+  const existingProfessional = await getProfessionalProfileByEmail(normalizedEmail);
+  const placeholderActivation =
+    Boolean(invitationPreview) &&
+    Boolean(existingProfessional) &&
+    normalizeProfessionalAccountStatus(existingProfessional?.accountStatus) === "placeholder";
+
+  if (existingProfessional && !placeholderActivation) {
+    throw new Error("Пользователь с таким email уже существует.");
+  }
+
   const createdAt = new Date().toISOString();
   const initialWorkSchedule =
     input.setup.ownerMode === "owner" && !input.setup.workSchedule
@@ -875,9 +998,8 @@ export async function createProfessionalSetup(input: {
       throw new Error("Supabase is not available.");
     }
 
-    const professionalId = makeId("pro");
-    const { error: professionalError } = await supabase.from("professionals").insert({
-      id: professionalId,
+    const professionalId = placeholderActivation && existingProfessional ? existingProfessional.id : makeId("pro");
+    const professionalPayload = {
       first_name: input.account.firstName,
       last_name: input.account.lastName,
       email: normalizedEmail,
@@ -888,16 +1010,38 @@ export async function createProfessionalSetup(input: {
       timezone: input.account.timezone,
       language: input.account.language,
       currency: input.account.currency || inferCurrencyFromCountry(input.account.country),
-      booking_credits_total: DEFAULT_BOOKING_CREDITS,
+      booking_credits_total:
+        existingProfessional?.bookingCreditsTotal ?? DEFAULT_BOOKING_CREDITS,
       owner_mode: input.setup.ownerMode,
-      created_at: createdAt
-    });
+      account_status: "active",
+      created_at: existingProfessional?.createdAt ?? createdAt
+    };
 
-    if (professionalError) {
-      throw new Error(professionalError.message);
+    if (placeholderActivation && existingProfessional) {
+      const { error: professionalError } = await supabase
+        .from("professionals")
+        .update(professionalPayload)
+        .eq("id", professionalId);
+
+      if (professionalError) {
+        throw new Error(professionalError.message);
+      }
+    } else {
+      const { error: professionalError } = await supabase.from("professionals").insert({
+        id: professionalId,
+        ...professionalPayload
+      });
+
+      if (professionalError) {
+        throw new Error(professionalError.message);
+      }
     }
 
     let businessId: string;
+
+    let targetBusiness:
+      | Pick<BusinessRecord, "id" | "workScheduleMode" | "workSchedule" | "customSchedule">
+      | null = null;
 
     if (input.setup.ownerMode === "owner") {
       businessId = makeId("biz");
@@ -924,6 +1068,13 @@ export async function createProfessionalSetup(input: {
       if (businessError) {
         throw new Error(businessError.message);
       }
+
+      targetBusiness = {
+        id: businessId,
+        workScheduleMode: initialWorkScheduleMode,
+        workSchedule: initialWorkSchedule,
+        customSchedule: initialCustomSchedule
+      };
 
       if (input.setup.services.length > 0) {
         const servicesPayload = input.setup.services.map((service, index) => ({
@@ -965,7 +1116,7 @@ export async function createProfessionalSetup(input: {
 
       const { data: business, error: businessError } = await supabase
         .from("businesses")
-        .select("id, name")
+        .select("id, name, work_schedule_mode, work_schedule, custom_schedule")
         .eq("id", targetBusinessId)
         .maybeSingle();
 
@@ -978,7 +1129,21 @@ export async function createProfessionalSetup(input: {
       }
 
       businessId = business.id;
+      targetBusiness = {
+        id: business.id,
+        workScheduleMode: normalizeWorkScheduleMode((business as { work_schedule_mode?: WorkScheduleMode | null }).work_schedule_mode),
+        workSchedule: normalizeWorkSchedule((business as { work_schedule?: unknown }).work_schedule),
+        customSchedule: normalizeCustomSchedule((business as { custom_schedule?: unknown }).custom_schedule)
+      };
     }
+
+    const memberSchedule = targetBusiness
+      ? buildMembershipScheduleFromBusiness(targetBusiness)
+      : {
+          workScheduleMode: initialWorkScheduleMode,
+          workSchedule: initialWorkSchedule,
+          customSchedule: initialCustomSchedule
+        };
 
     if (input.setup.ownerMode === "owner") {
       const membershipId = makeId("membership");
@@ -988,6 +1153,9 @@ export async function createProfessionalSetup(input: {
         professional_id: professionalId,
         role: "owner",
         scope: input.setup.ownerMode,
+        work_schedule_mode: memberSchedule.workScheduleMode,
+        work_schedule: memberSchedule.workSchedule,
+        custom_schedule: memberSchedule.customSchedule,
         created_at: createdAt
       });
 
@@ -995,18 +1163,59 @@ export async function createProfessionalSetup(input: {
         throw new Error(membershipError.message);
       }
     } else if (invitationPreview) {
-      const membershipId = makeId("membership");
-      const { error: membershipError } = await supabase.from("business_memberships").insert({
-        id: membershipId,
-        business_id: businessId,
-        professional_id: professionalId,
-        role: invitationPreview.role,
-        scope: "member",
-        created_at: createdAt
-      });
+      const { data: existingMemberships, error: membershipLookupError } = await supabase
+        .from("business_memberships")
+        .select("id, scope")
+        .eq("business_id", businessId)
+        .eq("professional_id", professionalId);
 
-      if (membershipError) {
-        throw new Error(membershipError.message);
+      if (membershipLookupError) {
+        throw new Error(membershipLookupError.message);
+      }
+
+      const pendingMembership = (existingMemberships ?? []).find((item) => item.scope === "pending");
+      const activeMembership = (existingMemberships ?? []).find((item) => item.scope !== "pending");
+
+      if (pendingMembership) {
+        const { error: membershipError } = await supabase
+          .from("business_memberships")
+          .update({
+            role: invitationPreview.role,
+            scope: "member"
+          })
+          .eq("id", pendingMembership.id);
+
+        if (membershipError) {
+          throw new Error(membershipError.message);
+        }
+      } else if (activeMembership) {
+        const { error: membershipError } = await supabase
+          .from("business_memberships")
+          .update({
+            role: invitationPreview.role
+          })
+          .eq("id", activeMembership.id);
+
+        if (membershipError) {
+          throw new Error(membershipError.message);
+        }
+      } else {
+        const membershipId = makeId("membership");
+        const { error: membershipError } = await supabase.from("business_memberships").insert({
+          id: membershipId,
+          business_id: businessId,
+          professional_id: professionalId,
+          role: invitationPreview.role,
+          scope: "member",
+          work_schedule_mode: memberSchedule.workScheduleMode,
+          work_schedule: memberSchedule.workSchedule,
+          custom_schedule: memberSchedule.customSchedule,
+          created_at: createdAt
+        });
+
+        if (membershipError) {
+          throw new Error(membershipError.message);
+        }
       }
 
       const { error: invitationError } = await supabase
@@ -1044,6 +1253,9 @@ export async function createProfessionalSetup(input: {
           professional_id: professionalId,
           role: input.setup.joinBusinessRole || "Specialist",
           scope: "pending",
+          work_schedule_mode: memberSchedule.workScheduleMode,
+          work_schedule: memberSchedule.workSchedule,
+          custom_schedule: memberSchedule.customSchedule,
           created_at: createdAt
         });
 
@@ -1060,9 +1272,9 @@ export async function createProfessionalSetup(input: {
   }
 
   const store = await ensureDemoBusinessesInLocalStore();
-  const professionalId = makeId("pro");
+  const professionalId = placeholderActivation && existingProfessional ? existingProfessional.id : makeId("pro");
 
-  const professional: ProfessionalRecord = {
+  const professional: ProfessionalRecord = normalizeProfessionalRecord({
     id: professionalId,
     firstName: input.account.firstName,
     lastName: input.account.lastName,
@@ -1074,14 +1286,28 @@ export async function createProfessionalSetup(input: {
     timezone: input.account.timezone,
     language: input.account.language,
     currency: input.account.currency || inferCurrencyFromCountry(input.account.country),
-    bookingCreditsTotal: DEFAULT_BOOKING_CREDITS,
+    bookingCreditsTotal: existingProfessional?.bookingCreditsTotal ?? DEFAULT_BOOKING_CREDITS,
     ownerMode: input.setup.ownerMode,
-    createdAt
-  };
+    accountStatus: "active",
+    createdAt: existingProfessional?.createdAt ?? createdAt
+  });
 
-  store.professionals.push(professional);
+  if (placeholderActivation && existingProfessional) {
+    const existingIndex = store.professionals.findIndex((item) => item.id === professionalId);
+    if (existingIndex >= 0) {
+      store.professionals[existingIndex] = professional;
+    } else {
+      store.professionals.push(professional);
+    }
+  } else {
+    store.professionals.push(professional);
+  }
 
   let businessId: string;
+
+  let targetBusiness:
+    | Pick<BusinessRecord, "id" | "workScheduleMode" | "workSchedule" | "customSchedule">
+    | null = null;
 
   if (input.setup.ownerMode === "owner") {
     const business: BusinessRecord = {
@@ -1106,6 +1332,12 @@ export async function createProfessionalSetup(input: {
 
     store.businesses.push(business);
     businessId = business.id;
+    targetBusiness = {
+      id: business.id,
+      workScheduleMode: business.workScheduleMode,
+      workSchedule: business.workSchedule,
+      customSchedule: business.customSchedule
+    };
 
     store.services.push(
       ...input.setup.services.map((service) => ({
@@ -1133,26 +1365,59 @@ export async function createProfessionalSetup(input: {
     }
 
     businessId = business.id;
+    targetBusiness = {
+      id: business.id,
+      workScheduleMode: business.workScheduleMode,
+      workSchedule: business.workSchedule,
+      customSchedule: business.customSchedule
+    };
   }
 
+  const memberSchedule = targetBusiness
+    ? buildMembershipScheduleFromBusiness(targetBusiness)
+    : {
+        workScheduleMode: initialWorkScheduleMode,
+        workSchedule: initialWorkSchedule,
+        customSchedule: initialCustomSchedule
+      };
+
   if (input.setup.ownerMode === "owner") {
-    store.memberships.push({
+    store.memberships.push(
+      normalizeMembershipRecord({
       id: makeId("membership"),
       businessId,
       professionalId,
       role: "owner",
       scope: input.setup.ownerMode,
+      workScheduleMode: memberSchedule.workScheduleMode,
+      workSchedule: memberSchedule.workSchedule,
+      customSchedule: memberSchedule.customSchedule,
       createdAt
-    });
+      })
+    );
   } else if (invitationPreview) {
-    store.memberships.push({
-      id: makeId("membership"),
-      businessId,
-      professionalId,
-      role: invitationPreview.role,
-      scope: "member",
-      createdAt
-    });
+    const existingMembership = store.memberships.find(
+      (item) => item.businessId === businessId && item.professionalId === professionalId
+    );
+
+    if (existingMembership) {
+      existingMembership.role = invitationPreview.role;
+      existingMembership.scope = "member";
+    } else {
+      store.memberships.push(
+        normalizeMembershipRecord({
+          id: makeId("membership"),
+          businessId,
+          professionalId,
+          role: invitationPreview.role,
+          scope: "member",
+          workScheduleMode: memberSchedule.workScheduleMode,
+          workSchedule: memberSchedule.workSchedule,
+          customSchedule: memberSchedule.customSchedule,
+          createdAt
+        })
+      );
+    }
 
     const invitation = (store.staffInvitations ?? []).find((item) => item.id === invitationPreview.id);
     if (invitation) {
@@ -1214,6 +1479,7 @@ export async function getWorkspaceSnapshot(
     professional,
     business,
     membership,
+    memberSchedule: resolveMembershipSchedule(membership, business),
     services
   };
 }
@@ -1286,6 +1552,387 @@ export async function getProfessionalProfileById(professionalId: string) {
   return directory.professionals.find((item) => item.id === professionalId) || null;
 }
 
+export async function getProfessionalProfileByEmail(email: string) {
+  const normalizedEmail = email.trim().toLowerCase();
+  if (!normalizedEmail) {
+    return null;
+  }
+
+  const directory = await getBusinessDirectorySnapshot();
+  return directory.professionals.find((item) => item.email.trim().toLowerCase() === normalizedEmail) || null;
+}
+
+export async function createManualStaffMember(input: {
+  ownerProfessionalId: string;
+  firstName: string;
+  lastName?: string;
+  role?: string;
+  email?: string;
+  phone?: string;
+  sendInvitation?: boolean;
+  request?: Request;
+}) {
+  const workspace = await getWorkspaceSnapshot(input.ownerProfessionalId);
+
+  if (!workspace || workspace.membership.scope !== "owner") {
+    throw new Error("Only business owners can add employees.");
+  }
+
+  const firstName = input.firstName.trim();
+  const lastName = input.lastName?.trim() || "";
+  const role = input.role?.trim() || "Specialist";
+  const normalizedEmail = input.email?.trim().toLowerCase() || "";
+  const phone = input.phone?.trim() || "";
+
+  if (!firstName) {
+    throw new Error("Имя сотрудника обязательно.");
+  }
+
+  const directory = await getBusinessDirectorySnapshot();
+  const memberSchedule = buildMembershipScheduleFromBusiness(workspace.business);
+  const existingProfessional = normalizedEmail
+    ? directory.professionals.find((item) => item.email.trim().toLowerCase() === normalizedEmail) || null
+    : null;
+  const existingMembership = existingProfessional
+    ? directory.memberships.find(
+        (item) =>
+          item.professionalId === existingProfessional.id &&
+          item.businessId === workspace.business.id &&
+          item.scope !== "pending"
+      ) || null
+    : null;
+  const existingMembershipOutsideBusiness = existingProfessional
+    ? directory.memberships.find(
+        (item) =>
+          item.professionalId === existingProfessional.id &&
+          item.businessId !== workspace.business.id &&
+          item.scope !== "pending"
+      ) || null
+    : null;
+
+  if (
+    existingProfessional &&
+    normalizeProfessionalAccountStatus(existingProfessional.accountStatus) === "active" &&
+    existingMembership
+  ) {
+    throw new Error("Этот сотрудник уже есть в вашей команде.");
+  }
+
+  if (existingMembershipOutsideBusiness) {
+    throw new Error("Этот email уже привязан к другому бизнес-аккаунту.");
+  }
+
+  const createdAt = new Date().toISOString();
+  const professionalId = existingProfessional?.id || makeId("pro");
+  const professionalEmail = normalizedEmail || buildPlaceholderProfessionalEmail(professionalId);
+  const accountStatus: ProfessionalAccountStatus = normalizedEmail ? "placeholder" : "placeholder";
+
+  if (isSupabaseConfigured()) {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      throw new Error("Supabase is not available.");
+    }
+
+    if (existingProfessional) {
+      const { error } = await supabase
+        .from("professionals")
+        .update({
+          first_name: firstName,
+          last_name: lastName,
+          email: professionalEmail,
+          phone,
+          owner_mode: "member",
+          account_status: accountStatus
+        })
+        .eq("id", professionalId);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+    } else {
+      const { error } = await supabase.from("professionals").insert({
+        id: professionalId,
+        first_name: firstName,
+        last_name: lastName,
+        email: professionalEmail,
+        password_hash: hashPassword(`placeholder-${crypto.randomUUID()}`),
+        avatar_url: "",
+        phone,
+        country: workspace.professional.country,
+        timezone: workspace.professional.timezone,
+        language: workspace.professional.language,
+        currency: workspace.professional.currency || inferCurrencyFromCountry(workspace.professional.country),
+        booking_credits_total: DEFAULT_BOOKING_CREDITS,
+        wallet_balance: 0,
+        owner_mode: "member",
+        account_status: accountStatus,
+        created_at: createdAt
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+    }
+
+    if (existingMembership) {
+      const { error } = await supabase
+        .from("business_memberships")
+        .update({
+          role,
+          work_schedule_mode: memberSchedule.workScheduleMode,
+          work_schedule: memberSchedule.workSchedule,
+          custom_schedule: memberSchedule.customSchedule
+        })
+        .eq("id", existingMembership.id);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+    } else {
+      const { error } = await supabase.from("business_memberships").insert({
+        id: makeId("membership"),
+        business_id: workspace.business.id,
+        professional_id: professionalId,
+        role,
+        scope: "member",
+        work_schedule_mode: memberSchedule.workScheduleMode,
+        work_schedule: memberSchedule.workSchedule,
+        custom_schedule: memberSchedule.customSchedule,
+        created_at: createdAt
+      });
+
+      if (error && !/duplicate/i.test(error.message)) {
+        throw new Error(error.message);
+      }
+    }
+  } else {
+    const store = await ensureDemoBusinessesInLocalStore();
+    const storeProfessional = store.professionals.find((item) => item.id === professionalId);
+
+    if (storeProfessional) {
+      storeProfessional.firstName = firstName;
+      storeProfessional.lastName = lastName;
+      storeProfessional.email = professionalEmail;
+      storeProfessional.phone = phone;
+      storeProfessional.ownerMode = "member";
+      storeProfessional.accountStatus = accountStatus;
+    } else {
+      store.professionals.push(
+        normalizeProfessionalRecord({
+          id: professionalId,
+          firstName,
+          lastName,
+          email: professionalEmail,
+          passwordHash: hashPassword(`placeholder-${crypto.randomUUID()}`),
+          avatarUrl: "",
+          phone,
+          country: workspace.professional.country,
+          timezone: workspace.professional.timezone,
+          language: workspace.professional.language,
+          currency: workspace.professional.currency || inferCurrencyFromCountry(workspace.professional.country),
+          bookingCreditsTotal: DEFAULT_BOOKING_CREDITS,
+          walletBalance: 0,
+          ownerMode: "member",
+          accountStatus,
+          createdAt
+        })
+      );
+    }
+
+    const storeMembership = store.memberships.find(
+      (item) =>
+        item.professionalId === professionalId &&
+        item.businessId === workspace.business.id &&
+        item.scope !== "pending"
+    );
+
+    if (storeMembership) {
+      storeMembership.role = role;
+      storeMembership.workScheduleMode = memberSchedule.workScheduleMode;
+      storeMembership.workSchedule = memberSchedule.workSchedule;
+      storeMembership.customSchedule = memberSchedule.customSchedule;
+    } else {
+      store.memberships.push(
+        normalizeMembershipRecord({
+          id: makeId("membership"),
+          businessId: workspace.business.id,
+          professionalId,
+          role,
+          scope: "member",
+          workScheduleMode: memberSchedule.workScheduleMode,
+          workSchedule: memberSchedule.workSchedule,
+          customSchedule: memberSchedule.customSchedule,
+          createdAt
+        })
+      );
+    }
+
+    await writeStore(store);
+  }
+
+  let invitation: Awaited<ReturnType<typeof createStaffInvitation>> | null = null;
+
+  if (input.sendInvitation) {
+    if (!normalizedEmail) {
+      throw new Error("Чтобы отправить приглашение, укажите email сотрудника.");
+    }
+
+    invitation = await createStaffInvitation({
+      ownerProfessionalId: input.ownerProfessionalId,
+      memberProfessionalId: professionalId,
+      email: normalizedEmail,
+      role,
+      request: input.request
+    });
+  }
+
+  return {
+    professionalId,
+    invitation
+  };
+}
+
+export async function updateStaffMemberByOwner(input: {
+  ownerProfessionalId: string;
+  memberProfessionalId: string;
+  firstName: string;
+  lastName?: string;
+  role?: string;
+  email?: string;
+  phone?: string;
+}) {
+  const workspace = await getWorkspaceSnapshot(input.ownerProfessionalId);
+
+  if (!workspace || workspace.membership.scope !== "owner") {
+    throw new Error("Only business owners can update employees.");
+  }
+
+  const directory = await getBusinessDirectorySnapshot();
+  const membership = directory.memberships.find(
+    (item) =>
+      item.professionalId === input.memberProfessionalId &&
+      item.businessId === workspace.business.id &&
+      item.scope !== "pending"
+  );
+
+  if (!membership) {
+    throw new Error("Employee not found.");
+  }
+
+  const professional = directory.professionals.find((item) => item.id === input.memberProfessionalId);
+  if (!professional) {
+    throw new Error("Professional not found.");
+  }
+
+  const firstName = input.firstName.trim();
+  const lastName = input.lastName?.trim() || "";
+  const role = input.role?.trim() || membership.role;
+  const phone = input.phone?.trim() || "";
+  const normalizedEmail = input.email?.trim().toLowerCase() || "";
+
+  if (!firstName) {
+    throw new Error("Имя сотрудника обязательно.");
+  }
+
+  const conflictingProfessional =
+    normalizedEmail
+      ? directory.professionals.find(
+          (item) =>
+            item.id !== professional.id && item.email.trim().toLowerCase() === normalizedEmail
+        ) || null
+      : null;
+
+  if (conflictingProfessional) {
+    const conflictMembership =
+      directory.memberships.find(
+        (item) => item.professionalId === conflictingProfessional.id && item.scope !== "pending"
+      ) || null;
+
+    if (!conflictMembership || conflictMembership.businessId !== workspace.business.id) {
+      throw new Error("Этот email уже используется другим аккаунтом.");
+    }
+  }
+
+  const nextEmail =
+    normalizedEmail ||
+    (normalizeProfessionalAccountStatus(professional.accountStatus) === "placeholder"
+      ? buildPlaceholderProfessionalEmail(professional.id)
+      : professional.email);
+
+  if (isSupabaseConfigured()) {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      throw new Error("Supabase is not available.");
+    }
+
+    const { error: professionalError } = await supabase
+      .from("professionals")
+      .update({
+        first_name: firstName,
+        last_name: lastName,
+        email: nextEmail,
+        phone,
+        account_status:
+          normalizeProfessionalAccountStatus(professional.accountStatus) === "active" ? "active" : "placeholder"
+      })
+      .eq("id", professional.id);
+
+    if (professionalError) {
+      throw new Error(professionalError.message);
+    }
+
+    const { error: membershipError } = await supabase
+      .from("business_memberships")
+      .update({ role })
+      .eq("id", membership.id);
+
+    if (membershipError) {
+      throw new Error(membershipError.message);
+    }
+
+    if (normalizedEmail) {
+      const { error: invitationError } = await supabase
+        .from("business_staff_invitations")
+        .update({ email: normalizedEmail, role })
+        .eq("business_id", workspace.business.id)
+        .eq("status", "pending")
+        .eq("email", professional.email);
+
+      if (invitationError && !isMissingStaffInvitationsTableError(invitationError.message)) {
+        throw new Error(invitationError.message);
+      }
+    }
+  } else {
+    const store = await ensureDemoBusinessesInLocalStore();
+    const storeProfessional = store.professionals.find((item) => item.id === professional.id);
+    const storeMembership = store.memberships.find((item) => item.id === membership.id);
+
+    if (!storeProfessional || !storeMembership) {
+      throw new Error("Employee not found.");
+    }
+
+    storeProfessional.firstName = firstName;
+    storeProfessional.lastName = lastName;
+    storeProfessional.email = nextEmail;
+    storeProfessional.phone = phone;
+    storeMembership.role = role;
+    for (const invitation of store.staffInvitations ?? []) {
+      if (
+        invitation.businessId === workspace.business.id &&
+        invitation.status === "pending" &&
+        invitation.email === professional.email.trim().toLowerCase()
+      ) {
+        invitation.email = normalizedEmail || invitation.email;
+        invitation.role = role;
+      }
+    }
+
+    await writeStore(store);
+  }
+
+  return { ok: true };
+}
+
 export async function getStaffInvitationPreviewByToken(token: string) {
   const normalizedToken = token.trim();
   if (!normalizedToken) {
@@ -1308,7 +1955,9 @@ export async function getStaffInvitationPreviewByToken(token: string) {
     ? directory.professionals.find((item) => item.id === invitation.acceptedProfessionalId) || null
     : null;
   const hasExistingAccount = directory.professionals.some(
-    (item) => item.email.trim().toLowerCase() === invitation.email
+    (item) =>
+      item.email.trim().toLowerCase() === invitation.email &&
+      normalizeProfessionalAccountStatus(item.accountStatus) === "active"
   );
 
   return {
@@ -1328,6 +1977,7 @@ export async function createStaffInvitation(input: {
   ownerProfessionalId: string;
   email: string;
   role?: string;
+  memberProfessionalId?: string;
   request?: Request;
 }) {
   const workspace = await getWorkspaceSnapshot(input.ownerProfessionalId);
@@ -1348,20 +1998,77 @@ export async function createStaffInvitation(input: {
   const role = input.role?.trim() || "Specialist";
   const directory = await getBusinessDirectorySnapshot();
   const business = directory.businesses.find((item) => item.id === workspace.business.id) || workspace.business;
-  const invitedProfessional =
+  const explicitMembership = input.memberProfessionalId
+    ? directory.memberships.find(
+        (item) =>
+          item.professionalId === input.memberProfessionalId &&
+          item.businessId === workspace.business.id &&
+          item.scope !== "pending"
+      ) || null
+    : null;
+  const explicitProfessional = explicitMembership
+    ? directory.professionals.find((item) => item.id === explicitMembership.professionalId) || null
+    : null;
+  const emailProfessional =
     directory.professionals.find((item) => item.email.trim().toLowerCase() === normalizedEmail) || null;
-  const activeMembership = invitedProfessional
+  const invitedProfessional = explicitProfessional || emailProfessional;
+  const invitedMembership = invitedProfessional
     ? directory.memberships.find(
         (item) => item.professionalId === invitedProfessional.id && item.scope !== "pending"
       ) || null
     : null;
+  const invitedStatus = invitedProfessional
+    ? normalizeProfessionalAccountStatus(invitedProfessional.accountStatus)
+    : null;
 
-  if (activeMembership?.businessId === workspace.business.id) {
+  if (
+    invitedProfessional &&
+    invitedMembership?.businessId === workspace.business.id &&
+    invitedStatus === "active"
+  ) {
     throw new Error("Этот сотрудник уже подключен к вашему бизнесу.");
   }
 
-  if (activeMembership && activeMembership.businessId !== workspace.business.id) {
+  if (invitedMembership && invitedMembership.businessId !== workspace.business.id) {
     throw new Error("Этот email уже привязан к другому бизнес-аккаунту.");
+  }
+
+  if (
+    explicitProfessional &&
+    invitedStatus === "placeholder" &&
+    explicitProfessional.email.trim().toLowerCase() !== normalizedEmail
+  ) {
+    if (
+      emailProfessional &&
+      emailProfessional.id !== explicitProfessional.id
+    ) {
+      throw new Error("Этот email уже используется другим сотрудником.");
+    }
+
+    if (isSupabaseConfigured()) {
+      const supabase = getSupabaseAdmin();
+      if (!supabase) {
+        throw new Error("Supabase is not available.");
+      }
+
+      const { error } = await supabase
+        .from("professionals")
+        .update({ email: normalizedEmail })
+        .eq("id", explicitProfessional.id);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+    } else {
+      const store = await ensureDemoBusinessesInLocalStore();
+      const professional = store.professionals.find((item) => item.id === explicitProfessional.id);
+      if (!professional) {
+        throw new Error("Professional not found.");
+      }
+
+      professional.email = normalizedEmail;
+      await writeStore(store);
+    }
   }
 
   const timestamp = new Date().toISOString();
@@ -1478,7 +2185,7 @@ export async function createStaffInvitation(input: {
   const safeFootnote = escapeHtml(copy.footnote);
 
   const html = `
-    <div style="font-family:Inter,Arial,sans-serif;background:#f7f4ee;padding:32px 16px;color:#171411">
+    <div style="font-family:Inter,Arial,sans-serif;background:#f5f7ff;padding:32px 16px;color:#171411">
       <div style="max-width:560px;margin:0 auto;background:#ffffff;border:1px solid rgba(23,20,17,.08);border-radius:24px;padding:32px">
         <div style="font-size:28px;font-weight:800;letter-spacing:-0.03em;margin-bottom:12px">Timviz</div>
         <div style="font-size:24px;font-weight:800;letter-spacing:-0.03em;margin-bottom:12px">${safeHeadline}</div>
@@ -1591,6 +2298,7 @@ export async function acceptStaffInvitation(input: {
   }
 
   const directory = await getBusinessDirectorySnapshot();
+  const targetBusiness = directory.businesses.find((item) => item.id === invitationPreview.business.id) || null;
   const activeMembership =
     directory.memberships.find(
       (item) => item.professionalId === input.professionalId && item.scope !== "pending"
@@ -1608,6 +2316,14 @@ export async function acceptStaffInvitation(input: {
     throw new Error("Этот аккаунт уже привязан к другому бизнесу.");
   }
 
+  const memberSchedule = targetBusiness
+    ? buildMembershipScheduleFromBusiness(targetBusiness)
+    : {
+        workScheduleMode: "fixed" as const,
+        workSchedule: createEmptyWorkSchedule(),
+        customSchedule: createEmptyCustomSchedule()
+      };
+
   if (isSupabaseConfigured()) {
     const supabase = getSupabaseAdmin();
     if (!supabase) {
@@ -1619,9 +2335,23 @@ export async function acceptStaffInvitation(input: {
         .from("business_memberships")
         .update({
           scope: "member",
-          role: invitationPreview.role
+          role: invitationPreview.role,
+          work_schedule_mode: memberSchedule.workScheduleMode,
+          work_schedule: memberSchedule.workSchedule,
+          custom_schedule: memberSchedule.customSchedule
         })
         .eq("id", pendingMembership.id);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+    } else if (activeMembership) {
+      const { error } = await supabase
+        .from("business_memberships")
+        .update({
+          role: invitationPreview.role
+        })
+        .eq("id", activeMembership.id);
 
       if (error) {
         throw new Error(error.message);
@@ -1633,6 +2363,9 @@ export async function acceptStaffInvitation(input: {
         professional_id: input.professionalId,
         role: invitationPreview.role,
         scope: "member",
+        work_schedule_mode: memberSchedule.workScheduleMode,
+        work_schedule: memberSchedule.workSchedule,
+        custom_schedule: memberSchedule.customSchedule,
         created_at: resolvedAt
       });
 
@@ -1689,15 +2422,25 @@ export async function acceptStaffInvitation(input: {
   if (storePendingMembership) {
     storePendingMembership.scope = "member";
     storePendingMembership.role = invitationPreview.role;
+    storePendingMembership.workScheduleMode = memberSchedule.workScheduleMode;
+    storePendingMembership.workSchedule = memberSchedule.workSchedule;
+    storePendingMembership.customSchedule = memberSchedule.customSchedule;
+  } else if (storeActiveMembership) {
+    storeActiveMembership.role = invitationPreview.role;
   } else if (!storeActiveMembership) {
-    store.memberships.push({
+    store.memberships.push(
+      normalizeMembershipRecord({
       id: makeId("membership"),
       businessId: invitationPreview.business.id,
       professionalId: input.professionalId,
       role: invitationPreview.role,
       scope: "member",
+      workScheduleMode: memberSchedule.workScheduleMode,
+      workSchedule: memberSchedule.workSchedule,
+      customSchedule: memberSchedule.customSchedule,
       createdAt: resolvedAt
-    });
+      })
+    );
   }
 
   for (const request of store.joinRequests ?? []) {
@@ -1859,6 +2602,7 @@ export async function resolveJoinRequestForOwner(input: {
   }
 
   const resolvedAt = new Date().toISOString();
+  const memberSchedule = buildMembershipScheduleFromBusiness(workspace.business);
 
   if (isSupabaseConfigured()) {
     const supabase = getSupabaseAdmin();
@@ -1899,7 +2643,12 @@ export async function resolveJoinRequestForOwner(input: {
       if (input.action === "approve") {
         const { error: membershipUpdateError } = await supabase
           .from("business_memberships")
-          .update({ scope: "member" })
+          .update({
+            scope: "member",
+            work_schedule_mode: memberSchedule.workScheduleMode,
+            work_schedule: memberSchedule.workSchedule,
+            custom_schedule: memberSchedule.customSchedule
+          })
           .eq("id", pendingMembership.id);
 
         if (membershipUpdateError) {
@@ -1926,6 +2675,9 @@ export async function resolveJoinRequestForOwner(input: {
         professional_id: request.professional_id,
         role: request.role,
         scope: "member",
+        work_schedule_mode: memberSchedule.workScheduleMode,
+        work_schedule: memberSchedule.workSchedule,
+        custom_schedule: memberSchedule.customSchedule,
         created_at: resolvedAt
       };
 
@@ -1960,18 +2712,29 @@ export async function resolveJoinRequestForOwner(input: {
   }
 
   if (input.action === "approve") {
-    const membershipExists = store.memberships.some(
+    const existingMembership = store.memberships.find(
       (item) => item.businessId === request.businessId && item.professionalId === request.professionalId
     );
-    if (!membershipExists) {
-      store.memberships.push({
+    if (existingMembership) {
+      existingMembership.scope = "member";
+      existingMembership.role = request.role;
+      existingMembership.workScheduleMode = memberSchedule.workScheduleMode;
+      existingMembership.workSchedule = memberSchedule.workSchedule;
+      existingMembership.customSchedule = memberSchedule.customSchedule;
+    } else {
+      store.memberships.push(
+        normalizeMembershipRecord({
         id: makeId("membership"),
         businessId: request.businessId,
         professionalId: request.professionalId,
         role: request.role,
         scope: "member",
+        workScheduleMode: memberSchedule.workScheduleMode,
+        workSchedule: memberSchedule.workSchedule,
+        customSchedule: memberSchedule.customSchedule,
         createdAt: resolvedAt
-      });
+        })
+      );
     }
   }
 
@@ -1993,7 +2756,7 @@ export async function authenticateProfessional(email: string, password: string) 
     const { data, error } = await supabase
       .from("professionals")
       .select(
-        "id, first_name, last_name, email, password_hash, phone, country, timezone, language, owner_mode, created_at"
+        "id, first_name, last_name, email, password_hash, phone, country, timezone, language, owner_mode, account_status, created_at"
       )
       .ilike("email", normalizedEmail)
       .maybeSingle();
@@ -2006,6 +2769,10 @@ export async function authenticateProfessional(email: string, password: string) 
       return null;
     }
 
+    if (normalizeProfessionalAccountStatus(data.account_status) !== "active") {
+      return null;
+    }
+
     return verifyPassword(password, data.password_hash) ? data.id : null;
   }
 
@@ -2013,6 +2780,10 @@ export async function authenticateProfessional(email: string, password: string) 
   const professional = store.professionals.find((item) => item.email.trim().toLowerCase() === normalizedEmail);
 
   if (!professional) {
+    return null;
+  }
+
+  if (normalizeProfessionalAccountStatus(professional.accountStatus) !== "active") {
     return null;
   }
 
@@ -2052,7 +2823,8 @@ export async function getProfessionalIdByEmail(email: string) {
 }
 
 export async function professionalExistsByEmail(email: string) {
-  return Boolean(await getProfessionalIdByEmail(email));
+  const professional = await getProfessionalProfileByEmail(email);
+  return Boolean(professional && normalizeProfessionalAccountStatus(professional.accountStatus) === "active");
 }
 
 export async function getProfessionalPasswordResetProfile(email: string) {
@@ -2187,6 +2959,7 @@ export async function updateProfessionalAvatar(professionalId: string, avatarUrl
 
 export async function updateBusinessScheduleForProfessional(input: {
   professionalId: string;
+  targetProfessionalId?: string;
   workScheduleMode: WorkScheduleMode;
   workSchedule: WorkSchedule;
   customSchedule: CustomSchedule;
@@ -2194,6 +2967,7 @@ export async function updateBusinessScheduleForProfessional(input: {
   const nextMode = normalizeWorkScheduleMode(input.workScheduleMode);
   const nextSchedule = normalizeWorkSchedule(input.workSchedule);
   const nextCustomSchedule = normalizeCustomSchedule(input.customSchedule);
+  const targetProfessionalId = input.targetProfessionalId?.trim() || input.professionalId;
 
   if (isSupabaseConfigured()) {
     const supabase = getSupabaseAdmin();
@@ -2203,7 +2977,7 @@ export async function updateBusinessScheduleForProfessional(input: {
 
     const { data: membership, error: membershipError } = await supabase
       .from("business_memberships")
-      .select("business_id, scope")
+      .select("id, business_id, scope")
       .eq("professional_id", input.professionalId)
       .maybeSingle();
 
@@ -2215,37 +2989,73 @@ export async function updateBusinessScheduleForProfessional(input: {
       throw new Error("Business membership not found.");
     }
 
-    if (membership.scope !== "owner") {
-      throw new Error("Only business owner can edit the business schedule now.");
+    const { data: targetMembership, error: targetMembershipError } = await supabase
+      .from("business_memberships")
+      .select("id, business_id, scope")
+      .eq("professional_id", targetProfessionalId)
+      .eq("business_id", membership.business_id)
+      .maybeSingle();
+
+    if (targetMembershipError) {
+      throw new Error(targetMembershipError.message);
     }
 
-    const { error: updateError } = await supabase
-      .from("businesses")
+    if (!targetMembership?.id) {
+      throw new Error("Target employee membership not found.");
+    }
+
+    if (targetProfessionalId !== input.professionalId && membership.scope !== "owner") {
+      throw new Error("Only business owner can edit another employee schedule.");
+    }
+
+    const { error: membershipUpdateError } = await supabase
+      .from("business_memberships")
       .update({
         work_schedule_mode: nextMode,
         work_schedule: nextSchedule,
         custom_schedule: nextCustomSchedule
       })
-      .eq("id", membership.business_id);
+      .eq("id", targetMembership.id);
 
-    if (updateError) {
-      throw new Error(updateError.message);
+    if (membershipUpdateError) {
+      throw new Error(membershipUpdateError.message);
+    }
+
+    if (targetMembership.scope === "owner") {
+      const { error: businessUpdateError } = await supabase
+        .from("businesses")
+        .update({
+          work_schedule_mode: nextMode,
+          work_schedule: nextSchedule,
+          custom_schedule: nextCustomSchedule
+        })
+        .eq("id", membership.business_id);
+
+      if (businessUpdateError) {
+        throw new Error(businessUpdateError.message);
+      }
     }
 
     return { ok: true };
   }
 
   const store = await ensureDemoBusinessesInLocalStore();
-  const membership = store.memberships.find(
-    (item) => item.professionalId === input.professionalId
-  );
+  const membership = store.memberships.find((item) => item.professionalId === input.professionalId);
 
   if (!membership) {
     throw new Error("Business membership not found.");
   }
 
-  if (membership.scope !== "owner") {
-    throw new Error("Only business owner can edit the business schedule now.");
+  const targetMembership = store.memberships.find(
+    (item) => item.professionalId === targetProfessionalId && item.businessId === membership.businessId
+  );
+
+  if (!targetMembership) {
+    throw new Error("Target employee membership not found.");
+  }
+
+  if (targetProfessionalId !== input.professionalId && membership.scope !== "owner") {
+    throw new Error("Only business owner can edit another employee schedule.");
   }
 
   const business = store.businesses.find((item) => item.id === membership.businessId);
@@ -2254,9 +3064,15 @@ export async function updateBusinessScheduleForProfessional(input: {
     throw new Error("Business not found.");
   }
 
-  business.workScheduleMode = nextMode;
-  business.workSchedule = nextSchedule;
-  business.customSchedule = nextCustomSchedule;
+  targetMembership.workScheduleMode = nextMode;
+  targetMembership.workSchedule = nextSchedule;
+  targetMembership.customSchedule = nextCustomSchedule;
+
+  if (targetMembership.scope === "owner") {
+    business.workScheduleMode = nextMode;
+    business.workSchedule = nextSchedule;
+    business.customSchedule = nextCustomSchedule;
+  }
 
   await writeStore(store);
   return { ok: true };

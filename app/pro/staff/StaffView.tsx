@@ -1,12 +1,18 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import ProfileAvatar from "../../ProfileAvatar";
 import ProSidebar from "../ProSidebar";
 import styles from "../pro.module.css";
 import { useProLanguage } from "../useProLanguage";
-import type { BusinessStaffSnapshot, StaffMemberSource } from "../../../lib/pro-staff";
+import type {
+  BusinessStaffSnapshot,
+  PendingStaffInvitationSnapshot,
+  StaffMemberSnapshot,
+  StaffMemberWorkspaceAccess
+} from "../../../lib/pro-staff";
 
 type StaffViewProps = {
   professionalId: string;
@@ -15,193 +21,204 @@ type StaffViewProps = {
 
 const staffText = {
   ru: {
-    kicker: "Кабинет компании",
-    title: "Сотрудники",
-    subtitle:
-      "Команда бизнеса в одном разделе: активные сотрудники, заявки на присоединение, приглашения по email, записи и рабочие услуги каждого мастера.",
-    inviteTitle: "Пригласить сотрудника",
-    inviteText:
-      "Отправьте письмо на email мастера. После входа или регистрации на этот адрес приглашение подтвердится автоматически.",
-    inviteEmail: "Email сотрудника",
-    inviteRole: "Роль в компании",
-    inviteButton: "Отправить приглашение",
-    inviteSending: "Отправляем...",
-    searchPlaceholder: "Поиск по имени, email, телефону или роли",
-    summaryPeople: "Всего в команде",
-    summaryMembers: "Активные сотрудники",
-    summaryRequests: "Ожидают подтверждения",
-    summaryInvites: "Письма в ожидании",
-    summaryMonthBookings: "Записи за месяц",
-    summaryMonthRevenue: "Доход за месяц",
+    sectionTitle: "Команда",
+    people: "Участники команды",
+    schedule: "График смен",
+    pageTitle: "Участники команды",
+    pageText:
+      "Добавляйте сотрудников вручную, редактируйте их профиль и график, а доступ в кабинет выдавайте отдельным приглашением на email.",
+    add: "Добавить",
+    options: "Варианты",
+    search: "Поиск участников команды",
+    filterHint: "Вход в кабинет отправляется по приглашению. Без приглашения сотрудник остаётся в команде и участвует в графике.",
+    name: "Имя",
+    contacts: "Контактные данные",
+    access: "Роль разрешения",
+    stats: "Статистика",
+    actions: "Действия",
+    edit: "Изменить",
+    openSchedule: "Посмотреть график",
+    invite: "Отправить приглашение",
+    resendInvite: "Отправить повторно",
+    addEmail: "Добавить email",
+    revokeInvite: "Отозвать приглашение",
+    pendingInvites: "Приглашения",
     joinRequests: "Запросы на присоединение",
-    joinRequestsEmpty: "Новых запросов пока нет.",
+    noInvites: "Активных приглашений пока нет.",
+    noJoinRequests: "Новых запросов пока нет.",
     approve: "Подтвердить",
     reject: "Отклонить",
-    pendingInvites: "Приглашения по email",
-    pendingInvitesEmpty: "Активных приглашений пока нет.",
-    revokeInvite: "Отозвать",
-    roleLabel: "Роль",
-    sourceLabel: "Источник",
-    source: {
-      owner: "Владелец",
-      join_request: "Регистрация + заявка",
-      email_invitation: "Email-приглашение",
-      member: "Сотрудник"
-    } satisfies Record<StaffMemberSource, string>,
-    memberCount: "чел.",
-    bookings: "Записи",
-    completed: "Подтверждено",
-    upcoming: "Впереди",
-    revenue: "Доход",
-    services: "Услуги в работе",
-    noServices: "Пока нет личной истории услуг. Сотруднику видны общие услуги бизнеса.",
-    businessServicesVisible: "Услуг бизнеса видно в кабинете",
-    recentAppointments: "Последние записи",
-    noAppointments: "Пока нет записей по этому сотруднику.",
-    customerFallback: "Клиент",
-    statusSaved: "Изменения сохранены.",
-    statusFailed: "Не удалось выполнить действие.",
-    attendance: {
-      pending: "Ожидает",
-      confirmed: "Подтверждено",
-      arrived: "Пришел",
-      no_show: "Не пришел"
-    },
+    inviteSent: "Приглашение отправлено.",
+    saved: "Изменения сохранены.",
+    failed: "Не удалось выполнить действие.",
+    addTitle: "Добавить сотрудника",
+    addText:
+      "Сотрудника можно сразу добавить в команду и настроить ему график. Доступ в кабинет включается отдельным приглашением.",
+    fullName: "Имя и фамилия",
+    role: "Должность",
+    email: "Email",
+    phone: "Телефон",
+    sendInvite: "Сразу отправить приглашение в кабинет",
+    createStaff: "Добавить сотрудника",
+    cancel: "Закрыть",
+    placeholderEmail: "name@example.com",
+    placeholderPhone: "+380...",
+    noContact: "Данные не указаны",
     memberSince: "В команде с",
-    requestSince: "Запрос от",
-    inviteSince: "Приглашение от",
-    linkedAccount: "Аккаунт уже создан",
-    employeeList: "Активная команда"
+    bookings: "зап.",
+    revenue: "Доход",
+    accessState: {
+      owner: "Владелец рабочего пространства",
+      active: "Доступ в кабинет открыт",
+      invited: "Приглашение отправлено",
+      offline: "Нет доступа"
+    } satisfies Record<StaffMemberWorkspaceAccess, string>,
+    accessTone: {
+      owner: "owner",
+      active: "active",
+      invited: "invited",
+      offline: "offline"
+    } satisfies Record<StaffMemberWorkspaceAccess, string>,
+    roleFallback: "Сотрудник",
+    emptySearch: "По этому запросу никого не нашли.",
+    requestFrom: "Запрос от",
+    inviteFrom: "Приглашение от"
   },
   uk: {
-    kicker: "Кабінет компанії",
-    title: "Співробітники",
-    subtitle:
-      "Команда бізнесу в одному розділі: активні співробітники, запити на приєднання, запрошення через email, записи й робочі послуги кожного майстра.",
-    inviteTitle: "Запросити співробітника",
-    inviteText:
-      "Надішліть листа на email майстра. Після входу або реєстрації на цю адресу запрошення підтвердиться автоматично.",
-    inviteEmail: "Email співробітника",
-    inviteRole: "Роль у компанії",
-    inviteButton: "Надіслати запрошення",
-    inviteSending: "Надсилаємо...",
-    searchPlaceholder: "Пошук за ім'ям, email, телефоном або роллю",
-    summaryPeople: "Усього в команді",
-    summaryMembers: "Активні співробітники",
-    summaryRequests: "Очікують підтвердження",
-    summaryInvites: "Листи в очікуванні",
-    summaryMonthBookings: "Записи за місяць",
-    summaryMonthRevenue: "Дохід за місяць",
+    sectionTitle: "Команда",
+    people: "Учасники команди",
+    schedule: "Графік змін",
+    pageTitle: "Учасники команди",
+    pageText:
+      "Додавайте співробітників вручну, редагуйте їхній профіль і графік, а доступ до кабінету видавайте окремим запрошенням на email.",
+    add: "Додати",
+    options: "Варіанти",
+    search: "Пошук учасників команди",
+    filterHint: "Вхід до кабінету надсилається окремим запрошенням. Без нього співробітник лишається в команді та бере участь у графіку.",
+    name: "Ім'я",
+    contacts: "Контактні дані",
+    access: "Роль доступу",
+    stats: "Статистика",
+    actions: "Дії",
+    edit: "Змінити",
+    openSchedule: "Подивитися графік",
+    invite: "Надіслати запрошення",
+    resendInvite: "Надіслати повторно",
+    addEmail: "Додати email",
+    revokeInvite: "Відкликати запрошення",
+    pendingInvites: "Запрошення",
     joinRequests: "Запити на приєднання",
-    joinRequestsEmpty: "Нових запитів поки немає.",
+    noInvites: "Активних запрошень поки немає.",
+    noJoinRequests: "Нових запитів поки немає.",
     approve: "Підтвердити",
     reject: "Відхилити",
-    pendingInvites: "Запрошення через email",
-    pendingInvitesEmpty: "Активних запрошень поки немає.",
-    revokeInvite: "Відкликати",
-    roleLabel: "Роль",
-    sourceLabel: "Джерело",
-    source: {
-      owner: "Власник",
-      join_request: "Реєстрація + запит",
-      email_invitation: "Email-запрошення",
-      member: "Співробітник"
-    } satisfies Record<StaffMemberSource, string>,
-    memberCount: "ос.",
-    bookings: "Записи",
-    completed: "Підтверджено",
-    upcoming: "Попереду",
-    revenue: "Дохід",
-    services: "Послуги в роботі",
-    noServices: "Поки немає особистої історії послуг. Співробітнику видно спільні послуги бізнесу.",
-    businessServicesVisible: "Послуг бізнесу видно в кабінеті",
-    recentAppointments: "Останні записи",
-    noAppointments: "Поки немає записів по цьому співробітнику.",
-    customerFallback: "Клієнт",
-    statusSaved: "Зміни збережено.",
-    statusFailed: "Не вдалося виконати дію.",
-    attendance: {
-      pending: "Очікує",
-      confirmed: "Підтверджено",
-      arrived: "Прийшов",
-      no_show: "Не прийшов"
-    },
+    inviteSent: "Запрошення надіслано.",
+    saved: "Зміни збережено.",
+    failed: "Не вдалося виконати дію.",
+    addTitle: "Додати співробітника",
+    addText:
+      "Співробітника можна одразу додати до команди й налаштувати йому графік. Доступ до кабінету вмикається окремим запрошенням.",
+    fullName: "Ім'я та прізвище",
+    role: "Посада",
+    email: "Email",
+    phone: "Телефон",
+    sendInvite: "Одразу надіслати запрошення до кабінету",
+    createStaff: "Додати співробітника",
+    cancel: "Закрити",
+    placeholderEmail: "name@example.com",
+    placeholderPhone: "+380...",
+    noContact: "Дані не вказані",
     memberSince: "У команді з",
-    requestSince: "Запит від",
-    inviteSince: "Запрошення від",
-    linkedAccount: "Акаунт уже створено",
-    employeeList: "Активна команда"
+    bookings: "зап.",
+    revenue: "Дохід",
+    accessState: {
+      owner: "Власник робочого простору",
+      active: "Доступ до кабінету відкрито",
+      invited: "Запрошення надіслано",
+      offline: "Немає доступу"
+    } satisfies Record<StaffMemberWorkspaceAccess, string>,
+    accessTone: {
+      owner: "owner",
+      active: "active",
+      invited: "invited",
+      offline: "offline"
+    } satisfies Record<StaffMemberWorkspaceAccess, string>,
+    roleFallback: "Співробітник",
+    emptySearch: "За цим запитом нікого не знайдено.",
+    requestFrom: "Запит від",
+    inviteFrom: "Запрошення від"
   },
   en: {
-    kicker: "Company workspace",
-    title: "Staff",
-    subtitle:
-      "Your business team in one place: active staff, join requests, email invitations, bookings and each specialist's working services.",
-    inviteTitle: "Invite a staff member",
-    inviteText:
-      "Send an email invitation to the specialist. After signing in or registering with that address, the invitation is confirmed automatically.",
-    inviteEmail: "Staff email",
-    inviteRole: "Role in the company",
-    inviteButton: "Send invitation",
-    inviteSending: "Sending...",
-    searchPlaceholder: "Search by name, email, phone or role",
-    summaryPeople: "Team total",
-    summaryMembers: "Active staff",
-    summaryRequests: "Awaiting approval",
-    summaryInvites: "Emails pending",
-    summaryMonthBookings: "Bookings this month",
-    summaryMonthRevenue: "Revenue this month",
+    sectionTitle: "Team",
+    people: "Team members",
+    schedule: "Shift schedule",
+    pageTitle: "Team members",
+    pageText:
+      "Add employees manually, manage their profile and schedule, and only send workspace access when you are ready.",
+    add: "Add",
+    options: "Options",
+    search: "Search team members",
+    filterHint: "Workspace access is sent separately by email invitation. Without it, the employee still stays in the team and schedule.",
+    name: "Name",
+    contacts: "Contact details",
+    access: "Access role",
+    stats: "Stats",
+    actions: "Actions",
+    edit: "Edit",
+    openSchedule: "Open schedule",
+    invite: "Send invitation",
+    resendInvite: "Resend invitation",
+    addEmail: "Add email",
+    revokeInvite: "Revoke invitation",
+    pendingInvites: "Invitations",
     joinRequests: "Join requests",
-    joinRequestsEmpty: "No new requests yet.",
+    noInvites: "No active invitations yet.",
+    noJoinRequests: "No new requests yet.",
     approve: "Approve",
     reject: "Reject",
-    pendingInvites: "Email invitations",
-    pendingInvitesEmpty: "No active invitations yet.",
-    revokeInvite: "Revoke",
-    roleLabel: "Role",
-    sourceLabel: "Source",
-    source: {
-      owner: "Owner",
-      join_request: "Registration + request",
-      email_invitation: "Email invitation",
-      member: "Staff member"
-    } satisfies Record<StaffMemberSource, string>,
-    memberCount: "people",
-    bookings: "Bookings",
-    completed: "Completed",
-    upcoming: "Upcoming",
-    revenue: "Revenue",
-    services: "Working services",
-    noServices: "No personal service history yet. The specialist still sees the shared business services.",
-    businessServicesVisible: "Business services visible in the workspace",
-    recentAppointments: "Recent bookings",
-    noAppointments: "No bookings for this team member yet.",
-    customerFallback: "Client",
-    statusSaved: "Changes saved.",
-    statusFailed: "Could not complete the action.",
-    attendance: {
-      pending: "Pending",
-      confirmed: "Confirmed",
-      arrived: "Arrived",
-      no_show: "No show"
-    },
+    inviteSent: "Invitation sent.",
+    saved: "Changes saved.",
+    failed: "Could not complete the action.",
+    addTitle: "Add employee",
+    addText:
+      "You can add an employee to the team right away and set their schedule first. Workspace access is enabled by a separate invitation.",
+    fullName: "Full name",
+    role: "Role",
+    email: "Email",
+    phone: "Phone",
+    sendInvite: "Send workspace invitation now",
+    createStaff: "Add employee",
+    cancel: "Close",
+    placeholderEmail: "name@example.com",
+    placeholderPhone: "+1...",
+    noContact: "No details yet",
     memberSince: "In team since",
-    requestSince: "Request from",
-    inviteSince: "Invitation from",
-    linkedAccount: "Account already created",
-    employeeList: "Active team"
+    bookings: "book.",
+    revenue: "Revenue",
+    accessState: {
+      owner: "Workspace owner",
+      active: "Workspace access enabled",
+      invited: "Invitation sent",
+      offline: "No access"
+    } satisfies Record<StaffMemberWorkspaceAccess, string>,
+    accessTone: {
+      owner: "owner",
+      active: "active",
+      invited: "invited",
+      offline: "offline"
+    } satisfies Record<StaffMemberWorkspaceAccess, string>,
+    roleFallback: "Employee",
+    emptySearch: "No one matched this search.",
+    requestFrom: "Request from",
+    inviteFrom: "Invitation from"
   }
 } as const;
 
+type StaffCopy = (typeof staffText)[keyof typeof staffText];
+
 function getLocale(language: "ru" | "uk" | "en") {
-  if (language === "uk") {
-    return "uk-UA";
-  }
-
-  if (language === "en") {
-    return "en-US";
-  }
-
+  if (language === "uk") return "uk-UA";
+  if (language === "en") return "en-US";
   return "ru-RU";
 }
 
@@ -221,9 +238,119 @@ function formatMoney(value: number, locale: string, currency: string) {
   }).format(value || 0);
 }
 
-function makeInitials(firstName: string, lastName: string, email: string) {
-  const initial = `${firstName?.[0] ?? ""}${lastName?.[0] ?? ""}`.trim();
-  return (initial || email[0] || "S").toUpperCase();
+function makeInitials(member: StaffMemberSnapshot) {
+  const initials = `${member.professional.firstName?.[0] ?? ""}${member.professional.lastName?.[0] ?? ""}`.trim();
+  return (initials || member.professional.email[0] || "S").toUpperCase();
+}
+
+function splitFullName(value: string) {
+  const parts = value.trim().split(/\s+/).filter(Boolean);
+  return {
+    firstName: parts[0] || "",
+    lastName: parts.slice(1).join(" ")
+  };
+}
+
+function renderContact(member: StaffMemberSnapshot, copy: StaffCopy) {
+  const values = [member.professional.email, member.professional.phone].filter(Boolean);
+  return values.length ? values : [copy.noContact];
+}
+
+function renderStats(member: StaffMemberSnapshot, locale: string, currency: string, copy: StaffCopy) {
+  return `${member.stats.totalBookings} ${copy.bookings} · ${formatMoney(member.stats.revenue, locale, currency)}`;
+}
+
+function StaffRowActions({
+  member,
+  copy,
+  onInvite,
+  onRevoke
+}: {
+  member: StaffMemberSnapshot;
+  copy: StaffCopy;
+  onInvite: (member: StaffMemberSnapshot) => void;
+  onRevoke: (member: StaffMemberSnapshot) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const canInvite = Boolean(member.professional.email);
+
+  return (
+    <div className={styles.staffControlMenuWrap}>
+      <button
+        type="button"
+        className={styles.staffRowActionButton}
+        onClick={() => setOpen((value) => !value)}
+      >
+        {copy.actions}
+        <span aria-hidden="true">⌄</span>
+      </button>
+
+      {open ? (
+        <div className={styles.staffControlMenu}>
+          <Link href={`/pro/staff/${member.professional.id}`} className={styles.staffControlMenuItem}>
+            {copy.edit}
+          </Link>
+          <Link
+            href={`/pro/staff/${member.professional.id}?tab=schedule`}
+            className={styles.staffControlMenuItem}
+          >
+            {copy.openSchedule}
+          </Link>
+          <button
+            type="button"
+            className={styles.staffControlMenuItem}
+            onClick={() => {
+              setOpen(false);
+              onInvite(member);
+            }}
+          >
+            {canInvite
+              ? member.pendingInvitation
+                ? copy.resendInvite
+                : copy.invite
+              : copy.addEmail}
+          </button>
+          {member.pendingInvitation ? (
+            <button
+              type="button"
+              className={`${styles.staffControlMenuItem} ${styles.staffControlMenuDanger}`}
+              onClick={() => {
+                setOpen(false);
+                onRevoke(member);
+              }}
+            >
+              {copy.revokeInvite}
+            </button>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function PendingInvitationCard({
+  invitation,
+  copy,
+  locale,
+  onRevoke
+}: {
+  invitation: PendingStaffInvitationSnapshot;
+  copy: StaffCopy;
+  locale: string;
+  onRevoke: (invitationId: string) => void;
+}) {
+  return (
+    <article className={styles.staffSideCard}>
+      <div>
+        <strong>{invitation.email}</strong>
+        <p>{invitation.role || copy.roleFallback}</p>
+        <span>{`${copy.inviteFrom}: ${formatDate(invitation.createdAt, locale)}`}</span>
+      </div>
+      <button type="button" className={styles.staffSecondaryButton} onClick={() => onRevoke(invitation.id)}>
+        {copy.revokeInvite}
+      </button>
+    </article>
+  );
 }
 
 export default function StaffView({ professionalId, snapshot }: StaffViewProps) {
@@ -232,11 +359,14 @@ export default function StaffView({ professionalId, snapshot }: StaffViewProps) 
   const copy = staffText[language];
   const locale = getLocale(language);
   const [query, setQuery] = useState("");
-  const [inviteEmail, setInviteEmail] = useState("");
-  const [inviteRole, setInviteRole] = useState(language === "en" ? "Specialist" : language === "uk" ? "Майстер" : "Мастер");
   const [statusText, setStatusText] = useState("");
-  const [isInviteLoading, setIsInviteLoading] = useState(false);
-  const [actionId, setActionId] = useState("");
+  const [isAddOpen, setIsAddOpen] = useState(false);
+  const [fullName, setFullName] = useState("");
+  const [role, setRole] = useState(language === "en" ? "Specialist" : language === "uk" ? "Майстер" : "Мастер");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [sendInvitation, setSendInvitation] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   const filteredMembers = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -252,56 +382,65 @@ export default function StaffView({ professionalId, snapshot }: StaffViewProps) 
         member.professional.email,
         member.professional.phone,
         member.membership.role,
-        copy.source[member.source],
-        ...member.services
+        copy.accessState[member.workspaceAccess]
       ]
         .join(" ")
         .toLowerCase()
         .includes(normalized)
     );
-  }, [copy.source, query, snapshot.members]);
+  }, [copy.accessState, query, snapshot.members]);
 
-  async function refreshAfter(request: Promise<Response>) {
+  async function refreshAfter(request: Promise<Response>, successText: string = copy.saved) {
     try {
       const response = await request;
       const payload = await response.json().catch(() => ({}));
 
       if (!response.ok) {
-        setStatusText(String(payload.error || copy.statusFailed));
+        setStatusText(String(payload.error || copy.failed));
         return;
       }
 
-      setStatusText(copy.statusSaved);
+      setStatusText(successText);
       router.refresh();
     } catch {
-      setStatusText(copy.statusFailed);
+      setStatusText(copy.failed);
     }
   }
 
-  async function handleSendInvite() {
-    if (!inviteEmail.trim()) {
+  async function handleCreateStaff() {
+    const parsed = splitFullName(fullName);
+
+    if (!parsed.firstName) {
       return;
     }
 
-    setIsInviteLoading(true);
+    setIsSaving(true);
     await refreshAfter(
-      fetch("/api/pro/staff/invitations", {
+      fetch("/api/pro/staff/members", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          email: inviteEmail,
-          role: inviteRole
+          firstName: parsed.firstName,
+          lastName: parsed.lastName,
+          role,
+          email,
+          phone,
+          sendInvitation
         })
       })
     );
-    setIsInviteLoading(false);
-    setInviteEmail("");
+    setIsSaving(false);
+    setFullName("");
+    setRole(language === "en" ? "Specialist" : language === "uk" ? "Майстер" : "Мастер");
+    setEmail("");
+    setPhone("");
+    setSendInvitation(false);
+    setIsAddOpen(false);
   }
 
   async function handleJoinRequest(requestId: string, action: "approve" | "reject") {
-    setActionId(requestId);
     await refreshAfter(
       fetch("/api/pro/join-requests", {
         method: "POST",
@@ -311,114 +450,182 @@ export default function StaffView({ professionalId, snapshot }: StaffViewProps) 
         body: JSON.stringify({ requestId, action })
       })
     );
-    setActionId("");
   }
 
-  async function handleRevokeInvite(invitationId: string) {
-    setActionId(invitationId);
+  async function handleInvite(member: StaffMemberSnapshot) {
+    if (!member.professional.email) {
+      router.push(`/pro/staff/${member.professional.id}`);
+      return;
+    }
+
+    await refreshAfter(
+      fetch("/api/pro/staff/invitations", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          memberProfessionalId: member.professional.id,
+          email: member.professional.email,
+          role: member.membership.role
+        })
+      }),
+      copy.inviteSent
+    );
+  }
+
+  async function handleRevokeInviteById(invitationId: string) {
     await refreshAfter(
       fetch(`/api/pro/staff/invitations?invitationId=${encodeURIComponent(invitationId)}`, {
         method: "DELETE"
       })
     );
-    setActionId("");
+  }
+
+  async function handleRevokeInvite(member: StaffMemberSnapshot) {
+    if (!member.pendingInvitation) {
+      return;
+    }
+
+    await handleRevokeInviteById(member.pendingInvitation.id);
   }
 
   return (
     <main className={`${styles.workspaceShell} ${styles.scheduleShell}`}>
       <ProSidebar active="staff" professionalId={professionalId} />
 
-      <section className={styles.staffShell}>
-        <section className={styles.staffMain}>
-          <header className={styles.clientsHeader}>
+      <section className={styles.staffStudioShell}>
+        <aside className={styles.staffStudioSidebar}>
+          <div className={styles.staffStudioSidebarCard}>
+            <strong>{copy.sectionTitle}</strong>
+            <nav className={styles.staffStudioLocalNav}>
+              <Link href="/pro/staff" className={`${styles.staffStudioLocalLink} ${styles.staffStudioLocalLinkActive}`}>
+                {copy.people}
+              </Link>
+              <Link href="/pro/staff/schedule" className={styles.staffStudioLocalLink}>
+                {copy.schedule}
+              </Link>
+            </nav>
+          </div>
+        </aside>
+
+        <section className={styles.staffStudioMain}>
+          <div className={styles.staffStudioHeader}>
             <div>
-              <p className={styles.clientsKicker}>{copy.kicker}</p>
-              <div className={styles.clientsTitleRow}>
-                <h1 className={styles.clientsTitle}>{copy.title}</h1>
-                <span className={styles.clientsBadge}>{snapshot.summary.totalPeople}</span>
+              <div className={styles.staffStudioTitleRow}>
+                <h1 className={styles.staffStudioTitle}>{copy.pageTitle}</h1>
+                <span className={styles.staffStudioCount}>{snapshot.members.length}</span>
               </div>
-              <p className={styles.clientsSubtitle}>{copy.subtitle}</p>
+              <p className={styles.staffStudioText}>{copy.pageText}</p>
             </div>
-          </header>
 
-          <section className={styles.staffSummaryGrid}>
-            <article className={styles.staffSummaryCard}>
-              <span>{copy.summaryPeople}</span>
-              <strong>{snapshot.summary.totalPeople}</strong>
-            </article>
-            <article className={styles.staffSummaryCard}>
-              <span>{copy.summaryMembers}</span>
-              <strong>{snapshot.summary.activeEmployees}</strong>
-            </article>
-            <article className={styles.staffSummaryCard}>
-              <span>{copy.summaryRequests}</span>
-              <strong>{snapshot.summary.pendingRequests}</strong>
-            </article>
-            <article className={styles.staffSummaryCard}>
-              <span>{copy.summaryInvites}</span>
-              <strong>{snapshot.summary.pendingInvitations}</strong>
-            </article>
-            <article className={styles.staffSummaryCard}>
-              <span>{copy.summaryMonthBookings}</span>
-              <strong>{snapshot.summary.monthBookings}</strong>
-            </article>
-            <article className={styles.staffSummaryCard}>
-              <span>{copy.summaryMonthRevenue}</span>
-              <strong>{formatMoney(snapshot.summary.monthRevenue, locale, snapshot.business.currency)}</strong>
-            </article>
-          </section>
-
-          <section className={styles.staffInvitePanel}>
-            <div>
-              <h2>{copy.inviteTitle}</h2>
-              <p>{copy.inviteText}</p>
-            </div>
-            <div className={styles.staffInviteForm}>
-              <label className={styles.staffField}>
-                <span>{copy.inviteEmail}</span>
-                <input
-                  className={styles.input}
-                  type="email"
-                  value={inviteEmail}
-                  onChange={(event) => setInviteEmail(event.target.value)}
-                  placeholder="name@example.com"
-                />
-              </label>
-              <label className={styles.staffField}>
-                <span>{copy.inviteRole}</span>
-                <input
-                  className={styles.input}
-                  value={inviteRole}
-                  onChange={(event) => setInviteRole(event.target.value)}
-                />
-              </label>
-              <button
-                type="button"
-                className={styles.clientsPrimaryAddButton}
-                onClick={() => void handleSendInvite()}
-                disabled={!inviteEmail.trim() || isInviteLoading}
-              >
-                {isInviteLoading ? copy.inviteSending : copy.inviteButton}
+            <div className={styles.staffStudioTopActions}>
+              <button type="button" className={styles.staffStudioGhostButton}>
+                {copy.options}
+                <span aria-hidden="true">⌄</span>
+              </button>
+              <button type="button" className={styles.staffStudioPrimaryButton} onClick={() => setIsAddOpen(true)}>
+                {copy.add}
               </button>
             </div>
+          </div>
+
+          <div className={styles.staffStudioNotice}>
+            <span>{copy.filterHint}</span>
+          </div>
+
+          <div className={styles.staffStudioToolbar}>
+            <label className={styles.staffStudioSearch}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="6.8" />
+                <path d="m20 20-3.8-3.8" />
+              </svg>
+              <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={copy.search} />
+            </label>
+          </div>
+
+          {statusText ? <div className={styles.staffStudioStatus}>{statusText}</div> : null}
+
+          <section className={styles.staffStudioTable}>
+            <div className={styles.staffStudioTableHead}>
+              <span>{copy.name}</span>
+              <span>{copy.contacts}</span>
+              <span>{copy.access}</span>
+              <span>{copy.stats}</span>
+              <span>{copy.actions}</span>
+            </div>
+
+            <div className={styles.staffStudioRows}>
+              {filteredMembers.length === 0 ? (
+                <div className={styles.staffStudioEmpty}>{copy.emptySearch}</div>
+              ) : (
+                filteredMembers.map((member) => (
+                  <article key={member.professional.id} className={styles.staffStudioRow}>
+                    <div className={styles.staffStudioNameCell}>
+                      <ProfileAvatar
+                        avatarUrl={member.professional.avatarUrl}
+                        initials={makeInitials(member)}
+                        label={`${member.professional.firstName} ${member.professional.lastName}`.trim() || member.professional.email}
+                        className={styles.clientAvatar}
+                        imageClassName={styles.avatarImage}
+                        fallbackClassName={styles.avatarFallback}
+                      />
+                      <div className={styles.staffStudioIdentity}>
+                        <strong>
+                          {`${member.professional.firstName} ${member.professional.lastName}`.trim() ||
+                            member.professional.email}
+                        </strong>
+                        <span>{member.membership.role || copy.roleFallback}</span>
+                        <small>{`${copy.memberSince}: ${formatDate(member.membership.createdAt, locale)}`}</small>
+                      </div>
+                    </div>
+
+                    <div className={styles.staffStudioContactCell}>
+                      {renderContact(member, copy).map((value) => (
+                        <span key={`${member.professional.id}-${value}`}>{value}</span>
+                      ))}
+                    </div>
+
+                    <div className={styles.staffStudioAccessCell}>
+                      <span
+                        className={`${styles.staffStudioAccessBadge} ${
+                          styles[`staffStudioAccessBadge${copy.accessTone[member.workspaceAccess][0].toUpperCase()}${copy.accessTone[member.workspaceAccess].slice(1)}`]
+                        }`}
+                      >
+                        {copy.accessState[member.workspaceAccess]}
+                      </span>
+                    </div>
+
+                    <div className={styles.staffStudioStatsCell}>
+                      {renderStats(member, locale, snapshot.business.currency, copy)}
+                    </div>
+
+                    <div className={styles.staffStudioActionCell}>
+                      <StaffRowActions
+                        member={member}
+                        copy={copy}
+                        onInvite={handleInvite}
+                        onRevoke={handleRevokeInvite}
+                      />
+                    </div>
+                  </article>
+                ))
+              )}
+            </div>
           </section>
 
-          {statusText ? <div className={styles.clientsStatus}>{statusText}</div> : null}
-
-          <section className={styles.staffTwoColumn}>
-            <article className={styles.staffPanel}>
-              <div className={styles.staffPanelHeader}>
-                <div>
-                  <h2>{copy.joinRequests}</h2>
-                </div>
+          <div className={styles.staffStudioBottomGrid}>
+            <section className={styles.staffStudioPanel}>
+              <div className={styles.staffStudioPanelHeader}>
+                <h2>{copy.joinRequests}</h2>
               </div>
 
               {snapshot.joinRequests.length === 0 ? (
-                <div className={styles.staffEmpty}>{copy.joinRequestsEmpty}</div>
+                <div className={styles.staffStudioEmpty}>{copy.noJoinRequests}</div>
               ) : (
-                <div className={styles.staffActionList}>
+                <div className={styles.staffStudioSideList}>
                   {snapshot.joinRequests.map((request) => (
-                    <article key={request.id} className={styles.staffActionCard}>
+                    <article key={request.id} className={styles.staffSideCard}>
                       <div>
                         <strong>
                           {request.professional
@@ -426,24 +633,21 @@ export default function StaffView({ professionalId, snapshot }: StaffViewProps) 
                               request.professional.email
                             : "—"}
                         </strong>
-                        <p>{request.professional?.email || request.professional?.phone || "—"}</p>
-                        <span>{`${copy.roleLabel}: ${request.role}`}</span>
-                        <span>{`${copy.requestSince}: ${formatDate(request.createdAt, locale)}`}</span>
+                        <p>{request.professional?.email || request.professional?.phone || copy.noContact}</p>
+                        <span>{`${copy.requestFrom}: ${formatDate(request.createdAt, locale)}`}</span>
                       </div>
-                      <div className={styles.staffActionButtons}>
+                      <div className={styles.staffSideActions}>
                         <button
                           type="button"
-                          className={styles.ghostButton}
+                          className={styles.staffSecondaryButton}
                           onClick={() => void handleJoinRequest(request.id, "reject")}
-                          disabled={actionId === request.id}
                         >
                           {copy.reject}
                         </button>
                         <button
                           type="button"
-                          className={styles.primaryButton}
+                          className={styles.staffStudioPrimaryButton}
                           onClick={() => void handleJoinRequest(request.id, "approve")}
-                          disabled={actionId === request.id}
                         >
                           {copy.approve}
                         </button>
@@ -452,172 +656,100 @@ export default function StaffView({ professionalId, snapshot }: StaffViewProps) 
                   ))}
                 </div>
               )}
-            </article>
+            </section>
 
-            <article className={styles.staffPanel}>
-              <div className={styles.staffPanelHeader}>
-                <div>
-                  <h2>{copy.pendingInvites}</h2>
-                </div>
+            <section className={styles.staffStudioPanel}>
+              <div className={styles.staffStudioPanelHeader}>
+                <h2>{copy.pendingInvites}</h2>
               </div>
 
               {snapshot.invitations.length === 0 ? (
-                <div className={styles.staffEmpty}>{copy.pendingInvitesEmpty}</div>
+                <div className={styles.staffStudioEmpty}>{copy.noInvites}</div>
               ) : (
-                <div className={styles.staffActionList}>
+                <div className={styles.staffStudioSideList}>
                   {snapshot.invitations.map((invitation) => (
-                    <article key={invitation.id} className={styles.staffActionCard}>
-                      <div>
-                        <strong>{invitation.email}</strong>
-                        <p>{`${copy.roleLabel}: ${invitation.role}`}</p>
-                        <span>{`${copy.inviteSince}: ${formatDate(invitation.createdAt, locale)}`}</span>
-                        {invitation.invitedProfessional ? (
-                          <span>{copy.linkedAccount}</span>
-                        ) : null}
-                      </div>
-                      <div className={styles.staffActionButtons}>
-                        <button
-                          type="button"
-                          className={styles.ghostButton}
-                          onClick={() => void handleRevokeInvite(invitation.id)}
-                          disabled={actionId === invitation.id}
-                        >
-                          {copy.revokeInvite}
-                        </button>
-                      </div>
-                    </article>
+                    <PendingInvitationCard
+                      key={invitation.id}
+                      invitation={invitation}
+                      copy={copy}
+                      locale={locale}
+                      onRevoke={handleRevokeInviteById}
+                    />
                   ))}
                 </div>
               )}
-            </article>
-          </section>
-
-          <section className={styles.clientsToolbar}>
-            <div className={styles.clientsToolbarLeft}>
-              <div className={styles.clientsSearch}>
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <circle cx="11" cy="11" r="6.8" />
-                  <path d="m20 20-3.8-3.8" />
-                </svg>
-                <input
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  placeholder={copy.searchPlaceholder}
-                />
-              </div>
-            </div>
-          </section>
-
-          <section className={styles.staffPanel}>
-            <div className={styles.staffPanelHeader}>
-              <div>
-                <h2>{copy.employeeList}</h2>
-              </div>
-            </div>
-
-            <div className={styles.staffCards}>
-              {filteredMembers.length === 0 ? (
-                <div className={styles.staffEmpty}>{copy.noAppointments}</div>
-              ) : (
-                filteredMembers.map((member) => (
-                  <article key={member.professional.id} className={styles.staffMemberCard}>
-                    <div className={styles.staffMemberTop}>
-                      <div className={styles.staffIdentity}>
-                        <ProfileAvatar
-                          avatarUrl={member.professional.avatarUrl}
-                          initials={makeInitials(
-                            member.professional.firstName,
-                            member.professional.lastName,
-                            member.professional.email
-                          )}
-                          label={`${member.professional.firstName} ${member.professional.lastName}`.trim() || member.professional.email}
-                          className={styles.clientAvatar}
-                          imageClassName={styles.avatarImage}
-                          fallbackClassName={styles.avatarFallback}
-                        />
-                        <div>
-                          <strong>
-                            {`${member.professional.firstName} ${member.professional.lastName}`.trim() ||
-                              member.professional.email}
-                          </strong>
-                          <span>{member.professional.email}</span>
-                          <span>{member.professional.phone || "—"}</span>
-                        </div>
-                      </div>
-
-                      <div className={styles.staffBadgeStack}>
-                        <span className={styles.staffBadge}>{member.membership.role}</span>
-                        <span className={styles.staffBadgeMuted}>{copy.source[member.source]}</span>
-                      </div>
-                    </div>
-
-                    <div className={styles.staffMetaRow}>
-                      <span>{`${copy.memberSince}: ${formatDate(member.membership.createdAt, locale)}`}</span>
-                      <span>{`${copy.businessServicesVisible}: ${member.visibleBusinessServicesCount}`}</span>
-                    </div>
-
-                    <div className={styles.staffStatsGrid}>
-                      <div>
-                        <span>{copy.bookings}</span>
-                        <strong>{member.stats.totalBookings}</strong>
-                      </div>
-                      <div>
-                        <span>{copy.completed}</span>
-                        <strong>{member.stats.completedBookings}</strong>
-                      </div>
-                      <div>
-                        <span>{copy.upcoming}</span>
-                        <strong>{member.stats.upcomingBookings}</strong>
-                      </div>
-                      <div>
-                        <span>{copy.revenue}</span>
-                        <strong>{formatMoney(member.stats.revenue, locale, snapshot.business.currency)}</strong>
-                      </div>
-                    </div>
-
-                    <div className={styles.staffServicesBlock}>
-                      <strong>{copy.services}</strong>
-                      {member.services.length > 0 ? (
-                        <div className={styles.generatedList}>
-                          {member.services.map((service) => (
-                            <span key={`${member.professional.id}-${service}`} className={styles.generatedChip}>
-                              {service}
-                            </span>
-                          ))}
-                        </div>
-                      ) : (
-                        <p>{copy.noServices}</p>
-                      )}
-                    </div>
-
-                    <div className={styles.staffAppointmentsBlock}>
-                      <strong>{copy.recentAppointments}</strong>
-                      {member.recentAppointments.length === 0 ? (
-                        <p>{copy.noAppointments}</p>
-                      ) : (
-                        <div className={styles.staffAppointmentsList}>
-                          {member.recentAppointments.map((appointment) => (
-                            <div key={appointment.id} className={styles.staffAppointmentRow}>
-                              <div>
-                                <strong>{appointment.customerName || copy.customerFallback}</strong>
-                                <span>{appointment.serviceName || "—"}</span>
-                              </div>
-                              <div>
-                                <strong>{`${formatDate(appointment.appointmentDate, locale)} · ${appointment.startTime}`}</strong>
-                                <span>{copy.attendance[appointment.attendance as keyof typeof copy.attendance] || appointment.attendance}</span>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </article>
-                ))
-              )}
-            </div>
-          </section>
+            </section>
+          </div>
         </section>
       </section>
+
+      {isAddOpen ? (
+        <div className={styles.staffDrawerBackdrop} onClick={() => setIsAddOpen(false)}>
+          <aside className={styles.staffDrawer} onClick={(event) => event.stopPropagation()}>
+            <div className={styles.staffDrawerHeader}>
+              <div>
+                <h2>{copy.addTitle}</h2>
+                <p>{copy.addText}</p>
+              </div>
+              <button type="button" className={styles.staffDrawerClose} onClick={() => setIsAddOpen(false)}>
+                ×
+              </button>
+            </div>
+
+            <div className={styles.staffDrawerForm}>
+              <label className={styles.staffDrawerField}>
+                <span>{copy.fullName}</span>
+                <input className={styles.input} value={fullName} onChange={(event) => setFullName(event.target.value)} />
+              </label>
+              <label className={styles.staffDrawerField}>
+                <span>{copy.role}</span>
+                <input className={styles.input} value={role} onChange={(event) => setRole(event.target.value)} />
+              </label>
+              <label className={styles.staffDrawerField}>
+                <span>{copy.email}</span>
+                <input
+                  className={styles.input}
+                  type="email"
+                  placeholder={copy.placeholderEmail}
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                />
+              </label>
+              <label className={styles.staffDrawerField}>
+                <span>{copy.phone}</span>
+                <input
+                  className={styles.input}
+                  placeholder={copy.placeholderPhone}
+                  value={phone}
+                  onChange={(event) => setPhone(event.target.value)}
+                />
+              </label>
+              <label className={styles.staffDrawerToggle}>
+                <input
+                  type="checkbox"
+                  checked={sendInvitation}
+                  onChange={(event) => setSendInvitation(event.target.checked)}
+                />
+                <span>{copy.sendInvite}</span>
+              </label>
+            </div>
+
+            <div className={styles.staffDrawerActions}>
+              <button type="button" className={styles.staffStudioGhostButton} onClick={() => setIsAddOpen(false)}>
+                {copy.cancel}
+              </button>
+              <button
+                type="button"
+                className={styles.staffStudioPrimaryButton}
+                onClick={() => void handleCreateStaff()}
+                disabled={!fullName.trim() || isSaving}
+              >
+                {copy.createStaff}
+              </button>
+            </div>
+          </aside>
+        </div>
+      ) : null}
     </main>
   );
 }

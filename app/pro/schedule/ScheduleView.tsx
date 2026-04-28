@@ -32,6 +32,11 @@ type WorkspaceSnapshot = {
     role: string;
     scope: "owner" | "member";
   };
+  memberSchedule: {
+    workScheduleMode: WorkScheduleMode;
+    workSchedule: WorkSchedule;
+    customSchedule: CustomSchedule;
+  };
   services: Array<{
     id: string;
     name: string;
@@ -127,10 +132,10 @@ export default function ScheduleView({ professionalId }: ScheduleViewProps) {
 
         <div className={styles.schedulePageBody}>
           <WorkScheduleCard
-            canEdit={Boolean(isOwner)}
-            initialMode={snapshot.business.workScheduleMode}
-            initialSchedule={snapshot.business.workSchedule}
-            initialCustomSchedule={snapshot.business.customSchedule}
+            canEdit
+            initialMode={snapshot.memberSchedule.workScheduleMode}
+            initialSchedule={snapshot.memberSchedule.workSchedule}
+            initialCustomSchedule={snapshot.memberSchedule.customSchedule}
             layout="page"
           />
         </div>

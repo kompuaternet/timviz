@@ -43,11 +43,14 @@ create table if not exists public.professionals (
   booking_credits_total integer not null default 500,
   wallet_balance integer not null default 0,
   owner_mode text not null,
+  account_status text not null default 'active',
   created_at timestamptz not null default timezone('utc', now())
 );
 
 alter table if exists public.professionals
   add column if not exists avatar_url text not null default '';
+alter table if exists public.professionals
+  add column if not exists account_status text not null default 'active';
 
 create table if not exists public.businesses (
   id text primary key,
@@ -103,6 +106,9 @@ create table if not exists public.business_memberships (
   professional_id text not null references public.professionals(id) on delete cascade,
   role text not null,
   scope text not null,
+  work_schedule_mode text,
+  work_schedule jsonb,
+  custom_schedule jsonb,
   created_at timestamptz not null default timezone('utc', now())
 );
 
@@ -205,6 +211,9 @@ alter table public.business_services add column if not exists source text not nu
 alter table public.business_services add column if not exists moderation_status text not null default 'approved';
 alter table public.business_services add column if not exists moderated_at timestamptz;
 alter table public.business_services add column if not exists is_blocked boolean not null default false;
+alter table public.business_memberships add column if not exists work_schedule_mode text;
+alter table public.business_memberships add column if not exists work_schedule jsonb;
+alter table public.business_memberships add column if not exists custom_schedule jsonb;
 
 create index if not exists bookings_salon_date_idx on public.bookings (salon_slug, appointment_date, appointment_time);
 create index if not exists bookings_customer_email_idx on public.bookings (customer_email, created_at desc);

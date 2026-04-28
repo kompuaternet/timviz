@@ -3,11 +3,16 @@ import { NextResponse } from "next/server";
 import { getPublicAppUrl } from "../../../../../../lib/app-url";
 import { getSessionCookieName, signSessionValue } from "../../../../../../lib/pro-auth";
 import { exchangeCodeForGoogleProfile, getGoogleOAuthSettings } from "../../../../../../lib/google-oauth";
-import { getProfessionalIdByEmail, updateProfessionalAvatar } from "../../../../../../lib/pro-data";
+import {
+  acceptStaffInvitation,
+  getProfessionalProfileByEmail,
+  updateProfessionalAvatar
+} from "../../../../../../lib/pro-data";
 
 const GOOGLE_OAUTH_STATE_COOKIE = "rezervo_google_oauth_state";
 const GOOGLE_OAUTH_MODE_COOKIE = "rezervo_google_oauth_mode";
 const GOOGLE_OAUTH_PKCE_COOKIE = "rezervo_google_oauth_pkce";
+const GOOGLE_OAUTH_INVITE_COOKIE = "rezervo_google_oauth_invite";
 
 function clearOAuthCookies(cookieStore: Awaited<ReturnType<typeof cookies>>, isSecure: boolean) {
   cookieStore.set(GOOGLE_OAUTH_STATE_COOKIE, "", {
@@ -31,6 +36,13 @@ function clearOAuthCookies(cookieStore: Awaited<ReturnType<typeof cookies>>, isS
     secure: isSecure,
     maxAge: 0
   });
+  cookieStore.set(GOOGLE_OAUTH_INVITE_COOKIE, "", {
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/",
+    secure: isSecure,
+    maxAge: 0
+  });
 }
 
 export async function GET(request: Request) {
@@ -43,6 +55,7 @@ export async function GET(request: Request) {
   const expectedState = cookieStore.get(GOOGLE_OAUTH_STATE_COOKIE)?.value || "";
   const codeVerifier = cookieStore.get(GOOGLE_OAUTH_PKCE_COOKIE)?.value || "";
   const mode = cookieStore.get(GOOGLE_OAUTH_MODE_COOKIE)?.value === "register" ? "register" : "login";
+  const inviteToken = cookieStore.get(GOOGLE_OAUTH_INVITE_COOKIE)?.value?.trim() || "";
 
   if (!code || !state || !expectedState || !codeVerifier || state !== expectedState) {
     clearOAuthCookies(cookieStore, isSecure);
@@ -58,16 +71,23 @@ export async function GET(request: Request) {
       redirectUri: settings.redirectUri,
       codeVerifier
     });
-    const professionalId = await getProfessionalIdByEmail(profile.email);
+    const professional = await getProfessionalProfileByEmail(profile.email);
 
     clearOAuthCookies(cookieStore, isSecure);
 
-    if (professionalId) {
+    if (professional && professional.accountStatus === "active") {
       if (profile.avatarUrl) {
-        await updateProfessionalAvatar(professionalId, profile.avatarUrl).catch(() => undefined);
+        await updateProfessionalAvatar(professional.id, profile.avatarUrl).catch(() => undefined);
       }
 
-      cookieStore.set(getSessionCookieName(), signSessionValue(professionalId), {
+      if (inviteToken) {
+        await acceptStaffInvitation({
+          professionalId: professional.id,
+          invitationToken: inviteToken
+        }).catch(() => undefined);
+      }
+
+      cookieStore.set(getSessionCookieName(), signSessionValue(professional.id), {
         httpOnly: true,
         sameSite: "lax",
         path: "/",
@@ -80,6 +100,9 @@ export async function GET(request: Request) {
     const createAccountUrl = new URL("/pro/create-account", appUrl);
     createAccountUrl.searchParams.set("google", "1");
     createAccountUrl.searchParams.set("email", profile.email);
+    if (inviteToken) {
+      createAccountUrl.searchParams.set("invite", inviteToken);
+    }
     if (profile.givenName) {
       createAccountUrl.searchParams.set("firstName", profile.givenName);
     }
