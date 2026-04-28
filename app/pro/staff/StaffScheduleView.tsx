@@ -1433,7 +1433,7 @@ export default function StaffScheduleView({ professionalId, snapshot }: StaffSch
                             </button>
 
                             {rowMenuMemberId === member.professional.id ? (
-                              <div className={styles.staffControlMenu}>
+                              <div className={`${styles.staffControlMenu} ${styles.staffScheduleMemberMenu}`}>
                                 <strong className={styles.staffScheduleMenuTitle}>{copy.planSection}</strong>
                                 <button
                                   type="button"
