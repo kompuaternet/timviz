@@ -312,7 +312,7 @@ function StaffRowActions({
             {copy.edit}
           </Link>
           <Link
-            href={`/pro/staff/${member.professional.id}?tab=schedule`}
+            href="/pro/staff/schedule"
             className={styles.staffControlMenuItem}
             onClick={onClose}
           >

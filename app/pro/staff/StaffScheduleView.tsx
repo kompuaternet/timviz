@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import ProfileAvatar from "../../ProfileAvatar";
 import FloatingPopover from "../FloatingPopover";
 import ProSidebar from "../ProSidebar";
@@ -934,6 +934,14 @@ type SaveScheduleInput = {
   successText: string;
 };
 
+type SaveScheduleBuildResult =
+  | {
+      payload: SaveScheduleInput;
+    }
+  | {
+      error: string;
+    };
+
 function SchedulePlannerModal({
   member,
   businessName,
@@ -967,15 +975,30 @@ function SchedulePlannerModal({
   const [endDate, setEndDate] = useState(() => toDateKey(addDays(fromDateKey(defaultStartDate), 27)));
   const [isSaving, setIsSaving] = useState(false);
   const [statusText, setStatusText] = useState("");
+  const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastSavedSignatureRef = useRef("");
 
   useEffect(() => {
-    setWorkSchedule(createEditableWorkSchedule(normalizeWorkSchedule(member.membership.workSchedule)));
+    const nextSchedule = createEditableWorkSchedule(normalizeWorkSchedule(member.membership.workSchedule));
     const nextStartDate = anchorDateKey || toDateKey(new Date());
+    const nextEndDate = toDateKey(addDays(fromDateKey(nextStartDate), 27));
+    setWorkSchedule(nextSchedule);
     setApplyMode("template");
     setStartDate(nextStartDate);
     setEndMode("until-changed");
-    setEndDate(toDateKey(addDays(fromDateKey(nextStartDate), 27)));
+    setEndDate(nextEndDate);
     setStatusText("");
+    lastSavedSignatureRef.current = JSON.stringify({
+      workSchedule: nextSchedule,
+      applyMode: "template" satisfies PlannerApplyMode,
+      startDate: nextStartDate,
+      endMode: "until-changed" satisfies PlannerEndMode,
+      endDate: nextEndDate
+    });
+    if (autosaveTimerRef.current) {
+      clearTimeout(autosaveTimerRef.current);
+      autosaveTimerRef.current = null;
+    }
   }, [anchorDateKey, member]);
 
   const totalMinutes = useMemo(
@@ -985,6 +1008,18 @@ function SchedulePlannerModal({
         return sum + (item.enabled ? getIntervalsDurationMinutes(item.intervals) : 0);
       }, 0),
     [localizedWorkDays, workSchedule]
+  );
+
+  const plannerSignature = useMemo(
+    () =>
+      JSON.stringify({
+        workSchedule,
+        applyMode,
+        startDate,
+        endMode,
+        endDate
+      }),
+    [applyMode, endDate, endMode, startDate, workSchedule]
   );
 
   function updateDay(dayKey: WorkDayKey, patch: Partial<EditableDaySchedule>) {
@@ -1041,7 +1076,7 @@ function SchedulePlannerModal({
     setStatusText("");
   }
 
-  async function handleSave() {
+  function buildPlannerPayload(): SaveScheduleBuildResult {
     for (const day of localizedWorkDays) {
       const value = workSchedule[day.key];
       if (!value.enabled) {
@@ -1050,25 +1085,19 @@ function SchedulePlannerModal({
 
       const validation = validateIntervals(value.intervals);
       if (!validation.ok) {
-        setStatusText(getIntervalError(validation.reason, copy));
-        return;
+        return { error: getIntervalError(validation.reason, copy) } as const;
       }
     }
 
     if (applyMode === "period") {
       if (!endDate) {
-        setStatusText(copy.selectEndDate);
-        return;
+        return { error: copy.selectEndDate } as const;
       }
 
       if (endDate < startDate) {
-        setStatusText(copy.invalidDateRange);
-        return;
+        return { error: copy.invalidDateRange } as const;
       }
     }
-
-    setIsSaving(true);
-    let success = false;
 
     if (applyMode === "period") {
       const nextCustomSchedule = normalizeCustomSchedule(member.membership.customSchedule);
@@ -1085,13 +1114,15 @@ function SchedulePlannerModal({
         nextCustomSchedule[dateKey] = serializeIntervals(template.enabled, template.intervals, fallbackRange);
       }
 
-      success = await onSave({
+      return {
+        payload: {
         memberId: member.professional.id,
         workScheduleMode: member.membership.workScheduleMode,
         workSchedule: member.membership.workSchedule,
         customSchedule: nextCustomSchedule,
         successText: copy.saved
-      });
+        }
+      } as const;
     } else {
       const nextCustomSchedule = normalizeCustomSchedule(member.membership.customSchedule);
       const todayKey = toDateKey(new Date());
@@ -1122,32 +1153,103 @@ function SchedulePlannerModal({
         return accumulator;
       }, createEmptyWorkSchedule());
 
-      success = await onSave({
+      return {
+        payload: {
         memberId: member.professional.id,
         workScheduleMode: "fixed",
         workSchedule: nextWorkSchedule,
         customSchedule: nextCustomSchedule,
         successText: copy.saved
-      });
-    }
-
-    setIsSaving(false);
-
-    if (success) {
-      onClose();
-    } else {
-      setStatusText(copy.failed);
+        }
+      } as const;
     }
   }
 
+  async function persistPlanner(closeAfter = false) {
+    const built = buildPlannerPayload();
+    if ("error" in built) {
+      setStatusText(built.error);
+      return false;
+    }
+
+    if (plannerSignature === lastSavedSignatureRef.current) {
+      if (closeAfter) {
+        onClose();
+      }
+      return true;
+    }
+
+    setIsSaving(true);
+    setStatusText(copy.saving);
+    const success = await onSave(built.payload);
+    setIsSaving(false);
+
+    if (success) {
+      lastSavedSignatureRef.current = plannerSignature;
+      setStatusText(copy.saved);
+      if (closeAfter) {
+        onClose();
+      }
+    } else {
+      setStatusText(copy.failed);
+    }
+
+    return success;
+  }
+
+  useEffect(() => {
+    if (isSaving) {
+      return;
+    }
+
+    if (plannerSignature === lastSavedSignatureRef.current) {
+      return;
+    }
+
+    if (autosaveTimerRef.current) {
+      clearTimeout(autosaveTimerRef.current);
+    }
+
+    autosaveTimerRef.current = setTimeout(() => {
+      void persistPlanner(false);
+    }, 700);
+
+    return () => {
+      if (autosaveTimerRef.current) {
+        clearTimeout(autosaveTimerRef.current);
+        autosaveTimerRef.current = null;
+      }
+    };
+  }, [isSaving, plannerSignature]);
+
+  async function handleDismiss() {
+    if (autosaveTimerRef.current) {
+      clearTimeout(autosaveTimerRef.current);
+      autosaveTimerRef.current = null;
+    }
+
+    if (!isSaving && plannerSignature !== lastSavedSignatureRef.current) {
+      const built = buildPlannerPayload();
+      if ("error" in built) {
+        onClose();
+        return;
+      }
+
+      await persistPlanner(true);
+      return;
+    }
+
+    onClose();
+  }
+
   return (
-    <div className={styles.staffPlannerBackdrop} onClick={onClose}>
+    <div className={styles.staffPlannerBackdrop} onClick={() => void handleDismiss()}>
       <div className={styles.staffPlannerShell} onClick={(event) => event.stopPropagation()}>
         <div className={styles.staffPlannerTopBar}>
-          <button type="button" className={styles.staffStudioGhostButton} onClick={onClose}>
+          <button type="button" className={styles.staffStudioGhostButton} onClick={() => void handleDismiss()}>
             {copy.close}
           </button>
-          <button type="button" className={styles.staffStudioPrimaryButton} onClick={() => void handleSave()} disabled={isSaving}>
+          <button type="button" className={styles.staffStudioPrimaryButton} onClick={() => void persistPlanner(true)} disabled={isSaving}>
             {isSaving ? copy.saving : copy.save}
           </button>
         </div>
@@ -1325,6 +1427,8 @@ function DayScheduleModal({
   const [intervals, setIntervals] = useState<WorkInterval[]>(() => createEditableDaySchedule(sourceSchedule, focusBreak).intervals);
   const [isSaving, setIsSaving] = useState(false);
   const [statusText, setStatusText] = useState("");
+  const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastSavedSignatureRef = useRef("");
 
   useEffect(() => {
     const nextSchedule = getDaySchedule(dateKey, member.membership.workSchedule, member.membership.customSchedule);
@@ -1332,7 +1436,24 @@ function DayScheduleModal({
     setEnabled(nextSchedule.enabled);
     setIntervals(nextEditableSchedule.intervals);
     setStatusText("");
+    lastSavedSignatureRef.current = JSON.stringify({
+      enabled: nextSchedule.enabled,
+      intervals: nextEditableSchedule.intervals
+    });
+    if (autosaveTimerRef.current) {
+      clearTimeout(autosaveTimerRef.current);
+      autosaveTimerRef.current = null;
+    }
   }, [dateKey, focusBreak, member]);
+
+  const daySignature = useMemo(
+    () =>
+      JSON.stringify({
+        enabled,
+        intervals
+      }),
+    [enabled, intervals]
+  );
 
   function updateInterval(index: number, field: keyof WorkInterval, value: string) {
     setIntervals((current) => current.map((item, itemIndex) => (itemIndex === index ? { ...item, [field]: value } : item)));
@@ -1363,33 +1484,58 @@ function DayScheduleModal({
     setStatusText("");
   }
 
-  async function saveDay() {
+  function buildDayPayload(): SaveScheduleBuildResult {
     const validation = validateIntervals(intervals);
     if (enabled && !validation.ok) {
-      setStatusText(getIntervalError(validation.reason, copy));
-      return;
+      return { error: getIntervalError(validation.reason, copy) } as const;
     }
 
-    setIsSaving(true);
     const nextCustomSchedule = normalizeCustomSchedule(member.membership.customSchedule);
     const fallbackRange = getFallbackRange(intervals, sourceSchedule);
     nextCustomSchedule[dateKey] = serializeIntervals(enabled, intervals, fallbackRange);
 
-    const success = await onSave({
-      memberId: member.professional.id,
-      workScheduleMode: member.membership.workScheduleMode,
-      workSchedule: member.membership.workSchedule,
-      customSchedule: nextCustomSchedule,
-      successText: copy.saved
-    });
+    return {
+      payload: {
+        memberId: member.professional.id,
+        workScheduleMode: member.membership.workScheduleMode,
+        workSchedule: member.membership.workSchedule,
+        customSchedule: nextCustomSchedule,
+        successText: copy.saved
+      }
+    } as const;
+  }
+
+  async function saveDay(closeAfter = false) {
+    const built = buildDayPayload();
+    if ("error" in built) {
+      setStatusText(built.error);
+      return false;
+    }
+
+    if (daySignature === lastSavedSignatureRef.current) {
+      if (closeAfter) {
+        onClose();
+      }
+      return true;
+    }
+
+    setIsSaving(true);
+    setStatusText(copy.saving);
+    const success = await onSave(built.payload);
 
     setIsSaving(false);
 
     if (success) {
-      onClose();
+      lastSavedSignatureRef.current = daySignature;
+      setStatusText(copy.saved);
+      if (closeAfter) {
+        onClose();
+      }
     } else {
       setStatusText(copy.failed);
     }
+
+    return success;
   }
 
   async function resetToTemplate() {
@@ -1418,15 +1564,60 @@ function DayScheduleModal({
     month: "long"
   });
 
+  useEffect(() => {
+    if (isSaving) {
+      return;
+    }
+
+    if (daySignature === lastSavedSignatureRef.current) {
+      return;
+    }
+
+    if (autosaveTimerRef.current) {
+      clearTimeout(autosaveTimerRef.current);
+    }
+
+    autosaveTimerRef.current = setTimeout(() => {
+      void saveDay(false);
+    }, 700);
+
+    return () => {
+      if (autosaveTimerRef.current) {
+        clearTimeout(autosaveTimerRef.current);
+        autosaveTimerRef.current = null;
+      }
+    };
+  }, [daySignature, isSaving]);
+
+  async function handleDismiss() {
+    if (autosaveTimerRef.current) {
+      clearTimeout(autosaveTimerRef.current);
+      autosaveTimerRef.current = null;
+    }
+
+    if (!isSaving && daySignature !== lastSavedSignatureRef.current) {
+      const built = buildDayPayload();
+      if ("error" in built) {
+        onClose();
+        return;
+      }
+
+      await saveDay(true);
+      return;
+    }
+
+    onClose();
+  }
+
   return (
-    <div className={styles.staffDayModalBackdrop} onClick={onClose}>
+    <div className={styles.staffDayModalBackdrop} onClick={() => void handleDismiss()}>
       <div className={styles.staffDayModal} onClick={(event) => event.stopPropagation()}>
         <div className={styles.staffDayModalHeader}>
           <div>
             <h2>{copy.dayEditorTitle(makeMemberName(member), formattedDate)}</h2>
             <p>{copy.dayEditorText}</p>
           </div>
-          <button type="button" className={styles.staffStudioGhostButton} onClick={onClose}>
+          <button type="button" className={styles.staffStudioGhostButton} onClick={() => void handleDismiss()}>
             {copy.close}
           </button>
         </div>
@@ -1472,10 +1663,10 @@ function DayScheduleModal({
           </button>
 
           <div className={styles.staffDayModalActionsRight}>
-            <button type="button" className={styles.staffStudioGhostButton} onClick={onClose}>
+            <button type="button" className={styles.staffStudioGhostButton} onClick={() => void handleDismiss()}>
               {copy.close}
             </button>
-            <button type="button" className={styles.staffStudioPrimaryButton} onClick={() => void saveDay()} disabled={isSaving}>
+            <button type="button" className={styles.staffStudioPrimaryButton} onClick={() => void saveDay(true)} disabled={isSaving}>
               {isSaving ? copy.saving : copy.save}
             </button>
           </div>

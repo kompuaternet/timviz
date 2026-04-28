@@ -180,6 +180,7 @@ export default function WorkspaceView({ professionalId }: WorkspaceViewProps) {
   const isOwner = snapshot?.membership.scope === "owner";
   const copy = workspaceCopy[language];
   const bookings = isOwner ? copy.bookings.owner : copy.bookings.member;
+  const scheduleHref = isOwner ? "/pro/staff/schedule" : "/pro/calendar";
 
   const initials = useMemo(() => {
     if (!snapshot) {
@@ -214,7 +215,7 @@ export default function WorkspaceView({ professionalId }: WorkspaceViewProps) {
           <div className={styles.workspaceControls}>
             <div className={styles.pillControl}>{t.schedule.today}</div>
             <div className={styles.pillControl}>{copy.dateLabel}</div>
-            <Link href="/pro/schedule" className={styles.pillControl}>
+            <Link href={scheduleHref} className={styles.pillControl}>
               {t.schedule.mySchedule}
             </Link>
             <div className={styles.pillControl}>{copy.settingsPill}</div>

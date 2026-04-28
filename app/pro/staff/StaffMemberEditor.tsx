@@ -2,11 +2,10 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import ProfileAvatar from "../../ProfileAvatar";
 import styles from "../pro.module.css";
 import { useProLanguage } from "../useProLanguage";
-import WorkScheduleCard from "../workspace/WorkScheduleCard";
 import type { StaffMemberEditorSnapshot, StaffMemberWorkspaceAccess } from "../../../lib/pro-staff";
 
 type StaffMemberEditorProps = {
@@ -18,6 +17,7 @@ const editorText = {
   ru: {
     back: "Закрыть",
     save: "Сохранить",
+    saving: "Сохраняем...",
     titlePrefix: "Изменить",
     profileTab: "Профиль",
     scheduleTab: "График",
@@ -53,11 +53,13 @@ const editorText = {
     saved: "Изменения сохранены.",
     failed: "Не удалось сохранить изменения.",
     scheduleHint:
-      "Ниже редактируется личный график сотрудника. Он влияет на рабочий календарь мастера и онлайн-запись."
+      "Личный график сотрудника теперь редактируется только в общем разделе графика смен команды.",
+    openTeamSchedule: "Открыть график смен команды"
   },
   uk: {
     back: "Закрити",
     save: "Зберегти",
+    saving: "Зберігаємо...",
     titlePrefix: "Змінити",
     profileTab: "Профіль",
     scheduleTab: "Графік",
@@ -93,11 +95,13 @@ const editorText = {
     saved: "Зміни збережено.",
     failed: "Не вдалося зберегти зміни.",
     scheduleHint:
-      "Нижче редагується особистий графік співробітника. Він впливає на календар майстра й онлайн-запис."
+      "Особистий графік співробітника тепер редагується лише в загальному розділі графіка змін команди.",
+    openTeamSchedule: "Відкрити графік змін команди"
   },
   en: {
     back: "Close",
     save: "Save",
+    saving: "Saving...",
     titlePrefix: "Edit",
     profileTab: "Profile",
     scheduleTab: "Schedule",
@@ -133,7 +137,8 @@ const editorText = {
     saved: "Changes saved.",
     failed: "Could not save changes.",
     scheduleHint:
-      "Below you are editing the employee personal schedule. It drives both their calendar and public booking availability."
+      "The employee personal schedule is now managed only from the shared team shift schedule screen.",
+    openTeamSchedule: "Open team shift schedule"
   }
 } as const;
 
@@ -165,15 +170,41 @@ export default function StaffMemberEditor({ snapshot, initialTab }: StaffMemberE
   const [phone, setPhone] = useState(member.professional.phone);
   const [statusText, setStatusText] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastSavedSignatureRef = useRef(
+    JSON.stringify({
+      firstName: member.professional.firstName,
+      lastName: member.professional.lastName,
+      role: member.membership.role,
+      email: member.professional.email,
+      phone: member.professional.phone
+    })
+  );
 
   const initials = useMemo(() => {
     const letters = `${firstName?.[0] ?? ""}${lastName?.[0] ?? ""}`.trim();
     return (letters || email[0] || "M").toUpperCase();
   }, [email, firstName, lastName]);
 
+  const profileSignature = useMemo(
+    () =>
+      JSON.stringify({
+        firstName,
+        lastName,
+        role,
+        email,
+        phone
+      }),
+    [email, firstName, lastName, phone, role]
+  );
+
   async function saveProfile() {
+    if (profileSignature === lastSavedSignatureRef.current) {
+      return true;
+    }
+
     setIsSaving(true);
-    setStatusText("");
+    setStatusText(copy.saving);
 
     try {
       const response = await fetch(`/api/pro/staff/members/${encodeURIComponent(member.professional.id)}`, {
@@ -194,15 +225,39 @@ export default function StaffMemberEditor({ snapshot, initialTab }: StaffMemberE
       if (!response.ok) {
         setStatusText(String(payload.error || copy.failed));
       } else {
+        lastSavedSignatureRef.current = profileSignature;
         setStatusText(copy.saved);
-        router.refresh();
+        setIsSaving(false);
+        return true;
       }
     } catch {
       setStatusText(copy.failed);
     }
 
     setIsSaving(false);
+    return false;
   }
+
+  useEffect(() => {
+    if (activeTab !== "profile" || isSaving || profileSignature === lastSavedSignatureRef.current) {
+      return;
+    }
+
+    if (autosaveTimerRef.current) {
+      clearTimeout(autosaveTimerRef.current);
+    }
+
+    autosaveTimerRef.current = setTimeout(() => {
+      void saveProfile();
+    }, 700);
+
+    return () => {
+      if (autosaveTimerRef.current) {
+        clearTimeout(autosaveTimerRef.current);
+        autosaveTimerRef.current = null;
+      }
+    };
+  }, [activeTab, isSaving, profileSignature]);
 
   async function sendInvite() {
     if (!email.trim()) {
@@ -384,14 +439,15 @@ export default function StaffMemberEditor({ snapshot, initialTab }: StaffMemberE
                 </div>
               </div>
 
-              <WorkScheduleCard
-                canEdit
-                targetProfessionalId={member.professional.id}
-                initialMode={member.membership.workScheduleMode}
-                initialSchedule={member.membership.workSchedule}
-                initialCustomSchedule={member.membership.customSchedule}
-                layout="page"
-              />
+              <div className={styles.staffStudioNotice}>
+                {copy.scheduleHint}
+              </div>
+
+              <div className={styles.staffEditorActionRow}>
+                <Link href="/pro/staff/schedule" className={styles.staffStudioPrimaryButton}>
+                  {copy.openTeamSchedule}
+                </Link>
+              </div>
             </div>
           ) : null}
 

@@ -67,15 +67,6 @@ function StaffIcon() {
   );
 }
 
-function ScheduleIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <circle cx="12" cy="12" r="8.2" />
-      <path d="M12 7.5v5l3.2 1.8" />
-    </svg>
-  );
-}
-
 function SettingsIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -110,8 +101,7 @@ const mainLinks = [
   { key: "calendar", href: "/pro/calendar", icon: <CalendarIcon /> },
   { key: "services", href: "/pro/services", icon: <TagIcon /> },
   { key: "clients", href: "/pro/clients", icon: <ClientIcon /> },
-  { key: "staff", href: "/pro/staff", icon: <StaffIcon /> },
-  { key: "schedule", href: "/pro/schedule", icon: <ScheduleIcon /> }
+  { key: "staff", href: "/pro/staff", icon: <StaffIcon /> }
 ] as const;
 
 export default function ProSidebar({
@@ -124,7 +114,7 @@ export default function ProSidebar({
   const [isSupportOpen, setIsSupportOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [showScheduleReminder, setShowScheduleReminder] = useState(
-    () => active !== "schedule" && hasPendingScheduleReminder(professionalId)
+    () => active !== "staff" && hasPendingScheduleReminder(professionalId)
   );
   const labels = {
     workspace: t.nav.home,
@@ -141,7 +131,7 @@ export default function ProSidebar({
       return;
     }
 
-    if (active === "schedule") {
+    if (active === "staff") {
       clearScheduleReminder(professionalId);
       setShowScheduleReminder(false);
       return;
@@ -157,7 +147,6 @@ export default function ProSidebar({
     { key: "services" as const, href: "/pro/services", label: t.nav.services, icon: <TagIcon />, active: active === "services" },
     { key: "clients" as const, href: "/pro/clients", label: t.nav.clients, icon: <ClientIcon />, active: active === "clients" },
     { key: "staff" as const, href: "/pro/staff", label: t.nav.staff, icon: <StaffIcon />, active: active === "staff" },
-    { key: "schedule" as const, href: "/pro/schedule", label: t.nav.schedule, icon: <ScheduleIcon />, active: active === "schedule" },
     { key: "settings" as const, href: "/pro/settings", label: t.nav.settings, icon: <SettingsIcon />, active: active === "settings" }
   ].filter((link) => canManageStaff || link.key !== "staff");
 
@@ -187,7 +176,7 @@ export default function ProSidebar({
               title={labels[link.key]}
             >
               {link.icon}
-              {link.key === "schedule" && showScheduleReminder ? (
+              {link.key === "staff" && showScheduleReminder ? (
                 <span className={styles.workspaceNavDot} aria-hidden="true" />
               ) : null}
             </Link>
@@ -238,7 +227,7 @@ export default function ProSidebar({
           >
             <span className={styles.mobileWorkspaceNavIcon}>
               {link.icon}
-              {link.key === "schedule" && showScheduleReminder ? (
+              {link.key === "staff" && showScheduleReminder ? (
                 <span className={styles.workspaceNavDot} aria-hidden="true" />
               ) : null}
             </span>
