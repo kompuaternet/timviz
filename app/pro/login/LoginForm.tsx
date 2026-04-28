@@ -56,7 +56,11 @@ const loginText = {
   }
 } as const;
 
-export default function LoginForm() {
+type LoginFormProps = {
+  staleSession?: boolean;
+};
+
+export default function LoginForm({ staleSession = false }: LoginFormProps) {
   const router = useRouter();
   const { language } = useProLanguage();
   const copy = loginText[language];
@@ -66,6 +70,37 @@ export default function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [oauthErrorText, setOauthErrorText] = useState("");
   const [inviteToken, setInviteToken] = useState("");
+  const [staleSessionMessage, setStaleSessionMessage] = useState("");
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    if (!staleSession) {
+      return () => {
+        isCancelled = true;
+      };
+    }
+
+    void fetch("/api/pro/logout", {
+      method: "POST"
+    }).finally(() => {
+      if (isCancelled) {
+        return;
+      }
+
+      setStaleSessionMessage(
+        language === "uk"
+          ? "Попередню сесію очищено. Увійдіть знову."
+          : language === "en"
+            ? "Your previous session was cleared. Please sign in again."
+            : "Предыдущая сессия очищена. Войдите снова."
+      );
+    });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [language, staleSession]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -151,7 +186,8 @@ export default function LoginForm() {
       </div>
 
       {error ? <div className={styles.addressWarning}>{error}</div> : null}
-      {!error && oauthErrorText ? <div className={styles.addressWarning}>{oauthErrorText}</div> : null}
+      {!error && staleSessionMessage ? <div className={styles.addressWarning}>{staleSessionMessage}</div> : null}
+      {!error && !staleSessionMessage && oauthErrorText ? <div className={styles.addressWarning}>{oauthErrorText}</div> : null}
 
       <a
         href={`/api/pro/auth/google/start?mode=login${

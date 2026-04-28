@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getSessionCookieName, verifySessionValue } from "../../../lib/pro-auth";
+import { getPendingJoinRequestForProfessional, getWorkspaceSnapshot } from "../../../lib/pro-data";
 import LoginForm from "./LoginForm";
 import styles from "../pro.module.css";
 
@@ -11,13 +12,24 @@ export default async function ProLoginPage() {
   );
 
   if (professionalId) {
-    redirect("/pro/calendar");
+    const [workspace, pendingJoinRequest] = await Promise.all([
+      getWorkspaceSnapshot(professionalId),
+      getPendingJoinRequestForProfessional(professionalId)
+    ]);
+
+    if (workspace) {
+      redirect("/pro/calendar");
+    }
+
+    if (pendingJoinRequest) {
+      redirect("/pro/pending");
+    }
   }
 
   return (
     <main className={styles.splitShell}>
       <section className={styles.formSide}>
-        <LoginForm />
+        <LoginForm staleSession={Boolean(professionalId)} />
       </section>
       <aside className={styles.visualSide}>
         <div className={styles.visualPhoto} />
