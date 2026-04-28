@@ -3661,6 +3661,17 @@
   cursor: pointer;
 }
 
+.staffScheduleShiftLabels {
+  width: 100%;
+  display: grid;
+  gap: 4px;
+  text-align: center;
+}
+
+.staffScheduleShiftLabels span {
+  display: block;
+}
+
 .staffScheduleShiftCell {
   margin: 8px;
   min-height: 56px;
@@ -3682,6 +3693,10 @@
 .staffScheduleShiftCellOff {
   background: #f4f6fa;
   color: #8b90a1;
+}
+
+.staffScheduleMobileDayLabel {
+  display: none;
 }
 
 .staffScheduleCellMenu {
@@ -3845,6 +3860,50 @@
   color: #7a8195;
 }
 
+.staffPlannerIntervals,
+.staffDayIntervals {
+  display: grid;
+  gap: 14px;
+}
+
+.staffPlannerIntervalRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: center;
+}
+
+.staffPlannerIntervalActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.staffPlannerIconButton {
+  width: 34px;
+  height: 34px;
+  border: 0;
+  background: transparent;
+  color: #1f2435;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+.staffPlannerIconButton svg {
+  width: 20px;
+  height: 20px;
+}
+
+.staffPlannerIconButtonDanger {
+  color: #e34c63;
+}
+
+.staffPlannerIconButton:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
 .staffPlannerTimeRow {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
@@ -3905,6 +3964,22 @@
   width: 20px;
   height: 20px;
   accent-color: #6b5cff;
+}
+
+.staffDayIntervalsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.staffDayIntervalsHeader strong {
+  font-size: 1.05rem;
+}
+
+.staffDayIntervalsHeader span {
+  color: #70778c;
+  font-weight: 700;
 }
 
 .staffDayModalGrid {
@@ -4179,6 +4254,76 @@
     border-right: 0;
     border-bottom: 1px solid #edf1f8;
   }
+
+  .staffScheduleHead {
+    display: none;
+  }
+
+  .staffScheduleBoardScroller {
+    overflow: visible;
+  }
+
+  .staffScheduleRows {
+    gap: 16px;
+    padding: 16px;
+  }
+
+  .staffScheduleRow {
+    min-width: 0;
+    border: 1px solid #e7ebf5;
+    border-radius: 22px;
+    overflow: hidden;
+    background: #ffffff;
+  }
+
+  .staffScheduleRow:last-child {
+    border-bottom: 1px solid #e7ebf5;
+  }
+
+  .staffScheduleMemberCell {
+    padding: 16px;
+  }
+
+  .staffScheduleShiftWrap {
+    padding: 12px 16px;
+    border-bottom: 1px solid #edf1f8;
+    display: grid;
+    grid-template-columns: minmax(88px, 108px) minmax(0, 1fr);
+    gap: 12px;
+    align-items: start;
+  }
+
+  .staffScheduleShiftWrap:last-child {
+    border-bottom: 0;
+  }
+
+  .staffScheduleMobileDayLabel {
+    display: grid;
+    gap: 2px;
+    align-content: start;
+  }
+
+  .staffScheduleMobileDayLabel strong {
+    text-transform: capitalize;
+    font-size: 0.95rem;
+  }
+
+  .staffScheduleMobileDayLabel span,
+  .staffScheduleMobileDayLabel small {
+    color: #7c8398;
+  }
+
+  .staffScheduleShiftButton {
+    width: 100%;
+    margin: 0;
+    min-height: 0;
+    padding: 12px 14px;
+    text-align: left;
+  }
+
+  .staffScheduleShiftLabels {
+    text-align: left;
+  }
 }
 
 @media (max-width: 720px) {
@@ -4213,6 +4358,37 @@
   .staffScheduleRangeLabelButton {
     min-width: 0;
     width: 100%;
+  }
+
+  .staffPlannerIntervalRow {
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  }
+
+  .staffPlannerIntervalActions {
+    grid-column: 1 / -1;
+    justify-content: flex-end;
+  }
+
+  .staffScheduleToolbar {
+    padding: 12px;
+  }
+
+  .staffScheduleToolbarRight,
+  .staffScheduleRangeBox {
+    width: 100%;
+  }
+
+  .staffScheduleRangeBox {
+    display: grid;
+    grid-template-columns: 42px minmax(0, 1fr) 42px;
+  }
+
+  .staffScheduleShiftWrap {
+    grid-template-columns: 1fr;
+  }
+
+  .staffScheduleShiftButton {
+    padding: 12px;
   }
 
   .staffDayModal {

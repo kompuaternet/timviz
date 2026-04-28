@@ -93,6 +93,11 @@ type ScheduleCopy = {
   breakTo: string;
   addBreak: string;
   removeBreak: string;
+  addWorkWindow: string;
+  removeWorkWindow: string;
+  invalidIntervalRange: string;
+  overlappingIntervals: string;
+  noRoomForInterval: string;
   restoreTemplate: string;
   dayEditorTitle: (name: string, date: string) => string;
   dayEditorText: string;
@@ -130,12 +135,23 @@ type PlannerState = {
 
 type PlannerApplyMode = "template" | "period";
 type PlannerEndMode = "until-changed" | "until-date";
+type WorkInterval = {
+  startTime: string;
+  endTime: string;
+};
 
 type DayEditorState = {
   memberId: string;
   dateKey: string;
   focusBreak?: boolean;
 };
+
+type EditableDaySchedule = {
+  enabled: boolean;
+  intervals: WorkInterval[];
+};
+
+type EditableWorkSchedule = Record<WorkDayKey, EditableDaySchedule>;
 
 const TIME_OPTIONS = Array.from({ length: 96 }, (_, index) => {
   const minutes = index * 15;
@@ -207,6 +223,12 @@ const scheduleText: Record<"ru" | "uk" | "en", ScheduleCopy> = {
     breakTo: "До",
     addBreak: "Добавить свободное время",
     removeBreak: "Удалить перерыв",
+    addWorkWindow: "Добавить рабочее время",
+    removeWorkWindow: "Удалить рабочее время",
+    invalidIntervalRange: "В каждом рабочем окне время окончания должно быть позже времени начала.",
+    overlappingIntervals: "Рабочие окна одного дня не должны пересекаться или заходить друг на друга.",
+    noRoomForInterval:
+      "Для нового рабочего окна в этом дне уже не осталось места. Измените текущее время или удалите лишний интервал.",
     restoreTemplate: "Сбросить к шаблону недели",
     dayEditorTitle: (name, date) => `Изменить ${date} для ${name}`,
     dayEditorText:
@@ -279,6 +301,12 @@ const scheduleText: Record<"ru" | "uk" | "en", ScheduleCopy> = {
     breakTo: "До",
     addBreak: "Додати вільний час",
     removeBreak: "Видалити перерву",
+    addWorkWindow: "Додати робочий час",
+    removeWorkWindow: "Видалити робочий час",
+    invalidIntervalRange: "У кожному робочому вікні час завершення має бути пізніше за час початку.",
+    overlappingIntervals: "Робочі вікна в межах одного дня не повинні перетинатися або накладатися.",
+    noRoomForInterval:
+      "Для нового робочого вікна в цьому дні вже не залишилося місця. Змініть поточний час або приберіть зайвий інтервал.",
     restoreTemplate: "Скинути до шаблону тижня",
     dayEditorTitle: (name, date) => `Змінити ${date} для ${name}`,
     dayEditorText:
@@ -351,6 +379,12 @@ const scheduleText: Record<"ru" | "uk" | "en", ScheduleCopy> = {
     breakTo: "To",
     addBreak: "Add time off",
     removeBreak: "Remove break",
+    addWorkWindow: "Add work period",
+    removeWorkWindow: "Remove work period",
+    invalidIntervalRange: "Each work period must end after it starts.",
+    overlappingIntervals: "Work periods within the same day cannot overlap.",
+    noRoomForInterval:
+      "There is no room left for another work period in this day. Adjust the current time or remove an extra interval.",
     restoreTemplate: "Reset to weekly template",
     dayEditorTitle: (name, date) => `Edit ${date} for ${name}`,
     dayEditorText:
@@ -449,27 +483,285 @@ function getDayDurationMinutes(daySchedule: WorkDaySchedule | null | undefined) 
   return Math.max(0, workMinutes - breakMinutes);
 }
 
+function getDayIntervals(daySchedule: WorkDaySchedule | null | undefined) {
+  if (!daySchedule) {
+    return [] as WorkInterval[];
+  }
+
+  const dayStart = timeToMinutes(daySchedule.startTime);
+  const dayEnd = timeToMinutes(daySchedule.endTime);
+
+  if (dayStart >= dayEnd) {
+    return [
+      {
+        startTime: daySchedule.startTime,
+        endTime: daySchedule.endTime
+      }
+    ];
+  }
+
+  const intervals: WorkInterval[] = [];
+  let cursor = dayStart;
+
+  for (const item of getDayBreaks(daySchedule)) {
+    const breakStart = Math.max(dayStart, Math.min(dayEnd, timeToMinutes(item.startTime)));
+    const breakEnd = Math.max(dayStart, Math.min(dayEnd, timeToMinutes(item.endTime)));
+
+    if (breakStart > cursor) {
+      intervals.push({
+        startTime: minutesToTime(cursor),
+        endTime: minutesToTime(breakStart)
+      });
+    }
+
+    cursor = Math.max(cursor, breakEnd);
+  }
+
+  if (cursor < dayEnd) {
+    intervals.push({
+      startTime: minutesToTime(cursor),
+      endTime: minutesToTime(dayEnd)
+    });
+  }
+
+  return intervals.length > 0
+    ? intervals
+    : [
+        {
+          startTime: daySchedule.startTime,
+          endTime: daySchedule.endTime
+        }
+      ];
+}
+
+function validateIntervals(intervals: WorkInterval[]) {
+  const sorted = [...intervals]
+    .map((item) => ({
+      startTime: item.startTime,
+      endTime: item.endTime
+    }))
+    .sort((left, right) => timeToMinutes(left.startTime) - timeToMinutes(right.startTime));
+
+  if (sorted.some((item) => timeToMinutes(item.startTime) >= timeToMinutes(item.endTime))) {
+    return {
+      ok: false as const,
+      reason: "range" as const,
+      intervals: sorted
+    };
+  }
+
+  const normalized: WorkInterval[] = [];
+
+  for (const interval of sorted) {
+    const previous = normalized[normalized.length - 1];
+
+    if (!previous) {
+      normalized.push(interval);
+      continue;
+    }
+
+    if (timeToMinutes(interval.startTime) < timeToMinutes(previous.endTime)) {
+      return {
+        ok: false as const,
+        reason: "overlap" as const,
+        intervals: sorted
+      };
+    }
+
+    if (interval.startTime === previous.endTime) {
+      previous.endTime = interval.endTime;
+      continue;
+    }
+
+    normalized.push(interval);
+  }
+
+  return {
+    ok: true as const,
+    reason: null,
+    intervals: normalized
+  };
+}
+
+function serializeIntervals(
+  enabled: boolean,
+  intervals: WorkInterval[],
+  fallback: Pick<WorkDaySchedule, "startTime" | "endTime">
+) {
+  const validation = validateIntervals(intervals);
+  const normalized = validation.ok ? validation.intervals : intervals;
+
+  if (!enabled || normalized.length === 0) {
+    return serializeDay(false, fallback.startTime, fallback.endTime, []);
+  }
+
+  const first = normalized[0];
+  const last = normalized[normalized.length - 1];
+  const breaks: WorkBreak[] = [];
+
+  for (let index = 0; index < normalized.length - 1; index += 1) {
+    const current = normalized[index];
+    const next = normalized[index + 1];
+    breaks.push({
+      startTime: current.endTime,
+      endTime: next.startTime
+    });
+  }
+
+  return serializeDay(true, first.startTime, last.endTime, breaks);
+}
+
+function getIntervalsDurationMinutes(intervals: WorkInterval[]) {
+  return intervals.reduce((sum, interval) => {
+    return sum + Math.max(0, timeToMinutes(interval.endTime) - timeToMinutes(interval.startTime));
+  }, 0);
+}
+
+function createEditableDaySchedule(daySchedule: WorkDaySchedule, focusBreak = false): EditableDaySchedule {
+  const intervals = getDayIntervals(daySchedule);
+
+  if (focusBreak && intervals.length < 2) {
+    const nextIntervals = insertWorkInterval(intervals, 0);
+    if (nextIntervals) {
+      return {
+        enabled: true,
+        intervals: nextIntervals
+      };
+    }
+  }
+
+  return {
+    enabled: daySchedule.enabled,
+    intervals
+  };
+}
+
+function createEditableWorkSchedule(schedule: WorkSchedule) {
+  return Object.fromEntries(
+    workDays.map((day) => [day.key, createEditableDaySchedule(schedule[day.key])])
+  ) as EditableWorkSchedule;
+}
+
+function getFallbackRange(
+  intervals: WorkInterval[],
+  fallback: Pick<WorkDaySchedule, "startTime" | "endTime">
+) {
+  if (intervals.length === 0) {
+    return fallback;
+  }
+
+  const sorted = [...intervals].sort(
+    (left, right) => timeToMinutes(left.startTime) - timeToMinutes(right.startTime)
+  );
+
+  return {
+    startTime: sorted[0].startTime,
+    endTime: sorted[sorted.length - 1].endTime
+  };
+}
+
+function getIntervalError(reason: "range" | "overlap" | null, copy: ScheduleCopy) {
+  if (reason === "range") {
+    return copy.invalidIntervalRange;
+  }
+
+  if (reason === "overlap") {
+    return copy.overlappingIntervals;
+  }
+
+  return copy.failed;
+}
+
 function formatHourCount(minutes: number, unit: string) {
   const hours = Math.round((minutes / 60) * 10) / 10;
   const value = Number.isInteger(hours) ? String(hours) : hours.toFixed(1).replace(".", ",");
   return `${value} ${unit}`;
 }
 
-function createSuggestedBreak(day: Pick<WorkDaySchedule, "startTime" | "endTime" | "breaks" | "breakStart" | "breakEnd">) {
-  const existing = getDayBreaks(day as WorkDaySchedule);
-  const workStart = timeToMinutes(day.startTime);
-  const workEnd = timeToMinutes(day.endTime);
-  const anchor =
-    existing.length > 0
-      ? Math.min(workEnd - 30, timeToMinutes(existing[existing.length - 1].endTime) + 30)
-      : Math.min(workEnd - 60, Math.max(workStart + 180, workStart + 60));
-  const start = Math.max(workStart, Math.min(anchor, workEnd - 30));
-  const end = Math.min(workEnd, start + 60);
+function createIntervalAfter(intervals: WorkInterval[], index: number) {
+  const current = intervals[index];
+  if (!current) {
+    return null;
+  }
+
+  const next = intervals[index + 1];
+  const minGap = 15;
+  const currentEnd = timeToMinutes(current.endTime);
+  const nextStart = next ? timeToMinutes(next.startTime) : 24 * 60;
+
+  if (nextStart - currentEnd > minGap) {
+    const windowStart = currentEnd + minGap;
+    const desiredEnd = Math.min(nextStart - minGap, windowStart + 60);
+
+    if (desiredEnd - windowStart >= 15) {
+      return {
+        startTime: minutesToTime(windowStart),
+        endTime: minutesToTime(desiredEnd)
+      } satisfies WorkInterval;
+    }
+  }
+
+  const desiredStart = Math.min(currentEnd + 60, 24 * 60 - 30);
+  const desiredEnd = Math.min(24 * 60 - 1, desiredStart + 60);
+
+  if (desiredEnd - desiredStart < 15) {
+    return null;
+  }
 
   return {
-    startTime: minutesToTime(start),
-    endTime: minutesToTime(Math.max(start + 15, end))
-  } satisfies WorkBreak;
+    startTime: minutesToTime(desiredStart),
+    endTime: minutesToTime(desiredEnd)
+  } satisfies WorkInterval;
+}
+
+function createSplitIntervals(interval: WorkInterval) {
+  const start = timeToMinutes(interval.startTime);
+  const end = timeToMinutes(interval.endTime);
+  const duration = end - start;
+
+  if (duration < 180) {
+    return null;
+  }
+
+  const gap = 60;
+  const firstEnd = Math.round((start + (duration - gap) / 2) / 15) * 15;
+  const safeFirstEnd = Math.max(start + 60, Math.min(firstEnd, end - gap - 60));
+  const secondStart = safeFirstEnd + gap;
+
+  if (safeFirstEnd <= start || secondStart >= end) {
+    return null;
+  }
+
+  return [
+    {
+      startTime: minutesToTime(start),
+      endTime: minutesToTime(safeFirstEnd)
+    },
+    {
+      startTime: minutesToTime(secondStart),
+      endTime: minutesToTime(end)
+    }
+  ] satisfies WorkInterval[];
+}
+
+function insertWorkInterval(intervals: WorkInterval[], index: number) {
+  if (intervals.length === 1) {
+    const split = createSplitIntervals(intervals[0]);
+    if (split) {
+      return split;
+    }
+  }
+
+  const suggestion = createIntervalAfter(intervals, index);
+  if (!suggestion) {
+    return null;
+  }
+
+  return [...intervals.slice(0, index + 1), suggestion, ...intervals.slice(index + 1)];
+}
+
+function formatIntervalLabel(interval: WorkInterval) {
+  return `${interval.startTime} - ${interval.endTime}`;
 }
 
 function serializeDay(enabled: boolean, startTime: string, endTime: string, breaks: WorkBreak[]) {
@@ -538,6 +830,102 @@ function formatRangeLabel(weekDays: Array<{ date: Date }>, locale: string) {
   return `${startLabel} – ${endLabel}`;
 }
 
+function PlusCircleIcon() {
+  return (
+    <svg viewBox="0 0 20 20" aria-hidden="true">
+      <circle cx="10" cy="10" r="8.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M10 6v8M6 10h8" fill="none" stroke="currentColor" strokeLinecap="round" strokeWidth="1.5" />
+    </svg>
+  );
+}
+
+function TrashIcon() {
+  return (
+    <svg viewBox="0 0 20 20" aria-hidden="true">
+      <path
+        d="M6.5 6.5v8m3.5-8v8m3.5-8v8M4.5 5.5h11M7 3.5h6m-7 2 1 10a1 1 0 0 0 1 .9h4a1 1 0 0 0 1-.9l1-10"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.5"
+      />
+    </svg>
+  );
+}
+
+function WorkIntervalsEditor({
+  intervals,
+  enabled,
+  copy,
+  onChange,
+  onAddAfter,
+  onRemove
+}: {
+  intervals: WorkInterval[];
+  enabled: boolean;
+  copy: ScheduleCopy;
+  onChange: (index: number, field: keyof WorkInterval, value: string) => void;
+  onAddAfter: (index: number) => void;
+  onRemove: (index: number) => void;
+}) {
+  return (
+    <div className={styles.staffPlannerIntervals}>
+      {intervals.map((interval, index) => (
+        <div key={`${interval.startTime}-${interval.endTime}-${index}`} className={styles.staffPlannerIntervalRow}>
+          <select
+            className={styles.select}
+            value={interval.startTime}
+            disabled={!enabled}
+            onChange={(event) => onChange(index, "startTime", event.target.value)}
+          >
+            {TIME_OPTIONS.map((time) => (
+              <option key={`interval-start-${index}-${time}`} value={time}>
+                {time}
+              </option>
+            ))}
+          </select>
+          <span className={styles.staffPlannerTimeDivider}>{copy.workTo}</span>
+          <select
+            className={styles.select}
+            value={interval.endTime}
+            disabled={!enabled}
+            onChange={(event) => onChange(index, "endTime", event.target.value)}
+          >
+            {TIME_OPTIONS.map((time) => (
+              <option key={`interval-end-${index}-${time}`} value={time}>
+                {time}
+              </option>
+            ))}
+          </select>
+          <div className={styles.staffPlannerIntervalActions}>
+            <button
+              type="button"
+              className={styles.staffPlannerIconButton}
+              onClick={() => onAddAfter(index)}
+              disabled={!enabled}
+              aria-label={copy.addWorkWindow}
+              title={copy.addWorkWindow}
+            >
+              <PlusCircleIcon />
+            </button>
+            <button
+              type="button"
+              className={`${styles.staffPlannerIconButton} ${styles.staffPlannerIconButtonDanger}`}
+              onClick={() => onRemove(index)}
+              disabled={!enabled}
+              aria-label={copy.removeWorkWindow}
+              title={copy.removeWorkWindow}
+            >
+              <TrashIcon />
+            </button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 type SaveScheduleInput = {
   memberId: string;
   workScheduleMode: StaffMemberSnapshot["membership"]["workScheduleMode"];
@@ -572,7 +960,7 @@ function SchedulePlannerModal({
     [member.membership.workSchedule]
   );
   const defaultStartDate = anchorDateKey || toDateKey(new Date());
-  const [workSchedule, setWorkSchedule] = useState<WorkSchedule>(initialSchedule);
+  const [workSchedule, setWorkSchedule] = useState<EditableWorkSchedule>(() => createEditableWorkSchedule(initialSchedule));
   const [applyMode, setApplyMode] = useState<PlannerApplyMode>("template");
   const [startDate, setStartDate] = useState(defaultStartDate);
   const [endMode, setEndMode] = useState<PlannerEndMode>("until-changed");
@@ -581,7 +969,7 @@ function SchedulePlannerModal({
   const [statusText, setStatusText] = useState("");
 
   useEffect(() => {
-    setWorkSchedule(normalizeWorkSchedule(member.membership.workSchedule));
+    setWorkSchedule(createEditableWorkSchedule(normalizeWorkSchedule(member.membership.workSchedule)));
     const nextStartDate = anchorDateKey || toDateKey(new Date());
     setApplyMode("template");
     setStartDate(nextStartDate);
@@ -593,20 +981,64 @@ function SchedulePlannerModal({
   const totalMinutes = useMemo(
     () =>
       localizedWorkDays.reduce((sum, day) => {
-        return sum + getDayDurationMinutes(workSchedule[day.key]);
+        const item = workSchedule[day.key];
+        return sum + (item.enabled ? getIntervalsDurationMinutes(item.intervals) : 0);
       }, 0),
     [localizedWorkDays, workSchedule]
   );
 
-  function updateDay(dayKey: WorkDayKey, patch: Partial<WorkDaySchedule>) {
+  function updateDay(dayKey: WorkDayKey, patch: Partial<EditableDaySchedule>) {
     setWorkSchedule((current) => ({
       ...current,
       [dayKey]: {
         ...current[dayKey],
-        ...patch,
-        dayType: patch.enabled === false ? "day-off" : "workday"
+        ...patch
       }
     }));
+    setStatusText("");
+  }
+
+  function updateDayInterval(dayKey: WorkDayKey, index: number, field: keyof WorkInterval, value: string) {
+    setWorkSchedule((current) => ({
+      ...current,
+      [dayKey]: {
+        ...current[dayKey],
+        intervals: current[dayKey].intervals.map((item, itemIndex) =>
+          itemIndex === index ? { ...item, [field]: value } : item
+        )
+      }
+    }));
+    setStatusText("");
+  }
+
+  function addDayInterval(dayKey: WorkDayKey, index: number) {
+    const nextIntervals = insertWorkInterval(workSchedule[dayKey].intervals, index);
+    if (!nextIntervals) {
+      setStatusText(copy.noRoomForInterval);
+      return;
+    }
+
+    setWorkSchedule((current) => ({
+      ...current,
+      [dayKey]: {
+        enabled: true,
+        intervals: nextIntervals
+      }
+    }));
+    setStatusText("");
+  }
+
+  function removeDayInterval(dayKey: WorkDayKey, index: number) {
+    const nextIntervals = workSchedule[dayKey].intervals.filter((_, itemIndex) => itemIndex !== index);
+
+    setWorkSchedule((current) => ({
+      ...current,
+      [dayKey]: {
+        enabled: nextIntervals.length > 0 ? current[dayKey].enabled : false,
+        intervals: nextIntervals.length > 0 ? nextIntervals : current[dayKey].intervals
+      }
+    }));
+    setStatusText("");
   }
 
   async function handleSave() {
@@ -616,8 +1048,9 @@ function SchedulePlannerModal({
         continue;
       }
 
-      if (timeToMinutes(value.startTime) >= timeToMinutes(value.endTime)) {
-        setStatusText(copy.failed);
+      const validation = validateIntervals(value.intervals);
+      if (!validation.ok) {
+        setStatusText(getIntervalError(validation.reason, copy));
         return;
       }
     }
@@ -648,12 +1081,8 @@ function SchedulePlannerModal({
         const dateKey = toDateKey(new Date(cursor));
         const weekdayKey = getWeekdayKey(dateKey);
         const template = workSchedule[weekdayKey];
-        nextCustomSchedule[dateKey] = serializeDay(
-          template.enabled,
-          template.startTime,
-          template.endTime,
-          getDayBreaks(template)
-        );
+        const fallbackRange = getFallbackRange(template.intervals, initialSchedule[weekdayKey]);
+        nextCustomSchedule[dateKey] = serializeIntervals(template.enabled, template.intervals, fallbackRange);
       }
 
       success = await onSave({
@@ -681,14 +1110,22 @@ function SchedulePlannerModal({
             continue;
           }
 
-          nextCustomSchedule[dateKey] = serializeDay(false, template.startTime, template.endTime, getDayBreaks(template));
+          const fallbackRange = getFallbackRange(template.intervals, initialSchedule[weekdayKey]);
+          nextCustomSchedule[dateKey] = serializeDay(false, fallbackRange.startTime, fallbackRange.endTime, []);
         }
       }
+
+      const nextWorkSchedule = localizedWorkDays.reduce((accumulator, day) => {
+        const template = workSchedule[day.key];
+        const fallbackRange = getFallbackRange(template.intervals, initialSchedule[day.key]);
+        accumulator[day.key] = serializeIntervals(template.enabled, template.intervals, fallbackRange);
+        return accumulator;
+      }, createEmptyWorkSchedule());
 
       success = await onSave({
         memberId: member.professional.id,
         workScheduleMode: "fixed",
-        workSchedule,
+        workSchedule: nextWorkSchedule,
         customSchedule: nextCustomSchedule,
         successText: copy.saved
       });
@@ -821,7 +1258,10 @@ function SchedulePlannerModal({
               <div className={styles.staffPlannerDays}>
                 {localizedWorkDays.map((day) => {
                   const daySchedule = workSchedule[day.key];
-                  const dayHours = formatHourCount(getDayDurationMinutes(daySchedule), copy.hours);
+                  const dayHours = formatHourCount(
+                    daySchedule.enabled ? getIntervalsDurationMinutes(daySchedule.intervals) : 0,
+                    copy.hours
+                  );
 
                   return (
                     <div key={day.key} className={styles.staffPlannerDayRow}>
@@ -837,33 +1277,14 @@ function SchedulePlannerModal({
                         </div>
                       </label>
 
-                      <div className={styles.staffPlannerTimeRow}>
-                        <select
-                          className={styles.select}
-                          value={daySchedule.startTime}
-                          disabled={!daySchedule.enabled}
-                          onChange={(event) => updateDay(day.key, { startTime: event.target.value })}
-                        >
-                          {TIME_OPTIONS.map((time) => (
-                            <option key={`start-${day.key}-${time}`} value={time}>
-                              {time}
-                            </option>
-                          ))}
-                        </select>
-                        <span className={styles.staffPlannerTimeDivider}>{copy.workTo}</span>
-                        <select
-                          className={styles.select}
-                          value={daySchedule.endTime}
-                          disabled={!daySchedule.enabled}
-                          onChange={(event) => updateDay(day.key, { endTime: event.target.value })}
-                        >
-                          {TIME_OPTIONS.map((time) => (
-                            <option key={`end-${day.key}-${time}`} value={time}>
-                              {time}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
+                      <WorkIntervalsEditor
+                        intervals={daySchedule.intervals}
+                        enabled={daySchedule.enabled}
+                        copy={copy}
+                        onChange={(index, field, value) => updateDayInterval(day.key, index, field, value)}
+                        onAddAfter={(index) => addDayInterval(day.key, index)}
+                        onRemove={(index) => removeDayInterval(day.key, index)}
+                      />
                     </div>
                   );
                 })}
@@ -901,57 +1322,58 @@ function DayScheduleModal({
   );
   const hasOverride = Boolean(member.membership.customSchedule[dateKey]);
   const [enabled, setEnabled] = useState(sourceSchedule.enabled);
-  const [startTime, setStartTime] = useState(sourceSchedule.startTime);
-  const [endTime, setEndTime] = useState(sourceSchedule.endTime);
-  const [breaks, setBreaks] = useState<WorkBreak[]>(() => {
-    const initialBreaks = getDayBreaks(sourceSchedule);
-    return focusBreak && initialBreaks.length === 0
-      ? [createSuggestedBreak(sourceSchedule)]
-      : initialBreaks;
-  });
+  const [intervals, setIntervals] = useState<WorkInterval[]>(() => createEditableDaySchedule(sourceSchedule, focusBreak).intervals);
   const [isSaving, setIsSaving] = useState(false);
   const [statusText, setStatusText] = useState("");
 
   useEffect(() => {
     const nextSchedule = getDaySchedule(dateKey, member.membership.workSchedule, member.membership.customSchedule);
-    const nextBreaks = getDayBreaks(nextSchedule);
+    const nextEditableSchedule = createEditableDaySchedule(nextSchedule, focusBreak);
     setEnabled(nextSchedule.enabled);
-    setStartTime(nextSchedule.startTime);
-    setEndTime(nextSchedule.endTime);
-    setBreaks(focusBreak && nextBreaks.length === 0 ? [createSuggestedBreak(nextSchedule)] : nextBreaks);
+    setIntervals(nextEditableSchedule.intervals);
     setStatusText("");
   }, [dateKey, focusBreak, member]);
 
-  function addBreak() {
-    setBreaks((current) => [
-      ...current,
-      createSuggestedBreak({
-        startTime,
-        endTime,
-        breakStart: current[0]?.startTime ?? startTime,
-        breakEnd: current[0]?.endTime ?? startTime,
-        breaks: current
-      })
-    ]);
+  function updateInterval(index: number, field: keyof WorkInterval, value: string) {
+    setIntervals((current) => current.map((item, itemIndex) => (itemIndex === index ? { ...item, [field]: value } : item)));
+    setStatusText("");
   }
 
-  function updateBreak(index: number, field: keyof WorkBreak, value: string) {
-    setBreaks((current) => current.map((item, itemIndex) => (itemIndex === index ? { ...item, [field]: value } : item)));
+  function addInterval(index: number) {
+    const nextIntervals = insertWorkInterval(intervals, index);
+    if (!nextIntervals) {
+      setStatusText(copy.noRoomForInterval);
+      return;
+    }
+
+    setIntervals(nextIntervals);
+    setEnabled(true);
+    setStatusText("");
   }
 
-  function removeBreak(index: number) {
-    setBreaks((current) => current.filter((_, itemIndex) => itemIndex !== index));
+  function removeInterval(index: number) {
+    const nextIntervals = intervals.filter((_, itemIndex) => itemIndex !== index);
+    if (nextIntervals.length === 0) {
+      setEnabled(false);
+      setStatusText("");
+      return;
+    }
+
+    setIntervals(nextIntervals);
+    setStatusText("");
   }
 
   async function saveDay() {
-    if (enabled && timeToMinutes(startTime) >= timeToMinutes(endTime)) {
-      setStatusText(copy.failed);
+    const validation = validateIntervals(intervals);
+    if (enabled && !validation.ok) {
+      setStatusText(getIntervalError(validation.reason, copy));
       return;
     }
 
     setIsSaving(true);
     const nextCustomSchedule = normalizeCustomSchedule(member.membership.customSchedule);
-    nextCustomSchedule[dateKey] = serializeDay(enabled, startTime, endTime, breaks);
+    const fallbackRange = getFallbackRange(intervals, sourceSchedule);
+    nextCustomSchedule[dateKey] = serializeIntervals(enabled, intervals, fallbackRange);
 
     const success = await onSave({
       memberId: member.professional.id,
@@ -1010,78 +1432,31 @@ function DayScheduleModal({
         </div>
 
         <label className={styles.staffDayToggle}>
-          <input type="checkbox" checked={enabled} onChange={(event) => setEnabled(event.target.checked)} />
+          <input
+            type="checkbox"
+            checked={enabled}
+            onChange={(event) => {
+              setEnabled(event.target.checked);
+              setStatusText("");
+            }}
+          />
           <span>{copy.workingDay}</span>
         </label>
 
-        <div className={styles.staffDayModalGrid}>
-          <label className={styles.staffDrawerField}>
-            <span>{copy.workFrom}</span>
-            <select className={styles.select} value={startTime} disabled={!enabled} onChange={(event) => setStartTime(event.target.value)}>
-              {TIME_OPTIONS.map((time) => (
-                <option key={`modal-start-${time}`} value={time}>
-                  {time}
-                </option>
-              ))}
-            </select>
-          </label>
+        <div className={styles.staffDayIntervals}>
+          <div className={styles.staffDayIntervalsHeader}>
+            <strong>{copy.plannerSummary}</strong>
+            <span>{enabled ? formatHourCount(getIntervalsDurationMinutes(intervals), copy.hours) : copy.noWork}</span>
+          </div>
 
-          <label className={styles.staffDrawerField}>
-            <span>{copy.workTo}</span>
-            <select className={styles.select} value={endTime} disabled={!enabled} onChange={(event) => setEndTime(event.target.value)}>
-              {TIME_OPTIONS.map((time) => (
-                <option key={`modal-end-${time}`} value={time}>
-                  {time}
-                </option>
-              ))}
-            </select>
-          </label>
-        </div>
-
-        <div className={styles.staffDayBreaks}>
-          {breaks.map((item, index) => (
-            <div key={`${item.startTime}-${item.endTime}-${index}`} className={styles.staffDayBreakRow}>
-              <label className={styles.staffDrawerField}>
-                <span>{copy.breakFrom}</span>
-                <select
-                  className={styles.select}
-                  value={item.startTime}
-                  disabled={!enabled}
-                  onChange={(event) => updateBreak(index, "startTime", event.target.value)}
-                >
-                  {TIME_OPTIONS.map((time) => (
-                    <option key={`break-start-${index}-${time}`} value={time}>
-                      {time}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <label className={styles.staffDrawerField}>
-                <span>{copy.breakTo}</span>
-                <select
-                  className={styles.select}
-                  value={item.endTime}
-                  disabled={!enabled}
-                  onChange={(event) => updateBreak(index, "endTime", event.target.value)}
-                >
-                  {TIME_OPTIONS.map((time) => (
-                    <option key={`break-end-${index}-${time}`} value={time}>
-                      {time}
-                    </option>
-                  ))}
-                </select>
-              </label>
-
-              <button type="button" className={styles.staffSecondaryButton} onClick={() => removeBreak(index)} disabled={!enabled}>
-                {copy.removeBreak}
-              </button>
-            </div>
-          ))}
-
-          <button type="button" className={styles.staffStudioGhostButton} onClick={addBreak} disabled={!enabled}>
-            {copy.addBreak}
-          </button>
+          <WorkIntervalsEditor
+            intervals={intervals}
+            enabled={enabled}
+            copy={copy}
+            onChange={updateInterval}
+            onAddAfter={addInterval}
+            onRemove={removeInterval}
+          />
         </div>
 
         {statusText ? <div className={styles.staffStudioStatus}>{statusText}</div> : null}
@@ -1669,7 +2044,8 @@ export default function StaffScheduleView({ professionalId, snapshot }: StaffSch
                             member.membership.workSchedule,
                             member.membership.customSchedule
                           );
-                          const label = daySchedule.enabled ? `${daySchedule.startTime} - ${daySchedule.endTime}` : copy.noWork;
+                          const dayIntervals = daySchedule.enabled ? getDayIntervals(daySchedule) : [];
+                          const intervalLabel = dayIntervals.map((interval) => formatIntervalLabel(interval)).join(" · ");
                           const isCellMenuOpen =
                             cellMenu?.memberId === member.professional.id && cellMenu.dateKey === day.key;
 
@@ -1679,11 +2055,17 @@ export default function StaffScheduleView({ professionalId, snapshot }: StaffSch
                               className={styles.staffScheduleShiftWrap}
                               data-staff-floating-root
                             >
+                              <div className={styles.staffScheduleMobileDayLabel}>
+                                <strong>{day.short}</strong>
+                                <span>{day.label}</span>
+                                <small>{formatHourCount(getDayDurationMinutes(daySchedule), copy.hours)}</small>
+                              </div>
                               <button
                                 type="button"
                                 className={`${styles.staffScheduleShiftButton} ${
                                   daySchedule.enabled ? styles.staffScheduleShiftCellActive : styles.staffScheduleShiftCellOff
                                 }`}
+                                aria-label={daySchedule.enabled ? intervalLabel : copy.noWork}
                                 onClick={(event) => {
                                   const anchorEl = event.currentTarget;
                                   const nextState =
@@ -1692,7 +2074,17 @@ export default function StaffScheduleView({ professionalId, snapshot }: StaffSch
                                   setCellMenu(nextState);
                                 }}
                               >
-                                {label}
+                                {daySchedule.enabled ? (
+                                  <span className={styles.staffScheduleShiftLabels}>
+                                    {dayIntervals.map((interval, index) => (
+                                      <span key={`${member.professional.id}-${day.key}-${index}`}>
+                                        {formatIntervalLabel(interval)}
+                                      </span>
+                                    ))}
+                                  </span>
+                                ) : (
+                                  copy.noWork
+                                )}
                               </button>
 
                               <FloatingPopover
