@@ -71,9 +71,14 @@ type ScheduleCopy = {
   plannerText: string;
   repeatType: string;
   repeatWeekly: string;
+  repeatForPeriod: string;
   startDate: string;
   endBehavior: string;
   untilChanged: string;
+  untilDate: string;
+  endDate: string;
+  selectEndDate: string;
+  invalidDateRange: string;
   businessHint: string;
   plannerHint: string;
   plannerSummary: string;
@@ -115,6 +120,9 @@ type PlannerState = {
   memberId: string;
   anchorDateKey?: string;
 };
+
+type PlannerApplyMode = "template" | "period";
+type PlannerEndMode = "until-changed" | "until-date";
 
 type DayEditorState = {
   memberId: string;
@@ -169,11 +177,16 @@ const scheduleText: Record<"ru" | "uk" | "en", ScheduleCopy> = {
     plannerTitle: (name) => `Установить повторяющиеся смены для ${name}`,
     plannerText:
       "Сохраните недельный шаблон сотрудника. Он станет основной сеткой для будущих недель, а отдельные исключения можно будет менять прямо в таблице.",
-    repeatType: "Тип бронирования",
-    repeatWeekly: "Каждую неделю",
+    repeatType: "Как применять",
+    repeatWeekly: "Сделать основным графиком",
+    repeatForPeriod: "Применить на выбранный период",
     startDate: "Дата начала",
     endBehavior: "Завершение",
     untilChanged: "Пока не измените график",
+    untilDate: "До выбранной даты",
+    endDate: "Дата завершения",
+    selectEndDate: "Выберите дату завершения.",
+    invalidDateRange: "Дата завершения должна быть не раньше даты начала.",
     businessHint: "График сотрудника применяется внутри текущего бизнеса и влияет на календарь мастера и онлайн-запись.",
     plannerHint: "Исключения по конкретным датам по-прежнему редактируются из недельной таблицы.",
     plannerSummary: "Еженедельно",
@@ -236,11 +249,16 @@ const scheduleText: Record<"ru" | "uk" | "en", ScheduleCopy> = {
     plannerTitle: (name) => `Встановити повторювані зміни для ${name}`,
     plannerText:
       "Збережіть тижневий шаблон співробітника. Він стане основною сіткою для майбутніх тижнів, а окремі винятки можна буде змінювати прямо в таблиці.",
-    repeatType: "Тип бронювання",
-    repeatWeekly: "Щотижня",
+    repeatType: "Як застосувати",
+    repeatWeekly: "Зробити основним графіком",
+    repeatForPeriod: "Застосувати на вибраний період",
     startDate: "Дата початку",
     endBehavior: "Завершення",
     untilChanged: "Поки не зміните графік",
+    untilDate: "До вибраної дати",
+    endDate: "Дата завершення",
+    selectEndDate: "Оберіть дату завершення.",
+    invalidDateRange: "Дата завершення має бути не раніше дати початку.",
     businessHint: "Графік співробітника застосовується всередині поточного бізнесу й впливає на календар майстра та онлайн-запис.",
     plannerHint: "Винятки за конкретними датами й надалі редагуються прямо з тижневої таблиці.",
     plannerSummary: "Щотижня",
@@ -303,11 +321,16 @@ const scheduleText: Record<"ru" | "uk" | "en", ScheduleCopy> = {
     plannerTitle: (name) => `Set recurring shifts for ${name}`,
     plannerText:
       "Save a weekly employee template. It becomes the base grid for future weeks, while date-specific exceptions stay editable from the table.",
-    repeatType: "Booking type",
-    repeatWeekly: "Every week",
+    repeatType: "How to apply",
+    repeatWeekly: "Set as base schedule",
+    repeatForPeriod: "Apply for selected period",
     startDate: "Start date",
     endBehavior: "End",
     untilChanged: "Until you change it",
+    untilDate: "Until selected date",
+    endDate: "End date",
+    selectEndDate: "Choose an end date.",
+    invalidDateRange: "The end date must be on or after the start date.",
     businessHint: "The employee schedule is applied inside the current business and affects both the calendar and online booking.",
     plannerHint: "Date-specific exceptions are still managed directly from the weekly board.",
     plannerSummary: "Weekly",
@@ -541,14 +564,22 @@ function SchedulePlannerModal({
     () => normalizeWorkSchedule(member.membership.workSchedule),
     [member.membership.workSchedule]
   );
+  const defaultStartDate = anchorDateKey || toDateKey(new Date());
   const [workSchedule, setWorkSchedule] = useState<WorkSchedule>(initialSchedule);
-  const [startDate, setStartDate] = useState(anchorDateKey || toDateKey(new Date()));
+  const [applyMode, setApplyMode] = useState<PlannerApplyMode>("template");
+  const [startDate, setStartDate] = useState(defaultStartDate);
+  const [endMode, setEndMode] = useState<PlannerEndMode>("until-changed");
+  const [endDate, setEndDate] = useState(() => toDateKey(addDays(fromDateKey(defaultStartDate), 27)));
   const [isSaving, setIsSaving] = useState(false);
   const [statusText, setStatusText] = useState("");
 
   useEffect(() => {
     setWorkSchedule(normalizeWorkSchedule(member.membership.workSchedule));
-    setStartDate(anchorDateKey || toDateKey(new Date()));
+    const nextStartDate = anchorDateKey || toDateKey(new Date());
+    setApplyMode("template");
+    setStartDate(nextStartDate);
+    setEndMode("until-changed");
+    setEndDate(toDateKey(addDays(fromDateKey(nextStartDate), 27)));
     setStatusText("");
   }, [anchorDateKey, member]);
 
@@ -584,31 +615,77 @@ function SchedulePlannerModal({
       }
     }
 
-    setIsSaving(true);
-    const nextCustomSchedule = normalizeCustomSchedule(member.membership.customSchedule);
-    const todayKey = toDateKey(new Date());
+    if (applyMode === "period") {
+      if (!endDate) {
+        setStatusText(copy.selectEndDate);
+        return;
+      }
 
-    if (startDate > todayKey) {
-      for (let cursor = new Date(`${todayKey}T00:00:00`); toDateKey(cursor) < startDate; cursor.setDate(cursor.getDate() + 1)) {
-        const dateKey = toDateKey(new Date(cursor));
-        const weekdayKey = getWeekdayKey(dateKey);
-        const template = workSchedule[weekdayKey];
-
-        if (!template.enabled) {
-          continue;
-        }
-
-        nextCustomSchedule[dateKey] = serializeDay(false, template.startTime, template.endTime, getDayBreaks(template));
+      if (endDate < startDate) {
+        setStatusText(copy.invalidDateRange);
+        return;
       }
     }
 
-    const success = await onSave({
-      memberId: member.professional.id,
-      workScheduleMode: "fixed",
-      workSchedule,
-      customSchedule: nextCustomSchedule,
-      successText: copy.saved
-    });
+    setIsSaving(true);
+    let success = false;
+
+    if (applyMode === "period") {
+      const nextCustomSchedule = normalizeCustomSchedule(member.membership.customSchedule);
+
+      for (
+        let cursor = fromDateKey(startDate);
+        toDateKey(cursor) <= endDate;
+        cursor.setDate(cursor.getDate() + 1)
+      ) {
+        const dateKey = toDateKey(new Date(cursor));
+        const weekdayKey = getWeekdayKey(dateKey);
+        const template = workSchedule[weekdayKey];
+        nextCustomSchedule[dateKey] = serializeDay(
+          template.enabled,
+          template.startTime,
+          template.endTime,
+          getDayBreaks(template)
+        );
+      }
+
+      success = await onSave({
+        memberId: member.professional.id,
+        workScheduleMode: member.membership.workScheduleMode,
+        workSchedule: member.membership.workSchedule,
+        customSchedule: nextCustomSchedule,
+        successText: copy.saved
+      });
+    } else {
+      const nextCustomSchedule = normalizeCustomSchedule(member.membership.customSchedule);
+      const todayKey = toDateKey(new Date());
+
+      if (startDate > todayKey) {
+        for (
+          let cursor = new Date(`${todayKey}T00:00:00`);
+          toDateKey(cursor) < startDate;
+          cursor.setDate(cursor.getDate() + 1)
+        ) {
+          const dateKey = toDateKey(new Date(cursor));
+          const weekdayKey = getWeekdayKey(dateKey);
+          const template = workSchedule[weekdayKey];
+
+          if (!template.enabled) {
+            continue;
+          }
+
+          nextCustomSchedule[dateKey] = serializeDay(false, template.startTime, template.endTime, getDayBreaks(template));
+        }
+      }
+
+      success = await onSave({
+        memberId: member.professional.id,
+        workScheduleMode: "fixed",
+        workSchedule,
+        customSchedule: nextCustomSchedule,
+        successText: copy.saved
+      });
+    }
 
     setIsSaving(false);
 
@@ -648,8 +725,21 @@ function SchedulePlannerModal({
               <div className={styles.staffPlannerInfoCard}>
                 <label className={styles.staffDrawerField}>
                   <span>{copy.repeatType}</span>
-                  <select className={styles.select} value="weekly" disabled>
-                    <option value="weekly">{copy.repeatWeekly}</option>
+                  <select
+                    className={styles.select}
+                    value={applyMode}
+                    onChange={(event) => {
+                      const nextMode = event.target.value as PlannerApplyMode;
+                      setApplyMode(nextMode);
+                      setEndMode(nextMode === "period" ? "until-date" : "until-changed");
+                      if (nextMode === "period" && endDate < startDate) {
+                        setEndDate(startDate);
+                      }
+                      setStatusText("");
+                    }}
+                  >
+                    <option value="template">{copy.repeatWeekly}</option>
+                    <option value="period">{copy.repeatForPeriod}</option>
                   </select>
                 </label>
 
@@ -659,16 +749,55 @@ function SchedulePlannerModal({
                     type="date"
                     className={styles.input}
                     value={formatInputDate(startDate)}
-                    onChange={(event) => setStartDate(event.target.value)}
+                    onChange={(event) => {
+                      const nextStartDate = event.target.value;
+                      setStartDate(nextStartDate);
+                      if (endMode === "until-date" && endDate < nextStartDate) {
+                        setEndDate(nextStartDate);
+                      }
+                      setStatusText("");
+                    }}
                   />
                 </label>
 
                 <label className={styles.staffDrawerField}>
                   <span>{copy.endBehavior}</span>
-                  <select className={styles.select} value="until-changed" disabled>
-                    <option value="until-changed">{copy.untilChanged}</option>
+                  <select
+                    className={styles.select}
+                    value={endMode}
+                    onChange={(event) => {
+                      const nextMode = event.target.value as PlannerEndMode;
+                      setEndMode(nextMode);
+                      if (nextMode === "until-date" && endDate < startDate) {
+                        setEndDate(startDate);
+                      }
+                      setStatusText("");
+                    }}
+                  >
+                    <option value="until-changed" disabled={applyMode === "period"}>
+                      {copy.untilChanged}
+                    </option>
+                    <option value="until-date" disabled={applyMode === "template"}>
+                      {copy.untilDate}
+                    </option>
                   </select>
                 </label>
+
+                {endMode === "until-date" ? (
+                  <label className={styles.staffDrawerField}>
+                    <span>{copy.endDate}</span>
+                    <input
+                      type="date"
+                      className={styles.input}
+                      value={formatInputDate(endDate)}
+                      min={formatInputDate(startDate)}
+                      onChange={(event) => {
+                        setEndDate(event.target.value);
+                        setStatusText("");
+                      }}
+                    />
+                  </label>
+                ) : null}
               </div>
 
               <div className={styles.staffPlannerHintCard}>{copy.plannerHint}</div>
