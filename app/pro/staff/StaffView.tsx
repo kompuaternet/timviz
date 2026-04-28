@@ -281,7 +281,10 @@ function StaffRowActions({
   const canInvite = Boolean(member.professional.email);
 
   return (
-    <div className={styles.staffControlMenuWrap} data-staff-row-menu-root>
+    <div
+      className={`${styles.staffControlMenuWrap} ${open ? styles.staffControlMenuWrapOpen : ""}`}
+      data-staff-row-menu-root
+    >
       <button
         type="button"
         className={styles.staffRowActionButton}
@@ -625,7 +628,11 @@ export default function StaffView({ professionalId, snapshot, initialAddOpen = f
                       {renderStats(member, locale, snapshot.business.currency, copy)}
                     </div>
 
-                    <div className={styles.staffStudioActionCell}>
+                    <div
+                      className={`${styles.staffStudioActionCell} ${
+                        activeActionMemberId === member.professional.id ? styles.staffStudioActionCellOpen : ""
+                      }`}
+                    >
                       <span className={styles.staffStudioMobileLabel}>{copy.actions}</span>
                       <StaffRowActions
                         member={member}

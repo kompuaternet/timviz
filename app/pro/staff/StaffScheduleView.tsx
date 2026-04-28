@@ -1549,7 +1549,12 @@ export default function StaffScheduleView({ professionalId, snapshot }: StaffSch
                             </div>
                           </Link>
 
-                          <div className={styles.staffControlMenuWrap} data-staff-floating-root>
+                          <div
+                            className={`${styles.staffControlMenuWrap} ${
+                              rowMenuMemberId === member.professional.id ? styles.staffControlMenuWrapOpen : ""
+                            }`}
+                            data-staff-floating-root
+                          >
                             <button
                               type="button"
                               className={styles.staffScheduleMemberAction}
@@ -1613,7 +1618,13 @@ export default function StaffScheduleView({ professionalId, snapshot }: StaffSch
                             cellMenu?.memberId === member.professional.id && cellMenu.dateKey === day.key;
 
                           return (
-                            <div key={`${member.professional.id}-${day.key}`} className={styles.staffScheduleShiftWrap} data-staff-floating-root>
+                            <div
+                              key={`${member.professional.id}-${day.key}`}
+                              className={`${styles.staffScheduleShiftWrap} ${
+                                isCellMenuOpen ? styles.staffScheduleShiftWrapOpen : ""
+                              }`}
+                              data-staff-floating-root
+                            >
                               <button
                                 type="button"
                                 className={`${styles.staffScheduleShiftButton} ${
