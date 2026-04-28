@@ -1,6 +1,6 @@
 "use client";
 
-import { type ReactNode, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { type MutableRefObject, type ReactNode, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 type FloatingPlacement = "bottom-start" | "bottom-end" | "top-start" | "top-end";
@@ -14,6 +14,7 @@ type FloatingPopoverProps = {
   offset?: number;
   viewportPadding?: number;
   matchAnchorWidth?: boolean;
+  panelRef?: MutableRefObject<HTMLDivElement | null>;
 };
 
 type FloatingPosition = {
@@ -35,7 +36,8 @@ export default function FloatingPopover({
   placement = "bottom-start",
   offset = 10,
   viewportPadding = 8,
-  matchAnchorWidth = false
+  matchAnchorWidth = false,
+  panelRef: externalPanelRef
 }: FloatingPopoverProps) {
   const panelRef = useRef<HTMLDivElement | null>(null);
   const [mounted, setMounted] = useState(false);
@@ -121,7 +123,12 @@ export default function FloatingPopover({
 
   return createPortal(
     <div
-      ref={panelRef}
+      ref={(node) => {
+        panelRef.current = node;
+        if (externalPanelRef) {
+          externalPanelRef.current = node;
+        }
+      }}
       className={className}
       data-staff-floating-root
       style={{

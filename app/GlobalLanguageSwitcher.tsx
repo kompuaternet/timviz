@@ -114,8 +114,9 @@ export default function GlobalLanguageSwitcher({ mode = "fixed" }: GlobalLanguag
     pathname?.startsWith("/en/account") ||
     pathname?.startsWith("/pro/create-account") ||
     pathname?.startsWith("/pro/setup");
+  const useEmbeddedCalendarLanguageMenu = pathname?.startsWith("/pro/calendar");
 
-  if (!isInline && hasInlinePublicHeader) {
+  if (!isInline && (hasInlinePublicHeader || useEmbeddedCalendarLanguageMenu)) {
     return null;
   }
 

@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import ProfileAvatar from "../../ProfileAvatar";
 import styles from "../pro.module.css";
+import FloatingPopover from "../FloatingPopover";
 import ProSidebar from "../ProSidebar";
-import { languageFromProfile } from "../i18n";
+import { languageFromProfile, profileLanguageFromCode } from "../i18n";
 import {
   getDayBreaks,
   getDaySchedule as resolveDaySchedule,
@@ -55,8 +57,30 @@ type CalendarPeriodStats = {
 };
 
 type CalendarSnapshot = {
+  viewer: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    avatarUrl?: string;
+    role: string;
+    scope: "owner" | "member";
+    language?: string;
+    country?: string;
+    currency?: string;
+  };
+  teamMembers: Array<{
+    id: string;
+    firstName: string;
+    lastName: string;
+    avatarUrl?: string;
+    role: string;
+    scope: "owner" | "member";
+    isViewer: boolean;
+  }>;
+  viewedProfessionalId: string;
   workspace: {
     professional: {
+      id: string;
       firstName: string;
       lastName: string;
       avatarUrl?: string;
@@ -91,6 +115,16 @@ type CalendarSnapshot = {
   };
   appointments: CalendarAppointment[];
   clients: CalendarClient[];
+  recentActivity: Array<{
+    id: string;
+    appointmentDate: string;
+    startTime: string;
+    customerName: string;
+    serviceName: string;
+    professionalId: string;
+    professionalName: string;
+    createdAt: string;
+  }>;
   stats?: {
     day: CalendarPeriodStats;
     week: CalendarPeriodStats;
@@ -114,7 +148,7 @@ type QuickMenuState = {
   time: string;
 };
 
-type DrawerStage = "closed" | "visit" | "service-picker" | "client-search" | "details";
+type DrawerStage = "closed" | "visit" | "service-picker" | "client-search" | "details" | "notifications";
 
 type VisitServiceDraft = {
   id: string;
@@ -235,6 +269,18 @@ const CALENDAR_TEXT: Record<AppLanguage, {
   newClientModalText: string;
   addClientDataUpper: string;
   notNowUpper: string;
+  chooseSpecialist: string;
+  refresh: string;
+  notifications: string;
+  notificationsEmpty: string;
+  recentBookings: string;
+  accountMenu: string;
+  myProfile: string;
+  personalSettings: string;
+  helpSupport: string;
+  logout: string;
+  language: string;
+  recentBookingTitle: string;
 }> = {
   ru: {
     today: "Сегодня",
@@ -330,7 +376,19 @@ const CALENDAR_TEXT: Record<AppLanguage, {
     newClientModalTitle: "Новый клиент?",
     newClientModalText: "Добавь данные клиента, чтобы отправлять напоминания о визитах и мотивировать его на повторные записи.",
     addClientDataUpper: "ДОБАВИТЬ ДАННЫЕ КЛИЕНТА",
-    notNowUpper: "НЕ СЕЙЧАС"
+    notNowUpper: "НЕ СЕЙЧАС",
+    chooseSpecialist: "Выбрать специалиста",
+    refresh: "Обновить",
+    notifications: "Уведомления",
+    notificationsEmpty: "Пока нет новых событий.",
+    recentBookings: "Недавние записи",
+    accountMenu: "Меню аккаунта",
+    myProfile: "Мой профиль",
+    personalSettings: "Личные настройки",
+    helpSupport: "Помощь и поддержка",
+    logout: "Выйти",
+    language: "Язык",
+    recentBookingTitle: "Новая запись"
   },
   uk: {
     today: "Сьогодні",
@@ -426,7 +484,19 @@ const CALENDAR_TEXT: Record<AppLanguage, {
     newClientModalTitle: "Новий клієнт?",
     newClientModalText: "Додайте дані клієнта, щоб надсилати нагадування про візити й мотивувати його на повторні записи.",
     addClientDataUpper: "ДОДАТИ ДАНІ КЛІЄНТА",
-    notNowUpper: "НЕ ЗАРАЗ"
+    notNowUpper: "НЕ ЗАРАЗ",
+    chooseSpecialist: "Обрати спеціаліста",
+    refresh: "Оновити",
+    notifications: "Сповіщення",
+    notificationsEmpty: "Поки немає нових подій.",
+    recentBookings: "Останні записи",
+    accountMenu: "Меню акаунта",
+    myProfile: "Мій профіль",
+    personalSettings: "Особисті налаштування",
+    helpSupport: "Допомога і підтримка",
+    logout: "Вийти",
+    language: "Мова",
+    recentBookingTitle: "Новий запис"
   },
   en: {
     today: "Today",
@@ -522,7 +592,19 @@ const CALENDAR_TEXT: Record<AppLanguage, {
     newClientModalTitle: "New client?",
     newClientModalText: "Add client details to send visit reminders and encourage repeat bookings.",
     addClientDataUpper: "ADD CLIENT DETAILS",
-    notNowUpper: "NOT NOW"
+    notNowUpper: "NOT NOW",
+    chooseSpecialist: "Choose specialist",
+    refresh: "Refresh",
+    notifications: "Notifications",
+    notificationsEmpty: "There are no new updates yet.",
+    recentBookings: "Recent bookings",
+    accountMenu: "Account menu",
+    myProfile: "My profile",
+    personalSettings: "Personal settings",
+    helpSupport: "Help and support",
+    logout: "Log out",
+    language: "Language",
+    recentBookingTitle: "New booking"
   }
 };
 
@@ -620,6 +702,38 @@ function getScheduleLabel(schedule: WorkDaySchedule | null, closedLabel: string)
   }
 
   return `${formatDisplayTime(schedule.startTime)}-${formatDisplayTime(schedule.endTime)}`;
+}
+
+function buildDisplayName(firstName = "", lastName = "", fallback = "") {
+  return `${firstName} ${lastName}`.trim() || fallback;
+}
+
+function formatActivityTime(createdAt: string, locale: AppLocale) {
+  const created = new Date(createdAt);
+  const now = Date.now();
+  const diffMinutes = Math.max(0, Math.round((now - created.getTime()) / 60000));
+
+  if (diffMinutes < 60) {
+    return locale === "uk-UA"
+      ? `${diffMinutes} хв тому`
+      : locale === "en-US"
+        ? `${diffMinutes} min ago`
+        : `${diffMinutes} мин назад`;
+  }
+
+  const diffHours = Math.round(diffMinutes / 60);
+  if (diffHours < 24) {
+    return locale === "uk-UA"
+      ? `${diffHours} год тому`
+      : locale === "en-US"
+        ? `${diffHours} hr ago`
+        : `${diffHours} ч назад`;
+  }
+
+  return created.toLocaleDateString(locale, {
+    day: "numeric",
+    month: "short"
+  });
 }
 
 function getServiceColor(serviceName: string, services: CalendarSnapshot["workspace"]["services"]) {
@@ -737,6 +851,7 @@ function getAppointmentLayouts(appointments: CalendarAppointment[]) {
 }
 
 export default function CalendarDayView({ professionalId, initialDate }: CalendarDayViewProps) {
+  const router = useRouter();
   const topOffset = 24;
   const dayStartMinutes = 0;
   const dayEndMinutes = 24 * 60;
@@ -746,7 +861,8 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
 
   const [selectedDate, setSelectedDate] = useState(initialDate);
   const [viewMode, setViewMode] = useState<CalendarViewMode>("day");
-  const [viewMenuOpen, setViewMenuOpen] = useState(false);
+  const [selectedProfessionalId, setSelectedProfessionalId] = useState(professionalId);
+  const [activeToolbarMenu, setActiveToolbarMenu] = useState<null | "view" | "team" | "account">(null);
   const [uiLanguage, setUiLanguage] = useState<AppLanguage>("ru");
   const [snapshot, setSnapshot] = useState<CalendarSnapshot | null>(null);
   const [selectedTime, setSelectedTime] = useState("");
@@ -774,6 +890,13 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
   const slotHeight = minuteHeight * CALENDAR_GRID_STEP_MINUTES;
   const calendarGridHeight = topOffset + dayEndMinutes * minuteHeight;
   const bookingCardMinHeight = isMobileViewport ? MOBILE_MIN_BOOKING_CARD_HEIGHT : MIN_BOOKING_CARD_HEIGHT;
+  const viewMenuButtonRef = useRef<HTMLButtonElement | null>(null);
+  const teamMenuButtonRef = useRef<HTMLButtonElement | null>(null);
+  const accountMenuButtonRef = useRef<HTMLButtonElement | null>(null);
+  const viewMenuPanelRef = useRef<HTMLDivElement | null>(null);
+  const teamMenuPanelRef = useRef<HTMLDivElement | null>(null);
+  const accountMenuPanelRef = useRef<HTMLDivElement | null>(null);
+  const quickMenuRef = useRef<HTMLDivElement | null>(null);
 
   const dragRef = useRef<
     | {
@@ -805,12 +928,12 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
   }, []);
 
   useEffect(() => {
-    if (!snapshot?.workspace.professional.language) {
+    if (!snapshot?.viewer.language) {
       return;
     }
 
-    setUiLanguage(languageFromProfile(snapshot.workspace.professional.language));
-  }, [snapshot?.workspace.professional.language]);
+    setUiLanguage(languageFromProfile(snapshot.viewer.language));
+  }, [snapshot?.viewer.language]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -825,25 +948,40 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
     return () => media.removeEventListener("change", syncViewport);
   }, []);
 
+  function buildCalendarUrl(dateKey = selectedDate, targetId = selectedProfessionalId) {
+    const params = new URLSearchParams({ date: dateKey });
+
+    if (targetId) {
+      params.set("targetProfessionalId", targetId);
+    }
+
+    return `/api/pro/calendar?${params.toString()}`;
+  }
+
+  async function loadSnapshot(dateKey = selectedDate, targetId = selectedProfessionalId) {
+    const response = await fetch(buildCalendarUrl(dateKey, targetId));
+    const data = (await response.json()) as CalendarSnapshot;
+
+    setSnapshot(data);
+    setSelectedProfessionalId(data.viewedProfessionalId || professionalId);
+    setSelectedTime("");
+    setQuickMenu({ visible: false, x: 0, y: 0, time: "" });
+    setActiveToolbarMenu(null);
+    setDrawerStage("closed");
+    setSelectedAppointmentId(null);
+    setStatusText("");
+    setVisitItems([]);
+    setSelectedCustomer(null);
+    setServiceQuery("");
+    setClientQuery("");
+    setShowNewClientForm(false);
+    setNewClientName("");
+    setNewClientPhone("");
+  }
+
   useEffect(() => {
-    void fetch(`/api/pro/calendar?date=${selectedDate}`)
-      .then((response) => response.json())
-      .then((data: CalendarSnapshot) => {
-        setSnapshot(data);
-        setSelectedTime("");
-        setQuickMenu({ visible: false, x: 0, y: 0, time: "" });
-        setDrawerStage("closed");
-        setSelectedAppointmentId(null);
-        setStatusText("");
-        setVisitItems([]);
-        setSelectedCustomer(null);
-        setServiceQuery("");
-        setClientQuery("");
-        setShowNewClientForm(false);
-        setNewClientName("");
-        setNewClientPhone("");
-      });
-  }, [selectedDate]);
+    void loadSnapshot(selectedDate, selectedProfessionalId);
+  }, [selectedDate, selectedProfessionalId]);
 
   useEffect(() => {
     if (drawerStage !== "client-search") {
@@ -858,19 +996,139 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
       .catch(() => setDirectoryClients([]));
   }, [drawerStage]);
 
+  useEffect(() => {
+    if (!activeToolbarMenu) {
+      return;
+    }
+
+    const anchor =
+      activeToolbarMenu === "view"
+        ? viewMenuButtonRef.current
+        : activeToolbarMenu === "team"
+          ? teamMenuButtonRef.current
+          : accountMenuButtonRef.current;
+    const panel =
+      activeToolbarMenu === "view"
+        ? viewMenuPanelRef.current
+        : activeToolbarMenu === "team"
+          ? teamMenuPanelRef.current
+          : accountMenuPanelRef.current;
+
+    function handlePointerDown(event: MouseEvent) {
+      const target = event.target;
+      if (!(target instanceof Node)) {
+        return;
+      }
+
+      if ((anchor && anchor.contains(target)) || (panel && panel.contains(target))) {
+        return;
+      }
+
+      setActiveToolbarMenu(null);
+    }
+
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setActiveToolbarMenu(null);
+      }
+    }
+
+    window.addEventListener("mousedown", handlePointerDown);
+    window.addEventListener("keydown", handleEscape);
+    return () => {
+      window.removeEventListener("mousedown", handlePointerDown);
+      window.removeEventListener("keydown", handleEscape);
+    };
+  }, [activeToolbarMenu]);
+
+  useEffect(() => {
+    if (!quickMenu.visible) {
+      return;
+    }
+
+    function handlePointerDown(event: MouseEvent) {
+      const target = event.target;
+      if (!(target instanceof Node)) {
+        return;
+      }
+
+      if (quickMenuRef.current?.contains(target)) {
+        return;
+      }
+
+      setQuickMenu({ visible: false, x: 0, y: 0, time: "" });
+    }
+
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setQuickMenu({ visible: false, x: 0, y: 0, time: "" });
+      }
+    }
+
+    window.addEventListener("mousedown", handlePointerDown);
+    window.addEventListener("keydown", handleEscape);
+    return () => {
+      window.removeEventListener("mousedown", handlePointerDown);
+      window.removeEventListener("keydown", handleEscape);
+    };
+  }, [quickMenu.visible]);
+
+  async function applyLanguage(nextLanguage: AppLanguage) {
+    if (nextLanguage === uiLanguage) {
+      setActiveToolbarMenu(null);
+      return;
+    }
+
+    setUiLanguage(nextLanguage);
+    document.documentElement.lang = nextLanguage;
+    window.localStorage.setItem("rezervo-pro-language", nextLanguage);
+    window.dispatchEvent(new CustomEvent("rezervo-language-change", { detail: nextLanguage }));
+    setActiveToolbarMenu(null);
+
+    try {
+      await fetch("/api/pro/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ language: profileLanguageFromCode(nextLanguage) })
+      });
+    } catch {
+      // Keep the local language choice even if remote save is temporarily unavailable.
+    }
+  }
+
+  async function handleAccountLogout() {
+    await fetch("/api/pro/logout", { method: "POST" });
+    router.push("/pro/login");
+    router.refresh();
+  }
+
   const todayDate = formatDateKey(new Date());
-  const initials = useMemo(() => {
+  const t = CALENDAR_TEXT[uiLanguage];
+  const locale = getLocale(uiLanguage);
+  const accountCountry = snapshot?.viewer.country;
+  const accountCurrency = snapshot?.viewer.currency;
+  const phoneRule = getPhoneRule(accountCountry);
+  const viewedProfessionalName = buildDisplayName(
+    snapshot?.workspace.professional.firstName,
+    snapshot?.workspace.professional.lastName,
+    t.masterFallback
+  );
+  const viewedProfessionalInitials = useMemo(() => {
     if (!snapshot) {
       return "RZ";
     }
+
     return `${snapshot.workspace.professional.firstName?.[0] ?? ""}${snapshot.workspace.professional.lastName?.[0] ?? ""}`.toUpperCase() || "RZ";
   }, [snapshot]);
-
-  const t = CALENDAR_TEXT[uiLanguage];
-  const locale = getLocale(uiLanguage);
-  const accountCountry = snapshot?.workspace.professional.country;
-  const accountCurrency = snapshot?.workspace.professional.currency;
-  const phoneRule = getPhoneRule(accountCountry);
+  const viewerName = buildDisplayName(
+    snapshot?.viewer.firstName,
+    snapshot?.viewer.lastName,
+    viewedProfessionalName
+  );
+  const viewerInitials = `${snapshot?.viewer.firstName?.[0] ?? ""}${snapshot?.viewer.lastName?.[0] ?? ""}`.toUpperCase() || viewedProfessionalInitials;
+  const teamMembers = snapshot?.teamMembers ?? [];
+  const recentActivity = snapshot?.recentActivity ?? [];
+  const canSwitchProfessional = teamMembers.length > 1;
   const selectedDateLabel = new Date(`${selectedDate}T00:00:00`).toLocaleDateString(locale, {
     weekday: "short",
     day: "numeric",
@@ -883,9 +1141,6 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
   });
   const selectedMonthLabel = new Date(`${selectedDate}T00:00:00`).toLocaleDateString(locale, {
     month: "long"
-  });
-  const selectedYearLabel = new Date(`${selectedDate}T00:00:00`).toLocaleDateString(locale, {
-    year: "numeric"
   });
   const weekKeys = useMemo(() => getWeekKeys(selectedDate), [selectedDate]);
   const selectedWeekLabel = `${new Date(`${weekKeys[0]}T00:00:00`).toLocaleDateString(locale, {
@@ -1101,19 +1356,6 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
     () => getAppointmentLayouts(snapshot?.appointments ?? []),
     [snapshot?.appointments]
   );
-  const miniCalendarWeekdays = useMemo(
-    () => {
-      const sundayFirst = Array.from({ length: 7 }, (_, index) => {
-        const date = new Date(Date.UTC(2024, 0, 7 + index));
-        return new Intl.DateTimeFormat(locale, { weekday: "short", timeZone: "UTC" })
-          .format(date)
-          .replace(".", "");
-      });
-      return sundayFirst;
-    },
-    [locale]
-  );
-
   useEffect(() => {
     function handlePointerMove(event: PointerEvent) {
       if (!dragRef.current || !snapshot) {
@@ -1177,6 +1419,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
+            targetProfessionalId: selectedProfessionalId,
             appointmentId: appointment.id,
             startTime: appointment.startTime,
             endTime: appointment.endTime
@@ -1195,16 +1438,16 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
       window.removeEventListener("pointermove", handlePointerMove);
       window.removeEventListener("pointerup", handlePointerUp);
     };
-  }, [snapshot, minuteHeight]);
+  }, [minuteHeight, selectedProfessionalId, snapshot]);
 
   async function refreshSnapshot() {
-    const refreshed = await fetch(`/api/pro/calendar?date=${selectedDate}`).then((response) => response.json());
-    setSnapshot(refreshed);
+    await loadSnapshot(selectedDate, selectedProfessionalId);
   }
 
   function openNewVisit(slot: string) {
     const initialItem = createDraftService(slot);
     setSelectedTime(slot);
+    setActiveToolbarMenu(null);
     setQuickMenu({ visible: false, x: 0, y: 0, time: "" });
     setVisitItems([initialItem]);
     setSelectedCustomer(null);
@@ -1325,6 +1568,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          targetProfessionalId: selectedProfessionalId,
           appointmentDate: selectedDate,
           startTime: item.startTime,
           endTime: item.endTime,
@@ -1410,6 +1654,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         kind: "blocked",
+        targetProfessionalId: selectedProfessionalId,
         appointmentDate: selectedDate,
         startTime: selectedTime,
         endTime: minutesToTime(timeToMinutes(selectedTime) + 30),
@@ -1433,7 +1678,11 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
       return;
     }
 
-    const response = await fetch(`/api/pro/calendar?appointmentId=${encodeURIComponent(selectedAppointment.id)}`, {
+    const params = new URLSearchParams({
+      appointmentId: selectedAppointment.id,
+      targetProfessionalId: selectedProfessionalId
+    });
+    const response = await fetch(`/api/pro/calendar?${params.toString()}`, {
       method: "DELETE"
     });
     const payload = await response.json();
@@ -1459,6 +1708,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         mode: "meta",
+        targetProfessionalId: selectedProfessionalId,
         appointmentId: selectedAppointment.id,
         attendance: attendanceDraft,
         priceAmount: Number(priceAmountDraft || 0)
@@ -1485,6 +1735,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        targetProfessionalId: selectedProfessionalId,
         appointmentId: selectedAppointment.id,
         startTime: selectedAppointment.startTime,
         endTime: selectedAppointment.endTime
@@ -1553,144 +1804,278 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
       <ProSidebar
         active="calendar"
         professionalId={professionalId}
-        canManageStaff={snapshot?.workspace.membership.scope === "owner"}
+        canManageStaff={snapshot?.viewer.scope === "owner"}
       />
 
-      <aside className={styles.calendarLeftPanel}>
-        <div className={styles.calendarViewRail}>
-          <button type="button" className={styles.calendarPanelBack} aria-label={t.back}>‹</button>
-          <div className={styles.calendarViewDropdown}>
+      <section className={styles.calendarCenterShell}>
+        <div className={styles.calendarWorkspaceHeader}>
+          <div className={styles.calendarWorkspaceMeta}>
+            <span>{snapshot?.workspace.business.name ?? "Timviz"}</span>
+            <strong>{t.dailyCalendar}</strong>
+          </div>
+
+          <div className={styles.calendarWorkspaceActions}>
             <button
               type="button"
-              className={styles.calendarViewModeButton}
-              onClick={() => setViewMenuOpen((value) => !value)}
-              aria-expanded={viewMenuOpen}
+              className={`${styles.calendarIconButton} ${drawerStage === "notifications" ? styles.calendarIconButtonActive : ""}`}
+              aria-label={t.notifications}
+              onClick={() => {
+                setActiveToolbarMenu(null);
+                setQuickMenu({ visible: false, x: 0, y: 0, time: "" });
+                setDrawerStage((current) => (current === "notifications" ? "closed" : "notifications"));
+              }}
             >
-              <span>{viewModeOptions.find((option) => option.value === viewMode)?.label ?? t.day}</span>
-              <span className={styles.calendarViewClose}>×</span>
-              <span className={styles.calendarViewChevron}>⌄</span>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M6.7 8.8a5.3 5.3 0 1 1 10.6 0c0 5.1 2.1 6.1 2.1 6.1H4.6s2.1-1 2.1-6.1" />
+                <path d="M10.2 18.2a2.1 2.1 0 0 0 3.6 0" />
+              </svg>
+              {recentActivity.length ? <span className={styles.calendarNotificationBadge}>{recentActivity.length}</span> : null}
             </button>
-            {viewMenuOpen ? (
-              <div className={styles.calendarViewMenu}>
-                {viewModeOptions.map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    className={option.value === viewMode ? styles.calendarViewMenuActive : ""}
-                    onClick={() => {
-                      setViewMode(option.value);
-                      setViewMenuOpen(false);
-                    }}
-                  >
-                    <span>{option.label}</span>
-                    {option.value === viewMode ? <span>✓</span> : null}
-                  </button>
-                ))}
+
+            <button
+              ref={accountMenuButtonRef}
+              type="button"
+              className={styles.calendarProfileButton}
+              aria-label={t.accountMenu}
+              onClick={() => {
+                setDrawerStage("closed");
+                setActiveToolbarMenu((current) => (current === "account" ? null : "account"));
+              }}
+            >
+              <ProfileAvatar
+                avatarUrl={snapshot?.viewer.avatarUrl}
+                initials={viewerInitials}
+                label={viewerName}
+                className={styles.calendarHeaderAvatar}
+                imageClassName={styles.avatarImage}
+                fallbackClassName={styles.avatarFallback}
+              />
+              <div className={styles.calendarProfileMeta}>
+                <strong>{viewerName}</strong>
+                <span>{snapshot?.workspace.business.name ?? snapshot?.viewer.role}</span>
               </div>
-            ) : null}
-          </div>
-        </div>
+              <span className={styles.calendarToolbarChevron}>⌄</span>
+            </button>
 
-        <div className={styles.miniCalendarCard}>
-          <div className={styles.miniCalendarHeader}>
-            <strong>
-              <span>{selectedMonthLabel}</span>
-              <span>{selectedYearLabel}</span>
-            </strong>
-            <div className={styles.miniCalendarNav}>
-              <button type="button" onClick={() => setSelectedDate(addDays(selectedDate, -30))}>‹</button>
-              <button type="button" onClick={() => setSelectedDate(addDays(selectedDate, 30))}>›</button>
-            </div>
-          </div>
+            <FloatingPopover
+              open={activeToolbarMenu === "account"}
+              anchorEl={accountMenuButtonRef.current}
+              panelRef={accountMenuPanelRef}
+              className={styles.calendarAccountMenu}
+              placement="bottom-end"
+              offset={12}
+            >
+              <div className={styles.calendarAccountMenuHeader}>
+                <ProfileAvatar
+                  avatarUrl={snapshot?.viewer.avatarUrl}
+                  initials={viewerInitials}
+                  label={viewerName}
+                  className={styles.calendarAccountMenuAvatar}
+                  imageClassName={styles.avatarImage}
+                  fallbackClassName={styles.avatarFallback}
+                />
+                <div>
+                  <strong>{viewerName}</strong>
+                  <span>{snapshot?.workspace.business.name ?? "Timviz"}</span>
+                </div>
+              </div>
 
-          <div className={styles.miniCalendarWeekdays}>
-            {miniCalendarWeekdays.map((day) => (
-              <span key={day}>{day}</span>
-            ))}
-          </div>
-
-          <div className={styles.miniCalendarGrid}>
-            {monthGrid.map((day) => {
-              const schedule = monthSchedules.get(day.key) ?? null;
-              const isWorkingDay = Boolean(schedule?.enabled);
-              const scheduleLabel = getScheduleLabel(schedule, t.closed);
-
-              return (
+              <div className={styles.calendarAccountMenuSection}>
                 <button
-                  key={day.key}
                   type="button"
-                  title={scheduleLabel}
-                  className={`${styles.miniCalendarDay} ${day.outside ? styles.miniCalendarDayOutside : ""} ${isWorkingDay ? styles.miniCalendarDayWork : styles.miniCalendarDayOff} ${day.key === todayDate ? styles.miniCalendarDayToday : ""} ${day.key === selectedDate ? styles.miniCalendarDayActive : ""}`}
-                  onClick={() => setSelectedDate(day.key)}
+                  onClick={() => {
+                    setActiveToolbarMenu(null);
+                    router.push("/pro/settings");
+                  }}
                 >
-                  <span>{day.day}</span>
-                  <small>{isWorkingDay ? scheduleLabel : t.closed}</small>
+                  {t.myProfile}
                 </button>
-              );
-            })}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveToolbarMenu(null);
+                    router.push("/pro/settings");
+                  }}
+                >
+                  {t.personalSettings}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveToolbarMenu(null);
+                    window.dispatchEvent(new CustomEvent("rezervo-open-support"));
+                  }}
+                >
+                  {t.helpSupport}
+                </button>
+              </div>
+
+              <div className={styles.calendarAccountMenuSection}>
+                <span className={styles.calendarAccountMenuLabel}>{t.language}</span>
+                <div className={styles.calendarLanguageOptions}>
+                  {(["ru", "uk", "en"] as const).map((languageCode) => (
+                    <button
+                      key={languageCode}
+                      type="button"
+                      className={`${styles.calendarLanguageOption} ${uiLanguage === languageCode ? styles.calendarLanguageOptionActive : ""}`}
+                      onClick={() => void applyLanguage(languageCode)}
+                    >
+                      {languageCode.toUpperCase()}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className={styles.calendarAccountMenuSection}>
+                <button
+                  type="button"
+                  className={styles.calendarDangerMenuItem}
+                  onClick={() => {
+                    void handleAccountLogout();
+                  }}
+                >
+                  {t.logout}
+                </button>
+              </div>
+            </FloatingPopover>
           </div>
         </div>
 
-        <div className={styles.weekJumpBlock}>
-          <strong>{t.weekJump}</strong>
-          <div className={styles.weekJumpGrid}>
-            {[1, 2, 3, 4, 5, 6, -1, -2, -3, -4, -5, -6].map((week) => (
-              <button
-                key={week}
-                type="button"
-                onClick={() => setSelectedDate(addDays(selectedDate, week * 7))}
-              >
-                {week > 0 ? `+${week}` : week}
-              </button>
-            ))}
-          </div>
-        </div>
-      </aside>
-
-      <section className={styles.calendarCenterShell}>
         <header className={styles.calendarTopBarV2}>
           <div className={styles.calendarTopLeft}>
-            {isMobileViewport ? (
-              <div className={styles.calendarViewDropdown}>
-                <button
-                  type="button"
-                  className={`${styles.calendarViewModeButton} ${styles.calendarTopMobileModeButton}`}
-                  onClick={() => setViewMenuOpen((value) => !value)}
-                  aria-expanded={viewMenuOpen}
-                >
-                  <span>{viewModeOptions.find((option) => option.value === viewMode)?.label ?? t.day}</span>
-                  <span className={styles.calendarViewChevron}>⌄</span>
-                </button>
-                {viewMenuOpen ? (
-                  <div className={`${styles.calendarViewMenu} ${styles.calendarTopMobileMenu}`}>
-                    {viewModeOptions.map((option) => (
-                      <button
-                        key={option.value}
-                        type="button"
-                        className={option.value === viewMode ? styles.calendarViewMenuActive : ""}
-                        onClick={() => {
-                          setViewMode(option.value);
-                          setViewMenuOpen(false);
-                        }}
-                      >
-                        <span>{option.label}</span>
-                        {option.value === viewMode ? <span>✓</span> : null}
-                      </button>
-                    ))}
-                  </div>
-                ) : null}
-              </div>
-            ) : (
-              <button type="button" className={styles.calendarTodayButton} onClick={() => setSelectedDate(todayDate)}>
-                {t.today}
-              </button>
-            )}
+            <button type="button" className={styles.calendarTodayButton} onClick={jumpToCurrentTime}>
+              {t.today}
+            </button>
             <button type="button" className={styles.calendarSquareButton} onClick={() => moveVisiblePeriod(-1)}>‹</button>
             <div className={styles.calendarDatePill}>
               <strong>{activeDateLabel}</strong>
               <span>{viewMode === "day" ? (selectedDayIsWorking ? `${formatDisplayTime(minutesToTime(workStartMinutes))} - ${formatDisplayTime(minutesToTime(workEndMinutes))}` : t.closedBySchedule) : t.selected}</span>
             </div>
             <button type="button" className={styles.calendarSquareButton} onClick={() => moveVisiblePeriod(1)}>›</button>
+
+            {canSwitchProfessional ? (
+              <>
+                <button
+                  ref={teamMenuButtonRef}
+                  type="button"
+                  className={styles.calendarTeamButton}
+                  aria-label={t.chooseSpecialist}
+                  onClick={() => {
+                    setDrawerStage("closed");
+                    setActiveToolbarMenu((current) => (current === "team" ? null : "team"));
+                  }}
+                >
+                  <span>{viewedProfessionalName}</span>
+                  <span className={styles.calendarToolbarChevron}>⌄</span>
+                </button>
+
+                <FloatingPopover
+                  open={activeToolbarMenu === "team"}
+                  anchorEl={teamMenuButtonRef.current}
+                  panelRef={teamMenuPanelRef}
+                  className={styles.calendarToolbarMenu}
+                  placement="bottom-start"
+                  offset={12}
+                >
+                  <div className={styles.calendarToolbarMenuSectionLabel}>{t.chooseSpecialist}</div>
+                  <div className={styles.calendarToolbarMenuList}>
+                    {teamMembers.map((member) => {
+                      const memberLabel = buildDisplayName(member.firstName, member.lastName, t.masterFallback);
+                      return (
+                        <button
+                          key={member.id}
+                          type="button"
+                          className={`${styles.calendarToolbarMenuItem} ${selectedProfessionalId === member.id ? styles.calendarToolbarMenuItemActive : ""}`}
+                          onClick={() => {
+                            setActiveToolbarMenu(null);
+                            setSelectedProfessionalId(member.id);
+                          }}
+                        >
+                          <ProfileAvatar
+                            avatarUrl={member.avatarUrl}
+                            initials={`${member.firstName?.[0] ?? ""}${member.lastName?.[0] ?? ""}`.toUpperCase() || "RZ"}
+                            label={memberLabel}
+                            className={styles.calendarToolbarMenuAvatar}
+                            imageClassName={styles.avatarImage}
+                            fallbackClassName={styles.avatarFallback}
+                          />
+                          <div>
+                            <strong>{memberLabel}</strong>
+                            <span>{member.scope === "owner" ? member.role || "Owner" : member.role}</span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </FloatingPopover>
+              </>
+            ) : null}
+          </div>
+
+          <div className={styles.calendarTopRight}>
+            <button
+              type="button"
+              className={styles.calendarIconButton}
+              aria-label={t.refresh}
+              onClick={() => {
+                void refreshSnapshot();
+              }}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M20 11a8 8 0 1 0 2 5.3" />
+                <path d="M20 4v7h-7" />
+              </svg>
+            </button>
+
+            <button
+              ref={viewMenuButtonRef}
+              type="button"
+              className={styles.calendarViewPill}
+              aria-expanded={activeToolbarMenu === "view"}
+              onClick={() => {
+                setDrawerStage("closed");
+                setActiveToolbarMenu((current) => (current === "view" ? null : "view"));
+              }}
+            >
+              <span>{viewModeOptions.find((option) => option.value === viewMode)?.label ?? t.day}</span>
+              <span className={styles.calendarToolbarChevron}>⌄</span>
+            </button>
+
+            <FloatingPopover
+              open={activeToolbarMenu === "view"}
+              anchorEl={viewMenuButtonRef.current}
+              panelRef={viewMenuPanelRef}
+              className={styles.calendarToolbarMenu}
+              placement="bottom-end"
+              offset={12}
+            >
+              <div className={styles.calendarToolbarMenuList}>
+                {viewModeOptions.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    className={`${styles.calendarToolbarMenuItem} ${option.value === viewMode ? styles.calendarToolbarMenuItemActive : ""}`}
+                    onClick={() => {
+                      setViewMode(option.value);
+                      setActiveToolbarMenu(null);
+                    }}
+                  >
+                    <div>
+                      <strong>{option.label}</strong>
+                      <span>{option.value === "day" ? t.daySchedule : option.value === "week" ? t.week : t.month}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </FloatingPopover>
+
+            <button
+              type="button"
+              className={styles.calendarPrimaryAction}
+              onClick={() => openNewVisit(getSuggestedVisitStartTime())}
+            >
+              + {t.quickNewVisit}
+            </button>
           </div>
         </header>
 
@@ -1699,14 +2084,14 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
             <div className={styles.calendarTitleProfile}>
               <ProfileAvatar
                 avatarUrl={snapshot?.workspace.professional.avatarUrl}
-                initials={initials}
-                label={`${snapshot?.workspace.professional.firstName ?? ""} ${snapshot?.workspace.professional.lastName ?? ""}`.trim() || t.masterFallback}
+                initials={viewedProfessionalInitials}
+                label={viewedProfessionalName}
                 className={styles.calendarTitleAvatar}
                 imageClassName={styles.avatarImage}
                 fallbackClassName={styles.avatarFallback}
               />
               <div>
-                <strong>{snapshot?.workspace.professional.firstName || t.masterFallback}</strong>
+                <strong>{viewedProfessionalName}</strong>
                 <span>{`${snapshot?.workspace.services.length ?? 0} ${t.services} · ${viewMode === "day" ? t.dailyCalendar : viewModeOptions.find((option) => option.value === viewMode)?.label}`}</span>
               </div>
             </div>
@@ -1819,7 +2204,11 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
               })}
 
               {quickMenu.visible ? (
-                <div className={styles.calendarQuickMenu} style={{ left: `${quickMenu.x}px`, top: `${quickMenu.y}px` }}>
+                <div
+                  ref={quickMenuRef}
+                  className={styles.calendarQuickMenu}
+                  style={{ left: `${quickMenu.x}px`, top: `${quickMenu.y}px` }}
+                >
                   <button
                     type="button"
                     className={styles.calendarQuickMenuAction}
@@ -1978,7 +2367,49 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
       </section>
 
       <aside className={`${styles.calendarV2Drawer} ${overlayActive ? styles.calendarV2DrawerOpen : ""}`}>
-        {drawerStage === "visit" ? (
+        {drawerStage === "notifications" ? (
+          <div className={styles.calendarV2Panel}>
+            <div className={styles.calendarV2PanelHeader}>
+              <button type="button" className={styles.calendarDrawerBack} onClick={() => setDrawerStage("closed")}>←</button>
+              <strong>{t.notifications}</strong>
+            </div>
+
+            <div className={styles.calendarNotificationsPanel}>
+              <div className={styles.calendarNotificationsHeading}>
+                <strong>{t.recentBookings}</strong>
+                <span>{recentActivity.length}</span>
+              </div>
+
+              {recentActivity.length ? (
+                <div className={styles.calendarNotificationsList}>
+                  {recentActivity.map((item) => (
+                    <article key={item.id} className={styles.calendarNotificationCard}>
+                      <div className={styles.calendarNotificationCardHeader}>
+                        <strong>{t.recentBookingTitle}</strong>
+                        <span>{formatActivityTime(item.createdAt, locale)}</span>
+                      </div>
+                      <div className={styles.calendarNotificationCardBody}>
+                        <strong>{item.customerName || t.walkInClient}</strong>
+                        <span>{item.serviceName}</span>
+                        <small>
+                          {new Date(`${item.appointmentDate}T00:00:00`).toLocaleDateString(locale, {
+                            day: "numeric",
+                            month: "short"
+                          })} · {formatDisplayTime(item.startTime)} · {item.professionalName}
+                        </small>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              ) : (
+                <div className={styles.calendarNotificationEmpty}>
+                  <strong>{t.notifications}</strong>
+                  <span>{t.notificationsEmpty}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        ) : drawerStage === "visit" ? (
           <div className={styles.calendarV2Panel}>
             <div className={styles.calendarV2PanelHeader}>
               <button type="button" className={styles.calendarDrawerBack} onClick={() => setDrawerStage("closed")}>←</button>

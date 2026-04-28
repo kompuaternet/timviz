@@ -24,7 +24,8 @@ export async function GET(request: Request) {
 
     const url = new URL(request.url);
     const appointmentDate = url.searchParams.get("date") || new Date().toISOString().slice(0, 10);
-    const result = await getCalendarDaySnapshot({ professionalId, appointmentDate });
+    const targetProfessionalId = url.searchParams.get("targetProfessionalId") || undefined;
+    const result = await getCalendarDaySnapshot({ professionalId, appointmentDate, targetProfessionalId });
 
     return NextResponse.json(result);
   } catch (error) {
@@ -49,6 +50,7 @@ export async function POST(request: Request) {
     if (body.kind === "blocked") {
       const blocked = await createBlockedCalendarTime({
         professionalId,
+        targetProfessionalId: body.targetProfessionalId,
         appointmentDate: body.appointmentDate,
         startTime: body.startTime,
         endTime: body.endTime,
@@ -60,6 +62,7 @@ export async function POST(request: Request) {
 
     const appointment = await createCalendarAppointment({
       professionalId,
+      targetProfessionalId: body.targetProfessionalId,
       appointmentDate: body.appointmentDate,
       startTime: body.startTime,
       endTime: body.endTime,
@@ -91,7 +94,8 @@ export async function DELETE(request: Request) {
 
     const { searchParams } = new URL(request.url);
     const appointmentId = searchParams.get("appointmentId") || "";
-    const result = await deleteCalendarAppointment({ professionalId, appointmentId });
+    const targetProfessionalId = searchParams.get("targetProfessionalId") || undefined;
+    const result = await deleteCalendarAppointment({ professionalId, targetProfessionalId, appointmentId });
 
     return NextResponse.json(result);
   } catch (error) {
@@ -116,6 +120,7 @@ export async function PATCH(request: Request) {
     if (body.mode === "meta") {
       const appointment = await updateCalendarAppointmentMeta({
         professionalId,
+        targetProfessionalId: body.targetProfessionalId,
         appointmentId: body.appointmentId,
         attendance: body.attendance,
         priceAmount: Number(body.priceAmount ?? 0)
@@ -138,6 +143,7 @@ export async function PATCH(request: Request) {
 
     const appointment = await updateCalendarAppointmentTime({
       professionalId,
+      targetProfessionalId: body.targetProfessionalId,
       appointmentId: body.appointmentId,
       startTime: body.startTime,
       endTime: body.endTime

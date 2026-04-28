@@ -1,7 +1,17 @@
 import { promises as fs } from "fs";
 import path from "path";
-import { ensureServiceForProfessional, getWorkspaceSnapshot } from "./pro-data";
-import type { ServiceRecord } from "./pro-data";
+import {
+  ensureServiceForProfessional,
+  getBusinessDirectorySnapshot,
+  getWorkspaceSnapshot,
+  resolveMembershipSchedule
+} from "./pro-data";
+import type {
+  MembershipRecord,
+  ProfessionalRecord,
+  ServiceRecord,
+  WorkspaceSnapshot
+} from "./pro-data";
 import { getSupabaseAdmin, isSupabaseConfigured } from "./supabase";
 
 export type CalendarAppointmentKind = "appointment" | "blocked";
@@ -32,6 +42,39 @@ export type CalendarPeriodStats = {
 export type CalendarClient = {
   name: string;
   phone: string;
+};
+
+export type CalendarViewer = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  avatarUrl?: string;
+  role: string;
+  scope: "owner" | "member";
+  language?: string;
+  country?: string;
+  currency?: string;
+};
+
+export type CalendarTeamMember = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  avatarUrl?: string;
+  role: string;
+  scope: "owner" | "member";
+  isViewer: boolean;
+};
+
+export type CalendarRecentActivity = {
+  id: string;
+  appointmentDate: string;
+  startTime: string;
+  customerName: string;
+  serviceName: string;
+  professionalId: string;
+  professionalName: string;
+  createdAt: string;
 };
 
 export type ClientDirectoryEntry = {
@@ -367,17 +410,123 @@ function getDefaultDuration(serviceName: string, services: ServiceRecord[]) {
   return 60;
 }
 
+function buildProfessionalLabel(professional: Pick<ProfessionalRecord, "firstName" | "lastName" | "email">) {
+  const fullName = `${professional.firstName} ${professional.lastName}`.trim();
+  return fullName || professional.email || "Specialist";
+}
+
+function buildWorkspaceSnapshotFromDirectory(
+  professional: ProfessionalRecord,
+  membership: MembershipRecord,
+  business: WorkspaceSnapshot["business"],
+  services: ServiceRecord[]
+): WorkspaceSnapshot {
+  return {
+    professional,
+    business,
+    membership,
+    memberSchedule: resolveMembershipSchedule(membership, business),
+    services
+  };
+}
+
+async function resolveCalendarAccess(input: {
+  viewerProfessionalId: string;
+  targetProfessionalId?: string;
+  strictTarget?: boolean;
+}) {
+  const viewerWorkspace = await getWorkspaceSnapshot(input.viewerProfessionalId);
+
+  if (!viewerWorkspace) {
+    throw new Error("Workspace not found.");
+  }
+
+  const directory = await getBusinessDirectorySnapshot();
+  const business = directory.businesses.find((item) => item.id === viewerWorkspace.business.id);
+
+  if (!business) {
+    throw new Error("Business not found.");
+  }
+
+  const services = directory.services
+    .filter((item) => item.businessId === business.id && item.isBlocked !== true)
+    .sort((left, right) => {
+      const orderDiff = (left.sortOrder ?? 0) - (right.sortOrder ?? 0);
+      return orderDiff || left.createdAt.localeCompare(right.createdAt);
+    });
+
+  const teamEntries = directory.memberships
+    .filter((membership) => membership.businessId === business.id && membership.scope !== "pending")
+    .map((membership) => {
+      const professional = directory.professionals.find((item) => item.id === membership.professionalId);
+      if (!professional || professional.accountStatus !== "active") {
+        return null;
+      }
+
+      return { professional, membership };
+    })
+    .filter(
+      (entry): entry is { professional: ProfessionalRecord; membership: MembershipRecord } => Boolean(entry)
+    )
+    .sort((left, right) => {
+      const scopeWeight = left.membership.scope === right.membership.scope ? 0 : left.membership.scope === "owner" ? -1 : 1;
+      if (scopeWeight !== 0) {
+        return scopeWeight;
+      }
+
+      return buildProfessionalLabel(left.professional).localeCompare(buildProfessionalLabel(right.professional), "ru");
+    });
+
+  const canManageTeam = viewerWorkspace.membership.scope === "owner";
+  const requestedTargetId = input.targetProfessionalId?.trim() || input.viewerProfessionalId;
+
+  let targetId = input.viewerProfessionalId;
+
+  if (requestedTargetId === input.viewerProfessionalId) {
+    targetId = input.viewerProfessionalId;
+  } else if (canManageTeam && teamEntries.some((entry) => entry.professional.id === requestedTargetId)) {
+    targetId = requestedTargetId;
+  } else if (input.strictTarget) {
+    throw new Error("Access denied.");
+  }
+
+  const targetEntry = teamEntries.find((entry) => entry.professional.id === targetId);
+
+  if (!targetEntry) {
+    throw new Error("Specialist not found.");
+  }
+
+  return {
+    viewerWorkspace,
+    targetWorkspace: buildWorkspaceSnapshotFromDirectory(
+      targetEntry.professional,
+      targetEntry.membership,
+      business,
+      services
+    ),
+    teamMembers: teamEntries.map((entry) => ({
+      id: entry.professional.id,
+      firstName: entry.professional.firstName,
+      lastName: entry.professional.lastName,
+      avatarUrl: entry.professional.avatarUrl,
+      role: entry.membership.role,
+      scope: entry.membership.scope === "owner" ? "owner" : "member",
+      isViewer: entry.professional.id === input.viewerProfessionalId
+    })),
+    canManageTeam
+  };
+}
+
 export async function getCalendarDaySnapshot(input: {
   professionalId: string;
   appointmentDate: string;
+  targetProfessionalId?: string;
 }) {
-  const workspace = await getWorkspaceSnapshot(input.professionalId);
-
-  if (!workspace) {
-    return null;
-  }
-
-  const professionalAppointments = await readAppointmentsForProfessional(input.professionalId);
+  const access = await resolveCalendarAccess({
+    viewerProfessionalId: input.professionalId,
+    targetProfessionalId: input.targetProfessionalId
+  });
+  const professionalAppointments = await readAppointmentsForProfessional(access.targetWorkspace.professional.id);
   const existing = professionalAppointments.filter(
     (appointment) => appointment.appointmentDate === input.appointmentDate
   );
@@ -401,20 +550,58 @@ export async function getCalendarDaySnapshot(input: {
     ).values()
   ).sort((left, right) => left.name.localeCompare(right.name, "ru"));
 
+  const activitySource = access.canManageTeam
+    ? await getAppointmentsForBusiness(access.targetWorkspace.business.id)
+    : [...professionalAppointments].sort((left, right) =>
+        `${right.createdAt}${right.appointmentDate}${right.startTime}`.localeCompare(
+          `${left.createdAt}${left.appointmentDate}${left.startTime}`
+        )
+      );
+  const teamMemberLabels = new Map(
+    access.teamMembers.map((member) => [member.id, `${member.firstName} ${member.lastName}`.trim() || member.role])
+  );
+
   return {
-    workspace,
+    viewer: {
+      id: access.viewerWorkspace.professional.id,
+      firstName: access.viewerWorkspace.professional.firstName,
+      lastName: access.viewerWorkspace.professional.lastName,
+      avatarUrl: access.viewerWorkspace.professional.avatarUrl,
+      role: access.viewerWorkspace.membership.role,
+      scope: access.viewerWorkspace.membership.scope === "owner" ? "owner" : "member",
+      language: access.viewerWorkspace.professional.language,
+      country: access.viewerWorkspace.professional.country,
+      currency: access.viewerWorkspace.professional.currency
+    },
+    teamMembers: access.teamMembers,
+    viewedProfessionalId: access.targetWorkspace.professional.id,
+    workspace: access.targetWorkspace,
     appointments: existing.sort((left, right) => left.startTime.localeCompare(right.startTime)),
     clients,
     stats: {
       day: summarizeAppointments(professionalAppointments, input.appointmentDate, input.appointmentDate),
       week: summarizeAppointments(professionalAppointments, weekRange.start, weekRange.end),
       month: summarizeAppointments(professionalAppointments, monthRange.start, monthRange.end)
-    }
+    },
+    recentActivity: activitySource
+      .filter((appointment) => appointment.kind === "appointment")
+      .slice(0, 8)
+      .map((appointment) => ({
+        id: appointment.id,
+        appointmentDate: appointment.appointmentDate,
+        startTime: appointment.startTime,
+        customerName: appointment.customerName,
+        serviceName: appointment.serviceName,
+        professionalId: appointment.professionalId,
+        professionalName: teamMemberLabels.get(appointment.professionalId) || appointment.customerName || "Specialist",
+        createdAt: appointment.createdAt
+      }))
   };
 }
 
 export async function createCalendarAppointment(input: {
   professionalId: string;
+  targetProfessionalId?: string;
   appointmentDate: string;
   startTime: string;
   endTime?: string;
@@ -426,11 +613,12 @@ export async function createCalendarAppointment(input: {
   attendance?: CalendarAttendanceStatus;
   allowMissingService?: boolean;
 }) {
-  const workspace = await getWorkspaceSnapshot(input.professionalId);
-
-  if (!workspace) {
-    throw new Error("Workspace not found.");
-  }
+  const access = await resolveCalendarAccess({
+    viewerProfessionalId: input.professionalId,
+    targetProfessionalId: input.targetProfessionalId,
+    strictTarget: true
+  });
+  const workspace = access.targetWorkspace;
 
   if (!input.startTime.trim()) {
     throw new Error("Start time is required.");
@@ -447,14 +635,14 @@ export async function createCalendarAppointment(input: {
     (input.allowMissingService
       ? null
       : await ensureServiceForProfessional({
-          professionalId: input.professionalId,
+          professionalId: workspace.professional.id,
           serviceName
         }));
 
   const appointment: CalendarAppointment = {
     id: makeId("cal"),
     businessId: workspace.business.id,
-    professionalId: input.professionalId,
+    professionalId: workspace.professional.id,
     appointmentDate: input.appointmentDate,
     startTime: input.startTime,
     endTime:
@@ -581,15 +769,17 @@ export async function getAppointmentUsageForProfessional(professionalId: string)
 
 export async function updateCalendarAppointmentTime(input: {
   professionalId: string;
+  targetProfessionalId?: string;
   appointmentId: string;
   startTime: string;
   endTime?: string;
 }) {
-  const workspace = await getWorkspaceSnapshot(input.professionalId);
-
-  if (!workspace) {
-    throw new Error("Workspace not found.");
-  }
+  const access = await resolveCalendarAccess({
+    viewerProfessionalId: input.professionalId,
+    targetProfessionalId: input.targetProfessionalId,
+    strictTarget: true
+  });
+  const targetProfessionalId = access.targetWorkspace.professional.id;
 
   if (isSupabaseConfigured()) {
     const supabase = getSupabaseAdmin();
@@ -603,7 +793,7 @@ export async function updateCalendarAppointmentTime(input: {
         "id, business_id, professional_id, appointment_date, start_time, end_time, kind, customer_name, customer_phone, service_name, notes, attendance, price_amount, created_at"
       )
       .eq("id", input.appointmentId)
-      .eq("professional_id", input.professionalId)
+      .eq("professional_id", targetProfessionalId)
       .maybeSingle();
 
     if (existingError) {
@@ -623,7 +813,7 @@ export async function updateCalendarAppointmentTime(input: {
         end_time: nextEndTime
       })
       .eq("id", input.appointmentId)
-      .eq("professional_id", input.professionalId)
+      .eq("professional_id", targetProfessionalId)
       .select(
         "id, business_id, professional_id, appointment_date, start_time, end_time, kind, customer_name, customer_phone, service_name, notes, attendance, price_amount, created_at"
       )
@@ -643,7 +833,7 @@ export async function updateCalendarAppointmentTime(input: {
   const store = await readStore();
   const appointment = store.appointments.find(
     (item) =>
-      item.id === input.appointmentId && item.professionalId === input.professionalId
+      item.id === input.appointmentId && item.professionalId === targetProfessionalId
   );
 
   if (!appointment) {
@@ -660,21 +850,23 @@ export async function updateCalendarAppointmentTime(input: {
 
 export async function createBlockedCalendarTime(input: {
   professionalId: string;
+  targetProfessionalId?: string;
   appointmentDate: string;
   startTime: string;
   endTime: string;
   serviceName?: string;
 }) {
-  const workspace = await getWorkspaceSnapshot(input.professionalId);
-
-  if (!workspace) {
-    throw new Error("Workspace not found.");
-  }
+  const access = await resolveCalendarAccess({
+    viewerProfessionalId: input.professionalId,
+    targetProfessionalId: input.targetProfessionalId,
+    strictTarget: true
+  });
+  const workspace = access.targetWorkspace;
 
   const blocked: CalendarAppointment = {
     id: makeId("blk"),
     businessId: workspace.business.id,
-    professionalId: input.professionalId,
+    professionalId: workspace.professional.id,
     appointmentDate: input.appointmentDate,
     startTime: input.startTime,
     endTime: input.endTime,
@@ -727,13 +919,15 @@ export async function createBlockedCalendarTime(input: {
 
 export async function deleteCalendarAppointment(input: {
   professionalId: string;
+  targetProfessionalId?: string;
   appointmentId: string;
 }) {
-  const workspace = await getWorkspaceSnapshot(input.professionalId);
-
-  if (!workspace) {
-    throw new Error("Workspace not found.");
-  }
+  const access = await resolveCalendarAccess({
+    viewerProfessionalId: input.professionalId,
+    targetProfessionalId: input.targetProfessionalId,
+    strictTarget: true
+  });
+  const targetProfessionalId = access.targetWorkspace.professional.id;
 
   if (isSupabaseConfigured()) {
     const supabase = getSupabaseAdmin();
@@ -745,7 +939,7 @@ export async function deleteCalendarAppointment(input: {
       .from("calendar_appointments")
       .delete()
       .eq("id", input.appointmentId)
-      .eq("professional_id", input.professionalId)
+      .eq("professional_id", targetProfessionalId)
       .select("id")
       .maybeSingle();
 
@@ -763,7 +957,7 @@ export async function deleteCalendarAppointment(input: {
   const store = await readStore();
   const beforeLength = store.appointments.length;
   store.appointments = store.appointments.filter(
-    (item) => !(item.id === input.appointmentId && item.professionalId === input.professionalId)
+    (item) => !(item.id === input.appointmentId && item.professionalId === targetProfessionalId)
   );
 
   if (store.appointments.length === beforeLength) {
@@ -776,15 +970,17 @@ export async function deleteCalendarAppointment(input: {
 
 export async function updateCalendarAppointmentMeta(input: {
   professionalId: string;
+  targetProfessionalId?: string;
   appointmentId: string;
   attendance: CalendarAttendanceStatus;
   priceAmount: number;
 }) {
-  const workspace = await getWorkspaceSnapshot(input.professionalId);
-
-  if (!workspace) {
-    throw new Error("Workspace not found.");
-  }
+  const access = await resolveCalendarAccess({
+    viewerProfessionalId: input.professionalId,
+    targetProfessionalId: input.targetProfessionalId,
+    strictTarget: true
+  });
+  const targetProfessionalId = access.targetWorkspace.professional.id;
 
   if (isSupabaseConfigured()) {
     const supabase = getSupabaseAdmin();
@@ -799,7 +995,7 @@ export async function updateCalendarAppointmentMeta(input: {
         price_amount: Math.max(0, Number.isFinite(input.priceAmount) ? input.priceAmount : 0)
       })
       .eq("id", input.appointmentId)
-      .eq("professional_id", input.professionalId)
+      .eq("professional_id", targetProfessionalId)
       .select(
         "id, business_id, professional_id, appointment_date, start_time, end_time, kind, customer_name, customer_phone, service_name, notes, attendance, price_amount, created_at"
       )
@@ -818,7 +1014,7 @@ export async function updateCalendarAppointmentMeta(input: {
 
   const store = await readStore();
   const appointment = store.appointments.find(
-    (item) => item.id === input.appointmentId && item.professionalId === input.professionalId
+    (item) => item.id === input.appointmentId && item.professionalId === targetProfessionalId
   );
 
   if (!appointment) {

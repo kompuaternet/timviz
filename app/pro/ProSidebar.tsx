@@ -140,6 +140,15 @@ export default function ProSidebar({
     setShowScheduleReminder(hasPendingScheduleReminder(professionalId));
   }, [active, professionalId]);
 
+  useEffect(() => {
+    function handleSupportOpen() {
+      setIsSupportOpen(true);
+    }
+
+    window.addEventListener("rezervo-open-support", handleSupportOpen);
+    return () => window.removeEventListener("rezervo-open-support", handleSupportOpen);
+  }, []);
+
   const visibleMainLinks = mainLinks.filter((link) => canManageStaff || link.key !== "staff");
 
   const mobileLinks = [
