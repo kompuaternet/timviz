@@ -28,6 +28,7 @@ export default async function ProClientsPage() {
       accountCountry={workspace.professional.country}
       accountCurrency={workspace.professional.currency || "USD"}
       businessName={workspace.business.name}
+      canManageStaff={workspace.membership.scope === "owner"}
       initialClients={clients}
     />
   );

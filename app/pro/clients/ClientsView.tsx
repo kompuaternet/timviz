@@ -18,6 +18,7 @@ type ClientsViewProps = {
   accountCountry: string;
   accountCurrency: string;
   businessName: string;
+  canManageStaff: boolean;
   initialClients: ClientListItem[];
 };
 
@@ -255,7 +256,13 @@ function digitsOnly(value: string) {
   return value.replace(/\D/g, "");
 }
 
-export default function ClientsView({ professionalId, accountCountry, accountCurrency, initialClients }: ClientsViewProps) {
+export default function ClientsView({
+  professionalId,
+  accountCountry,
+  accountCurrency,
+  canManageStaff,
+  initialClients
+}: ClientsViewProps) {
   const [clients, setClients] = useState(initialClients);
   const [query, setQuery] = useState("");
   const [uiLanguage, setUiLanguage] = useState<AppLanguage>("ru");
@@ -369,7 +376,11 @@ export default function ClientsView({ professionalId, accountCountry, accountCur
 
   return (
     <main className={`${styles.workspaceShell} ${styles.scheduleShell}`}>
-      <ProSidebar active="clients" professionalId={professionalId} />
+      <ProSidebar
+        active="clients"
+        professionalId={professionalId}
+        canManageStaff={canManageStaff}
+      />
 
       <section className={styles.clientsShell}>
         <section className={styles.clientsMain}>

@@ -371,7 +371,11 @@ export default function ServicesView({ initialWorkspace, catalog }: ServicesView
 
   return (
     <main className={`${styles.workspaceShell} ${styles.servicesShell}`}>
-      <ProSidebar active="services" professionalId={initialWorkspace.professional.id} />
+      <ProSidebar
+        active="services"
+        professionalId={initialWorkspace.professional.id}
+        canManageStaff={initialWorkspace.membership.scope === "owner"}
+      />
 
       <section className={styles.servicesPage}>
         <header className={styles.servicesHeroCompact}>

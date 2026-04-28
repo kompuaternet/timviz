@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   clearScheduleReminder,
@@ -15,6 +16,7 @@ type SidebarSection = "workspace" | "calendar" | "services" | "clients" | "staff
 type ProSidebarProps = {
   active: SidebarSection;
   professionalId?: string;
+  canManageStaff?: boolean;
 };
 
 function HomeIcon() {
@@ -93,6 +95,16 @@ function HelpIcon() {
   );
 }
 
+function LogoutIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M15.5 4.8h2.1a2 2 0 0 1 2 2v10.4a2 2 0 0 1-2 2h-2.1" />
+      <path d="M10.2 16.8 15 12l-4.8-4.8" />
+      <path d="M14.7 12H4.4" />
+    </svg>
+  );
+}
+
 const mainLinks = [
   { key: "workspace", href: "/pro/calendar", icon: <HomeIcon /> },
   { key: "calendar", href: "/pro/calendar", icon: <CalendarIcon /> },
@@ -102,9 +114,15 @@ const mainLinks = [
   { key: "schedule", href: "/pro/schedule", icon: <ScheduleIcon /> }
 ] as const;
 
-export default function ProSidebar({ active, professionalId = "" }: ProSidebarProps) {
+export default function ProSidebar({
+  active,
+  professionalId = "",
+  canManageStaff = false
+}: ProSidebarProps) {
+  const router = useRouter();
   const { t } = useProLanguage();
   const [isSupportOpen, setIsSupportOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [showScheduleReminder, setShowScheduleReminder] = useState(
     () => active !== "schedule" && hasPendingScheduleReminder(professionalId)
   );
@@ -132,6 +150,8 @@ export default function ProSidebar({ active, professionalId = "" }: ProSidebarPr
     setShowScheduleReminder(hasPendingScheduleReminder(professionalId));
   }, [active, professionalId]);
 
+  const visibleMainLinks = mainLinks.filter((link) => canManageStaff || link.key !== "staff");
+
   const mobileLinks = [
     { key: "calendar" as const, href: "/pro/calendar", label: t.nav.home, icon: <HomeIcon />, active: active === "workspace" || active === "calendar" },
     { key: "services" as const, href: "/pro/services", label: t.nav.services, icon: <TagIcon />, active: active === "services" },
@@ -139,13 +159,26 @@ export default function ProSidebar({ active, professionalId = "" }: ProSidebarPr
     { key: "staff" as const, href: "/pro/staff", label: t.nav.staff, icon: <StaffIcon />, active: active === "staff" },
     { key: "schedule" as const, href: "/pro/schedule", label: t.nav.schedule, icon: <ScheduleIcon />, active: active === "schedule" },
     { key: "settings" as const, href: "/pro/settings", label: t.nav.settings, icon: <SettingsIcon />, active: active === "settings" }
-  ];
+  ].filter((link) => canManageStaff || link.key !== "staff");
+
+  async function handleLogout() {
+    setIsLoggingOut(true);
+
+    try {
+      await fetch("/api/pro/logout", {
+        method: "POST"
+      });
+    } finally {
+      router.push("/pro/login");
+      router.refresh();
+    }
+  }
 
   return (
     <>
       <aside className={styles.workspaceSidebar}>
         <div className={styles.workspaceSidebarTop}>
-          {mainLinks.map((link) => (
+          {visibleMainLinks.map((link) => (
             <Link
               key={link.key}
               href={link.href}
@@ -170,6 +203,18 @@ export default function ProSidebar({ active, professionalId = "" }: ProSidebarPr
           >
             <SettingsIcon />
           </Link>
+          <button
+            type="button"
+            className={styles.workspaceNavButton}
+            aria-label={isLoggingOut ? t.settings.logoutLoading : t.settings.logout}
+            title={isLoggingOut ? t.settings.logoutLoading : t.settings.logout}
+            disabled={isLoggingOut}
+            onClick={() => {
+              void handleLogout();
+            }}
+          >
+            <LogoutIcon />
+          </button>
           <button
             type="button"
             className={styles.workspaceNavButton}
@@ -200,6 +245,23 @@ export default function ProSidebar({ active, professionalId = "" }: ProSidebarPr
             <span className={styles.mobileWorkspaceNavLabel}>{link.label}</span>
           </Link>
         ))}
+        <button
+          type="button"
+          className={styles.mobileWorkspaceNavLink}
+          aria-label={isLoggingOut ? t.settings.logoutLoading : t.settings.logout}
+          title={isLoggingOut ? t.settings.logoutLoading : t.settings.logout}
+          disabled={isLoggingOut}
+          onClick={() => {
+            void handleLogout();
+          }}
+        >
+          <span className={styles.mobileWorkspaceNavIcon}>
+            <LogoutIcon />
+          </span>
+          <span className={styles.mobileWorkspaceNavLabel}>
+            {isLoggingOut ? t.settings.logoutLoading : t.settings.logout}
+          </span>
+        </button>
       </nav>
 
       <SupportWidget

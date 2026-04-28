@@ -203,7 +203,11 @@ export default function WorkspaceView({ professionalId }: WorkspaceViewProps) {
 
   return (
     <main className={styles.workspaceShell}>
-      <ProSidebar active="workspace" professionalId={professionalId} />
+      <ProSidebar
+        active="workspace"
+        professionalId={professionalId}
+        canManageStaff={snapshot.membership.scope === "owner"}
+      />
 
       <section className={styles.workspaceMain}>
         <div className={styles.workspaceTopBar}>

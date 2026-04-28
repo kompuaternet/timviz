@@ -96,7 +96,11 @@ export default function ScheduleView({ professionalId }: ScheduleViewProps) {
 
   return (
     <main className={`${styles.workspaceShell} ${styles.scheduleShell}`}>
-      <ProSidebar active="schedule" professionalId={professionalId} />
+      <ProSidebar
+        active="schedule"
+        professionalId={professionalId}
+        canManageStaff={snapshot.membership.scope === "owner"}
+      />
 
       <section className={styles.workspaceMain}>
         <div className={styles.workspaceTopBar}>

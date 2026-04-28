@@ -15,7 +15,7 @@ export default async function ProStaffPage() {
   const snapshot = await getBusinessStaffSnapshot(professionalId);
 
   if (!snapshot) {
-    redirect("/pro/calendar");
+    redirect("/pro/settings");
   }
 
   return <StaffView professionalId={professionalId} snapshot={snapshot} />;

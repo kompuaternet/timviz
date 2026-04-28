@@ -120,7 +120,7 @@ export default function StaffScheduleView({ professionalId, snapshot }: StaffSch
 
   return (
     <main className={`${styles.workspaceShell} ${styles.scheduleShell}`}>
-      <ProSidebar active="staff" professionalId={professionalId} />
+      <ProSidebar active="staff" professionalId={professionalId} canManageStaff />
 
       <section className={styles.staffStudioShell}>
         <aside className={styles.staffStudioSidebar}>

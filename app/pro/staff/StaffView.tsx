@@ -492,7 +492,7 @@ export default function StaffView({ professionalId, snapshot }: StaffViewProps) 
 
   return (
     <main className={`${styles.workspaceShell} ${styles.scheduleShell}`}>
-      <ProSidebar active="staff" professionalId={professionalId} />
+      <ProSidebar active="staff" professionalId={professionalId} canManageStaff />
 
       <section className={styles.staffStudioShell}>
         <aside className={styles.staffStudioSidebar}>

@@ -682,7 +682,11 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
 
   return (
     <main className={`${styles.workspaceShell} ${styles.scheduleShell}`}>
-      <ProSidebar active="settings" professionalId={initialData.professional.id} />
+      <ProSidebar
+        active="settings"
+        professionalId={initialData.professional.id}
+        canManageStaff={initialData.membership.scope === "owner"}
+      />
       <section className={styles.settingsShell}>
         <header className={styles.settingsHero}>
           <div>

@@ -1,25 +1,20 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getSessionCookieName, verifySessionValue } from "../../../lib/pro-auth";
+import { getWorkspaceSnapshot } from "../../../lib/pro-data";
 import ScheduleView from "./ScheduleView";
 
-type ProSchedulePageProps = {
-  searchParams?: Promise<{
-    professionalId?: string;
-  }>;
-};
-
-export default async function ProSchedulePage({
-  searchParams
-}: ProSchedulePageProps) {
-  const params = (await searchParams) ?? {};
+export default async function ProSchedulePage() {
   const cookieStore = await cookies();
-  const professionalId =
-    params.professionalId ||
-    verifySessionValue(cookieStore.get(getSessionCookieName())?.value) ||
-    "";
+  const professionalId = verifySessionValue(cookieStore.get(getSessionCookieName())?.value) || "";
 
   if (!professionalId) {
+    redirect("/pro/login");
+  }
+
+  const workspace = await getWorkspaceSnapshot(professionalId);
+
+  if (!workspace) {
     redirect("/pro/login");
   }
 

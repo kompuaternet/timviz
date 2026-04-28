@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getSessionCookieName, verifySessionValue } from "../../../lib/pro-auth";
+import { getWorkspaceSnapshot } from "../../../lib/pro-data";
 import CalendarDayView from "./CalendarDayView";
 
 function formatDateKey(date: Date) {
@@ -13,7 +14,6 @@ function formatDateKey(date: Date) {
 type ProCalendarPageProps = {
   searchParams?: Promise<{
     date?: string;
-    professionalId?: string;
   }>;
 };
 
@@ -22,12 +22,15 @@ export default async function ProCalendarPage({
 }: ProCalendarPageProps) {
   const params = (await searchParams) ?? {};
   const cookieStore = await cookies();
-  const professionalId =
-    params.professionalId ||
-    verifySessionValue(cookieStore.get(getSessionCookieName())?.value) ||
-    "";
+  const professionalId = verifySessionValue(cookieStore.get(getSessionCookieName())?.value) || "";
 
   if (!professionalId) {
+    redirect("/pro/login");
+  }
+
+  const workspace = await getWorkspaceSnapshot(professionalId);
+
+  if (!workspace) {
     redirect("/pro/login");
   }
 

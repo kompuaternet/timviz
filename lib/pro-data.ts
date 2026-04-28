@@ -1454,6 +1454,10 @@ export async function getWorkspaceSnapshot(
     return null;
   }
 
+  if (normalizeProfessionalAccountStatus(professional.accountStatus) !== "active") {
+    return null;
+  }
+
   const membership = directory.memberships.find(
     (item) => item.professionalId === professionalId && item.scope !== "pending"
   );

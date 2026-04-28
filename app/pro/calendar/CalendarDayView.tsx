@@ -1550,7 +1550,11 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
 
   return (
     <main className={`${styles.workspaceShell} ${styles.calendarV2Shell} ${overlayActive ? styles.calendarV2Expanded : ""}`}>
-      <ProSidebar active="calendar" professionalId={professionalId} />
+      <ProSidebar
+        active="calendar"
+        professionalId={professionalId}
+        canManageStaff={snapshot?.workspace.membership.scope === "owner"}
+      />
 
       <aside className={styles.calendarLeftPanel}>
         <div className={styles.calendarViewRail}>
