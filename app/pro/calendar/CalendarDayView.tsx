@@ -21,7 +21,8 @@ import {
   formatPhoneLocal,
   getPhoneRule,
   getPhoneValidationMessage,
-  isPhoneValid
+  isPhoneValid,
+  onlyPhoneDigits
 } from "../../../lib/phone-format";
 
 type CalendarAppointment = {
@@ -287,13 +288,25 @@ const CALENDAR_TEXT: Record<AppLanguage, {
   walkInClient: string;
   saveTime: string;
   deleteBlock: string;
+  deleteVisit: string;
+  moveVisit: string;
+  resizeVisit: string;
   service: string;
+  specialist: string;
+  visitDateTime: string;
   attendanceStatus: string;
   attendancePending: string;
   attendanceConfirmed: string;
   attendanceArrived: string;
   attendanceNoShow: string;
   price: string;
+  notesLabel: string;
+  quickContact: string;
+  call: string;
+  whatsapp: string;
+  telegram: string;
+  viber: string;
+  contactPhoneHint: string;
   saveVisit: string;
   newClientModalTitle: string;
   newClientModalText: string;
@@ -401,13 +414,25 @@ const CALENDAR_TEXT: Record<AppLanguage, {
     walkInClient: "Клиент без бронирования",
     saveTime: "Сохранить время",
     deleteBlock: "Удалить блок",
+    deleteVisit: "Удалить визит",
+    moveVisit: "Перетащить запись",
+    resizeVisit: "Изменить длительность записи",
     service: "Услуга",
+    specialist: "Мастер",
+    visitDateTime: "Дата и время",
     attendanceStatus: "Статус визита",
     attendancePending: "Ожидается",
     attendanceConfirmed: "Подтверждена",
     attendanceArrived: "Пришел",
     attendanceNoShow: "Не пришел",
     price: "Цена",
+    notesLabel: "Заметка",
+    quickContact: "Быстрая связь",
+    call: "Позвонить",
+    whatsapp: "WhatsApp",
+    telegram: "Telegram",
+    viber: "Viber",
+    contactPhoneHint: "Добавьте телефон клиента, чтобы быстро написать ему в мессенджер.",
     saveVisit: "Сохранить визит",
     newClientModalTitle: "Новый клиент?",
     newClientModalText: "Добавь данные клиента, чтобы отправлять напоминания о визитах и мотивировать его на повторные записи.",
@@ -515,13 +540,25 @@ const CALENDAR_TEXT: Record<AppLanguage, {
     walkInClient: "Клієнт без бронювання",
     saveTime: "Зберегти час",
     deleteBlock: "Видалити блок",
+    deleteVisit: "Видалити візит",
+    moveVisit: "Перетягнути запис",
+    resizeVisit: "Змінити тривалість запису",
     service: "Послуга",
+    specialist: "Майстер",
+    visitDateTime: "Дата й час",
     attendanceStatus: "Статус візиту",
     attendancePending: "Очікується",
     attendanceConfirmed: "Підтверджено",
     attendanceArrived: "Прийшов",
     attendanceNoShow: "Не прийшов",
     price: "Ціна",
+    notesLabel: "Нотатка",
+    quickContact: "Швидкий зв'язок",
+    call: "Зателефонувати",
+    whatsapp: "WhatsApp",
+    telegram: "Telegram",
+    viber: "Viber",
+    contactPhoneHint: "Додайте телефон клієнта, щоб швидко написати йому в месенджер.",
     saveVisit: "Зберегти візит",
     newClientModalTitle: "Новий клієнт?",
     newClientModalText: "Додайте дані клієнта, щоб надсилати нагадування про візити й мотивувати його на повторні записи.",
@@ -629,13 +666,25 @@ const CALENDAR_TEXT: Record<AppLanguage, {
     walkInClient: "Walk-in client",
     saveTime: "Save time",
     deleteBlock: "Delete block",
+    deleteVisit: "Delete visit",
+    moveVisit: "Move appointment",
+    resizeVisit: "Change appointment duration",
     service: "Service",
+    specialist: "Specialist",
+    visitDateTime: "Date and time",
     attendanceStatus: "Visit status",
     attendancePending: "Pending",
     attendanceConfirmed: "Confirmed",
     attendanceArrived: "Arrived",
     attendanceNoShow: "No-show",
     price: "Price",
+    notesLabel: "Note",
+    quickContact: "Quick contact",
+    call: "Call",
+    whatsapp: "WhatsApp",
+    telegram: "Telegram",
+    viber: "Viber",
+    contactPhoneHint: "Add the client's phone to quickly message them in a messenger.",
     saveVisit: "Save visit",
     newClientModalTitle: "New client?",
     newClientModalText: "Add client details to send visit reminders and encourage repeat bookings.",
@@ -717,6 +766,40 @@ function timeToMinutes(value: string) {
 function minutesToTime(minutes: number) {
   const safe = Math.max(0, Math.min(minutes, 24 * 60 - 5));
   return `${String(Math.floor(safe / 60)).padStart(2, "0")}:${String(safe % 60).padStart(2, "0")}`;
+}
+
+function getNormalizedContactPhone(phone: string, country: string | undefined) {
+  const trimmed = phone.trim();
+  if (!trimmed) {
+    return "";
+  }
+
+  if (trimmed.startsWith("+")) {
+    const digits = onlyPhoneDigits(trimmed);
+    return digits.length >= 8 ? `+${digits}` : "";
+  }
+
+  if (!isPhoneValid(country ?? "", trimmed)) {
+    return "";
+  }
+
+  return buildInternationalPhone(country ?? "", trimmed).replace(/\s+/g, " ").trim();
+}
+
+function getContactLinks(phone: string) {
+  const digits = onlyPhoneDigits(phone);
+  const normalizedPhone = digits ? `+${digits}` : "";
+
+  return {
+    call: normalizedPhone ? `tel:${normalizedPhone}` : "",
+    whatsapp: digits ? `https://wa.me/${digits}` : "",
+    telegram: digits ? `tg://resolve?phone=${digits}` : "",
+    viber: normalizedPhone ? `viber://chat?number=${encodeURIComponent(normalizedPhone)}` : ""
+  };
+}
+
+function getPersonInitial(name: string, fallback = "C") {
+  return name.trim()[0]?.toUpperCase() ?? fallback;
 }
 
 function isWithinWorkingWindow(time: string, daySchedule: WorkDaySchedule | null) {
@@ -940,6 +1023,9 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
   const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null);
   const [attendanceDraft, setAttendanceDraft] = useState<"pending" | "confirmed" | "arrived" | "no_show">("pending");
   const [priceAmountDraft, setPriceAmountDraft] = useState("0");
+  const [detailsCustomerNameDraft, setDetailsCustomerNameDraft] = useState("");
+  const [detailsCustomerPhoneDraft, setDetailsCustomerPhoneDraft] = useState("");
+  const [detailsNotesDraft, setDetailsNotesDraft] = useState("");
   const [visitItems, setVisitItems] = useState<VisitServiceDraft[]>([]);
   const [editingServiceIndex, setEditingServiceIndex] = useState(0);
   const [serviceQuery, setServiceQuery] = useState("");
@@ -1563,6 +1649,41 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
     () => allVisibleAppointments.find((appointment) => appointment.id === selectedAppointmentId) ?? null,
     [allVisibleAppointments, selectedAppointmentId]
   );
+  const selectedAppointmentMember = useMemo(
+    () =>
+      selectedAppointment
+        ? memberCalendars.find((member) => member.professionalId === selectedAppointment.professionalId) ?? null
+        : null,
+    [memberCalendars, selectedAppointment]
+  );
+  const selectedAppointmentDateLabel = useMemo(() => {
+    if (!selectedAppointment) {
+      return selectedDateLabel;
+    }
+
+    return new Date(`${selectedAppointment.appointmentDate}T00:00:00`).toLocaleDateString(locale, {
+      weekday: "short",
+      day: "numeric",
+      month: "short"
+    });
+  }, [locale, selectedAppointment, selectedDateLabel]);
+  const selectedAppointmentContactPhone = useMemo(
+    () => getNormalizedContactPhone(detailsCustomerPhoneDraft || selectedAppointment?.customerPhone || "", accountCountry),
+    [accountCountry, detailsCustomerPhoneDraft, selectedAppointment]
+  );
+  const selectedAppointmentContactLinks = useMemo(
+    () => getContactLinks(selectedAppointmentContactPhone),
+    [selectedAppointmentContactPhone]
+  );
+  const appointmentContactActions = useMemo(
+    () => [
+      { key: "call", label: t.call, shortLabel: "☎", href: selectedAppointmentContactLinks.call, external: false },
+      { key: "whatsapp", label: t.whatsapp, shortLabel: "WA", href: selectedAppointmentContactLinks.whatsapp, external: true },
+      { key: "telegram", label: t.telegram, shortLabel: "TG", href: selectedAppointmentContactLinks.telegram, external: false },
+      { key: "viber", label: t.viber, shortLabel: "VB", href: selectedAppointmentContactLinks.viber, external: false }
+    ],
+    [selectedAppointmentContactLinks.call, selectedAppointmentContactLinks.telegram, selectedAppointmentContactLinks.viber, selectedAppointmentContactLinks.whatsapp, t.call, t.telegram, t.viber, t.whatsapp]
+  );
   const calendarStats = snapshot?.stats ?? {
     day: { visitsCount: 0, revenue: 0 },
     week: { visitsCount: 0, revenue: 0 },
@@ -1605,6 +1726,18 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
       ),
     [visibleCalendars]
   );
+  useEffect(() => {
+    if (!selectedAppointment || selectedAppointment.kind !== "appointment") {
+      return;
+    }
+
+    setAttendanceDraft(selectedAppointment.attendance);
+    setPriceAmountDraft(String(selectedAppointment.priceAmount ?? 0));
+    setDetailsCustomerNameDraft(selectedAppointment.customerName || "");
+    setDetailsCustomerPhoneDraft(selectedAppointment.customerPhone || "");
+    setDetailsNotesDraft(selectedAppointment.notes || "");
+  }, [selectedAppointment]);
+
   useEffect(() => {
     function handlePointerMove(event: PointerEvent) {
       if (!dragRef.current || !snapshot) {
@@ -1699,6 +1832,42 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
 
   async function refreshSnapshot() {
     await loadSnapshot(selectedDate, selectedProfessionalId);
+  }
+
+  function startAppointmentDrag(
+    event: React.PointerEvent<HTMLButtonElement>,
+    appointment: CalendarAppointment,
+    targetProfessionalId: string
+  ) {
+    event.preventDefault();
+    event.stopPropagation();
+    setSelectedProfessionalId(targetProfessionalId);
+    dragRef.current = {
+      startY: event.clientY,
+      originalStartMinutes: timeToMinutes(appointment.startTime),
+      originalEndMinutes: timeToMinutes(appointment.endTime),
+      appointmentId: appointment.id,
+      mode: "move"
+    };
+    setDraggingId(appointment.id);
+  }
+
+  function startAppointmentResize(
+    event: React.PointerEvent<HTMLButtonElement>,
+    appointment: CalendarAppointment,
+    targetProfessionalId: string
+  ) {
+    event.preventDefault();
+    event.stopPropagation();
+    setSelectedProfessionalId(targetProfessionalId);
+    dragRef.current = {
+      startY: event.clientY,
+      originalStartMinutes: timeToMinutes(appointment.startTime),
+      originalEndMinutes: timeToMinutes(appointment.endTime),
+      appointmentId: appointment.id,
+      mode: "resize"
+    };
+    setDraggingId(appointment.id);
   }
 
   function openNewVisit(slot: string, targetProfessionalId = selectedProfessionalId) {
@@ -1946,14 +2115,14 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
     showToast(kindLabel, "success");
   }
 
-  async function deleteSelectedAppointment() {
-    if (!selectedAppointment) {
+  async function deleteAppointment(appointment: CalendarAppointment, closeDrawer = false) {
+    if (!appointment) {
       return;
     }
 
     const params = new URLSearchParams({
-      appointmentId: selectedAppointment.id,
-      targetProfessionalId: selectedAppointment.professionalId
+      appointmentId: appointment.id,
+      targetProfessionalId: appointment.professionalId
     });
     const response = await fetch(`/api/pro/calendar?${params.toString()}`, {
       method: "DELETE"
@@ -1966,14 +2135,46 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
     }
 
     await refreshSnapshot();
-    setDrawerStage("closed");
-    setSelectedAppointmentId(null);
-    showToast(selectedAppointment.kind === "blocked" ? t.blockedRemoved : t.visitRemoved, "success");
+    if (closeDrawer || selectedAppointmentId === appointment.id) {
+      setDrawerStage("closed");
+      setSelectedAppointmentId(null);
+    }
+    showToast(appointment.kind === "blocked" ? t.blockedRemoved : t.visitRemoved, "success");
+  }
+
+  async function deleteSelectedAppointment() {
+    if (!selectedAppointment) {
+      return;
+    }
+
+    await deleteAppointment(selectedAppointment, true);
   }
 
   async function saveAppointmentMeta() {
     if (!selectedAppointment || selectedAppointment.kind !== "appointment") {
       return;
+    }
+
+    const normalizedCustomerName = detailsCustomerNameDraft.trim() || selectedAppointment.customerName;
+    let normalizedCustomerPhone = "";
+    const trimmedPhone = detailsCustomerPhoneDraft.trim();
+
+    if (trimmedPhone) {
+      if (trimmedPhone.startsWith("+")) {
+        const digits = onlyPhoneDigits(trimmedPhone);
+        if (digits.length < 8) {
+          showToast(getPhoneValidationMessage(accountCountry ?? ""), "warning");
+          return;
+        }
+        normalizedCustomerPhone = `+${digits}`;
+      } else {
+        if (!isPhoneValid(accountCountry ?? "", trimmedPhone)) {
+          showToast(getPhoneValidationMessage(accountCountry ?? ""), "warning");
+          return;
+        }
+
+        normalizedCustomerPhone = buildInternationalPhone(accountCountry ?? "", trimmedPhone);
+      }
     }
 
     const response = await fetch("/api/pro/calendar", {
@@ -1984,7 +2185,12 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
         targetProfessionalId: selectedAppointment.professionalId,
         appointmentId: selectedAppointment.id,
         attendance: attendanceDraft,
-        priceAmount: Number(priceAmountDraft || 0)
+        priceAmount: Number(priceAmountDraft || 0),
+        customerName: normalizedCustomerName,
+        customerPhone: normalizedCustomerPhone,
+        notes: detailsNotesDraft.trim(),
+        previousCustomerName: selectedAppointment.customerName,
+        previousCustomerPhone: selectedAppointment.customerPhone
       })
     });
     const payload = await response.json();
@@ -1994,8 +2200,6 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
     }
 
     await refreshSnapshot();
-    setDrawerStage("closed");
-    setSelectedAppointmentId(null);
     showToast(t.visitUpdated, "success");
   }
 
@@ -2404,7 +2608,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
           </div>
 
           <div className={styles.calendarTopRight}>
-            {visibleCalendarIds.length === 1 ? (
+            {visibleCalendarIds.length === 1 && !isMobileViewport ? (
               <div className={`${styles.calendarStatsStrip} ${styles.calendarStatsStripCompact}`} aria-label={t.dailyCalendar}>
                 <div>
                   <span>{t.today}</span>
@@ -2527,7 +2731,8 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
                   type="button"
                   className={styles.calendarMobilePlusButton}
                   onClick={() => openNewVisit(getSuggestedVisitStartTime(), selectedProfessionalId)}
-                  aria-label={t.quickNewVisit}
+                  aria-label="Добавить запись"
+                  title="Добавить запись"
                 >
                   <span>+</span>
                 </button>
@@ -2685,17 +2890,6 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
                             right: "auto",
                             background: isBlocked ? undefined : bookingColor
                           }}
-                          onPointerDown={(event) => {
-                            setSelectedProfessionalId(member.professionalId);
-                            dragRef.current = {
-                              startY: event.clientY,
-                              originalStartMinutes: timeToMinutes(appointment.startTime),
-                              originalEndMinutes: timeToMinutes(appointment.endTime),
-                              appointmentId: appointment.id,
-                              mode: "move"
-                            };
-                            setDraggingId(appointment.id);
-                          }}
                           onClick={() => {
                             setSelectedProfessionalId(member.professionalId);
                             if (isBlocked) {
@@ -2711,6 +2905,34 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
                             setQuickMenu((current) => ({ ...current, visible: false, x: 0, y: 0, time: "" }));
                           }}
                         >
+                          <div className={styles.bookingControlRow}>
+                            <button
+                              type="button"
+                              className={styles.bookingDeleteButton}
+                              aria-label={isBlocked ? t.deleteBlock : t.deleteVisit}
+                              title={isBlocked ? t.deleteBlock : t.deleteVisit}
+                              onClick={(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                void deleteAppointment(appointment);
+                              }}
+                            >
+                              <span aria-hidden="true">×</span>
+                            </button>
+                            <button
+                              type="button"
+                              className={styles.bookingDragHandle}
+                              aria-label={t.moveVisit}
+                              title={t.moveVisit}
+                              onPointerDown={(event) => startAppointmentDrag(event, appointment, member.professionalId)}
+                              onClick={(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
+                              }}
+                            >
+                              <span aria-hidden="true" className={styles.bookingDragDots} />
+                            </button>
+                          </div>
                           <span className={styles.bookingTime}>{`${formatDisplayTime(appointment.startTime)} - ${formatDisplayTime(appointment.endTime)}`}</span>
                           <strong className={styles.bookingTitle}>
                             {isBlocked ? appointment.serviceName || t.blockedTimeFallback : appointment.customerName || t.walkInClient}
@@ -2719,17 +2941,12 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
                           <button
                             type="button"
                             className={styles.bookingResizeHandle}
-                            onPointerDown={(event) => {
+                            aria-label={t.resizeVisit}
+                            title={t.resizeVisit}
+                            onPointerDown={(event) => startAppointmentResize(event, appointment, member.professionalId)}
+                            onClick={(event) => {
+                              event.preventDefault();
                               event.stopPropagation();
-                              setSelectedProfessionalId(member.professionalId);
-                              dragRef.current = {
-                                startY: event.clientY,
-                                originalStartMinutes: timeToMinutes(appointment.startTime),
-                                originalEndMinutes: timeToMinutes(appointment.endTime),
-                                appointmentId: appointment.id,
-                                mode: "resize"
-                              };
-                              setDraggingId(appointment.id);
                             }}
                           />
                         </article>
@@ -3315,42 +3532,134 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
                 </button>
               </div>
             ) : (
-            <div className={styles.fieldStack}>
-              <div className={styles.field}>
-                <label>{t.service}</label>
-                <div className={styles.select}>{selectedAppointment.serviceName}</div>
+              <div className={styles.fieldStack}>
+                <div className={styles.calendarAppointmentContactCard}>
+                  <div className={styles.calendarAppointmentContactTop}>
+                    <div className={styles.calendarCustomerAvatar}>
+                      {getPersonInitial(detailsCustomerNameDraft || selectedAppointment.customerName || t.customer, t.customer[0] ?? "C")}
+                    </div>
+                    <div className={styles.calendarAppointmentContactMeta}>
+                      <strong>{detailsCustomerNameDraft.trim() || selectedAppointment.customerName || t.walkInClient}</strong>
+                      <span>{selectedAppointmentContactPhone || detailsCustomerPhoneDraft.trim() || t.noPhone}</span>
+                      <small>{t.quickContact}</small>
+                    </div>
+                  </div>
+
+                  <div className={styles.calendarAppointmentContactActions}>
+                    {appointmentContactActions.map((action) =>
+                      action.href ? (
+                        <a
+                          key={action.key}
+                          className={styles.calendarContactAction}
+                          href={action.href}
+                          target={action.external ? "_blank" : undefined}
+                          rel={action.external ? "noopener noreferrer" : undefined}
+                        >
+                          <span className={styles.calendarContactActionIcon}>{action.shortLabel}</span>
+                          <span className={styles.calendarContactActionLabel}>{action.label}</span>
+                        </a>
+                      ) : (
+                        <button key={action.key} type="button" className={styles.calendarContactActionDisabled} disabled>
+                          <span className={styles.calendarContactActionIcon}>{action.shortLabel}</span>
+                          <span className={styles.calendarContactActionLabel}>{action.label}</span>
+                        </button>
+                      )
+                    )}
+                  </div>
+                </div>
+
+                {!selectedAppointmentContactPhone ? (
+                  <div className={styles.calendarInlineHint}>{t.contactPhoneHint}</div>
+                ) : null}
+
+                <div className={styles.calendarAppointmentSummaryGrid}>
+                  <div className={styles.calendarAppointmentSummaryCard}>
+                    <span>{t.visitDateTime}</span>
+                    <strong>{selectedAppointmentDateLabel}</strong>
+                    <small>
+                      {formatDisplayTime(selectedAppointment.startTime)} - {formatDisplayTime(selectedAppointment.endTime)}
+                    </small>
+                  </div>
+                  <div className={styles.calendarAppointmentSummaryCard}>
+                    <span>{t.service}</span>
+                    <strong>{selectedAppointment.serviceName}</strong>
+                    <small>
+                      {t.specialist}:{" "}
+                      {selectedAppointmentMember
+                        ? buildDisplayName(selectedAppointmentMember.firstName, selectedAppointmentMember.lastName, t.masterFallback)
+                        : viewedProfessionalName}
+                    </small>
+                  </div>
+                </div>
+
+                <div className={`${styles.createAccountGrid} ${styles.calendarAppointmentEditGrid}`}>
+                  <div className={styles.field}>
+                    <label htmlFor="customerName">{t.customer}</label>
+                    <input
+                      id="customerName"
+                      className={styles.input}
+                      value={detailsCustomerNameDraft}
+                      onChange={(event) => setDetailsCustomerNameDraft(event.target.value)}
+                    />
+                  </div>
+                  <div className={styles.field}>
+                    <label htmlFor="customerPhone">{t.phone}</label>
+                    <input
+                      id="customerPhone"
+                      className={styles.input}
+                      inputMode="tel"
+                      placeholder={`${phoneRule.prefix} ${phoneRule.placeholder}`}
+                      value={detailsCustomerPhoneDraft}
+                      onChange={(event) => setDetailsCustomerPhoneDraft(event.target.value)}
+                    />
+                  </div>
+                  <div className={styles.field}>
+                    <label htmlFor="attendanceStatus">{t.attendanceStatus}</label>
+                    <select
+                      id="attendanceStatus"
+                      className={styles.select}
+                      value={attendanceDraft}
+                      onChange={(event) => setAttendanceDraft(event.target.value as "pending" | "confirmed" | "arrived" | "no_show")}
+                    >
+                      <option value="pending">{t.attendancePending}</option>
+                      <option value="confirmed">{t.attendanceConfirmed}</option>
+                      <option value="arrived">{t.attendanceArrived}</option>
+                      <option value="no_show">{t.attendanceNoShow}</option>
+                    </select>
+                  </div>
+                  <div className={styles.field}>
+                    <label htmlFor="priceAmount">{t.price}</label>
+                    <input
+                      id="priceAmount"
+                      className={styles.input}
+                      inputMode="decimal"
+                      value={priceAmountDraft}
+                      onChange={(event) => setPriceAmountDraft(event.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className={styles.calendarAppointmentEditGrid}>
+                  <div className={styles.field}>
+                    <label htmlFor="appointmentNotes">{t.notesLabel}</label>
+                    <textarea
+                      id="appointmentNotes"
+                      className={styles.textarea}
+                      value={detailsNotesDraft}
+                      onChange={(event) => setDetailsNotesDraft(event.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div className={styles.calendarDrawerFooter}>
+                  <button type="button" className={styles.dangerButton} onClick={() => void deleteSelectedAppointment()}>
+                    {t.deleteVisit}
+                  </button>
+                  <button type="button" className={styles.primaryButton} onClick={() => void saveAppointmentMeta()}>
+                    {t.saveVisit}
+                  </button>
+                </div>
               </div>
-              <div className={styles.field}>
-                <label>{t.customer}</label>
-                <div className={styles.select}>{selectedAppointment.customerName || t.walkInClient}</div>
-              </div>
-              <div className={styles.field}>
-                <label htmlFor="attendanceStatus">{t.attendanceStatus}</label>
-                <select
-                  id="attendanceStatus"
-                  className={styles.select}
-                  value={attendanceDraft}
-                  onChange={(event) => setAttendanceDraft(event.target.value as "pending" | "confirmed" | "arrived" | "no_show")}
-                >
-                  <option value="pending">{t.attendancePending}</option>
-                  <option value="confirmed">{t.attendanceConfirmed}</option>
-                  <option value="arrived">{t.attendanceArrived}</option>
-                  <option value="no_show">{t.attendanceNoShow}</option>
-                </select>
-              </div>
-              <div className={styles.field}>
-                <label htmlFor="priceAmount">{t.price}</label>
-                <input
-                  id="priceAmount"
-                  className={styles.input}
-                  value={priceAmountDraft}
-                  onChange={(event) => setPriceAmountDraft(event.target.value)}
-                />
-              </div>
-              <button type="button" className={styles.primaryButton} onClick={() => void saveAppointmentMeta()}>
-                {t.saveVisit}
-              </button>
-            </div>
             )}
           </div>
         ) : (

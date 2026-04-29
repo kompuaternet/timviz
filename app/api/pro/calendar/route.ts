@@ -123,7 +123,10 @@ export async function PATCH(request: Request) {
         targetProfessionalId: body.targetProfessionalId,
         appointmentId: body.appointmentId,
         attendance: body.attendance,
-        priceAmount: Number(body.priceAmount ?? 0)
+        priceAmount: Number(body.priceAmount ?? 0),
+        customerName: body.customerName,
+        customerPhone: body.customerPhone,
+        notes: body.notes
       });
 
       if (appointment.kind === "appointment") {
@@ -133,6 +136,9 @@ export async function PATCH(request: Request) {
           appointmentTime: appointment.startTime,
           customerName: appointment.customerName,
           customerPhone: appointment.customerPhone,
+          customerNotes: appointment.notes,
+          previousCustomerName: body.previousCustomerName,
+          previousCustomerPhone: body.previousCustomerPhone,
           serviceName: appointment.serviceName,
           attendance: appointment.attendance
         });

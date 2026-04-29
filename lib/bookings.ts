@@ -558,18 +558,30 @@ export async function syncBookingStatusFromCalendarAppointment(input: {
   appointmentTime: string;
   customerName: string;
   customerPhone: string;
+  customerNotes?: string;
+  previousCustomerName?: string;
+  previousCustomerPhone?: string;
   serviceName: string;
   attendance: string;
 }) {
   const nextStatus = mapAttendanceToBookingStatus(input.attendance);
   const salonSlug = `business:${input.businessId}`;
   const normalizedPhone = input.customerPhone.trim();
+  const previousPhone = input.previousCustomerPhone?.trim() ?? "";
   const normalizedName = input.customerName.trim().toLowerCase();
+  const previousName = input.previousCustomerName?.trim().toLowerCase() ?? "";
   const normalizedServiceName = input.serviceName.trim().toLowerCase();
+  const normalizedNotes = input.customerNotes?.trim() ?? "";
 
   const pickCandidate = (items: BookingRecord[]) => {
     return (
+      (previousPhone
+        ? items.find((item) => item.customerPhone.trim() && item.customerPhone.trim() === previousPhone) ?? null
+        : null) ??
       items.find((item) => item.customerPhone.trim() && item.customerPhone.trim() === normalizedPhone) ??
+      (previousName
+        ? items.find((item) => item.customerName.trim().toLowerCase() === previousName) ?? null
+        : null) ??
       items.find((item) => item.customerName.trim().toLowerCase() === normalizedName) ??
       items.find((item) => item.serviceName.trim().toLowerCase() === normalizedServiceName) ??
       null
@@ -609,11 +621,25 @@ export async function syncBookingStatusFromCalendarAppointment(input: {
       })) ?? [];
 
     const match = pickCandidate(candidates);
-    if (!match || match.status === nextStatus) {
+    if (
+      !match ||
+      (match.status === nextStatus &&
+        match.customerName === input.customerName.trim() &&
+        match.customerPhone === normalizedPhone &&
+        (match.customerNotes ?? "") === normalizedNotes)
+    ) {
       return;
     }
 
-    const { error: updateError } = await supabase.from("bookings").update({ status: nextStatus }).eq("id", match.id);
+    const { error: updateError } = await supabase
+      .from("bookings")
+      .update({
+        status: nextStatus,
+        customer_name: input.customerName.trim(),
+        customer_phone: normalizedPhone,
+        customer_notes: normalizedNotes
+      })
+      .eq("id", match.id);
     if (updateError) {
       throw new Error(updateError.message);
     }
@@ -630,10 +656,26 @@ export async function syncBookingStatusFromCalendarAppointment(input: {
   );
   const match = pickCandidate(candidates);
 
-  if (!match || match.status === nextStatus) {
+  if (
+    !match ||
+    (match.status === nextStatus &&
+      match.customerName === input.customerName.trim() &&
+      match.customerPhone === normalizedPhone &&
+      (match.customerNotes ?? "") === normalizedNotes)
+  ) {
     return;
   }
 
-  const nextBookings = bookings.map((item) => (item.id === match.id ? { ...item, status: nextStatus } : item));
+  const nextBookings = bookings.map((item) =>
+    item.id === match.id
+      ? {
+          ...item,
+          status: nextStatus,
+          customerName: input.customerName.trim(),
+          customerPhone: normalizedPhone,
+          customerNotes: normalizedNotes
+        }
+      : item
+  );
   await writeLocalBookings(nextBookings);
 }

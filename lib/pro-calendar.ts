@@ -1019,6 +1019,9 @@ export async function updateCalendarAppointmentMeta(input: {
   appointmentId: string;
   attendance: CalendarAttendanceStatus;
   priceAmount: number;
+  customerName?: string;
+  customerPhone?: string;
+  notes?: string;
 }) {
   const access = await resolveCalendarAccess({
     viewerProfessionalId: input.professionalId,
@@ -1033,12 +1036,26 @@ export async function updateCalendarAppointmentMeta(input: {
       throw new Error("Supabase is not available.");
     }
 
+    const updatePayload: Record<string, string | number> = {
+      attendance: input.attendance,
+      price_amount: Math.max(0, Number.isFinite(input.priceAmount) ? input.priceAmount : 0)
+    };
+
+    if (typeof input.customerName === "string") {
+      updatePayload.customer_name = input.customerName.trim();
+    }
+
+    if (typeof input.customerPhone === "string") {
+      updatePayload.customer_phone = input.customerPhone.trim();
+    }
+
+    if (typeof input.notes === "string") {
+      updatePayload.notes = input.notes.trim();
+    }
+
     const { data, error } = await supabase
       .from("calendar_appointments")
-      .update({
-        attendance: input.attendance,
-        price_amount: Math.max(0, Number.isFinite(input.priceAmount) ? input.priceAmount : 0)
-      })
+      .update(updatePayload)
       .eq("id", input.appointmentId)
       .eq("professional_id", targetProfessionalId)
       .select(
@@ -1068,6 +1085,15 @@ export async function updateCalendarAppointmentMeta(input: {
 
   appointment.attendance = input.attendance;
   appointment.priceAmount = Math.max(0, Number.isFinite(input.priceAmount) ? input.priceAmount : 0);
+  if (typeof input.customerName === "string") {
+    appointment.customerName = input.customerName.trim();
+  }
+  if (typeof input.customerPhone === "string") {
+    appointment.customerPhone = input.customerPhone.trim();
+  }
+  if (typeof input.notes === "string") {
+    appointment.notes = input.notes.trim();
+  }
 
   await writeStore(store);
   return appointment;
