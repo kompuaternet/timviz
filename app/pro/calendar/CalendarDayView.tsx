@@ -312,6 +312,8 @@ const CALENDAR_TEXT: Record<AppLanguage, {
   whatsapp: string;
   telegram: string;
   viber: string;
+  prefixAria: string;
+  prefixSearch: string;
   contactPhoneHint: string;
   changeClient: string;
   saveVisit: string;
@@ -454,6 +456,8 @@ const CALENDAR_TEXT: Record<AppLanguage, {
     whatsapp: "WhatsApp",
     telegram: "Telegram",
     viber: "Viber",
+    prefixAria: "Выбрать телефонный префикс",
+    prefixSearch: "Поиск по стране или коду",
     contactPhoneHint: "Добавьте телефон клиента, чтобы быстро написать ему в мессенджер.",
     changeClient: "Сменить клиента",
     saveVisit: "Сохранить визит",
@@ -596,6 +600,8 @@ const CALENDAR_TEXT: Record<AppLanguage, {
     whatsapp: "WhatsApp",
     telegram: "Telegram",
     viber: "Viber",
+    prefixAria: "Вибрати телефонний префікс",
+    prefixSearch: "Пошук за країною або кодом",
     contactPhoneHint: "Додайте телефон клієнта, щоб швидко написати йому в месенджер.",
     changeClient: "Змінити клієнта",
     saveVisit: "Зберегти візит",
@@ -738,6 +744,8 @@ const CALENDAR_TEXT: Record<AppLanguage, {
     whatsapp: "WhatsApp",
     telegram: "Telegram",
     viber: "Viber",
+    prefixAria: "Choose phone prefix",
+    prefixSearch: "Search by country or code",
     contactPhoneHint: "Add the client's phone to quickly message them in a messenger.",
     changeClient: "Change client",
     saveVisit: "Save visit",
@@ -1152,9 +1160,13 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
   const [detailsCustomerNameDraft, setDetailsCustomerNameDraft] = useState("");
   const [detailsCustomerPhoneDraft, setDetailsCustomerPhoneDraft] = useState("");
   const [detailsCustomerPhoneCountryDraft, setDetailsCustomerPhoneCountryDraft] = useState("Ukraine");
+  const [detailsStartTimeDraft, setDetailsStartTimeDraft] = useState("09:00");
+  const [detailsEndTimeDraft, setDetailsEndTimeDraft] = useState("09:15");
+  const [detailsServiceNameDraft, setDetailsServiceNameDraft] = useState("");
   const [detailsNotesDraft, setDetailsNotesDraft] = useState("");
   const [visitItems, setVisitItems] = useState<VisitServiceDraft[]>([]);
   const [editingServiceIndex, setEditingServiceIndex] = useState(0);
+  const [servicePickerReturnStage, setServicePickerReturnStage] = useState<"visit" | "details">("visit");
   const [serviceQuery, setServiceQuery] = useState("");
   const [clientQuery, setClientQuery] = useState("");
   const [directoryClients, setDirectoryClients] = useState<CalendarDirectoryClient[]>([]);
@@ -1162,6 +1174,10 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
   const [newClientName, setNewClientName] = useState("");
   const [newClientPhone, setNewClientPhone] = useState("");
   const [newClientPhoneCountry, setNewClientPhoneCountry] = useState("Ukraine");
+  const [isNewClientPrefixOpen, setIsNewClientPrefixOpen] = useState(false);
+  const [newClientPrefixSearch, setNewClientPrefixSearch] = useState("");
+  const [isDetailsPrefixOpen, setIsDetailsPrefixOpen] = useState(false);
+  const [detailsPrefixSearch, setDetailsPrefixSearch] = useState("");
   const [selectedCustomer, setSelectedCustomer] = useState<CalendarClient | null>(null);
   const [clientSearchReturnStage, setClientSearchReturnStage] = useState<"visit" | "details">("visit");
   const [showClientPrompt, setShowClientPrompt] = useState(false);
@@ -1171,8 +1187,8 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
   const [isMobileViewport, setIsMobileViewport] = useState(false);
   const [mobileTeamButtonPosition, setMobileTeamButtonPosition] = useState<{ top: number; left: number } | null>(null);
   const [teamQuery, setTeamQuery] = useState("");
-  const mobileDayHourColumnWidth = 56;
-  const dayMemberColumnWidth = isMobileViewport ? 184 : 280;
+  const mobileDayHourColumnWidth = 52;
+  const dayMemberColumnWidth = isMobileViewport ? 164 : 280;
   const teamBoardDayWidth = isMobileViewport ? 92 : 180;
   const calendarHourHeight = isMobileViewport ? CALENDAR_MOBILE_HOUR_HEIGHT : CALENDAR_HOUR_HEIGHT;
   const minuteHeight = calendarHourHeight / 60;
@@ -1190,6 +1206,8 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
   const accountMenuPanelRef = useRef<HTMLDivElement | null>(null);
   const shareLinkInputRef = useRef<HTMLInputElement | null>(null);
   const quickMenuRef = useRef<HTMLDivElement | null>(null);
+  const newClientPrefixMenuRef = useRef<HTMLDivElement | null>(null);
+  const detailsPrefixMenuRef = useRef<HTMLDivElement | null>(null);
 
   const dragRef = useRef<
     | {
@@ -1227,6 +1245,25 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
   function openClientSearch(returnStage: "visit" | "details") {
     setClientSearchReturnStage(returnStage);
     setDrawerStage("client-search");
+  }
+
+  function updateDraftTime(
+    nextStartTime: string,
+    nextEndTime: string,
+    setters: {
+      setStart: (value: string) => void;
+      setEnd: (value: string) => void;
+    }
+  ) {
+    const normalizedStart = nextStartTime;
+    let normalizedEnd = nextEndTime;
+
+    if (timeToMinutes(normalizedEnd) <= timeToMinutes(normalizedStart)) {
+      normalizedEnd = minutesToTime(timeToMinutes(normalizedStart) + 15);
+    }
+
+    setters.setStart(normalizedStart);
+    setters.setEnd(normalizedEnd);
   }
 
   function applySelectedClient(client: CalendarClient | null) {
@@ -1575,6 +1612,28 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
   const publicBookingEnabled = snapshot?.workspace.business.allowOnlineBooking === true;
   const canUseNativeShare =
     typeof navigator !== "undefined" && typeof navigator.share === "function";
+  const filteredNewClientPhoneCountries = useMemo(() => {
+    const query = newClientPrefixSearch.trim().toLowerCase();
+    if (!query) {
+      return phoneCountries;
+    }
+
+    return phoneCountries.filter((country) => {
+      const rule = getPhoneRule(country);
+      return country.toLowerCase().includes(query) || rule.prefix.toLowerCase().includes(query);
+    });
+  }, [newClientPrefixSearch]);
+  const filteredDetailsPhoneCountries = useMemo(() => {
+    const query = detailsPrefixSearch.trim().toLowerCase();
+    if (!query) {
+      return phoneCountries;
+    }
+
+    return phoneCountries.filter((country) => {
+      const rule = getPhoneRule(country);
+      return country.toLowerCase().includes(query) || rule.prefix.toLowerCase().includes(query);
+    });
+  }, [detailsPrefixSearch]);
 
   function selectPublicBookingLink() {
     shareLinkInputRef.current?.focus();
@@ -2012,12 +2071,34 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
     setAttendanceDraft(selectedAppointment.attendance);
     setPriceAmountDraft(String(selectedAppointment.priceAmount ?? 0));
     setDetailsCustomerNameDraft(selectedAppointment.customerName || "");
+    setDetailsStartTimeDraft(selectedAppointment.startTime);
+    setDetailsEndTimeDraft(selectedAppointment.endTime);
+    setDetailsServiceNameDraft(selectedAppointment.serviceName || "");
     applyPhoneDraft(selectedAppointment.customerPhone || "", accountCountry, {
       setCountry: setDetailsCustomerPhoneCountryDraft,
       setPhone: setDetailsCustomerPhoneDraft
     });
     setDetailsNotesDraft(selectedAppointment.notes || "");
   }, [accountCountry, selectedAppointment]);
+
+  useEffect(() => {
+    function handlePrefixOutsideClick(event: PointerEvent) {
+      const target = event.target as Node | null;
+
+      if (newClientPrefixMenuRef.current && !newClientPrefixMenuRef.current.contains(target)) {
+        setIsNewClientPrefixOpen(false);
+      }
+
+      if (detailsPrefixMenuRef.current && !detailsPrefixMenuRef.current.contains(target)) {
+        setIsDetailsPrefixOpen(false);
+      }
+    }
+
+    document.addEventListener("pointerdown", handlePrefixOutsideClick);
+    return () => {
+      document.removeEventListener("pointerdown", handlePrefixOutsideClick);
+    };
+  }, []);
 
   useEffect(() => {
     function handlePointerMove(event: PointerEvent) {
@@ -2226,6 +2307,15 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
 
   function selectService(serviceName: string, price: number, durationMinutes?: number) {
     const duration = durationMinutes || getServiceDurationMinutes(serviceName, snapshot?.workspace.services ?? []);
+    if (servicePickerReturnStage === "details") {
+      setDetailsServiceNameDraft(serviceName);
+      setPriceAmountDraft(String(price));
+      setDetailsEndTimeDraft(minutesToTime(timeToMinutes(detailsStartTimeDraft) + duration));
+      setDrawerStage("details");
+      setServiceQuery("");
+      return;
+    }
+
     setVisitItems((current) =>
       current.map((item, index) =>
         index === editingServiceIndex
@@ -2452,6 +2542,14 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
     const normalizedCustomerName = detailsCustomerNameDraft.trim() || selectedAppointment.customerName;
     let normalizedCustomerPhone = "";
     const trimmedPhone = detailsCustomerPhoneDraft.trim();
+    const normalizedServiceName = detailsServiceNameDraft.trim() || selectedAppointment.serviceName;
+    const normalizedStartTime = detailsStartTimeDraft;
+    let normalizedEndTime = detailsEndTimeDraft;
+
+    if (timeToMinutes(normalizedEndTime) <= timeToMinutes(normalizedStartTime)) {
+      normalizedEndTime = minutesToTime(timeToMinutes(normalizedStartTime) + 15);
+      setDetailsEndTimeDraft(normalizedEndTime);
+    }
 
     if (trimmedPhone) {
       if (!isPhoneValid(detailsCustomerPhoneCountryDraft || accountCountry, trimmedPhone)) {
@@ -2473,9 +2571,13 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
         priceAmount: Number(priceAmountDraft || 0),
         customerName: normalizedCustomerName,
         customerPhone: normalizedCustomerPhone,
+        startTime: normalizedStartTime,
+        endTime: normalizedEndTime,
+        serviceName: normalizedServiceName,
         notes: detailsNotesDraft.trim(),
         previousCustomerName: selectedAppointment.customerName,
-        previousCustomerPhone: selectedAppointment.customerPhone
+        previousCustomerPhone: selectedAppointment.customerPhone,
+        previousAppointmentTime: selectedAppointment.startTime
       })
     });
     const payload = await response.json();
@@ -2616,6 +2718,25 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
     }
   }
 
+  function toggleTeamMemberSelection(memberId: string) {
+    const isVisible = visibleProfessionalIds.includes(memberId);
+
+    if (!isVisible) {
+      setSelectedProfessionalId(memberId);
+      setVisibleProfessionalIds((current) =>
+        current.includes(memberId) ? current : [...current, memberId]
+      );
+      return;
+    }
+
+    if (visibleProfessionalIds.length === 1) {
+      setSelectedProfessionalId(memberId);
+      return;
+    }
+
+    toggleVisibleProfessional(memberId);
+  }
+
   return (
     <main className={`${styles.workspaceShell} ${styles.calendarV2Shell} ${overlayActive ? styles.calendarV2Expanded : ""}`}>
       <ProSidebar
@@ -2662,9 +2783,9 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
               }}
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <circle cx="12" cy="12" r="8.2" />
-                <path d="M9.85 9.25a2.55 2.55 0 0 1 4.83 1.1c0 1.5-1.37 2.08-2.2 2.7-.6.45-.93 0.82-.93 1.65" />
-                <circle cx="12" cy="16.9" r="0.85" fill="currentColor" stroke="none" />
+                <path d="M12 4.8c4.3 0 7.8 3 7.8 6.8s-3.5 6.8-7.8 6.8c-1.3 0-2.6-.3-3.7-.8l-2.9 1 .8-2.7c-1-1-1.8-2.5-1.8-4.3 0-3.8 3.5-6.8 7.8-6.8Z" />
+                <path d="M10.15 10.05a2.22 2.22 0 0 1 4.2.95c0 1.3-1.18 1.8-1.9 2.34-.51.38-.79.69-.79 1.43" />
+                <circle cx="11.95" cy="15.55" r="0.72" fill="currentColor" stroke="none" />
               </svg>
             </button>
 
@@ -2931,28 +3052,13 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
                     {filteredTeamMembers.map((member) => {
                       const memberLabel = buildDisplayName(member.firstName, member.lastName, t.masterFallback);
                       const isVisible = visibleCalendarIds.includes(member.professionalId);
-                      const isFocused = selectedProfessionalId === member.professionalId;
                       return (
                         <button
                           key={member.professionalId}
                           type="button"
-                          className={`${styles.calendarToolbarMenuItem} ${isFocused ? styles.calendarToolbarMenuItemActive : ""}`}
-                          onClick={() => {
-                            if (!isVisible) {
-                              setVisibleProfessionalIds((current) => [...current, member.professionalId]);
-                              setSelectedProfessionalId(member.professionalId);
-                              return;
-                            }
-
-                            if (!isFocused) {
-                              void loadSnapshot(selectedDate, member.professionalId);
-                              return;
-                            }
-
-                            if (visibleCalendarIds.length > 1) {
-                              toggleVisibleProfessional(member.professionalId);
-                            }
-                          }}
+                          aria-pressed={isVisible}
+                          className={`${styles.calendarToolbarMenuItem} ${isVisible ? styles.calendarToolbarMenuItemActive : ""}`}
+                          onClick={() => toggleTeamMemberSelection(member.professionalId)}
                         >
                           <span className={`${styles.calendarToolbarMenuCheck} ${isVisible ? styles.calendarToolbarMenuCheckActive : ""}`}>
                             {isVisible ? "✓" : ""}
@@ -3123,28 +3229,13 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
                 {filteredTeamMembers.map((member) => {
                   const memberLabel = buildDisplayName(member.firstName, member.lastName, t.masterFallback);
                   const isVisible = visibleCalendarIds.includes(member.professionalId);
-                  const isFocused = selectedProfessionalId === member.professionalId;
                   return (
                     <button
                       key={member.professionalId}
                       type="button"
-                      className={`${styles.calendarToolbarMenuItem} ${isFocused ? styles.calendarToolbarMenuItemActive : ""}`}
-                      onClick={() => {
-                        if (!isVisible) {
-                          setVisibleProfessionalIds((current) => [...current, member.professionalId]);
-                          setSelectedProfessionalId(member.professionalId);
-                          return;
-                        }
-
-                        if (!isFocused) {
-                          void loadSnapshot(selectedDate, member.professionalId);
-                          return;
-                        }
-
-                        if (visibleCalendarIds.length > 1) {
-                          toggleVisibleProfessional(member.professionalId);
-                        }
-                      }}
+                      aria-pressed={isVisible}
+                      className={`${styles.calendarToolbarMenuItem} ${isVisible ? styles.calendarToolbarMenuItemActive : ""}`}
+                      onClick={() => toggleTeamMemberSelection(member.professionalId)}
                     >
                       <span className={`${styles.calendarToolbarMenuCheck} ${isVisible ? styles.calendarToolbarMenuCheckActive : ""}`}>
                         {isVisible ? "✓" : ""}
@@ -3719,6 +3810,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
                       className={styles.calendarVisitServicePicker}
                       onClick={() => {
                         setEditingServiceIndex(index);
+                        setServicePickerReturnStage("visit");
                         setDrawerStage("service-picker");
                       }}
                     >
@@ -3796,7 +3888,13 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
         ) : drawerStage === "service-picker" ? (
           <div className={styles.calendarV2Panel}>
             <div className={styles.calendarV2PanelHeader}>
-              <button type="button" className={styles.calendarDrawerBack} onClick={() => setDrawerStage("visit")}>←</button>
+              <button
+                type="button"
+                className={styles.calendarDrawerBack}
+                onClick={() => setDrawerStage(servicePickerReturnStage === "details" && selectedAppointment ? "details" : "visit")}
+              >
+                ←
+              </button>
               <strong>{t.chooseService}</strong>
             </div>
 
@@ -3898,26 +3996,58 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
                 </label>
                 <label>
                   <span>{t.phone}</span>
-                  <div className={styles.phoneRow}>
-                    <select
-                      className={styles.phoneCodeSelect}
-                      value={newClientPhoneCountry}
-                      onChange={(event) => {
-                        const nextCountry = event.target.value;
-                        const nextRule = getPhoneRule(nextCountry);
-                        setNewClientPhoneCountry(nextCountry);
-                        setNewClientPhone(formatPhoneLocal(onlyPhoneDigits(newClientPhone), nextRule));
-                      }}
-                    >
-                      {phoneCountries.map((country) => {
-                        const rule = getPhoneRule(country);
-                        return (
-                          <option key={country} value={country}>
-                            {`${rule.prefix} · ${country}`}
-                          </option>
-                        );
-                      })}
-                    </select>
+                  <div className={`${styles.phoneRow} ${styles.calendarAppointmentPhoneRow}`}>
+                    <div className={styles.phonePrefixPicker} ref={newClientPrefixMenuRef}>
+                      <button
+                        type="button"
+                        className={`${styles.phonePrefixButton} ${styles.phonePrefixButtonWide} ${isNewClientPrefixOpen ? styles.phonePrefixButtonOpen : ""}`}
+                        aria-label={t.prefixAria}
+                        aria-expanded={isNewClientPrefixOpen}
+                        onClick={() => setIsNewClientPrefixOpen((value) => !value)}
+                      >
+                        <div className={styles.calendarPrefixButtonText}>
+                          <strong>{getPhoneRule(newClientPhoneCountry).prefix}</strong>
+                          <span>{newClientPhoneCountry}</span>
+                        </div>
+                        <span aria-hidden="true">⌄</span>
+                      </button>
+                      {isNewClientPrefixOpen ? (
+                        <div className={`${styles.phonePrefixMenu} ${styles.phonePrefixMenuRich}`}>
+                          <div className={styles.phonePrefixSearchWrap}>
+                            <input
+                              type="search"
+                              className={styles.phonePrefixSearch}
+                              placeholder={t.prefixSearch}
+                              value={newClientPrefixSearch}
+                              onChange={(event) => setNewClientPrefixSearch(event.target.value)}
+                              autoFocus
+                            />
+                          </div>
+                          <div className={styles.phonePrefixList}>
+                            {filteredNewClientPhoneCountries.map((phoneCountryOption) => {
+                              const optionRule = getPhoneRule(phoneCountryOption);
+                              const active = newClientPhoneCountry === phoneCountryOption;
+                              return (
+                                <button
+                                  key={phoneCountryOption}
+                                  type="button"
+                                  className={active ? styles.phonePrefixOptionActive : ""}
+                                  onClick={() => {
+                                    setNewClientPhoneCountry(phoneCountryOption);
+                                    setNewClientPhone(formatPhoneLocal(onlyPhoneDigits(newClientPhone), optionRule));
+                                    setIsNewClientPrefixOpen(false);
+                                    setNewClientPrefixSearch("");
+                                  }}
+                                >
+                                  <span>{phoneCountryOption}</span>
+                                  <strong>{optionRule.prefix}</strong>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ) : null}
+                    </div>
                     <input
                       className={styles.phoneInput}
                       inputMode="numeric"
@@ -4097,13 +4227,11 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
                   <div className={styles.calendarAppointmentSummaryCard}>
                     <span>{t.visitDateTime}</span>
                     <strong>{selectedAppointmentDateLabel}</strong>
-                    <small>
-                      {formatDisplayTime(selectedAppointment.startTime)} - {formatDisplayTime(selectedAppointment.endTime)}
-                    </small>
+                    <small>{formatDisplayTime(detailsStartTimeDraft)} - {formatDisplayTime(detailsEndTimeDraft)}</small>
                   </div>
                   <div className={styles.calendarAppointmentSummaryCard}>
                     <span>{t.service}</span>
-                    <strong>{selectedAppointment.serviceName}</strong>
+                    <strong>{detailsServiceNameDraft || selectedAppointment.serviceName}</strong>
                     <small>
                       {t.specialist}:{" "}
                       {selectedAppointmentMember
@@ -4115,6 +4243,69 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
 
                 <div className={`${styles.createAccountGrid} ${styles.calendarAppointmentEditGrid}`}>
                   <div className={styles.field}>
+                    <label>{t.service}</label>
+                    <button
+                      type="button"
+                      className={styles.calendarVisitServicePicker}
+                      onClick={() => {
+                        setServicePickerReturnStage("details");
+                        setDrawerStage("service-picker");
+                      }}
+                    >
+                      <span>{detailsServiceNameDraft || t.chooseService}</span>
+                      <span aria-hidden="true">⌄</span>
+                    </button>
+                  </div>
+                  <div className={styles.field}>
+                    <label>{t.visitDateTime}</label>
+                    <div className={styles.calendarVisitTimeGrid}>
+                      <label>
+                        <span>{t.start}</span>
+                        <select
+                          className={styles.select}
+                          value={detailsStartTimeDraft}
+                          onChange={(event) =>
+                            updateDraftTime(event.target.value, detailsEndTimeDraft, {
+                              setStart: setDetailsStartTimeDraft,
+                              setEnd: setDetailsEndTimeDraft
+                            })
+                          }
+                        >
+                          {Array.from({ length: timeOptionCount }, (_, slotIndex) => {
+                            const time = minutesToTime(slotIndex * TIME_SELECT_STEP_MINUTES);
+                            return (
+                              <option key={time} value={time}>
+                                {formatDisplayTime(time)}
+                              </option>
+                            );
+                          })}
+                        </select>
+                      </label>
+                      <label>
+                        <span>{t.end}</span>
+                        <select
+                          className={styles.select}
+                          value={detailsEndTimeDraft}
+                          onChange={(event) =>
+                            updateDraftTime(detailsStartTimeDraft, event.target.value, {
+                              setStart: setDetailsStartTimeDraft,
+                              setEnd: setDetailsEndTimeDraft
+                            })
+                          }
+                        >
+                          {Array.from({ length: timeOptionCount }, (_, slotIndex) => {
+                            const time = minutesToTime(slotIndex * TIME_SELECT_STEP_MINUTES);
+                            return (
+                              <option key={time} value={time}>
+                                {formatDisplayTime(time)}
+                              </option>
+                            );
+                          })}
+                        </select>
+                      </label>
+                    </div>
+                  </div>
+                  <div className={styles.field}>
                     <label htmlFor="customerName">{t.customer}</label>
                     <input
                       id="customerName"
@@ -4125,26 +4316,60 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
                   </div>
                   <div className={styles.field}>
                     <label htmlFor="customerPhone">{t.phone}</label>
-                    <div className={styles.phoneRow}>
-                      <select
-                        className={styles.phoneCodeSelect}
-                        value={detailsCustomerPhoneCountryDraft}
-                        onChange={(event) => {
-                          const nextCountry = event.target.value;
-                          const nextRule = getPhoneRule(nextCountry);
-                          setDetailsCustomerPhoneCountryDraft(nextCountry);
-                          setDetailsCustomerPhoneDraft(formatPhoneLocal(onlyPhoneDigits(detailsCustomerPhoneDraft), nextRule));
-                        }}
-                      >
-                        {phoneCountries.map((country) => {
-                          const rule = getPhoneRule(country);
-                          return (
-                            <option key={country} value={country}>
-                              {`${rule.prefix} · ${country}`}
-                            </option>
-                          );
-                        })}
-                      </select>
+                    <div className={`${styles.phoneRow} ${styles.calendarAppointmentPhoneRow}`}>
+                      <div className={styles.phonePrefixPicker} ref={detailsPrefixMenuRef}>
+                        <button
+                          type="button"
+                          className={`${styles.phonePrefixButton} ${styles.phonePrefixButtonWide} ${isDetailsPrefixOpen ? styles.phonePrefixButtonOpen : ""}`}
+                          aria-label={t.prefixAria}
+                          aria-expanded={isDetailsPrefixOpen}
+                          onClick={() => setIsDetailsPrefixOpen((value) => !value)}
+                        >
+                          <div className={styles.calendarPrefixButtonText}>
+                            <strong>{detailsCustomerPhoneRule.prefix}</strong>
+                            <span>{detailsCustomerPhoneCountryDraft}</span>
+                          </div>
+                          <span aria-hidden="true">⌄</span>
+                        </button>
+                        {isDetailsPrefixOpen ? (
+                          <div className={`${styles.phonePrefixMenu} ${styles.phonePrefixMenuRich}`}>
+                            <div className={styles.phonePrefixSearchWrap}>
+                              <input
+                                type="search"
+                                className={styles.phonePrefixSearch}
+                                placeholder={t.prefixSearch}
+                                value={detailsPrefixSearch}
+                                onChange={(event) => setDetailsPrefixSearch(event.target.value)}
+                                autoFocus
+                              />
+                            </div>
+                            <div className={styles.phonePrefixList}>
+                              {filteredDetailsPhoneCountries.map((phoneCountryOption) => {
+                                const optionRule = getPhoneRule(phoneCountryOption);
+                                const active = detailsCustomerPhoneCountryDraft === phoneCountryOption;
+                                return (
+                                  <button
+                                    key={phoneCountryOption}
+                                    type="button"
+                                    className={active ? styles.phonePrefixOptionActive : ""}
+                                    onClick={() => {
+                                      setDetailsCustomerPhoneCountryDraft(phoneCountryOption);
+                                      setDetailsCustomerPhoneDraft(
+                                        formatPhoneLocal(onlyPhoneDigits(detailsCustomerPhoneDraft), optionRule)
+                                      );
+                                      setIsDetailsPrefixOpen(false);
+                                      setDetailsPrefixSearch("");
+                                    }}
+                                  >
+                                    <span>{phoneCountryOption}</span>
+                                    <strong>{optionRule.prefix}</strong>
+                                  </button>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ) : null}
+                      </div>
                       <input
                         id="customerPhone"
                         className={styles.phoneInput}

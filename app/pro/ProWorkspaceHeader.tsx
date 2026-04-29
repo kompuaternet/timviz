@@ -127,9 +127,9 @@ function BellIcon() {
 function HelpIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <circle cx="12" cy="12" r="8.2" />
-      <path d="M9.85 9.25a2.55 2.55 0 0 1 4.83 1.1c0 1.5-1.37 2.08-2.2 2.7-.6.45-.93.82-.93 1.65" />
-      <circle cx="12" cy="16.9" r="0.85" fill="currentColor" stroke="none" />
+      <path d="M12 4.8c4.3 0 7.8 3 7.8 6.8s-3.5 6.8-7.8 6.8c-1.3 0-2.6-.3-3.7-.8l-2.9 1 .8-2.7c-1-1-1.8-2.5-1.8-4.3 0-3.8 3.5-6.8 7.8-6.8Z" />
+      <path d="M10.15 10.05a2.22 2.22 0 0 1 4.2.95c0 1.3-1.18 1.8-1.9 2.34-.51.38-.79.69-.79 1.43" />
+      <circle cx="11.95" cy="15.55" r="0.72" fill="currentColor" stroke="none" />
     </svg>
   );
 }
