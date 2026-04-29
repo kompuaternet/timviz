@@ -2154,10 +2154,11 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
                 window.dispatchEvent(new CustomEvent("rezervo-open-support"));
               }}
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M8 9.5a4 4 0 1 1 7.1 2.5c-.7.8-1.6 1.4-2.2 2" />
-                <path d="M12 17h.01" />
-                <path d="M7.2 19.4 4 20l.8-3.1A8 8 0 1 1 20 12a8 8 0 0 1-12.8 7.4Z" />
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M12 4.5c4.7 0 8.5 3.3 8.5 7.4s-3.8 7.4-8.5 7.4c-1.5 0-2.9-.3-4.1-.9L4.5 20l1-3.6C4.6 15.1 3.5 13.6 3.5 11.9c0-4.1 3.8-7.4 8.5-7.4Z" />
+                <circle cx="9" cy="12" r="0.8" fill="currentColor" stroke="none" />
+                <circle cx="12" cy="12" r="0.8" fill="currentColor" stroke="none" />
+                <circle cx="15" cy="12" r="0.8" fill="currentColor" stroke="none" />
               </svg>
             </button>
 

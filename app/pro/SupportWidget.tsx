@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import styles from "./pro.module.css";
 import { useProLanguage } from "./useProLanguage";
 
@@ -30,6 +30,9 @@ export default function SupportWidget({
   const [isSending, setIsSending] = useState(false);
   const [status, setStatus] = useState<"idle" | "sent" | "failed" | "empty">("idle");
   const lastMessageCreatedAt = useRef("");
+  const pollAbortRef = useRef<AbortController | null>(null);
+  const pollTimeoutRef = useRef<number | null>(null);
+  const isPollingRef = useRef(false);
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: "hello",
@@ -49,27 +52,59 @@ export default function SupportWidget({
     );
   }, [t.support.botGreeting]);
 
-  useEffect(() => {
-    if (!isOpen) {
+  const clearPolling = useCallback(() => {
+    if (pollTimeoutRef.current !== null) {
+      window.clearTimeout(pollTimeoutRef.current);
+      pollTimeoutRef.current = null;
+    }
+
+    pollAbortRef.current?.abort();
+    pollAbortRef.current = null;
+    isPollingRef.current = false;
+  }, []);
+
+  const scheduleNextPoll = useCallback((delayMs: number) => {
+    if (!isOpen || !ticketId) {
       return;
     }
 
-    let isCancelled = false;
+    if (pollTimeoutRef.current !== null) {
+      window.clearTimeout(pollTimeoutRef.current);
+    }
 
-    async function loadTelegramReplies() {
-      if (!ticketId) {
-        return;
-      }
+    pollTimeoutRef.current = window.setTimeout(() => {
+      void loadTelegramReplies();
+    }, delayMs);
+  }, [isOpen, ticketId]);
 
+  const loadTelegramReplies = useCallback(async () => {
+    if (!isOpen || !ticketId || isPollingRef.current) {
+      return;
+    }
+
+    const isHidden = typeof document !== "undefined" && document.visibilityState === "hidden";
+
+    if (isHidden) {
+      scheduleNextPoll(15000);
+      return;
+    }
+
+    isPollingRef.current = true;
+    const controller = new AbortController();
+    pollAbortRef.current = controller;
+
+    try {
       const params = new URLSearchParams({
         ticketId,
         after: lastMessageCreatedAt.current
       });
       const response = await fetch(`/api/pro/support?${params.toString()}`, {
-        cache: "no-store"
+        cache: "no-store",
+        signal: controller.signal
       }).catch(() => null);
 
-      if (!response?.ok || isCancelled) {
+      if (!response?.ok) {
+        scheduleNextPoll(12000);
         return;
       }
 
@@ -86,16 +121,47 @@ export default function SupportWidget({
           ...incomingMessages.filter((item) => !current.some((message) => message.id === item.id))
         ]);
       }
+
+      scheduleNextPoll(incomingMessages.length > 0 ? 4000 : 8000);
+    } catch (error) {
+      if (!(error instanceof DOMException && error.name === "AbortError")) {
+        scheduleNextPoll(12000);
+      }
+    } finally {
+      isPollingRef.current = false;
+
+      if (pollAbortRef.current === controller) {
+        pollAbortRef.current = null;
+      }
+    }
+  }, [isOpen, scheduleNextPoll, ticketId]);
+
+  useEffect(() => {
+    if (!isOpen || !ticketId) {
+      clearPolling();
+      return;
     }
 
-    loadTelegramReplies();
-    const intervalId = window.setInterval(loadTelegramReplies, 4000);
+    void loadTelegramReplies();
+
+    function handleVisibilityChange() {
+      if (document.visibilityState === "visible") {
+        clearPolling();
+        void loadTelegramReplies();
+        return;
+      }
+
+      clearPolling();
+      scheduleNextPoll(15000);
+    }
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
-      isCancelled = true;
-      window.clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      clearPolling();
     };
-  }, [isOpen, ticketId]);
+  }, [clearPolling, isOpen, loadTelegramReplies, scheduleNextPoll, ticketId]);
 
   async function submitSupportMessage(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -141,15 +207,22 @@ export default function SupportWidget({
 
     setIsSending(false);
     setStatus(response?.ok ? "sent" : "failed");
+
+    if (response?.ok && isOpen) {
+      clearPolling();
+      scheduleNextPoll(1500);
+    }
   }
 
   return (
     <>
       {showTrigger ? (
         <button type="button" className={styles.supportFloatingButton} onClick={onOpen} aria-label={t.support.open}>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M21 11.5a8.4 8.4 0 0 1-8.8 8.4 9.8 9.8 0 0 1-4.4-1.1L3 20l1.3-4.2A8.1 8.1 0 0 1 3 11.5a8.5 8.5 0 0 1 18 0Z" />
-            <path d="M8.2 11.7h.1M12 11.7h.1M15.8 11.7h.1" />
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M12 4.5c4.7 0 8.5 3.3 8.5 7.4s-3.8 7.4-8.5 7.4c-1.5 0-2.9-.3-4.1-.9L4.5 20l1-3.6C4.6 15.1 3.5 13.6 3.5 11.9c0-4.1 3.8-7.4 8.5-7.4Z" />
+            <circle cx="9" cy="12" r="0.8" fill="currentColor" stroke="none" />
+            <circle cx="12" cy="12" r="0.8" fill="currentColor" stroke="none" />
+            <circle cx="15" cy="12" r="0.8" fill="currentColor" stroke="none" />
           </svg>
         </button>
       ) : null}

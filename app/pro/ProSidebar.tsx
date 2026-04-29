@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -7,9 +8,13 @@ import {
   clearScheduleReminder,
   hasPendingScheduleReminder
 } from "../../lib/schedule-reminder";
-import SupportWidget from "./SupportWidget";
 import styles from "./pro.module.css";
 import { useProLanguage } from "./useProLanguage";
+
+const SupportWidget = dynamic(() => import("./SupportWidget"), {
+  ssr: false,
+  loading: () => null
+});
 
 type SidebarSection = "workspace" | "calendar" | "services" | "clients" | "staff" | "schedule" | "settings";
 

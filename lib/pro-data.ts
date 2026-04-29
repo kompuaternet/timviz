@@ -216,6 +216,8 @@ const defaultServiceColors = [
 
 export const DEFAULT_BOOKING_CREDITS = 500;
 
+let activeDirectorySnapshotPromise: Promise<BusinessDirectorySnapshot> | null = null;
+
 function isMissingTableError(message: string | undefined, tableName: string) {
   return (
     typeof message === "string" &&
@@ -816,6 +818,7 @@ async function readStore() {
 }
 
 async function writeStore(data: ProDataStore) {
+  activeDirectorySnapshotPromise = null;
   await fs.writeFile(storePath, JSON.stringify(data, null, 2) + "\n", "utf8");
 }
 
@@ -869,7 +872,7 @@ async function ensureDemoBusinessesInLocalStore() {
   return store;
 }
 
-export async function getBusinessDirectorySnapshot(): Promise<BusinessDirectorySnapshot> {
+async function loadBusinessDirectorySnapshot(): Promise<BusinessDirectorySnapshot> {
   if (isSupabaseConfigured()) {
     const supabase = getSupabaseAdmin();
     if (!supabase) {
@@ -950,6 +953,18 @@ export async function getBusinessDirectorySnapshot(): Promise<BusinessDirectoryS
       status: normalizeStaffInvitationStatus(invitation.status)
     }))
   };
+}
+
+export async function getBusinessDirectorySnapshot(): Promise<BusinessDirectorySnapshot> {
+  if (activeDirectorySnapshotPromise) {
+    return activeDirectorySnapshotPromise;
+  }
+
+  activeDirectorySnapshotPromise = loadBusinessDirectorySnapshot().finally(() => {
+    activeDirectorySnapshotPromise = null;
+  });
+
+  return activeDirectorySnapshotPromise;
 }
 
 export async function createProfessionalSetup(input: {

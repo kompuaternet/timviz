@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 
 type ProfileAvatarProps = {
   avatarUrl?: string | null;
@@ -20,7 +20,7 @@ function buildFallbackInitials(label: string) {
     .toUpperCase();
 }
 
-export default function ProfileAvatar({
+function ProfileAvatar({
   avatarUrl,
   initials,
   label,
@@ -52,3 +52,16 @@ export default function ProfileAvatar({
     </div>
   );
 }
+
+function arePropsEqual(previous: ProfileAvatarProps, next: ProfileAvatarProps) {
+  return (
+    previous.avatarUrl === next.avatarUrl &&
+    previous.initials === next.initials &&
+    previous.label === next.label &&
+    previous.className === next.className &&
+    previous.imageClassName === next.imageClassName &&
+    previous.fallbackClassName === next.fallbackClassName
+  );
+}
+
+export default memo(ProfileAvatar, arePropsEqual);
