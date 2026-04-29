@@ -1882,7 +1882,7 @@ export default function StaffScheduleView({ professionalId, snapshot, header }: 
           <div className={styles.staffStudioSidebarCard}>
             <strong>{copy.sectionTitle}</strong>
             <nav className={styles.staffStudioLocalNav}>
-              <Link href="/pro/staff" className={styles.staffStudioLocalLink}>
+              <Link href="/pro/staff/members" className={styles.staffStudioLocalLink}>
                 {copy.people}
               </Link>
               <Link href="/pro/staff/schedule" className={`${styles.staffStudioLocalLink} ${styles.staffStudioLocalLinkActive}`}>
@@ -1920,7 +1920,7 @@ export default function StaffScheduleView({ professionalId, snapshot, header }: 
                   className={styles.staffControlMenu}
                   placement="bottom-end"
                 >
-                    <Link href="/pro/staff" className={styles.staffControlMenuItem}>
+                    <Link href="/pro/staff/members" className={styles.staffControlMenuItem}>
                       {copy.membersList}
                     </Link>
                     <button
@@ -1956,10 +1956,10 @@ export default function StaffScheduleView({ professionalId, snapshot, header }: 
                   className={styles.staffControlMenu}
                   placement="bottom-end"
                 >
-                    <Link href="/pro/staff?openAdd=1" className={styles.staffControlMenuItem}>
+                    <Link href="/pro/staff/members?openAdd=1" className={styles.staffControlMenuItem}>
                       {copy.addMember}
                     </Link>
-                    <Link href="/pro/staff" className={styles.staffControlMenuItem}>
+                    <Link href="/pro/staff/members" className={styles.staffControlMenuItem}>
                       {copy.membersList}
                     </Link>
                 </FloatingPopover>
@@ -2138,7 +2138,7 @@ export default function StaffScheduleView({ professionalId, snapshot, header }: 
                 <div className={styles.staffScheduleHead}>
                   <div className={styles.staffScheduleMemberHead}>
                     <span>{copy.employee}</span>
-                    <Link href="/pro/staff" className={styles.staffScheduleInlineLink}>
+                    <Link href="/pro/staff/members" className={styles.staffScheduleInlineLink}>
                       {copy.change}
                     </Link>
                   </div>

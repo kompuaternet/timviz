@@ -30,7 +30,7 @@ export default async function ProStaffMemberPage({ params, searchParams }: ProSt
   const snapshot = await getStaffMemberEditorSnapshot(professionalId, memberId);
 
   if (!snapshot) {
-    redirect("/pro/staff");
+    redirect("/pro/staff/members");
   }
 
   return <StaffMemberEditor snapshot={snapshot} initialTab={initialTab} />;

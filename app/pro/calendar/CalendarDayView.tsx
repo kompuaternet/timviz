@@ -1839,7 +1839,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
 
       setMobileTeamButtonPosition({
         top: Math.max(96, Math.round(frameRect.top + 12)),
-        left: Math.round(frameRect.left + 10)
+        left: Math.round(frameRect.left + Math.max(2, (mobileDayHourColumnWidth - 48) / 2))
       });
     };
 
@@ -1851,7 +1851,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
       window.removeEventListener("resize", updatePosition);
       window.removeEventListener("scroll", updatePosition, true);
     };
-  }, [canSwitchProfessional, isMobileViewport, viewMode, selectedDate, visibleCalendarIds.length]);
+  }, [canSwitchProfessional, isMobileViewport, mobileDayHourColumnWidth, viewMode, selectedDate, visibleCalendarIds.length]);
 
   useEffect(() => {
     const frame = scrollFrameRef.current;

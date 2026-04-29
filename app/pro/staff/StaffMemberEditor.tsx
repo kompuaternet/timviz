@@ -330,7 +330,7 @@ export default function StaffMemberEditor({ snapshot, initialTab }: StaffMemberE
           {copy.titlePrefix} {`${member.professional.firstName} ${member.professional.lastName}`.trim() || member.professional.email}
         </div>
         <div className={styles.staffEditorTopActions}>
-          <Link href="/pro/staff" className={styles.staffStudioGhostButton}>
+          <Link href="/pro/staff/members" className={styles.staffStudioGhostButton}>
             {copy.back}
           </Link>
           <button type="button" className={styles.staffStudioPrimaryButton} onClick={() => void saveProfile()} disabled={isSaving}>

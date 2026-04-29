@@ -566,7 +566,7 @@ export default function StaffView({ professionalId, snapshot, initialAddOpen = f
           <div className={styles.staffStudioSidebarCard}>
             <strong>{copy.sectionTitle}</strong>
             <nav className={styles.staffStudioLocalNav}>
-              <Link href="/pro/staff" className={`${styles.staffStudioLocalLink} ${styles.staffStudioLocalLinkActive}`}>
+              <Link href="/pro/staff/members" className={`${styles.staffStudioLocalLink} ${styles.staffStudioLocalLinkActive}`}>
                 {copy.people}
               </Link>
               <Link href="/pro/staff/schedule" className={styles.staffStudioLocalLink}>

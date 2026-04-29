@@ -1839,8 +1839,8 @@
   min-width: 0;
   min-height: 54px;
   padding: 5px 3px;
-  border: 0;
-  background: transparent;
+  border: 1px solid rgba(220, 227, 245, 0.32);
+  background: rgba(255, 255, 255, 0.4);
   border-radius: 13px;
   color: #6d7690;
   text-decoration: none;
@@ -1855,7 +1855,7 @@
 }
 
 .mobileWorkspaceNavLink:hover {
-  background: rgba(17, 17, 17, 0.04);
+  background: rgba(255, 255, 255, 0.58);
   color: #1f2433;
 }
 
@@ -2166,14 +2166,15 @@
 }
 
 .clientsMain {
-  padding: 20px clamp(24px, 5vw, 72px) 40px;
+  --page-gutter: clamp(24px, 5vw, 72px);
+  padding: 0 var(--page-gutter) 40px;
   display: grid;
   align-content: start;
   gap: 20px;
   background: transparent;
   min-width: 0;
-  max-width: 1480px;
-  margin: 0 auto;
+  max-width: none;
+  margin: 0;
 }
 
 .clientsHeader {
@@ -2894,6 +2895,11 @@
   display: grid;
   grid-template-columns: 260px minmax(0, 1fr);
   grid-template-rows: auto 1fr;
+}
+
+.staffStudioShell > .proPageWorkspaceHeader {
+  padding-left: calc(260px + 40px);
+  padding-right: 40px;
 }
 
 .staffStudioSidebar {
@@ -4225,6 +4231,11 @@
   .staffStudioShell,
   .staffEditorLayout {
     grid-template-columns: 1fr;
+  }
+
+  .staffStudioShell > .proPageWorkspaceHeader {
+    padding-left: 24px;
+    padding-right: 24px;
   }
 
   .staffStudioSidebar,
@@ -6018,9 +6029,23 @@
   backdrop-filter: blur(16px);
 }
 
+.clientsMain > .proPageWorkspaceHeader,
+.servicesPage > .proPageWorkspaceHeader,
+.settingsShell > .proPageWorkspaceHeader {
+  margin-left: calc(var(--page-gutter, 24px) * -1);
+  margin-right: calc(var(--page-gutter, 24px) * -1);
+  padding-left: var(--page-gutter, 24px);
+  padding-right: var(--page-gutter, 24px);
+  border-top: 0;
+  border-left: 0;
+  border-right: 0;
+  border-radius: 0;
+}
+
 .calendarWorkspaceMeta {
   display: grid;
   gap: 2px;
+  padding-left: 6px;
 }
 
 .calendarWorkspaceMeta span {
@@ -6071,6 +6096,7 @@
   gap: 10px;
   flex-wrap: nowrap;
   min-width: 0;
+  justify-content: flex-end;
 }
 
 .calendarTopLeft {
@@ -6089,6 +6115,12 @@
   flex: 0 0 auto;
   flex-wrap: nowrap;
   white-space: nowrap;
+}
+
+.calendarTopRight .calendarStatsStripCompact {
+  flex: 0 1 auto;
+  width: min(468px, 100%);
+  grid-template-columns: repeat(3, minmax(110px, 1fr));
 }
 
 .calendarViewSelector {
@@ -6191,8 +6223,8 @@
 }
 
 .calendarSupportButton svg {
-  width: 18px;
-  height: 18px;
+  width: 24px;
+  height: 24px;
 }
 
 .calendarShareButton {
@@ -6429,6 +6461,11 @@
   gap: 8px;
   box-shadow: 0 16px 32px rgba(72, 63, 131, 0.22);
   cursor: pointer;
+}
+
+.calendarTopRightActionGroup .calendarPrimaryAction {
+  padding-left: 16px;
+  padding-right: 16px;
 }
 
 .calendarAccountMenu {
@@ -6857,7 +6894,7 @@
 
 .calendarMobileTeamFab {
   position: fixed;
-  z-index: 97;
+  z-index: 70;
   width: 48px;
   height: 48px;
   display: inline-flex;
@@ -8615,8 +8652,9 @@
 }
 
 .servicesPage {
+  --page-gutter: 26px;
   min-width: 0;
-  padding: 26px;
+  padding: 0 var(--page-gutter) 26px;
   display: grid;
   gap: 16px;
 }
@@ -9586,8 +9624,9 @@
 }
 
 .settingsShell {
+  --page-gutter: clamp(22px, 4vw, 58px);
   min-height: 100vh;
-  padding: 32px clamp(22px, 4vw, 58px) 48px;
+  padding: 0 var(--page-gutter) 48px;
   background:
     radial-gradient(circle at 88% 0%, rgba(111, 76, 255, 0.1), transparent 28%),
     linear-gradient(180deg, #f7f8fc 0%, #f3f6ff 100%);
@@ -10172,12 +10211,13 @@
   }
 
   .proPageWorkspaceHeader {
-    padding-left: 0;
-    padding-right: 0;
+    padding-left: 14px;
+    padding-right: 14px;
   }
 
   .calendarWorkspaceMeta {
     min-width: 0;
+    padding-left: 8px;
   }
 
   .calendarWorkspaceMeta span {
@@ -10314,6 +10354,11 @@
     width: 34px;
     min-width: 34px;
     min-height: 34px;
+  }
+
+  .calendarSupportButton svg {
+    width: 21px;
+    height: 21px;
   }
 
   .calendarViewPill {
@@ -10500,6 +10545,26 @@
 
   .calendarQuickMenu {
     display: none;
+  }
+
+  .clientsMain,
+  .servicesPage,
+  .settingsShell {
+    padding-top: 0;
+  }
+
+  .clientsMain > .proPageWorkspaceHeader,
+  .servicesPage > .proPageWorkspaceHeader,
+  .settingsShell > .proPageWorkspaceHeader,
+  .staffStudioShell > .proPageWorkspaceHeader {
+    margin-left: -14px;
+    margin-right: -14px;
+    padding-left: 14px;
+    padding-right: 14px;
+    border-top: 0;
+    border-left: 0;
+    border-right: 0;
+    border-radius: 0;
   }
 }
 
@@ -11834,6 +11899,10 @@
     padding-bottom: 8px;
     padding-left: 14px;
     padding-right: 14px;
+  }
+
+  .calendarWorkspaceMeta {
+    padding-left: 8px;
   }
 
   .proPageWorkspaceHeader {
