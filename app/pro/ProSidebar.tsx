@@ -270,6 +270,7 @@ export default function ProSidebar({
         isOpen={isSupportOpen}
         onOpen={() => setIsSupportOpen(true)}
         onClose={() => setIsSupportOpen(false)}
+        showTrigger={active !== "calendar"}
       />
     </>
   );

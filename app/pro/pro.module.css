@@ -1821,6 +1821,7 @@
   gap: 4px;
   cursor: pointer;
   font: inherit;
+  pointer-events: auto;
   transition: background-color 120ms ease, color 120ms ease, transform 120ms ease, box-shadow 120ms ease;
 }
 
@@ -5876,33 +5877,33 @@
   align-items: center;
   justify-content: space-between;
   gap: 14px;
-  padding: 10px 20px 8px;
+  padding: 6px 18px 5px;
 }
 
 .calendarWorkspaceMeta {
   display: grid;
-  gap: 4px;
+  gap: 2px;
 }
 
 .calendarWorkspaceMeta span {
   color: #7b8398;
-  font-size: 0.74rem;
+  font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
 }
 
 .calendarWorkspaceMeta strong {
-  font-size: 1.2rem;
+  font-size: 1rem;
   letter-spacing: -0.04em;
-  line-height: 1.05;
+  line-height: 1.02;
   color: #1f2433;
 }
 
 .calendarWorkspaceActions {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 }
 
 .calendarTopBarV2 {
@@ -5910,7 +5911,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 10px 20px;
+  padding: 8px 18px;
   border-top: 1px solid #e8ebf4;
   border-bottom: 1px solid #e8ebf4;
   background: rgba(255, 255, 255, 0.9);
@@ -6010,6 +6011,18 @@
   width: 40px;
   font-size: 1.15rem;
   position: relative;
+}
+
+.calendarSupportButton {
+  border-color: #caebef;
+  background: linear-gradient(135deg, #f4feff 0%, #e8fbff 100%);
+  color: #12a8bf;
+  box-shadow: 0 12px 24px rgba(18, 168, 191, 0.12);
+}
+
+.calendarSupportButton:hover {
+  background: linear-gradient(135deg, #effdff 0%, #def8ff 100%);
+  color: #0f91a6;
 }
 
 .calendarIconButtonActive {
@@ -6433,6 +6446,80 @@
   border: 1px solid #d5dcff;
 }
 
+.calendarToastViewport {
+  position: fixed;
+  top: 86px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 140;
+  width: min(420px, calc(100vw - 28px));
+  pointer-events: none;
+}
+
+.calendarToast {
+  min-height: 52px;
+  padding: 12px 14px 12px 16px;
+  border-radius: 18px;
+  border: 1px solid #dbe2f3;
+  background: rgba(255, 255, 255, 0.97);
+  color: #1f2433;
+  box-shadow: 0 20px 48px rgba(79, 92, 133, 0.22);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  pointer-events: auto;
+  backdrop-filter: blur(18px);
+}
+
+.calendarToast span {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: 0.94rem;
+  line-height: 1.4;
+}
+
+.calendarToastInfo {
+  border-color: #d8deec;
+}
+
+.calendarToastSuccess {
+  border-color: #bde9d4;
+  background:
+    radial-gradient(circle at top left, rgba(83, 206, 133, 0.12), transparent 34%),
+    rgba(255, 255, 255, 0.98);
+}
+
+.calendarToastWarning {
+  border-color: #f2deb0;
+  background:
+    radial-gradient(circle at top left, rgba(247, 181, 56, 0.14), transparent 36%),
+    rgba(255, 255, 255, 0.98);
+}
+
+.calendarToastError {
+  border-color: #f2c7cf;
+  background:
+    radial-gradient(circle at top left, rgba(226, 91, 120, 0.14), transparent 36%),
+    rgba(255, 255, 255, 0.98);
+}
+
+.calendarToastClose {
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(233, 238, 248, 0.95);
+  color: #69738f;
+  font-size: 1.2rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
 .calendarMobileActionBar {
   display: none;
 }
@@ -6846,6 +6933,256 @@
   overflow: auto;
   padding: 20px;
   background: #f7f8fc;
+}
+
+.calendarTeamBoardShell {
+  display: grid;
+  gap: 0;
+  min-width: max-content;
+  border: 1px solid #e4eaf5;
+  border-radius: 24px;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+.calendarTeamBoardHeader,
+.calendarTeamBoardRow {
+  display: grid;
+}
+
+.calendarTeamBoardHeader {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #ffffff;
+  border-bottom: 1px solid #e8eef7;
+}
+
+.calendarTeamBoardMemberSpacer {
+  border-right: 1px solid #edf1f8;
+  background: #ffffff;
+}
+
+.calendarTeamBoardDayHeader {
+  min-height: 72px;
+  padding: 10px 8px 8px;
+  border: 0;
+  border-left: 1px solid #edf1f8;
+  background: #ffffff;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 6px;
+  color: #232532;
+  text-transform: capitalize;
+  cursor: pointer;
+}
+
+.calendarTeamBoardDayHeader strong {
+  font-size: 1.7rem;
+  line-height: 1;
+  font-weight: 700;
+}
+
+.calendarTeamBoardDayHeader span {
+  font-size: 0.92rem;
+  color: #74809b;
+  font-weight: 600;
+}
+
+.calendarTeamBoardDayHeaderActive {
+  background: rgba(109, 98, 246, 0.08);
+}
+
+.calendarTeamBoardDayHeaderToday strong,
+.calendarTeamBoardDayHeaderActive strong {
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #6458f6;
+  color: #ffffff;
+}
+
+.calendarTeamBoardDayHeaderToday span,
+.calendarTeamBoardDayHeaderActive span {
+  color: #6458f6;
+}
+
+.calendarTeamBoardRows {
+  display: grid;
+}
+
+.calendarTeamBoardRow + .calendarTeamBoardRow {
+  border-top: 1px solid #edf1f8;
+}
+
+.calendarTeamMemberRail {
+  border: 0;
+  border-right: 1px solid #edf1f8;
+  background: #ffffff;
+  padding: 14px 8px;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 10px;
+  text-align: center;
+  cursor: pointer;
+}
+
+.calendarTeamMemberRail strong {
+  font-size: 0.9rem;
+  line-height: 1.15;
+  color: #232532;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.calendarTeamMemberRailActive {
+  background:
+    radial-gradient(circle at top center, rgba(108, 93, 255, 0.12), transparent 65%),
+    #ffffff;
+}
+
+.calendarTeamMemberAvatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  color: #1091d1;
+  border: 2px solid #d4ebf9;
+  background: #f2fbff;
+  font-weight: 700;
+}
+
+.calendarTeamBoardCell {
+  min-height: 190px;
+  padding: 10px;
+  border: 0;
+  border-left: 1px solid #edf1f8;
+  background: #ffffff;
+  text-align: left;
+  vertical-align: top;
+  cursor: pointer;
+}
+
+.calendarTeamBoardCellClosed {
+  background:
+    repeating-linear-gradient(135deg, rgba(20, 20, 20, 0.035) 0, rgba(20, 20, 20, 0.035) 4px, transparent 4px, transparent 8px),
+    #f5f7fb;
+}
+
+.calendarTeamBoardCellActive {
+  box-shadow: inset 0 0 0 2px rgba(100, 88, 246, 0.32);
+}
+
+.calendarTeamBoardCellList,
+.calendarMonthTeamDayList {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+}
+
+.calendarTeamBoardPill,
+.calendarMonthTeamPill {
+  min-height: 24px;
+  border-radius: 8px;
+  padding: 4px 8px;
+  display: grid;
+  gap: 2px;
+  color: #1f2433;
+  overflow: hidden;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.55);
+}
+
+.calendarTeamBoardPill strong,
+.calendarMonthTeamPill strong {
+  font-size: 0.9rem;
+  line-height: 1.15;
+  font-weight: 700;
+}
+
+.calendarTeamBoardPill span,
+.calendarMonthTeamPill span {
+  font-size: 0.84rem;
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.calendarTeamBoardPillBlocked {
+  background: #d9dce4 !important;
+  color: #4d5566;
+}
+
+.calendarTeamBoardMore {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: #edf1ff;
+  color: #6458f6;
+  font-size: 0.82rem;
+  font-weight: 700;
+  justify-self: start;
+}
+
+.calendarTeamBoardClosedLabel {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  color: #8c95aa;
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+.calendarMonthTeamGrid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(116px, 1fr));
+  gap: 10px;
+  min-width: 860px;
+}
+
+.calendarMonthTeamDay {
+  min-height: 128px;
+  padding: 12px;
+  border: 1px solid #e2e7f3;
+  border-radius: 20px;
+  background: #ffffff;
+  text-align: left;
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.calendarMonthTeamDayHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.calendarMonthTeamDayHeader strong {
+  font-size: 1.02rem;
+  color: #232532;
+}
+
+.calendarMonthTeamDayHeader span {
+  color: #6458f6;
+  font-size: 0.78rem;
+  font-weight: 700;
 }
 
 .calendarWeekOverviewGrid {
@@ -8421,12 +8758,13 @@
     z-index: 85;
     display: grid;
     gap: 4px;
-    padding: 6px 5px;
-    border: 1px solid rgba(218, 225, 241, 0.96);
-    border-radius: 20px;
-    background: rgba(255, 255, 255, 0.95);
-    box-shadow: 0 18px 42px rgba(90, 103, 151, 0.16);
-    backdrop-filter: blur(18px);
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+    pointer-events: none;
   }
 
   .workspaceMain,
@@ -9086,21 +9424,30 @@
   }
 
   .calendarTopBarV2 {
-    display: grid;
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: flex-start;
     gap: 6px;
     padding: 6px 10px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+  }
+
+  .calendarTopBarV2::-webkit-scrollbar {
+    display: none;
   }
 
   .calendarTopLeft {
     display: flex;
-    width: 100%;
+    width: auto;
+    flex: 0 0 auto;
     flex-wrap: nowrap;
-    overflow-x: auto;
-    overflow-y: hidden;
+    overflow: visible;
     gap: 6px;
-    align-items: stretch;
-    scrollbar-width: none;
-    padding-bottom: 1px;
+    align-items: center;
+    padding-bottom: 0;
   }
 
   .calendarTopLeft::-webkit-scrollbar {
@@ -9108,11 +9455,7 @@
   }
 
   .calendarTodayButton {
-    min-width: 0;
-    min-height: 36px;
-    padding: 0 10px;
-    font-size: 0.84rem;
-    flex: 0 0 auto;
+    display: none;
   }
 
   .calendarSquareButton {
@@ -9124,7 +9467,7 @@
 
   .calendarDatePill {
     min-height: 36px;
-    min-width: 148px;
+    min-width: 138px;
     padding: 0 10px;
     flex: 0 0 auto;
   }
@@ -9142,15 +9485,16 @@
 
   .calendarTopRight {
     display: flex;
-    width: 100%;
+    width: auto;
+    flex: 0 0 auto;
     flex-wrap: nowrap;
-    overflow-x: auto;
-    overflow-y: hidden;
+    overflow: visible;
     gap: 6px;
     align-items: center;
     justify-content: flex-start;
     scrollbar-width: none;
-    padding-bottom: 1px;
+    padding-bottom: 0;
+    margin-left: auto;
   }
 
   .calendarTopRight::-webkit-scrollbar {
@@ -9158,7 +9502,6 @@
   }
 
   .calendarViewPill,
-  .calendarPrimaryAction,
   .calendarTeamButton {
     min-width: 0;
     flex: 0 0 auto;
@@ -9182,15 +9525,12 @@
   }
 
   .calendarPrimaryAction {
-    min-height: 36px;
-    padding: 0 12px;
-    font-size: 0.84rem;
-    white-space: nowrap;
+    display: none;
   }
 
   .calendarTeamButton {
     min-height: 36px;
-    min-width: 148px;
+    min-width: 132px;
     padding: 0 10px;
     font-size: 0.84rem;
     white-space: nowrap;
@@ -9203,6 +9543,75 @@
   .calendarDayMemberHeaderGrid,
   .calendarDayMembersGrid {
     min-width: 520px;
+  }
+
+  .calendarTeamBoardShell {
+    border-radius: 18px;
+  }
+
+  .calendarTeamBoardDayHeader {
+    min-height: 62px;
+    padding: 8px 6px;
+    gap: 4px;
+  }
+
+  .calendarTeamBoardDayHeader strong {
+    font-size: 1.3rem;
+  }
+
+  .calendarTeamBoardDayHeaderToday strong,
+  .calendarTeamBoardDayHeaderActive strong {
+    width: 34px;
+    height: 34px;
+  }
+
+  .calendarTeamBoardDayHeader span {
+    font-size: 0.8rem;
+  }
+
+  .calendarTeamMemberRail {
+    padding: 10px 4px;
+    gap: 8px;
+  }
+
+  .calendarTeamMemberAvatar {
+    width: 40px;
+    height: 40px;
+  }
+
+  .calendarTeamMemberRail strong {
+    font-size: 0.8rem;
+  }
+
+  .calendarTeamBoardCell {
+    min-height: 156px;
+    padding: 8px 6px;
+  }
+
+  .calendarTeamBoardPill,
+  .calendarMonthTeamPill {
+    padding: 4px 6px;
+  }
+
+  .calendarTeamBoardPill strong,
+  .calendarMonthTeamPill strong {
+    font-size: 0.8rem;
+  }
+
+  .calendarTeamBoardPill span,
+  .calendarMonthTeamPill span {
+    font-size: 0.74rem;
+  }
+
+  .calendarMonthTeamGrid {
+    min-width: 700px;
+    gap: 8px;
+  }
+
+  .calendarMonthTeamDay {
+    min-height: 112px;
+    padding: 10px;
+    gap: 8px;
   }
 
   .calendarDayMemberHeaderCard {
@@ -9310,23 +9719,17 @@
   }
 
   .calendarDatePill {
-    min-width: 136px;
+    min-width: 128px;
   }
 
   .calendarTeamButton {
-    min-width: 136px;
+    min-width: 120px;
   }
 
   .calendarTopRight {
     gap: 5px;
   }
 
-  .calendarPrimaryAction {
-    padding: 0 10px;
-    font-size: 0.8rem;
-  }
-
-  .calendarTodayButton,
   .calendarViewPill,
   .calendarTeamButton {
     font-size: 0.8rem;
@@ -9340,10 +9743,8 @@
   }
 
   .calendarDatePill,
-  .calendarTodayButton,
   .calendarViewPill,
-  .calendarTeamButton,
-  .calendarPrimaryAction {
+  .calendarTeamButton {
     min-height: 34px;
   }
 
@@ -9373,6 +9774,96 @@
   .calendarDayMemberHeaderGrid,
   .calendarDayMembersGrid {
     min-width: 360px;
+  }
+
+  .calendarTeamBoardDayHeader {
+    min-height: 54px;
+    padding: 8px 4px 6px;
+  }
+
+  .calendarTeamBoardDayHeader strong {
+    font-size: 1rem;
+  }
+
+  .calendarTeamBoardDayHeaderToday strong,
+  .calendarTeamBoardDayHeaderActive strong {
+    width: 28px;
+    height: 28px;
+  }
+
+  .calendarTeamBoardDayHeader span {
+    font-size: 0.72rem;
+  }
+
+  .calendarTeamMemberRail {
+    padding: 8px 2px;
+    gap: 6px;
+  }
+
+  .calendarTeamMemberAvatar {
+    width: 34px;
+    height: 34px;
+    border-width: 1px;
+  }
+
+  .calendarTeamMemberRail strong {
+    font-size: 0.68rem;
+    line-height: 1.05;
+  }
+
+  .calendarTeamBoardCell {
+    min-height: 122px;
+    padding: 6px 4px;
+  }
+
+  .calendarTeamBoardCellList,
+  .calendarMonthTeamDayList {
+    gap: 5px;
+  }
+
+  .calendarTeamBoardPill,
+  .calendarMonthTeamPill {
+    min-height: 20px;
+    padding: 3px 5px;
+    gap: 1px;
+  }
+
+  .calendarTeamBoardPill strong,
+  .calendarMonthTeamPill strong {
+    font-size: 0.72rem;
+  }
+
+  .calendarTeamBoardPill span {
+    display: none;
+  }
+
+  .calendarMonthTeamPill span {
+    display: none;
+  }
+
+  .calendarTeamBoardMore {
+    min-height: 18px;
+    padding: 0 6px;
+    font-size: 0.7rem;
+  }
+
+  .calendarMonthTeamGrid {
+    min-width: 520px;
+    gap: 6px;
+  }
+
+  .calendarMonthTeamDay {
+    min-height: 96px;
+    padding: 8px;
+    border-radius: 16px;
+  }
+
+  .calendarMonthTeamDayHeader strong {
+    font-size: 0.92rem;
+  }
+
+  .calendarMonthTeamDayHeader span {
+    font-size: 0.68rem;
   }
 
   .calendarDayMemberHeaderCard strong {
@@ -9620,17 +10111,11 @@
   .calendarTopLeft,
   .calendarTopRight,
   .calendarViewSelector {
-    width: 100%;
+    width: auto;
+    flex: 0 0 auto;
     flex-wrap: nowrap;
-    overflow-x: auto;
-    overflow-y: hidden;
+    overflow: visible;
     scrollbar-width: none;
-  }
-
-  .calendarTopLeft::-webkit-scrollbar,
-  .calendarTopRight::-webkit-scrollbar,
-  .calendarViewSelector::-webkit-scrollbar {
-    display: none;
   }
 
   .calendarOverviewPanel {
@@ -9829,22 +10314,28 @@
 
   .calendarMobilePlusButton {
     position: fixed;
-    left: 12px;
+    left: calc(26px + env(safe-area-inset-left));
     bottom: calc(90px + env(safe-area-inset-bottom));
     z-index: 24;
-    width: 48px;
-    height: 48px;
+    width: 28px;
+    height: 28px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     border: 0;
-    border-radius: 16px;
-    background: linear-gradient(90deg, #6d4dff 0%, #5f49f6 38%, #1d1838 100%);
-    color: #fff;
-    box-shadow: 0 18px 34px rgba(107, 92, 196, 0.28);
+    border-radius: 0;
+    background: transparent;
+    color: #5f49f6;
+    box-shadow: none;
+    transform: translateX(-50%);
     font-size: 2rem;
     line-height: 1;
-    font-weight: 500;
+    font-weight: 400;
+    text-shadow: 0 8px 22px rgba(95, 73, 246, 0.14);
+  }
+
+  .calendarMobilePlusButton span {
+    transform: translateY(-1px);
   }
 
   .nowBadge {
@@ -10263,8 +10754,8 @@
     left: 6px;
     right: 6px;
     gap: 1px;
-    padding: 5px 3px;
-    border-radius: 18px;
+    padding: 0;
+    border-radius: 0;
   }
 
   .mobileWorkspaceNavLabel {
@@ -10333,10 +10824,8 @@
     gap: 6px;
   }
 
-  .calendarTodayButton,
   .calendarViewPill,
-  .calendarTeamButton,
-  .calendarPrimaryAction {
+  .calendarTeamButton {
     min-height: 32px;
     padding: 0 9px;
     font-size: 0.78rem;
@@ -10391,5 +10880,21 @@
   .calendarDay small {
     font-size: 0.56rem;
     line-height: 1.1;
+  }
+
+  .calendarToastViewport {
+    top: auto;
+    bottom: calc(78px + env(safe-area-inset-bottom));
+    width: min(360px, calc(100vw - 20px));
+  }
+
+  .calendarToast {
+    min-height: 48px;
+    padding: 11px 12px 11px 14px;
+    border-radius: 16px;
+  }
+
+  .calendarToast span {
+    font-size: 0.88rem;
   }
 }

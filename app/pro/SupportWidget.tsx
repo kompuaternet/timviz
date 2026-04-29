@@ -8,6 +8,7 @@ type SupportWidgetProps = {
   isOpen: boolean;
   onOpen: () => void;
   onClose: () => void;
+  showTrigger?: boolean;
 };
 
 type ChatMessage = {
@@ -17,7 +18,12 @@ type ChatMessage = {
   createdAt?: string;
 };
 
-export default function SupportWidget({ isOpen, onOpen, onClose }: SupportWidgetProps) {
+export default function SupportWidget({
+  isOpen,
+  onOpen,
+  onClose,
+  showTrigger = true
+}: SupportWidgetProps) {
   const { language, t } = useProLanguage();
   const [message, setMessage] = useState("");
   const [ticketId, setTicketId] = useState("");
@@ -139,12 +145,14 @@ export default function SupportWidget({ isOpen, onOpen, onClose }: SupportWidget
 
   return (
     <>
-      <button type="button" className={styles.supportFloatingButton} onClick={onOpen} aria-label={t.support.open}>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-          <path d="M21 11.5a8.4 8.4 0 0 1-8.8 8.4 9.8 9.8 0 0 1-4.4-1.1L3 20l1.3-4.2A8.1 8.1 0 0 1 3 11.5a8.5 8.5 0 0 1 18 0Z" />
-          <path d="M8.2 11.7h.1M12 11.7h.1M15.8 11.7h.1" />
-        </svg>
-      </button>
+      {showTrigger ? (
+        <button type="button" className={styles.supportFloatingButton} onClick={onOpen} aria-label={t.support.open}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M21 11.5a8.4 8.4 0 0 1-8.8 8.4 9.8 9.8 0 0 1-4.4-1.1L3 20l1.3-4.2A8.1 8.1 0 0 1 3 11.5a8.5 8.5 0 0 1 18 0Z" />
+            <path d="M8.2 11.7h.1M12 11.7h.1M15.8 11.7h.1" />
+          </svg>
+        </button>
+      ) : null}
 
       {isOpen ? (
         <div className={styles.supportOverlay} onMouseDown={(event) => {
