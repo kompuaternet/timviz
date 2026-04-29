@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import ProSidebar from "../ProSidebar";
+import ProWorkspaceHeader from "../ProWorkspaceHeader";
 import styles from "../pro.module.css";
 import type { CategoryTemplate } from "../../../lib/service-templates";
 import type { ServiceRecord, WorkspaceSnapshot } from "../../../lib/pro-data";
@@ -21,25 +22,32 @@ type DraftService = {
 };
 
 const colorPalette = ["#8bd7e8", "#ffd166", "#7ed6bd", "#b794f4", "#f6729a", "#a5d76e", "#ff9f80", "#90cdf4"];
+const ALL_CATEGORIES_KEY = "__all_categories__";
 
 const serviceExtras = {
   ru: {
     addFromCatalogFailed: "Не удалось добавить услугу из каталога.",
+    removeFromCatalogFailed: "Не удалось убрать услугу из вашего списка.",
     addedNamed: (name: string) => `"${name}" добавлена в ваш рабочий список.`,
+    removedNamed: (name: string) => `"${name}" убрана из вашего рабочего списка.`,
     colorLabel: (color: string) => `Цвет ${color}`,
     moveUp: "Выше",
     moveDown: "Ниже"
   },
   uk: {
     addFromCatalogFailed: "Не вдалося додати послугу з каталогу.",
+    removeFromCatalogFailed: "Не вдалося прибрати послугу з вашого списку.",
     addedNamed: (name: string) => `"${name}" додано до вашого робочого списку.`,
+    removedNamed: (name: string) => `"${name}" прибрано з вашого робочого списку.`,
     colorLabel: (color: string) => `Колір ${color}`,
     moveUp: "Вище",
     moveDown: "Нижче"
   },
   en: {
     addFromCatalogFailed: "Could not add the service from the catalog.",
+    removeFromCatalogFailed: "Could not remove the service from your list.",
     addedNamed: (name: string) => `"${name}" added to your working list.`,
+    removedNamed: (name: string) => `"${name}" removed from your working list.`,
     colorLabel: (color: string) => `Color ${color}`,
     moveUp: "Move up",
     moveDown: "Move down"
@@ -96,7 +104,7 @@ export default function ServicesView({ initialWorkspace, catalog }: ServicesView
   const copy = serviceExtras[language];
   const accountCurrency = initialWorkspace.professional.currency || "USD";
   const [services, setServices] = useState<ServiceRecord[]>(() => normalizeServices(initialWorkspace.services));
-  const [activeCategory, setActiveCategory] = useState<string>(t.common.allCategories);
+  const [activeCategory, setActiveCategory] = useState<string>(ALL_CATEGORIES_KEY);
   const [customCategory, setCustomCategory] = useState("");
   const [draft, setDraft] = useState<DraftService>(() =>
     emptyDraft(initialWorkspace.business.categories[0] || catalog[0]?.title || t.common.noCategory)
@@ -116,7 +124,6 @@ export default function ServicesView({ initialWorkspace, catalog }: ServicesView
   const categories = useMemo(() => {
     return Array.from(
       new Set([
-        t.common.allCategories,
         ...initialWorkspace.business.categories,
         ...services.map((service) => service.category || t.common.noCategory),
         ...catalog.map((item) => item.title),
@@ -128,7 +135,7 @@ export default function ServicesView({ initialWorkspace, catalog }: ServicesView
   const visibleServices = useMemo(() => {
     const query = serviceQuery.trim().toLowerCase();
     const scopedServices =
-      activeCategory === t.common.allCategories
+      activeCategory === ALL_CATEGORIES_KEY
         ? services
         : services.filter((service) => (service.category || t.common.noCategory) === activeCategory);
 
@@ -139,17 +146,28 @@ export default function ServicesView({ initialWorkspace, catalog }: ServicesView
     return scopedServices.filter((service) =>
       `${service.name} ${service.category || ""}`.toLowerCase().includes(query)
     );
-  }, [activeCategory, serviceQuery, services, t.common.allCategories, t.common.noCategory]);
+  }, [activeCategory, serviceQuery, services, t.common.noCategory]);
 
   const categoryCounts = useMemo(() => {
     const counts = new Map<string, number>();
-    counts.set(t.common.allCategories, services.length);
+    counts.set(ALL_CATEGORIES_KEY, services.length);
     for (const service of services) {
       const category = service.category || t.common.noCategory;
       counts.set(category, (counts.get(category) || 0) + 1);
     }
     return counts;
-  }, [services, t.common.allCategories, t.common.noCategory]);
+  }, [services, t.common.noCategory]);
+
+  const servicesByCatalogKey = useMemo(
+    () =>
+      new Map(
+        services.map((service) => [
+          `${service.name.trim().toLowerCase()}::${(service.category || t.common.noCategory).trim().toLowerCase()}`,
+          service
+        ])
+      ),
+    [services, t.common.noCategory]
+  );
 
   const catalogGroups = useMemo(() => {
     const query = catalogQuery.trim().toLowerCase();
@@ -311,6 +329,26 @@ export default function ServicesView({ initialWorkspace, catalog }: ServicesView
     setIsSaving(false);
   }
 
+  async function removeCatalogService(service: ServiceRecord) {
+    setIsSaving(true);
+    setStatusText("");
+
+    const response = await fetch(`/api/pro/services?serviceId=${encodeURIComponent(service.id)}`, {
+      method: "DELETE"
+    });
+    const payload = await response.json();
+
+    if (!response.ok) {
+      setStatusText(payload.error || copy.removeFromCatalogFailed);
+      setIsSaving(false);
+      return;
+    }
+
+    await reloadServices();
+    setStatusText(copy.removedNamed(service.name));
+    setIsSaving(false);
+  }
+
   function startEdit(service: ServiceRecord) {
     setEditId(service.id);
     setEditDraft({
@@ -378,6 +416,15 @@ export default function ServicesView({ initialWorkspace, catalog }: ServicesView
       />
 
       <section className={styles.servicesPage}>
+        <ProWorkspaceHeader
+          businessName={initialWorkspace.business.name}
+          viewerName={`${initialWorkspace.professional.firstName} ${initialWorkspace.professional.lastName}`.trim() || initialWorkspace.professional.email}
+          viewerAvatarUrl={initialWorkspace.professional.avatarUrl}
+          viewerInitials={`${initialWorkspace.professional.firstName?.[0] ?? ""}${initialWorkspace.professional.lastName?.[0] ?? ""}`.toUpperCase() || "RZ"}
+          publicBookingUrl={initialWorkspace.business.publicBookingUrl}
+          publicBookingEnabled={initialWorkspace.business.allowOnlineBooking === true}
+        />
+
         <header className={styles.servicesHeroCompact}>
           <div>
             <p className={styles.eyebrow}>{t.services.kicker}</p>
@@ -398,8 +445,8 @@ export default function ServicesView({ initialWorkspace, catalog }: ServicesView
           <aside className={styles.servicesCategoryPanel}>
             <h2>{t.services.categories}</h2>
             <div className={styles.servicesCategoryList}>
-              {categories
-                .filter((category) => category === t.common.allCategories || categoryCounts.has(category))
+              {[ALL_CATEGORIES_KEY, ...categories]
+                .filter((category) => category === ALL_CATEGORIES_KEY || categoryCounts.has(category))
                 .map((category) => (
                   <button
                     key={category}
@@ -407,7 +454,7 @@ export default function ServicesView({ initialWorkspace, catalog }: ServicesView
                     className={activeCategory === category ? styles.servicesCategoryActive : ""}
                     onClick={() => setActiveCategory(category)}
                   >
-                    <span>{category}</span>
+                    <span>{category === ALL_CATEGORIES_KEY ? t.common.allCategories : category}</span>
                     <em>{categoryCounts.get(category) || 0}</em>
                   </button>
                 ))}
@@ -426,6 +473,9 @@ export default function ServicesView({ initialWorkspace, catalog }: ServicesView
           </aside>
 
           <section className={styles.servicesMenuPanel}>
+            <div className={styles.servicesMenuHeader}>
+              <h2>{t.services.myServices}</h2>
+            </div>
             <div className={styles.servicesMenuToolbar}>
               <input
                 className={styles.input}
@@ -433,7 +483,7 @@ export default function ServicesView({ initialWorkspace, catalog }: ServicesView
                 onChange={(event) => setServiceQuery(event.target.value)}
                 placeholder={t.services.searchPlaceholder}
               />
-              <button type="button" className={styles.calendarSecondaryAction} onClick={() => setActiveCategory(t.common.allCategories)}>
+              <button type="button" className={styles.calendarSecondaryAction} onClick={() => setActiveCategory(ALL_CATEGORIES_KEY)}>
                 {t.common.allServices}
               </button>
             </div>
@@ -468,7 +518,6 @@ export default function ServicesView({ initialWorkspace, catalog }: ServicesView
                           onChange={(event) => setEditDraft((current) => ({ ...current, category: event.target.value }))}
                         >
                           {categories
-                            .filter((category) => category !== t.common.allCategories)
                             .map((category) => (
                               <option key={category} value={category}>
                                 {category}
@@ -570,7 +619,6 @@ export default function ServicesView({ initialWorkspace, catalog }: ServicesView
                     onChange={(event) => setDraft((current) => ({ ...current, category: event.target.value }))}
                   >
                     {categories
-                      .filter((category) => category !== t.common.allCategories)
                       .map((category) => (
                         <option key={category} value={category}>
                           {category}
@@ -646,19 +694,30 @@ export default function ServicesView({ initialWorkspace, catalog }: ServicesView
                       {isExpanded ? (
                         <div className={styles.servicesCatalogList}>
                           {group.services.map((service) => {
-                            const exists = services.some((item) => item.name.toLowerCase() === service.name.toLowerCase());
+                            const existingService =
+                              servicesByCatalogKey.get(
+                                `${service.name.trim().toLowerCase()}::${group.category.trim().toLowerCase()}`
+                              ) ||
+                              services.find((item) => item.name.trim().toLowerCase() === service.name.trim().toLowerCase()) ||
+                              null;
+                            const exists = Boolean(existingService);
 
                             return (
                               <button
                                 key={`${group.category}-${service.name}`}
                                 type="button"
-                                className={styles.catalogServiceLine}
-                                disabled={exists || isSaving}
-                                onClick={() => void addCatalogService({ ...service, category: group.category })}
+                                className={`${styles.catalogServiceLine} ${exists ? styles.catalogServiceLineActive : ""}`}
+                                disabled={isSaving}
+                                onClick={() =>
+                                  exists && existingService
+                                    ? void removeCatalogService(existingService)
+                                    : void addCatalogService({ ...service, category: group.category })
+                                }
                               >
                                 <span>{service.name}</span>
                                 <em>{formatDuration(service.durationMinutes || 60, t.common)} · {formatServicePrice(service.price || 0, language, accountCurrency)}</em>
-                                <strong>{exists ? t.services.alreadyExists : "+"}</strong>
+                                <strong>{exists ? "−" : "+"}</strong>
+                                <small>{exists ? t.services.inMyServices : t.services.addFromCatalog}</small>
                               </button>
                             );
                           })}

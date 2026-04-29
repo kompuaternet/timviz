@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import ProfileAvatar from "../../ProfileAvatar";
 import FloatingPopover from "../FloatingPopover";
 import ProSidebar from "../ProSidebar";
+import ProWorkspaceHeader from "../ProWorkspaceHeader";
 import styles from "../pro.module.css";
 import { useProLanguage } from "../useProLanguage";
 import type { BusinessStaffSnapshot, StaffMemberSnapshot } from "../../../lib/pro-staff";
@@ -28,6 +29,13 @@ import {
 type StaffScheduleViewProps = {
   professionalId: string;
   snapshot: BusinessStaffSnapshot;
+  header: {
+    viewerName: string;
+    viewerAvatarUrl?: string;
+    viewerInitials: string;
+    publicBookingUrl?: string;
+    publicBookingEnabled?: boolean;
+  };
 };
 
 type SortMode = "name" | "hours-desc" | "hours-asc";
@@ -1676,7 +1684,7 @@ function DayScheduleModal({
   );
 }
 
-export default function StaffScheduleView({ professionalId, snapshot }: StaffScheduleViewProps) {
+export default function StaffScheduleView({ professionalId, snapshot, header }: StaffScheduleViewProps) {
   const { language, t } = useProLanguage();
   const copy = scheduleText[language];
   const locale = getLocale(language);
@@ -1861,6 +1869,15 @@ export default function StaffScheduleView({ professionalId, snapshot }: StaffSch
       <ProSidebar active="staff" professionalId={professionalId} canManageStaff />
 
       <section className={styles.staffStudioShell}>
+        <ProWorkspaceHeader
+          businessName={snapshot.business.name}
+          viewerName={header.viewerName}
+          viewerAvatarUrl={header.viewerAvatarUrl}
+          viewerInitials={header.viewerInitials}
+          publicBookingUrl={header.publicBookingUrl}
+          publicBookingEnabled={header.publicBookingEnabled === true}
+        />
+
         <aside className={styles.staffStudioSidebar}>
           <div className={styles.staffStudioSidebarCard}>
             <strong>{copy.sectionTitle}</strong>

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import ProfileAvatar from "../../ProfileAvatar";
 import FloatingPopover from "../FloatingPopover";
 import ProSidebar from "../ProSidebar";
+import ProWorkspaceHeader from "../ProWorkspaceHeader";
 import styles from "../pro.module.css";
 import { useProLanguage } from "../useProLanguage";
 import type {
@@ -19,6 +20,13 @@ type StaffViewProps = {
   professionalId: string;
   snapshot: BusinessStaffSnapshot;
   initialAddOpen?: boolean;
+  header: {
+    viewerName: string;
+    viewerAvatarUrl?: string;
+    viewerInitials: string;
+    publicBookingUrl?: string;
+    publicBookingEnabled?: boolean;
+  };
 };
 
 type StaffActionMenuState = {
@@ -374,7 +382,7 @@ function PendingInvitationCard({
   );
 }
 
-export default function StaffView({ professionalId, snapshot, initialAddOpen = false }: StaffViewProps) {
+export default function StaffView({ professionalId, snapshot, initialAddOpen = false, header }: StaffViewProps) {
   const router = useRouter();
   const { language } = useProLanguage();
   const copy = staffText[language];
@@ -545,6 +553,15 @@ export default function StaffView({ professionalId, snapshot, initialAddOpen = f
       <ProSidebar active="staff" professionalId={professionalId} canManageStaff />
 
       <section className={styles.staffStudioShell}>
+        <ProWorkspaceHeader
+          businessName={snapshot.business.name}
+          viewerName={header.viewerName}
+          viewerAvatarUrl={header.viewerAvatarUrl}
+          viewerInitials={header.viewerInitials}
+          publicBookingUrl={header.publicBookingUrl}
+          publicBookingEnabled={header.publicBookingEnabled === true}
+        />
+
         <aside className={styles.staffStudioSidebar}>
           <div className={styles.staffStudioSidebarCard}>
             <strong>{copy.sectionTitle}</strong>

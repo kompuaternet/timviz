@@ -1,8 +1,9 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import ProSidebar from "../ProSidebar";
-import LogoutButton from "../workspace/LogoutButton";
+import ProWorkspaceHeader from "../ProWorkspaceHeader";
 import styles from "../pro.module.css";
 import { languageFromProfile, languageLabels, type ProLanguage } from "../i18n";
 import { useProLanguage } from "../useProLanguage";
@@ -15,6 +16,7 @@ type SettingsData = {
     id: string;
     firstName: string;
     lastName: string;
+    avatarUrl?: string;
     email: string;
     phone: string;
     country: string;
@@ -27,6 +29,8 @@ type SettingsData = {
     id: string;
     name: string;
     website: string;
+    publicBookingPath?: string;
+    publicBookingUrl?: string;
     photos?: BusinessPhoto[];
     categories: string[];
     accountType: "solo" | "team";
@@ -169,7 +173,18 @@ const settingsExtras = {
     joinEmpty: "Новых запросов пока нет.",
     joinOwner: "Владелец бизнеса",
     joinRole: "Роль",
-    joinRequestSaved: "Запрос обновлён."
+    joinRequestSaved: "Запрос обновлён.",
+    publicBookingTitle: "Публичная ссылка для записи",
+    publicBookingText: "Делитесь этой ссылкой с клиентами, публикуйте её в соцсетях и отправляйте мастерам. По ней откроется страница онлайн-записи.",
+    publicBookingEnabled: "Онлайн-запись включена",
+    publicBookingDisabled: "Онлайн-запись выключена",
+    copyLink: "Копировать ссылку",
+    openLink: "Открыть страницу",
+    shareLink: "Поделиться",
+    linkCopied: "Ссылка для записи скопирована.",
+    linkSelected: "Ссылка выделена. Скопируйте её вручную, если браузер запретил буфер обмена.",
+    closeSettings: "Закрыть настройки",
+    logoutConfirm: "Выйти из кабинета? Если есть свежие изменения, мы постараемся сохранить их перед выходом."
   },
   uk: {
     readFileFailed: "Не вдалося прочитати файл.",
@@ -183,7 +198,18 @@ const settingsExtras = {
     joinEmpty: "Нових запитів поки немає.",
     joinOwner: "Власник бізнесу",
     joinRole: "Роль",
-    joinRequestSaved: "Запит оновлено."
+    joinRequestSaved: "Запит оновлено.",
+    publicBookingTitle: "Публічне посилання для запису",
+    publicBookingText: "Діліться цим посиланням із клієнтами, публікуйте його в соцмережах і надсилайте майстрам. За ним відкриється сторінка онлайн-запису.",
+    publicBookingEnabled: "Онлайн-запис увімкнено",
+    publicBookingDisabled: "Онлайн-запис вимкнено",
+    copyLink: "Скопіювати посилання",
+    openLink: "Відкрити сторінку",
+    shareLink: "Поділитися",
+    linkCopied: "Посилання для запису скопійовано.",
+    linkSelected: "Посилання виділено. Скопіюйте його вручну, якщо браузер заборонив буфер обміну.",
+    closeSettings: "Закрити налаштування",
+    logoutConfirm: "Вийти з кабінету? Якщо є свіжі зміни, ми спробуємо зберегти їх перед виходом."
   },
   en: {
     readFileFailed: "Could not read the file.",
@@ -197,7 +223,18 @@ const settingsExtras = {
     joinEmpty: "No new requests yet.",
     joinOwner: "Business owner",
     joinRole: "Role",
-    joinRequestSaved: "Request updated."
+    joinRequestSaved: "Request updated.",
+    publicBookingTitle: "Public booking link",
+    publicBookingText: "Share this link with clients, post it on social media, and send it to your specialists. It opens the online booking page.",
+    publicBookingEnabled: "Online booking is on",
+    publicBookingDisabled: "Online booking is off",
+    copyLink: "Copy link",
+    openLink: "Open page",
+    shareLink: "Share",
+    linkCopied: "The booking link has been copied.",
+    linkSelected: "The link is selected. Copy it manually if the browser blocked clipboard access.",
+    closeSettings: "Close settings",
+    logoutConfirm: "Sign out now? If there are recent changes, we will try to save them before leaving."
   }
 } as const;
 
@@ -257,6 +294,7 @@ function readFileAsDataUrl(file: File, errorText: string) {
 }
 
 export default function SettingsView({ initialData }: SettingsViewProps) {
+  const router = useRouter();
   const initialLanguage = languageFromProfile(initialData.professional.language);
   const { t, language } = useProLanguage(initialLanguage);
   const copy = settingsExtras[language];
@@ -274,6 +312,10 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
   const autoSaveTimerRef = useRef<number | null>(null);
   const lastSavedSnapshotRef = useRef("");
   const latestSnapshotRef = useRef("");
+  const publicBookingInputRef = useRef<HTMLInputElement | null>(null);
+  const publicBookingUrl = data.business.publicBookingUrl ?? "";
+  const canUseNativeShare =
+    typeof navigator !== "undefined" && typeof navigator.share === "function";
 
   useEffect(() => {
     window.localStorage.setItem("rezervo-pro-language", initialLanguage);
@@ -312,6 +354,46 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
         photos: normalizePhotos(nextPhotos)
       }
     }));
+  }
+
+  function selectPublicBookingUrl() {
+    publicBookingInputRef.current?.focus();
+    publicBookingInputRef.current?.select();
+  }
+
+  async function copyPublicBookingUrl() {
+    if (!publicBookingUrl) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(publicBookingUrl);
+      setStatus(copy.linkCopied);
+    } catch {
+      selectPublicBookingUrl();
+      setStatus(copy.linkSelected);
+    }
+  }
+
+  async function sharePublicBookingUrl() {
+    if (!publicBookingUrl) {
+      return;
+    }
+
+    if (!canUseNativeShare) {
+      await copyPublicBookingUrl();
+      return;
+    }
+
+    try {
+      await navigator.share({
+        title: data.business.name || "Timviz",
+        text: copy.publicBookingTitle,
+        url: publicBookingUrl
+      });
+    } catch {
+      // Ignore cancelled native share sheets.
+    }
   }
 
   async function handleBusinessPhotoUpload(event: ChangeEvent<HTMLInputElement>) {
@@ -680,6 +762,28 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
     }
   }
 
+  async function handleLogoutConfirm() {
+    if (typeof window !== "undefined" && !window.confirm(copy.logoutConfirm)) {
+      return;
+    }
+
+    if (autoSaveTimerRef.current) {
+      window.clearTimeout(autoSaveTimerRef.current);
+      autoSaveTimerRef.current = null;
+    }
+
+    if (!isSaving && autosaveSnapshot !== lastSavedSnapshotRef.current) {
+      await saveSettings(0, true);
+    }
+
+    await fetch("/api/pro/logout", {
+      method: "POST"
+    });
+
+    router.push("/pro/login");
+    router.refresh();
+  }
+
   return (
     <main className={`${styles.workspaceShell} ${styles.scheduleShell}`}>
       <ProSidebar
@@ -688,13 +792,32 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
         canManageStaff={initialData.membership.scope === "owner"}
       />
       <section className={styles.settingsShell}>
+        <ProWorkspaceHeader
+          businessName={initialData.business.name}
+          viewerName={`${initialData.professional.firstName} ${initialData.professional.lastName}`.trim() || initialData.professional.email}
+          viewerAvatarUrl={initialData.professional.avatarUrl}
+          viewerInitials={`${initialData.professional.firstName?.[0] ?? ""}${initialData.professional.lastName?.[0] ?? ""}`.toUpperCase() || "RZ"}
+          publicBookingUrl={initialData.business.publicBookingUrl}
+          publicBookingEnabled={initialData.business.allowOnlineBooking === true}
+        />
+
         <header className={styles.settingsHero}>
+          <button
+            type="button"
+            className={styles.settingsCloseButton}
+            aria-label={copy.closeSettings}
+            title={copy.closeSettings}
+            onClick={() => {
+              void handleLogoutConfirm();
+            }}
+          >
+            <span aria-hidden="true">×</span>
+          </button>
           <div>
             <p className={styles.eyebrow}>{t.settings.kicker}</p>
             <h1>{t.settings.title}</h1>
           </div>
-          <div className={styles.rowActions}>
-            <LogoutButton />
+          <div className={styles.settingsHeroActions}>
             <button
               type="button"
               className={styles.primaryButton}
@@ -837,6 +960,61 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
                   <small className={styles.settingsInlineHint}>{t.settings.onlineBookingHint}</small>
                 </label>
               ) : null}
+
+              <div className={`${styles.settingsWideField} ${styles.settingsShareCard}`}>
+                <div className={styles.settingsShareCardHeader}>
+                  <div>
+                    <strong>{copy.publicBookingTitle}</strong>
+                    <p>{copy.publicBookingText}</p>
+                  </div>
+                  <span className={`${styles.settingsShareStatus} ${data.business.allowOnlineBooking ? styles.settingsShareStatusActive : ""}`}>
+                    {data.business.allowOnlineBooking ? copy.publicBookingEnabled : copy.publicBookingDisabled}
+                  </span>
+                </div>
+
+                <div className={styles.settingsShareField}>
+                  <input
+                    ref={publicBookingInputRef}
+                    className={styles.input}
+                    readOnly
+                    value={publicBookingUrl}
+                    onFocus={(event) => event.currentTarget.select()}
+                    onClick={(event) => event.currentTarget.select()}
+                  />
+                </div>
+
+                <div className={styles.settingsShareActions}>
+                  <button
+                    type="button"
+                    className={styles.primaryButton}
+                    onClick={() => void copyPublicBookingUrl()}
+                  >
+                    {copy.copyLink}
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.ghostButton}
+                    onClick={() => {
+                      if (!publicBookingUrl) {
+                        return;
+                      }
+
+                      window.open(publicBookingUrl, "_blank", "noopener,noreferrer");
+                    }}
+                  >
+                    {copy.openLink}
+                  </button>
+                  {canUseNativeShare ? (
+                    <button
+                      type="button"
+                      className={styles.ghostButton}
+                      onClick={() => void sharePublicBookingUrl()}
+                    >
+                      {copy.shareLink}
+                    </button>
+                  ) : null}
+                </div>
+              </div>
             </div>
           </section>
 
@@ -966,6 +1144,8 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
                 <input
                   className={styles.input}
                   value={data.business.address}
+                  onFocus={(event) => event.currentTarget.select()}
+                  onClick={(event) => event.currentTarget.select()}
                   onChange={(event) =>
                     setData((current) => ({
                       ...current,

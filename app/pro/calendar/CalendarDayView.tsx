@@ -19,10 +19,12 @@ import {
 import {
   buildInternationalPhone,
   formatPhoneLocal,
+  getPhoneEditingState,
   getPhoneRule,
   getPhoneValidationMessage,
   isPhoneValid,
-  onlyPhoneDigits
+  onlyPhoneDigits,
+  phoneCountries
 } from "../../../lib/phone-format";
 
 type CalendarAppointment = {
@@ -109,6 +111,9 @@ type CalendarSnapshot = {
       name: string;
       accountType: "solo" | "team";
       categories: string[];
+      allowOnlineBooking?: boolean;
+      publicBookingPath?: string;
+      publicBookingUrl?: string;
       workScheduleMode: WorkScheduleMode;
       workSchedule: WorkSchedule;
       customSchedule: CustomSchedule;
@@ -307,7 +312,13 @@ const CALENDAR_TEXT: Record<AppLanguage, {
   telegram: string;
   viber: string;
   contactPhoneHint: string;
+  changeClient: string;
   saveVisit: string;
+  deleteVisitConfirmTitle: string;
+  deleteBlockConfirmTitle: string;
+  deleteConfirmText: string;
+  deleteCancel: string;
+  deleteConfirm: string;
   newClientModalTitle: string;
   newClientModalText: string;
   addClientDataUpper: string;
@@ -323,6 +334,16 @@ const CALENDAR_TEXT: Record<AppLanguage, {
   helpSupport: string;
   logout: string;
   language: string;
+  publicLink: string;
+  publicLinkTitle: string;
+  publicLinkHint: string;
+  publicLinkCopy: string;
+  publicLinkOpen: string;
+  publicLinkShare: string;
+  publicLinkCopied: string;
+  publicLinkSelected: string;
+  publicLinkDisabled: string;
+  publicLinkEnabled: string;
   recentBookingTitle: string;
 }> = {
   ru: {
@@ -433,7 +454,13 @@ const CALENDAR_TEXT: Record<AppLanguage, {
     telegram: "Telegram",
     viber: "Viber",
     contactPhoneHint: "Добавьте телефон клиента, чтобы быстро написать ему в мессенджер.",
+    changeClient: "Сменить клиента",
     saveVisit: "Сохранить визит",
+    deleteVisitConfirmTitle: "Вы точно хотите удалить запись?",
+    deleteBlockConfirmTitle: "Вы точно хотите удалить блок времени?",
+    deleteConfirmText: "Удаление сотрет запись из календаря и отменит быстрый возврат. Это действие нельзя отменить.",
+    deleteCancel: "Нет",
+    deleteConfirm: "Да, удалить",
     newClientModalTitle: "Новый клиент?",
     newClientModalText: "Добавь данные клиента, чтобы отправлять напоминания о визитах и мотивировать его на повторные записи.",
     addClientDataUpper: "ДОБАВИТЬ ДАННЫЕ КЛИЕНТА",
@@ -449,6 +476,16 @@ const CALENDAR_TEXT: Record<AppLanguage, {
     helpSupport: "Помощь и поддержка",
     logout: "Выйти",
     language: "Язык",
+    publicLink: "Публичная ссылка",
+    publicLinkTitle: "Ссылка для онлайн-записи",
+    publicLinkHint: "Отправляйте ссылку клиентам, публикуйте в соцсетях или копируйте в один тап.",
+    publicLinkCopy: "Копировать",
+    publicLinkOpen: "Открыть страницу",
+    publicLinkShare: "Поделиться",
+    publicLinkCopied: "Ссылка для записи скопирована.",
+    publicLinkSelected: "Ссылка выделена. Скопируйте её вручную, если браузер запретил доступ к буферу.",
+    publicLinkDisabled: "Онлайн-запись выключена",
+    publicLinkEnabled: "Онлайн-запись включена",
     recentBookingTitle: "Новая запись"
   },
   uk: {
@@ -559,7 +596,13 @@ const CALENDAR_TEXT: Record<AppLanguage, {
     telegram: "Telegram",
     viber: "Viber",
     contactPhoneHint: "Додайте телефон клієнта, щоб швидко написати йому в месенджер.",
+    changeClient: "Змінити клієнта",
     saveVisit: "Зберегти візит",
+    deleteVisitConfirmTitle: "Ви точно хочете видалити запис?",
+    deleteBlockConfirmTitle: "Ви точно хочете видалити блок часу?",
+    deleteConfirmText: "Видалення прибере запис із календаря. Повернути дію після підтвердження не вийде.",
+    deleteCancel: "Ні",
+    deleteConfirm: "Так, видалити",
     newClientModalTitle: "Новий клієнт?",
     newClientModalText: "Додайте дані клієнта, щоб надсилати нагадування про візити й мотивувати його на повторні записи.",
     addClientDataUpper: "ДОДАТИ ДАНІ КЛІЄНТА",
@@ -575,6 +618,16 @@ const CALENDAR_TEXT: Record<AppLanguage, {
     helpSupport: "Допомога і підтримка",
     logout: "Вийти",
     language: "Мова",
+    publicLink: "Публічне посилання",
+    publicLinkTitle: "Посилання для онлайн-запису",
+    publicLinkHint: "Надсилайте посилання клієнтам, публікуйте в соцмережах або копіюйте в один дотик.",
+    publicLinkCopy: "Скопіювати",
+    publicLinkOpen: "Відкрити сторінку",
+    publicLinkShare: "Поділитися",
+    publicLinkCopied: "Посилання для запису скопійовано.",
+    publicLinkSelected: "Посилання виділено. Скопіюйте його вручну, якщо браузер заборонив буфер обміну.",
+    publicLinkDisabled: "Онлайн-запис вимкнено",
+    publicLinkEnabled: "Онлайн-запис увімкнено",
     recentBookingTitle: "Новий запис"
   },
   en: {
@@ -685,7 +738,13 @@ const CALENDAR_TEXT: Record<AppLanguage, {
     telegram: "Telegram",
     viber: "Viber",
     contactPhoneHint: "Add the client's phone to quickly message them in a messenger.",
+    changeClient: "Change client",
     saveVisit: "Save visit",
+    deleteVisitConfirmTitle: "Are you sure you want to delete this appointment?",
+    deleteBlockConfirmTitle: "Are you sure you want to delete this blocked time?",
+    deleteConfirmText: "This will remove the item from the calendar. You won't be able to undo it afterwards.",
+    deleteCancel: "No",
+    deleteConfirm: "Yes, delete",
     newClientModalTitle: "New client?",
     newClientModalText: "Add client details to send visit reminders and encourage repeat bookings.",
     addClientDataUpper: "ADD CLIENT DETAILS",
@@ -701,9 +760,74 @@ const CALENDAR_TEXT: Record<AppLanguage, {
     helpSupport: "Help and support",
     logout: "Log out",
     language: "Language",
+    publicLink: "Public link",
+    publicLinkTitle: "Online booking link",
+    publicLinkHint: "Send it to clients, post it on social media, or copy it in one tap.",
+    publicLinkCopy: "Copy link",
+    publicLinkOpen: "Open page",
+    publicLinkShare: "Share",
+    publicLinkCopied: "The booking link has been copied.",
+    publicLinkSelected: "The link is selected. Copy it manually if the browser blocked clipboard access.",
+    publicLinkDisabled: "Online booking is off",
+    publicLinkEnabled: "Online booking is on",
     recentBookingTitle: "New booking"
   }
 };
+
+function ContactChannelIcon({ kind }: { kind: "call" | "whatsapp" | "telegram" | "viber" }) {
+  if (kind === "call") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path
+          d="M7.2 4.8c.4-.4 1-.6 1.6-.4l2 .7c.7.2 1.1.9 1 1.6l-.3 2.3c1.2 2.3 3.1 4.2 5.4 5.4l2.3-.3c.7-.1 1.4.3 1.6 1l.7 2c.2.6 0 1.2-.4 1.6l-1 1c-.8.8-2 1.1-3.1.8-6.7-1.8-12-7.1-13.8-13.8-.3-1.1 0-2.3.8-3.1l1-1Z"
+          fill="currentColor"
+        />
+      </svg>
+    );
+  }
+
+  if (kind === "whatsapp") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path
+          d="M12 3.6a8.4 8.4 0 0 0-7.2 12.7l-1 4 4.1-1A8.4 8.4 0 1 0 12 3.6Zm4.8 11.9c-.2.5-1 .9-1.5 1-.4.1-.9.2-1.4 0-1-.3-2.2-1-3.3-2-1-1-1.8-2.2-2-3.2-.1-.5-.1-1 .1-1.4.1-.4.5-1.2 1-1.4.2-.1.4-.1.5 0 .1 0 .3 0 .4.3l.7 1.6c.1.2.1.4 0 .6l-.3.5c-.1.2-.2.3 0 .6.3.6.8 1.2 1.3 1.7.5.5 1.1 1 1.7 1.3.2.1.4.1.6 0l.5-.3c.2-.1.4-.1.6 0l1.6.7c.2.1.3.2.3.4.1.1.1.3 0 .5Z"
+          fill="currentColor"
+        />
+      </svg>
+    );
+  }
+
+  if (kind === "telegram") {
+    return (
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path
+          d="m20.4 5.2-2.6 13c-.2.9-.7 1.1-1.5.7l-4.2-3.1-2 .2-.9 3c-.1.3-.3.4-.6.4-.2 0-.4-.1-.6-.2l.3-4 7.3-6.6c.3-.3-.1-.4-.4-.2l-9 5.7-3.9-1.2c-.9-.3-.9-.9.2-1.3L19 4.3c.8-.3 1.5.2 1.3.9Z"
+          fill="currentColor"
+        />
+      </svg>
+    );
+  }
+
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M12.1 3.5c4.7 0 8.6 3.4 8.6 7.7 0 4.2-3.9 7.7-8.6 7.7-.4 0-.8 0-1.2-.1l-4.6 2.4 1.2-3.8c-2.4-1.4-4-3.8-4-6.2 0-4.3 3.9-7.7 8.6-7.7Zm3.4 9.7c.2-.1.3-.4.2-.6l-.5-1c-.1-.2-.4-.3-.6-.2l-1 .5a.5.5 0 0 1-.5 0 5.5 5.5 0 0 1-1.2-1 5.5 5.5 0 0 1-1-1.2.5.5 0 0 1 0-.5l.5-1a.5.5 0 0 0-.2-.6l-1-.5a.5.5 0 0 0-.6.2l-.4.8c-.4.8-.4 1.7 0 2.5.4.8 1 1.7 1.8 2.5s1.7 1.4 2.5 1.8c.8.4 1.7.4 2.5 0l.8-.4Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
+
+function MoveHandleIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        d="M12 2.6 15.8 6.5h-2.4v3h-2.8v-3H8.2L12 2.6Zm0 18.8-3.8-3.9h2.4v-3h2.8v3h2.4L12 21.4ZM2.6 12l3.9-3.8v2.4h3v2.8h-3v2.4L2.6 12Zm18.8 0-3.9 3.8v-2.4h-3v-2.8h3V8.2l3.9 3.8Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
 
 function addDays(dateKey: string, amount: number) {
   const next = new Date(`${dateKey}T00:00:00`);
@@ -1006,7 +1130,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
   const [viewMode, setViewMode] = useState<CalendarViewMode>("day");
   const [selectedProfessionalId, setSelectedProfessionalId] = useState(professionalId);
   const [visibleProfessionalIds, setVisibleProfessionalIds] = useState<string[]>([professionalId]);
-  const [activeToolbarMenu, setActiveToolbarMenu] = useState<null | "view" | "team" | "account">(null);
+  const [activeToolbarMenu, setActiveToolbarMenu] = useState<null | "view" | "team" | "share" | "account">(null);
   const [uiLanguage, setUiLanguage] = useState<AppLanguage>("ru");
   const [snapshot, setSnapshot] = useState<CalendarSnapshot | null>(null);
   const [selectedTime, setSelectedTime] = useState("");
@@ -1025,6 +1149,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
   const [priceAmountDraft, setPriceAmountDraft] = useState("0");
   const [detailsCustomerNameDraft, setDetailsCustomerNameDraft] = useState("");
   const [detailsCustomerPhoneDraft, setDetailsCustomerPhoneDraft] = useState("");
+  const [detailsCustomerPhoneCountryDraft, setDetailsCustomerPhoneCountryDraft] = useState("Ukraine");
   const [detailsNotesDraft, setDetailsNotesDraft] = useState("");
   const [visitItems, setVisitItems] = useState<VisitServiceDraft[]>([]);
   const [editingServiceIndex, setEditingServiceIndex] = useState(0);
@@ -1034,11 +1159,19 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
   const [showNewClientForm, setShowNewClientForm] = useState(false);
   const [newClientName, setNewClientName] = useState("");
   const [newClientPhone, setNewClientPhone] = useState("");
+  const [newClientPhoneCountry, setNewClientPhoneCountry] = useState("Ukraine");
   const [selectedCustomer, setSelectedCustomer] = useState<CalendarClient | null>(null);
+  const [clientSearchReturnStage, setClientSearchReturnStage] = useState<"visit" | "details">("visit");
   const [showClientPrompt, setShowClientPrompt] = useState(false);
   const [isSavingVisit, setIsSavingVisit] = useState(false);
+  const [deleteConfirmTarget, setDeleteConfirmTarget] = useState<CalendarAppointment | null>(null);
+  const [isDeletingAppointment, setIsDeletingAppointment] = useState(false);
   const [isMobileViewport, setIsMobileViewport] = useState(false);
+  const [mobileTeamButtonPosition, setMobileTeamButtonPosition] = useState<{ top: number; left: number } | null>(null);
   const [teamQuery, setTeamQuery] = useState("");
+  const mobileDayHourColumnWidth = 56;
+  const dayMemberColumnWidth = isMobileViewport ? 184 : 280;
+  const teamBoardDayWidth = isMobileViewport ? 92 : 180;
   const calendarHourHeight = isMobileViewport ? CALENDAR_MOBILE_HOUR_HEIGHT : CALENDAR_HOUR_HEIGHT;
   const minuteHeight = calendarHourHeight / 60;
   const slotHeight = minuteHeight * CALENDAR_GRID_STEP_MINUTES;
@@ -1046,10 +1179,14 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
   const bookingCardMinHeight = isMobileViewport ? MOBILE_MIN_BOOKING_CARD_HEIGHT : MIN_BOOKING_CARD_HEIGHT;
   const viewMenuButtonRef = useRef<HTMLButtonElement | null>(null);
   const teamMenuButtonRef = useRef<HTMLButtonElement | null>(null);
+  const mobileTeamMenuButtonRef = useRef<HTMLButtonElement | null>(null);
+  const shareMenuButtonRef = useRef<HTMLButtonElement | null>(null);
   const accountMenuButtonRef = useRef<HTMLButtonElement | null>(null);
   const viewMenuPanelRef = useRef<HTMLDivElement | null>(null);
   const teamMenuPanelRef = useRef<HTMLDivElement | null>(null);
+  const shareMenuPanelRef = useRef<HTMLDivElement | null>(null);
   const accountMenuPanelRef = useRef<HTMLDivElement | null>(null);
+  const shareLinkInputRef = useRef<HTMLInputElement | null>(null);
   const quickMenuRef = useRef<HTMLDivElement | null>(null);
 
   const dragRef = useRef<
@@ -1070,6 +1207,56 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
       text,
       tone
     });
+  }
+
+  function applyPhoneDraft(
+    phone: string,
+    fallbackCountry: string,
+    setters: {
+      setCountry: (country: string) => void;
+      setPhone: (value: string) => void;
+    }
+  ) {
+    const phoneState = getPhoneEditingState(phone, fallbackCountry);
+    setters.setCountry(phoneState.country);
+    setters.setPhone(phoneState.localPhone);
+  }
+
+  function openClientSearch(returnStage: "visit" | "details") {
+    setClientSearchReturnStage(returnStage);
+    setDrawerStage("client-search");
+  }
+
+  function applySelectedClient(client: CalendarClient | null) {
+    setSelectedCustomer(client);
+    setClientQuery("");
+    setShowNewClientForm(false);
+    setNewClientName("");
+    setNewClientPhone("");
+    setNewClientPhoneCountry(accountCountry);
+
+    if (clientSearchReturnStage === "details" && selectedAppointment?.kind === "appointment") {
+      setDetailsCustomerNameDraft(client?.name ?? "");
+      applyPhoneDraft(client?.phone ?? "", accountCountry, {
+        setCountry: setDetailsCustomerPhoneCountryDraft,
+        setPhone: setDetailsCustomerPhoneDraft
+      });
+      setDrawerStage("details");
+      return;
+    }
+
+    setDrawerStage("visit");
+  }
+
+  function requestDeleteAppointment(appointment: CalendarAppointment) {
+    setDeleteConfirmTarget(appointment);
+  }
+
+  function closeDeleteConfirm() {
+    if (isDeletingAppointment) {
+      return;
+    }
+    setDeleteConfirmTarget(null);
   }
 
   function renderCalendarToast() {
@@ -1180,12 +1367,15 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
     setToast(null);
     setVisitItems([]);
     setSelectedCustomer(null);
+    setClientSearchReturnStage("visit");
     setServiceQuery("");
     setClientQuery("");
     setShowNewClientForm(false);
     setNewClientName("");
     setNewClientPhone("");
     setTeamQuery("");
+    setDeleteConfirmTarget(null);
+    setIsDeletingAppointment(false);
   }
 
   useEffect(() => {
@@ -1210,18 +1400,23 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
       return;
     }
 
+    const teamAnchor = isMobileViewport ? mobileTeamMenuButtonRef.current : teamMenuButtonRef.current;
     const anchor =
       activeToolbarMenu === "view"
         ? viewMenuButtonRef.current
         : activeToolbarMenu === "team"
-          ? teamMenuButtonRef.current
-          : accountMenuButtonRef.current;
+          ? teamAnchor
+          : activeToolbarMenu === "share"
+            ? shareMenuButtonRef.current
+            : accountMenuButtonRef.current;
     const panel =
       activeToolbarMenu === "view"
         ? viewMenuPanelRef.current
         : activeToolbarMenu === "team"
           ? teamMenuPanelRef.current
-          : accountMenuPanelRef.current;
+          : activeToolbarMenu === "share"
+            ? shareMenuPanelRef.current
+            : accountMenuPanelRef.current;
 
     function handlePointerDown(event: MouseEvent) {
       const target = event.target;
@@ -1248,7 +1443,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
       window.removeEventListener("mousedown", handlePointerDown);
       window.removeEventListener("keydown", handleEscape);
     };
-  }, [activeToolbarMenu]);
+  }, [activeToolbarMenu, isMobileViewport]);
 
   useEffect(() => {
     if (!quickMenu.visible) {
@@ -1326,9 +1521,10 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
   const todayDate = formatDateKey(new Date());
   const t = CALENDAR_TEXT[uiLanguage];
   const locale = getLocale(uiLanguage);
-  const accountCountry = snapshot?.viewer.country;
+  const accountCountry = snapshot?.viewer.country || "Ukraine";
   const accountCurrency = snapshot?.viewer.currency;
-  const phoneRule = getPhoneRule(accountCountry);
+  const newClientPhoneRule = getPhoneRule(newClientPhoneCountry || accountCountry);
+  const detailsCustomerPhoneRule = getPhoneRule(detailsCustomerPhoneCountryDraft || accountCountry);
   const viewedProfessionalName = buildDisplayName(
     snapshot?.workspace.professional.firstName,
     snapshot?.workspace.professional.lastName,
@@ -1373,6 +1569,55 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
   );
   const isShowingAllTeam = memberCalendars.length > 1 && visibleCalendarIds.length === memberCalendars.length;
   const isTeamMultiView = visibleCalendarIds.length > 1;
+  const publicBookingUrl = snapshot?.workspace.business.publicBookingUrl ?? "";
+  const publicBookingEnabled = snapshot?.workspace.business.allowOnlineBooking === true;
+  const canUseNativeShare =
+    typeof navigator !== "undefined" && typeof navigator.share === "function";
+
+  function selectPublicBookingLink() {
+    shareLinkInputRef.current?.focus();
+    shareLinkInputRef.current?.select();
+  }
+
+  async function copyPublicBookingLink(closeMenu = false) {
+    if (!publicBookingUrl) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(publicBookingUrl);
+      showToast(t.publicLinkCopied, "success");
+    } catch {
+      selectPublicBookingLink();
+      showToast(t.publicLinkSelected, "info");
+    }
+
+    if (closeMenu) {
+      setActiveToolbarMenu(null);
+    }
+  }
+
+  async function sharePublicBookingLink() {
+    if (!publicBookingUrl) {
+      return;
+    }
+
+    if (!canUseNativeShare) {
+      await copyPublicBookingLink(true);
+      return;
+    }
+
+    try {
+      await navigator.share({
+        title: snapshot?.workspace.business.name || "Timviz",
+        text: t.publicLinkTitle,
+        url: publicBookingUrl
+      });
+      setActiveToolbarMenu(null);
+    } catch {
+      // Ignore cancelled native share sheets.
+    }
+  }
   const allVisibleAppointments = useMemo(
     () => visibleCalendars.flatMap((member) => member.appointments),
     [visibleCalendars]
@@ -1423,19 +1668,12 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
         : viewMode === "threeDay"
           ? selectedThreeDayLabel
           : selectedDateLong;
-  const viewModeOptions: Array<{ value: CalendarViewMode; label: string }> =
-    visibleCalendarIds.length > 1
-      ? [
-          { value: "day", label: t.day },
-          { value: "threeDay", label: t.threeDays },
-          { value: "week", label: t.week },
-          { value: "month", label: t.month }
-        ]
-      : [
-          { value: "day", label: t.day },
-          { value: "week", label: t.week },
-          { value: "month", label: t.month }
-        ];
+  const viewModeOptions: Array<{ value: CalendarViewMode; label: string }> = [
+    { value: "day", label: t.day },
+    { value: "threeDay", label: t.threeDays },
+    { value: "week", label: t.week },
+    { value: "month", label: t.month }
+  ];
   const monthGrid = useMemo(() => getMonthGrid(selectedDate), [selectedDate]);
   const hours = Array.from({ length: 24 }, (_, index) => index);
   const scheduleOverrides = useMemo<CustomSchedule>(() => {
@@ -1525,6 +1763,34 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
       return [selectedProfessionalId];
     });
   }, [memberCalendars, selectedProfessionalId]);
+
+  useEffect(() => {
+    if (!isMobileViewport || !canSwitchProfessional) {
+      setMobileTeamButtonPosition(null);
+      return;
+    }
+
+    const updatePosition = () => {
+      const frameRect = scrollFrameRef.current?.getBoundingClientRect();
+      if (!frameRect) {
+        return;
+      }
+
+      setMobileTeamButtonPosition({
+        top: Math.max(96, Math.round(frameRect.top + 12)),
+        left: Math.round(frameRect.left + 10)
+      });
+    };
+
+    updatePosition();
+    window.addEventListener("resize", updatePosition);
+    window.addEventListener("scroll", updatePosition, true);
+
+    return () => {
+      window.removeEventListener("resize", updatePosition);
+      window.removeEventListener("scroll", updatePosition, true);
+    };
+  }, [canSwitchProfessional, isMobileViewport, viewMode, selectedDate, visibleCalendarIds.length]);
 
   useEffect(() => {
     const frame = scrollFrameRef.current;
@@ -1668,8 +1934,12 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
     });
   }, [locale, selectedAppointment, selectedDateLabel]);
   const selectedAppointmentContactPhone = useMemo(
-    () => getNormalizedContactPhone(detailsCustomerPhoneDraft || selectedAppointment?.customerPhone || "", accountCountry),
-    [accountCountry, detailsCustomerPhoneDraft, selectedAppointment]
+    () =>
+      getNormalizedContactPhone(
+        detailsCustomerPhoneDraft || selectedAppointment?.customerPhone || "",
+        detailsCustomerPhoneDraft ? detailsCustomerPhoneCountryDraft : accountCountry
+      ),
+    [accountCountry, detailsCustomerPhoneCountryDraft, detailsCustomerPhoneDraft, selectedAppointment]
   );
   const selectedAppointmentContactLinks = useMemo(
     () => getContactLinks(selectedAppointmentContactPhone),
@@ -1726,6 +1996,12 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
       ),
     [visibleCalendars]
   );
+
+  useEffect(() => {
+    setNewClientPhoneCountry((current) => current || accountCountry);
+    setDetailsCustomerPhoneCountryDraft((current) => current || accountCountry);
+  }, [accountCountry]);
+
   useEffect(() => {
     if (!selectedAppointment || selectedAppointment.kind !== "appointment") {
       return;
@@ -1734,9 +2010,12 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
     setAttendanceDraft(selectedAppointment.attendance);
     setPriceAmountDraft(String(selectedAppointment.priceAmount ?? 0));
     setDetailsCustomerNameDraft(selectedAppointment.customerName || "");
-    setDetailsCustomerPhoneDraft(selectedAppointment.customerPhone || "");
+    applyPhoneDraft(selectedAppointment.customerPhone || "", accountCountry, {
+      setCountry: setDetailsCustomerPhoneCountryDraft,
+      setPhone: setDetailsCustomerPhoneDraft
+    });
     setDetailsNotesDraft(selectedAppointment.notes || "");
-  }, [selectedAppointment]);
+  }, [accountCountry, selectedAppointment]);
 
   useEffect(() => {
     function handlePointerMove(event: PointerEvent) {
@@ -1887,9 +2166,11 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
     setQuickMenu({ visible: false, x: 0, y: 0, time: "", professionalId: targetProfessionalId });
     setVisitItems([initialItem]);
     setSelectedCustomer(null);
+    setClientSearchReturnStage("visit");
     setServiceQuery("");
     setClientQuery("");
     setShowClientPrompt(false);
+    setDeleteConfirmTarget(null);
     if (isWithinWorkingWindow(slot, targetDaySchedule)) {
       setToast(null);
     } else {
@@ -2051,12 +2332,12 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
       return;
     }
 
-    if (newClientPhone.trim() && !isPhoneValid(accountCountry ?? "", newClientPhone)) {
-      showToast(getPhoneValidationMessage(accountCountry ?? ""), "warning");
+    if (newClientPhone.trim() && !isPhoneValid(newClientPhoneCountry || accountCountry, newClientPhone)) {
+      showToast(getPhoneValidationMessage(newClientPhoneCountry || accountCountry), "warning");
       return;
     }
 
-    const fullPhone = buildInternationalPhone(accountCountry ?? "", newClientPhone);
+    const fullPhone = buildInternationalPhone(newClientPhoneCountry || accountCountry, newClientPhone);
 
     const response = await fetch("/api/pro/clients", {
       method: "POST",
@@ -2079,12 +2360,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
       return;
     }
 
-    setSelectedCustomer({ name, phone: fullPhone });
-    setClientQuery("");
-    setNewClientName("");
-    setNewClientPhone("");
-    setShowNewClientForm(false);
-    setDrawerStage("visit");
+    applySelectedClient({ name, phone: fullPhone });
   }
 
   async function createBlocked(kindLabel: string, serviceName: string) {
@@ -2117,7 +2393,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
 
   async function deleteAppointment(appointment: CalendarAppointment, closeDrawer = false) {
     if (!appointment) {
-      return;
+      return false;
     }
 
     const params = new URLSearchParams({
@@ -2131,7 +2407,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
 
     if (!response.ok) {
       showToast(payload.error || t.deleteBlockFailed, "error");
-      return;
+      return false;
     }
 
     await refreshSnapshot();
@@ -2140,6 +2416,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
       setSelectedAppointmentId(null);
     }
     showToast(appointment.kind === "blocked" ? t.blockedRemoved : t.visitRemoved, "success");
+    return true;
   }
 
   async function deleteSelectedAppointment() {
@@ -2147,7 +2424,22 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
       return;
     }
 
-    await deleteAppointment(selectedAppointment, true);
+    requestDeleteAppointment(selectedAppointment);
+  }
+
+  async function confirmDeleteAppointment() {
+    if (!deleteConfirmTarget) {
+      return;
+    }
+
+    setIsDeletingAppointment(true);
+    const shouldCloseDrawer = selectedAppointmentId === deleteConfirmTarget.id || drawerStage === "details";
+    const deleted = await deleteAppointment(deleteConfirmTarget, shouldCloseDrawer);
+    setIsDeletingAppointment(false);
+
+    if (deleted) {
+      setDeleteConfirmTarget(null);
+    }
   }
 
   async function saveAppointmentMeta() {
@@ -2160,21 +2452,12 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
     const trimmedPhone = detailsCustomerPhoneDraft.trim();
 
     if (trimmedPhone) {
-      if (trimmedPhone.startsWith("+")) {
-        const digits = onlyPhoneDigits(trimmedPhone);
-        if (digits.length < 8) {
-          showToast(getPhoneValidationMessage(accountCountry ?? ""), "warning");
-          return;
-        }
-        normalizedCustomerPhone = `+${digits}`;
-      } else {
-        if (!isPhoneValid(accountCountry ?? "", trimmedPhone)) {
-          showToast(getPhoneValidationMessage(accountCountry ?? ""), "warning");
-          return;
-        }
-
-        normalizedCustomerPhone = buildInternationalPhone(accountCountry ?? "", trimmedPhone);
+      if (!isPhoneValid(detailsCustomerPhoneCountryDraft || accountCountry, trimmedPhone)) {
+        showToast(getPhoneValidationMessage(detailsCustomerPhoneCountryDraft || accountCountry), "warning");
+        return;
       }
+
+      normalizedCustomerPhone = buildInternationalPhone(detailsCustomerPhoneCountryDraft || accountCountry, trimmedPhone);
     }
 
     const response = await fetch("/api/pro/calendar", {
@@ -2348,21 +2631,20 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
 
           <div className={styles.calendarWorkspaceActions}>
             <button
+              ref={shareMenuButtonRef}
               type="button"
-              className={`${styles.calendarIconButton} ${styles.calendarSupportButton}`}
-              aria-label={t.helpSupport}
+              className={`${styles.calendarIconButton} ${styles.calendarShareButton} ${activeToolbarMenu === "share" ? styles.calendarIconButtonActive : ""}`}
+              aria-label={t.publicLink}
               onClick={() => {
-                setActiveToolbarMenu(null);
-                setQuickMenu((current) => ({ ...current, visible: false, x: 0, y: 0, time: "" }));
                 setDrawerStage("closed");
-                window.dispatchEvent(new CustomEvent("rezervo-open-support"));
+                setQuickMenu((current) => ({ ...current, visible: false, x: 0, y: 0, time: "" }));
+                setActiveToolbarMenu((current) => (current === "share" ? null : "share"));
               }}
             >
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M12 4.5c4.7 0 8.5 3.3 8.5 7.4s-3.8 7.4-8.5 7.4c-1.5 0-2.9-.3-4.1-.9L4.5 20l1-3.6C4.6 15.1 3.5 13.6 3.5 11.9c0-4.1 3.8-7.4 8.5-7.4Z" />
-                <circle cx="9" cy="12" r="0.8" fill="currentColor" stroke="none" />
-                <circle cx="12" cy="12" r="0.8" fill="currentColor" stroke="none" />
-                <circle cx="15" cy="12" r="0.8" fill="currentColor" stroke="none" />
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M12 16V5" />
+                <path d="M8.5 8.5 12 5l3.5 3.5" />
+                <path d="M6 14.5v2.3A2.2 2.2 0 0 0 8.2 19h7.6a2.2 2.2 0 0 0 2.2-2.2v-2.3" />
               </svg>
             </button>
 
@@ -2409,6 +2691,68 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
             </button>
 
             <FloatingPopover
+              open={activeToolbarMenu === "share"}
+              anchorEl={shareMenuButtonRef.current}
+              panelRef={shareMenuPanelRef}
+              className={`${styles.calendarAccountMenu} ${styles.calendarShareMenu}`}
+              placement="bottom-end"
+              offset={12}
+            >
+              <div className={styles.calendarShareMenuHero}>
+                <span className={styles.calendarShareMenuEyebrow}>{t.publicLink}</span>
+                <strong>{t.publicLinkTitle}</strong>
+                <p>{t.publicLinkHint}</p>
+                <span className={`${styles.calendarShareStatusPill} ${publicBookingEnabled ? styles.calendarShareStatusPillActive : ""}`}>
+                  {publicBookingEnabled ? t.publicLinkEnabled : t.publicLinkDisabled}
+                </span>
+              </div>
+
+              <div className={styles.calendarShareField}>
+                <input
+                  ref={shareLinkInputRef}
+                  className={styles.calendarShareFieldInput}
+                  readOnly
+                  value={publicBookingUrl}
+                  onFocus={(event) => event.currentTarget.select()}
+                  onClick={(event) => event.currentTarget.select()}
+                />
+              </div>
+
+              <div className={styles.calendarShareActions}>
+                <button
+                  type="button"
+                  className={styles.calendarSharePrimaryAction}
+                  onClick={() => void copyPublicBookingLink()}
+                >
+                  {t.publicLinkCopy}
+                </button>
+                <button
+                  type="button"
+                  className={styles.calendarShareGhostAction}
+                  onClick={() => {
+                    if (!publicBookingUrl) {
+                      return;
+                    }
+
+                    setActiveToolbarMenu(null);
+                    window.open(publicBookingUrl, "_blank", "noopener,noreferrer");
+                  }}
+                >
+                  {t.publicLinkOpen}
+                </button>
+                {canUseNativeShare ? (
+                  <button
+                    type="button"
+                    className={styles.calendarShareGhostAction}
+                    onClick={() => void sharePublicBookingLink()}
+                  >
+                    {t.publicLinkShare}
+                  </button>
+                ) : null}
+              </div>
+            </FloatingPopover>
+
+            <FloatingPopover
               open={activeToolbarMenu === "account"}
               anchorEl={accountMenuButtonRef.current}
               panelRef={accountMenuPanelRef}
@@ -2450,31 +2794,6 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
                 >
                   {t.personalSettings}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveToolbarMenu(null);
-                    window.dispatchEvent(new CustomEvent("rezervo-open-support"));
-                  }}
-                >
-                  {t.helpSupport}
-                </button>
-              </div>
-
-              <div className={styles.calendarAccountMenuSection}>
-                <span className={styles.calendarAccountMenuLabel}>{t.language}</span>
-                <div className={styles.calendarLanguageOptions}>
-                  {(["ru", "uk", "en"] as const).map((languageCode) => (
-                    <button
-                      key={languageCode}
-                      type="button"
-                      className={`${styles.calendarLanguageOption} ${uiLanguage === languageCode ? styles.calendarLanguageOptionActive : ""}`}
-                      onClick={() => void applyLanguage(languageCode)}
-                    >
-                      {languageCode.toUpperCase()}
-                    </button>
-                  ))}
-                </div>
               </div>
 
               <div className={styles.calendarAccountMenuSection}>
@@ -2504,7 +2823,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
             </div>
             <button type="button" className={styles.calendarSquareButton} onClick={() => moveVisiblePeriod(1)}>›</button>
 
-            {canSwitchProfessional ? (
+            {canSwitchProfessional && !isMobileViewport ? (
               <>
                 <button
                   ref={teamMenuButtonRef}
@@ -2522,7 +2841,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
 
                 <FloatingPopover
                   open={activeToolbarMenu === "team"}
-                  anchorEl={teamMenuButtonRef.current}
+                  anchorEl={isMobileViewport ? mobileTeamMenuButtonRef.current : teamMenuButtonRef.current}
                   panelRef={teamMenuPanelRef}
                   className={styles.calendarToolbarMenu}
                   placement="bottom-start"
@@ -2625,65 +2944,178 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
               </div>
             ) : null}
 
+            <div className={styles.calendarTopRightActionGroup}>
+              <button
+                ref={viewMenuButtonRef}
+                type="button"
+                className={styles.calendarViewPill}
+                aria-expanded={activeToolbarMenu === "view"}
+                onClick={() => {
+                  setDrawerStage("closed");
+                  setActiveToolbarMenu((current) => (current === "view" ? null : "view"));
+                }}
+              >
+                <span>{viewModeOptions.find((option) => option.value === viewMode)?.label ?? t.day}</span>
+                <span className={styles.calendarToolbarChevron}>⌄</span>
+              </button>
+
+              <FloatingPopover
+                open={activeToolbarMenu === "view"}
+                anchorEl={viewMenuButtonRef.current}
+                panelRef={viewMenuPanelRef}
+                className={styles.calendarToolbarMenu}
+                placement="bottom-end"
+                offset={12}
+              >
+                <div className={styles.calendarToolbarMenuList}>
+                  {viewModeOptions.map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      className={`${styles.calendarToolbarMenuItem} ${option.value === viewMode ? styles.calendarToolbarMenuItemActive : ""}`}
+                      onClick={() => {
+                        setViewMode(option.value);
+                        setActiveToolbarMenu(null);
+                      }}
+                    >
+                      <div>
+                        <strong>{option.label}</strong>
+                        <span>
+                          {option.value === "day"
+                            ? t.daySchedule
+                            : option.value === "threeDay"
+                              ? t.threeDays
+                              : option.value === "week"
+                                ? t.week
+                                : t.month}
+                        </span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </FloatingPopover>
+
+              <button
+                type="button"
+                className={styles.calendarPrimaryAction}
+                onClick={() => openNewVisit(getSuggestedVisitStartTime())}
+              >
+                + {t.quickNewVisit}
+              </button>
+            </div>
+          </div>
+        </header>
+
+        {canSwitchProfessional && isMobileViewport && mobileTeamButtonPosition ? (
+          <>
             <button
-              ref={viewMenuButtonRef}
+              ref={mobileTeamMenuButtonRef}
               type="button"
-              className={styles.calendarViewPill}
-              aria-expanded={activeToolbarMenu === "view"}
+              className={styles.calendarMobileTeamFab}
+              aria-label={t.chooseSpecialist}
+              title={calendarSelectorLabel}
+              style={mobileTeamButtonPosition}
               onClick={() => {
                 setDrawerStage("closed");
-                setActiveToolbarMenu((current) => (current === "view" ? null : "view"));
+                setActiveToolbarMenu((current) => (current === "team" ? null : "team"));
               }}
             >
-              <span>{viewModeOptions.find((option) => option.value === viewMode)?.label ?? t.day}</span>
-              <span className={styles.calendarToolbarChevron}>⌄</span>
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <circle cx="9" cy="9" r="3.2" />
+                <circle cx="16.5" cy="10.5" r="2.6" />
+                <path d="M4.5 18.3c.7-2.6 2.9-4.2 5.5-4.2s4.8 1.6 5.5 4.2" />
+                <path d="M13.8 18.3c.4-1.6 1.7-2.8 3.5-3.1 1.2-.2 2.4 0 3.2.5" />
+              </svg>
+              {visibleCalendarIds.length > 1 ? (
+                <span className={styles.calendarMobileTeamFabBadge}>{visibleCalendarIds.length}</span>
+              ) : null}
             </button>
 
             <FloatingPopover
-              open={activeToolbarMenu === "view"}
-              anchorEl={viewMenuButtonRef.current}
-              panelRef={viewMenuPanelRef}
+              open={activeToolbarMenu === "team"}
+              anchorEl={mobileTeamMenuButtonRef.current}
+              panelRef={teamMenuPanelRef}
               className={styles.calendarToolbarMenu}
-              placement="bottom-end"
+              placement="bottom-start"
               offset={12}
             >
+              <div className={styles.calendarToolbarMenuSearch}>
+                <span>⌕</span>
+                <input
+                  value={teamQuery}
+                  onChange={(event) => setTeamQuery(event.target.value)}
+                  placeholder={t.searchPlaceholder}
+                />
+              </div>
+              <div className={styles.calendarToolbarMenuSectionLabel}>{t.chooseSpecialist}</div>
               <div className={styles.calendarToolbarMenuList}>
-                {viewModeOptions.map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    className={`${styles.calendarToolbarMenuItem} ${option.value === viewMode ? styles.calendarToolbarMenuItemActive : ""}`}
-                    onClick={() => {
-                      setViewMode(option.value);
-                      setActiveToolbarMenu(null);
-                    }}
-                  >
-                    <div>
-                      <strong>{option.label}</strong>
-                      <span>
-                        {option.value === "day"
-                          ? t.daySchedule
-                          : option.value === "threeDay"
-                            ? t.threeDays
-                            : option.value === "week"
-                              ? t.week
-                              : t.month}
+                <button
+                  type="button"
+                  className={`${styles.calendarToolbarMenuItem} ${isShowingAllTeam ? styles.calendarToolbarMenuItemActive : ""}`}
+                  onClick={() => {
+                    showWholeTeam();
+                    setSelectedProfessionalId(memberCalendars[0]?.professionalId ?? selectedProfessionalId);
+                  }}
+                >
+                  <span className={`${styles.calendarToolbarMenuCheck} ${isShowingAllTeam ? styles.calendarToolbarMenuCheckActive : ""}`}>
+                    {isShowingAllTeam ? "✓" : ""}
+                  </span>
+                  <div>
+                    <strong>{t.allTeam}</strong>
+                    <span>{t.showAllTeam}</span>
+                  </div>
+                </button>
+              </div>
+              <div className={styles.calendarToolbarMenuSectionLabel}>{t.selectedMasters}</div>
+              <div className={styles.calendarToolbarMenuList}>
+                {filteredTeamMembers.map((member) => {
+                  const memberLabel = buildDisplayName(member.firstName, member.lastName, t.masterFallback);
+                  const isVisible = visibleCalendarIds.includes(member.professionalId);
+                  const isFocused = selectedProfessionalId === member.professionalId;
+                  return (
+                    <button
+                      key={member.professionalId}
+                      type="button"
+                      className={`${styles.calendarToolbarMenuItem} ${isFocused ? styles.calendarToolbarMenuItemActive : ""}`}
+                      onClick={() => {
+                        if (!isVisible) {
+                          setVisibleProfessionalIds((current) => [...current, member.professionalId]);
+                          setSelectedProfessionalId(member.professionalId);
+                          return;
+                        }
+
+                        if (!isFocused) {
+                          void loadSnapshot(selectedDate, member.professionalId);
+                          return;
+                        }
+
+                        if (visibleCalendarIds.length > 1) {
+                          toggleVisibleProfessional(member.professionalId);
+                        }
+                      }}
+                    >
+                      <span className={`${styles.calendarToolbarMenuCheck} ${isVisible ? styles.calendarToolbarMenuCheckActive : ""}`}>
+                        {isVisible ? "✓" : ""}
                       </span>
-                    </div>
-                  </button>
-                ))}
+                      <ProfileAvatar
+                        avatarUrl={member.avatarUrl}
+                        initials={getMemberInitials(member)}
+                        label={memberLabel}
+                        className={styles.calendarToolbarMenuAvatar}
+                        imageClassName={styles.avatarImage}
+                        fallbackClassName={styles.avatarFallback}
+                      />
+                      <div>
+                        <strong>{memberLabel}{member.isViewer ? ` ${t.myMarker}` : ""}</strong>
+                        <span>{member.scope === "owner" ? member.role || "Owner" : member.role}</span>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </FloatingPopover>
-
-            <button
-              type="button"
-              className={styles.calendarPrimaryAction}
-              onClick={() => openNewVisit(getSuggestedVisitStartTime())}
-            >
-              + {t.quickNewVisit}
-            </button>
-          </div>
-        </header>
+          </>
+        ) : null}
 
         {renderCalendarToast()}
 
@@ -2694,7 +3126,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
             <div className={styles.calendarDayHourSpacer} />
             <div
               className={styles.calendarDayMemberHeaderGrid}
-              style={{ gridTemplateColumns: `repeat(${Math.max(1, visibleCalendars.length)}, minmax(${isMobileViewport ? 220 : 280}px, 1fr))` }}
+              style={{ gridTemplateColumns: `repeat(${Math.max(1, visibleCalendars.length)}, minmax(${dayMemberColumnWidth}px, 1fr))` }}
             >
               {visibleCalendars.map((member) => {
                 const memberLabel = buildDisplayName(member.firstName, member.lastName, t.masterFallback);
@@ -2741,7 +3173,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
 
             <div
               className={styles.calendarDayMembersGrid}
-              style={{ gridTemplateColumns: `repeat(${Math.max(1, visibleCalendars.length)}, minmax(${isMobileViewport ? 220 : 280}px, 1fr))` }}
+              style={{ gridTemplateColumns: `repeat(${Math.max(1, visibleCalendars.length)}, minmax(${dayMemberColumnWidth}px, 1fr))` }}
             >
               {visibleCalendars.map((member) => {
                 const memberSchedule = getMemberSchedule(member);
@@ -2914,30 +3346,28 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
                               onClick={(event) => {
                                 event.preventDefault();
                                 event.stopPropagation();
-                                void deleteAppointment(appointment);
+                                requestDeleteAppointment(appointment);
                               }}
-                            >
-                              <span aria-hidden="true">×</span>
-                            </button>
-                            <button
-                              type="button"
-                              className={styles.bookingDragHandle}
-                              aria-label={t.moveVisit}
-                              title={t.moveVisit}
-                              onPointerDown={(event) => startAppointmentDrag(event, appointment, member.professionalId)}
-                              onClick={(event) => {
-                                event.preventDefault();
-                                event.stopPropagation();
-                              }}
-                            >
-                              <span aria-hidden="true" className={styles.bookingDragDots} />
-                            </button>
+                            />
                           </div>
                           <span className={styles.bookingTime}>{`${formatDisplayTime(appointment.startTime)} - ${formatDisplayTime(appointment.endTime)}`}</span>
                           <strong className={styles.bookingTitle}>
                             {isBlocked ? appointment.serviceName || t.blockedTimeFallback : appointment.customerName || t.walkInClient}
                           </strong>
                           {!isBlocked ? <span className={styles.bookingService}>{appointment.serviceName}</span> : null}
+                          <button
+                            type="button"
+                            className={styles.bookingDragHandle}
+                            aria-label={t.moveVisit}
+                            title={t.moveVisit}
+                            onPointerDown={(event) => startAppointmentDrag(event, appointment, member.professionalId)}
+                            onClick={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                            }}
+                          >
+                            <MoveHandleIcon />
+                          </button>
                           <button
                             type="button"
                             className={styles.bookingResizeHandle}
@@ -2959,13 +3389,13 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
           </div>
         </div>
         </>
-        ) : isTeamMultiView && (viewMode === "threeDay" || viewMode === "week") ? (
+        ) : viewMode === "threeDay" || (isTeamMultiView && viewMode === "week") ? (
           <div className={styles.calendarOverviewPanel}>
             <div className={styles.calendarTeamBoardShell}>
               <div
                 className={styles.calendarTeamBoardHeader}
                 style={{
-                  gridTemplateColumns: `76px repeat(${teamBoardKeys.length}, minmax(${isMobileViewport ? 92 : 180}px, 1fr))`
+                  gridTemplateColumns: `76px repeat(${teamBoardKeys.length}, minmax(${teamBoardDayWidth}px, 1fr))`
                 }}
               >
                 <div className={styles.calendarTeamBoardMemberSpacer} />
@@ -2994,7 +3424,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
                       key={member.professionalId}
                       className={styles.calendarTeamBoardRow}
                       style={{
-                        gridTemplateColumns: `76px repeat(${teamBoardKeys.length}, minmax(${isMobileViewport ? 92 : 180}px, 1fr))`
+                        gridTemplateColumns: `76px repeat(${teamBoardKeys.length}, minmax(${teamBoardDayWidth}px, 1fr))`
                       }}
                     >
                       <button
@@ -3208,7 +3638,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
               <strong>{t.newVisitTitle}</strong>
             </div>
 
-            <button type="button" className={styles.calendarCustomerCard} onClick={() => setDrawerStage("client-search")}>
+            <button type="button" className={styles.calendarCustomerCard} onClick={() => openClientSearch("visit")}>
               <div className={styles.calendarCustomerAvatar}>{selectedCustomer ? selectedCustomer.name[0]?.toUpperCase() : "◌"}</div>
               <div>
                 <span>{t.customer}</span>
@@ -3358,7 +3788,13 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
         ) : drawerStage === "client-search" ? (
           <div className={styles.calendarV2Panel}>
             <div className={styles.calendarV2PanelHeader}>
-              <button type="button" className={styles.calendarDrawerBack} onClick={() => setDrawerStage("visit")}>←</button>
+              <button
+                type="button"
+                className={styles.calendarDrawerBack}
+                onClick={() => setDrawerStage(clientSearchReturnStage === "details" && selectedAppointment ? "details" : "visit")}
+              >
+                ←
+              </button>
               <strong>{t.chooseClient}</strong>
             </div>
 
@@ -3378,9 +3814,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
               <button
                 type="button"
                 onClick={() => {
-                  setSelectedCustomer(null);
-                  setClientQuery("");
-                  setDrawerStage("visit");
+                  applySelectedClient(null);
                 }}
               >
                 <strong>{t.withoutClient}</strong>
@@ -3413,13 +3847,31 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
                 <label>
                   <span>{t.phone}</span>
                   <div className={styles.phoneRow}>
-                    <div className={styles.phoneCode}>{phoneRule.prefix}</div>
+                    <select
+                      className={styles.phoneCodeSelect}
+                      value={newClientPhoneCountry}
+                      onChange={(event) => {
+                        const nextCountry = event.target.value;
+                        const nextRule = getPhoneRule(nextCountry);
+                        setNewClientPhoneCountry(nextCountry);
+                        setNewClientPhone(formatPhoneLocal(onlyPhoneDigits(newClientPhone), nextRule));
+                      }}
+                    >
+                      {phoneCountries.map((country) => {
+                        const rule = getPhoneRule(country);
+                        return (
+                          <option key={country} value={country}>
+                            {`${rule.prefix} · ${country}`}
+                          </option>
+                        );
+                      })}
+                    </select>
                     <input
                       className={styles.phoneInput}
                       inputMode="numeric"
                       value={newClientPhone}
-                      onChange={(event) => setNewClientPhone(formatPhoneLocal(event.target.value, phoneRule))}
-                      placeholder={phoneRule.placeholder}
+                      onChange={(event) => setNewClientPhone(formatPhoneLocal(event.target.value, newClientPhoneRule))}
+                      placeholder={newClientPhoneRule.placeholder}
                     />
                   </div>
                 </label>
@@ -3441,11 +3893,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
                       key={`${client.name}-${client.phone}`}
                       type="button"
                       className={styles.calendarClientResultItem}
-                      onClick={() => {
-                        setSelectedCustomer(client);
-                        setClientQuery("");
-                        setDrawerStage("visit");
-                      }}
+                      onClick={() => applySelectedClient(client)}
                     >
                       <div className={styles.calendarEntityAvatar}>{client.name[0]?.toUpperCase() ?? t.customer[0]?.toUpperCase() ?? "C"}</div>
                       <div>
@@ -3479,7 +3927,11 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
           <div className={styles.calendarV2Panel}>
             <div className={styles.calendarV2PanelHeader}>
               <button type="button" className={styles.calendarDrawerBack} onClick={() => setDrawerStage("closed")}>←</button>
-              <strong>{selectedAppointment.kind === "blocked" ? selectedAppointment.serviceName : selectedAppointment.customerName || t.customer}</strong>
+              <strong>
+                {selectedAppointment.kind === "blocked"
+                  ? selectedAppointment.serviceName
+                  : detailsCustomerNameDraft.trim() || selectedAppointment.customerName || t.customer}
+              </strong>
             </div>
 
             {selectedAppointment.kind === "blocked" ? (
@@ -3534,34 +3986,51 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
             ) : (
               <div className={styles.fieldStack}>
                 <div className={styles.calendarAppointmentContactCard}>
-                  <div className={styles.calendarAppointmentContactTop}>
-                    <div className={styles.calendarCustomerAvatar}>
-                      {getPersonInitial(detailsCustomerNameDraft || selectedAppointment.customerName || t.customer, t.customer[0] ?? "C")}
+                  <button
+                    type="button"
+                    className={styles.calendarAppointmentContactTopButton}
+                    onClick={() => openClientSearch("details")}
+                  >
+                    <div className={styles.calendarAppointmentContactTop}>
+                      <div className={styles.calendarCustomerAvatar}>
+                        {getPersonInitial(detailsCustomerNameDraft || selectedAppointment.customerName || t.customer, t.customer[0] ?? "C")}
+                      </div>
+                      <div className={styles.calendarAppointmentContactMeta}>
+                        <strong>{detailsCustomerNameDraft.trim() || selectedAppointment.customerName || t.walkInClient}</strong>
+                        <span>{selectedAppointmentContactPhone || detailsCustomerPhoneDraft.trim() || t.noPhone}</span>
+                        <small>{t.changeClient}</small>
+                      </div>
                     </div>
-                    <div className={styles.calendarAppointmentContactMeta}>
-                      <strong>{detailsCustomerNameDraft.trim() || selectedAppointment.customerName || t.walkInClient}</strong>
-                      <span>{selectedAppointmentContactPhone || detailsCustomerPhoneDraft.trim() || t.noPhone}</span>
-                      <small>{t.quickContact}</small>
-                    </div>
-                  </div>
+                  </button>
 
                   <div className={styles.calendarAppointmentContactActions}>
                     {appointmentContactActions.map((action) =>
                       action.href ? (
                         <a
                           key={action.key}
-                          className={styles.calendarContactAction}
+                          className={`${styles.calendarContactAction} ${styles[`calendarContactAction${action.key[0].toUpperCase()}${action.key.slice(1)}` as keyof typeof styles] ?? ""}`}
                           href={action.href}
                           target={action.external ? "_blank" : undefined}
                           rel={action.external ? "noopener noreferrer" : undefined}
+                          aria-label={action.label}
+                          title={action.label}
                         >
-                          <span className={styles.calendarContactActionIcon}>{action.shortLabel}</span>
-                          <span className={styles.calendarContactActionLabel}>{action.label}</span>
+                          <span className={styles.calendarContactActionIcon}>
+                            <ContactChannelIcon kind={action.key as "call" | "whatsapp" | "telegram" | "viber"} />
+                          </span>
                         </a>
                       ) : (
-                        <button key={action.key} type="button" className={styles.calendarContactActionDisabled} disabled>
-                          <span className={styles.calendarContactActionIcon}>{action.shortLabel}</span>
-                          <span className={styles.calendarContactActionLabel}>{action.label}</span>
+                        <button
+                          key={action.key}
+                          type="button"
+                          className={`${styles.calendarContactActionDisabled} ${styles[`calendarContactAction${action.key[0].toUpperCase()}${action.key.slice(1)}` as keyof typeof styles] ?? ""}`}
+                          disabled
+                          aria-label={action.label}
+                          title={action.label}
+                        >
+                          <span className={styles.calendarContactActionIcon}>
+                            <ContactChannelIcon kind={action.key as "call" | "whatsapp" | "telegram" | "viber"} />
+                          </span>
                         </button>
                       )
                     )}
@@ -3604,14 +4073,37 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
                   </div>
                   <div className={styles.field}>
                     <label htmlFor="customerPhone">{t.phone}</label>
-                    <input
-                      id="customerPhone"
-                      className={styles.input}
-                      inputMode="tel"
-                      placeholder={`${phoneRule.prefix} ${phoneRule.placeholder}`}
-                      value={detailsCustomerPhoneDraft}
-                      onChange={(event) => setDetailsCustomerPhoneDraft(event.target.value)}
-                    />
+                    <div className={styles.phoneRow}>
+                      <select
+                        className={styles.phoneCodeSelect}
+                        value={detailsCustomerPhoneCountryDraft}
+                        onChange={(event) => {
+                          const nextCountry = event.target.value;
+                          const nextRule = getPhoneRule(nextCountry);
+                          setDetailsCustomerPhoneCountryDraft(nextCountry);
+                          setDetailsCustomerPhoneDraft(formatPhoneLocal(onlyPhoneDigits(detailsCustomerPhoneDraft), nextRule));
+                        }}
+                      >
+                        {phoneCountries.map((country) => {
+                          const rule = getPhoneRule(country);
+                          return (
+                            <option key={country} value={country}>
+                              {`${rule.prefix} · ${country}`}
+                            </option>
+                          );
+                        })}
+                      </select>
+                      <input
+                        id="customerPhone"
+                        className={styles.phoneInput}
+                        inputMode="numeric"
+                        placeholder={detailsCustomerPhoneRule.placeholder}
+                        value={detailsCustomerPhoneDraft}
+                        onChange={(event) =>
+                          setDetailsCustomerPhoneDraft(formatPhoneLocal(event.target.value, detailsCustomerPhoneRule))
+                        }
+                      />
+                    </div>
                   </div>
                   <div className={styles.field}>
                     <label htmlFor="attendanceStatus">{t.attendanceStatus}</label>
@@ -3667,13 +4159,51 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
         )}
       </aside>
 
+      {deleteConfirmTarget ? (
+        <div className={styles.calendarModalBackdrop}>
+          <div className={`${styles.calendarModalCard} ${styles.calendarDeleteConfirmCard}`}>
+            <button
+              type="button"
+              className={styles.calendarDeleteConfirmClose}
+              onClick={closeDeleteConfirm}
+              aria-label={t.deleteCancel}
+            >
+              ×
+            </button>
+            <div className={styles.calendarDeleteConfirmIcon}>×</div>
+            <h3>{deleteConfirmTarget.kind === "blocked" ? t.deleteBlockConfirmTitle : t.deleteVisitConfirmTitle}</h3>
+            <p>{t.deleteConfirmText}</p>
+            <div className={styles.calendarDeleteConfirmActions}>
+              <button type="button" className={styles.primaryButton} onClick={closeDeleteConfirm}>
+                {t.deleteCancel}
+              </button>
+              <button
+                type="button"
+                className={styles.calendarDeleteConfirmDanger}
+                disabled={isDeletingAppointment}
+                onClick={() => void confirmDeleteAppointment()}
+              >
+                {t.deleteConfirm}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       {showClientPrompt ? (
         <div className={styles.calendarModalBackdrop}>
           <div className={styles.calendarModalCard}>
             <div className={styles.calendarModalAvatar}>◌</div>
             <h3>{t.newClientModalTitle}</h3>
             <p>{t.newClientModalText}</p>
-            <button type="button" className={styles.primaryButton} onClick={() => { setShowClientPrompt(false); setDrawerStage("client-search"); }}>
+            <button
+              type="button"
+              className={styles.primaryButton}
+              onClick={() => {
+                setShowClientPrompt(false);
+                openClientSearch("visit");
+              }}
+            >
               {t.addClientDataUpper}
             </button>
             <button type="button" className={styles.ghostButton} onClick={() => void saveVisit(true)}>

@@ -1,6 +1,7 @@
 import { promises as fs } from "fs";
 import path from "path";
 import {
+  decorateBusinessWithPublicBookingLink,
   ensureServiceForProfessional,
   getBusinessDirectorySnapshot,
   getWorkspaceSnapshot,
@@ -431,13 +432,19 @@ function buildWorkspaceSnapshotFromDirectory(
   professional: ProfessionalRecord,
   membership: MembershipRecord,
   business: WorkspaceSnapshot["business"],
-  services: ServiceRecord[]
+  services: ServiceRecord[],
+  businesses: Pick<WorkspaceSnapshot["business"], "id" | "name" | "createdAt">[]
 ): WorkspaceSnapshot {
+  const decoratedBusiness = decorateBusinessWithPublicBookingLink(
+    business,
+    businesses
+  );
+
   return {
     professional,
-    business,
+    business: decoratedBusiness,
     membership,
-    memberSchedule: resolveMembershipSchedule(membership, business),
+    memberSchedule: resolveMembershipSchedule(membership, decoratedBusiness),
     services
   };
 }
@@ -514,7 +521,8 @@ async function resolveCalendarAccess(input: {
       targetEntry.professional,
       targetEntry.membership,
       business,
-      services
+      services,
+      directory.businesses
     ),
     teamMembers: teamEntries.map((entry) => ({
       id: entry.professional.id,
@@ -526,7 +534,12 @@ async function resolveCalendarAccess(input: {
       isViewer: entry.professional.id === input.viewerProfessionalId
     })),
     teamEntries,
-    canManageTeam
+    canManageTeam,
+    businessDirectory: directory.businesses.map((item) => ({
+      id: item.id,
+      name: item.name,
+      createdAt: item.createdAt
+    }))
   };
 }
 
@@ -583,7 +596,8 @@ export async function getCalendarDaySnapshot(input: {
         entry.professional,
         entry.membership,
         access.targetWorkspace.business,
-        access.targetWorkspace.services
+        access.targetWorkspace.services,
+        access.businessDirectory
       );
 
       return {

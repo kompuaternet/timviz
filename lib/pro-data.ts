@@ -77,6 +77,8 @@ export type BusinessRecord = {
   customSchedule: CustomSchedule;
   allowOnlineBooking?: boolean;
   photos?: BusinessPhoto[];
+  publicBookingPath?: string;
+  publicBookingUrl?: string;
   ownerProfessionalId: string | null;
   createdAt: string;
 };
@@ -177,6 +179,27 @@ export type WorkspaceSnapshot = {
   };
   services: ServiceRecord[];
 };
+
+export function decorateBusinessWithPublicBookingLink(
+  business: BusinessRecord,
+  businesses: Pick<BusinessRecord, "id" | "name" | "createdAt">[]
+): BusinessRecord {
+  const pathId = getPublicBusinessPathId(
+    {
+      id: business.id,
+      name: business.name,
+      createdAt: business.createdAt
+    },
+    businesses
+  );
+  const publicBookingPath = `/salons/${pathId}`;
+
+  return {
+    ...business,
+    publicBookingPath,
+    publicBookingUrl: `${getPublicAppUrl()}${publicBookingPath}`
+  };
+}
 
 export type BusinessDirectorySnapshot = {
   businesses: BusinessRecord[];
@@ -1494,11 +1517,20 @@ export async function getWorkspaceSnapshot(
       return orderDiff || left.createdAt.localeCompare(right.createdAt);
     });
 
+  const decoratedBusiness = decorateBusinessWithPublicBookingLink(
+    business,
+    directory.businesses.map((item) => ({
+      id: item.id,
+      name: item.name,
+      createdAt: item.createdAt
+    }))
+  );
+
   return {
     professional,
-    business,
+    business: decoratedBusiness,
     membership,
-    memberSchedule: resolveMembershipSchedule(membership, business),
+    memberSchedule: resolveMembershipSchedule(membership, decoratedBusiness),
     services
   };
 }

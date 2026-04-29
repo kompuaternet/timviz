@@ -25,11 +25,18 @@ export default async function ProClientsPage() {
   return (
     <ClientsView
       professionalId={professionalId}
-      accountCountry={workspace.professional.country}
+      accountCountry={workspace.professional.country || "Ukraine"}
       accountCurrency={workspace.professional.currency || "USD"}
       businessName={workspace.business.name}
       canManageStaff={workspace.membership.scope === "owner"}
       initialClients={clients}
+      header={{
+        viewerName: `${workspace.professional.firstName} ${workspace.professional.lastName}`.trim() || workspace.professional.email,
+        viewerAvatarUrl: workspace.professional.avatarUrl,
+        viewerInitials: `${workspace.professional.firstName?.[0] ?? ""}${workspace.professional.lastName?.[0] ?? ""}`.toUpperCase() || "RZ",
+        publicBookingUrl: workspace.business.publicBookingUrl,
+        publicBookingEnabled: workspace.business.allowOnlineBooking === true
+      }}
     />
   );
 }

@@ -3,14 +3,17 @@
 import { useEffect, useMemo, useState } from "react";
 import styles from "../pro.module.css";
 import ProSidebar from "../ProSidebar";
+import ProWorkspaceHeader from "../ProWorkspaceHeader";
 import type { ClientListItem } from "../../../lib/pro-clients";
 import {
   buildInternationalPhone,
   formatPhoneLocal,
-  getPhoneLocalDigits,
+  getPhoneEditingState,
   getPhoneRule,
   getPhoneValidationMessage,
-  isPhoneValid
+  isPhoneValid,
+  onlyPhoneDigits,
+  phoneCountries
 } from "../../../lib/phone-format";
 
 type ClientsViewProps = {
@@ -20,6 +23,13 @@ type ClientsViewProps = {
   businessName: string;
   canManageStaff: boolean;
   initialClients: ClientListItem[];
+  header: {
+    viewerName: string;
+    viewerAvatarUrl?: string;
+    viewerInitials: string;
+    publicBookingUrl?: string;
+    publicBookingEnabled?: boolean;
+  };
 };
 
 type ClientForm = {
@@ -260,8 +270,10 @@ export default function ClientsView({
   professionalId,
   accountCountry,
   accountCurrency,
+  businessName,
   canManageStaff,
-  initialClients
+  initialClients,
+  header
 }: ClientsViewProps) {
   const [clients, setClients] = useState(initialClients);
   const [query, setQuery] = useState("");
@@ -269,9 +281,10 @@ export default function ClientsView({
   const [modalOpen, setModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"profile" | "settings">("profile");
   const [form, setForm] = useState<ClientForm>(emptyForm);
+  const [phoneCountry, setPhoneCountry] = useState(accountCountry || "Ukraine");
   const [saving, setSaving] = useState(false);
   const [statusText, setStatusText] = useState("");
-  const phoneRule = getPhoneRule(accountCountry);
+  const phoneRule = getPhoneRule(phoneCountry || accountCountry || "Ukraine");
   const t = CLIENTS_TEXT[uiLanguage];
   const locale = getLocale(uiLanguage);
 
@@ -292,6 +305,10 @@ export default function ClientsView({
     return () => window.removeEventListener("rezervo-language-change", handleLanguageChange);
   }, []);
 
+  useEffect(() => {
+    setPhoneCountry((current) => current || accountCountry || "Ukraine");
+  }, [accountCountry]);
+
   const filteredClients = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
     const queryDigits = digitsOnly(query);
@@ -311,23 +328,27 @@ export default function ClientsView({
 
   function openCreateModal() {
     setForm(emptyForm);
+    setPhoneCountry(accountCountry || "Ukraine");
     setActiveTab("profile");
     setStatusText("");
     setModalOpen(true);
   }
 
   function openEditModal(client: ClientListItem) {
+    const phoneState = getPhoneEditingState(client.phone, accountCountry || "Ukraine");
+
     setForm({
       clientId: client.id.startsWith("derived_") ? null : client.id,
       firstName: client.firstName,
       lastName: client.lastName,
       email: client.email,
-      phone: formatPhoneLocal(getPhoneLocalDigits(client.phone, phoneRule), phoneRule),
+      phone: phoneState.localPhone,
       telegram: client.telegram,
       notes: client.notes,
       notificationsTelegram: client.notificationsTelegram,
       marketingTelegram: client.marketingTelegram
     });
+    setPhoneCountry(phoneState.country);
     setActiveTab("profile");
     setStatusText("");
     setModalOpen(true);
@@ -340,8 +361,8 @@ export default function ClientsView({
   }
 
   async function handleSave() {
-    if (form.phone.trim() && !isPhoneValid(accountCountry, form.phone)) {
-      setStatusText(getPhoneValidationMessage(accountCountry));
+    if (form.phone.trim() && !isPhoneValid(phoneCountry, form.phone)) {
+      setStatusText(getPhoneValidationMessage(phoneCountry));
       return;
     }
 
@@ -349,7 +370,7 @@ export default function ClientsView({
     setStatusText("");
     const payloadForm = {
       ...form,
-      phone: buildInternationalPhone(accountCountry, form.phone)
+      phone: buildInternationalPhone(phoneCountry, form.phone)
     };
 
     const response = await fetch("/api/pro/clients", {
@@ -384,6 +405,15 @@ export default function ClientsView({
 
       <section className={styles.clientsShell}>
         <section className={styles.clientsMain}>
+          <ProWorkspaceHeader
+            businessName={businessName}
+            viewerName={header.viewerName}
+            viewerAvatarUrl={header.viewerAvatarUrl}
+            viewerInitials={header.viewerInitials}
+            publicBookingUrl={header.publicBookingUrl}
+            publicBookingEnabled={header.publicBookingEnabled === true}
+          />
+
           <header className={styles.clientsHeader}>
             <div>
               <div className={styles.clientsTitleRow}>
@@ -534,7 +564,28 @@ export default function ClientsView({
                       <label>
                         <span>{t.phone}</span>
                         <div className={styles.phoneRow}>
-                          <div className={styles.phoneCode}>{phoneRule.prefix}</div>
+                          <select
+                            className={styles.phoneCodeSelect}
+                            value={phoneCountry}
+                            onChange={(event) => {
+                              const nextCountry = event.target.value;
+                              const nextRule = getPhoneRule(nextCountry);
+                              setPhoneCountry(nextCountry);
+                              setForm((current) => ({
+                                ...current,
+                                phone: formatPhoneLocal(onlyPhoneDigits(current.phone), nextRule)
+                              }));
+                            }}
+                          >
+                            {phoneCountries.map((country) => {
+                              const rule = getPhoneRule(country);
+                              return (
+                                <option key={country} value={country}>
+                                  {`${rule.prefix} · ${country}`}
+                                </option>
+                              );
+                            })}
+                          </select>
                           <input
                             className={styles.phoneInput}
                             inputMode="numeric"

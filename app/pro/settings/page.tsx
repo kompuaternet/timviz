@@ -30,6 +30,7 @@ export default async function ProSettingsPage() {
           id: workspace.professional.id,
           firstName: workspace.professional.firstName,
           lastName: workspace.professional.lastName,
+          avatarUrl: workspace.professional.avatarUrl,
           email: workspace.professional.email,
           phone: workspace.professional.phone,
           country: workspace.professional.country,

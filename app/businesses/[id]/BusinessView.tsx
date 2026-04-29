@@ -9,6 +9,7 @@ import {
   formatPhoneLocal,
   getPhoneRule,
   inferPhoneCountryFromAddress,
+  inferPhoneCountryFromLocales,
   isPhoneValid,
   onlyPhoneDigits,
   phoneCountries
@@ -537,7 +538,7 @@ export default function BusinessView({
   }, [business.name, business.ownerProfessionalId, language, team]);
 
   const companyPhoneCountry = useMemo(
-    () => inferPhoneCountryFromAddress(business.address) || "Ukraine",
+    () => inferPhoneCountryFromAddress(business.address),
     [business.address]
   );
 
@@ -593,7 +594,12 @@ export default function BusinessView({
   }, [serviceCategory, serviceGroups]);
 
   useEffect(() => {
-    setPhoneCountry(companyPhoneCountry);
+    const browserPhoneCountry =
+      typeof window === "undefined"
+        ? ""
+        : inferPhoneCountryFromLocales([window.navigator.language, ...(window.navigator.languages ?? [])]);
+
+    setPhoneCountry(companyPhoneCountry || browserPhoneCountry || "Ukraine");
   }, [companyPhoneCountry]);
 
   useEffect(() => {

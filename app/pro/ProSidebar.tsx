@@ -1,6 +1,5 @@
 "use client";
 
-import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -10,11 +9,6 @@ import {
 } from "../../lib/schedule-reminder";
 import styles from "./pro.module.css";
 import { useProLanguage } from "./useProLanguage";
-
-const SupportWidget = dynamic(() => import("./SupportWidget"), {
-  ssr: false,
-  loading: () => null
-});
 
 type SidebarSection = "workspace" | "calendar" | "services" | "clients" | "staff" | "schedule" | "settings";
 
@@ -81,16 +75,6 @@ function SettingsIcon() {
   );
 }
 
-function HelpIcon() {
-  return (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <circle cx="12" cy="12" r="8.4" />
-      <path d="M9.7 9.4a2.5 2.5 0 1 1 4.1 2c-.9.7-1.4 1.2-1.4 2.2" />
-      <circle cx="12" cy="17.3" r="0.9" fill="currentColor" stroke="none" />
-    </svg>
-  );
-}
-
 function LogoutIcon() {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -116,7 +100,6 @@ export default function ProSidebar({
 }: ProSidebarProps) {
   const router = useRouter();
   const { t } = useProLanguage();
-  const [isSupportOpen, setIsSupportOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [showScheduleReminder, setShowScheduleReminder] = useState(
     () => active !== "staff" && hasPendingScheduleReminder(professionalId)
@@ -144,15 +127,6 @@ export default function ProSidebar({
 
     setShowScheduleReminder(hasPendingScheduleReminder(professionalId));
   }, [active, professionalId]);
-
-  useEffect(() => {
-    function handleSupportOpen() {
-      setIsSupportOpen(true);
-    }
-
-    window.addEventListener("rezervo-open-support", handleSupportOpen);
-    return () => window.removeEventListener("rezervo-open-support", handleSupportOpen);
-  }, []);
 
   const visibleMainLinks = mainLinks.filter((link) => canManageStaff || link.key !== "staff");
 
@@ -218,15 +192,6 @@ export default function ProSidebar({
           >
             <LogoutIcon />
           </button>
-          <button
-            type="button"
-            className={styles.workspaceNavButton}
-            aria-label={t.nav.help}
-            title={t.nav.help}
-            onClick={() => setIsSupportOpen(true)}
-          >
-            <HelpIcon />
-          </button>
         </div>
       </aside>
 
@@ -271,12 +236,6 @@ export default function ProSidebar({
         </button>
       </nav>
 
-      <SupportWidget
-        isOpen={isSupportOpen}
-        onOpen={() => setIsSupportOpen(true)}
-        onClose={() => setIsSupportOpen(false)}
-        showTrigger={active !== "calendar"}
-      />
     </>
   );
 }

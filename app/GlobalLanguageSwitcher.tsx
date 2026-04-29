@@ -115,8 +115,13 @@ export default function GlobalLanguageSwitcher({ mode = "fixed" }: GlobalLanguag
     pathname?.startsWith("/pro/create-account") ||
     pathname?.startsWith("/pro/setup");
   const useEmbeddedCalendarLanguageMenu = pathname?.startsWith("/pro/calendar");
+  const hideForAuthenticatedPro =
+    pathname?.startsWith("/pro") &&
+    !pathname?.startsWith("/pro/create-account") &&
+    !pathname?.startsWith("/pro/setup") &&
+    !pathname?.startsWith("/pro/login");
 
-  if (!isInline && (hasInlinePublicHeader || useEmbeddedCalendarLanguageMenu)) {
+  if (!isInline && (hasInlinePublicHeader || useEmbeddedCalendarLanguageMenu || hideForAuthenticatedPro)) {
     return null;
   }
 

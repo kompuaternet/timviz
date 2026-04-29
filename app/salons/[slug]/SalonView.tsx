@@ -3,7 +3,17 @@
 import { useEffect, useMemo, useState } from "react";
 import { getLocalizedSalon, type Salon } from "../../../data/mock-data";
 import type { BookingRecord } from "../../../lib/bookings";
-import { buildInternationalPhone, formatPhoneLocal, getPhoneRule, getPhoneValidationMessage, inferPhoneCountryFromAddress, inferPhoneCountryFromLocale, isPhoneValid, onlyPhoneDigits, phoneCountries } from "../../../lib/phone-format";
+import {
+  buildInternationalPhone,
+  formatPhoneLocal,
+  getPhoneRule,
+  getPhoneValidationMessage,
+  inferPhoneCountryFromAddress,
+  inferPhoneCountryFromLocales,
+  isPhoneValid,
+  onlyPhoneDigits,
+  phoneCountries
+} from "../../../lib/phone-format";
 import { findNextPublicBookingDate, getPublicBookingSlots } from "../../../lib/public-booking";
 import { type SiteLanguage } from "../../../lib/site-language";
 import { createBookingAction } from "./actions";
@@ -72,23 +82,6 @@ function getTodayDateKey() {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 }
 
-function getBrowserPhoneCountry() {
-  if (typeof window === "undefined") {
-    return "";
-  }
-
-  const candidates = [navigator.language, ...(navigator.languages ?? [])].filter(Boolean);
-
-  for (const candidate of candidates) {
-    const country = inferPhoneCountryFromLocale(candidate);
-    if (country) {
-      return country;
-    }
-  }
-
-  return "";
-}
-
 function getPhoneErrorText(language: SiteLanguage, country: string) {
   const digits = getPhoneRule(country).digits;
 
@@ -116,7 +109,7 @@ export default function SalonView({ salon, bookings, initialLanguage = "ru" }: S
   const [timeError, setTimeError] = useState("");
 
   const companyPhoneCountry = useMemo(
-    () => inferPhoneCountryFromAddress(salon.address.ru) || salon.country || "Ukraine",
+    () => salon.country || inferPhoneCountryFromAddress(salon.address.ru),
     [salon.address.ru, salon.country]
   );
   const activeBookings = useMemo(
@@ -152,8 +145,11 @@ export default function SalonView({ salon, bookings, initialLanguage = "ru" }: S
   );
 
   useEffect(() => {
-    const browserPhoneCountry = getBrowserPhoneCountry();
-    setPhoneCountry(browserPhoneCountry || companyPhoneCountry);
+    const browserPhoneCountry =
+      typeof window === "undefined"
+        ? ""
+        : inferPhoneCountryFromLocales([window.navigator.language, ...(window.navigator.languages ?? [])]);
+    setPhoneCountry(companyPhoneCountry || browserPhoneCountry || "Ukraine");
   }, [companyPhoneCountry]);
 
   useEffect(() => {

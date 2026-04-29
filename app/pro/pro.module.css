@@ -4830,7 +4830,7 @@
   left: 0;
   right: 16px;
   border-radius: 0 16px 16px 0;
-  padding: 12px 14px 16px;
+  padding: 12px 14px 24px;
   background: #9dd9f7;
   color: #10222d;
   box-shadow: inset 0 0 0 1px rgba(84, 136, 164, 0.12);
@@ -4876,9 +4876,6 @@
   position: absolute;
   top: 8px;
   right: 8px;
-  display: flex;
-  align-items: center;
-  gap: 6px;
   z-index: 3;
 }
 
@@ -4888,11 +4885,11 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   border: 0;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.58);
+  background: rgba(255, 255, 255, 0.72);
   color: rgba(16, 34, 45, 0.86);
   box-shadow:
     0 6px 18px rgba(16, 34, 45, 0.1),
@@ -4921,15 +4918,30 @@
   transform: scale(0.96);
 }
 
-.bookingDeleteButton span {
-  display: inline-block;
-  font-size: 1.12rem;
-  line-height: 1;
-  font-weight: 500;
-  transform: translateY(-1px);
+.bookingDeleteButton::before,
+.bookingDeleteButton::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 11px;
+  height: 1.8px;
+  border-radius: 999px;
+  background: currentColor;
+}
+
+.bookingDeleteButton::before {
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.bookingDeleteButton::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
 }
 
 .bookingDragHandle {
+  position: absolute;
+  right: 10px;
+  bottom: 10px;
   cursor: grab;
 }
 
@@ -4937,31 +4949,11 @@
   cursor: grabbing;
 }
 
-.bookingDragDots {
-  position: relative;
+.bookingDragHandle svg {
   display: block;
-  width: 12px;
-  height: 12px;
-}
-
-.bookingDragDots::before {
-  content: "";
-  position: absolute;
-  left: 1px;
-  top: 1px;
-  width: 2px;
-  height: 2px;
-  border-radius: 999px;
-  background: currentColor;
-  box-shadow:
-    0 4px 0 currentColor,
-    0 8px 0 currentColor,
-    4px 0 0 currentColor,
-    4px 4px 0 currentColor,
-    4px 8px 0 currentColor,
-    8px 0 0 currentColor,
-    8px 4px 0 currentColor,
-    8px 8px 0 currentColor;
+  width: 18px;
+  height: 18px;
+  color: inherit;
 }
 
 .bookingResizeHandle {
@@ -5993,6 +5985,12 @@
   padding: 6px 18px 5px;
 }
 
+.proPageWorkspaceHeader {
+  grid-column: 1 / -1;
+  padding-left: 0;
+  padding-right: 0;
+}
+
 .calendarWorkspaceMeta {
   display: grid;
   gap: 2px;
@@ -6044,6 +6042,14 @@
   align-items: center;
   gap: 10px;
   flex-wrap: wrap;
+}
+
+.calendarTopRightActionGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 
 .calendarViewSelector {
@@ -6146,6 +6152,30 @@
 }
 
 .calendarSupportButton svg {
+  width: 18px;
+  height: 18px;
+}
+
+.calendarShareButton {
+  border-color: rgba(111, 92, 255, 0.18);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(245, 243, 255, 0.96)),
+    #ffffff;
+  color: #6a56f4;
+  box-shadow:
+    0 12px 24px rgba(97, 84, 210, 0.14),
+    inset 0 1px 0 rgba(255, 255, 255, 0.94);
+}
+
+.calendarShareButton:hover {
+  border-color: rgba(111, 92, 255, 0.28);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 1), rgba(239, 235, 255, 0.98)),
+    #ffffff;
+  color: #5c49eb;
+}
+
+.calendarShareButton svg {
   width: 18px;
   height: 18px;
 }
@@ -6365,6 +6395,106 @@
 .calendarAccountMenu {
   width: min(320px, calc(100vw - 24px));
   padding: 14px;
+}
+
+.calendarShareMenu {
+  width: min(360px, calc(100vw - 24px));
+  padding: 14px;
+}
+
+.calendarShareMenuHero {
+  padding: 16px;
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at top right, rgba(111, 92, 255, 0.16), transparent 42%),
+    linear-gradient(180deg, #ffffff 0%, #f7f8ff 100%);
+  border: 1px solid rgba(223, 228, 245, 0.96);
+}
+
+.calendarShareMenuEyebrow {
+  display: inline-block;
+  color: #7b8398;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.calendarShareMenuHero strong {
+  display: block;
+  margin-top: 8px;
+  font-size: 1.08rem;
+  line-height: 1.1;
+  color: #1f2433;
+}
+
+.calendarShareMenuHero p {
+  margin: 10px 0 0;
+  color: #667089;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.calendarShareStatusPill {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 14px;
+  min-height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: rgba(255, 232, 197, 0.52);
+  color: #8d5c1a;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.calendarShareStatusPillActive {
+  background: rgba(213, 245, 227, 0.9);
+  color: #1f7a4f;
+}
+
+.calendarShareField {
+  margin-top: 14px;
+}
+
+.calendarShareFieldInput {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 14px;
+  border: 1px solid #dfe4f5;
+  border-radius: 18px;
+  background: #f8faff;
+  color: #25304a;
+  font: inherit;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+.calendarShareActions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.calendarSharePrimaryAction,
+.calendarShareGhostAction {
+  min-height: 44px;
+  border-radius: 16px;
+  border: 0;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.calendarSharePrimaryAction {
+  background: linear-gradient(135deg, #6f5cff 0%, #4f46e5 100%);
+  color: #ffffff;
+  box-shadow: 0 16px 34px rgba(91, 79, 226, 0.2);
+}
+
+.calendarShareGhostAction {
+  background: #f4f7ff;
+  color: #28324b;
 }
 
 .calendarAccountMenuHeader {
@@ -6682,6 +6812,63 @@
 
 .calendarMobilePlusButton {
   display: none;
+}
+
+.calendarMobileTeamFab {
+  position: fixed;
+  z-index: 97;
+  width: 48px;
+  height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(223, 228, 245, 0.96);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 16px 36px rgba(90, 103, 151, 0.18);
+  color: #232532;
+  cursor: pointer;
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  transition: transform 140ms ease, box-shadow 140ms ease, background 140ms ease;
+}
+
+.calendarMobileTeamFab:hover,
+.calendarMobileTeamFab:active {
+  background: rgba(255, 255, 255, 1);
+  box-shadow: 0 18px 40px rgba(90, 103, 151, 0.22);
+}
+
+.calendarMobileTeamFab:active {
+  transform: scale(0.96);
+}
+
+.calendarMobileTeamFab svg {
+  width: 22px;
+  height: 22px;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  fill: none;
+}
+
+.calendarMobileTeamFabBadge {
+  position: absolute;
+  top: -4px;
+  right: -3px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  background: #5f49dd;
+  color: #ffffff;
+  font-size: 0.66rem;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 16px rgba(95, 73, 221, 0.28);
 }
 
 .calendarV2ScrollFrame {
@@ -7698,6 +7885,15 @@
   gap: 14px;
 }
 
+.calendarAppointmentContactTopButton {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+}
+
 .calendarAppointmentContactTop {
   display: grid;
   grid-template-columns: 48px minmax(0, 1fr);
@@ -7734,25 +7930,24 @@
 
 .calendarAppointmentContactActions {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
 }
 
 .calendarContactAction,
 .calendarContactActionDisabled {
-  min-height: 48px;
-  padding: 10px 12px;
+  min-height: 52px;
+  padding: 8px;
   border-radius: 16px;
   border: 1px solid #dde5f2;
   background: rgba(255, 255, 255, 0.94);
   color: #182033;
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  justify-content: center;
   font: inherit;
   font-weight: 700;
   text-decoration: none;
-  justify-content: flex-start;
 }
 
 .calendarContactAction {
@@ -7772,21 +7967,45 @@
 }
 
 .calendarContactActionIcon {
-  width: 28px;
-  height: 28px;
+  width: 34px;
+  height: 34px;
   border-radius: 999px;
-  background: linear-gradient(135deg, #6f5aff, #4ac8ff);
-  color: #fff;
+  background: #f4f7ff;
+  color: #5f49dd;
   display: grid;
   place-items: center;
   flex-shrink: 0;
-  font-size: 0.72rem;
-  font-weight: 900;
-  letter-spacing: 0.04em;
+  box-shadow: inset 0 0 0 1px rgba(205, 214, 238, 0.72);
+}
+
+.calendarContactActionIcon svg {
+  width: 18px;
+  height: 18px;
+  display: block;
 }
 
 .calendarContactActionLabel {
-  white-space: nowrap;
+  display: none;
+}
+
+.calendarContactActionCall .calendarContactActionIcon {
+  background: rgba(229, 240, 255, 0.92);
+  color: #3b82f6;
+}
+
+.calendarContactActionWhatsapp .calendarContactActionIcon {
+  background: rgba(226, 248, 234, 0.96);
+  color: #25d366;
+}
+
+.calendarContactActionTelegram .calendarContactActionIcon {
+  background: rgba(227, 244, 255, 0.96);
+  color: #229ed9;
+}
+
+.calendarContactActionViber .calendarContactActionIcon {
+  background: rgba(241, 233, 255, 0.98);
+  color: #7360f2;
 }
 
 .calendarInlineHint {
@@ -8269,6 +8488,74 @@
   font-size: 2rem;
 }
 
+.calendarDeleteConfirmCard {
+  position: relative;
+  gap: 14px;
+}
+
+.calendarDeleteConfirmClose {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid #dfe5f2;
+  background: #ffffff;
+  color: #384252;
+  font: inherit;
+  font-size: 1.35rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.calendarDeleteConfirmClose:hover {
+  background: #f7f9ff;
+}
+
+.calendarDeleteConfirmIcon {
+  width: 76px;
+  height: 76px;
+  margin: 0 auto;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #fff5f7 0%, #ffe9ee 100%);
+  color: #cf3654;
+  display: grid;
+  place-items: center;
+  font-size: 2rem;
+  font-weight: 600;
+  box-shadow: inset 0 0 0 1px rgba(227, 120, 144, 0.18);
+}
+
+.calendarDeleteConfirmActions {
+  display: grid;
+  gap: 10px;
+}
+
+.calendarDeleteConfirmCard p {
+  color: #73819b;
+}
+
+.calendarDeleteConfirmDanger {
+  min-height: 44px;
+  border: 1px solid rgba(209, 47, 66, 0.14);
+  border-radius: 999px;
+  padding: 0 18px;
+  background: rgba(209, 47, 66, 0.08);
+  color: #cf3654;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.calendarDeleteConfirmDanger:disabled {
+  opacity: 0.56;
+  cursor: not-allowed;
+}
+
 .servicesShell {
   grid-template-columns: 72px minmax(0, 1fr);
   min-height: 100vh;
@@ -8406,6 +8693,13 @@
 .servicesMenuPanel {
   padding: 14px;
   display: grid;
+  gap: 12px;
+}
+
+.servicesMenuHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: 12px;
 }
 
@@ -8751,6 +9045,11 @@
   text-align: left;
   font: inherit;
   cursor: pointer;
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease,
+    box-shadow 0.18s ease,
+    transform 0.18s ease;
 }
 
 .catalogServiceLine span {
@@ -8768,15 +9067,44 @@
 }
 
 .catalogServiceLine strong {
-  grid-row: 1 / span 2;
+  grid-row: 1;
   grid-column: 2;
   align-self: center;
   color: #5f49dd;
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.catalogServiceLine small {
+  grid-column: 2;
+  grid-row: 2;
+  align-self: center;
+  justify-self: end;
+  color: #7b6af2;
+  font-size: 0.77rem;
+  font-weight: 700;
 }
 
 .catalogServiceLine:disabled {
   cursor: not-allowed;
   opacity: 0.5;
+}
+
+.catalogServiceLine:hover {
+  border-color: rgba(111, 82, 255, 0.34);
+  box-shadow: 0 14px 28px rgba(111, 82, 255, 0.08);
+  transform: translateY(-1px);
+}
+
+.catalogServiceLineActive {
+  border-color: rgba(111, 82, 255, 0.3);
+  background: linear-gradient(180deg, rgba(242, 239, 255, 0.95), rgba(255, 255, 255, 0.98));
+  box-shadow: inset 0 0 0 1px rgba(111, 82, 255, 0.06);
+}
+
+.catalogServiceLineActive strong,
+.catalogServiceLineActive small {
+  color: #5b46dc;
 }
 
 .servicesHero {
@@ -9065,6 +9393,18 @@
     box-sizing: border-box;
   }
 
+  .calendarV2Shell.workspaceMain {
+    padding-bottom: calc(16px + env(safe-area-inset-bottom));
+  }
+
+  .calendarV2Shell .calendarCenterShell {
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
+  }
+
+  .calendarV2Shell .calendarV2ScrollFrame {
+    padding-bottom: calc(18px + env(safe-area-inset-bottom));
+  }
+
   .supportFloatingButton {
     right: 12px;
     top: calc(78px + env(safe-area-inset-top));
@@ -9205,6 +9545,7 @@
 }
 
 .settingsHero {
+  position: relative;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
@@ -9229,6 +9570,54 @@
 
 .settingsHero .primaryButton {
   flex: 0 0 auto;
+}
+
+.settingsHeroActions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: flex-start;
+  justify-content: flex-end;
+  padding-right: 72px;
+}
+
+.settingsCloseButton {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border: 1px solid rgba(200, 209, 230, 0.92);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.88);
+  color: #5f677f;
+  box-shadow: 0 12px 28px rgba(90, 103, 151, 0.12);
+  transition:
+    transform 0.18s ease,
+    background 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease;
+}
+
+.settingsCloseButton span {
+  display: block;
+  margin-top: -1px;
+  font-size: 1.85rem;
+  line-height: 1;
+  font-weight: 400;
+}
+
+.settingsCloseButton:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.98);
+  border-color: rgba(142, 157, 201, 0.92);
+  color: #2c3145;
+}
+
+.settingsCloseButton:active {
+  transform: scale(0.96);
 }
 
 .settingsHero p {
@@ -9441,6 +9830,64 @@
   margin: -6px 0 18px;
   color: #737d94;
   line-height: 1.6;
+}
+
+.settingsShareCard {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at top right, rgba(111, 92, 255, 0.12), transparent 34%),
+    linear-gradient(180deg, #ffffff 0%, #f8f9ff 100%);
+  border: 1px solid #e5e9f6;
+}
+
+.settingsShareCardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.settingsShareCardHeader strong {
+  display: block;
+  color: #1f2433;
+  font-size: 1rem;
+}
+
+.settingsShareCardHeader p {
+  margin: 8px 0 0;
+  color: #667089;
+  line-height: 1.5;
+}
+
+.settingsShareStatus {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: rgba(255, 232, 197, 0.52);
+  color: #8d5c1a;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.settingsShareStatusActive {
+  background: rgba(213, 245, 227, 0.9);
+  color: #1f7a4f;
+}
+
+.settingsShareField input {
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.settingsShareActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .settingsPhotoGrid {
@@ -9674,6 +10121,11 @@
     align-items: center;
   }
 
+  .proPageWorkspaceHeader {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
   .calendarWorkspaceMeta {
     min-width: 0;
   }
@@ -9696,6 +10148,14 @@
     padding: 3px 6px 3px 3px;
     gap: 8px;
     border-radius: 16px;
+  }
+
+  .calendarShareMenu {
+    width: min(340px, calc(100vw - 16px));
+  }
+
+  .calendarShareActions {
+    grid-template-columns: 1fr;
   }
 
   .calendarProfileMeta {
@@ -9783,6 +10243,10 @@
 
   .calendarTopRight::-webkit-scrollbar {
     display: none;
+  }
+
+  .calendarTopRightActionGroup {
+    gap: 6px;
   }
 
   .calendarViewPill,
@@ -10033,6 +10497,15 @@
     min-height: 34px;
   }
 
+  .calendarShareMenuHero {
+    padding: 14px;
+    border-radius: 20px;
+  }
+
+  .calendarShareMenuHero strong {
+    font-size: 1rem;
+  }
+
   .calendarWorkspaceMeta strong {
     font-size: 0.92rem;
   }
@@ -10188,22 +10661,29 @@
   .bookingControlRow {
     top: 6px;
     right: 6px;
-    gap: 4px;
   }
 
   .bookingDeleteButton,
   .bookingDragHandle {
-    width: 22px;
-    height: 22px;
+    width: 24px;
+    height: 24px;
   }
 
-  .bookingDeleteButton span {
-    font-size: 1rem;
+  .bookingDeleteButton::before,
+  .bookingDeleteButton::after {
+    width: 9px;
   }
 
-  .bookingDragDots {
-    width: 10px;
-    height: 10px;
+  .bookingDragHandle {
+    right: 6px;
+    bottom: 6px;
+    width: 26px;
+    height: 26px;
+  }
+
+  .bookingDragHandle svg {
+    width: 16px;
+    height: 16px;
   }
 
   .bookingTime,
@@ -10578,23 +11058,25 @@
   }
 
   .calendarAppointmentContactActions {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 8px;
   }
 
   .calendarContactAction,
   .calendarContactActionDisabled {
     min-height: 42px;
-    padding: 9px 10px;
+    padding: 6px;
     border-radius: 14px;
-    gap: 8px;
-    font-size: 0.82rem;
   }
 
   .calendarContactActionIcon {
     width: 24px;
     height: 24px;
-    font-size: 0.62rem;
+  }
+
+  .calendarContactActionIcon svg {
+    width: 14px;
+    height: 14px;
   }
 
   .calendarInlineHint,
@@ -10686,7 +11168,7 @@
 
   .calendarV2Grid,
   .calendarPageGrid {
-    grid-template-columns: 52px minmax(0, 1fr);
+    grid-template-columns: 56px minmax(0, 1fr);
   }
 
   .calendarV2HourLabel,
@@ -10697,7 +11179,8 @@
 
   .calendarMobilePlusButton {
     position: fixed;
-    left: calc(16px + env(safe-area-inset-left));
+    left: auto;
+    right: calc(18px + env(safe-area-inset-right));
     bottom: calc(76px + env(safe-area-inset-bottom));
     z-index: 96;
     width: 56px;
@@ -10740,6 +11223,11 @@
     transform: translateY(-1px);
   }
 
+  .calendarMobileTeamFab {
+    width: 46px;
+    height: 46px;
+  }
+
   .nowBadge {
     left: -28px;
     font-size: 0.64rem;
@@ -10747,13 +11235,13 @@
 
   .bookingBlock {
     right: 8px;
-    padding: 10px 10px 12px;
+    padding: 10px 10px 20px;
   }
 
   .bookingTime,
   .bookingTitle,
   .bookingService {
-    padding-right: 54px;
+    padding-right: 42px;
   }
 
   .calendarV2Drawer,
@@ -11041,11 +11529,30 @@
   }
 
   .settingsHero {
-    padding: 20px 16px;
+    padding: 20px 16px 16px;
   }
 
   .settingsHero .primaryButton {
     width: 100%;
+  }
+
+  .settingsHeroActions {
+    align-items: stretch;
+    justify-content: stretch;
+    padding-right: 0;
+    padding-top: 12px;
+  }
+
+  .settingsCloseButton {
+    top: 12px;
+    right: 12px;
+    width: 42px;
+    height: 42px;
+    border-radius: 15px;
+  }
+
+  .settingsCloseButton span {
+    font-size: 1.6rem;
   }
 
   .addressSearchItem,
@@ -11162,7 +11669,7 @@
   .calendarCenterShell,
   .workspaceMain,
   .calendarV2ScrollFrame {
-    background: #ffffff;
+    background: transparent;
   }
 
   .mobileWorkspaceNav {
@@ -11197,6 +11704,18 @@
     padding: 6px 8px;
   }
 
+  .calendarV2Shell.workspaceMain {
+    padding-bottom: calc(10px + env(safe-area-inset-bottom));
+  }
+
+  .calendarV2Shell .calendarCenterShell {
+    padding-bottom: calc(8px + env(safe-area-inset-bottom));
+  }
+
+  .calendarV2Shell .calendarV2ScrollFrame {
+    padding-bottom: calc(14px + env(safe-area-inset-bottom));
+  }
+
   .calendarWorkspaceHeader {
     padding-top: 6px;
     padding-bottom: 4px;
@@ -11204,13 +11723,14 @@
     padding-right: 10px;
   }
 
+  .proPageWorkspaceHeader {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
   .calendarDatePill {
     min-width: 124px;
     padding: 0 9px;
-  }
-
-  .calendarTeamButton {
-    min-width: 124px;
   }
 
   .topActions {
@@ -11252,6 +11772,16 @@
     border-radius: 12px;
   }
 
+  .calendarMobileTeamFab {
+    width: 44px;
+    height: 44px;
+  }
+
+  .calendarMobileTeamFab svg {
+    width: 20px;
+    height: 20px;
+  }
+
   .calendarSquareButton,
   .calendarIconButton {
     width: 31px;
@@ -11270,6 +11800,19 @@
 
   .calendarWorkspaceMeta strong {
     font-size: 0.9rem;
+  }
+
+  .settingsShareCardHeader {
+    flex-direction: column;
+  }
+
+  .settingsShareStatus {
+    align-self: flex-start;
+  }
+
+  .settingsShareActions {
+    display: grid;
+    grid-template-columns: 1fr;
   }
 
   .calendarProfileButton {

@@ -246,6 +246,10 @@ const ADDRESS_COUNTRY_MATCHERS: Array<{ country: string; patterns: string[] }> =
 
 export const phoneCountries = [...PHONE_RULES.map((rule) => rule.country), DEFAULT_RULE.country];
 
+export function isKnownPhoneCountry(country = "") {
+  return PHONE_RULES.some((rule) => rule.country === country);
+}
+
 export function getPhoneRule(country = "") {
   const normalized = country.toLowerCase();
 
@@ -289,6 +293,20 @@ export function getPhoneLocalDigits(fullPhone: string, rule: PhoneRule) {
   return localDigits.slice(0, rule.digits);
 }
 
+export function inferPhoneCountryFromPhone(fullPhone = "") {
+  const digits = onlyPhoneDigits(fullPhone);
+
+  if (!digits) {
+    return "";
+  }
+
+  return (
+    PHONE_RULES.slice()
+      .sort((left, right) => onlyPhoneDigits(right.prefix).length - onlyPhoneDigits(left.prefix).length)
+      .find((rule) => digits.startsWith(onlyPhoneDigits(rule.prefix)))?.country ?? ""
+  );
+}
+
 export function buildInternationalPhone(country: string, localPhone: string) {
   const rule = getPhoneRule(country);
   const digits = onlyPhoneDigits(localPhone).slice(0, rule.digits);
@@ -315,6 +333,19 @@ export function inferPhoneCountryFromLocale(locale = "") {
   return region ? COUNTRY_BY_REGION[region] || "" : "";
 }
 
+export function inferPhoneCountryFromLocales(locales: string | string[] = []) {
+  const candidates = Array.isArray(locales) ? locales : [locales];
+
+  for (const candidate of candidates) {
+    const country = inferPhoneCountryFromLocale(candidate);
+    if (country) {
+      return country;
+    }
+  }
+
+  return "";
+}
+
 export function inferPhoneCountryFromAddress(address = "") {
   const normalized = address.toLowerCase();
 
@@ -325,4 +356,16 @@ export function inferPhoneCountryFromAddress(address = "") {
   }
 
   return "";
+}
+
+export function getPhoneEditingState(fullPhone = "", fallbackCountry = "Ukraine") {
+  const country =
+    inferPhoneCountryFromPhone(fullPhone) ||
+    (isKnownPhoneCountry(fallbackCountry) ? fallbackCountry : "Ukraine");
+  const rule = getPhoneRule(country);
+
+  return {
+    country,
+    localPhone: formatPhoneLocal(getPhoneLocalDigits(fullPhone, rule), rule)
+  };
 }
