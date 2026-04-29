@@ -134,7 +134,15 @@ export default function BookingSuccessView({ booking, backPath, pending = false 
         </div>
 
         <div className="hero-actions">
-          <Link href={backPath || `/salons/${booking.salonSlug}`} className="primary-button">
+          <Link
+            href={
+              backPath ||
+              (booking.salonSlug.startsWith("business:")
+                ? `/b/${booking.salonSlug.replace(/^business:/, "")}`
+                : `/salons/${booking.salonSlug}`)
+            }
+            className="primary-button"
+          >
             {t.backToSalon}
           </Link>
           <Link href="/catalog" className="secondary-button">

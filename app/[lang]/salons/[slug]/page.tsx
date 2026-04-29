@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, permanentRedirect } from "next/navigation";
 import { getSalonBySlug, getLocalizedText } from "../../../../data/mock-data";
 import { getAllBookings } from "../../../../lib/bookings";
+import { getPublicBusinessProfile } from "../../../../lib/public-business";
 import { buildLanguageAlternates, buildMetadata } from "../../../../lib/seo";
-import { isSiteLanguage, type SiteLanguage } from "../../../../lib/site-language";
+import { getLocalizedPath, isSiteLanguage, type SiteLanguage } from "../../../../lib/site-language";
 import SalonView from "../../../salons/[slug]/SalonView";
 
 export const dynamic = "force-dynamic";
@@ -83,6 +84,13 @@ export default async function LocalizedSalonPage({
   }
 
   const salon = getSalonBySlug(slug);
+  if (!salon) {
+    const business = await getPublicBusinessProfile(slug);
+    if (business) {
+      permanentRedirect(getLocalizedPath(lang as SiteLanguage, `/businesses/${business.publicPathId}`));
+    }
+  }
+
   if (!salon) {
     notFound();
   }

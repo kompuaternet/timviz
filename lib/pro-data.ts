@@ -192,7 +192,7 @@ export function decorateBusinessWithPublicBookingLink(
     },
     businesses
   );
-  const publicBookingPath = `/salons/${pathId}`;
+  const publicBookingPath = `/b/${pathId}`;
 
   return {
     ...business,

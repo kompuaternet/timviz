@@ -6,6 +6,11 @@ Open the Supabase SQL editor and run:
 
 - [schema.sql](/Users/Vitaliy/Graviti/Rezervo/supabase/schema.sql)
 
+If the project is already live and Supabase reports `rls_disabled_in_public`,
+run this hotfix immediately:
+
+- [rls.sql](/Users/Vitaliy/Graviti/Rezervo/supabase/rls.sql)
+
 This creates or updates the tables used by:
 
 - business accounts and settings

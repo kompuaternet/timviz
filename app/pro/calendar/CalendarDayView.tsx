@@ -6,6 +6,7 @@ import ProfileAvatar from "../../ProfileAvatar";
 import styles from "../pro.module.css";
 import FloatingPopover from "../FloatingPopover";
 import ProSidebar from "../ProSidebar";
+import SupportWidget from "../SupportWidget";
 import { languageFromProfile, profileLanguageFromCode } from "../i18n";
 import {
   getDayBreaks,
@@ -1142,6 +1143,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
     professionalId
   });
   const [drawerStage, setDrawerStage] = useState<DrawerStage>("closed");
+  const [isSupportOpen, setIsSupportOpen] = useState(false);
   const [toast, setToast] = useState<CalendarToastState | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null);
@@ -2650,6 +2652,24 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
 
             <button
               type="button"
+              className={`${styles.calendarIconButton} ${styles.calendarSupportButton}`}
+              aria-label={t.helpSupport}
+              onClick={() => {
+                setActiveToolbarMenu(null);
+                setQuickMenu((current) => ({ ...current, visible: false, x: 0, y: 0, time: "" }));
+                setDrawerStage("closed");
+                setIsSupportOpen(true);
+              }}
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="8.2" />
+                <path d="M9.85 9.25a2.55 2.55 0 0 1 4.83 1.1c0 1.5-1.37 2.08-2.2 2.7-.6.45-.93 0.82-.93 1.65" />
+                <circle cx="12" cy="16.9" r="0.85" fill="currentColor" stroke="none" />
+              </svg>
+            </button>
+
+            <button
+              type="button"
               className={`${styles.calendarIconButton} ${drawerStage === "notifications" ? styles.calendarIconButtonActive : ""}`}
               aria-label={t.notifications}
               onClick={() => {
@@ -2794,6 +2814,31 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
                 >
                   {t.personalSettings}
                 </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setActiveToolbarMenu(null);
+                    setIsSupportOpen(true);
+                  }}
+                >
+                  {t.helpSupport}
+                </button>
+              </div>
+
+              <div className={styles.calendarAccountMenuSection}>
+                <span className={styles.calendarAccountMenuLabel}>{t.language}</span>
+                <div className={styles.calendarLanguageOptions}>
+                  {(["ru", "uk", "en"] as const).map((option) => (
+                    <button
+                      key={option}
+                      type="button"
+                      className={`${styles.calendarLanguageOption} ${uiLanguage === option ? styles.calendarLanguageOptionActive : ""}`}
+                      onClick={() => void applyLanguage(option)}
+                    >
+                      {option === "ru" ? "RU" : option === "uk" ? "UA" : "EN"}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div className={styles.calendarAccountMenuSection}>
@@ -2808,6 +2853,13 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
                 </button>
               </div>
             </FloatingPopover>
+
+            <SupportWidget
+              isOpen={isSupportOpen}
+              onOpen={() => setIsSupportOpen(true)}
+              onClose={() => setIsSupportOpen(false)}
+              showTrigger={false}
+            />
           </div>
         </div>
 

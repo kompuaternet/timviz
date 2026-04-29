@@ -4,8 +4,10 @@ import ProfileAvatar from "../ProfileAvatar";
 import { usePathname, useRouter } from "next/navigation";
 import { useMemo, useRef, useState } from "react";
 import FloatingPopover from "./FloatingPopover";
+import SupportWidget from "./SupportWidget";
 import styles from "./pro.module.css";
 import { useProLanguage } from "./useProLanguage";
+import { profileLanguageFromCode, type ProLanguage } from "./i18n";
 
 type ProWorkspaceHeaderProps = {
   businessName: string;
@@ -39,6 +41,8 @@ const headerCopy = {
     accountMenu: "Меню аккаунта",
     myProfile: "Мой профиль",
     personalSettings: "Личные настройки",
+    helpSupport: "Помощь и поддержка",
+    language: "Язык",
     logout: "Выйти"
   },
   uk: {
@@ -63,6 +67,8 @@ const headerCopy = {
     accountMenu: "Меню акаунта",
     myProfile: "Мій профіль",
     personalSettings: "Особисті налаштування",
+    helpSupport: "Допомога і підтримка",
+    language: "Мова",
     logout: "Вийти"
   },
   en: {
@@ -87,9 +93,17 @@ const headerCopy = {
     accountMenu: "Account menu",
     myProfile: "My profile",
     personalSettings: "Personal settings",
+    helpSupport: "Help and support",
+    language: "Language",
     logout: "Log out"
   }
 } as const;
+
+const accountLanguages: Array<{ value: ProLanguage; short: string }> = [
+  { value: "ru", short: "RU" },
+  { value: "uk", short: "UA" },
+  { value: "en", short: "EN" }
+];
 
 function ShareIcon() {
   return (
@@ -106,6 +120,16 @@ function BellIcon() {
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M6.7 8.8a5.3 5.3 0 1 1 10.6 0c0 5.1 2.1 6.1 2.1 6.1H4.6s2.1-1 2.1-6.1" />
       <path d="M10.2 18.2a2.1 2.1 0 0 0 3.6 0" />
+    </svg>
+  );
+}
+
+function HelpIcon() {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <circle cx="12" cy="12" r="8.2" />
+      <path d="M9.85 9.25a2.55 2.55 0 0 1 4.83 1.1c0 1.5-1.37 2.08-2.2 2.7-.6.45-.93.82-.93 1.65" />
+      <circle cx="12" cy="16.9" r="0.85" fill="currentColor" stroke="none" />
     </svg>
   );
 }
@@ -142,6 +166,7 @@ export default function ProWorkspaceHeader({
   const shareLinkInputRef = useRef<HTMLInputElement | null>(null);
   const [activeMenu, setActiveMenu] = useState<"share" | "account" | null>(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [isSupportOpen, setIsSupportOpen] = useState(false);
   const pageTitle = useMemo(() => getPageTitle(pathname, language), [language, pathname]);
   const canUseNativeShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
 
@@ -183,6 +208,28 @@ export default function ProWorkspaceHeader({
     }
   }
 
+  async function applyLanguage(nextLanguage: ProLanguage) {
+    if (nextLanguage === language) {
+      setActiveMenu(null);
+      return;
+    }
+
+    document.documentElement.lang = nextLanguage;
+    window.localStorage.setItem("rezervo-pro-language", nextLanguage);
+    window.dispatchEvent(new CustomEvent("rezervo-language-change", { detail: nextLanguage }));
+    setActiveMenu(null);
+
+    try {
+      await fetch("/api/pro/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ language: profileLanguageFromCode(nextLanguage) })
+      });
+    } catch {
+      return;
+    }
+  }
+
   return (
     <div className={`${styles.calendarWorkspaceHeader} ${styles.proPageWorkspaceHeader}`}>
       <div className={styles.calendarWorkspaceMeta}>
@@ -199,6 +246,18 @@ export default function ProWorkspaceHeader({
           onClick={() => setActiveMenu((current) => (current === "share" ? null : "share"))}
         >
           <ShareIcon />
+        </button>
+
+        <button
+          type="button"
+          className={`${styles.calendarIconButton} ${styles.calendarSupportButton}`}
+          aria-label={copy.helpSupport}
+          onClick={() => {
+            setActiveMenu(null);
+            setIsSupportOpen(true);
+          }}
+        >
+          <HelpIcon />
         </button>
 
         <button
@@ -325,6 +384,31 @@ export default function ProWorkspaceHeader({
             >
               {copy.personalSettings}
             </button>
+            <button
+              type="button"
+              onClick={() => {
+                setActiveMenu(null);
+                setIsSupportOpen(true);
+              }}
+            >
+              {copy.helpSupport}
+            </button>
+          </div>
+
+          <div className={styles.calendarAccountMenuSection}>
+            <span className={styles.calendarAccountMenuLabel}>{copy.language}</span>
+            <div className={styles.calendarLanguageOptions}>
+              {accountLanguages.map((item) => (
+                <button
+                  key={item.value}
+                  type="button"
+                  className={`${styles.calendarLanguageOption} ${language === item.value ? styles.calendarLanguageOptionActive : ""}`}
+                  onClick={() => void applyLanguage(item.value)}
+                >
+                  {item.short}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className={styles.calendarAccountMenuSection}>
@@ -340,6 +424,13 @@ export default function ProWorkspaceHeader({
             </button>
           </div>
         </FloatingPopover>
+
+        <SupportWidget
+          isOpen={isSupportOpen}
+          onOpen={() => setIsSupportOpen(true)}
+          onClose={() => setIsSupportOpen(false)}
+          showTrigger={false}
+        />
       </div>
     </div>
   );

@@ -231,3 +231,27 @@ create index if not exists pro_clients_professional_idx on public.pro_clients (p
 create index if not exists support_messages_ticket_idx on public.support_messages (ticket_id, created_at);
 create unique index if not exists support_messages_telegram_update_uidx on public.support_messages (telegram_update_id) where telegram_update_id is not null;
 create unique index if not exists support_messages_telegram_message_uidx on public.support_messages (telegram_message_id) where telegram_message_id is not null;
+
+-- Security hardening
+--
+-- This app talks to Supabase only through server-side routes using the
+-- service-role key. Public browser clients should not be able to read or
+-- mutate these tables directly, so we lock them down with RLS and revoke
+-- broad anon/authenticated grants.
+
+revoke all on all tables in schema public from anon, authenticated;
+alter default privileges in schema public revoke all on tables from anon, authenticated;
+
+alter table if exists public.bookings enable row level security;
+alter table if exists public.customer_accounts enable row level security;
+alter table if exists public.professionals enable row level security;
+alter table if exists public.businesses enable row level security;
+alter table if exists public.business_services enable row level security;
+alter table if exists public.global_service_catalog enable row level security;
+alter table if exists public.business_memberships enable row level security;
+alter table if exists public.business_join_requests enable row level security;
+alter table if exists public.business_staff_invitations enable row level security;
+alter table if exists public.calendar_appointments enable row level security;
+alter table if exists public.pro_clients enable row level security;
+alter table if exists public.support_tickets enable row level security;
+alter table if exists public.support_messages enable row level security;
