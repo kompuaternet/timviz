@@ -11291,7 +11291,7 @@
 
   .calendarTopBarV2 {
     align-items: stretch;
-    justify-content: flex-start;
+    justify-content: space-between;
   }
 
   .calendarTopLeft,
