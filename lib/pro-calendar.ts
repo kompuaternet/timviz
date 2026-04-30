@@ -1035,6 +1035,9 @@ export async function updateCalendarAppointmentMeta(input: {
   priceAmount: number;
   customerName?: string;
   customerPhone?: string;
+  startTime?: string;
+  endTime?: string;
+  serviceName?: string;
   notes?: string;
 }) {
   const access = await resolveCalendarAccess({
@@ -1061,6 +1064,18 @@ export async function updateCalendarAppointmentMeta(input: {
 
     if (typeof input.customerPhone === "string") {
       updatePayload.customer_phone = input.customerPhone.trim();
+    }
+
+    if (typeof input.startTime === "string" && input.startTime.trim()) {
+      updatePayload.start_time = input.startTime.trim();
+    }
+
+    if (typeof input.endTime === "string" && input.endTime.trim()) {
+      updatePayload.end_time = input.endTime.trim();
+    }
+
+    if (typeof input.serviceName === "string" && input.serviceName.trim()) {
+      updatePayload.service_name = input.serviceName.trim();
     }
 
     if (typeof input.notes === "string") {
@@ -1104,6 +1119,15 @@ export async function updateCalendarAppointmentMeta(input: {
   }
   if (typeof input.customerPhone === "string") {
     appointment.customerPhone = input.customerPhone.trim();
+  }
+  if (typeof input.startTime === "string" && input.startTime.trim()) {
+    appointment.startTime = input.startTime.trim();
+  }
+  if (typeof input.endTime === "string" && input.endTime.trim()) {
+    appointment.endTime = input.endTime.trim();
+  }
+  if (typeof input.serviceName === "string" && input.serviceName.trim()) {
+    appointment.serviceName = input.serviceName.trim();
   }
   if (typeof input.notes === "string") {
     appointment.notes = input.notes.trim();

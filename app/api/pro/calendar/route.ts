@@ -126,6 +126,9 @@ export async function PATCH(request: Request) {
         priceAmount: Number(body.priceAmount ?? 0),
         customerName: body.customerName,
         customerPhone: body.customerPhone,
+        startTime: body.startTime,
+        endTime: body.endTime,
+        serviceName: body.serviceName,
         notes: body.notes
       });
 
@@ -139,6 +142,7 @@ export async function PATCH(request: Request) {
           customerNotes: appointment.notes,
           previousCustomerName: body.previousCustomerName,
           previousCustomerPhone: body.previousCustomerPhone,
+          previousAppointmentTime: body.previousAppointmentTime,
           serviceName: appointment.serviceName,
           attendance: appointment.attendance
         });

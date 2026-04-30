@@ -253,8 +253,12 @@ const CALENDAR_TEXT: Record<AppLanguage, {
   chooseService: string;
   start: string;
   end: string;
+  primaryService: string;
+  additionalService: string;
   addAnotherService: string;
+  removeService: string;
   overlapWarning: string;
+  serviceBlocksOverlap: string;
   total: string;
   payable: string;
   cancelUpper: string;
@@ -397,8 +401,12 @@ const CALENDAR_TEXT: Record<AppLanguage, {
     chooseService: "Выбрать услугу",
     start: "Начало",
     end: "Конец",
+    primaryService: "Услуга",
+    additionalService: "Доп. услуга",
     addAnotherService: "ДОБАВИТЬ ЕЩЕ УСЛУГУ ＋",
+    removeService: "Удалить услугу",
     overlapWarning: "Есть наложение на существующие записи, но сохранить можно.",
+    serviceBlocksOverlap: "Услуги внутри одной записи не должны пересекаться по времени.",
     total: "Итого",
     payable: "К оплате",
     cancelUpper: "ОТМЕНИТЬ",
@@ -541,8 +549,12 @@ const CALENDAR_TEXT: Record<AppLanguage, {
     chooseService: "Оберіть послугу",
     start: "Початок",
     end: "Кінець",
+    primaryService: "Послуга",
+    additionalService: "Дод. послуга",
     addAnotherService: "ДОДАТИ ЩЕ ПОСЛУГУ ＋",
+    removeService: "Видалити послугу",
     overlapWarning: "Є накладення на наявні записи, але зберегти можна.",
+    serviceBlocksOverlap: "Послуги в межах одного запису не повинні накладатися за часом.",
     total: "Разом",
     payable: "До оплати",
     cancelUpper: "СКАСУВАТИ",
@@ -685,8 +697,12 @@ const CALENDAR_TEXT: Record<AppLanguage, {
     chooseService: "Choose a service",
     start: "Start",
     end: "End",
+    primaryService: "Service",
+    additionalService: "Extra service",
     addAnotherService: "ADD ANOTHER SERVICE ＋",
+    removeService: "Remove service",
     overlapWarning: "There is an overlap with existing bookings, but saving is allowed.",
+    serviceBlocksOverlap: "Services inside one appointment cannot overlap each other.",
     total: "Total",
     payable: "To pay",
     cancelUpper: "CANCEL",
@@ -1065,6 +1081,21 @@ function createDraftService(startTime: string, serviceName = "", priceAmount = 0
     endTime: minutesToTime(timeToMinutes(startTime) + duration),
     priceAmount
   };
+}
+
+function patchDraftService(item: VisitServiceDraft, patch: Partial<VisitServiceDraft>) {
+  const nextItem = { ...item, ...patch };
+
+  if (patch.startTime && !patch.endTime) {
+    const originalDuration = Math.max(15, timeToMinutes(item.endTime) - timeToMinutes(item.startTime));
+    nextItem.endTime = minutesToTime(timeToMinutes(patch.startTime) + originalDuration);
+  }
+
+  if (patch.endTime && timeToMinutes(patch.endTime) <= timeToMinutes(nextItem.startTime)) {
+    nextItem.endTime = minutesToTime(timeToMinutes(nextItem.startTime) + 15);
+  }
+
+  return nextItem;
 }
 
 function roundMinutesToStep(minutes: number, step = TIME_SELECT_STEP_MINUTES) {
@@ -2068,12 +2099,25 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
       return;
     }
 
+    const draftDuration = Math.max(
+      15,
+      timeToMinutes(selectedAppointment.endTime) - timeToMinutes(selectedAppointment.startTime)
+    );
     setAttendanceDraft(selectedAppointment.attendance);
     setPriceAmountDraft(String(selectedAppointment.priceAmount ?? 0));
     setDetailsCustomerNameDraft(selectedAppointment.customerName || "");
     setDetailsStartTimeDraft(selectedAppointment.startTime);
     setDetailsEndTimeDraft(selectedAppointment.endTime);
     setDetailsServiceNameDraft(selectedAppointment.serviceName || "");
+    setVisitItems([
+      createDraftService(
+        selectedAppointment.startTime,
+        selectedAppointment.serviceName || "",
+        selectedAppointment.priceAmount ?? 0,
+        draftDuration
+      )
+    ]);
+    setEditingServiceIndex(0);
     applyPhoneDraft(selectedAppointment.customerPhone || "", accountCountry, {
       setCountry: setDetailsCustomerPhoneCountryDraft,
       setPhone: setDetailsCustomerPhoneDraft
@@ -2284,33 +2328,48 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
 
   function updateVisitItem(index: number, patch: Partial<VisitServiceDraft>) {
     setVisitItems((current) =>
-      current.map((item, itemIndex) => {
-        if (itemIndex !== index) {
-          return item;
-        }
-
-        const nextItem = { ...item, ...patch };
-
-        if (patch.startTime && !patch.endTime) {
-          const originalDuration = Math.max(15, timeToMinutes(item.endTime) - timeToMinutes(item.startTime));
-          nextItem.endTime = minutesToTime(timeToMinutes(patch.startTime) + originalDuration);
-        }
-
-        if (patch.endTime && timeToMinutes(patch.endTime) <= timeToMinutes(nextItem.startTime)) {
-          nextItem.endTime = minutesToTime(timeToMinutes(nextItem.startTime) + 15);
-        }
-
-        return nextItem;
-      })
+      current.map((item, itemIndex) => (itemIndex === index ? patchDraftService(item, patch) : item))
     );
+  }
+
+  function updateDetailsVisitItem(index: number, patch: Partial<VisitServiceDraft>) {
+    if (index === 0) {
+      const primaryItem = patchDraftService(
+        {
+          id: visitItems[0]?.id ?? crypto.randomUUID(),
+          serviceName: detailsServiceNameDraft,
+          startTime: detailsStartTimeDraft,
+          endTime: detailsEndTimeDraft,
+          priceAmount: Number(priceAmountDraft || 0)
+        },
+        patch
+      );
+
+      setDetailsServiceNameDraft(primaryItem.serviceName);
+      setDetailsStartTimeDraft(primaryItem.startTime);
+      setDetailsEndTimeDraft(primaryItem.endTime);
+      setPriceAmountDraft(String(primaryItem.priceAmount ?? 0));
+    }
+
+    updateVisitItem(index, patch);
   }
 
   function selectService(serviceName: string, price: number, durationMinutes?: number) {
     const duration = durationMinutes || getServiceDurationMinutes(serviceName, snapshot?.workspace.services ?? []);
     if (servicePickerReturnStage === "details") {
-      setDetailsServiceNameDraft(serviceName);
-      setPriceAmountDraft(String(price));
-      setDetailsEndTimeDraft(minutesToTime(timeToMinutes(detailsStartTimeDraft) + duration));
+      const currentItem =
+        visitItems[editingServiceIndex] ??
+        createDraftService(
+          editingServiceIndex === 0 ? detailsStartTimeDraft : detailsEndTimeDraft,
+          "",
+          0,
+          duration
+        );
+      updateDetailsVisitItem(editingServiceIndex, {
+        serviceName,
+        priceAmount: price,
+        endTime: minutesToTime(timeToMinutes(currentItem.startTime) + duration)
+      });
       setDrawerStage("details");
       setServiceQuery("");
       return;
@@ -2338,6 +2397,31 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
       const nextStart = lastItem ? lastItem.endTime : selectedTime || minutesToTime(workStartMinutes);
       return [...current, createDraftService(nextStart)];
     });
+  }
+
+  function addAnotherDetailService() {
+    setVisitItems((current) => {
+      const source =
+        current.length > 0
+          ? current
+          : [
+              createDraftService(
+                detailsStartTimeDraft,
+                detailsServiceNameDraft,
+                Number(priceAmountDraft || 0),
+                Math.max(15, timeToMinutes(detailsEndTimeDraft) - timeToMinutes(detailsStartTimeDraft))
+              )
+            ];
+      const lastItem = source[source.length - 1];
+      return [...source, createDraftService(lastItem.endTime)];
+    });
+  }
+
+  function removeDetailService(index: number) {
+    if (index === 0) {
+      return;
+    }
+    setVisitItems((current) => current.filter((_, itemIndex) => itemIndex !== index));
   }
 
   async function saveVisit(saveWithoutClient = false) {
@@ -2542,14 +2626,38 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
     const normalizedCustomerName = detailsCustomerNameDraft.trim() || selectedAppointment.customerName;
     let normalizedCustomerPhone = "";
     const trimmedPhone = detailsCustomerPhoneDraft.trim();
-    const normalizedServiceName = detailsServiceNameDraft.trim() || selectedAppointment.serviceName;
+    const draftItems = visitItems.length
+      ? visitItems
+      : [
+          createDraftService(
+            detailsStartTimeDraft,
+            detailsServiceNameDraft || selectedAppointment.serviceName,
+            Number(priceAmountDraft || selectedAppointment.priceAmount || 0),
+            Math.max(15, timeToMinutes(detailsEndTimeDraft) - timeToMinutes(detailsStartTimeDraft))
+          )
+        ];
     const normalizedStartTime = detailsStartTimeDraft;
     let normalizedEndTime = detailsEndTimeDraft;
 
     if (timeToMinutes(normalizedEndTime) <= timeToMinutes(normalizedStartTime)) {
       normalizedEndTime = minutesToTime(timeToMinutes(normalizedStartTime) + 15);
       setDetailsEndTimeDraft(normalizedEndTime);
+      setVisitItems((current) =>
+        current.map((item, index) => (index === 0 ? { ...item, endTime: normalizedEndTime } : item))
+      );
     }
+
+    const normalizedItems = draftItems.map((item, index) =>
+      index === 0
+        ? {
+            ...item,
+            serviceName: (detailsServiceNameDraft.trim() || selectedAppointment.serviceName).trim(),
+            startTime: normalizedStartTime,
+            endTime: normalizedEndTime,
+            priceAmount: Math.max(0, Number(priceAmountDraft || 0))
+          }
+        : item
+    );
 
     if (trimmedPhone) {
       if (!isPhoneValid(detailsCustomerPhoneCountryDraft || accountCountry, trimmedPhone)) {
@@ -2560,6 +2668,44 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
       normalizedCustomerPhone = buildInternationalPhone(detailsCustomerPhoneCountryDraft || accountCountry, trimmedPhone);
     }
 
+    if (normalizedItems.some((item) => !item.serviceName.trim())) {
+      showToast(t.chooseServiceForEveryBlock, "warning");
+      return;
+    }
+
+    const hasSelfOverlap = normalizedItems.some((item, index) =>
+      normalizedItems.some(
+        (otherItem, otherIndex) =>
+          otherIndex > index &&
+          appointmentsOverlap(item.startTime, item.endTime, otherItem.startTime, otherItem.endTime)
+      )
+    );
+
+    if (hasSelfOverlap) {
+      showToast(t.serviceBlocksOverlap, "error");
+      return;
+    }
+
+    const externalAppointments = focusedAppointments.filter(
+      (appointment) => appointment.kind === "appointment" && appointment.id !== selectedAppointment.id
+    );
+    const hasExternalOverlap = normalizedItems.some((item) =>
+      externalAppointments.some((appointment) =>
+        appointmentsOverlap(item.startTime, item.endTime, appointment.startTime, appointment.endTime)
+      )
+    );
+    const blockedAppointments = focusedAppointments.filter((appointment) => appointment.kind === "blocked");
+    const touchesBlockedTime = normalizedItems.some((item) =>
+      blockedAppointments.some((appointment) =>
+        appointmentsOverlap(item.startTime, item.endTime, appointment.startTime, appointment.endTime)
+      )
+    );
+
+    if (touchesBlockedTime) {
+      showToast(t.partBlocked, "error");
+      return;
+    }
+
     const response = await fetch("/api/pro/calendar", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
@@ -2568,12 +2714,12 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
         targetProfessionalId: selectedAppointment.professionalId,
         appointmentId: selectedAppointment.id,
         attendance: attendanceDraft,
-        priceAmount: Number(priceAmountDraft || 0),
+        priceAmount: normalizedItems[0]?.priceAmount ?? 0,
         customerName: normalizedCustomerName,
         customerPhone: normalizedCustomerPhone,
-        startTime: normalizedStartTime,
-        endTime: normalizedEndTime,
-        serviceName: normalizedServiceName,
+        startTime: normalizedItems[0]?.startTime ?? normalizedStartTime,
+        endTime: normalizedItems[0]?.endTime ?? normalizedEndTime,
+        serviceName: normalizedItems[0]?.serviceName ?? selectedAppointment.serviceName,
         notes: detailsNotesDraft.trim(),
         previousCustomerName: selectedAppointment.customerName,
         previousCustomerPhone: selectedAppointment.customerPhone,
@@ -2586,8 +2732,35 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
       return;
     }
 
+    for (const item of normalizedItems.slice(1)) {
+      const extraResponse = await fetch("/api/pro/calendar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          targetProfessionalId: selectedAppointment.professionalId,
+          appointmentDate: selectedAppointment.appointmentDate,
+          startTime: item.startTime,
+          endTime: item.endTime,
+          serviceName: item.serviceName,
+          customerName: normalizedCustomerName,
+          customerPhone: normalizedCustomerPhone,
+          priceAmount: item.priceAmount,
+          attendance: attendanceDraft,
+          notes: detailsNotesDraft.trim()
+        })
+      });
+      const extraPayload = await extraResponse.json();
+
+      if (!extraResponse.ok) {
+        showToast(extraPayload.error || t.saveVisitFailed, "error");
+        return;
+      }
+    }
+
     await refreshSnapshot();
-    showToast(t.visitUpdated, "success");
+    setDrawerStage("closed");
+    setSelectedAppointmentId(null);
+    showToast(hasExternalOverlap ? t.visitSavedOverlap : t.visitUpdated, hasExternalOverlap ? "warning" : "success");
   }
 
   async function saveBlockedTime() {
@@ -4237,75 +4410,100 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
                       {selectedAppointmentMember
                         ? buildDisplayName(selectedAppointmentMember.firstName, selectedAppointmentMember.lastName, t.masterFallback)
                         : viewedProfessionalName}
+                      {visitItems.length > 1 ? ` · +${visitItems.length - 1}` : ""}
                     </small>
                   </div>
                 </div>
 
                 <div className={`${styles.createAccountGrid} ${styles.calendarAppointmentEditGrid}`}>
                   <div className={styles.field}>
-                    <label>{t.service}</label>
-                    <button
-                      type="button"
-                      className={styles.calendarVisitServicePicker}
-                      onClick={() => {
-                        setServicePickerReturnStage("details");
-                        setDrawerStage("service-picker");
-                      }}
-                    >
-                      <span>{detailsServiceNameDraft || t.chooseService}</span>
-                      <span aria-hidden="true">⌄</span>
+                    <div className={styles.calendarAppointmentServiceStack}>
+                      {visitItems.map((item, index) => (
+                        <div key={item.id} className={styles.calendarAppointmentServiceEditor}>
+                          <div className={styles.calendarAppointmentServiceHeader}>
+                            <strong>{index === 0 ? t.primaryService : `${t.additionalService} ${index}`}</strong>
+                            {index > 0 ? (
+                              <button
+                                type="button"
+                                className={styles.calendarAppointmentServiceRemove}
+                                onClick={() => removeDetailService(index)}
+                                aria-label={t.removeService}
+                                title={t.removeService}
+                              >
+                                ×
+                              </button>
+                            ) : null}
+                          </div>
+
+                          <div className={styles.calendarAppointmentServiceFieldLabels}>
+                            <span>{t.service}</span>
+                            <span>{t.start}</span>
+                            <span>{t.end}</span>
+                          </div>
+
+                          <div className={styles.calendarAppointmentServiceFieldGrid}>
+                            <button
+                              type="button"
+                              className={styles.calendarVisitServicePicker}
+                              onClick={() => {
+                                setEditingServiceIndex(index);
+                                setServicePickerReturnStage("details");
+                                setDrawerStage("service-picker");
+                              }}
+                            >
+                              <span>{index === 0 ? detailsServiceNameDraft || t.chooseService : item.serviceName || t.chooseService}</span>
+                              <span aria-hidden="true">⌄</span>
+                            </button>
+                            <select
+                              className={styles.select}
+                              value={index === 0 ? detailsStartTimeDraft : item.startTime}
+                              onChange={(event) =>
+                                index === 0
+                                  ? updateDetailsVisitItem(index, { startTime: event.target.value })
+                                  : updateVisitItem(index, { startTime: event.target.value })
+                              }
+                            >
+                              {Array.from({ length: timeOptionCount }, (_, slotIndex) => {
+                                const time = minutesToTime(slotIndex * TIME_SELECT_STEP_MINUTES);
+                                return (
+                                  <option key={time} value={time}>
+                                    {formatDisplayTime(time)}
+                                  </option>
+                                );
+                              })}
+                            </select>
+                            <select
+                              className={styles.select}
+                              value={index === 0 ? detailsEndTimeDraft : item.endTime}
+                              onChange={(event) =>
+                                index === 0
+                                  ? updateDetailsVisitItem(index, { endTime: event.target.value })
+                                  : updateVisitItem(index, { endTime: event.target.value })
+                              }
+                            >
+                              {Array.from({ length: timeOptionCount }, (_, slotIndex) => {
+                                const time = minutesToTime(slotIndex * TIME_SELECT_STEP_MINUTES);
+                                return (
+                                  <option key={time} value={time}>
+                                    {formatDisplayTime(time)}
+                                  </option>
+                                );
+                              })}
+                            </select>
+                          </div>
+
+                          <div className={styles.calendarVisitMeta}>
+                            <span>{index === 0 ? detailsServiceNameDraft || t.chooseService : item.serviceName || t.chooseService}</span>
+                            <strong>{formatMoney(index === 0 ? Number(priceAmountDraft || 0) : item.priceAmount, accountCurrency, locale)}</strong>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <button type="button" className={styles.calendarAddServiceButton} onClick={addAnotherDetailService}>
+                      {t.addAnotherService}
                     </button>
                   </div>
-                  <div className={styles.field}>
-                    <label>{t.visitDateTime}</label>
-                    <div className={styles.calendarVisitTimeGrid}>
-                      <label>
-                        <span>{t.start}</span>
-                        <select
-                          className={styles.select}
-                          value={detailsStartTimeDraft}
-                          onChange={(event) =>
-                            updateDraftTime(event.target.value, detailsEndTimeDraft, {
-                              setStart: setDetailsStartTimeDraft,
-                              setEnd: setDetailsEndTimeDraft
-                            })
-                          }
-                        >
-                          {Array.from({ length: timeOptionCount }, (_, slotIndex) => {
-                            const time = minutesToTime(slotIndex * TIME_SELECT_STEP_MINUTES);
-                            return (
-                              <option key={time} value={time}>
-                                {formatDisplayTime(time)}
-                              </option>
-                            );
-                          })}
-                        </select>
-                      </label>
-                      <label>
-                        <span>{t.end}</span>
-                        <select
-                          className={styles.select}
-                          value={detailsEndTimeDraft}
-                          onChange={(event) =>
-                            updateDraftTime(detailsStartTimeDraft, event.target.value, {
-                              setStart: setDetailsStartTimeDraft,
-                              setEnd: setDetailsEndTimeDraft
-                            })
-                          }
-                        >
-                          {Array.from({ length: timeOptionCount }, (_, slotIndex) => {
-                            const time = minutesToTime(slotIndex * TIME_SELECT_STEP_MINUTES);
-                            return (
-                              <option key={time} value={time}>
-                                {formatDisplayTime(time)}
-                              </option>
-                            );
-                          })}
-                        </select>
-                      </label>
-                    </div>
-                  </div>
-                  <div className={styles.field}>
+                  <div className={`${styles.field} ${styles.calendarAppointmentCustomerField}`}>
                     <label htmlFor="customerName">{t.customer}</label>
                     <input
                       id="customerName"
@@ -4314,7 +4512,7 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
                       onChange={(event) => setDetailsCustomerNameDraft(event.target.value)}
                     />
                   </div>
-                  <div className={styles.field}>
+                  <div className={`${styles.field} ${styles.calendarAppointmentPhoneField}`}>
                     <label htmlFor="customerPhone">{t.phone}</label>
                     <div className={`${styles.phoneRow} ${styles.calendarAppointmentPhoneRow}`}>
                       <div className={styles.phonePrefixPicker} ref={detailsPrefixMenuRef}>
@@ -4403,7 +4601,20 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
                       className={styles.input}
                       inputMode="decimal"
                       value={priceAmountDraft}
-                      onChange={(event) => setPriceAmountDraft(event.target.value)}
+                      onChange={(event) => {
+                        setPriceAmountDraft(event.target.value);
+                        const nextPrice = Number(event.target.value || 0);
+                        setVisitItems((current) =>
+                          current.map((item, index) =>
+                            index === 0
+                              ? {
+                                  ...item,
+                                  priceAmount: Number.isFinite(nextPrice) ? Math.max(0, nextPrice) : 0
+                                }
+                              : item
+                          )
+                        );
+                      }}
                     />
                   </div>
                 </div>

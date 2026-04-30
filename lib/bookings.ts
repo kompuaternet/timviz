@@ -556,6 +556,7 @@ export async function syncBookingStatusFromCalendarAppointment(input: {
   businessId: string;
   appointmentDate: string;
   appointmentTime: string;
+  previousAppointmentTime?: string;
   customerName: string;
   customerPhone: string;
   customerNotes?: string;
@@ -572,6 +573,7 @@ export async function syncBookingStatusFromCalendarAppointment(input: {
   const previousName = input.previousCustomerName?.trim().toLowerCase() ?? "";
   const normalizedServiceName = input.serviceName.trim().toLowerCase();
   const normalizedNotes = input.customerNotes?.trim() ?? "";
+  const previousAppointmentTime = input.previousAppointmentTime?.trim() ?? "";
 
   const pickCandidate = (items: BookingRecord[]) => {
     return (
@@ -590,35 +592,45 @@ export async function syncBookingStatusFromCalendarAppointment(input: {
 
   const supabase = getSupabaseAdmin();
   if (supabase) {
-    const { data, error } = await supabase
-      .from("bookings")
-      .select(
-        "id, salon_slug, salon_name, service_name, appointment_date, appointment_time, customer_name, customer_email, customer_phone, customer_notes, status, created_at"
-      )
-      .eq("salon_slug", salonSlug)
-      .eq("appointment_date", input.appointmentDate)
-      .eq("appointment_time", input.appointmentTime);
+    const timesToCheck = Array.from(new Set([input.appointmentTime, previousAppointmentTime].filter(Boolean)));
+    const candidates: BookingRecord[] = [];
 
-    if (error) {
-      throw new Error(error.message);
+    for (const timeToCheck of timesToCheck) {
+      const { data, error } = await supabase
+        .from("bookings")
+        .select(
+          "id, salon_slug, salon_name, service_name, appointment_date, appointment_time, customer_name, customer_email, customer_phone, customer_notes, status, created_at"
+        )
+        .eq("salon_slug", salonSlug)
+        .eq("appointment_date", input.appointmentDate)
+        .eq("appointment_time", timeToCheck);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      for (const item of ((data as Array<Record<string, unknown>> | null) ?? [])) {
+        const candidate = {
+          id: String(item.id ?? ""),
+          salonSlug: String(item.salon_slug ?? ""),
+          salonName: String(item.salon_name ?? ""),
+          serviceName: String(item.service_name ?? ""),
+          appointmentDate: String(item.appointment_date ?? ""),
+          appointmentTime: String(item.appointment_time ?? ""),
+          customerName: String(item.customer_name ?? ""),
+          customerEmail: String(item.customer_email ?? ""),
+          customerPhone: String(item.customer_phone ?? ""),
+          customerNotes: String(item.customer_notes ?? ""),
+          status: (item.status as BookingStatus) ?? "confirmed",
+          source: "supabase" as const,
+          createdAt: String(item.created_at ?? "")
+        };
+
+        if (!candidates.some((existing) => existing.id === candidate.id)) {
+          candidates.push(candidate);
+        }
+      }
     }
-
-    const candidates =
-      ((data as Array<Record<string, unknown>> | null) ?? []).map((item) => ({
-        id: String(item.id ?? ""),
-        salonSlug: String(item.salon_slug ?? ""),
-        salonName: String(item.salon_name ?? ""),
-        serviceName: String(item.service_name ?? ""),
-        appointmentDate: String(item.appointment_date ?? ""),
-        appointmentTime: String(item.appointment_time ?? ""),
-        customerName: String(item.customer_name ?? ""),
-        customerEmail: String(item.customer_email ?? ""),
-        customerPhone: String(item.customer_phone ?? ""),
-        customerNotes: String(item.customer_notes ?? ""),
-        status: (item.status as BookingStatus) ?? "confirmed",
-        source: "supabase" as const,
-        createdAt: String(item.created_at ?? "")
-      })) ?? [];
 
     const match = pickCandidate(candidates);
     if (
@@ -626,7 +638,9 @@ export async function syncBookingStatusFromCalendarAppointment(input: {
       (match.status === nextStatus &&
         match.customerName === input.customerName.trim() &&
         match.customerPhone === normalizedPhone &&
-        (match.customerNotes ?? "") === normalizedNotes)
+        (match.customerNotes ?? "") === normalizedNotes &&
+        match.appointmentTime === input.appointmentTime &&
+        match.serviceName.trim() === input.serviceName.trim())
     ) {
       return;
     }
@@ -637,7 +651,9 @@ export async function syncBookingStatusFromCalendarAppointment(input: {
         status: nextStatus,
         customer_name: input.customerName.trim(),
         customer_phone: normalizedPhone,
-        customer_notes: normalizedNotes
+        customer_notes: normalizedNotes,
+        appointment_time: input.appointmentTime,
+        service_name: input.serviceName.trim()
       })
       .eq("id", match.id);
     if (updateError) {
@@ -648,11 +664,12 @@ export async function syncBookingStatusFromCalendarAppointment(input: {
   }
 
   const bookings = await readLocalBookings();
+  const timesToCheck = new Set([input.appointmentTime, previousAppointmentTime].filter(Boolean));
   const candidates = bookings.filter(
     (item) =>
       item.salonSlug === salonSlug &&
       item.appointmentDate === input.appointmentDate &&
-      item.appointmentTime === input.appointmentTime
+      timesToCheck.has(item.appointmentTime)
   );
   const match = pickCandidate(candidates);
 
@@ -661,7 +678,9 @@ export async function syncBookingStatusFromCalendarAppointment(input: {
     (match.status === nextStatus &&
       match.customerName === input.customerName.trim() &&
       match.customerPhone === normalizedPhone &&
-      (match.customerNotes ?? "") === normalizedNotes)
+      (match.customerNotes ?? "") === normalizedNotes &&
+      match.appointmentTime === input.appointmentTime &&
+      match.serviceName.trim() === input.serviceName.trim())
   ) {
     return;
   }
@@ -673,7 +692,9 @@ export async function syncBookingStatusFromCalendarAppointment(input: {
           status: nextStatus,
           customerName: input.customerName.trim(),
           customerPhone: normalizedPhone,
-          customerNotes: normalizedNotes
+          customerNotes: normalizedNotes,
+          appointmentTime: input.appointmentTime,
+          serviceName: input.serviceName.trim()
         }
       : item
   );
