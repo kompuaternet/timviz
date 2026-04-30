@@ -671,7 +671,7 @@ export async function getCalendarDaySnapshot(input: {
   };
 }
 
-async function createCalendarAppointmentWithWorkspace(input: {
+async function prepareCalendarAppointmentWithWorkspace(input: {
   workspace: WorkspaceSnapshot;
   servicesCache?: ServiceRecord[];
   professionalId: string;
@@ -741,6 +741,26 @@ async function createCalendarAppointmentWithWorkspace(input: {
     createdAt: new Date().toISOString()
   };
 
+  return appointment;
+}
+
+async function createCalendarAppointmentWithWorkspace(input: {
+  workspace: WorkspaceSnapshot;
+  servicesCache?: ServiceRecord[];
+  professionalId: string;
+  appointmentDate: string;
+  startTime: string;
+  endTime?: string;
+  customerName: string;
+  customerPhone: string;
+  serviceName: string;
+  notes: string;
+  priceAmount?: number;
+  attendance?: CalendarAttendanceStatus;
+  allowMissingService?: boolean;
+}) {
+  const appointment = await prepareCalendarAppointmentWithWorkspace(input);
+
   if (isSupabaseConfigured()) {
     const supabase = getSupabaseAdmin();
     if (!supabase) {
@@ -809,7 +829,7 @@ export async function createCalendarAppointmentsBatch(input: {
 
   for (const item of input.items) {
     created.push(
-      await createCalendarAppointmentWithWorkspace({
+      await prepareCalendarAppointmentWithWorkspace({
         workspace,
         servicesCache,
         professionalId: input.professionalId,
@@ -826,6 +846,42 @@ export async function createCalendarAppointmentsBatch(input: {
       })
     );
   }
+
+  if (isSupabaseConfigured()) {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      throw new Error("Supabase is not available.");
+    }
+
+    const { error } = await supabase.from("calendar_appointments").insert(
+      created.map((appointment) => ({
+        id: appointment.id,
+        business_id: appointment.businessId,
+        professional_id: appointment.professionalId,
+        appointment_date: appointment.appointmentDate,
+        start_time: appointment.startTime,
+        end_time: appointment.endTime,
+        kind: appointment.kind,
+        customer_name: appointment.customerName,
+        customer_phone: appointment.customerPhone,
+        service_name: appointment.serviceName,
+        notes: appointment.notes,
+        attendance: appointment.attendance,
+        price_amount: appointment.priceAmount,
+        created_at: appointment.createdAt
+      }))
+    );
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return created;
+  }
+
+  const store = await readStore();
+  store.appointments.push(...created);
+  await writeStore(store);
 
   return created;
 }

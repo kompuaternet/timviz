@@ -2887,6 +2887,16 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
     setIsSavingVisit(true);
     setToast(null);
     const firstVisitStartTime = visitItems[0]?.startTime ?? "";
+    const requestItems = visitItems.map((item) => ({
+      appointmentDate: selectedDate,
+      startTime: item.startTime,
+      endTime: item.endTime,
+      serviceName: item.serviceName,
+      customerName: selectedCustomer?.name ?? "",
+      customerPhone: selectedCustomer?.phone ?? "",
+      priceAmount: item.priceAmount,
+      notes: ""
+    }));
     setShowClientPrompt(false);
     setDrawerStage("closed");
     setQuickMenu((current) => ({ ...current, visible: false, x: 0, y: 0, time: "" }));
@@ -2916,63 +2926,49 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
       insertOptimisticAppointments(optimisticAppointments);
     }
 
-    try {
-      const response = await fetch("/api/pro/calendar", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          targetProfessionalId: selectedProfessionalId,
-          items: visitItems.map((item) => ({
-            appointmentDate: selectedDate,
-            startTime: item.startTime,
-            endTime: item.endTime,
-            serviceName: item.serviceName,
-            customerName: selectedCustomer?.name ?? "",
-            customerPhone: selectedCustomer?.phone ?? "",
-            priceAmount: item.priceAmount,
-            notes: ""
-          }))
-        })
-      });
-
-      const payload = await response.json();
-
-      if (!response.ok) {
-        removeAppointmentsByIds(optimisticIds);
-        showToast(payload?.error || t.saveVisitFailed, "error");
-        setIsSavingVisit(false);
-        void refreshSnapshot({ preserveUi: true });
-        void loadNotifications(selectedDate).catch(() => undefined);
-        return;
-      }
-
-      const createdAppointments = Array.isArray(payload?.appointments)
-        ? (payload.appointments as CalendarAppointment[])
-        : [];
-
-      removeAppointmentsByIds(optimisticIds);
-      if (createdAppointments.length) {
-        mergeCreatedAppointments(createdAppointments);
-      }
-    } catch {
-      removeAppointmentsByIds(optimisticIds);
-      showToast(t.saveVisitFailed, "error");
-      setIsSavingVisit(false);
-      return;
-    }
-
     setIsSavingVisit(false);
     setVisitItems([]);
     setSelectedCustomer(null);
     showToast(visitHasOverlap ? t.visitSavedOverlap : t.visitSaved, visitHasOverlap ? "warning" : "success");
-    void refreshSnapshot({ preserveUi: true });
-    void loadNotifications(selectedDate).catch(() => undefined);
 
     if (firstVisitStartTime) {
       window.setTimeout(() => {
         scrollCalendarToTime(Math.max(dayStartMinutes, timeToMinutes(firstVisitStartTime) - 30));
       }, 80);
     }
+
+    void (async () => {
+      try {
+        const response = await fetch("/api/pro/calendar", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            targetProfessionalId: selectedProfessionalId,
+            items: requestItems
+          })
+        });
+
+        const payload = await response.json();
+
+        if (!response.ok) {
+          removeAppointmentsByIds(optimisticIds);
+          showToast(payload?.error || t.saveVisitFailed, "error");
+          return;
+        }
+
+        const createdAppointments = Array.isArray(payload?.appointments)
+          ? (payload.appointments as CalendarAppointment[])
+          : [];
+
+        removeAppointmentsByIds(optimisticIds);
+        if (createdAppointments.length) {
+          mergeCreatedAppointments(createdAppointments);
+        }
+      } catch {
+        removeAppointmentsByIds(optimisticIds);
+        showToast(t.saveVisitFailed, "error");
+      }
+    })();
   }
 
   async function createAndSelectClient() {
