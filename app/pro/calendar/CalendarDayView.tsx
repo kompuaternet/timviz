@@ -4372,7 +4372,7 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
                 </label>
                 <label>
                   <span>{t.phone}</span>
-                  <div className={`${styles.phoneRow} ${styles.calendarAppointmentPhoneRow}`}>
+                  <div className={`${styles.phoneRow} ${styles.calendarAppointmentPhoneRow} ${isNewClientPrefixOpen ? styles.phoneRowExpanded : ""}`}>
                     <div className={styles.phonePrefixPicker} ref={newClientPrefixMenuRef}>
                       <button
                         type="button"
@@ -4642,7 +4642,6 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
                           </div>
 
                           <div className={styles.calendarAppointmentServiceFieldLabels}>
-                            <span>{t.service}</span>
                             <span>{t.start}</span>
                             <span>{t.end}</span>
                           </div>
@@ -4720,7 +4719,7 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
                   </div>
                   <div className={`${styles.field} ${styles.calendarAppointmentPhoneField}`}>
                     <label htmlFor="customerPhone">{t.phone}</label>
-                    <div className={`${styles.phoneRow} ${styles.calendarAppointmentPhoneRow}`}>
+                    <div className={`${styles.phoneRow} ${styles.calendarAppointmentPhoneRow} ${isDetailsPrefixOpen ? styles.phoneRowExpanded : ""}`}>
                       <div className={styles.phonePrefixPicker} ref={detailsPrefixMenuRef}>
                         <button
                           type="button"

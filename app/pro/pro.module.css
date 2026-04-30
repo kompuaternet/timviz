@@ -1530,6 +1530,23 @@
   gap: 4px;
 }
 
+.phoneRowExpanded {
+  grid-template-columns: 1fr;
+}
+
+.phoneRowExpanded .phonePrefixPicker {
+  display: grid;
+  gap: 10px;
+}
+
+.phoneRowExpanded .phonePrefixButton {
+  width: 132px;
+}
+
+.phoneRowExpanded .phonePrefixMenuRich {
+  width: 100%;
+}
+
 .phonePrefixMenuRich button {
   grid-template-columns: 1fr auto;
   font-size: 0.96rem;
@@ -8218,23 +8235,16 @@
 .calendarAppointmentServiceFieldLabels {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  grid-template-areas:
-    "service service"
-    "start end";
   gap: 12px;
   align-items: end;
 }
 
 .calendarAppointmentServiceFieldLabels span:first-child {
-  grid-area: service;
+  grid-column: 1;
 }
 
 .calendarAppointmentServiceFieldLabels span:nth-child(2) {
-  grid-area: start;
-}
-
-.calendarAppointmentServiceFieldLabels span:nth-child(3) {
-  grid-area: end;
+  grid-column: 2;
 }
 
 .calendarAppointmentServiceFieldLabels span {
