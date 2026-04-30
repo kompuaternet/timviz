@@ -8184,6 +8184,9 @@
 
 .calendarAppointmentEditGrid {
   padding: 0 20px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
 }
 
 .calendarAppointmentServiceStack {
@@ -11310,8 +11313,8 @@
 
   .calendarAddServiceButton {
     min-height: 42px;
-    margin-top: 0;
-    margin-bottom: 8px;
+    width: 100%;
+    margin: 0 0 8px;
   }
 
   .calendarTotals {
@@ -11320,7 +11323,7 @@
   }
 
   .calendarDrawerFooter {
-    position: sticky;
+    position: static;
     bottom: 0;
     gap: 8px;
     padding-top: 8px;
@@ -11418,6 +11421,16 @@
     gap: 12px;
   }
 
+  .calendarAppointmentEditGrid > .field,
+  .calendarAppointmentServiceStack,
+  .calendarAppointmentServiceEditor,
+  .calendarVisitMeta,
+  .calendarAppointmentPhoneField,
+  .calendarAppointmentCustomerField {
+    width: 100%;
+    min-width: 0;
+  }
+
   .calendarAppointmentPhoneRow {
     grid-template-columns: 148px minmax(0, 1fr);
     gap: 10px;
@@ -11468,6 +11481,32 @@
   }
 
   .calendarAppointmentPhoneField .phonePrefixList {
+    max-height: min(210px, 30vh);
+    overflow: auto;
+    padding-right: 2px;
+  }
+
+  .calendarQuickClientForm .phonePrefixPicker {
+    display: grid;
+    align-content: start;
+    gap: 10px;
+  }
+
+  .calendarQuickClientForm .phonePrefixMenuRich {
+    position: static;
+    top: auto;
+    left: auto;
+    width: 100%;
+    max-height: min(300px, 42vh);
+    margin-top: 0;
+    margin-bottom: 12px;
+  }
+
+  .calendarQuickClientForm .phonePrefixSearchWrap {
+    border-radius: 18px 18px 0 0;
+  }
+
+  .calendarQuickClientForm .phonePrefixList {
     max-height: min(210px, 30vh);
     overflow: auto;
     padding-right: 2px;
