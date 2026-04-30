@@ -6028,6 +6028,7 @@
 
 .calendarCenterShell {
   min-width: 0;
+  min-height: 0;
   display: grid;
   grid-template-rows: auto auto auto auto minmax(0, 1fr);
   background: #f7f8fc;
@@ -6986,8 +6987,12 @@
 }
 
 .calendarV2ScrollFrame {
+  min-height: 0;
   height: auto;
   overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  touch-action: pan-y;
 }
 
 .calendarDayColumnsHeader {
@@ -10724,7 +10729,11 @@
     min-height: 0;
     height: 100%;
     overflow: auto;
+    overflow-x: auto;
+    overflow-y: auto;
     overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
     padding-bottom: calc(170px + env(safe-area-inset-bottom));
     background: #ffffff;
   }

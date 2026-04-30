@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import styles from "./pro.module.css";
 import { useProLanguage } from "./useProLanguage";
 
@@ -29,6 +30,7 @@ export default function SupportWidget({
   const [ticketId, setTicketId] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [status, setStatus] = useState<"idle" | "sent" | "failed" | "empty">("idle");
+  const [isMounted, setIsMounted] = useState(false);
   const lastMessageCreatedAt = useRef("");
   const pollAbortRef = useRef<AbortController | null>(null);
   const pollTimeoutRef = useRef<number | null>(null);
@@ -42,6 +44,10 @@ export default function SupportWidget({
   ]);
 
   useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  useEffect(() => {
     const storedTicketId = window.localStorage.getItem("rezervo-support-ticket-id") || "";
     setTicketId(storedTicketId);
 
@@ -51,6 +57,19 @@ export default function SupportWidget({
         : current
     );
   }, [t.support.botGreeting]);
+
+  useEffect(() => {
+    if (!isOpen || !isMounted) {
+      return;
+    }
+
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+    };
+  }, [isMounted, isOpen]);
 
   const clearPolling = useCallback(() => {
     if (pollTimeoutRef.current !== null) {
@@ -227,7 +246,8 @@ export default function SupportWidget({
         </button>
       ) : null}
 
-      {isOpen ? (
+      {isOpen && isMounted
+        ? createPortal(
         <div className={styles.supportOverlay} onMouseDown={(event) => {
           if (event.target === event.currentTarget) {
             onClose();
@@ -272,8 +292,10 @@ export default function SupportWidget({
               </p>
             ) : null}
           </aside>
-        </div>
-      ) : null}
+        </div>,
+        document.body
+      )
+        : null}
     </>
   );
 }
