@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import {
   cancelBookingFromCalendarAppointment,
+  updateBookingStatus,
   getBookingsForSalonSlug,
   syncBookingStatusFromCalendarAppointment,
   type BookingRecord,
@@ -42,9 +43,12 @@ type PendingBookingSyncPayload = {
   businessId: string;
   appointmentDate: string;
   appointmentTime: string;
+  previousAppointmentTime?: string;
   customerName: string;
   customerPhone: string;
   customerNotes: string;
+  previousCustomerName?: string;
+  previousCustomerPhone?: string;
   serviceName: string;
   attendance: "pending" | "confirmed" | "arrived" | "no_show";
 };
@@ -57,6 +61,24 @@ function mapAttendanceToNotificationStatus(attendance: string) {
   return attendance === "pending" ? "pending" : "confirmed";
 }
 
+function timeToMinutes(value: string) {
+  const [hours, minutes] = value.split(":").map((part) => Number(part));
+  if (!Number.isFinite(hours) || !Number.isFinite(minutes)) {
+    return Number.NaN;
+  }
+
+  return hours * 60 + minutes;
+}
+
+function parseAppointmentTimestamp(date: string, time: string) {
+  if (!date || !time) {
+    return Number.NaN;
+  }
+
+  const timestamp = new Date(`${date}T${time}:00`).getTime();
+  return Number.isFinite(timestamp) ? timestamp : Number.NaN;
+}
+
 function pickMatchingAppointment(
   appointments: Array<CalendarRouteAppointment & { professionalName: string }>,
   booking: BookingRecord
@@ -64,20 +86,43 @@ function pickMatchingAppointment(
   const normalizedPhone = booking.customerPhone.trim();
   const normalizedName = booking.customerName.trim().toLowerCase();
   const normalizedService = booking.serviceName.trim().toLowerCase();
-  const scoped = appointments.filter(
+  const exactScoped = appointments.filter(
     (item) =>
       item.kind === "appointment" &&
       item.appointmentDate === booking.appointmentDate &&
       item.startTime === booking.appointmentTime
   );
-
-  return (
-    scoped.find((item) => item.customerPhone.trim() && item.customerPhone.trim() === normalizedPhone) ??
-    scoped.find((item) => item.customerName.trim().toLowerCase() === normalizedName) ??
-    scoped.find((item) => item.serviceName.trim().toLowerCase() === normalizedService) ??
-    scoped[0] ??
-    null
+  const sameDateScoped = appointments.filter(
+    (item) =>
+      item.kind === "appointment" &&
+      item.appointmentDate === booking.appointmentDate
   );
+
+  const bookingMinutes = timeToMinutes(booking.appointmentTime);
+  const rankedSameDateMatches = sameDateScoped
+    .map((item) => {
+      const phoneMatches = !!normalizedPhone && item.customerPhone.trim() === normalizedPhone;
+      const nameMatches = item.customerName.trim().toLowerCase() === normalizedName;
+      const serviceMatches = item.serviceName.trim().toLowerCase() === normalizedService;
+      const itemMinutes = timeToMinutes(item.startTime);
+      const timeDistance =
+        Number.isFinite(bookingMinutes) && Number.isFinite(itemMinutes)
+          ? Math.abs(itemMinutes - bookingMinutes)
+          : 9999;
+      let score = 0;
+
+      if (phoneMatches) score += 100;
+      if (nameMatches) score += 60;
+      if (serviceMatches) score += 40;
+      if (item.startTime === booking.appointmentTime) score += 30;
+      score -= Math.min(timeDistance, 12 * 60) / 10;
+
+      return { item, score };
+    })
+    .filter((entry) => entry.score > 0)
+    .sort((left, right) => right.score - left.score);
+
+  return rankedSameDateMatches[0]?.item ?? exactScoped[0] ?? sameDateScoped[0] ?? null;
 }
 
 async function decorateSnapshotWithOnlineBookingNotifications(snapshot: CalendarRouteSnapshot) {
@@ -101,23 +146,57 @@ async function decorateSnapshotWithOnlineBookingNotifications(snapshot: Calendar
     }));
 
   const mismatchedPendingBookings: PendingBookingSyncPayload[] = [];
+  const orphanedPendingBookingIds: string[] = [];
+  const now = Date.now();
+  const orphanGraceMs = 2 * 60 * 1000;
 
   const notifications = bookings
     .map((booking) => {
       const appointment = pickMatchingAppointment(appointmentPool, booking);
+      const hasDriftedFromBooking =
+        !!appointment &&
+        appointment.kind === "appointment" &&
+        (
+          appointment.startTime !== booking.appointmentTime ||
+          appointment.serviceName.trim() !== booking.serviceName.trim() ||
+          appointment.customerName.trim() !== booking.customerName.trim() ||
+          appointment.customerPhone.trim() !== booking.customerPhone.trim()
+        );
+      const bookingCreatedAt = new Date(booking.createdAt).getTime();
+      const bookingScheduledAt = parseAppointmentTimestamp(booking.appointmentDate, booking.appointmentTime);
+      const shouldArchiveAsOrphan =
+        booking.status === "pending" &&
+        !appointment &&
+        (
+          (Number.isFinite(bookingCreatedAt) && now - bookingCreatedAt > orphanGraceMs) ||
+          (Number.isFinite(bookingScheduledAt) && bookingScheduledAt < now - orphanGraceMs)
+        );
       const effectiveStatus =
-        booking.status === "pending" && appointment
+        shouldArchiveAsOrphan
+          ? "cancelled"
+          : booking.status === "pending" && appointment
           ? mapAttendanceToNotificationStatus(appointment.attendance)
           : mapBookingStatusForNotification(booking.status);
 
-      if (booking.status === "pending" && effectiveStatus !== "pending" && appointment?.kind === "appointment") {
+      if (shouldArchiveAsOrphan) {
+        orphanedPendingBookingIds.push(booking.id);
+      }
+
+      if (
+        booking.status === "pending" &&
+        appointment?.kind === "appointment" &&
+        (effectiveStatus !== "pending" || hasDriftedFromBooking)
+      ) {
         mismatchedPendingBookings.push({
           businessId,
           appointmentDate: appointment.appointmentDate,
           appointmentTime: appointment.startTime,
+          previousAppointmentTime: hasDriftedFromBooking ? booking.appointmentTime : undefined,
           customerName: appointment.customerName,
           customerPhone: appointment.customerPhone,
           customerNotes: appointment.notes,
+          previousCustomerName: hasDriftedFromBooking ? booking.customerName : undefined,
+          previousCustomerPhone: hasDriftedFromBooking ? booking.customerPhone : undefined,
           serviceName: appointment.serviceName,
           attendance: appointment.attendance
         });
@@ -148,13 +227,22 @@ async function decorateSnapshotWithOnlineBookingNotifications(snapshot: Calendar
           businessId: item.businessId,
           appointmentDate: item.appointmentDate,
           appointmentTime: item.appointmentTime,
+          previousAppointmentTime: item.previousAppointmentTime,
           customerName: item.customerName,
           customerPhone: item.customerPhone,
           customerNotes: item.customerNotes,
+          previousCustomerName: item.previousCustomerName,
+          previousCustomerPhone: item.previousCustomerPhone,
           serviceName: item.serviceName,
           attendance: item.attendance
         })
       )
+    );
+  }
+
+  if (orphanedPendingBookingIds.length) {
+    await Promise.allSettled(
+      orphanedPendingBookingIds.map((id) => updateBookingStatus(id, "cancelled"))
     );
   }
 
@@ -318,6 +406,7 @@ export async function PATCH(request: Request) {
       return NextResponse.json(appointment);
     }
 
+    const previousAppointmentTime = body.previousAppointmentTime || "";
     const appointment = await updateCalendarAppointmentTime({
       professionalId,
       targetProfessionalId: body.targetProfessionalId,
@@ -325,6 +414,20 @@ export async function PATCH(request: Request) {
       startTime: body.startTime,
       endTime: body.endTime
     });
+
+    if (appointment.kind === "appointment") {
+      await syncBookingStatusFromCalendarAppointment({
+        businessId: appointment.businessId,
+        appointmentDate: appointment.appointmentDate,
+        appointmentTime: appointment.startTime,
+        previousAppointmentTime,
+        customerName: appointment.customerName,
+        customerPhone: appointment.customerPhone,
+        customerNotes: appointment.notes,
+        serviceName: appointment.serviceName,
+        attendance: appointment.attendance
+      });
+    }
 
     return NextResponse.json(appointment);
   } catch (error) {

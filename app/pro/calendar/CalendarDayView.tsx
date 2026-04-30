@@ -2313,7 +2313,8 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
             targetProfessionalId: appointment.professionalId,
             appointmentId: appointment.id,
             startTime: appointment.startTime,
-            endTime: appointment.endTime
+            endTime: appointment.endTime,
+            previousAppointmentTime: minutesToTime(dragRef.current.originalStartMinutes)
           })
         });
       }

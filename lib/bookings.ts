@@ -567,19 +567,24 @@ export async function createBusinessBooking(input: PublicBusinessBookingInput) {
     await writeLocalBookings(bookings);
   }
 
-  await createCalendarAppointment({
-    professionalId,
-    appointmentDate: input.appointmentDate,
-    startTime: input.appointmentTime,
-    customerName: input.customerName,
-    customerPhone: input.customerPhone,
-    serviceName: combinedServiceName,
-    notes: input.customerNotes,
-    priceAmount: totalPrice,
-    attendance: "pending",
-    endTime: addMinutesToTime(input.appointmentTime, totalDurationMinutes),
-    allowMissingService: selectedServices.length > 1
-  });
+  try {
+    await createCalendarAppointment({
+      professionalId,
+      appointmentDate: input.appointmentDate,
+      startTime: input.appointmentTime,
+      customerName: input.customerName,
+      customerPhone: input.customerPhone,
+      serviceName: combinedServiceName,
+      notes: input.customerNotes,
+      priceAmount: totalPrice,
+      attendance: "pending",
+      endTime: addMinutesToTime(input.appointmentTime, totalDurationMinutes),
+      allowMissingService: selectedServices.length > 1
+    });
+  } catch (error) {
+    await deleteBooking(booking.id).catch(() => undefined);
+    throw error;
+  }
 
   return booking;
 }
@@ -713,6 +718,27 @@ export async function updateBookingStatus(id: string, status: BookingStatus) {
   const nextBookings = bookings.map((booking) =>
     booking.id === id ? { ...booking, status } : booking
   );
+  await writeLocalBookings(nextBookings);
+}
+
+export async function deleteBooking(id: string) {
+  const supabase = getSupabaseAdmin();
+
+  if (supabase) {
+    const { error } = await supabase
+      .from("bookings")
+      .delete()
+      .eq("id", id);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return;
+  }
+
+  const bookings = await readLocalBookings();
+  const nextBookings = bookings.filter((booking) => booking.id !== id);
   await writeLocalBookings(nextBookings);
 }
 
