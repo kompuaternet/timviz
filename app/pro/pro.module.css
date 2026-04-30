@@ -6005,7 +6005,9 @@
 .calendarV2Shell {
   grid-template-columns: 68px minmax(0, 1fr) 0;
   height: 100vh;
+  height: 100dvh;
   min-height: 100vh;
+  min-height: 100dvh;
   overflow: hidden;
   background: #f7f8fc;
 }
@@ -6038,6 +6040,13 @@
   justify-content: space-between;
   gap: 14px;
   padding: 6px 18px 5px;
+  position: relative;
+  z-index: 9;
+  isolation: isolate;
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 
 .proPageWorkspaceHeader {
@@ -6102,6 +6111,12 @@
   position: sticky;
   top: 0;
   z-index: 8;
+  isolation: isolate;
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  will-change: transform;
 }
 
 .calendarTopBarV2 .calendarTopLeft {
@@ -6984,6 +6999,10 @@
   position: sticky;
   top: 0;
   z-index: 4;
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
 }
 
 .calendarDayHourSpacer {
@@ -9602,6 +9621,11 @@
 }
 
 @media (max-width: 1180px) {
+  .calendarV2Shell {
+    min-height: -webkit-fill-available;
+    height: -webkit-fill-available;
+  }
+
   .splitShell,
   .workspaceShell {
     grid-template-columns: 1fr;
