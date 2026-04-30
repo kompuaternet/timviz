@@ -1842,7 +1842,7 @@
   min-height: 54px;
   padding: 5px 3px;
   border: 1px solid rgba(220, 227, 245, 0.32);
-  background: rgba(255, 255, 255, 0.78);
+  background: rgba(255, 255, 255, 0.88);
   border-radius: 13px;
   color: #6d7690;
   text-decoration: none;
@@ -1857,7 +1857,7 @@
 }
 
 .mobileWorkspaceNavLink:hover {
-  background: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.96);
   color: #1f2433;
 }
 

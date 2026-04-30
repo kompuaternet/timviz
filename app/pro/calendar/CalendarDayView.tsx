@@ -4197,7 +4197,13 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
                         aria-expanded={isNewClientPrefixOpen}
                         onClick={() => {
                           ensureFormFieldVisible(newClientPrefixMenuRef.current, "smooth");
-                          setIsNewClientPrefixOpen((value) => !value);
+                          setIsNewClientPrefixOpen((value) => {
+                            const nextValue = !value;
+                            if (nextValue) {
+                              window.setTimeout(() => ensureFormFieldVisible(newClientPrefixMenuRef.current, "smooth"), 80);
+                            }
+                            return nextValue;
+                          });
                         }}
                       >
                         <div className={styles.calendarPrefixButtonText}>
@@ -4539,7 +4545,13 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
                           aria-expanded={isDetailsPrefixOpen}
                           onClick={() => {
                             ensureFormFieldVisible(detailsPrefixMenuRef.current, "smooth");
-                            setIsDetailsPrefixOpen((value) => !value);
+                            setIsDetailsPrefixOpen((value) => {
+                              const nextValue = !value;
+                              if (nextValue) {
+                                window.setTimeout(() => ensureFormFieldVisible(detailsPrefixMenuRef.current, "smooth"), 80);
+                              }
+                              return nextValue;
+                            });
                           }}
                         >
                           <div className={styles.calendarPrefixButtonText}>
