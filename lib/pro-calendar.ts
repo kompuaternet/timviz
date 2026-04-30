@@ -543,6 +543,19 @@ async function resolveCalendarAccess(input: {
   };
 }
 
+export async function getCalendarNotificationsContext(input: {
+  professionalId: string;
+}) {
+  const access = await resolveCalendarAccess({
+    viewerProfessionalId: input.professionalId
+  });
+
+  return {
+    businessId: access.targetWorkspace.business.id,
+    teamMembers: access.teamMembers
+  };
+}
+
 export async function getCalendarDaySnapshot(input: {
   professionalId: string;
   appointmentDate: string;

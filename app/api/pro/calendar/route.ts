@@ -14,6 +14,7 @@ import {
   createCalendarAppointment,
   deleteCalendarAppointment,
   getAppointmentsForBusiness,
+  getCalendarNotificationsContext,
   getCalendarDaySnapshot,
   updateCalendarAppointmentMeta,
   updateCalendarAppointmentTime
@@ -37,6 +38,13 @@ type CalendarRouteAppointment = {
 type CalendarRouteSnapshot = Awaited<ReturnType<typeof getCalendarDaySnapshot>> & {
   pendingOnlineBookings?: Array<Record<string, string>>;
   archivedOnlineBookings?: Array<Record<string, string>>;
+};
+
+type CalendarRouteTeamMember = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  role: string;
 };
 
 type PendingBookingSyncPayload = {
@@ -125,16 +133,22 @@ function pickMatchingAppointment(
   return rankedSameDateMatches[0]?.item ?? exactScoped[0] ?? sameDateScoped[0] ?? null;
 }
 
-async function decorateSnapshotWithOnlineBookingNotifications(snapshot: CalendarRouteSnapshot) {
-  const businessId = snapshot.workspace.business.id;
+async function getOnlineBookingNotifications(input: {
+  businessId: string;
+  teamMembers: CalendarRouteTeamMember[];
+}) {
+  const businessId = input.businessId;
 
   if (!businessId) {
-    return snapshot;
+    return {
+      pendingOnlineBookings: [],
+      archivedOnlineBookings: []
+    };
   }
 
   const bookings = await getBookingsForSalonSlug(`business:${businessId}`);
   const memberNameMap = new Map(
-    snapshot.teamMembers.map((member) => [
+    input.teamMembers.map((member) => [
       member.id,
       `${member.firstName} ${member.lastName}`.trim() || member.role
     ])
@@ -247,7 +261,6 @@ async function decorateSnapshotWithOnlineBookingNotifications(snapshot: Calendar
   }
 
   return {
-    ...snapshot,
     pendingOnlineBookings: notifications.filter((item) => item.status === "pending"),
     archivedOnlineBookings: notifications.filter((item) => item.status !== "pending").slice(0, 12)
   };
@@ -267,8 +280,23 @@ export async function GET(request: Request) {
     const url = new URL(request.url);
     const appointmentDate = url.searchParams.get("date") || new Date().toISOString().slice(0, 10);
     const targetProfessionalId = url.searchParams.get("targetProfessionalId") || undefined;
+    const mode = url.searchParams.get("mode");
+
+    if (mode === "notifications") {
+      const context = await getCalendarNotificationsContext({ professionalId });
+      const notifications = await getOnlineBookingNotifications(context);
+      return NextResponse.json(notifications);
+    }
+
     const result = await getCalendarDaySnapshot({ professionalId, appointmentDate, targetProfessionalId });
-    const decoratedResult = await decorateSnapshotWithOnlineBookingNotifications(result as CalendarRouteSnapshot);
+    const notifications = await getOnlineBookingNotifications({
+      businessId: result.workspace.business.id,
+      teamMembers: result.teamMembers
+    });
+    const decoratedResult: CalendarRouteSnapshot = {
+      ...(result as CalendarRouteSnapshot),
+      ...notifications
+    };
 
     return NextResponse.json(decoratedResult);
   } catch (error) {

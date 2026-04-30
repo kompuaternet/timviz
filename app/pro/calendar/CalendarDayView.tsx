@@ -41,6 +41,7 @@ type CalendarAppointment = {
   notes: string;
   attendance: "pending" | "confirmed" | "arrived" | "no_show";
   priceAmount: number;
+  createdAt: string;
 };
 
 type CalendarClient = {
@@ -1449,28 +1450,180 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
     return `/api/pro/calendar?${params.toString()}`;
   }
 
-  async function loadSnapshot(dateKey = selectedDate, targetId = selectedProfessionalId) {
+  function buildNotificationsUrl(dateKey = selectedDate) {
+    const params = new URLSearchParams({
+      mode: "notifications",
+      date: dateKey
+    });
+
+    return `/api/pro/calendar?${params.toString()}`;
+  }
+
+  function applyNotificationPayload(
+    payload: Pick<CalendarSnapshot, "pendingOnlineBookings" | "archivedOnlineBookings">
+  ) {
+    setSnapshot((current) =>
+      current
+        ? {
+            ...current,
+            pendingOnlineBookings: payload.pendingOnlineBookings ?? [],
+            archivedOnlineBookings: payload.archivedOnlineBookings ?? []
+          }
+        : current
+    );
+  }
+
+  function mergeCreatedAppointments(appointmentsToMerge: CalendarAppointment[]) {
+    if (!appointmentsToMerge.length) {
+      return;
+    }
+
+    const mergedIds = new Set(appointmentsToMerge.map((appointment) => appointment.id));
+    const weekKeysSet = new Set(getWeekKeys(selectedDate));
+    const monthKey = selectedDate.slice(0, 7);
+
+    setSnapshot((current) => {
+      if (!current) {
+        return current;
+      }
+
+      const mergeList = (appointments: CalendarAppointment[], professionalId?: string, restrictToViewedDate = false) => {
+        const mergedAppointments = appointmentsToMerge.filter((appointment) => {
+          if (professionalId && appointment.professionalId !== professionalId) {
+            return false;
+          }
+
+          if (restrictToViewedDate && appointment.appointmentDate !== selectedDate) {
+            return false;
+          }
+
+          return true;
+        });
+
+        return sortAppointmentsByTime([
+          ...appointments.filter((appointment) => !mergedIds.has(appointment.id)),
+          ...mergedAppointments
+        ]);
+      };
+
+      const relevantStatsAppointments = appointmentsToMerge.filter(
+        (appointment) =>
+          appointment.kind === "appointment" &&
+          appointment.attendance !== "pending" &&
+          appointment.professionalId === current.viewedProfessionalId
+      );
+
+      const stats =
+        current.stats && relevantStatsAppointments.length
+          ? {
+              day: {
+                visitsCount:
+                  current.stats.day.visitsCount +
+                  relevantStatsAppointments.filter((appointment) => appointment.appointmentDate === selectedDate).length,
+                revenue:
+                  current.stats.day.revenue +
+                  relevantStatsAppointments
+                    .filter((appointment) => appointment.appointmentDate === selectedDate)
+                    .reduce((sum, appointment) => sum + (appointment.priceAmount || 0), 0)
+              },
+              week: {
+                visitsCount:
+                  current.stats.week.visitsCount +
+                  relevantStatsAppointments.filter((appointment) => weekKeysSet.has(appointment.appointmentDate)).length,
+                revenue:
+                  current.stats.week.revenue +
+                  relevantStatsAppointments
+                    .filter((appointment) => weekKeysSet.has(appointment.appointmentDate))
+                    .reduce((sum, appointment) => sum + (appointment.priceAmount || 0), 0)
+              },
+              month: {
+                visitsCount:
+                  current.stats.month.visitsCount +
+                  relevantStatsAppointments.filter((appointment) => appointment.appointmentDate.slice(0, 7) === monthKey).length,
+                revenue:
+                  current.stats.month.revenue +
+                  relevantStatsAppointments
+                    .filter((appointment) => appointment.appointmentDate.slice(0, 7) === monthKey)
+                    .reduce((sum, appointment) => sum + (appointment.priceAmount || 0), 0)
+              }
+            }
+          : current.stats;
+
+      return {
+        ...current,
+        appointments: mergeList(current.appointments, current.viewedProfessionalId, true),
+        memberCalendars: current.memberCalendars.map((member) => ({
+          ...member,
+          appointments: mergeList(member.appointments, member.professionalId, true)
+        })),
+        recentActivity: [
+          ...appointmentsToMerge
+            .filter((appointment) => appointment.kind === "appointment")
+            .map((appointment) => ({
+              id: appointment.id,
+              appointmentDate: appointment.appointmentDate,
+              startTime: appointment.startTime,
+              customerName: appointment.customerName,
+              serviceName: appointment.serviceName,
+              professionalId: appointment.professionalId,
+              professionalName:
+                current.teamMembers.find((member) => member.id === appointment.professionalId)
+                  ? buildDisplayName(
+                      current.teamMembers.find((member) => member.id === appointment.professionalId)?.firstName,
+                      current.teamMembers.find((member) => member.id === appointment.professionalId)?.lastName,
+                      t.masterFallback
+                    )
+                  : appointment.customerName || t.masterFallback,
+              createdAt: appointment.createdAt
+            })),
+          ...current.recentActivity
+        ].slice(0, 8),
+        stats
+      };
+    });
+  }
+
+  async function loadNotifications(dateKey = selectedDate) {
+    const response = await fetch(buildNotificationsUrl(dateKey));
+    const data = (await response.json()) as Pick<CalendarSnapshot, "pendingOnlineBookings" | "archivedOnlineBookings">;
+
+    if (!response.ok) {
+      throw new Error("Failed to load notifications.");
+    }
+
+    applyNotificationPayload(data);
+  }
+
+  async function loadSnapshot(
+    dateKey = selectedDate,
+    targetId = selectedProfessionalId,
+    options: { preserveUi?: boolean } = {}
+  ) {
     const response = await fetch(buildCalendarUrl(dateKey, targetId));
     const data = (await response.json()) as CalendarSnapshot;
     const allowedIds = (data.memberCalendars ?? []).map((member) => member.professionalId);
-    const nextVisibleIds =
-      visibleProfessionalIds.filter((memberId) => allowedIds.includes(memberId)) ||
-      [];
+    const nextViewedProfessionalId = data.viewedProfessionalId || professionalId;
 
     setSnapshot(data);
-    setSelectedProfessionalId(data.viewedProfessionalId || professionalId);
-    setVisibleProfessionalIds(
-      nextVisibleIds.length
-        ? nextVisibleIds
-        : [data.viewedProfessionalId || professionalId].filter(Boolean)
+    setSelectedProfessionalId((current) =>
+      options.preserveUi && allowedIds.includes(current) ? current : nextViewedProfessionalId
     );
+    setVisibleProfessionalIds((current) => {
+      const nextVisibleIds = current.filter((memberId) => allowedIds.includes(memberId));
+      return nextVisibleIds.length ? nextVisibleIds : [nextViewedProfessionalId].filter(Boolean);
+    });
+
+    if (options.preserveUi) {
+      return;
+    }
+
     setSelectedTime("");
     setQuickMenu({
       visible: false,
       x: 0,
       y: 0,
       time: "",
-      professionalId: data.viewedProfessionalId || professionalId
+      professionalId: nextViewedProfessionalId
     });
     setActiveToolbarMenu(null);
     setDrawerStage("closed");
@@ -2332,8 +2485,8 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
     };
   }, [minuteHeight, snapshot]);
 
-  async function refreshSnapshot() {
-    await loadSnapshot(selectedDate, selectedProfessionalId);
+  async function refreshSnapshot(options: { preserveUi?: boolean } = {}) {
+    await loadSnapshot(selectedDate, selectedProfessionalId, options);
   }
 
   function openAppointmentDetails(appointment: CalendarAppointment) {
@@ -2611,36 +2764,62 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
     setDrawerStage("closed");
     setQuickMenu((current) => ({ ...current, visible: false, x: 0, y: 0, time: "" }));
 
-    for (const item of visitItems) {
-      const response = await fetch("/api/pro/calendar", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          targetProfessionalId: selectedProfessionalId,
-          appointmentDate: selectedDate,
-          startTime: item.startTime,
-          endTime: item.endTime,
-          serviceName: item.serviceName,
-          customerName: selectedCustomer?.name ?? "",
-          customerPhone: selectedCustomer?.phone ?? "",
-          priceAmount: item.priceAmount,
-          notes: ""
-        })
-      });
+    try {
+      const results = await Promise.all(
+        visitItems.map(async (item) => {
+          const response = await fetch("/api/pro/calendar", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              targetProfessionalId: selectedProfessionalId,
+              appointmentDate: selectedDate,
+              startTime: item.startTime,
+              endTime: item.endTime,
+              serviceName: item.serviceName,
+              customerName: selectedCustomer?.name ?? "",
+              customerPhone: selectedCustomer?.phone ?? "",
+              priceAmount: item.priceAmount,
+              notes: ""
+            })
+          });
 
-      const payload = await response.json();
-      if (!response.ok) {
-        showToast(payload.error || t.saveVisitFailed, "error");
+          const payload = await response.json();
+          return {
+            ok: response.ok,
+            payload,
+            item
+          };
+        })
+      );
+
+      const failedResult = results.find((result) => !result.ok);
+      const createdAppointments = results
+        .filter((result): result is { ok: true; payload: CalendarAppointment; item: VisitServiceDraft } => result.ok)
+        .map((result) => result.payload);
+
+      if (createdAppointments.length) {
+        mergeCreatedAppointments(createdAppointments);
+      }
+
+      if (failedResult) {
+        showToast(failedResult.payload?.error || t.saveVisitFailed, "error");
         setIsSavingVisit(false);
+        void refreshSnapshot({ preserveUi: true });
+        void loadNotifications(selectedDate).catch(() => undefined);
         return;
       }
+    } catch {
+      showToast(t.saveVisitFailed, "error");
+      setIsSavingVisit(false);
+      return;
     }
 
-    await refreshSnapshot();
     setIsSavingVisit(false);
     setVisitItems([]);
     setSelectedCustomer(null);
     showToast(visitHasOverlap ? t.visitSavedOverlap : t.visitSaved, visitHasOverlap ? "warning" : "success");
+    void refreshSnapshot({ preserveUi: true });
+    void loadNotifications(selectedDate).catch(() => undefined);
 
     if (firstVisitStartTime) {
       window.setTimeout(() => {
@@ -3115,7 +3294,7 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
               type="button"
               className={`${styles.calendarIconButton} ${drawerStage === "notifications" ? styles.calendarIconButtonActive : ""}`}
               aria-label={t.notifications}
-              onClick={async () => {
+              onClick={() => {
                 const shouldOpen = drawerStage !== "notifications";
                 setActiveToolbarMenu(null);
                 setQuickMenu((current) => ({ ...current, visible: false, x: 0, y: 0, time: "" }));
@@ -3124,8 +3303,8 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
                   return;
                 }
 
-                await refreshSnapshot();
                 setDrawerStage("notifications");
+                void loadNotifications(selectedDate).catch(() => undefined);
               }}
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

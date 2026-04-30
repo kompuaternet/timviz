@@ -181,7 +181,7 @@ export default function ProWorkspaceHeader({
   useEffect(() => {
     const todayDate = formatDateKey(new Date());
 
-    void fetch(`/api/pro/calendar?date=${todayDate}`)
+    void fetch(`/api/pro/calendar?mode=notifications&date=${todayDate}`)
       .then((response) => response.json())
       .then((payload: { pendingOnlineBookings?: Array<unknown> }) => {
         setNotificationsCount(payload.pendingOnlineBookings?.length ?? 0);
