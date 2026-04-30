@@ -8,6 +8,7 @@ import {
   getPhoneLocalDigits,
   getPhoneRule,
   getPhoneValidationMessage,
+  inferPhoneCountryFromLocales,
   isPhoneValid,
   onlyPhoneDigits,
   phoneCountries
@@ -135,11 +136,51 @@ function getCountryFromRegion(region: string) {
     AE: "United Arab Emirates",
     CA: "Canada"
   };
-  return countriesByRegion[region] || "Ukraine";
+  return countriesByRegion[region] || "";
+}
+
+function getCountryFromTimezone(timezone: string) {
+  const countriesByTimezone: Record<string, string> = {
+    "Europe/Kiev": "Ukraine",
+    "Europe/Warsaw": "Poland",
+    "Europe/London": "United Kingdom",
+    "America/New_York": "United States",
+    "America/Toronto": "Canada",
+    "Europe/Berlin": "Germany",
+    "Europe/Paris": "France",
+    "Europe/Madrid": "Spain",
+    "Europe/Rome": "Italy",
+    "Europe/Prague": "Czech Republic",
+    "Asia/Tbilisi": "Georgia",
+    "Asia/Yerevan": "Armenia",
+    "Asia/Almaty": "Kazakhstan",
+    "Europe/Vilnius": "Lithuania",
+    "Europe/Riga": "Latvia",
+    "Europe/Tallinn": "Estonia",
+    "Europe/Istanbul": "Turkey",
+    "Asia/Dubai": "United Arab Emirates",
+    "Europe/Moscow": "Russia"
+  };
+
+  return countriesByTimezone[timezone] || "";
 }
 
 function getBrowserCountry() {
-  return getCountryFromRegion(getBrowserRegion());
+  if (typeof window === "undefined") return "Ukraine";
+
+  const browserTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "";
+  const localeCandidates = [
+    navigator.language,
+    ...(navigator.languages ?? []),
+    Intl.DateTimeFormat().resolvedOptions().locale
+  ].filter(Boolean);
+
+  return (
+    inferPhoneCountryFromLocales(localeCandidates) ||
+    getCountryFromRegion(getBrowserRegion()) ||
+    getCountryFromTimezone(browserTimezone) ||
+    "Ukraine"
+  );
 }
 
 function getBrowserTimezone() {
@@ -398,9 +439,14 @@ export default function CreateAccountForm() {
       : isKnownCountry(setupDraft?.country)
         ? setupDraft.country
         : browserCountry;
-    const draftPhoneCountry = isKnownCountry(liveDraft?.phoneCountry)
-      ? liveDraft.phoneCountry
-      : draftCountry;
+    const hasStoredPhone =
+      typeof liveDraft?.phone === "string"
+        ? liveDraft.phone.trim().length > 0
+        : typeof setupDraft?.phone === "string"
+          ? setupDraft.phone.trim().length > 0
+          : false;
+    const storedPhoneCountry = isKnownCountry(liveDraft?.phoneCountry) ? liveDraft.phoneCountry : "";
+    const draftPhoneCountry = hasStoredPhone ? storedPhoneCountry || draftCountry : draftCountry;
     const draftPhoneRule = getPhoneRule(draftPhoneCountry);
     const draftPhone = typeof liveDraft?.phone === "string"
       ? formatPhoneLocal(liveDraft.phone, draftPhoneRule)
@@ -462,7 +508,7 @@ export default function CreateAccountForm() {
     setTermsAccepted(true);
     setStep("details");
 
-    if (googleCountry && googleCountry !== "Ukraine") {
+    if (googleCountry) {
       setCountry(googleCountry);
       setPhoneCountry(googleCountry);
       setCurrency(inferCurrency(googleCountry));
