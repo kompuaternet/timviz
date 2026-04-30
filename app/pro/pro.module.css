@@ -8212,9 +8212,24 @@
 
 .calendarAppointmentServiceFieldLabels {
   display: grid;
-  grid-template-columns: minmax(0, 1.45fr) repeat(2, minmax(88px, 0.78fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-areas:
+    "service service"
+    "start end";
   gap: 12px;
   align-items: end;
+}
+
+.calendarAppointmentServiceFieldLabels span:first-child {
+  grid-area: service;
+}
+
+.calendarAppointmentServiceFieldLabels span:nth-child(2) {
+  grid-area: start;
+}
+
+.calendarAppointmentServiceFieldLabels span:nth-child(3) {
+  grid-area: end;
 }
 
 .calendarAppointmentServiceFieldLabels span {
@@ -8225,9 +8240,24 @@
 
 .calendarAppointmentServiceFieldGrid {
   display: grid;
-  grid-template-columns: minmax(0, 1.45fr) repeat(2, minmax(88px, 0.78fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-areas:
+    "service service"
+    "start end";
   gap: 12px;
   align-items: start;
+}
+
+.calendarAppointmentServiceFieldGrid > :first-child {
+  grid-area: service;
+}
+
+.calendarAppointmentServiceFieldGrid > :nth-child(2) {
+  grid-area: start;
+}
+
+.calendarAppointmentServiceFieldGrid > :nth-child(3) {
+  grid-area: end;
 }
 
 .calendarAppointmentServiceRemove {
@@ -8318,6 +8348,15 @@
   text-align: left;
   font: inherit;
   font-weight: 800;
+}
+
+.calendarVisitServicePicker span:first-child {
+  min-width: 0;
+  line-height: 1.18;
+}
+
+.calendarVisitServicePicker span:last-child {
+  flex: 0 0 auto;
 }
 
 .calendarVisitTimeGrid {
