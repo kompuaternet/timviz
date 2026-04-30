@@ -6255,6 +6255,12 @@
   position: relative;
 }
 
+.calendarIconButton svg {
+  width: 26px;
+  height: 26px;
+  flex: 0 0 auto;
+}
+
 .calendarSupportButton {
   border-color: rgba(37, 185, 204, 0.18);
   background:
@@ -6275,8 +6281,8 @@
 }
 
 .calendarSupportButton svg {
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
 }
 
 .calendarShareButton {
@@ -6299,8 +6305,8 @@
 }
 
 .calendarShareButton svg {
-  width: 18px;
-  height: 18px;
+  width: 26px;
+  height: 26px;
 }
 
 .calendarIconButtonActive {
