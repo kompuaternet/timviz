@@ -4616,243 +4616,245 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
                   </div>
                 </div>
 
-                <div
-                  className={`${styles.createAccountGrid} ${styles.calendarAppointmentEditGrid}`}
-                  onFocusCapture={(event) => {
-                    ensureFormFieldVisible(event.target as HTMLElement, "smooth");
-                  }}
-                >
-                  <div className={styles.field}>
-                    <div className={styles.calendarAppointmentServiceStack}>
-                      {visitItems.map((item, index) => (
-                        <div key={item.id} className={styles.calendarAppointmentServiceEditor}>
-                          <div className={styles.calendarAppointmentServiceHeader}>
-                            <strong>{index === 0 ? t.primaryService : `${t.additionalService} ${index}`}</strong>
-                            {index > 0 ? (
+                <div className={styles.calendarAppointmentEditShell}>
+                  <div
+                    className={`${styles.createAccountGrid} ${styles.calendarAppointmentEditGrid}`}
+                    onFocusCapture={(event) => {
+                      ensureFormFieldVisible(event.target as HTMLElement, "smooth");
+                    }}
+                  >
+                    <div className={styles.field}>
+                      <div className={styles.calendarAppointmentServiceStack}>
+                        {visitItems.map((item, index) => (
+                          <div key={item.id} className={styles.calendarAppointmentServiceEditor}>
+                            <div className={styles.calendarAppointmentServiceHeader}>
+                              <strong>{index === 0 ? t.primaryService : `${t.additionalService} ${index}`}</strong>
+                              {index > 0 ? (
+                                <button
+                                  type="button"
+                                  className={styles.calendarAppointmentServiceRemove}
+                                  onClick={() => removeDetailService(index)}
+                                  aria-label={t.removeService}
+                                  title={t.removeService}
+                                >
+                                  ×
+                                </button>
+                              ) : null}
+                            </div>
+
+                            <div className={styles.calendarAppointmentServiceFieldLabels}>
+                              <span>{t.service}</span>
+                              <span>{t.start}</span>
+                              <span>{t.end}</span>
+                            </div>
+
+                            <div className={styles.calendarAppointmentServiceFieldGrid}>
                               <button
                                 type="button"
-                                className={styles.calendarAppointmentServiceRemove}
-                                onClick={() => removeDetailService(index)}
-                                aria-label={t.removeService}
-                                title={t.removeService}
+                                className={styles.calendarVisitServicePicker}
+                                onClick={() => {
+                                  setEditingServiceIndex(index);
+                                  setServicePickerReturnStage("details");
+                                  setDrawerStage("service-picker");
+                                }}
                               >
-                                ×
+                                <span>{index === 0 ? detailsServiceNameDraft || t.chooseService : item.serviceName || t.chooseService}</span>
+                                <span aria-hidden="true">⌄</span>
                               </button>
-                            ) : null}
-                          </div>
+                              <select
+                                className={styles.select}
+                                value={index === 0 ? detailsStartTimeDraft : item.startTime}
+                                onChange={(event) =>
+                                  index === 0
+                                    ? updateDetailsVisitItem(index, { startTime: event.target.value })
+                                    : updateVisitItem(index, { startTime: event.target.value })
+                                }
+                              >
+                                {Array.from({ length: timeOptionCount }, (_, slotIndex) => {
+                                  const time = minutesToTime(slotIndex * TIME_SELECT_STEP_MINUTES);
+                                  return (
+                                    <option key={time} value={time}>
+                                      {formatDisplayTime(time)}
+                                    </option>
+                                  );
+                                })}
+                              </select>
+                              <select
+                                className={styles.select}
+                                value={index === 0 ? detailsEndTimeDraft : item.endTime}
+                                onChange={(event) =>
+                                  index === 0
+                                    ? updateDetailsVisitItem(index, { endTime: event.target.value })
+                                    : updateVisitItem(index, { endTime: event.target.value })
+                                }
+                              >
+                                {Array.from({ length: timeOptionCount }, (_, slotIndex) => {
+                                  const time = minutesToTime(slotIndex * TIME_SELECT_STEP_MINUTES);
+                                  return (
+                                    <option key={time} value={time}>
+                                      {formatDisplayTime(time)}
+                                    </option>
+                                  );
+                                })}
+                              </select>
+                            </div>
 
-                          <div className={styles.calendarAppointmentServiceFieldLabels}>
-                            <span>{t.service}</span>
-                            <span>{t.start}</span>
-                            <span>{t.end}</span>
-                          </div>
-
-                          <div className={styles.calendarAppointmentServiceFieldGrid}>
-                            <button
-                              type="button"
-                              className={styles.calendarVisitServicePicker}
-                              onClick={() => {
-                                setEditingServiceIndex(index);
-                                setServicePickerReturnStage("details");
-                                setDrawerStage("service-picker");
-                              }}
-                            >
+                            <div className={styles.calendarVisitMeta}>
                               <span>{index === 0 ? detailsServiceNameDraft || t.chooseService : item.serviceName || t.chooseService}</span>
-                              <span aria-hidden="true">⌄</span>
-                            </button>
-                            <select
-                              className={styles.select}
-                              value={index === 0 ? detailsStartTimeDraft : item.startTime}
-                              onChange={(event) =>
-                                index === 0
-                                  ? updateDetailsVisitItem(index, { startTime: event.target.value })
-                                  : updateVisitItem(index, { startTime: event.target.value })
-                              }
-                            >
-                              {Array.from({ length: timeOptionCount }, (_, slotIndex) => {
-                                const time = minutesToTime(slotIndex * TIME_SELECT_STEP_MINUTES);
-                                return (
-                                  <option key={time} value={time}>
-                                    {formatDisplayTime(time)}
-                                  </option>
-                                );
-                              })}
-                            </select>
-                            <select
-                              className={styles.select}
-                              value={index === 0 ? detailsEndTimeDraft : item.endTime}
-                              onChange={(event) =>
-                                index === 0
-                                  ? updateDetailsVisitItem(index, { endTime: event.target.value })
-                                  : updateVisitItem(index, { endTime: event.target.value })
-                              }
-                            >
-                              {Array.from({ length: timeOptionCount }, (_, slotIndex) => {
-                                const time = minutesToTime(slotIndex * TIME_SELECT_STEP_MINUTES);
-                                return (
-                                  <option key={time} value={time}>
-                                    {formatDisplayTime(time)}
-                                  </option>
-                                );
-                              })}
-                            </select>
-                          </div>
-
-                          <div className={styles.calendarVisitMeta}>
-                            <span>{index === 0 ? detailsServiceNameDraft || t.chooseService : item.serviceName || t.chooseService}</span>
-                            <strong>{formatMoney(index === 0 ? Number(priceAmountDraft || 0) : item.priceAmount, accountCurrency, locale)}</strong>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <button type="button" className={styles.calendarAddServiceButton} onClick={addAnotherDetailService}>
-                      {t.addAnotherService}
-                    </button>
-                  </div>
-                  <div className={`${styles.field} ${styles.calendarAppointmentCustomerField}`}>
-                    <label htmlFor="customerName">{t.customer}</label>
-                    <input
-                      id="customerName"
-                      className={styles.input}
-                      value={detailsCustomerNameDraft}
-                      onChange={(event) => setDetailsCustomerNameDraft(event.target.value)}
-                    />
-                  </div>
-                  <div className={`${styles.field} ${styles.calendarAppointmentPhoneField}`}>
-                    <label htmlFor="customerPhone">{t.phone}</label>
-                    <div className={`${styles.phoneRow} ${styles.calendarAppointmentPhoneRow}`}>
-                      <div className={styles.phonePrefixPicker} ref={detailsPrefixMenuRef}>
-                        <button
-                          type="button"
-                          className={`${styles.phonePrefixButton} ${styles.phonePrefixButtonWide} ${isDetailsPrefixOpen ? styles.phonePrefixButtonOpen : ""}`}
-                          aria-label={t.prefixAria}
-                          aria-expanded={isDetailsPrefixOpen}
-                          onClick={() => {
-                            ensureFormFieldVisible(detailsPrefixMenuRef.current, "smooth");
-                            setIsDetailsPrefixOpen((value) => {
-                              const nextValue = !value;
-                              if (nextValue) {
-                                window.setTimeout(() => ensureFormFieldVisible(detailsPrefixMenuRef.current, "smooth"), 80);
-                              }
-                              return nextValue;
-                            });
-                          }}
-                        >
-                          <div className={styles.calendarPrefixButtonText}>
-                            <strong>{detailsCustomerPhoneRule.prefix}</strong>
-                            <span>{detailsCustomerPhoneCountryDraft}</span>
-                          </div>
-                          <span aria-hidden="true">⌄</span>
-                        </button>
-                        {isDetailsPrefixOpen ? (
-                          <div className={`${styles.phonePrefixMenu} ${styles.phonePrefixMenuRich}`}>
-                            <div className={styles.phonePrefixSearchWrap}>
-                              <input
-                                type="search"
-                                className={styles.phonePrefixSearch}
-                                placeholder={t.prefixSearch}
-                                value={detailsPrefixSearch}
-                                onChange={(event) => setDetailsPrefixSearch(event.target.value)}
-                                autoFocus
-                              />
-                            </div>
-                            <div className={styles.phonePrefixList}>
-                              {filteredDetailsPhoneCountries.map((phoneCountryOption) => {
-                                const optionRule = getPhoneRule(phoneCountryOption);
-                                const active = detailsCustomerPhoneCountryDraft === phoneCountryOption;
-                                return (
-                                  <button
-                                    key={phoneCountryOption}
-                                    type="button"
-                                    className={active ? styles.phonePrefixOptionActive : ""}
-                                    onClick={() => {
-                                      setDetailsCustomerPhoneCountryDraft(phoneCountryOption);
-                                      setDetailsCustomerPhoneDraft(
-                                        formatPhoneLocal(onlyPhoneDigits(detailsCustomerPhoneDraft), optionRule)
-                                      );
-                                      setIsDetailsPrefixOpen(false);
-                                      setDetailsPrefixSearch("");
-                                    }}
-                                  >
-                                    <span>{phoneCountryOption}</span>
-                                    <strong>{optionRule.prefix}</strong>
-                                  </button>
-                                );
-                              })}
+                              <strong>{formatMoney(index === 0 ? Number(priceAmountDraft || 0) : item.priceAmount, accountCurrency, locale)}</strong>
                             </div>
                           </div>
-                        ) : null}
+                        ))}
                       </div>
+                      <button type="button" className={styles.calendarAddServiceButton} onClick={addAnotherDetailService}>
+                        {t.addAnotherService}
+                      </button>
+                    </div>
+                    <div className={`${styles.field} ${styles.calendarAppointmentCustomerField}`}>
+                      <label htmlFor="customerName">{t.customer}</label>
                       <input
-                        id="customerPhone"
-                        className={styles.phoneInput}
-                        inputMode="numeric"
-                        placeholder={detailsCustomerPhoneRule.placeholder}
-                        value={detailsCustomerPhoneDraft}
-                        onChange={(event) =>
-                          setDetailsCustomerPhoneDraft(formatPhoneLocal(event.target.value, detailsCustomerPhoneRule))
-                        }
+                        id="customerName"
+                        className={styles.input}
+                        value={detailsCustomerNameDraft}
+                        onChange={(event) => setDetailsCustomerNameDraft(event.target.value)}
+                      />
+                    </div>
+                    <div className={`${styles.field} ${styles.calendarAppointmentPhoneField}`}>
+                      <label htmlFor="customerPhone">{t.phone}</label>
+                      <div className={`${styles.phoneRow} ${styles.calendarAppointmentPhoneRow}`}>
+                        <div className={styles.phonePrefixPicker} ref={detailsPrefixMenuRef}>
+                          <button
+                            type="button"
+                            className={`${styles.phonePrefixButton} ${styles.phonePrefixButtonWide} ${isDetailsPrefixOpen ? styles.phonePrefixButtonOpen : ""}`}
+                            aria-label={t.prefixAria}
+                            aria-expanded={isDetailsPrefixOpen}
+                            onClick={() => {
+                              ensureFormFieldVisible(detailsPrefixMenuRef.current, "smooth");
+                              setIsDetailsPrefixOpen((value) => {
+                                const nextValue = !value;
+                                if (nextValue) {
+                                  window.setTimeout(() => ensureFormFieldVisible(detailsPrefixMenuRef.current, "smooth"), 80);
+                                }
+                                return nextValue;
+                              });
+                            }}
+                          >
+                            <div className={styles.calendarPrefixButtonText}>
+                              <strong>{detailsCustomerPhoneRule.prefix}</strong>
+                              <span>{detailsCustomerPhoneCountryDraft}</span>
+                            </div>
+                            <span aria-hidden="true">⌄</span>
+                          </button>
+                          {isDetailsPrefixOpen ? (
+                            <div className={`${styles.phonePrefixMenu} ${styles.phonePrefixMenuRich}`}>
+                              <div className={styles.phonePrefixSearchWrap}>
+                                <input
+                                  type="search"
+                                  className={styles.phonePrefixSearch}
+                                  placeholder={t.prefixSearch}
+                                  value={detailsPrefixSearch}
+                                  onChange={(event) => setDetailsPrefixSearch(event.target.value)}
+                                  autoFocus
+                                />
+                              </div>
+                              <div className={styles.phonePrefixList}>
+                                {filteredDetailsPhoneCountries.map((phoneCountryOption) => {
+                                  const optionRule = getPhoneRule(phoneCountryOption);
+                                  const active = detailsCustomerPhoneCountryDraft === phoneCountryOption;
+                                  return (
+                                    <button
+                                      key={phoneCountryOption}
+                                      type="button"
+                                      className={active ? styles.phonePrefixOptionActive : ""}
+                                      onClick={() => {
+                                        setDetailsCustomerPhoneCountryDraft(phoneCountryOption);
+                                        setDetailsCustomerPhoneDraft(
+                                          formatPhoneLocal(onlyPhoneDigits(detailsCustomerPhoneDraft), optionRule)
+                                        );
+                                        setIsDetailsPrefixOpen(false);
+                                        setDetailsPrefixSearch("");
+                                      }}
+                                    >
+                                      <span>{phoneCountryOption}</span>
+                                      <strong>{optionRule.prefix}</strong>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          ) : null}
+                        </div>
+                        <input
+                          id="customerPhone"
+                          className={styles.phoneInput}
+                          inputMode="numeric"
+                          placeholder={detailsCustomerPhoneRule.placeholder}
+                          value={detailsCustomerPhoneDraft}
+                          onChange={(event) =>
+                            setDetailsCustomerPhoneDraft(formatPhoneLocal(event.target.value, detailsCustomerPhoneRule))
+                          }
+                        />
+                      </div>
+                    </div>
+                    <div className={styles.field}>
+                      <label htmlFor="attendanceStatus">{t.attendanceStatus}</label>
+                      <select
+                        id="attendanceStatus"
+                        className={styles.select}
+                        value={attendanceDraft}
+                        onChange={(event) => setAttendanceDraft(event.target.value as "pending" | "confirmed" | "arrived" | "no_show")}
+                      >
+                        <option value="pending">{t.attendancePending}</option>
+                        <option value="confirmed">{t.attendanceConfirmed}</option>
+                        <option value="arrived">{t.attendanceArrived}</option>
+                        <option value="no_show">{t.attendanceNoShow}</option>
+                      </select>
+                    </div>
+                    <div className={styles.field}>
+                      <label htmlFor="priceAmount">{t.price}</label>
+                      <input
+                        id="priceAmount"
+                        className={styles.input}
+                        inputMode="decimal"
+                        value={priceAmountDraft}
+                        onChange={(event) => {
+                          setPriceAmountDraft(event.target.value);
+                          const nextPrice = Number(event.target.value || 0);
+                          setVisitItems((current) =>
+                            current.map((item, index) =>
+                              index === 0
+                                ? {
+                                    ...item,
+                                    priceAmount: Number.isFinite(nextPrice) ? Math.max(0, nextPrice) : 0
+                                  }
+                                : item
+                            )
+                          );
+                        }}
                       />
                     </div>
                   </div>
-                  <div className={styles.field}>
-                    <label htmlFor="attendanceStatus">{t.attendanceStatus}</label>
-                    <select
-                      id="attendanceStatus"
-                      className={styles.select}
-                      value={attendanceDraft}
-                      onChange={(event) => setAttendanceDraft(event.target.value as "pending" | "confirmed" | "arrived" | "no_show")}
-                    >
-                      <option value="pending">{t.attendancePending}</option>
-                      <option value="confirmed">{t.attendanceConfirmed}</option>
-                      <option value="arrived">{t.attendanceArrived}</option>
-                      <option value="no_show">{t.attendanceNoShow}</option>
-                    </select>
-                  </div>
-                  <div className={styles.field}>
-                    <label htmlFor="priceAmount">{t.price}</label>
-                    <input
-                      id="priceAmount"
-                      className={styles.input}
-                      inputMode="decimal"
-                      value={priceAmountDraft}
-                      onChange={(event) => {
-                        setPriceAmountDraft(event.target.value);
-                        const nextPrice = Number(event.target.value || 0);
-                        setVisitItems((current) =>
-                          current.map((item, index) =>
-                            index === 0
-                              ? {
-                                  ...item,
-                                  priceAmount: Number.isFinite(nextPrice) ? Math.max(0, nextPrice) : 0
-                                }
-                              : item
-                          )
-                        );
-                      }}
-                    />
-                  </div>
-                </div>
 
-                <div className={styles.calendarAppointmentEditGrid}>
-                  <div className={styles.field}>
-                    <label htmlFor="appointmentNotes">{t.notesLabel}</label>
-                    <textarea
-                      id="appointmentNotes"
-                      className={styles.textarea}
-                      value={detailsNotesDraft}
-                      onChange={(event) => setDetailsNotesDraft(event.target.value)}
-                    />
+                  <div className={styles.calendarAppointmentEditGrid}>
+                    <div className={styles.field}>
+                      <label htmlFor="appointmentNotes">{t.notesLabel}</label>
+                      <textarea
+                        id="appointmentNotes"
+                        className={styles.textarea}
+                        value={detailsNotesDraft}
+                        onChange={(event) => setDetailsNotesDraft(event.target.value)}
+                      />
+                    </div>
                   </div>
-                </div>
 
-                <div className={styles.calendarDrawerFooter}>
-                  <button type="button" className={styles.dangerButton} onClick={() => void deleteSelectedAppointment()}>
-                    {t.deleteVisit}
-                  </button>
-                  <button type="button" className={styles.primaryButton} onClick={() => void saveAppointmentMeta()}>
-                    {t.saveVisit}
-                  </button>
+                  <div className={styles.calendarDrawerFooter}>
+                    <button type="button" className={styles.dangerButton} onClick={() => void deleteSelectedAppointment()}>
+                      {t.deleteVisit}
+                    </button>
+                    <button type="button" className={styles.primaryButton} onClick={() => void saveAppointmentMeta()}>
+                      {t.saveVisit}
+                    </button>
+                  </div>
                 </div>
               </div>
             )}

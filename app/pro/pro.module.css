@@ -8184,6 +8184,29 @@
   padding: 0 20px;
 }
 
+.calendarAppointmentEditShell {
+  margin: 14px 20px 0;
+  padding: 16px;
+  display: grid;
+  gap: 16px;
+  border: 1px solid #dfe6f2;
+  border-radius: 24px;
+  background: #ffffff;
+}
+
+.calendarAppointmentEditShell .calendarAppointmentEditGrid {
+  margin: 0;
+  padding: 0;
+}
+
+.calendarAppointmentEditShell .calendarDrawerFooter {
+  margin: 0;
+  padding: 14px 0 0;
+  padding-bottom: calc(8px + env(safe-area-inset-bottom));
+  background: transparent;
+  border-top: 1px solid #e8edf7;
+}
+
 .calendarAppointmentServiceStack {
   display: grid;
   gap: 12px;
@@ -11345,6 +11368,23 @@
     border-radius: 18px;
   }
 
+  .calendarAppointmentEditShell {
+    margin: 0 12px;
+    padding: 14px 12px 12px;
+    gap: 14px;
+    border-radius: 22px;
+  }
+
+  .calendarAppointmentEditShell .calendarAppointmentEditGrid {
+    margin-left: 0;
+    margin-right: 0;
+  }
+
+  .calendarAppointmentEditShell .calendarDrawerFooter {
+    padding-top: 14px;
+    padding-bottom: calc(4px + env(safe-area-inset-bottom));
+  }
+
   .calendarAppointmentServiceHeader strong {
     font-size: 0.96rem;
   }
@@ -11382,6 +11422,12 @@
     gap: 10px;
   }
 
+  .calendarAppointmentPhoneField .phonePrefixPicker {
+    display: grid;
+    align-content: start;
+    gap: 10px;
+  }
+
   .calendarAppointmentPhoneRow .phonePrefixButton {
     min-height: 60px;
     padding-inline: 14px;
@@ -11404,6 +11450,25 @@
   .calendarAppointmentPhoneRow .phoneInput {
     min-height: 60px;
     font-size: 1.06rem;
+  }
+
+  .calendarAppointmentPhoneField .phonePrefixMenuRich {
+    position: static;
+    top: auto;
+    left: auto;
+    width: 100%;
+    max-height: min(300px, 42vh);
+    margin-top: 0;
+  }
+
+  .calendarAppointmentPhoneField .phonePrefixSearchWrap {
+    border-radius: 18px 18px 0 0;
+  }
+
+  .calendarAppointmentPhoneField .phonePrefixList {
+    max-height: min(210px, 30vh);
+    overflow: auto;
+    padding-right: 2px;
   }
 
   .calendarAppointmentEditGrid .input,
