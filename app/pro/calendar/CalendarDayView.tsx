@@ -1473,6 +1473,72 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
     );
   }
 
+  function insertOptimisticAppointments(appointmentsToInsert: CalendarAppointment[]) {
+    if (!appointmentsToInsert.length) {
+      return;
+    }
+
+    const insertIds = new Set(appointmentsToInsert.map((appointment) => appointment.id));
+
+    setSnapshot((current) => {
+      if (!current) {
+        return current;
+      }
+
+      const mergeList = (appointments: CalendarAppointment[], professionalId?: string, restrictToViewedDate = false) => {
+        const inserts = appointmentsToInsert.filter((appointment) => {
+          if (professionalId && appointment.professionalId !== professionalId) {
+            return false;
+          }
+
+          if (restrictToViewedDate && appointment.appointmentDate !== selectedDate) {
+            return false;
+          }
+
+          return true;
+        });
+
+        return sortAppointmentsByTime([
+          ...appointments.filter((appointment) => !insertIds.has(appointment.id)),
+          ...inserts
+        ]);
+      };
+
+      return {
+        ...current,
+        appointments: mergeList(current.appointments, current.viewedProfessionalId, true),
+        memberCalendars: current.memberCalendars.map((member) => ({
+          ...member,
+          appointments: mergeList(member.appointments, member.professionalId, true)
+        }))
+      };
+    });
+  }
+
+  function removeAppointmentsByIds(appointmentIds: string[]) {
+    if (!appointmentIds.length) {
+      return;
+    }
+
+    const ids = new Set(appointmentIds);
+
+    setSnapshot((current) => {
+      if (!current) {
+        return current;
+      }
+
+      return {
+        ...current,
+        appointments: current.appointments.filter((appointment) => !ids.has(appointment.id)),
+        memberCalendars: current.memberCalendars.map((member) => ({
+          ...member,
+          appointments: member.appointments.filter((appointment) => !ids.has(appointment.id))
+        })),
+        recentActivity: current.recentActivity.filter((activity) => !ids.has(activity.id))
+      };
+    });
+  }
+
   function mergeCreatedAppointments(appointmentsToMerge: CalendarAppointment[]) {
     if (!appointmentsToMerge.length) {
       return;
@@ -2764,51 +2830,71 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
     setDrawerStage("closed");
     setQuickMenu((current) => ({ ...current, visible: false, x: 0, y: 0, time: "" }));
 
+    const optimisticAppointments =
+      snapshot
+        ? visitItems.map((item) => ({
+            id: `temp-${crypto.randomUUID()}`,
+            businessId: "",
+            professionalId: selectedProfessionalId,
+            appointmentDate: selectedDate,
+            startTime: item.startTime,
+            endTime: item.endTime,
+            kind: "appointment" as const,
+            customerName: selectedCustomer?.name.trim() || "Клиент",
+            customerPhone: selectedCustomer?.phone.trim() || "",
+            serviceName: item.serviceName.trim(),
+            notes: "",
+            attendance: "confirmed" as const,
+            priceAmount: Number.isFinite(item.priceAmount) ? item.priceAmount : 0,
+            createdAt: new Date().toISOString()
+          }))
+        : [];
+    const optimisticIds = optimisticAppointments.map((appointment) => appointment.id);
+
+    if (optimisticAppointments.length) {
+      insertOptimisticAppointments(optimisticAppointments);
+    }
+
     try {
-      const results = await Promise.all(
-        visitItems.map(async (item) => {
-          const response = await fetch("/api/pro/calendar", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              targetProfessionalId: selectedProfessionalId,
-              appointmentDate: selectedDate,
-              startTime: item.startTime,
-              endTime: item.endTime,
-              serviceName: item.serviceName,
-              customerName: selectedCustomer?.name ?? "",
-              customerPhone: selectedCustomer?.phone ?? "",
-              priceAmount: item.priceAmount,
-              notes: ""
-            })
-          });
-
-          const payload = await response.json();
-          return {
-            ok: response.ok,
-            payload,
-            item
-          };
+      const response = await fetch("/api/pro/calendar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          targetProfessionalId: selectedProfessionalId,
+          items: visitItems.map((item) => ({
+            appointmentDate: selectedDate,
+            startTime: item.startTime,
+            endTime: item.endTime,
+            serviceName: item.serviceName,
+            customerName: selectedCustomer?.name ?? "",
+            customerPhone: selectedCustomer?.phone ?? "",
+            priceAmount: item.priceAmount,
+            notes: ""
+          }))
         })
-      );
+      });
 
-      const failedResult = results.find((result) => !result.ok);
-      const createdAppointments = results
-        .filter((result): result is { ok: true; payload: CalendarAppointment; item: VisitServiceDraft } => result.ok)
-        .map((result) => result.payload);
+      const payload = await response.json();
 
-      if (createdAppointments.length) {
-        mergeCreatedAppointments(createdAppointments);
-      }
-
-      if (failedResult) {
-        showToast(failedResult.payload?.error || t.saveVisitFailed, "error");
+      if (!response.ok) {
+        removeAppointmentsByIds(optimisticIds);
+        showToast(payload?.error || t.saveVisitFailed, "error");
         setIsSavingVisit(false);
         void refreshSnapshot({ preserveUi: true });
         void loadNotifications(selectedDate).catch(() => undefined);
         return;
       }
+
+      const createdAppointments = Array.isArray(payload?.appointments)
+        ? (payload.appointments as CalendarAppointment[])
+        : [];
+
+      removeAppointmentsByIds(optimisticIds);
+      if (createdAppointments.length) {
+        mergeCreatedAppointments(createdAppointments);
+      }
     } catch {
+      removeAppointmentsByIds(optimisticIds);
       showToast(t.saveVisitFailed, "error");
       setIsSavingVisit(false);
       return;

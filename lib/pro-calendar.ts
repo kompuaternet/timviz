@@ -671,9 +671,10 @@ export async function getCalendarDaySnapshot(input: {
   };
 }
 
-export async function createCalendarAppointment(input: {
+async function createCalendarAppointmentWithWorkspace(input: {
+  workspace: WorkspaceSnapshot;
+  servicesCache?: ServiceRecord[];
   professionalId: string;
-  targetProfessionalId?: string;
   appointmentDate: string;
   startTime: string;
   endTime?: string;
@@ -685,12 +686,8 @@ export async function createCalendarAppointment(input: {
   attendance?: CalendarAttendanceStatus;
   allowMissingService?: boolean;
 }) {
-  const access = await resolveCalendarAccess({
-    viewerProfessionalId: input.professionalId,
-    targetProfessionalId: input.targetProfessionalId,
-    strictTarget: true
-  });
-  const workspace = access.targetWorkspace;
+  const workspace = input.workspace;
+  const availableServices = input.servicesCache ?? workspace.services;
 
   if (!input.startTime.trim()) {
     throw new Error("Start time is required.");
@@ -701,7 +698,7 @@ export async function createCalendarAppointment(input: {
     throw new Error("Service name is required.");
   }
 
-  const existingService = workspace.services.find((item) => item.name === serviceName);
+  const existingService = availableServices.find((item) => item.name === serviceName);
   const service =
     existingService ??
     (input.allowMissingService
@@ -710,6 +707,14 @@ export async function createCalendarAppointment(input: {
           professionalId: workspace.professional.id,
           serviceName
         }));
+
+  if (
+    service &&
+    input.servicesCache &&
+    !input.servicesCache.some((item) => item.id === service.id)
+  ) {
+    input.servicesCache.push(service);
+  }
 
   const appointment: CalendarAppointment = {
     id: makeId("cal"),
@@ -769,6 +774,94 @@ export async function createCalendarAppointment(input: {
   const store = await readStore();
   store.appointments.push(appointment);
   await writeStore(store);
+
+  return appointment;
+}
+
+export async function createCalendarAppointmentsBatch(input: {
+  professionalId: string;
+  targetProfessionalId?: string;
+  items: Array<{
+    appointmentDate: string;
+    startTime: string;
+    endTime?: string;
+    customerName: string;
+    customerPhone: string;
+    serviceName: string;
+    notes: string;
+    priceAmount?: number;
+    attendance?: CalendarAttendanceStatus;
+    allowMissingService?: boolean;
+  }>;
+}) {
+  if (!input.items.length) {
+    return [];
+  }
+
+  const access = await resolveCalendarAccess({
+    viewerProfessionalId: input.professionalId,
+    targetProfessionalId: input.targetProfessionalId,
+    strictTarget: true
+  });
+  const workspace = access.targetWorkspace;
+  const servicesCache = [...workspace.services];
+  const created: CalendarAppointment[] = [];
+
+  for (const item of input.items) {
+    created.push(
+      await createCalendarAppointmentWithWorkspace({
+        workspace,
+        servicesCache,
+        professionalId: input.professionalId,
+        appointmentDate: item.appointmentDate,
+        startTime: item.startTime,
+        endTime: item.endTime,
+        customerName: item.customerName,
+        customerPhone: item.customerPhone,
+        serviceName: item.serviceName,
+        notes: item.notes,
+        priceAmount: item.priceAmount,
+        attendance: item.attendance,
+        allowMissingService: item.allowMissingService
+      })
+    );
+  }
+
+  return created;
+}
+
+export async function createCalendarAppointment(input: {
+  professionalId: string;
+  targetProfessionalId?: string;
+  appointmentDate: string;
+  startTime: string;
+  endTime?: string;
+  customerName: string;
+  customerPhone: string;
+  serviceName: string;
+  notes: string;
+  priceAmount?: number;
+  attendance?: CalendarAttendanceStatus;
+  allowMissingService?: boolean;
+}) {
+  const [appointment] = await createCalendarAppointmentsBatch({
+    professionalId: input.professionalId,
+    targetProfessionalId: input.targetProfessionalId,
+    items: [
+      {
+        appointmentDate: input.appointmentDate,
+        startTime: input.startTime,
+        endTime: input.endTime,
+        customerName: input.customerName,
+        customerPhone: input.customerPhone,
+        serviceName: input.serviceName,
+        notes: input.notes,
+        priceAmount: input.priceAmount,
+        attendance: input.attendance,
+        allowMissingService: input.allowMissingService
+      }
+    ]
+  });
 
   return appointment;
 }
