@@ -12,6 +12,7 @@ import {
   createBlockedCalendarTime,
   createCalendarAppointment,
   deleteCalendarAppointment,
+  getAppointmentsForBusiness,
   getCalendarDaySnapshot,
   updateCalendarAppointmentMeta,
   updateCalendarAppointmentTime
@@ -37,8 +38,23 @@ type CalendarRouteSnapshot = Awaited<ReturnType<typeof getCalendarDaySnapshot>> 
   archivedOnlineBookings?: Array<Record<string, string>>;
 };
 
+type PendingBookingSyncPayload = {
+  businessId: string;
+  appointmentDate: string;
+  appointmentTime: string;
+  customerName: string;
+  customerPhone: string;
+  customerNotes: string;
+  serviceName: string;
+  attendance: "pending" | "confirmed" | "arrived" | "no_show";
+};
+
 function mapBookingStatusForNotification(status: BookingStatus) {
   return status === "pending" ? "pending" : status === "cancelled" ? "cancelled" : "confirmed";
+}
+
+function mapAttendanceToNotificationStatus(attendance: string) {
+  return attendance === "pending" ? "pending" : "confirmed";
 }
 
 function pickMatchingAppointment(
@@ -72,16 +88,40 @@ async function decorateSnapshotWithOnlineBookingNotifications(snapshot: Calendar
   }
 
   const bookings = await getBookingsForSalonSlug(`business:${businessId}`);
-  const appointmentPool = snapshot.memberCalendars.flatMap((member) =>
-    member.appointments.map((appointment) => ({
-      ...appointment,
-      professionalName: `${member.firstName} ${member.lastName}`.trim() || member.role
-    }))
+  const memberNameMap = new Map(
+    snapshot.teamMembers.map((member) => [
+      member.id,
+      `${member.firstName} ${member.lastName}`.trim() || member.role
+    ])
   );
+  const businessAppointments = await getAppointmentsForBusiness(businessId);
+  const appointmentPool = businessAppointments.map((appointment) => ({
+      ...appointment,
+      professionalName: memberNameMap.get(appointment.professionalId) ?? ""
+    }));
+
+  const mismatchedPendingBookings: PendingBookingSyncPayload[] = [];
 
   const notifications = bookings
     .map((booking) => {
       const appointment = pickMatchingAppointment(appointmentPool, booking);
+      const effectiveStatus =
+        booking.status === "pending" && appointment
+          ? mapAttendanceToNotificationStatus(appointment.attendance)
+          : mapBookingStatusForNotification(booking.status);
+
+      if (booking.status === "pending" && effectiveStatus !== "pending" && appointment?.kind === "appointment") {
+        mismatchedPendingBookings.push({
+          businessId,
+          appointmentDate: appointment.appointmentDate,
+          appointmentTime: appointment.startTime,
+          customerName: appointment.customerName,
+          customerPhone: appointment.customerPhone,
+          customerNotes: appointment.notes,
+          serviceName: appointment.serviceName,
+          attendance: appointment.attendance
+        });
+      }
 
       return {
         id: booking.id,
@@ -96,10 +136,27 @@ async function decorateSnapshotWithOnlineBookingNotifications(snapshot: Calendar
         professionalId: appointment?.professionalId ?? "",
         professionalName: appointment?.professionalName ?? "",
         createdAt: booking.createdAt,
-        status: mapBookingStatusForNotification(booking.status)
+        status: effectiveStatus
       };
     })
     .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime());
+
+  if (mismatchedPendingBookings.length) {
+    await Promise.allSettled(
+      mismatchedPendingBookings.map((item) =>
+        syncBookingStatusFromCalendarAppointment({
+          businessId: item.businessId,
+          appointmentDate: item.appointmentDate,
+          appointmentTime: item.appointmentTime,
+          customerName: item.customerName,
+          customerPhone: item.customerPhone,
+          customerNotes: item.customerNotes,
+          serviceName: item.serviceName,
+          attendance: item.attendance
+        })
+      )
+    );
+  }
 
   return {
     ...snapshot,
