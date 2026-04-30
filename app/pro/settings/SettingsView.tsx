@@ -939,38 +939,37 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
                   placeholder={copy.categoriesPlaceholder}
                 />
               </label>
-              {data.membership.scope === "owner" ? (
-                <label className={styles.settingsWideField}>
-                  <span>{t.settings.onlineBooking}</span>
-                  <button
-                    type="button"
-                    className={`${styles.settingsToggle} ${data.business.allowOnlineBooking ? styles.settingsToggleActive : ""}`}
-                    onClick={() =>
-                      updateBusiness("allowOnlineBooking", !(data.business.allowOnlineBooking === true))
-                    }
-                    aria-pressed={data.business.allowOnlineBooking === true}
-                  >
-                    <span className={styles.settingsToggleText}>
-                      {data.business.allowOnlineBooking ? t.settings.onlineBookingEnabled : t.settings.onlineBookingDisabled}
-                    </span>
-                    <span className={styles.settingsToggleTrack}>
-                      <span className={styles.settingsToggleThumb} />
-                    </span>
-                  </button>
-                  <small className={styles.settingsInlineHint}>{t.settings.onlineBookingHint}</small>
-                </label>
-              ) : null}
-
               <div className={`${styles.settingsWideField} ${styles.settingsShareCard}`}>
                 <div className={styles.settingsShareCardHeader}>
                   <div>
                     <strong>{copy.publicBookingTitle}</strong>
                     <p>{copy.publicBookingText}</p>
                   </div>
-                  <span className={`${styles.settingsShareStatus} ${data.business.allowOnlineBooking ? styles.settingsShareStatusActive : ""}`}>
-                    {data.business.allowOnlineBooking ? copy.publicBookingEnabled : copy.publicBookingDisabled}
-                  </span>
+                  {data.membership.scope === "owner" ? (
+                    <button
+                      type="button"
+                      className={`${styles.settingsShareToggle} ${data.business.allowOnlineBooking ? styles.settingsShareToggleActive : ""}`}
+                      onClick={() =>
+                        updateBusiness("allowOnlineBooking", !(data.business.allowOnlineBooking === true))
+                      }
+                      aria-pressed={data.business.allowOnlineBooking === true}
+                      aria-label={t.settings.onlineBooking}
+                    >
+                      <span className={styles.settingsShareToggleLabel}>
+                        {data.business.allowOnlineBooking ? copy.publicBookingEnabled : copy.publicBookingDisabled}
+                      </span>
+                      <span className={styles.settingsShareToggleTrack}>
+                        <span className={styles.settingsShareToggleThumb} />
+                      </span>
+                    </button>
+                  ) : (
+                    <span className={`${styles.settingsShareStatus} ${data.business.allowOnlineBooking ? styles.settingsShareStatusActive : ""}`}>
+                      {data.business.allowOnlineBooking ? copy.publicBookingEnabled : copy.publicBookingDisabled}
+                    </span>
+                  )}
                 </div>
+
+                <small className={styles.settingsInlineHint}>{t.settings.onlineBookingHint}</small>
 
                 <div className={styles.settingsShareField}>
                   <input
