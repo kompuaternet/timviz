@@ -2,7 +2,7 @@
 
 import ProfileAvatar from "../ProfileAvatar";
 import { usePathname, useRouter } from "next/navigation";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import FloatingPopover from "./FloatingPopover";
 import SupportWidget from "./SupportWidget";
 import styles from "./pro.module.css";
@@ -17,6 +17,13 @@ type ProWorkspaceHeaderProps = {
   publicBookingUrl?: string;
   publicBookingEnabled?: boolean;
 };
+
+function formatDateKey(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
 
 const headerCopy = {
   ru: {
@@ -167,8 +174,20 @@ export default function ProWorkspaceHeader({
   const [activeMenu, setActiveMenu] = useState<"share" | "account" | null>(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isSupportOpen, setIsSupportOpen] = useState(false);
+  const [notificationsCount, setNotificationsCount] = useState(0);
   const pageTitle = useMemo(() => getPageTitle(pathname, language), [language, pathname]);
   const canUseNativeShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
+
+  useEffect(() => {
+    const todayDate = formatDateKey(new Date());
+
+    void fetch(`/api/pro/calendar?date=${todayDate}`)
+      .then((response) => response.json())
+      .then((payload: { pendingOnlineBookings?: Array<unknown> }) => {
+        setNotificationsCount(payload.pendingOnlineBookings?.length ?? 0);
+      })
+      .catch(() => setNotificationsCount(0));
+  }, [pathname]);
 
   async function copyPublicBookingLink() {
     if (!publicBookingUrl) return;
@@ -267,6 +286,7 @@ export default function ProWorkspaceHeader({
           onClick={() => router.push("/pro/calendar?panel=notifications")}
         >
           <BellIcon />
+          {notificationsCount ? <span className={styles.calendarNotificationBadge}>{notificationsCount}</span> : null}
         </button>
 
         <button

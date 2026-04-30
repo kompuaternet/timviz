@@ -14,6 +14,7 @@ function formatDateKey(date: Date) {
 type ProCalendarPageProps = {
   searchParams?: Promise<{
     date?: string;
+    panel?: string;
   }>;
 };
 
@@ -38,6 +39,7 @@ export default async function ProCalendarPage({
     <CalendarDayView
       professionalId={professionalId}
       initialDate={params.date || formatDateKey(new Date())}
+      initialPanel={params.panel === "notifications" ? "notifications" : undefined}
     />
   );
 }

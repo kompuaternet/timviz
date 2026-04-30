@@ -999,7 +999,9 @@ export async function deleteCalendarAppointment(input: {
       .delete()
       .eq("id", input.appointmentId)
       .eq("professional_id", targetProfessionalId)
-      .select("id")
+      .select(
+        "id, business_id, professional_id, appointment_date, start_time, end_time, kind, customer_name, customer_phone, service_name, notes, attendance, price_amount, created_at"
+      )
       .maybeSingle();
 
     if (error) {
@@ -1010,21 +1012,24 @@ export async function deleteCalendarAppointment(input: {
       throw new Error("Appointment not found.");
     }
 
-    return { ok: true };
+    return mapSupabaseAppointment(data as CalendarAppointmentRow);
   }
 
   const store = await readStore();
-  const beforeLength = store.appointments.length;
+  const deletedAppointment =
+    store.appointments.find(
+      (item) => item.id === input.appointmentId && item.professionalId === targetProfessionalId
+    ) ?? null;
   store.appointments = store.appointments.filter(
     (item) => !(item.id === input.appointmentId && item.professionalId === targetProfessionalId)
   );
 
-  if (store.appointments.length === beforeLength) {
+  if (!deletedAppointment) {
     throw new Error("Appointment not found.");
   }
 
   await writeStore(store);
-  return { ok: true };
+  return deletedAppointment;
 }
 
 export async function updateCalendarAppointmentMeta(input: {

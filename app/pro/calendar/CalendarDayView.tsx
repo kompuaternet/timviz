@@ -61,6 +61,22 @@ type CalendarPeriodStats = {
   revenue: number;
 };
 
+type CalendarOnlineBookingNotification = {
+  id: string;
+  bookingId: string;
+  appointmentId: string;
+  appointmentDate: string;
+  startTime: string;
+  endTime?: string;
+  customerName: string;
+  customerPhone: string;
+  serviceName: string;
+  professionalId: string;
+  professionalName: string;
+  createdAt: string;
+  status: "pending" | "confirmed" | "cancelled";
+};
+
 type CalendarSnapshot = {
   viewer: {
     id: string;
@@ -148,6 +164,8 @@ type CalendarSnapshot = {
     professionalName: string;
     createdAt: string;
   }>;
+  pendingOnlineBookings?: CalendarOnlineBookingNotification[];
+  archivedOnlineBookings?: CalendarOnlineBookingNotification[];
   stats?: {
     day: CalendarPeriodStats;
     week: CalendarPeriodStats;
@@ -158,6 +176,7 @@ type CalendarSnapshot = {
 type CalendarDayViewProps = {
   professionalId: string;
   initialDate: string;
+  initialPanel?: "notifications";
 };
 
 type AppLanguage = "ru" | "uk" | "en";
@@ -333,6 +352,8 @@ const CALENDAR_TEXT: Record<AppLanguage, {
   chooseSpecialist: string;
   refresh: string;
   notifications: string;
+  pendingOnlineBookings: string;
+  archivedOnlineBookings: string;
   notificationsEmpty: string;
   recentBookings: string;
   accountMenu: string;
@@ -352,6 +373,9 @@ const CALENDAR_TEXT: Record<AppLanguage, {
   publicLinkDisabled: string;
   publicLinkEnabled: string;
   recentBookingTitle: string;
+  onlineBookingStatusPending: string;
+  onlineBookingStatusConfirmed: string;
+  onlineBookingStatusCancelled: string;
 }> = {
   ru: {
     today: "Сегодня",
@@ -481,6 +505,8 @@ const CALENDAR_TEXT: Record<AppLanguage, {
     chooseSpecialist: "Выбрать специалиста",
     refresh: "Обновить",
     notifications: "Уведомления",
+    pendingOnlineBookings: "Неподтвержденные онлайн-записи",
+    archivedOnlineBookings: "Архив",
     notificationsEmpty: "Пока нет новых событий.",
     recentBookings: "Недавние записи",
     accountMenu: "Меню аккаунта",
@@ -499,7 +525,10 @@ const CALENDAR_TEXT: Record<AppLanguage, {
     publicLinkSelected: "Ссылка выделена. Скопируйте её вручную, если браузер запретил доступ к буферу.",
     publicLinkDisabled: "Онлайн-запись выключена",
     publicLinkEnabled: "Онлайн-запись включена",
-    recentBookingTitle: "Новая запись"
+    recentBookingTitle: "Новая запись",
+    onlineBookingStatusPending: "Ждет подтверждения",
+    onlineBookingStatusConfirmed: "Подтверждена",
+    onlineBookingStatusCancelled: "Отменена"
   },
   uk: {
     today: "Сьогодні",
@@ -629,6 +658,8 @@ const CALENDAR_TEXT: Record<AppLanguage, {
     chooseSpecialist: "Обрати спеціаліста",
     refresh: "Оновити",
     notifications: "Сповіщення",
+    pendingOnlineBookings: "Непідтверджені онлайн-записи",
+    archivedOnlineBookings: "Архів",
     notificationsEmpty: "Поки немає нових подій.",
     recentBookings: "Останні записи",
     accountMenu: "Меню акаунта",
@@ -647,7 +678,10 @@ const CALENDAR_TEXT: Record<AppLanguage, {
     publicLinkSelected: "Посилання виділено. Скопіюйте його вручну, якщо браузер заборонив буфер обміну.",
     publicLinkDisabled: "Онлайн-запис вимкнено",
     publicLinkEnabled: "Онлайн-запис увімкнено",
-    recentBookingTitle: "Новий запис"
+    recentBookingTitle: "Новий запис",
+    onlineBookingStatusPending: "Очікує підтвердження",
+    onlineBookingStatusConfirmed: "Підтверджено",
+    onlineBookingStatusCancelled: "Скасовано"
   },
   en: {
     today: "Today",
@@ -777,6 +811,8 @@ const CALENDAR_TEXT: Record<AppLanguage, {
     chooseSpecialist: "Choose specialist",
     refresh: "Refresh",
     notifications: "Notifications",
+    pendingOnlineBookings: "Pending online bookings",
+    archivedOnlineBookings: "Archive",
     notificationsEmpty: "There are no new updates yet.",
     recentBookings: "Recent bookings",
     accountMenu: "Account menu",
@@ -795,7 +831,10 @@ const CALENDAR_TEXT: Record<AppLanguage, {
     publicLinkSelected: "The link is selected. Copy it manually if the browser blocked clipboard access.",
     publicLinkDisabled: "Online booking is off",
     publicLinkEnabled: "Online booking is on",
-    recentBookingTitle: "New booking"
+    recentBookingTitle: "New booking",
+    onlineBookingStatusPending: "Waiting for confirmation",
+    onlineBookingStatusConfirmed: "Confirmed",
+    onlineBookingStatusCancelled: "Cancelled"
   }
 };
 
@@ -1157,7 +1196,7 @@ function getAppointmentLayouts(appointments: CalendarAppointment[]) {
   return layouts;
 }
 
-export default function CalendarDayView({ professionalId, initialDate }: CalendarDayViewProps) {
+export default function CalendarDayView({ professionalId, initialDate, initialPanel }: CalendarDayViewProps) {
   const router = useRouter();
   const topOffset = 24;
   const dayStartMinutes = 0;
@@ -1187,6 +1226,8 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null);
   const [attendanceDraft, setAttendanceDraft] = useState<"pending" | "confirmed" | "arrived" | "no_show">("pending");
+  const [pendingNotificationTarget, setPendingNotificationTarget] = useState<CalendarOnlineBookingNotification | null>(null);
+  const [shouldOpenInitialNotifications, setShouldOpenInitialNotifications] = useState(initialPanel === "notifications");
   const [priceAmountDraft, setPriceAmountDraft] = useState("0");
   const [detailsCustomerNameDraft, setDetailsCustomerNameDraft] = useState("");
   const [detailsCustomerPhoneDraft, setDetailsCustomerPhoneDraft] = useState("");
@@ -1453,6 +1494,15 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
   }, [selectedDate]);
 
   useEffect(() => {
+    if (!snapshot || !shouldOpenInitialNotifications) {
+      return;
+    }
+
+    setDrawerStage("notifications");
+    setShouldOpenInitialNotifications(false);
+  }, [shouldOpenInitialNotifications, snapshot]);
+
+  useEffect(() => {
     if (drawerStage !== "client-search") {
       return;
     }
@@ -1615,7 +1665,8 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
   const viewerInitials = `${snapshot?.viewer.firstName?.[0] ?? ""}${snapshot?.viewer.lastName?.[0] ?? ""}`.toUpperCase() || viewedProfessionalInitials;
   const teamMembers = snapshot?.teamMembers ?? [];
   const memberCalendars = snapshot?.memberCalendars ?? [];
-  const recentActivity = snapshot?.recentActivity ?? [];
+  const pendingOnlineBookings = snapshot?.pendingOnlineBookings ?? [];
+  const archivedOnlineBookings = snapshot?.archivedOnlineBookings ?? [];
   const canSwitchProfessional = snapshot?.viewer.scope === "owner" && teamMembers.length > 1;
   const filteredTeamMembers = useMemo(() => {
     const query = teamQuery.trim().toLowerCase();
@@ -1639,6 +1690,10 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
   );
   const isShowingAllTeam = memberCalendars.length > 1 && visibleCalendarIds.length === memberCalendars.length;
   const isTeamMultiView = visibleCalendarIds.length > 1;
+  const allCalendarAppointments = useMemo(
+    () => memberCalendars.flatMap((member) => member.appointments),
+    [memberCalendars]
+  );
   const publicBookingUrl = snapshot?.workspace.business.publicBookingUrl ?? "";
   const publicBookingEnabled = snapshot?.workspace.business.allowOnlineBooking === true;
   const canUseNativeShare =
@@ -2140,6 +2195,32 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
   }, [accountCountry, selectedAppointment]);
 
   useEffect(() => {
+    if (!pendingNotificationTarget || !snapshot || selectedDate !== pendingNotificationTarget.appointmentDate) {
+      return;
+    }
+
+    const matchedAppointment =
+      (pendingNotificationTarget.appointmentId
+        ? allCalendarAppointments.find((appointment) => appointment.id === pendingNotificationTarget.appointmentId) ?? null
+        : null) ??
+      allCalendarAppointments.find(
+        (appointment) =>
+          appointment.kind === "appointment" &&
+          appointment.appointmentDate === pendingNotificationTarget.appointmentDate &&
+          appointment.startTime === pendingNotificationTarget.startTime &&
+          (!pendingNotificationTarget.professionalId || appointment.professionalId === pendingNotificationTarget.professionalId)
+      ) ??
+      null;
+
+    if (!matchedAppointment) {
+      return;
+    }
+
+    openAppointmentDetails(matchedAppointment);
+    setPendingNotificationTarget(null);
+  }, [allCalendarAppointments, pendingNotificationTarget, selectedDate, snapshot]);
+
+  useEffect(() => {
     function handlePrefixOutsideClick(event: PointerEvent) {
       const target = event.target as Node | null;
 
@@ -2252,6 +2333,59 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
 
   async function refreshSnapshot() {
     await loadSnapshot(selectedDate, selectedProfessionalId);
+  }
+
+  function openAppointmentDetails(appointment: CalendarAppointment) {
+    setSelectedProfessionalId(appointment.professionalId);
+    setSelectedAppointmentId(appointment.id);
+    setDrawerStage("details");
+    setQuickMenu((current) => ({ ...current, visible: false, x: 0, y: 0, time: "" }));
+    setDeleteConfirmTarget(null);
+  }
+
+  function getNotificationStatusLabel(status: CalendarOnlineBookingNotification["status"]) {
+    if (status === "cancelled") {
+      return t.onlineBookingStatusCancelled;
+    }
+
+    if (status === "confirmed") {
+      return t.onlineBookingStatusConfirmed;
+    }
+
+    return t.onlineBookingStatusPending;
+  }
+
+  function handleNotificationSelect(item: CalendarOnlineBookingNotification) {
+    setActiveToolbarMenu(null);
+    setQuickMenu((current) => ({ ...current, visible: false, x: 0, y: 0, time: "" }));
+    setDeleteConfirmTarget(null);
+    setViewMode("day");
+
+    if (item.professionalId) {
+      setVisibleProfessionalIds([item.professionalId]);
+      setSelectedProfessionalId(item.professionalId);
+    }
+
+    const currentMatch =
+      item.appointmentId
+        ? allCalendarAppointments.find((appointment) => appointment.id === item.appointmentId) ?? null
+        : allCalendarAppointments.find(
+            (appointment) =>
+              appointment.kind === "appointment" &&
+              appointment.appointmentDate === item.appointmentDate &&
+              appointment.startTime === item.startTime &&
+              appointment.professionalId === item.professionalId
+          ) ?? null;
+
+    if (selectedDate === item.appointmentDate && currentMatch) {
+      openAppointmentDetails(currentMatch);
+      return;
+    }
+
+    setDrawerStage("closed");
+    setSelectedAppointmentId(null);
+    setPendingNotificationTarget(item);
+    setSelectedDate(item.appointmentDate);
   }
 
   function startAppointmentDrag(
@@ -2980,17 +3114,24 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
               type="button"
               className={`${styles.calendarIconButton} ${drawerStage === "notifications" ? styles.calendarIconButtonActive : ""}`}
               aria-label={t.notifications}
-              onClick={() => {
+              onClick={async () => {
+                const shouldOpen = drawerStage !== "notifications";
                 setActiveToolbarMenu(null);
                 setQuickMenu((current) => ({ ...current, visible: false, x: 0, y: 0, time: "" }));
-                setDrawerStage((current) => (current === "notifications" ? "closed" : "notifications"));
+                if (!shouldOpen) {
+                  setDrawerStage("closed");
+                  return;
+                }
+
+                await refreshSnapshot();
+                setDrawerStage("notifications");
               }}
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M6.7 8.8a5.3 5.3 0 1 1 10.6 0c0 5.1 2.1 6.1 2.1 6.1H4.6s2.1-1 2.1-6.1" />
                 <path d="M10.2 18.2a2.1 2.1 0 0 0 3.6 0" />
               </svg>
-              {recentActivity.length ? <span className={styles.calendarNotificationBadge}>{recentActivity.length}</span> : null}
+              {pendingOnlineBookings.length ? <span className={styles.calendarNotificationBadge}>{pendingOnlineBookings.length}</span> : null}
             </button>
 
             <button
@@ -3928,14 +4069,19 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
 
             <div className={styles.calendarNotificationsPanel}>
               <div className={styles.calendarNotificationsHeading}>
-                <strong>{t.recentBookings}</strong>
-                <span>{recentActivity.length}</span>
+                <strong>{t.pendingOnlineBookings}</strong>
+                <span>{pendingOnlineBookings.length}</span>
               </div>
 
-              {recentActivity.length ? (
+              {pendingOnlineBookings.length ? (
                 <div className={styles.calendarNotificationsList}>
-                  {recentActivity.map((item) => (
-                    <article key={item.id} className={styles.calendarNotificationCard}>
+                  {pendingOnlineBookings.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className={`${styles.calendarNotificationCard} ${styles.calendarNotificationCardInteractive}`}
+                      onClick={() => handleNotificationSelect(item)}
+                    >
                       <div className={styles.calendarNotificationCardHeader}>
                         <strong>{t.recentBookingTitle}</strong>
                         <span>{formatActivityTime(item.createdAt, locale)}</span>
@@ -3947,10 +4093,11 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
                           {new Date(`${item.appointmentDate}T00:00:00`).toLocaleDateString(locale, {
                             day: "numeric",
                             month: "short"
-                          })} · {formatDisplayTime(item.startTime)} · {item.professionalName}
+                          })} · {formatDisplayTime(item.startTime)}{item.professionalName ? ` · ${item.professionalName}` : ""}
                         </small>
+                        <em className={styles.calendarNotificationStatusPending}>{getNotificationStatusLabel(item.status)}</em>
                       </div>
-                    </article>
+                    </button>
                   ))}
                 </div>
               ) : (
@@ -3959,6 +4106,43 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
                   <span>{t.notificationsEmpty}</span>
                 </div>
               )}
+
+              {archivedOnlineBookings.length ? (
+                <>
+                  <div className={styles.calendarNotificationsHeading}>
+                    <strong>{t.archivedOnlineBookings}</strong>
+                    <span>{archivedOnlineBookings.length}</span>
+                  </div>
+                  <div className={styles.calendarNotificationsList}>
+                    {archivedOnlineBookings.map((item) => (
+                      <article key={item.id} className={styles.calendarNotificationCard}>
+                        <div className={styles.calendarNotificationCardHeader}>
+                          <strong>{item.customerName || t.walkInClient}</strong>
+                          <span>{formatActivityTime(item.createdAt, locale)}</span>
+                        </div>
+                        <div className={styles.calendarNotificationCardBody}>
+                          <span>{item.serviceName}</span>
+                          <small>
+                            {new Date(`${item.appointmentDate}T00:00:00`).toLocaleDateString(locale, {
+                              day: "numeric",
+                              month: "short"
+                            })} · {formatDisplayTime(item.startTime)}{item.professionalName ? ` · ${item.professionalName}` : ""}
+                          </small>
+                          <em
+                            className={
+                              item.status === "cancelled"
+                                ? styles.calendarNotificationStatusCancelled
+                                : styles.calendarNotificationStatusConfirmed
+                            }
+                          >
+                            {getNotificationStatusLabel(item.status)}
+                          </em>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
+                </>
+              ) : null}
             </div>
           </div>
         ) : drawerStage === "visit" ? (

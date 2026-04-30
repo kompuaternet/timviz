@@ -25,6 +25,18 @@ export type BookingRecord = {
   createdAt: string;
 };
 
+type BookingMatchInput = {
+  appointmentDate: string;
+  appointmentTime: string;
+  previousAppointmentTime?: string;
+  customerName: string;
+  customerPhone: string;
+  customerNotes?: string;
+  previousCustomerName?: string;
+  previousCustomerPhone?: string;
+  serviceName: string;
+};
+
 export type BookingInput = {
   salonSlug: string;
   serviceName: string;
@@ -62,6 +74,173 @@ async function readLocalBookings() {
 
 async function writeLocalBookings(bookings: BookingRecord[]) {
   await fs.writeFile(bookingsPath, JSON.stringify(bookings, null, 2) + "\n", "utf8");
+}
+
+function mapBookingRow(item: Record<string, unknown>) {
+  return {
+    id: String(item.id ?? ""),
+    salonSlug: String(item.salon_slug ?? ""),
+    salonName: String(item.salon_name ?? ""),
+    serviceName: String(item.service_name ?? ""),
+    appointmentDate: String(item.appointment_date ?? ""),
+    appointmentTime: String(item.appointment_time ?? ""),
+    customerName: String(item.customer_name ?? ""),
+    customerEmail: String(item.customer_email ?? ""),
+    customerPhone: String(item.customer_phone ?? ""),
+    customerNotes: String(item.customer_notes ?? ""),
+    status: (item.status as BookingStatus) ?? "confirmed",
+    source: "supabase" as const,
+    createdAt: String(item.created_at ?? "")
+  } satisfies BookingRecord;
+}
+
+async function fetchSupabaseBookingsForSalonSlug(salonSlug: string) {
+  const supabase = getSupabaseAdmin();
+
+  if (!supabase) {
+    return [] as BookingRecord[];
+  }
+
+  const primaryResult = await supabase
+    .from("bookings")
+    .select(
+      "id, salon_slug, salon_name, service_name, appointment_date, appointment_time, customer_name, customer_email, customer_phone, customer_notes, status, created_at"
+    )
+    .eq("salon_slug", salonSlug)
+    .order("created_at", { ascending: false });
+
+  let rows = (primaryResult.data as Array<Record<string, unknown>> | null) ?? [];
+  let error = primaryResult.error;
+
+  if (error && /customer_email/i.test(error.message)) {
+    const fallbackResult = await supabase
+      .from("bookings")
+      .select(
+        "id, salon_slug, salon_name, service_name, appointment_date, appointment_time, customer_name, customer_phone, customer_notes, status, created_at"
+      )
+      .eq("salon_slug", salonSlug)
+      .order("created_at", { ascending: false });
+    rows = (fallbackResult.data as Array<Record<string, unknown>> | null) ?? [];
+    error = fallbackResult.error;
+  }
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return rows.map(mapBookingRow);
+}
+
+function pickMatchingBookingCandidate(items: BookingRecord[], input: BookingMatchInput) {
+  const normalizedPhone = input.customerPhone.trim();
+  const previousPhone = input.previousCustomerPhone?.trim() ?? "";
+  const normalizedName = input.customerName.trim().toLowerCase();
+  const previousName = input.previousCustomerName?.trim().toLowerCase() ?? "";
+  const normalizedServiceName = input.serviceName.trim().toLowerCase();
+
+  return (
+    (previousPhone
+      ? items.find((item) => item.customerPhone.trim() && item.customerPhone.trim() === previousPhone) ?? null
+      : null) ??
+    items.find((item) => item.customerPhone.trim() && item.customerPhone.trim() === normalizedPhone) ??
+    (previousName
+      ? items.find((item) => item.customerName.trim().toLowerCase() === previousName) ?? null
+      : null) ??
+    items.find((item) => item.customerName.trim().toLowerCase() === normalizedName) ??
+    items.find((item) => item.serviceName.trim().toLowerCase() === normalizedServiceName) ??
+    null
+  );
+}
+
+async function syncMatchedBookingFromCalendarAppointment(
+  businessId: string,
+  input: BookingMatchInput,
+  nextStatus: BookingStatus
+) {
+  const salonSlug = `business:${businessId}`;
+  const normalizedPhone = input.customerPhone.trim();
+  const normalizedNotes = input.customerNotes?.trim() ?? "";
+  const previousAppointmentTime = input.previousAppointmentTime?.trim() ?? "";
+  const timesToCheck = Array.from(new Set([input.appointmentTime, previousAppointmentTime].filter(Boolean)));
+
+  if (isSupabaseConfigured()) {
+    const candidates = await fetchSupabaseBookingsForSalonSlug(salonSlug);
+    const scopedCandidates = candidates.filter(
+      (item) => item.appointmentDate === input.appointmentDate && timesToCheck.includes(item.appointmentTime)
+    );
+    const match = pickMatchingBookingCandidate(scopedCandidates, input);
+
+    if (
+      !match ||
+      (match.status === nextStatus &&
+        match.customerName === input.customerName.trim() &&
+        match.customerPhone === normalizedPhone &&
+        (match.customerNotes ?? "") === normalizedNotes &&
+        match.appointmentTime === input.appointmentTime &&
+        match.serviceName.trim() === input.serviceName.trim())
+    ) {
+      return;
+    }
+
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      return;
+    }
+
+    const { error: updateError } = await supabase
+      .from("bookings")
+      .update({
+        status: nextStatus,
+        customer_name: input.customerName.trim(),
+        customer_phone: normalizedPhone,
+        customer_notes: normalizedNotes,
+        appointment_time: input.appointmentTime,
+        service_name: input.serviceName.trim()
+      })
+      .eq("id", match.id);
+
+    if (updateError) {
+      throw new Error(updateError.message);
+    }
+
+    return;
+  }
+
+  const bookings = await readLocalBookings();
+  const scopedCandidates = bookings.filter(
+    (item) =>
+      item.salonSlug === salonSlug &&
+      item.appointmentDate === input.appointmentDate &&
+      timesToCheck.includes(item.appointmentTime)
+  );
+  const match = pickMatchingBookingCandidate(scopedCandidates, input);
+
+  if (
+    !match ||
+    (match.status === nextStatus &&
+      match.customerName === input.customerName.trim() &&
+      match.customerPhone === normalizedPhone &&
+      (match.customerNotes ?? "") === normalizedNotes &&
+      match.appointmentTime === input.appointmentTime &&
+      match.serviceName.trim() === input.serviceName.trim())
+  ) {
+    return;
+  }
+
+  const nextBookings = bookings.map((item) =>
+    item.id === match.id
+      ? {
+          ...item,
+          status: nextStatus,
+          customerName: input.customerName.trim(),
+          customerPhone: normalizedPhone,
+          customerNotes: normalizedNotes,
+          appointmentTime: input.appointmentTime,
+          serviceName: input.serviceName.trim()
+        }
+      : item
+  );
+  await writeLocalBookings(nextBookings);
 }
 
 async function validateBookingInput(input: BookingInput) {
@@ -492,21 +671,7 @@ export async function getAllBookings() {
       throw new Error(error.message);
     }
 
-    return rows.map((item) => ({
-      id: String(item.id ?? ""),
-      salonSlug: String(item.salon_slug ?? ""),
-      salonName: String(item.salon_name ?? ""),
-      serviceName: String(item.service_name ?? ""),
-      appointmentDate: String(item.appointment_date ?? ""),
-      appointmentTime: String(item.appointment_time ?? ""),
-      customerName: String(item.customer_name ?? ""),
-      customerEmail: String(item.customer_email ?? ""),
-      customerPhone: String(item.customer_phone ?? ""),
-      customerNotes: String(item.customer_notes ?? ""),
-      status: (item.status as BookingStatus) ?? "confirmed",
-      source: "supabase" as const,
-      createdAt: String(item.created_at ?? "")
-    }));
+    return rows.map(mapBookingRow);
   }
 
   const bookings = await readLocalBookings();
@@ -515,6 +680,17 @@ export async function getAllBookings() {
     const rightKey = `${right.appointmentDate}T${right.appointmentTime}`;
     return leftKey.localeCompare(rightKey);
   });
+}
+
+export async function getBookingsForSalonSlug(salonSlug: string) {
+  if (isSupabaseConfigured()) {
+    return fetchSupabaseBookingsForSalonSlug(salonSlug);
+  }
+
+  const bookings = await readLocalBookings();
+  return bookings
+    .filter((item) => item.salonSlug === salonSlug)
+    .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime());
 }
 
 export async function updateBookingStatus(id: string, status: BookingStatus) {
@@ -565,138 +741,24 @@ export async function syncBookingStatusFromCalendarAppointment(input: {
   serviceName: string;
   attendance: string;
 }) {
-  const nextStatus = mapAttendanceToBookingStatus(input.attendance);
-  const salonSlug = `business:${input.businessId}`;
-  const normalizedPhone = input.customerPhone.trim();
-  const previousPhone = input.previousCustomerPhone?.trim() ?? "";
-  const normalizedName = input.customerName.trim().toLowerCase();
-  const previousName = input.previousCustomerName?.trim().toLowerCase() ?? "";
-  const normalizedServiceName = input.serviceName.trim().toLowerCase();
-  const normalizedNotes = input.customerNotes?.trim() ?? "";
-  const previousAppointmentTime = input.previousAppointmentTime?.trim() ?? "";
-
-  const pickCandidate = (items: BookingRecord[]) => {
-    return (
-      (previousPhone
-        ? items.find((item) => item.customerPhone.trim() && item.customerPhone.trim() === previousPhone) ?? null
-        : null) ??
-      items.find((item) => item.customerPhone.trim() && item.customerPhone.trim() === normalizedPhone) ??
-      (previousName
-        ? items.find((item) => item.customerName.trim().toLowerCase() === previousName) ?? null
-        : null) ??
-      items.find((item) => item.customerName.trim().toLowerCase() === normalizedName) ??
-      items.find((item) => item.serviceName.trim().toLowerCase() === normalizedServiceName) ??
-      null
-    );
-  };
-
-  const supabase = getSupabaseAdmin();
-  if (supabase) {
-    const timesToCheck = Array.from(new Set([input.appointmentTime, previousAppointmentTime].filter(Boolean)));
-    const candidates: BookingRecord[] = [];
-
-    for (const timeToCheck of timesToCheck) {
-      const { data, error } = await supabase
-        .from("bookings")
-        .select(
-          "id, salon_slug, salon_name, service_name, appointment_date, appointment_time, customer_name, customer_email, customer_phone, customer_notes, status, created_at"
-        )
-        .eq("salon_slug", salonSlug)
-        .eq("appointment_date", input.appointmentDate)
-        .eq("appointment_time", timeToCheck);
-
-      if (error) {
-        throw new Error(error.message);
-      }
-
-      for (const item of ((data as Array<Record<string, unknown>> | null) ?? [])) {
-        const candidate = {
-          id: String(item.id ?? ""),
-          salonSlug: String(item.salon_slug ?? ""),
-          salonName: String(item.salon_name ?? ""),
-          serviceName: String(item.service_name ?? ""),
-          appointmentDate: String(item.appointment_date ?? ""),
-          appointmentTime: String(item.appointment_time ?? ""),
-          customerName: String(item.customer_name ?? ""),
-          customerEmail: String(item.customer_email ?? ""),
-          customerPhone: String(item.customer_phone ?? ""),
-          customerNotes: String(item.customer_notes ?? ""),
-          status: (item.status as BookingStatus) ?? "confirmed",
-          source: "supabase" as const,
-          createdAt: String(item.created_at ?? "")
-        };
-
-        if (!candidates.some((existing) => existing.id === candidate.id)) {
-          candidates.push(candidate);
-        }
-      }
-    }
-
-    const match = pickCandidate(candidates);
-    if (
-      !match ||
-      (match.status === nextStatus &&
-        match.customerName === input.customerName.trim() &&
-        match.customerPhone === normalizedPhone &&
-        (match.customerNotes ?? "") === normalizedNotes &&
-        match.appointmentTime === input.appointmentTime &&
-        match.serviceName.trim() === input.serviceName.trim())
-    ) {
-      return;
-    }
-
-    const { error: updateError } = await supabase
-      .from("bookings")
-      .update({
-        status: nextStatus,
-        customer_name: input.customerName.trim(),
-        customer_phone: normalizedPhone,
-        customer_notes: normalizedNotes,
-        appointment_time: input.appointmentTime,
-        service_name: input.serviceName.trim()
-      })
-      .eq("id", match.id);
-    if (updateError) {
-      throw new Error(updateError.message);
-    }
-
-    return;
-  }
-
-  const bookings = await readLocalBookings();
-  const timesToCheck = new Set([input.appointmentTime, previousAppointmentTime].filter(Boolean));
-  const candidates = bookings.filter(
-    (item) =>
-      item.salonSlug === salonSlug &&
-      item.appointmentDate === input.appointmentDate &&
-      timesToCheck.has(item.appointmentTime)
+  await syncMatchedBookingFromCalendarAppointment(
+    input.businessId,
+    input,
+    mapAttendanceToBookingStatus(input.attendance)
   );
-  const match = pickCandidate(candidates);
+}
 
-  if (
-    !match ||
-    (match.status === nextStatus &&
-      match.customerName === input.customerName.trim() &&
-      match.customerPhone === normalizedPhone &&
-      (match.customerNotes ?? "") === normalizedNotes &&
-      match.appointmentTime === input.appointmentTime &&
-      match.serviceName.trim() === input.serviceName.trim())
-  ) {
-    return;
-  }
-
-  const nextBookings = bookings.map((item) =>
-    item.id === match.id
-      ? {
-          ...item,
-          status: nextStatus,
-          customerName: input.customerName.trim(),
-          customerPhone: normalizedPhone,
-          customerNotes: normalizedNotes,
-          appointmentTime: input.appointmentTime,
-          serviceName: input.serviceName.trim()
-        }
-      : item
-  );
-  await writeLocalBookings(nextBookings);
+export async function cancelBookingFromCalendarAppointment(input: {
+  businessId: string;
+  appointmentDate: string;
+  appointmentTime: string;
+  previousAppointmentTime?: string;
+  customerName: string;
+  customerPhone: string;
+  customerNotes?: string;
+  previousCustomerName?: string;
+  previousCustomerPhone?: string;
+  serviceName: string;
+}) {
+  await syncMatchedBookingFromCalendarAppointment(input.businessId, input, "cancelled");
 }
