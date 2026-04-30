@@ -2048,7 +2048,8 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
     () => visibleCalendars.flatMap((member) => member.appointments),
     [visibleCalendars]
   );
-  const canTogglePublicBooking = snapshot?.viewer.scope === "owner";
+  const canTogglePublicBooking =
+    snapshot?.viewer.scope === "owner" || snapshot?.workspace.membership.scope === "owner";
   const focusedMemberCalendar =
     memberCalendars.find((member) => member.professionalId === selectedProfessionalId) ??
     memberCalendars[0] ??
@@ -2218,6 +2219,110 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
       window.removeEventListener("scroll", updatePosition, true);
     };
   }, [canSwitchProfessional, isMobileViewport, mobileDayHourColumnWidth, viewMode, selectedDate, visibleCalendarIds.length]);
+
+  useEffect(() => {
+    if (!isMobileViewport || typeof navigator === "undefined") {
+      return;
+    }
+
+    const ua = navigator.userAgent;
+    if (!/Android|Chrome|CriOS/i.test(ua) || /Safari/i.test(ua) && !/Chrome|CriOS/i.test(ua)) {
+      return;
+    }
+
+    const frame = scrollFrameRef.current;
+    if (!frame) {
+      return;
+    }
+
+    let startY = 0;
+    let startScrollTop = 0;
+    let gestureActive = false;
+
+    function shouldIgnoreTouchTarget(target: EventTarget | null) {
+      if (!(target instanceof HTMLElement)) {
+        return false;
+      }
+
+      return Boolean(
+        target.closest(
+          [
+            "button",
+            "a",
+            "input",
+            "textarea",
+            "select",
+            "[role='button']",
+            `.${styles.mobileWorkspaceNav}`,
+            `.${styles.calendarMobilePlusButton}`,
+            `.${styles.calendarMobileTeamFab}`,
+            `.${styles.calendarQuickMenu}`,
+            `.${styles.phonePrefixMenu}`,
+            `.${styles.phonePrefixButton}`,
+            `.${styles.bookingDeleteButton}`,
+            `.${styles.bookingDragHandle}`,
+            `.${styles.bookingResizeHandle}`
+          ].join(",")
+        )
+      );
+    }
+
+    function handleTouchStart(event: TouchEvent) {
+      const activeFrame = scrollFrameRef.current;
+      if (!activeFrame) {
+        gestureActive = false;
+        return;
+      }
+
+      if (event.touches.length !== 1 || shouldIgnoreTouchTarget(event.target)) {
+        gestureActive = false;
+        return;
+      }
+
+      gestureActive = true;
+      startY = event.touches[0].clientY;
+      startScrollTop = activeFrame.scrollTop;
+    }
+
+    function handleTouchMove(event: TouchEvent) {
+      const activeFrame = scrollFrameRef.current;
+      if (!activeFrame) {
+        gestureActive = false;
+        return;
+      }
+
+      if (!gestureActive || event.touches.length !== 1) {
+        return;
+      }
+
+      const deltaY = event.touches[0].clientY - startY;
+      if (Math.abs(deltaY) < 2) {
+        return;
+      }
+
+      if (event.cancelable) {
+        event.preventDefault();
+      }
+
+      activeFrame.scrollTop = startScrollTop - deltaY;
+    }
+
+    function stopGesture() {
+      gestureActive = false;
+    }
+
+    frame.addEventListener("touchstart", handleTouchStart, { passive: true });
+    frame.addEventListener("touchmove", handleTouchMove, { passive: false });
+    frame.addEventListener("touchend", stopGesture, { passive: true });
+    frame.addEventListener("touchcancel", stopGesture, { passive: true });
+
+    return () => {
+      frame.removeEventListener("touchstart", handleTouchStart);
+      frame.removeEventListener("touchmove", handleTouchMove);
+      frame.removeEventListener("touchend", stopGesture);
+      frame.removeEventListener("touchcancel", stopGesture);
+    };
+  }, [isMobileViewport]);
 
   useEffect(() => {
     const frame = scrollFrameRef.current;

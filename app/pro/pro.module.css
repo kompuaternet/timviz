@@ -11602,8 +11602,9 @@
     position: static;
     top: auto;
     left: auto;
-    width: 100%;
-    max-width: 100%;
+    width: min(420px, calc(100vw - 48px));
+    max-width: min(420px, calc(100vw - 48px));
+    min-width: min(420px, calc(100vw - 48px));
     max-height: min(300px, 42vh);
     margin-top: 0;
     margin-bottom: 12px;
@@ -11630,11 +11631,32 @@
     position: static;
     top: auto;
     left: auto;
-    width: 100%;
-    max-width: 100%;
+    width: min(420px, calc(100vw - 48px));
+    max-width: min(420px, calc(100vw - 48px));
+    min-width: min(420px, calc(100vw - 48px));
     max-height: min(300px, 42vh);
     margin-top: 0;
     margin-bottom: 12px;
+  }
+
+  .calendarAppointmentPhoneRow.phoneRowExpanded,
+  .calendarQuickClientForm .phoneRow.phoneRowExpanded,
+  .clientsModal .phoneRow.phoneRowExpanded {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .calendarAppointmentPhoneRow.phoneRowExpanded .phonePrefixPicker,
+  .calendarQuickClientForm .phoneRow.phoneRowExpanded .phonePrefixPicker,
+  .clientsModal .phoneRow.phoneRowExpanded .phonePrefixPicker {
+    width: min(420px, calc(100vw - 48px));
+    max-width: 100%;
+  }
+
+  .calendarAppointmentPhoneRow.phoneRowExpanded .phoneInput,
+  .calendarQuickClientForm .phoneRow.phoneRowExpanded .phoneInput,
+  .clientsModal .phoneRow.phoneRowExpanded .phoneInput {
+    grid-column: 1 / -1;
+    width: 100%;
   }
 
   .calendarQuickClientForm .phonePrefixSearchWrap {
@@ -12082,6 +12104,34 @@
   .phoneRowExpanded .phonePrefixMenuRich {
     width: 100%;
     max-width: 100%;
+  }
+
+  .calendarAppointmentPhoneRow.phoneRowExpanded,
+  .calendarQuickClientForm .phoneRow.phoneRowExpanded,
+  .clientsModal .phoneRow.phoneRowExpanded {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .calendarAppointmentPhoneRow.phoneRowExpanded .phonePrefixPicker,
+  .calendarQuickClientForm .phoneRow.phoneRowExpanded .phonePrefixPicker,
+  .clientsModal .phoneRow.phoneRowExpanded .phonePrefixPicker {
+    width: min(420px, calc(100vw - 48px));
+    max-width: 100%;
+  }
+
+  .calendarAppointmentPhoneRow.phoneRowExpanded .phonePrefixMenuRich,
+  .calendarQuickClientForm .phoneRow.phoneRowExpanded .phonePrefixMenuRich,
+  .clientsModal .phoneRow.phoneRowExpanded .phonePrefixMenuRich {
+    width: min(420px, calc(100vw - 48px));
+    max-width: min(420px, calc(100vw - 48px));
+    min-width: min(420px, calc(100vw - 48px));
+  }
+
+  .calendarAppointmentPhoneRow.phoneRowExpanded .phoneInput,
+  .calendarQuickClientForm .phoneRow.phoneRowExpanded .phoneInput,
+  .clientsModal .phoneRow.phoneRowExpanded .phoneInput {
+    grid-column: 1 / -1;
+    width: 100%;
   }
 
   .onboardingShell .input,
