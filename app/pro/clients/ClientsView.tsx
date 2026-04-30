@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import styles from "../pro.module.css";
 import ProSidebar from "../ProSidebar";
 import ProWorkspaceHeader from "../ProWorkspaceHeader";
@@ -72,6 +72,8 @@ const CLIENTS_TEXT: Record<AppLanguage, {
   firstName: string;
   lastName: string;
   email: string;
+  prefixAria: string;
+  prefixSearch: string;
   telegram: string;
   firstNamePlaceholder: string;
   lastNamePlaceholder: string;
@@ -111,6 +113,8 @@ const CLIENTS_TEXT: Record<AppLanguage, {
     firstName: "Имя",
     lastName: "Фамилия",
     email: "Эл. почта",
+    prefixAria: "Выберите телефонный код",
+    prefixSearch: "Поиск по стране или коду",
     telegram: "Telegram",
     firstNamePlaceholder: "Например, Саша",
     lastNamePlaceholder: "Например, Мороз",
@@ -150,6 +154,8 @@ const CLIENTS_TEXT: Record<AppLanguage, {
     firstName: "Ім'я",
     lastName: "Прізвище",
     email: "Ел. пошта",
+    prefixAria: "Виберіть телефонний код",
+    prefixSearch: "Пошук за країною або кодом",
     telegram: "Telegram",
     firstNamePlaceholder: "Наприклад, Саша",
     lastNamePlaceholder: "Наприклад, Мороз",
@@ -189,6 +195,8 @@ const CLIENTS_TEXT: Record<AppLanguage, {
     firstName: "First name",
     lastName: "Last name",
     email: "Email",
+    prefixAria: "Choose phone prefix",
+    prefixSearch: "Search by country or code",
     telegram: "Telegram",
     firstNamePlaceholder: "For example, Sasha",
     lastNamePlaceholder: "For example, Frost",
@@ -282,11 +290,14 @@ export default function ClientsView({
   const [activeTab, setActiveTab] = useState<"profile" | "settings">("profile");
   const [form, setForm] = useState<ClientForm>(emptyForm);
   const [phoneCountry, setPhoneCountry] = useState(accountCountry || "Ukraine");
+  const [isPrefixOpen, setIsPrefixOpen] = useState(false);
+  const [prefixSearch, setPrefixSearch] = useState("");
   const [saving, setSaving] = useState(false);
   const [statusText, setStatusText] = useState("");
   const phoneRule = getPhoneRule(phoneCountry || accountCountry || "Ukraine");
   const t = CLIENTS_TEXT[uiLanguage];
   const locale = getLocale(uiLanguage);
+  const prefixMenuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const storedLanguage = window.localStorage.getItem("rezervo-pro-language");
@@ -309,6 +320,26 @@ export default function ClientsView({
     setPhoneCountry((current) => current || accountCountry || "Ukraine");
   }, [accountCountry]);
 
+  useEffect(() => {
+    if (!isPrefixOpen) {
+      return;
+    }
+
+    function handlePointerDown(event: MouseEvent | TouchEvent) {
+      if (prefixMenuRef.current && !prefixMenuRef.current.contains(event.target as Node)) {
+        setIsPrefixOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handlePointerDown);
+    document.addEventListener("touchstart", handlePointerDown);
+
+    return () => {
+      document.removeEventListener("mousedown", handlePointerDown);
+      document.removeEventListener("touchstart", handlePointerDown);
+    };
+  }, [isPrefixOpen]);
+
   const filteredClients = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
     const queryDigits = digitsOnly(query);
@@ -326,9 +357,24 @@ export default function ClientsView({
     });
   }, [clients, query]);
 
+  const filteredPhoneCountries = useMemo(() => {
+    const normalizedQuery = prefixSearch.trim().toLowerCase();
+
+    if (!normalizedQuery) {
+      return phoneCountries;
+    }
+
+    return phoneCountries.filter((country) => {
+      const rule = getPhoneRule(country);
+      return country.toLowerCase().includes(normalizedQuery) || rule.prefix.toLowerCase().includes(normalizedQuery);
+    });
+  }, [prefixSearch]);
+
   function openCreateModal() {
     setForm(emptyForm);
     setPhoneCountry(accountCountry || "Ukraine");
+    setIsPrefixOpen(false);
+    setPrefixSearch("");
     setActiveTab("profile");
     setStatusText("");
     setModalOpen(true);
@@ -349,6 +395,8 @@ export default function ClientsView({
       marketingTelegram: client.marketingTelegram
     });
     setPhoneCountry(phoneState.country);
+    setIsPrefixOpen(false);
+    setPrefixSearch("");
     setActiveTab("profile");
     setStatusText("");
     setModalOpen(true);
@@ -564,29 +612,58 @@ export default function ClientsView({
                       </label>
                       <label>
                         <span>{t.phone}</span>
-                        <div className={styles.phoneRow}>
-                          <select
-                            className={styles.phoneCodeSelect}
-                            value={phoneCountry}
-                            onChange={(event) => {
-                              const nextCountry = event.target.value;
-                              const nextRule = getPhoneRule(nextCountry);
-                              setPhoneCountry(nextCountry);
-                              setForm((current) => ({
-                                ...current,
-                                phone: formatPhoneLocal(onlyPhoneDigits(current.phone), nextRule)
-                              }));
-                            }}
-                          >
-                            {phoneCountries.map((country) => {
-                              const rule = getPhoneRule(country);
-                              return (
-                                <option key={country} value={country}>
-                                  {`${rule.prefix} · ${country}`}
-                                </option>
-                              );
-                            })}
-                          </select>
+                        <div className={`${styles.phoneRow} ${isPrefixOpen ? styles.phoneRowExpanded : ""}`}>
+                          <div className={styles.phonePrefixPicker} ref={prefixMenuRef}>
+                            <button
+                              type="button"
+                              className={`${styles.phonePrefixButton} ${styles.phonePrefixButtonWide} ${isPrefixOpen ? styles.phonePrefixButtonOpen : ""}`}
+                              aria-label={t.prefixAria}
+                              aria-expanded={isPrefixOpen}
+                              onClick={() => setIsPrefixOpen((value) => !value)}
+                            >
+                              <span>{phoneRule.prefix}</span>
+                              <span aria-hidden="true">⌄</span>
+                            </button>
+                            {isPrefixOpen ? (
+                              <div className={`${styles.phonePrefixMenu} ${styles.phonePrefixMenuRich}`}>
+                                <div className={styles.phonePrefixSearchWrap}>
+                                  <input
+                                    type="search"
+                                    className={styles.phonePrefixSearch}
+                                    placeholder={t.prefixSearch}
+                                    value={prefixSearch}
+                                    onChange={(event) => setPrefixSearch(event.target.value)}
+                                    autoFocus
+                                  />
+                                </div>
+                                <div className={styles.phonePrefixList}>
+                                  {filteredPhoneCountries.map((country) => {
+                                    const rule = getPhoneRule(country);
+                                    const active = phoneCountry === country;
+                                    return (
+                                      <button
+                                        key={country}
+                                        type="button"
+                                        className={active ? styles.phonePrefixOptionActive : ""}
+                                        onClick={() => {
+                                          setPhoneCountry(country);
+                                          setForm((current) => ({
+                                            ...current,
+                                            phone: formatPhoneLocal(onlyPhoneDigits(current.phone), rule)
+                                          }));
+                                          setPrefixSearch("");
+                                          setIsPrefixOpen(false);
+                                        }}
+                                      >
+                                        <span>{country}</span>
+                                        <strong>{rule.prefix}</strong>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            ) : null}
+                          </div>
                           <input
                             className={styles.phoneInput}
                             inputMode="numeric"

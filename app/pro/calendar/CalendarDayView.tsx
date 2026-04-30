@@ -4735,10 +4735,7 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
                           });
                         }}
                       >
-                        <div className={styles.calendarPrefixButtonText}>
-                          <strong>{getPhoneRule(newClientPhoneCountry).prefix}</strong>
-                          <span>{newClientPhoneCountry}</span>
-                        </div>
+                        <span>{getPhoneRule(newClientPhoneCountry).prefix}</span>
                         <span aria-hidden="true">⌄</span>
                       </button>
                       {isNewClientPrefixOpen ? (
@@ -5083,10 +5080,7 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
                             });
                           }}
                         >
-                          <div className={styles.calendarPrefixButtonText}>
-                            <strong>{detailsCustomerPhoneRule.prefix}</strong>
-                            <span>{detailsCustomerPhoneCountryDraft}</span>
-                          </div>
+                          <span>{detailsCustomerPhoneRule.prefix}</span>
                           <span aria-hidden="true">⌄</span>
                         </button>
                         {isDetailsPrefixOpen ? (

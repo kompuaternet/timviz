@@ -1495,7 +1495,7 @@
 }
 
 .phonePrefixMenuRich {
-  width: min(360px, calc(100vw - 48px));
+  width: min(440px, calc(100vw - 32px));
   display: grid;
   gap: 10px;
 }
@@ -1559,6 +1559,7 @@
   font-size: 0.96rem;
 }
 
+.phonePrefixMenuRich button span,
 .phoneRowExpanded .phonePrefixMenu span,
 .phoneRowExpanded .phonePrefixMenuRich span {
   white-space: nowrap;
@@ -11564,6 +11565,7 @@
     display: grid;
     align-content: start;
     gap: 10px;
+    width: 100%;
   }
 
   .calendarAppointmentPhoneRow .phonePrefixButton {
@@ -11615,6 +11617,7 @@
     display: grid;
     align-content: start;
     gap: 10px;
+    width: 100%;
   }
 
   .calendarQuickClientForm .phonePrefixMenuRich {
@@ -12059,6 +12062,20 @@
 
   .phoneRow {
     grid-template-columns: 82px minmax(0, 1fr);
+  }
+
+  .phoneRowExpanded {
+    grid-template-columns: 1fr;
+  }
+
+  .phoneRowExpanded .phonePrefixPicker {
+    width: 100%;
+  }
+
+  .phoneRowExpanded .phonePrefixMenu,
+  .phoneRowExpanded .phonePrefixMenuRich {
+    width: 100%;
+    max-width: 100%;
   }
 
   .onboardingShell .input,
