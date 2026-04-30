@@ -101,6 +101,7 @@ export default function ProSidebar({
   const router = useRouter();
   const { t } = useProLanguage();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const [optimisticMobileActive, setOptimisticMobileActive] = useState<SidebarSection | null>(null);
   const [showScheduleReminder, setShowScheduleReminder] = useState(
     () => active !== "staff" && hasPendingScheduleReminder(professionalId)
   );
@@ -112,6 +113,10 @@ export default function ProSidebar({
     staff: t.nav.staff,
     schedule: t.nav.schedule
   };
+
+  useEffect(() => {
+    setOptimisticMobileActive(null);
+  }, [active]);
 
   useEffect(() => {
     if (!professionalId) {
@@ -204,9 +209,14 @@ export default function ProSidebar({
           <Link
             key={link.key}
             href={link.href}
-            className={`${styles.mobileWorkspaceNavLink} ${link.active ? styles.mobileWorkspaceNavActive : ""}`}
+            className={`${styles.mobileWorkspaceNavLink} ${
+              optimisticMobileActive === link.key || (!optimisticMobileActive && link.active)
+                ? styles.mobileWorkspaceNavActive
+                : ""
+            }`}
             aria-label={link.label}
             title={link.label}
+            onClick={() => setOptimisticMobileActive(link.key)}
           >
             <span className={styles.mobileWorkspaceNavIcon}>
               {link.icon}

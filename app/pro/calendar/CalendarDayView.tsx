@@ -1906,6 +1906,20 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
     });
   }, [selectedDate, todayDate, workStartMinutes, minuteHeight]);
 
+  function ensureFormFieldVisible(target: HTMLElement | null, behavior: ScrollBehavior = "smooth") {
+    if (!target || typeof window === "undefined" || window.innerWidth > 820) {
+      return;
+    }
+
+    requestAnimationFrame(() => {
+      target.scrollIntoView({
+        block: "center",
+        inline: "nearest",
+        behavior
+      });
+    });
+  }
+
   function scrollCalendarToTime(targetMinutes: number, behavior: ScrollBehavior = "smooth") {
     const frame = scrollFrameRef.current;
     if (!frame) {
@@ -4153,7 +4167,12 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
             </div>
 
             {showNewClientForm ? (
-              <div className={styles.calendarQuickClientForm}>
+              <div
+                className={styles.calendarQuickClientForm}
+                onFocusCapture={(event) => {
+                  ensureFormFieldVisible(event.target as HTMLElement, "smooth");
+                }}
+              >
                 <div>
                   <strong>{t.addClientTitle}</strong>
                   <span>{t.addClientText}</span>
@@ -4176,7 +4195,10 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
                         className={`${styles.phonePrefixButton} ${styles.phonePrefixButtonWide} ${isNewClientPrefixOpen ? styles.phonePrefixButtonOpen : ""}`}
                         aria-label={t.prefixAria}
                         aria-expanded={isNewClientPrefixOpen}
-                        onClick={() => setIsNewClientPrefixOpen((value) => !value)}
+                        onClick={() => {
+                          ensureFormFieldVisible(newClientPrefixMenuRef.current, "smooth");
+                          setIsNewClientPrefixOpen((value) => !value);
+                        }}
                       >
                         <div className={styles.calendarPrefixButtonText}>
                           <strong>{getPhoneRule(newClientPhoneCountry).prefix}</strong>
@@ -4402,20 +4424,14 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
                     <strong>{selectedAppointmentDateLabel}</strong>
                     <small>{formatDisplayTime(detailsStartTimeDraft)} - {formatDisplayTime(detailsEndTimeDraft)}</small>
                   </div>
-                  <div className={styles.calendarAppointmentSummaryCard}>
-                    <span>{t.service}</span>
-                    <strong>{detailsServiceNameDraft || selectedAppointment.serviceName}</strong>
-                    <small>
-                      {t.specialist}:{" "}
-                      {selectedAppointmentMember
-                        ? buildDisplayName(selectedAppointmentMember.firstName, selectedAppointmentMember.lastName, t.masterFallback)
-                        : viewedProfessionalName}
-                      {visitItems.length > 1 ? ` · +${visitItems.length - 1}` : ""}
-                    </small>
-                  </div>
                 </div>
 
-                <div className={`${styles.createAccountGrid} ${styles.calendarAppointmentEditGrid}`}>
+                <div
+                  className={`${styles.createAccountGrid} ${styles.calendarAppointmentEditGrid}`}
+                  onFocusCapture={(event) => {
+                    ensureFormFieldVisible(event.target as HTMLElement, "smooth");
+                  }}
+                >
                   <div className={styles.field}>
                     <div className={styles.calendarAppointmentServiceStack}>
                       {visitItems.map((item, index) => (
@@ -4521,7 +4537,10 @@ export default function CalendarDayView({ professionalId, initialDate }: Calenda
                           className={`${styles.phonePrefixButton} ${styles.phonePrefixButtonWide} ${isDetailsPrefixOpen ? styles.phonePrefixButtonOpen : ""}`}
                           aria-label={t.prefixAria}
                           aria-expanded={isDetailsPrefixOpen}
-                          onClick={() => setIsDetailsPrefixOpen((value) => !value)}
+                          onClick={() => {
+                            ensureFormFieldVisible(detailsPrefixMenuRef.current, "smooth");
+                            setIsDetailsPrefixOpen((value) => !value);
+                          }}
                         >
                           <div className={styles.calendarPrefixButtonText}>
                             <strong>{detailsCustomerPhoneRule.prefix}</strong>
