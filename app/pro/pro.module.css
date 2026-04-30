@@ -11417,6 +11417,7 @@
   }
 
   .calendarAppointmentEditGrid {
+    padding: 0;
     grid-template-columns: 1fr;
     gap: 12px;
   }
@@ -11427,6 +11428,18 @@
   .calendarVisitMeta,
   .calendarAppointmentPhoneField,
   .calendarAppointmentCustomerField {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .calendarAppointmentEditGrid .input,
+  .calendarAppointmentEditGrid .select,
+  .calendarAppointmentEditGrid .textarea,
+  .calendarAppointmentEditGrid .phoneRow,
+  .calendarAppointmentEditGrid .phoneInput,
+  .calendarAppointmentEditGrid .phonePrefixPicker,
+  .calendarAppointmentEditGrid .phonePrefixButton,
+  .calendarAppointmentEditGrid .field {
     width: 100%;
     min-width: 0;
   }
