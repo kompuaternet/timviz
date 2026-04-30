@@ -1255,6 +1255,7 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
   const [clientSearchReturnStage, setClientSearchReturnStage] = useState<"visit" | "details">("visit");
   const [showClientPrompt, setShowClientPrompt] = useState(false);
   const [isSavingVisit, setIsSavingVisit] = useState(false);
+  const [isTogglingPublicBooking, setIsTogglingPublicBooking] = useState(false);
   const [deleteConfirmTarget, setDeleteConfirmTarget] = useState<CalendarAppointment | null>(null);
   const [isDeletingAppointment, setIsDeletingAppointment] = useState(false);
   const [isMobileViewport, setIsMobileViewport] = useState(false);
@@ -1984,10 +1985,70 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
       // Ignore cancelled native share sheets.
     }
   }
+
+  async function togglePublicBooking() {
+    if (!snapshot || !canTogglePublicBooking || isTogglingPublicBooking) {
+      return;
+    }
+
+    const previousValue = snapshot.workspace.business.allowOnlineBooking === true;
+    const nextValue = !previousValue;
+
+    setIsTogglingPublicBooking(true);
+    setSnapshot((current) =>
+      current
+        ? {
+            ...current,
+            workspace: {
+              ...current.workspace,
+              business: {
+                ...current.workspace.business,
+                allowOnlineBooking: nextValue
+              }
+            }
+          }
+        : current
+    );
+
+    try {
+      const response = await fetch("/api/pro/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          business: {
+            allowOnlineBooking: nextValue
+          }
+        })
+      });
+      const payload = await response.json();
+
+      if (!response.ok) {
+        throw new Error(payload?.error || "toggle_failed");
+      }
+    } catch {
+      setSnapshot((current) =>
+        current
+          ? {
+              ...current,
+              workspace: {
+                ...current.workspace,
+                business: {
+                  ...current.workspace.business,
+                  allowOnlineBooking: previousValue
+                }
+              }
+            }
+          : current
+      );
+    } finally {
+      setIsTogglingPublicBooking(false);
+    }
+  }
   const allVisibleAppointments = useMemo(
     () => visibleCalendars.flatMap((member) => member.appointments),
     [visibleCalendars]
   );
+  const canTogglePublicBooking = snapshot?.viewer.scope === "owner";
   const focusedMemberCalendar =
     memberCalendars.find((member) => member.professionalId === selectedProfessionalId) ??
     memberCalendars[0] ??
@@ -3437,9 +3498,27 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
                 <span className={styles.calendarShareMenuEyebrow}>{t.publicLink}</span>
                 <strong>{t.publicLinkTitle}</strong>
                 <p>{t.publicLinkHint}</p>
-                <span className={`${styles.calendarShareStatusPill} ${publicBookingEnabled ? styles.calendarShareStatusPillActive : ""}`}>
-                  {publicBookingEnabled ? t.publicLinkEnabled : t.publicLinkDisabled}
-                </span>
+                {canTogglePublicBooking ? (
+                  <button
+                    type="button"
+                    className={`${styles.settingsShareToggle} ${publicBookingEnabled ? styles.settingsShareToggleActive : ""}`}
+                    onClick={() => void togglePublicBooking()}
+                    aria-pressed={publicBookingEnabled}
+                    aria-label={t.publicLink}
+                    disabled={isTogglingPublicBooking}
+                  >
+                    <span className={styles.settingsShareToggleLabel}>
+                      {publicBookingEnabled ? t.publicLinkEnabled : t.publicLinkDisabled}
+                    </span>
+                    <span className={styles.settingsShareToggleTrack}>
+                      <span className={styles.settingsShareToggleThumb} />
+                    </span>
+                  </button>
+                ) : (
+                  <span className={`${styles.settingsShareStatus} ${publicBookingEnabled ? styles.settingsShareStatusActive : ""}`}>
+                    {publicBookingEnabled ? t.publicLinkEnabled : t.publicLinkDisabled}
+                  </span>
+                )}
               </div>
 
               <div className={styles.calendarShareField}>
@@ -4907,24 +4986,25 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
                             ) : null}
                           </div>
 
-                          <div className={styles.calendarAppointmentServiceFieldLabels}>
+                          <button
+                            type="button"
+                            className={styles.calendarVisitServicePicker}
+                            onClick={() => {
+                              setEditingServiceIndex(index);
+                              setServicePickerReturnStage("details");
+                              setDrawerStage("service-picker");
+                            }}
+                          >
+                            <span>{index === 0 ? detailsServiceNameDraft || t.chooseService : item.serviceName || t.chooseService}</span>
+                            <span aria-hidden="true">⌄</span>
+                          </button>
+
+                          <div className={styles.calendarAppointmentTimeFieldLabels}>
                             <span>{t.start}</span>
                             <span>{t.end}</span>
                           </div>
 
-                          <div className={styles.calendarAppointmentServiceFieldGrid}>
-                            <button
-                              type="button"
-                              className={styles.calendarVisitServicePicker}
-                              onClick={() => {
-                                setEditingServiceIndex(index);
-                                setServicePickerReturnStage("details");
-                                setDrawerStage("service-picker");
-                              }}
-                            >
-                              <span>{index === 0 ? detailsServiceNameDraft || t.chooseService : item.serviceName || t.chooseService}</span>
-                              <span aria-hidden="true">⌄</span>
-                            </button>
+                          <div className={styles.calendarAppointmentTimeFieldGrid}>
                             <select
                               className={styles.select}
                               value={index === 0 ? detailsStartTimeDraft : item.startTime}

@@ -560,6 +560,7 @@ export default function StaffView({ professionalId, snapshot, initialAddOpen = f
           viewerInitials={header.viewerInitials}
           publicBookingUrl={header.publicBookingUrl}
           publicBookingEnabled={header.publicBookingEnabled === true}
+          canTogglePublicBooking
         />
 
         <aside className={styles.staffStudioSidebar}>

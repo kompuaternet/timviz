@@ -799,6 +799,7 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
           viewerInitials={`${initialData.professional.firstName?.[0] ?? ""}${initialData.professional.lastName?.[0] ?? ""}`.toUpperCase() || "RZ"}
           publicBookingUrl={initialData.business.publicBookingUrl}
           publicBookingEnabled={initialData.business.allowOnlineBooking === true}
+          canTogglePublicBooking={initialData.membership.scope === "owner"}
         />
 
         <header className={styles.settingsHero}>

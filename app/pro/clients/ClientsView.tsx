@@ -412,6 +412,7 @@ export default function ClientsView({
             viewerInitials={header.viewerInitials}
             publicBookingUrl={header.publicBookingUrl}
             publicBookingEnabled={header.publicBookingEnabled === true}
+            canTogglePublicBooking={canManageStaff}
           />
 
           <header className={styles.clientsHeader}>

@@ -1537,19 +1537,33 @@
 .phoneRowExpanded .phonePrefixPicker {
   display: grid;
   gap: 10px;
+  width: 100%;
 }
 
 .phoneRowExpanded .phonePrefixButton {
   width: 132px;
 }
 
+.phoneRowExpanded .phonePrefixMenu,
 .phoneRowExpanded .phonePrefixMenuRich {
+  position: static;
   width: 100%;
+  max-width: 100%;
+  min-width: 0;
 }
 
+.phoneRowExpanded .phonePrefixMenu button,
+.phoneRowExpanded .phonePrefixMenuRich button,
 .phonePrefixMenuRich button {
   grid-template-columns: 1fr auto;
   font-size: 0.96rem;
+}
+
+.phoneRowExpanded .phonePrefixMenu span,
+.phoneRowExpanded .phonePrefixMenuRich span {
+  white-space: nowrap;
+  overflow: visible;
+  text-overflow: clip;
 }
 
 .createVisualContent {
@@ -6988,10 +7002,12 @@
 
 .calendarV2ScrollFrame {
   min-height: 0;
-  height: auto;
-  overflow: auto;
+  height: 100%;
+  max-height: 100%;
+  overflow-x: auto;
+  overflow-y: scroll;
   -webkit-overflow-scrolling: touch;
-  overscroll-behavior: contain;
+  overscroll-behavior-y: contain;
   touch-action: pan-y;
 }
 
@@ -8256,47 +8272,24 @@
   line-height: 1.2;
 }
 
-.calendarAppointmentServiceFieldLabels {
+.calendarAppointmentTimeFieldLabels {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
   align-items: end;
 }
 
-.calendarAppointmentServiceFieldLabels span:first-child {
-  grid-column: 1;
-}
-
-.calendarAppointmentServiceFieldLabels span:nth-child(2) {
-  grid-column: 2;
-}
-
-.calendarAppointmentServiceFieldLabels span {
+.calendarAppointmentTimeFieldLabels span {
   color: #748096;
   font-size: 0.9rem;
   font-weight: 700;
 }
 
-.calendarAppointmentServiceFieldGrid {
+.calendarAppointmentTimeFieldGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  grid-template-areas:
-    "service service"
-    "start end";
   gap: 12px;
   align-items: start;
-}
-
-.calendarAppointmentServiceFieldGrid > :first-child {
-  grid-area: service;
-}
-
-.calendarAppointmentServiceFieldGrid > :nth-child(2) {
-  grid-area: start;
-}
-
-.calendarAppointmentServiceFieldGrid > :nth-child(3) {
-  grid-area: end;
 }
 
 .calendarAppointmentServiceRemove {
@@ -11511,13 +11504,13 @@
     font-size: 0.96rem;
   }
 
-  .calendarAppointmentServiceFieldLabels,
-  .calendarAppointmentServiceFieldGrid {
-    grid-template-columns: minmax(0, 1.15fr) repeat(2, minmax(0, 0.85fr));
+  .calendarAppointmentTimeFieldLabels,
+  .calendarAppointmentTimeFieldGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
   }
 
-  .calendarAppointmentServiceFieldLabels span {
+  .calendarAppointmentTimeFieldLabels span {
     font-size: 0.92rem;
     font-weight: 800;
   }
@@ -11602,6 +11595,7 @@
     top: auto;
     left: auto;
     width: 100%;
+    max-width: 100%;
     max-height: min(300px, 42vh);
     margin-top: 0;
     margin-bottom: 12px;
@@ -11628,6 +11622,7 @@
     top: auto;
     left: auto;
     width: 100%;
+    max-width: 100%;
     max-height: min(300px, 42vh);
     margin-top: 0;
     margin-bottom: 12px;
@@ -11928,8 +11923,9 @@
     grid-template-columns: 104px 1fr;
   }
 
+  .phonePrefixMenu,
   .phonePrefixMenuRich {
-    width: min(100vw - 24px, 360px);
+    width: min(100vw - 24px, 420px);
   }
 
   .createTopLanguage {

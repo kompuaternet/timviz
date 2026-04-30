@@ -423,6 +423,7 @@ export default function ServicesView({ initialWorkspace, catalog }: ServicesView
           viewerInitials={`${initialWorkspace.professional.firstName?.[0] ?? ""}${initialWorkspace.professional.lastName?.[0] ?? ""}`.toUpperCase() || "RZ"}
           publicBookingUrl={initialWorkspace.business.publicBookingUrl}
           publicBookingEnabled={initialWorkspace.business.allowOnlineBooking === true}
+          canTogglePublicBooking={initialWorkspace.membership.scope === "owner"}
         />
 
         <header className={styles.servicesHeroCompact}>

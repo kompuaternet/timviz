@@ -16,6 +16,7 @@ type ProWorkspaceHeaderProps = {
   viewerInitials?: string;
   publicBookingUrl?: string;
   publicBookingEnabled?: boolean;
+  canTogglePublicBooking?: boolean;
 };
 
 function formatDateKey(date: Date) {
@@ -160,7 +161,8 @@ export default function ProWorkspaceHeader({
   viewerAvatarUrl,
   viewerInitials,
   publicBookingUrl = "",
-  publicBookingEnabled = false
+  publicBookingEnabled = false,
+  canTogglePublicBooking = false
 }: ProWorkspaceHeaderProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -174,9 +176,15 @@ export default function ProWorkspaceHeader({
   const [activeMenu, setActiveMenu] = useState<"share" | "account" | null>(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isSupportOpen, setIsSupportOpen] = useState(false);
+  const [isTogglingPublicBooking, setIsTogglingPublicBooking] = useState(false);
   const [notificationsCount, setNotificationsCount] = useState(0);
+  const [publicBookingState, setPublicBookingState] = useState(publicBookingEnabled);
   const pageTitle = useMemo(() => getPageTitle(pathname, language), [language, pathname]);
   const canUseNativeShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
+
+  useEffect(() => {
+    setPublicBookingState(publicBookingEnabled);
+  }, [publicBookingEnabled]);
 
   useEffect(() => {
     const todayDate = formatDateKey(new Date());
@@ -213,6 +221,37 @@ export default function ProWorkspaceHeader({
       });
     } catch {
       return;
+    }
+  }
+
+  async function togglePublicBooking() {
+    if (!canTogglePublicBooking || isTogglingPublicBooking) {
+      return;
+    }
+
+    const nextValue = !publicBookingState;
+    setPublicBookingState(nextValue);
+    setIsTogglingPublicBooking(true);
+
+    try {
+      const response = await fetch("/api/pro/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          business: {
+            allowOnlineBooking: nextValue
+          }
+        })
+      });
+      const payload = await response.json();
+
+      if (!response.ok) {
+        throw new Error(payload?.error || "toggle_failed");
+      }
+    } catch {
+      setPublicBookingState(!nextValue);
+    } finally {
+      setIsTogglingPublicBooking(false);
     }
   }
 
@@ -323,9 +362,27 @@ export default function ProWorkspaceHeader({
             <span className={styles.calendarShareMenuEyebrow}>{copy.publicLink}</span>
             <strong>{copy.publicLinkTitle}</strong>
             <p>{copy.publicLinkHint}</p>
-            <span className={`${styles.calendarShareStatusPill} ${publicBookingEnabled ? styles.calendarShareStatusPillActive : ""}`}>
-              {publicBookingEnabled ? copy.publicLinkEnabled : copy.publicLinkDisabled}
-            </span>
+            {canTogglePublicBooking ? (
+              <button
+                type="button"
+                className={`${styles.settingsShareToggle} ${publicBookingState ? styles.settingsShareToggleActive : ""}`}
+                onClick={() => void togglePublicBooking()}
+                aria-pressed={publicBookingState}
+                aria-label={copy.publicLink}
+                disabled={isTogglingPublicBooking}
+              >
+                <span className={styles.settingsShareToggleLabel}>
+                  {publicBookingState ? copy.publicLinkEnabled : copy.publicLinkDisabled}
+                </span>
+                <span className={styles.settingsShareToggleTrack}>
+                  <span className={styles.settingsShareToggleThumb} />
+                </span>
+              </button>
+            ) : (
+              <span className={`${styles.calendarShareStatusPill} ${publicBookingState ? styles.calendarShareStatusPillActive : ""}`}>
+                {publicBookingState ? copy.publicLinkEnabled : copy.publicLinkDisabled}
+              </span>
+            )}
           </div>
 
           <div className={styles.calendarShareField}>
