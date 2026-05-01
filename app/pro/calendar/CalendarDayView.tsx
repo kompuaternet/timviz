@@ -1304,6 +1304,10 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
     | null
   >(null);
   const scrollFrameRef = useRef<HTMLDivElement | null>(null);
+  const snapshotCacheRef = useRef<Map<string, CalendarSnapshot>>(new Map());
+  const snapshotAbortRef = useRef<AbortController | null>(null);
+  const snapshotRequestIdRef = useRef(0);
+  const snapshotPrefetchRef = useRef<Set<string>>(new Set());
 
   function showToast(text: string, tone: CalendarToastTone = "info") {
     setToast({
@@ -1468,6 +1472,133 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
     });
 
     return `/api/pro/calendar?${params.toString()}`;
+  }
+
+  function buildSnapshotCacheKey(dateKey = selectedDate, targetId = selectedProfessionalId) {
+    return `${dateKey}::${targetId || ""}`;
+  }
+
+  function cacheSnapshot(dateKey: string, targetId: string, data: CalendarSnapshot) {
+    const keys = new Set([buildSnapshotCacheKey(dateKey, targetId)]);
+
+    if (data.viewedProfessionalId) {
+      keys.add(buildSnapshotCacheKey(dateKey, data.viewedProfessionalId));
+    }
+
+    for (const key of keys) {
+      snapshotCacheRef.current.set(key, data);
+    }
+  }
+
+  function applySnapshotState(data: CalendarSnapshot, options: { preserveUi?: boolean } = {}) {
+    const allowedIds = (data.memberCalendars ?? []).map((member) => member.professionalId);
+    const nextViewedProfessionalId = data.viewedProfessionalId || professionalId;
+
+    setSnapshot(data);
+    setSelectedProfessionalId((current) =>
+      options.preserveUi && allowedIds.includes(current) ? current : nextViewedProfessionalId
+    );
+    setVisibleProfessionalIds((current) => {
+      const nextVisibleIds = current.filter((memberId) => allowedIds.includes(memberId));
+      return nextVisibleIds.length ? nextVisibleIds : [nextViewedProfessionalId].filter(Boolean);
+    });
+
+    if (options.preserveUi) {
+      return;
+    }
+
+    setSelectedTime("");
+    setQuickMenu({
+      visible: false,
+      x: 0,
+      y: 0,
+      time: "",
+      professionalId: nextViewedProfessionalId
+    });
+    setActiveToolbarMenu(null);
+    setDrawerStage("closed");
+    setSelectedAppointmentId(null);
+    setToast(null);
+    setVisitItems([]);
+    setSelectedCustomer(null);
+    setClientSearchReturnStage("visit");
+    setServiceQuery("");
+    setClientQuery("");
+    setShowNewClientForm(false);
+    setNewClientName("");
+    setNewClientPhone("");
+    setTeamQuery("");
+    setDeleteConfirmTarget(null);
+    setIsDeletingAppointment(false);
+  }
+
+  async function fetchSnapshotData(
+    dateKey: string,
+    targetId: string,
+    signal?: AbortSignal
+  ): Promise<CalendarSnapshot> {
+    const response = await fetch(buildCalendarUrl(dateKey, targetId), { signal });
+    const data = (await response.json()) as CalendarSnapshot;
+
+    if (!response.ok) {
+      throw new Error("Failed to load calendar snapshot.");
+    }
+
+    return data;
+  }
+
+  function showCachedSnapshot(
+    dateKey = selectedDate,
+    targetId = selectedProfessionalId,
+    options: { preserveUi?: boolean } = {}
+  ) {
+    const cached = snapshotCacheRef.current.get(buildSnapshotCacheKey(dateKey, targetId));
+    if (!cached) {
+      return false;
+    }
+
+    applySnapshotState(cached, options);
+    return true;
+  }
+
+  function getPrefetchDates(dateKey: string) {
+    if (viewMode === "month") {
+      return [addMonths(dateKey, -1), addMonths(dateKey, 1)];
+    }
+
+    if (viewMode === "week") {
+      return [addDays(dateKey, -7), addDays(dateKey, 7)];
+    }
+
+    if (viewMode === "threeDay") {
+      return [addDays(dateKey, -3), addDays(dateKey, 3)];
+    }
+
+    return [addDays(dateKey, -1), addDays(dateKey, 1)];
+  }
+
+  async function prefetchSnapshots(dateKey = selectedDate, targetId = selectedProfessionalId) {
+    const prefetchDates = getPrefetchDates(dateKey);
+
+    await Promise.allSettled(
+      prefetchDates.map(async (prefetchDate) => {
+        const cacheKey = buildSnapshotCacheKey(prefetchDate, targetId);
+        if (snapshotCacheRef.current.has(cacheKey) || snapshotPrefetchRef.current.has(cacheKey)) {
+          return;
+        }
+
+        snapshotPrefetchRef.current.add(cacheKey);
+
+        try {
+          const data = await fetchSnapshotData(prefetchDate, targetId);
+          cacheSnapshot(prefetchDate, targetId, data);
+        } catch {
+          // Ignore background prefetch failures.
+        } finally {
+          snapshotPrefetchRef.current.delete(cacheKey);
+        }
+      })
+    );
   }
 
   function applyNotificationPayload(
@@ -1676,51 +1807,51 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
     targetId = selectedProfessionalId,
     options: { preserveUi?: boolean } = {}
   ) {
-    const response = await fetch(buildCalendarUrl(dateKey, targetId));
-    const data = (await response.json()) as CalendarSnapshot;
-    const allowedIds = (data.memberCalendars ?? []).map((member) => member.professionalId);
-    const nextViewedProfessionalId = data.viewedProfessionalId || professionalId;
+    const requestId = ++snapshotRequestIdRef.current;
+    snapshotAbortRef.current?.abort();
+    const controller = new AbortController();
+    snapshotAbortRef.current = controller;
 
-    setSnapshot(data);
-    setSelectedProfessionalId((current) =>
-      options.preserveUi && allowedIds.includes(current) ? current : nextViewedProfessionalId
-    );
-    setVisibleProfessionalIds((current) => {
-      const nextVisibleIds = current.filter((memberId) => allowedIds.includes(memberId));
-      return nextVisibleIds.length ? nextVisibleIds : [nextViewedProfessionalId].filter(Boolean);
-    });
+    try {
+      const data = await fetchSnapshotData(dateKey, targetId, controller.signal);
 
-    if (options.preserveUi) {
-      return;
+      if (requestId !== snapshotRequestIdRef.current) {
+        return;
+      }
+
+      cacheSnapshot(dateKey, targetId, data);
+      applySnapshotState(data, options);
+      void prefetchSnapshots(dateKey, targetId);
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        return;
+      }
+
+      console.error("Failed to load calendar snapshot", error);
+    } finally {
+      if (snapshotAbortRef.current === controller) {
+        snapshotAbortRef.current = null;
+      }
     }
-
-    setSelectedTime("");
-    setQuickMenu({
-      visible: false,
-      x: 0,
-      y: 0,
-      time: "",
-      professionalId: nextViewedProfessionalId
-    });
-    setActiveToolbarMenu(null);
-    setDrawerStage("closed");
-    setSelectedAppointmentId(null);
-    setToast(null);
-    setVisitItems([]);
-    setSelectedCustomer(null);
-    setClientSearchReturnStage("visit");
-    setServiceQuery("");
-    setClientQuery("");
-    setShowNewClientForm(false);
-    setNewClientName("");
-    setNewClientPhone("");
-    setTeamQuery("");
-    setDeleteConfirmTarget(null);
-    setIsDeletingAppointment(false);
   }
 
   useEffect(() => {
-    void loadSnapshot(selectedDate, selectedProfessionalId);
+    return () => {
+      snapshotAbortRef.current?.abort();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!snapshot) {
+      return;
+    }
+
+    cacheSnapshot(selectedDate, selectedProfessionalId, snapshot);
+  }, [selectedDate, selectedProfessionalId, snapshot]);
+
+  useEffect(() => {
+    const hadCache = showCachedSnapshot(selectedDate, selectedProfessionalId);
+    void loadSnapshot(selectedDate, selectedProfessionalId, hadCache ? { preserveUi: true } : {});
   }, [selectedDate]);
 
   useEffect(() => {
@@ -2830,6 +2961,7 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
     setQuickMenu((current) => ({ ...current, visible: false, x: 0, y: 0, time: "" }));
     setDeleteConfirmTarget(null);
     setViewMode("day");
+    const targetProfessionalId = item.professionalId || selectedProfessionalId;
 
     if (item.professionalId) {
       setVisibleProfessionalIds([item.professionalId]);
@@ -2855,6 +2987,7 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
     setDrawerStage("closed");
     setSelectedAppointmentId(null);
     setPendingNotificationTarget(item);
+    showCachedSnapshot(item.appointmentDate, targetProfessionalId);
     setSelectedDate(item.appointmentDate);
   }
 
@@ -3479,26 +3612,25 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
   const overlayActive = drawerStage !== "closed";
 
   function moveVisiblePeriod(direction: -1 | 1) {
+    let nextDate = selectedDate;
+
     if (viewMode === "month") {
-      setSelectedDate(addMonths(selectedDate, direction));
-      return;
+      nextDate = addMonths(selectedDate, direction);
+    } else if (viewMode === "week") {
+      nextDate = addDays(selectedDate, direction * 7);
+    } else if (viewMode === "threeDay") {
+      nextDate = addDays(selectedDate, direction * 3);
+    } else {
+      nextDate = addDays(selectedDate, direction);
     }
 
-    if (viewMode === "week") {
-      setSelectedDate(addDays(selectedDate, direction * 7));
-      return;
-    }
-
-    if (viewMode === "threeDay") {
-      setSelectedDate(addDays(selectedDate, direction * 3));
-      return;
-    }
-
-    setSelectedDate(addDays(selectedDate, direction));
+    showCachedSnapshot(nextDate, selectedProfessionalId);
+    setSelectedDate(nextDate);
   }
 
   function jumpToCurrentTime() {
     if (selectedDate !== todayDate) {
+      showCachedSnapshot(todayDate, selectedProfessionalId);
       setSelectedDate(todayDate);
       return;
     }
