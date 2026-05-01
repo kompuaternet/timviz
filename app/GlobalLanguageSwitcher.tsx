@@ -107,6 +107,18 @@ export default function GlobalLanguageSwitcher({ mode = "fixed" }: GlobalLanguag
     pathname?.startsWith("/ru/dlya-") ||
     pathname?.startsWith("/uk/dlya-") ||
     pathname?.startsWith("/en/dlya-") ||
+    pathname?.startsWith("/ru/kalendar-zapisey") ||
+    pathname?.startsWith("/uk/kalendar-zapisey") ||
+    pathname?.startsWith("/en/kalendar-zapisey") ||
+    pathname?.startsWith("/ru/telegram-bot-dlya-zapisey") ||
+    pathname?.startsWith("/uk/telegram-bot-dlya-zapisey") ||
+    pathname?.startsWith("/en/telegram-bot-dlya-zapisey") ||
+    pathname?.startsWith("/ru/crm-dlya-salona") ||
+    pathname?.startsWith("/uk/crm-dlya-salona") ||
+    pathname?.startsWith("/en/crm-dlya-salona") ||
+    pathname?.startsWith("/ru/programma-dlya-zapisi-klientov") ||
+    pathname?.startsWith("/uk/programma-dlya-zapisi-klientov") ||
+    pathname?.startsWith("/en/programma-dlya-zapisi-klientov") ||
     pathname?.startsWith("/businesses/") ||
     pathname?.startsWith("/ru/businesses/") ||
     pathname?.startsWith("/uk/businesses/") ||

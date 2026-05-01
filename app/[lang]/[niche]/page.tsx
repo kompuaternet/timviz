@@ -3,10 +3,17 @@ import { notFound } from "next/navigation";
 import BrandLogo from "../../BrandLogo";
 import GlobalLanguageSwitcher from "../../GlobalLanguageSwitcher";
 import { nichePageBySlug, nichePages, type NicheSlug } from "../../../lib/niche-pages";
+import {
+  forBusinessFeatureBySlug,
+  forBusinessFeaturePages,
+  isFeatureSlug,
+  isNicheAliasSlug,
+  nicheAliasToPrimary
+} from "../../../lib/for-business-seo-pages";
 import { buildLanguageAlternates, buildMetadata } from "../../../lib/seo";
 import { getLocalizedPath, isSiteLanguage, siteLanguages, type SiteLanguage } from "../../../lib/site-language";
 
-type LocalizedNichePageProps = {
+type LocalizedSeoPageProps = {
   params: Promise<{ lang: string; niche: string }>;
 };
 
@@ -42,31 +49,49 @@ function isNicheSlug(value: string): value is NicheSlug {
 }
 
 export async function generateStaticParams() {
-  return siteLanguages.flatMap((lang) => nichePages.map((item) => ({ lang, niche: item.slug })));
+  const aliasSlugs = Object.keys(nicheAliasToPrimary);
+  return siteLanguages.flatMap((lang) => [
+    ...nichePages.map((item) => ({ lang, niche: item.slug })),
+    ...forBusinessFeaturePages.map((item) => ({ lang, niche: item.slug })),
+    ...aliasSlugs.map((slug) => ({ lang, niche: slug }))
+  ]);
 }
 
-export async function generateMetadata({ params }: LocalizedNichePageProps): Promise<Metadata> {
+export async function generateMetadata({ params }: LocalizedSeoPageProps): Promise<Metadata> {
   const { lang, niche } = await params;
-  if (!isSiteLanguage(lang) || !isNicheSlug(niche)) return {};
+  if (!isSiteLanguage(lang)) return {};
 
-  const metadata = buildMetadata(`/${lang}/${niche}`, nichePageBySlug[niche].seo[lang], lang);
+  const canonicalSlug = isNicheAliasSlug(niche) ? nicheAliasToPrimary[niche] : niche;
+  if (!isNicheSlug(canonicalSlug) && !isFeatureSlug(canonicalSlug)) {
+    return {};
+  }
+
+  const seoCopy = isNicheSlug(canonicalSlug)
+    ? nichePageBySlug[canonicalSlug].seo[lang]
+    : forBusinessFeatureBySlug[canonicalSlug].seo[lang];
+  const metadata = buildMetadata(`/${lang}/${canonicalSlug}`, seoCopy, lang);
   return {
     ...metadata,
-    alternates: buildLanguageAlternates(`/${niche}`, lang)
+    alternates: buildLanguageAlternates(`/${canonicalSlug}`, lang)
   };
 }
 
-export default async function LocalizedNichePage({ params }: LocalizedNichePageProps) {
+export default async function LocalizedNichePage({ params }: LocalizedSeoPageProps) {
   const { lang, niche } = await params;
-  if (!isSiteLanguage(lang) || !isNicheSlug(niche)) {
+  const canonicalSlug = isNicheAliasSlug(niche) ? nicheAliasToPrimary[niche] : niche;
+
+  if (!isSiteLanguage(lang) || (!isNicheSlug(canonicalSlug) && !isFeatureSlug(canonicalSlug))) {
     notFound();
   }
 
   const language = lang as SiteLanguage;
-  const item = nichePageBySlug[niche];
   const t = pageCopy[language];
-  const content = item.page[language];
-  const related = nichePages.filter((entry) => entry.slug !== niche);
+  const isNichePage = isNicheSlug(canonicalSlug);
+  const content = isNichePage
+    ? nichePageBySlug[canonicalSlug].page[language]
+    : forBusinessFeatureBySlug[canonicalSlug].copy[language];
+  const related = isNichePage ? nichePages.filter((entry) => entry.slug !== canonicalSlug) : [];
+  const icon = isNichePage ? nichePageBySlug[canonicalSlug].card[language].icon : "⚙";
 
   return (
     <main className="niche-page">
@@ -81,7 +106,7 @@ export default async function LocalizedNichePage({ params }: LocalizedNichePageP
       </header>
 
       <section className="niche-page-hero">
-        <span>{item.card[language].icon}</span>
+        <span>{icon}</span>
         <h1>{content.h1}</h1>
         <p>{content.lead}</p>
       </section>
@@ -92,24 +117,26 @@ export default async function LocalizedNichePage({ params }: LocalizedNichePageP
         ))}
       </section>
 
-      <section className="niche-links-section niche-links-section--inner">
-        <div className="niche-links-head">
-          <h2>{t.otherTitle}</h2>
-        </div>
-        <div className="niche-links-grid">
-          {related.map((entry) => {
-            const card = entry.card[language];
-            return (
-              <a className="niche-link-card" href={getLocalizedPath(language, `/${entry.slug}`)} key={entry.slug}>
-                <span className="niche-link-icon" aria-hidden="true">{card.icon}</span>
-                <h3>{card.shortTitle}</h3>
-                <p>{card.description}</p>
-                <span className="niche-link-arrow" aria-hidden="true">→</span>
-              </a>
-            );
-          })}
-        </div>
-      </section>
+      {isNichePage ? (
+        <section className="niche-links-section niche-links-section--inner">
+          <div className="niche-links-head">
+            <h2>{t.otherTitle}</h2>
+          </div>
+          <div className="niche-links-grid">
+            {related.map((entry) => {
+              const card = entry.card[language];
+              return (
+                <a className="niche-link-card" href={getLocalizedPath(language, `/${entry.slug}`)} key={entry.slug}>
+                  <span className="niche-link-icon" aria-hidden="true">{card.icon}</span>
+                  <h3>{card.shortTitle}</h3>
+                  <p>{card.description}</p>
+                  <span className="niche-link-arrow" aria-hidden="true">→</span>
+                </a>
+              );
+            })}
+          </div>
+        </section>
+      ) : null}
 
       <section className="niche-page-cta">
         <h2>{t.ctaTitle}</h2>

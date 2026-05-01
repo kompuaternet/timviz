@@ -2690,6 +2690,24 @@
   color: #6047ff;
 }
 
+.business-seo-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+}
+
+.business-seo-list li {
+  color: #3c3834;
+  font-weight: 760;
+}
+
+.business-seo-list li::before {
+  content: "• ";
+  color: #6047ff;
+}
+
 .business-faq-list {
   display: grid;
   gap: 12px;
@@ -2730,6 +2748,10 @@
 .business-footer-links a {
   color: #5f5851;
   font-weight: 750;
+}
+
+.business-footer-links strong {
+  color: #302a3f;
 }
 
 .business-footer-links a:hover {

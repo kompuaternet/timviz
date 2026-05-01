@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { getBusinessDirectorySnapshot } from "../lib/pro-data";
 import { getPublicBusinessPathId } from "../lib/public-business-path";
+import { forBusinessFeaturePages } from "../lib/for-business-seo-pages";
 import { nichePages } from "../lib/niche-pages";
 import { siteUrl } from "../lib/seo";
 import { getLocalizedPath, siteLanguages } from "../lib/site-language";
@@ -32,6 +33,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: now,
       changeFrequency: "weekly" as const,
       priority: 0.82
+    })),
+    ...forBusinessFeaturePages.map((page) => ({
+      url: `${siteUrl}${getLocalizedPath(language, `/${page.slug}`)}`,
+      lastModified: now,
+      changeFrequency: "weekly" as const,
+      priority: 0.8
     })),
     {
       url: `${siteUrl}${getLocalizedPath(language, "/privacy")}`,

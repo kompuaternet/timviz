@@ -27,6 +27,13 @@ type LocalCopy = {
   screenshotAlt: string;
   whyTitle: string;
   whyCards: Array<{ title: string; text: string }>;
+  onlineBookingTitle: string;
+  onlineBookingText: string;
+  betterThanMessengersTitle: string;
+  betterThanMessengers: string[];
+  middleCtaTitle: string;
+  middleCtaText: string;
+  middleCtaButton: string;
   uiTitle: string;
   uiText: string;
   screenLabels: string[];
@@ -45,12 +52,15 @@ type LocalCopy = {
   finalTitle: string;
   finalText: string;
   finalHint: string;
-  linksTitle: string;
+  capabilitiesTitle: string;
+  capabilitiesSubtitle: string;
+  usefulForProsTitle: string;
   footer: string;
   privacy: string;
   terms: string;
   nichesSubtitle: string;
   mastersColumn: string;
+  nicheLinksTitle: string;
 };
 
 const copy: Record<LandingLanguage, LocalCopy> = {
@@ -82,6 +92,21 @@ const copy: Record<LandingLanguage, LocalCopy> = {
       },
       { title: "Швидкі сповіщення", text: "Отримуйте важливі події в Telegram." }
     ],
+    onlineBookingTitle: "Що таке онлайн-запис клієнтів",
+    onlineBookingText:
+      "Онлайн-запис клієнтів — це спосіб приймати заявки без дзвінків і переписок. Клієнт обирає послугу, день і час, а запис автоматично з'являється в календарі записів майстра. Timviz працює як програма для запису клієнтів і сервіс онлайн-запису: допомагає вести графік роботи майстра, керувати послугами та цінами, а також отримувати Telegram-сповіщення про записи.",
+    betterThanMessengersTitle: "Чому це краще, ніж записи в месенджерах",
+    betterThanMessengers: [
+      "клієнт сам обирає вільний час",
+      "майстер бачить усі записи в календарі",
+      "менше помилок і накладок",
+      "послуги, ціни й тривалість уже вказані",
+      "можна підключити Telegram-сповіщення",
+      "простіше вести постійних клієнтів"
+    ],
+    middleCtaTitle: "Готові приймати записи онлайн?",
+    middleCtaText: "Додайте послуги, графік роботи й почніть отримувати записи без зайвих переписок.",
+    middleCtaButton: "Створити профіль компанії",
     uiTitle: "Покажіть клієнтам тільки доступний час",
     uiText: "Покажіть клієнтам тільки доступний час, а самі керуйте записами з календаря.",
     screenLabels: [
@@ -105,16 +130,21 @@ const copy: Record<LandingLanguage, LocalCopy> = {
         text: "Клієнти записуються онлайн, а ви бачите все в календарі."
       }
     ],
-    nichesTitle: "Для кого Timviz",
+    nichesTitle: "Для кого підходить Timviz",
     niches: [
-      { title: "Майстри манікюру", text: "Зручно керувати вікнами, перервами й повторними записами." },
-      { title: "Перукарі", text: "Швидко комбінуйте послуги та тривалість для кожного клієнта." },
-      { title: "Барбери", text: "Тримайте щільний графік під контролем без зайвих дзвінків." },
-      { title: "Косметологи", text: "Легко планувати довгі процедури й бачити завантаження дня." },
-      { title: "Масажисти", text: "Просто керувати сесіями різної тривалості та вільними слотами." },
-      { title: "Салони краси", text: "Ведіть команду майстрів і всі записи в єдиному календарі." },
-      { title: "Брови та вії", text: "Фіксуйте послуги, ціни та статуси візитів без хаосу в месенджерах." },
-      { title: "Студії депіляції", text: "Швидкий запис клієнтів онлайн і чіткий розклад на кожен день." }
+      { title: "Майстри манікюру", text: "Онлайн-запис, послуги, ціни, тривалість процедур і повторні візити в одному календарі." },
+      { title: "Перукарі", text: "Календар записів для стрижок, фарбувань і складних послуг різної тривалості." },
+      { title: "Барбери", text: "Щільний графік, швидкі записи й нагадування клієнтам без зайвих дзвінків." },
+      { title: "Косметологи", text: "Зручний запис на консультації, процедури та повторні візити." },
+      { title: "Масажисти", text: "Керування сеансами різної тривалості, вільними вікнами й постійними клієнтами." },
+      { title: "Салони краси", text: "Онлайн-запис для команди майстрів, послуг, графіків і клієнтів салону." },
+      { title: "Брови та вії", text: "Запис клієнтів онлайн, ціни, статуси візитів і нагадування в Telegram." },
+      { title: "Студії депіляції", text: "Чіткий розклад процедур, онлайн-запис і керування клієнтами." },
+      { title: "Візажисти", text: "Запис на макіяж, пробні образи, весільні послуги та виїзні записи." },
+      { title: "Репетитори", text: "Онлайн-запис на заняття, розклад уроків і нагадування учням." },
+      { title: "Тренери", text: "Запис на персональні тренування, консультації та вільні вікна." },
+      { title: "Лікарі та приватні спеціалісти", text: "Онлайн-запис на консультації та прийоми зі зручним календарем." },
+      { title: "Автосервіси та сервісні послуги", text: "Запис клієнтів на послуги, діагностику, ремонт і обслуговування." }
     ],
     compareTitle: "Без Timviz і з Timviz",
     compareWithout: [
@@ -135,26 +165,29 @@ const copy: Record<LandingLanguage, LocalCopy> = {
     telegramCta: "Підключити після реєстрації",
     faqTitle: "Поширені запитання",
     faqItems: [
-      { q: "Що таке Timviz?", a: "Timviz — це сервіс, який обʼєднує онлайн-запис клієнтів, календар записів і керування послугами в одному кабінеті." },
-      { q: "Чи підходить Timviz для одного майстра?", a: "Так, сервіс зручний як для одного майстра, так і для команди або салону." },
-      { q: "Чи можна використовувати Timviz для салону?", a: "Так, ви можете вести кількох майстрів, графіки та записи в одному акаунті." },
-      { q: "Як клієнти записуються онлайн?", a: "Ви даєте клієнтам публічне посилання, вони обирають послугу, день і час, а запис одразу потрапляє в календар." },
-      { q: "Чи можна налаштувати послуги, ціни і тривалість?", a: "Так, у будь-який момент: відредагуйте назву послуги, вартість, тривалість і порядок відображення." },
-      { q: "Чи є Telegram-сповіщення?", a: "Так, Timviz надсилає сповіщення про нові записи, зміни та інші важливі події в Telegram." },
-      { q: "Чи можна почати безкоштовно?", a: "Так, ви можете створити профіль і швидко запустити онлайн-запис без складного старту." },
-      { q: "Чи потрібен окремий сайт?", a: "Ні, достатньо профілю в Timviz і публічного посилання для запису клієнтів." }
+      { q: "Чим Timviz відрізняється від запису через Telegram або Instagram?", a: "Timviz дає структурований календар записів, послуги з цінами й тривалістю та менше ручної роботи, ніж запис у чатах." },
+      { q: "Чи можна використовувати Timviz одному майстру?", a: "Так, платформа підходить одному спеціалісту і допомагає вести онлайн-запис для майстрів без адміністратора." },
+      { q: "Чи підходить Timviz для салону з кількома майстрами?", a: "Так, це CRM для салону, де можна вести графіки, послуги та клієнтів команди в одному кабінеті." },
+      { q: "Чи можна вказати ціну і тривалість послуги?", a: "Так, ви налаштовуєте ціну, тривалість і порядок послуг у кілька кліків." },
+      { q: "Як працює календар записів?", a: "Запис клієнтів онлайн автоматично потрапляє в календар, де видно вільний час і завантаження за день, тиждень або місяць." },
+      { q: "Чи можна отримувати сповіщення в Telegram?", a: "Так, Timviz надсилає Telegram-сповіщення про нові записи, зміни та підтвердження." },
+      { q: "Чи потрібен окремий сайт для онлайн-запису?", a: "Ні, достатньо профілю Timviz і публічного посилання на онлайн-запис для салону або майстра." },
+      { q: "Чи можна почати безкоштовно?", a: "Так, ви можете створити профіль компанії й запустити сервіс запису клієнтів безкоштовно." }
     ],
-    finalTitle: "Почніть приймати записи вже сьогодні",
+    finalTitle: "Запустіть онлайн-запис уже сьогодні",
     finalText:
       "Створіть профіль, додайте послуги і налаштуйте графік. Timviz допоможе швидко перейти від хаосу в месенджерах до зручного календаря записів.",
     finalHint: "Це займе кілька хвилин",
-    linksTitle: "Корисні посилання",
+    capabilitiesTitle: "Можливості Timviz",
+    capabilitiesSubtitle: "Усі інструменти для запису клієнтів, календаря та керування послугами в одному кабінеті.",
+    usefulForProsTitle: "Корисно для майстрів",
     footer: "Timviz для бізнесу · онлайн-запис клієнтів і керування послугами",
     privacy: "Політика конфіденційності",
     terms: "Умови використання"
     ,
-    nichesSubtitle: "Timviz підходить майстрам і салонам, які працюють за записом",
-    mastersColumn: "Для майстрів"
+    nichesSubtitle: "Timviz підходить усім, хто працює за попереднім записом: майстрам, салонам, студіям і приватним спеціалістам.",
+    mastersColumn: "Для майстрів",
+    nicheLinksTitle: "Для кого Timviz"
   },
   ru: {
     logo: "timviz",
@@ -181,6 +214,21 @@ const copy: Record<LandingLanguage, LocalCopy> = {
       { title: "Больше контроля", text: "Услуги, цены, график и клиенты собраны в одном кабинете." },
       { title: "Быстрые уведомления", text: "Получайте важные события в Telegram." }
     ],
+    onlineBookingTitle: "Что такое онлайн-запись клиентов",
+    onlineBookingText:
+      "Онлайн-запись клиентов — это способ принимать заявки без звонков и переписок. Клиент выбирает услугу, день и время, а запись автоматически появляется в календаре записей мастера. Timviz работает как программа для записи клиентов и сервис онлайн-записи: помогает вести график работы мастера, управлять услугами и ценами, а также получать Telegram-уведомления о записях.",
+    betterThanMessengersTitle: "Почему это лучше, чем записи в мессенджерах",
+    betterThanMessengers: [
+      "клиент сам выбирает свободное время",
+      "мастер видит все записи в календаре",
+      "меньше ошибок и накладок",
+      "услуги, цены и длительность уже указаны",
+      "можно подключить Telegram-уведомления",
+      "проще вести постоянных клиентов"
+    ],
+    middleCtaTitle: "Готовы принимать записи онлайн?",
+    middleCtaText: "Добавьте услуги, график работы и начните получать записи без лишних переписок.",
+    middleCtaButton: "Создать профиль компании",
     uiTitle: "Покажите клиентам только доступное время",
     uiText: "Покажите клиентам только доступное время, а сами управляйте записями из календаря.",
     screenLabels: ["Дневной календарь записей", "Недельное расписание", "Месячный обзор", "График работы"],
@@ -190,16 +238,21 @@ const copy: Record<LandingLanguage, LocalCopy> = {
       { title: "Настройте услуги и график", text: "Укажите цены, длительность и рабочие дни." },
       { title: "Принимайте записи", text: "Клиенты записываются онлайн, а вы видите всё в календаре." }
     ],
-    nichesTitle: "Для кого Timviz",
+    nichesTitle: "Для кого подходит Timviz",
     niches: [
-      { title: "Мастера маникюра", text: "Удобно управлять окнами, перерывами и повторными записями." },
-      { title: "Парикмахеры", text: "Быстро комбинируйте услуги и длительность под каждого клиента." },
-      { title: "Барберы", text: "Держите плотный график под контролем без лишних звонков." },
-      { title: "Косметологи", text: "Легко планировать длинные процедуры и загрузку дня." },
-      { title: "Массажисты", text: "Просто управлять сессиями разной длительности и свободными слотами." },
-      { title: "Салоны красоты", text: "Ведите команду мастеров и все записи в едином календаре." },
-      { title: "Брови и ресницы", text: "Фиксируйте услуги, цены и статусы визитов без хаоса в мессенджерах." },
-      { title: "Студии депиляции", text: "Быстрая онлайн-запись клиентов и четкое расписание на каждый день." }
+      { title: "Мастера маникюра", text: "Онлайн-запись, услуги, цены, длительность процедур и повторные визиты в одном календаре." },
+      { title: "Парикмахеры", text: "Календарь записей для стрижек, окрашиваний и сложных услуг разной длительности." },
+      { title: "Барберы", text: "Плотный график, быстрые записи и напоминания клиентам без лишних звонков." },
+      { title: "Косметологи", text: "Удобная запись на консультации, процедуры и повторные визиты." },
+      { title: "Массажисты", text: "Управление сеансами разной длительности, свободными окнами и постоянными клиентами." },
+      { title: "Салоны красоты", text: "Онлайн-запись для команды мастеров, услуг, графиков и клиентов салона." },
+      { title: "Брови и ресницы", text: "Запись клиентов онлайн, цены, статусы визитов и напоминания в Telegram." },
+      { title: "Студии депиляции", text: "Чёткое расписание процедур, онлайн-запись и управление клиентами." },
+      { title: "Визажисты", text: "Запись на макияж, пробные образы, свадебные услуги и выездные записи." },
+      { title: "Репетиторы", text: "Онлайн-запись на занятия, расписание уроков и напоминания ученикам." },
+      { title: "Тренеры", text: "Запись на персональные тренировки, консультации и свободные окна." },
+      { title: "Врачи и частные специалисты", text: "Онлайн-запись на консультации и приёмы с удобным календарём." },
+      { title: "Автосервисы и сервисные услуги", text: "Запись клиентов на услуги, диагностику, ремонт и обслуживание." }
     ],
     compareTitle: "Без Timviz и с Timviz",
     compareWithout: [
@@ -215,26 +268,29 @@ const copy: Record<LandingLanguage, LocalCopy> = {
     telegramCta: "Подключить после регистрации",
     faqTitle: "Частые вопросы",
     faqItems: [
-      { q: "Что такое Timviz?", a: "Timviz — это сервис, который объединяет онлайн-запись клиентов, календарь записей и управление услугами в одном кабинете." },
-      { q: "Подходит ли Timviz для одного мастера?", a: "Да, сервис удобен как для одного мастера, так и для команды или салона." },
-      { q: "Можно ли использовать Timviz для салона?", a: "Да, вы можете вести нескольких мастеров, графики и записи в одном аккаунте." },
-      { q: "Как клиенты записываются онлайн?", a: "Вы даёте клиентам публичную ссылку, они выбирают услугу, день и время, а запись сразу попадает в календарь." },
-      { q: "Можно ли настроить услуги, цены и длительность?", a: "Да, в любой момент: меняйте название услуги, стоимость, длительность и порядок отображения." },
-      { q: "Есть ли Telegram-уведомления?", a: "Да, Timviz отправляет уведомления о новых записях, изменениях и других важных событиях в Telegram." },
-      { q: "Можно ли начать бесплатно?", a: "Да, вы можете создать профиль и быстро запустить онлайн-запись без сложного старта." },
-      { q: "Нужен ли отдельный сайт?", a: "Нет, достаточно профиля в Timviz и публичной ссылки для записи клиентов." }
+      { q: "Чем Timviz отличается от записи через Telegram или Instagram?", a: "Timviz дает структурированный календарь записей, услуги с ценами и длительностью, поэтому ручной работы и ошибок меньше, чем при записи в чатах." },
+      { q: "Можно ли использовать Timviz одному мастеру?", a: "Да, платформа подходит одному специалисту и помогает вести онлайн-запись для мастеров без администратора." },
+      { q: "Подходит ли Timviz для салона с несколькими мастерами?", a: "Да, это CRM для салона, где можно вести графики, услуги и клиентов команды в одном кабинете." },
+      { q: "Можно ли указать цену и длительность услуги?", a: "Да, вы настраиваете цену, длительность и порядок услуг в несколько кликов." },
+      { q: "Как работает календарь записей?", a: "Запись клиентов онлайн автоматически попадает в календарь, где видно свободное время и загрузку на день, неделю или месяц." },
+      { q: "Можно ли получать уведомления в Telegram?", a: "Да, Timviz отправляет Telegram-уведомления о новых записях, изменениях и подтверждениях." },
+      { q: "Нужен ли отдельный сайт для онлайн-записи?", a: "Нет, достаточно профиля Timviz и публичной ссылки на онлайн-запись для салона или мастера." },
+      { q: "Можно ли начать бесплатно?", a: "Да, вы можете создать профиль компании и запустить сервис записи клиентов бесплатно." }
     ],
-    finalTitle: "Начните принимать записи уже сегодня",
+    finalTitle: "Запустите онлайн-запись уже сегодня",
     finalText:
       "Создайте профиль, добавьте услуги и настройте график. Timviz поможет быстро перейти от хаоса в мессенджерах к удобному календарю записей.",
     finalHint: "Это займет несколько минут",
-    linksTitle: "Полезные ссылки",
+    capabilitiesTitle: "Возможности Timviz",
+    capabilitiesSubtitle: "Все инструменты для записи клиентов, календаря и управления услугами в одном кабинете.",
+    usefulForProsTitle: "Полезно для мастеров",
     footer: "Timviz для бизнеса · онлайн-запись клиентов и управление услугами",
     privacy: "Политика конфиденциальности",
     terms: "Условия использования"
     ,
-    nichesSubtitle: "Timviz подходит мастерам и салонам, которые работают по записи",
-    mastersColumn: "Для мастеров"
+    nichesSubtitle: "Timviz подходит всем, кто работает по предварительной записи: мастерам, салонам, студиям и частным специалистам.",
+    mastersColumn: "Для мастеров",
+    nicheLinksTitle: "Для кого Timviz"
   },
   en: {
     logo: "timviz",
@@ -261,6 +317,21 @@ const copy: Record<LandingLanguage, LocalCopy> = {
       { title: "More control", text: "Services, prices, schedule and clients in one dashboard." },
       { title: "Fast alerts", text: "Get important events in Telegram." }
     ],
+    onlineBookingTitle: "What is online client booking",
+    onlineBookingText:
+      "Online client booking lets people choose a service, day and time without calls or endless messages. The appointment appears instantly in your booking calendar. Timviz works as booking software for professionals and salons: manage service pricing, duration, team schedule and Telegram booking notifications in one place.",
+    betterThanMessengersTitle: "Why this is better than messenger-based booking",
+    betterThanMessengers: [
+      "clients choose available time on their own",
+      "professionals see all appointments in one calendar",
+      "fewer scheduling errors and overlaps",
+      "services, prices and durations are predefined",
+      "Telegram notifications can be connected",
+      "easier repeat-client management"
+    ],
+    middleCtaTitle: "Ready to accept online bookings?",
+    middleCtaText: "Add services, set working hours and start receiving bookings without manual back-and-forth messages.",
+    middleCtaButton: "Create company profile",
     uiTitle: "Show only available time to clients",
     uiText: "Show clients only available slots while you manage everything from one calendar.",
     screenLabels: ["Daily booking calendar", "Weekly schedule", "Monthly overview", "Working schedule"],
@@ -270,16 +341,21 @@ const copy: Record<LandingLanguage, LocalCopy> = {
       { title: "Set services and schedule", text: "Define prices, duration and working days." },
       { title: "Accept bookings", text: "Clients book online while you see everything in the calendar." }
     ],
-    nichesTitle: "Who Timviz is for",
+    nichesTitle: "Who Timviz is suitable for",
     niches: [
-      { title: "Nail artists", text: "Manage slots, breaks and repeat visits with less manual work." },
-      { title: "Hairdressers", text: "Quickly combine services and durations per client." },
-      { title: "Barbers", text: "Keep busy schedules under control with fewer calls." },
-      { title: "Cosmetologists", text: "Plan longer procedures and monitor daily workload." },
-      { title: "Massage therapists", text: "Manage sessions with different durations and open slots." },
-      { title: "Beauty salons", text: "Run team schedules and bookings in one shared calendar." },
-      { title: "Brows & lashes", text: "Track services, prices and statuses without chat chaos." },
-      { title: "Depilation studios", text: "Fast online booking and clear day-by-day schedules." }
+      { title: "Nail artists", text: "Online booking, service pricing, duration setup and repeat visits in one calendar." },
+      { title: "Hairdressers", text: "Booking calendar for haircuts, coloring and complex services with different duration." },
+      { title: "Barbers", text: "High-load schedule, fast bookings and reminders without extra calls." },
+      { title: "Cosmetologists", text: "Convenient booking for consultations, procedures and repeat visits." },
+      { title: "Massage therapists", text: "Manage sessions of different duration, free slots and repeat clients." },
+      { title: "Beauty salons", text: "Online booking for team schedules, services and salon clients." },
+      { title: "Brows & lashes", text: "Client booking online, service prices, visit statuses and Telegram reminders." },
+      { title: "Depilation studios", text: "Clear procedure schedule, online bookings and client management." },
+      { title: "Makeup artists", text: "Bookings for makeup sessions, trials, wedding services and on-site visits." },
+      { title: "Tutors", text: "Online booking for lessons, class schedule and student reminders." },
+      { title: "Coaches", text: "Bookings for personal training, consultations and available slots." },
+      { title: "Doctors and private specialists", text: "Online booking for consultations and appointments with a clear calendar." },
+      { title: "Car service and field services", text: "Client booking for diagnostics, repair, maintenance and service visits." }
     ],
     compareTitle: "Without Timviz vs With Timviz",
     compareWithout: [
@@ -308,13 +384,16 @@ const copy: Record<LandingLanguage, LocalCopy> = {
     finalText:
       "Create your profile, add services and configure your schedule. Timviz helps you move from messenger chaos to a clear booking calendar.",
     finalHint: "It takes just a few minutes",
-    linksTitle: "Useful links",
+    capabilitiesTitle: "Timviz capabilities",
+    capabilitiesSubtitle: "All tools for client booking, calendar planning and service management in one workspace.",
+    usefulForProsTitle: "Useful for professionals",
     footer: "Timviz for business · online client booking and service management",
     privacy: "Privacy policy",
     terms: "Terms of use"
     ,
-    nichesSubtitle: "Timviz is built for professionals and salons who work by appointment",
-    mastersColumn: "For professionals"
+    nichesSubtitle: "Timviz is built for everyone who works by appointment: professionals, salons, studios and private specialists.",
+    mastersColumn: "For professionals",
+    nicheLinksTitle: "Who Timviz is for"
   }
 };
 
@@ -343,6 +422,21 @@ export default function BusinessLanding({ initialLanguage = "ru" }: BusinessLand
   const t = copy[language];
   const assets = screenAssets[language];
   const createProfileLink = "/pro/create-account";
+  const capabilitiesLinks: Array<{ label: string; href: string }> = [
+    { label: language === "uk" ? "Онлайн-запис клієнтів" : language === "ru" ? "Онлайн-запись клиентов" : "Online client booking", href: getLocalizedPath(language, "/for-business") },
+    { label: language === "uk" ? "Календар записів" : language === "ru" ? "Календарь записей" : "Booking calendar", href: getLocalizedPath(language, "/kalendar-zapisey") },
+    { label: language === "uk" ? "Telegram-сповіщення" : language === "ru" ? "Telegram-уведомления" : "Telegram notifications", href: getLocalizedPath(language, "/telegram-bot-dlya-zapisey") },
+    { label: language === "uk" ? "CRM для салону" : language === "ru" ? "CRM для салона" : "Salon CRM", href: getLocalizedPath(language, "/crm-dlya-salona") },
+    { label: language === "uk" ? "Програма для запису клієнтів" : language === "ru" ? "Программа для записи клиентов" : "Client booking software", href: getLocalizedPath(language, "/programma-dlya-zapisi-klientov") }
+  ];
+  const usefulLinks: Array<{ label: string; href: string }> = [
+    { label: language === "uk" ? "Онлайн-запис для майстрів" : language === "ru" ? "Онлайн-запись для мастеров" : "Online booking for professionals", href: getLocalizedPath(language, "/for-business") },
+    { label: language === "uk" ? "Для майстрів манікюру" : language === "ru" ? "Для мастеров маникюра" : "For nail artists", href: getLocalizedPath(language, "/dlya-manikyura") },
+    { label: language === "uk" ? "Для перукарів" : language === "ru" ? "Для парикмахеров" : "For hairdressers", href: getLocalizedPath(language, "/dlya-parikmaherov") },
+    { label: language === "uk" ? "Для барберів" : language === "ru" ? "Для барберов" : "For barbers", href: getLocalizedPath(language, "/dlya-barberov") },
+    { label: language === "uk" ? "Для косметологів" : language === "ru" ? "Для косметологов" : "For cosmetologists", href: getLocalizedPath(language, "/dlya-kosmetologov") },
+    { label: language === "uk" ? "Для масажистів" : language === "ru" ? "Для массажистов" : "For massage therapists", href: getLocalizedPath(language, "/dlya-massazhistov") }
+  ];
 
   useEffect(() => {
     setLanguage(initialLanguage || getInitialLanguage());
@@ -461,6 +555,15 @@ export default function BusinessLanding({ initialLanguage = "ru" }: BusinessLand
           <a className="business-primary" href={createProfileLink}>{t.primaryCta}</a>
         </div>
       </section>
+      <section className="business-seo-section">
+        <h2>{t.onlineBookingTitle}</h2>
+        <p>{t.onlineBookingText}</p>
+      </section>
+      <section className="business-seo-section">
+        <h2>{t.middleCtaTitle}</h2>
+        <p>{t.middleCtaText}</p>
+        <a className="business-primary" href={createProfileLink}>{t.middleCtaButton}</a>
+      </section>
 
       <section className="business-screens-section">
         <div className="business-section-head">
@@ -498,6 +601,7 @@ export default function BusinessLanding({ initialLanguage = "ru" }: BusinessLand
       <section className="business-feature-section">
         <div className="business-section-head">
           <h2>{t.nichesTitle}</h2>
+          <p>{t.nichesSubtitle}</p>
         </div>
         <div className="business-feature-grid business-feature-grid--4">
           {t.niches.map((niche) => (
@@ -510,29 +614,18 @@ export default function BusinessLanding({ initialLanguage = "ru" }: BusinessLand
       </section>
       <NicheLinksSection
         language={language}
-        title={t.nichesTitle}
+        title={t.nicheLinksTitle}
         subtitle={t.nichesSubtitle}
         className="niche-links-section niche-links-section--business"
       />
 
       <section className="business-feature-section">
         <div className="business-section-head">
-          <h2>{t.compareTitle}</h2>
+          <h2>{t.betterThanMessengersTitle}</h2>
         </div>
-        <div className="business-compare-grid">
-          <article>
-            <h3>Без Timviz</h3>
-            <ul>
-              {t.compareWithout.map((item) => <li key={item}>{item}</li>)}
-            </ul>
-          </article>
-          <article>
-            <h3>З Timviz</h3>
-            <ul>
-              {t.compareWith.map((item) => <li key={item}>{item}</li>)}
-            </ul>
-          </article>
-        </div>
+        <ul className="business-seo-list">
+          {t.betterThanMessengers.map((item) => <li key={item}>{item}</li>)}
+        </ul>
       </section>
 
       <section className="business-seo-section">
@@ -557,13 +650,18 @@ export default function BusinessLanding({ initialLanguage = "ru" }: BusinessLand
 
       <section className="business-feature-section">
         <div className="business-section-head">
-          <h2>{t.linksTitle}</h2>
+          <h2>{t.capabilitiesTitle}</h2>
+          <p>{t.capabilitiesSubtitle}</p>
         </div>
-        <div className="business-footer-links">
-          <a href={getLocalizedPath(language)}>{getLocalizedPath(language)}</a>
-          <a href={getLocalizedPath(language, "/for-business")}>{getLocalizedPath(language, "/for-business")}</a>
-          <a href={getLocalizedPath(language, "/privacy")}>{getLocalizedPath(language, "/privacy")}</a>
-          <a href={getLocalizedPath(language, "/terms")}>{getLocalizedPath(language, "/terms")}</a>
+        <div className="niche-links-grid">
+          {capabilitiesLinks.map((link) => (
+            <a className="niche-link-card" href={link.href} key={link.href}>
+              <span className="niche-link-icon" aria-hidden="true">⚡</span>
+              <h3>{link.label}</h3>
+              <p>{t.capabilitiesSubtitle}</p>
+              <span className="niche-link-arrow" aria-hidden="true">→</span>
+            </a>
+          ))}
         </div>
       </section>
 
@@ -578,11 +676,10 @@ export default function BusinessLanding({ initialLanguage = "ru" }: BusinessLand
         <a className="public-logo" href={getLocalizedPath(language)}><BrandLogo /></a>
         <span>{t.footer}</span>
         <div className="business-footer-links">
-          <a href={getLocalizedPath(language, "/dlya-manikyuru")}>{language === "uk" ? "Майстри манікюру" : language === "ru" ? "Мастера маникюра" : "Nail artists"}</a>
-          <a href={getLocalizedPath(language, "/dlya-perukariv")}>{language === "uk" ? "Перукарі" : language === "ru" ? "Парикмахеры" : "Hairdressers"}</a>
-          <a href={getLocalizedPath(language, "/dlya-barberiv")}>{language === "uk" ? "Барбери" : language === "ru" ? "Барберы" : "Barbers"}</a>
-          <a href={getLocalizedPath(language, "/dlya-kosmetologiv")}>{language === "uk" ? "Косметологи" : language === "ru" ? "Косметологи" : "Cosmetologists"}</a>
-          <a href={getLocalizedPath(language, "/dlya-masazhu")}>{language === "uk" ? "Масажисти" : language === "ru" ? "Массажисты" : "Massage therapists"}</a>
+          <strong>{t.usefulForProsTitle}</strong>
+          {usefulLinks.map((link) => (
+            <a href={link.href} key={link.href}>{link.label}</a>
+          ))}
           <a href={getLocalizedPath(language, "/privacy")}>{t.privacy}</a>
           <a href={getLocalizedPath(language, "/terms")}>{t.terms}</a>
         </div>
