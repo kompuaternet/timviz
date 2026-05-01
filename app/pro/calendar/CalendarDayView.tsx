@@ -1214,6 +1214,7 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
   const [activeToolbarMenu, setActiveToolbarMenu] = useState<null | "view" | "team" | "share" | "account">(null);
   const [uiLanguage, setUiLanguage] = useState<AppLanguage>("ru");
   const [snapshot, setSnapshot] = useState<CalendarSnapshot | null>(null);
+  const [snapshotCacheVersion, setSnapshotCacheVersion] = useState(0);
   const [selectedTime, setSelectedTime] = useState("");
   const [quickMenu, setQuickMenu] = useState<QuickMenuState>({
     visible: false,
@@ -1499,6 +1500,8 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
       }
       snapshotCacheRef.current.delete(oldestKey);
     }
+
+    setSnapshotCacheVersion((current) => current + 1);
   }
 
   function applySnapshotState(data: CalendarSnapshot, options: { preserveUi?: boolean } = {}) {
@@ -2343,10 +2346,6 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
       setIsTogglingPublicBooking(false);
     }
   }
-  const allVisibleAppointments = useMemo(
-    () => visibleCalendars.flatMap((member) => member.appointments),
-    [visibleCalendars]
-  );
   const canTogglePublicBooking =
     snapshot?.viewer.scope === "owner" || snapshot?.workspace.membership.scope === "owner";
   const focusedMemberCalendar =
@@ -2402,6 +2401,106 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
     { value: "month", label: t.month }
   ];
   const monthGrid = useMemo(() => getMonthGrid(selectedDate), [selectedDate]);
+  const visibleRangeKeys = useMemo(() => {
+    if (viewMode === "month") {
+      return monthGrid.map((day) => day.key);
+    }
+
+    if (viewMode === "week") {
+      return weekKeys;
+    }
+
+    if (viewMode === "threeDay") {
+      return threeDayKeys;
+    }
+
+    return [selectedDate];
+  }, [monthGrid, selectedDate, threeDayKeys, viewMode, weekKeys]);
+  const allVisibleAppointments = useMemo(() => {
+    const sourceKeys = viewMode === "day" ? [selectedDate] : visibleRangeKeys;
+    const visibleIdsSet = new Set(visibleCalendarIds);
+    const appointments: CalendarAppointment[] = [];
+    const seenIds = new Set<string>();
+
+    for (const dateKey of sourceKeys) {
+      const daySnapshot =
+        dateKey === selectedDate
+          ? snapshot
+          : snapshotCacheRef.current.get(buildSnapshotCacheKey(dateKey, selectedProfessionalId)) ?? null;
+
+      if (!daySnapshot) {
+        continue;
+      }
+
+      for (const member of daySnapshot.memberCalendars) {
+        if (!visibleIdsSet.has(member.professionalId)) {
+          continue;
+        }
+
+        for (const appointment of member.appointments) {
+          if (appointment.appointmentDate !== dateKey || seenIds.has(appointment.id)) {
+            continue;
+          }
+
+          seenIds.add(appointment.id);
+          appointments.push(appointment);
+        }
+      }
+    }
+
+    return sortAppointmentsByTime(appointments);
+  }, [selectedDate, selectedProfessionalId, snapshot, snapshotCacheVersion, viewMode, visibleCalendarIds, visibleRangeKeys]);
+  const teamBoardKeys = viewMode === "threeDay" ? threeDayKeys : weekKeys;
+  const teamAppointmentsByMemberAndDay = useMemo(() => {
+    const map = new Map<string, Map<string, CalendarAppointment[]>>();
+    const dayKeysSet = new Set(teamBoardKeys);
+
+    for (const member of visibleCalendars) {
+      map.set(
+        member.professionalId,
+        new Map(teamBoardKeys.map((dayKey) => [dayKey, [] as CalendarAppointment[]]))
+      );
+    }
+
+    for (const appointment of allVisibleAppointments) {
+      if (!dayKeysSet.has(appointment.appointmentDate)) {
+        continue;
+      }
+
+      const memberDayMap = map.get(appointment.professionalId);
+      if (!memberDayMap) {
+        continue;
+      }
+
+      const dayItems = memberDayMap.get(appointment.appointmentDate);
+      if (!dayItems) {
+        continue;
+      }
+
+      dayItems.push(appointment);
+    }
+
+    for (const memberDayMap of map.values()) {
+      for (const [dayKey, dayItems] of memberDayMap.entries()) {
+        memberDayMap.set(dayKey, sortAppointmentsByTime(dayItems));
+      }
+    }
+
+    return map;
+  }, [allVisibleAppointments, teamBoardKeys, visibleCalendars]);
+  const visibleAppointmentsByDay = useMemo(() => {
+    const map = new Map<string, CalendarAppointment[]>();
+    const sourceKeys = monthGrid.map((day) => day.key);
+
+    for (const dayKey of sourceKeys) {
+      map.set(
+        dayKey,
+        sortAppointmentsByTime(allVisibleAppointments.filter((appointment) => appointment.appointmentDate === dayKey))
+      );
+    }
+
+    return map;
+  }, [allVisibleAppointments, monthGrid]);
   const hours = Array.from({ length: 24 }, (_, index) => index);
   const scheduleOverrides = useMemo<CustomSchedule>(() => {
     if (!focusedMemberCalendar) {
@@ -2446,35 +2545,59 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
     [daySchedule]
   );
   const selectedDayIsWorking = Boolean(daySchedule?.enabled);
-  const teamBoardKeys = viewMode === "threeDay" ? threeDayKeys : weekKeys;
-  const teamAppointmentsByMemberAndDay = useMemo(
-    () =>
-      new Map(
-        visibleCalendars.map((member) => [
-          member.professionalId,
-          new Map(
-            teamBoardKeys.map((dayKey) => [
-              dayKey,
-              sortAppointmentsByTime(member.appointments.filter((appointment) => appointment.appointmentDate === dayKey))
-            ])
-          )
-        ])
-      ),
-    [teamBoardKeys, visibleCalendars]
-  );
-  const visibleAppointmentsByDay = useMemo(() => {
-    const map = new Map<string, CalendarAppointment[]>();
-    const sourceKeys = monthGrid.map((day) => day.key);
 
-    for (const dayKey of sourceKeys) {
-      map.set(
-        dayKey,
-        sortAppointmentsByTime(allVisibleAppointments.filter((appointment) => appointment.appointmentDate === dayKey))
-      );
+  useEffect(() => {
+    if (!snapshot || visibleRangeKeys.length <= 1) {
+      return;
     }
 
-    return map;
-  }, [allVisibleAppointments, monthGrid]);
+    const targetId = selectedProfessionalId;
+    const missingDays = visibleRangeKeys.filter((dateKey) => {
+      const cacheKey = buildSnapshotCacheKey(dateKey, targetId);
+      return !snapshotCacheRef.current.has(cacheKey) && !snapshotPrefetchRef.current.has(cacheKey);
+    });
+
+    if (!missingDays.length) {
+      return;
+    }
+
+    let cancelled = false;
+    const queue = [...missingDays];
+    const workerCount = Math.min(4, queue.length);
+
+    const workers = Array.from({ length: workerCount }, async () => {
+      while (!cancelled) {
+        const nextDate = queue.shift();
+        if (!nextDate) {
+          return;
+        }
+
+        const cacheKey = buildSnapshotCacheKey(nextDate, targetId);
+        if (snapshotCacheRef.current.has(cacheKey) || snapshotPrefetchRef.current.has(cacheKey)) {
+          continue;
+        }
+
+        snapshotPrefetchRef.current.add(cacheKey);
+
+        try {
+          const data = await fetchSnapshotData(nextDate, targetId);
+          if (!cancelled) {
+            cacheSnapshot(nextDate, targetId, data);
+          }
+        } catch {
+          // Ignore background range prefetch failures.
+        } finally {
+          snapshotPrefetchRef.current.delete(cacheKey);
+        }
+      }
+    });
+
+    void Promise.allSettled(workers);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedProfessionalId, snapshot, visibleRangeKeys]);
 
   useEffect(() => {
     if (!memberCalendars.length) {
