@@ -1753,6 +1753,48 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
     });
   }
 
+  function replaceAppointmentsById(appointmentsToReplace: CalendarAppointment[]) {
+    if (!appointmentsToReplace.length) {
+      return;
+    }
+
+    const patchMap = new Map(appointmentsToReplace.map((appointment) => [appointment.id, appointment]));
+
+    setSnapshot((current) => {
+      if (!current) {
+        return current;
+      }
+
+      const patchList = (appointments: CalendarAppointment[]) =>
+        sortAppointmentsByTime(
+          appointments.map((appointment) => patchMap.get(appointment.id) ?? appointment)
+        );
+
+      return {
+        ...current,
+        appointments: patchList(current.appointments),
+        memberCalendars: current.memberCalendars.map((member) => ({
+          ...member,
+          appointments: patchList(member.appointments)
+        })),
+        recentActivity: current.recentActivity.map((activity) => {
+          const patch = patchMap.get(activity.id);
+          if (!patch) {
+            return activity;
+          }
+
+          return {
+            ...activity,
+            appointmentDate: patch.appointmentDate,
+            startTime: patch.startTime,
+            customerName: patch.customerName,
+            serviceName: patch.serviceName
+          };
+        })
+      };
+    });
+  }
+
   function mergeCreatedAppointments(appointmentsToMerge: CalendarAppointment[]) {
     if (!appointmentsToMerge.length) {
       return;
@@ -3573,61 +3615,125 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
       return;
     }
 
-    const response = await fetch("/api/pro/calendar", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        mode: "meta",
-        targetProfessionalId: selectedAppointment.professionalId,
-        appointmentId: selectedAppointment.id,
-        attendance: attendanceDraft,
-        priceAmount: normalizedItems[0]?.priceAmount ?? 0,
-        customerName: normalizedCustomerName,
-        customerPhone: normalizedCustomerPhone,
-        startTime: normalizedItems[0]?.startTime ?? normalizedStartTime,
-        endTime: normalizedItems[0]?.endTime ?? normalizedEndTime,
-        serviceName: normalizedItems[0]?.serviceName ?? selectedAppointment.serviceName,
-        notes: detailsNotesDraft.trim(),
-        previousCustomerName: selectedAppointment.customerName,
-        previousCustomerPhone: selectedAppointment.customerPhone,
-        previousAppointmentTime: selectedAppointment.startTime
-      })
-    });
-    const payload = await response.json();
-    if (!response.ok) {
-      showToast(payload.error || t.saveVisitFailed, "error");
+    const normalizedNotes = detailsNotesDraft.trim();
+    const primaryItem = normalizedItems[0] ?? null;
+    if (!primaryItem) {
+      showToast(t.saveVisitFailed, "error");
       return;
     }
 
-    for (const item of normalizedItems.slice(1)) {
-      const extraResponse = await fetch("/api/pro/calendar", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          targetProfessionalId: selectedAppointment.professionalId,
-          appointmentDate: selectedAppointment.appointmentDate,
-          startTime: item.startTime,
-          endTime: item.endTime,
-          serviceName: item.serviceName,
-          customerName: normalizedCustomerName,
-          customerPhone: normalizedCustomerPhone,
-          priceAmount: item.priceAmount,
-          attendance: attendanceDraft,
-          notes: detailsNotesDraft.trim()
-        })
-      });
-      const extraPayload = await extraResponse.json();
+    const optimisticPrimary: CalendarAppointment = {
+      ...selectedAppointment,
+      attendance: attendanceDraft,
+      priceAmount: primaryItem.priceAmount,
+      customerName: normalizedCustomerName,
+      customerPhone: normalizedCustomerPhone,
+      startTime: primaryItem.startTime,
+      endTime: primaryItem.endTime,
+      serviceName: primaryItem.serviceName,
+      notes: normalizedNotes
+    };
 
-      if (!extraResponse.ok) {
-        showToast(extraPayload.error || t.saveVisitFailed, "error");
-        return;
-      }
+    const optimisticExtraAppointments = normalizedItems.slice(1).map((item) => ({
+      id: `temp-edit-${crypto.randomUUID()}`,
+      professionalId: selectedAppointment.professionalId,
+      appointmentDate: selectedAppointment.appointmentDate,
+      startTime: item.startTime,
+      endTime: item.endTime,
+      kind: "appointment" as const,
+      customerName: normalizedCustomerName,
+      customerPhone: normalizedCustomerPhone,
+      serviceName: item.serviceName,
+      notes: normalizedNotes,
+      attendance: attendanceDraft,
+      priceAmount: item.priceAmount,
+      createdAt: new Date().toISOString()
+    }));
+    const optimisticExtraIds = optimisticExtraAppointments.map((item) => item.id);
+
+    replaceAppointmentsById([optimisticPrimary]);
+    if (optimisticExtraAppointments.length) {
+      insertOptimisticAppointments(optimisticExtraAppointments);
     }
 
-    await refreshSnapshot();
     setDrawerStage("closed");
     setSelectedAppointmentId(null);
     showToast(hasExternalOverlap ? t.visitSavedOverlap : t.visitUpdated, hasExternalOverlap ? "warning" : "success");
+
+    void (async () => {
+      try {
+        const response = await fetch("/api/pro/calendar", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            mode: "meta",
+            targetProfessionalId: selectedAppointment.professionalId,
+            appointmentId: selectedAppointment.id,
+            attendance: attendanceDraft,
+            priceAmount: primaryItem.priceAmount,
+            customerName: normalizedCustomerName,
+            customerPhone: normalizedCustomerPhone,
+            startTime: primaryItem.startTime,
+            endTime: primaryItem.endTime,
+            serviceName: primaryItem.serviceName,
+            notes: normalizedNotes,
+            previousCustomerName: selectedAppointment.customerName,
+            previousCustomerPhone: selectedAppointment.customerPhone,
+            previousAppointmentTime: selectedAppointment.startTime
+          })
+        });
+        const payload = await response.json();
+
+        if (!response.ok) {
+          throw new Error(payload?.error || t.saveVisitFailed);
+        }
+
+        if (payload && typeof payload === "object" && "id" in payload) {
+          replaceAppointmentsById([payload as CalendarAppointment]);
+        }
+
+        const extraItems = normalizedItems.slice(1);
+        if (extraItems.length) {
+          const extraResponse = await fetch("/api/pro/calendar", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              targetProfessionalId: selectedAppointment.professionalId,
+              items: extraItems.map((item) => ({
+                appointmentDate: selectedAppointment.appointmentDate,
+                startTime: item.startTime,
+                endTime: item.endTime,
+                serviceName: item.serviceName,
+                customerName: normalizedCustomerName,
+                customerPhone: normalizedCustomerPhone,
+                priceAmount: item.priceAmount,
+                attendance: attendanceDraft,
+                notes: normalizedNotes
+              }))
+            })
+          });
+          const extraPayload = await extraResponse.json();
+
+          if (!extraResponse.ok) {
+            throw new Error(extraPayload?.error || t.saveVisitFailed);
+          }
+
+          removeAppointmentsByIds(optimisticExtraIds);
+          const createdAppointments = Array.isArray(extraPayload?.appointments)
+            ? (extraPayload.appointments as CalendarAppointment[])
+            : [];
+          if (createdAppointments.length) {
+            mergeCreatedAppointments(createdAppointments);
+          }
+        }
+
+        void refreshSnapshot({ preserveUi: true });
+      } catch (error) {
+        removeAppointmentsByIds(optimisticExtraIds);
+        await refreshSnapshot({ preserveUi: true });
+        showToast(error instanceof Error ? error.message : t.saveVisitFailed, "error");
+      }
+    })();
   }
 
   async function saveBlockedTime() {
