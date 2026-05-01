@@ -18,7 +18,7 @@ const nicheSlugMap: Record<SiteLanguage, Record<NicheKey, string>> = {
     hairdressers: "dlya-perukariv",
     barbers: "dlya-barberiv",
     cosmetologists: "dlya-kosmetologiv",
-    massage: "dlya-masazhistiv"
+    massage: "dlya-masazhu"
   },
   en: {
     manicure: "for-nail-technicians",
@@ -48,6 +48,8 @@ const nicheSlugAliases: Record<SiteLanguage, Record<string, NicheKey>> = {
     "dlya-parikmaherov": "hairdressers",
     "dlya-barberov": "barbers",
     "dlya-kosmetologov": "cosmetologists",
+    "dlya-masazhu": "massage",
+    "dlya-masazhistiv": "massage",
     "dlya-massazha": "massage",
     "dlya-massazhistov": "massage",
     "for-nail-technicians": "manicure",
