@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { startTransition, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import ProfileAvatar from "../../ProfileAvatar";
 import styles from "../pro.module.css";
@@ -3774,14 +3774,15 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
     }));
     const optimisticExtraIds = optimisticExtraAppointments.map((item) => item.id);
 
-    replaceAppointmentsById([optimisticPrimary]);
-    if (optimisticExtraAppointments.length) {
-      insertOptimisticAppointments(optimisticExtraAppointments);
-    }
-
     setDrawerStage("closed");
     setSelectedAppointmentId(null);
     showToast(hasExternalOverlap ? t.visitSavedOverlap : t.visitUpdated, hasExternalOverlap ? "warning" : "success");
+    startTransition(() => {
+      replaceAppointmentsById([optimisticPrimary]);
+      if (optimisticExtraAppointments.length) {
+        insertOptimisticAppointments(optimisticExtraAppointments);
+      }
+    });
 
     void (async () => {
       try {
@@ -3850,7 +3851,8 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
           }
         }
 
-        void refreshSnapshot({ preserveUi: true });
+        // Intentionally skip full refresh on success:
+        // optimistic patch is already in place and server confirmation is applied above.
       } catch (error) {
         removeAppointmentsByIds(optimisticExtraIds);
         await refreshSnapshot({ preserveUi: true });
