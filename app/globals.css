@@ -2879,6 +2879,39 @@
   padding: 88px 0 36px;
 }
 
+.manicure-page .business-feature-section,
+.manicure-page .business-screens-section,
+.manicure-page .business-workflow-section,
+.manicure-page .business-seo-section {
+  padding: 72px 0;
+}
+
+.manicure-page .business-final-section {
+  padding: 88px 24px;
+}
+
+.manicure-page .business-section-head {
+  margin-bottom: 24px;
+}
+
+.manicure-page .niche-links-grid {
+  margin-top: 18px;
+  gap: 12px;
+}
+
+.manicure-page .niche-link-card {
+  min-height: 172px;
+  padding: 14px 14px 12px;
+}
+
+.manicure-page .niche-link-card h3 {
+  margin: 12px 0 6px;
+}
+
+.manicure-page .niche-link-card p {
+  line-height: 1.35;
+}
+
 .manicure-hero h1 {
   margin: 0;
   font-size: clamp(2.1rem, 4.4vw, 3.6rem);
