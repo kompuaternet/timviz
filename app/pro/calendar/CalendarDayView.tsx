@@ -224,6 +224,7 @@ const CALENDAR_GRID_STEP_MINUTES = 10;
 const TIME_SELECT_STEP_MINUTES = 5;
 const MIN_BOOKING_CARD_HEIGHT = 64;
 const MOBILE_MIN_BOOKING_CARD_HEIGHT = 86;
+const SNAPSHOT_CACHE_LIMIT = 30;
 
 const CALENDAR_TEXT: Record<AppLanguage, {
   today: string;
@@ -1308,6 +1309,7 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
   const snapshotAbortRef = useRef<AbortController | null>(null);
   const snapshotRequestIdRef = useRef(0);
   const snapshotPrefetchRef = useRef<Set<string>>(new Set());
+  const lastCalendarNavigationDirectionRef = useRef<-1 | 0 | 1>(0);
 
   function showToast(text: string, tone: CalendarToastTone = "info") {
     setToast({
@@ -1486,7 +1488,16 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
     }
 
     for (const key of keys) {
+      snapshotCacheRef.current.delete(key);
       snapshotCacheRef.current.set(key, data);
+    }
+
+    while (snapshotCacheRef.current.size > SNAPSHOT_CACHE_LIMIT) {
+      const oldestKey = snapshotCacheRef.current.keys().next().value as string | undefined;
+      if (!oldestKey) {
+        break;
+      }
+      snapshotCacheRef.current.delete(oldestKey);
     }
   }
 
@@ -1552,33 +1563,94 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
     targetId = selectedProfessionalId,
     options: { preserveUi?: boolean } = {}
   ) {
-    const cached = snapshotCacheRef.current.get(buildSnapshotCacheKey(dateKey, targetId));
+    const cacheKey = buildSnapshotCacheKey(dateKey, targetId);
+    const cached = snapshotCacheRef.current.get(cacheKey);
     if (!cached) {
       return false;
     }
 
+    // Refresh insertion order to keep hot days in LRU cache.
+    snapshotCacheRef.current.delete(cacheKey);
+    snapshotCacheRef.current.set(cacheKey, cached);
     applySnapshotState(cached, options);
     return true;
   }
 
-  function getPrefetchDates(dateKey: string) {
+  function getPrefetchDates(dateKey: string, direction: -1 | 0 | 1) {
     if (viewMode === "month") {
       return [addMonths(dateKey, -1), addMonths(dateKey, 1)];
     }
 
     if (viewMode === "week") {
-      return [addDays(dateKey, -7), addDays(dateKey, 7)];
+      if (direction > 0) {
+        return [addDays(dateKey, 7), addDays(dateKey, 14), addDays(dateKey, 21), addDays(dateKey, -7)];
+      }
+      if (direction < 0) {
+        return [addDays(dateKey, -7), addDays(dateKey, -14), addDays(dateKey, -21), addDays(dateKey, 7)];
+      }
+      return [addDays(dateKey, 7), addDays(dateKey, -7), addDays(dateKey, 14), addDays(dateKey, -14)];
     }
 
     if (viewMode === "threeDay") {
-      return [addDays(dateKey, -3), addDays(dateKey, 3)];
+      if (direction > 0) {
+        return [addDays(dateKey, 3), addDays(dateKey, 6), addDays(dateKey, 9), addDays(dateKey, -3)];
+      }
+      if (direction < 0) {
+        return [addDays(dateKey, -3), addDays(dateKey, -6), addDays(dateKey, -9), addDays(dateKey, 3)];
+      }
+      return [addDays(dateKey, 3), addDays(dateKey, -3), addDays(dateKey, 6), addDays(dateKey, -6)];
     }
 
-    return [addDays(dateKey, -1), addDays(dateKey, 1)];
+    if (direction > 0) {
+      return [
+        addDays(dateKey, 1),
+        addDays(dateKey, 2),
+        addDays(dateKey, 3),
+        addDays(dateKey, 4),
+        addDays(dateKey, 5),
+        addDays(dateKey, 6),
+        addDays(dateKey, 7),
+        addDays(dateKey, -1),
+        addDays(dateKey, -2)
+      ];
+    }
+    if (direction < 0) {
+      return [
+        addDays(dateKey, -1),
+        addDays(dateKey, -2),
+        addDays(dateKey, -3),
+        addDays(dateKey, -4),
+        addDays(dateKey, -5),
+        addDays(dateKey, -6),
+        addDays(dateKey, -7),
+        addDays(dateKey, 1),
+        addDays(dateKey, 2)
+      ];
+    }
+    return [
+      addDays(dateKey, 1),
+      addDays(dateKey, -1),
+      addDays(dateKey, 2),
+      addDays(dateKey, -2),
+      addDays(dateKey, 3),
+      addDays(dateKey, -3),
+      addDays(dateKey, 4),
+      addDays(dateKey, -4),
+      addDays(dateKey, 5),
+      addDays(dateKey, -5),
+      addDays(dateKey, 6),
+      addDays(dateKey, -6),
+      addDays(dateKey, 7),
+      addDays(dateKey, -7)
+    ];
   }
 
-  async function prefetchSnapshots(dateKey = selectedDate, targetId = selectedProfessionalId) {
-    const prefetchDates = getPrefetchDates(dateKey);
+  async function prefetchSnapshots(
+    dateKey = selectedDate,
+    targetId = selectedProfessionalId,
+    direction: -1 | 0 | 1 = lastCalendarNavigationDirectionRef.current
+  ) {
+    const prefetchDates = Array.from(new Set(getPrefetchDates(dateKey, direction)));
 
     await Promise.allSettled(
       prefetchDates.map(async (prefetchDate) => {
@@ -2962,6 +3034,8 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
     setDeleteConfirmTarget(null);
     setViewMode("day");
     const targetProfessionalId = item.professionalId || selectedProfessionalId;
+    lastCalendarNavigationDirectionRef.current =
+      item.appointmentDate > selectedDate ? 1 : item.appointmentDate < selectedDate ? -1 : 0;
 
     if (item.professionalId) {
       setVisibleProfessionalIds([item.professionalId]);
@@ -3612,6 +3686,7 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
   const overlayActive = drawerStage !== "closed";
 
   function moveVisiblePeriod(direction: -1 | 1) {
+    lastCalendarNavigationDirectionRef.current = direction;
     let nextDate = selectedDate;
 
     if (viewMode === "month") {
@@ -3630,6 +3705,8 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
 
   function jumpToCurrentTime() {
     if (selectedDate !== todayDate) {
+      lastCalendarNavigationDirectionRef.current =
+        todayDate > selectedDate ? 1 : todayDate < selectedDate ? -1 : 0;
       showCachedSnapshot(todayDate, selectedProfessionalId);
       setSelectedDate(todayDate);
       return;
