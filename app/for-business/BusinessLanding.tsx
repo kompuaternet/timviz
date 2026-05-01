@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { getNicheSlug } from "../../lib/niche-pages";
 import { getLocalizedPath, type SiteLanguage } from "../../lib/site-language";
 import BrandLogo from "../BrandLogo";
+import BusinessIcon from "../BusinessIcon";
 import GlobalLanguageSwitcher from "../GlobalLanguageSwitcher";
 import NicheLinksSection from "../NicheLinksSection";
 
@@ -657,7 +658,9 @@ export default function BusinessLanding({ initialLanguage = "ru" }: BusinessLand
         <div className="niche-links-grid">
           {capabilitiesLinks.map((link) => (
             <a className="niche-link-card" href={link.href} key={link.href}>
-              <span className="niche-link-icon" aria-hidden="true">⚡</span>
+              <span className="niche-link-icon" aria-hidden="true">
+                <BusinessIcon name="default" className="niche-link-icon-svg" />
+              </span>
               <h3>{link.label}</h3>
               <p>{t.capabilitiesSubtitle}</p>
               <span className="niche-link-arrow" aria-hidden="true">→</span>
