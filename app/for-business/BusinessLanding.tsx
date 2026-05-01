@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { getLocalizedPath, type SiteLanguage } from "../../lib/site-language";
 import BrandLogo from "../BrandLogo";
 import GlobalLanguageSwitcher from "../GlobalLanguageSwitcher";
+import NicheLinksSection from "../NicheLinksSection";
 
 type LandingLanguage = SiteLanguage;
 
@@ -48,6 +49,8 @@ type LocalCopy = {
   footer: string;
   privacy: string;
   terms: string;
+  nichesSubtitle: string;
+  mastersColumn: string;
 };
 
 const copy: Record<LandingLanguage, LocalCopy> = {
@@ -149,6 +152,9 @@ const copy: Record<LandingLanguage, LocalCopy> = {
     footer: "Timviz для бізнесу · онлайн-запис клієнтів і керування послугами",
     privacy: "Політика конфіденційності",
     terms: "Умови використання"
+    ,
+    nichesSubtitle: "Timviz підходить майстрам і салонам, які працюють за записом",
+    mastersColumn: "Для майстрів"
   },
   ru: {
     logo: "timviz",
@@ -226,6 +232,9 @@ const copy: Record<LandingLanguage, LocalCopy> = {
     footer: "Timviz для бизнеса · онлайн-запись клиентов и управление услугами",
     privacy: "Политика конфиденциальности",
     terms: "Условия использования"
+    ,
+    nichesSubtitle: "Timviz подходит мастерам и салонам, которые работают по записи",
+    mastersColumn: "Для мастеров"
   },
   en: {
     logo: "timviz",
@@ -303,6 +312,9 @@ const copy: Record<LandingLanguage, LocalCopy> = {
     footer: "Timviz for business · online client booking and service management",
     privacy: "Privacy policy",
     terms: "Terms of use"
+    ,
+    nichesSubtitle: "Timviz is built for professionals and salons who work by appointment",
+    mastersColumn: "For professionals"
   }
 };
 
@@ -496,6 +508,12 @@ export default function BusinessLanding({ initialLanguage = "ru" }: BusinessLand
           ))}
         </div>
       </section>
+      <NicheLinksSection
+        language={language}
+        title={t.nichesTitle}
+        subtitle={t.nichesSubtitle}
+        className="niche-links-section niche-links-section--business"
+      />
 
       <section className="business-feature-section">
         <div className="business-section-head">
@@ -560,6 +578,11 @@ export default function BusinessLanding({ initialLanguage = "ru" }: BusinessLand
         <a className="public-logo" href={getLocalizedPath(language)}><BrandLogo /></a>
         <span>{t.footer}</span>
         <div className="business-footer-links">
+          <a href={getLocalizedPath(language, "/dlya-manikyuru")}>{language === "uk" ? "Майстри манікюру" : language === "ru" ? "Мастера маникюра" : "Nail artists"}</a>
+          <a href={getLocalizedPath(language, "/dlya-perukariv")}>{language === "uk" ? "Перукарі" : language === "ru" ? "Парикмахеры" : "Hairdressers"}</a>
+          <a href={getLocalizedPath(language, "/dlya-barberiv")}>{language === "uk" ? "Барбери" : language === "ru" ? "Барберы" : "Barbers"}</a>
+          <a href={getLocalizedPath(language, "/dlya-kosmetologiv")}>{language === "uk" ? "Косметологи" : language === "ru" ? "Косметологи" : "Cosmetologists"}</a>
+          <a href={getLocalizedPath(language, "/dlya-masazhu")}>{language === "uk" ? "Масажисти" : language === "ru" ? "Массажисты" : "Massage therapists"}</a>
           <a href={getLocalizedPath(language, "/privacy")}>{t.privacy}</a>
           <a href={getLocalizedPath(language, "/terms")}>{t.terms}</a>
         </div>

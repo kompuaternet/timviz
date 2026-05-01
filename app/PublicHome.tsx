@@ -5,6 +5,7 @@ import type { PublicSearchIndex } from "../lib/public-search";
 import { getLocalizedPath, isSiteLanguage, type SiteLanguage } from "../lib/site-language";
 import BrandLogo from "./BrandLogo";
 import GlobalLanguageSwitcher from "./GlobalLanguageSwitcher";
+import NicheLinksSection from "./NicheLinksSection";
 import PublicSearch from "./PublicSearch";
 type PublicLanguage = SiteLanguage;
 
@@ -115,7 +116,10 @@ const copy = {
     legal: "Юридическая информация",
     privacy: "Политика конфиденциальности",
     terms: "Условия использования",
-    cityIn: "в"
+    cityIn: "в",
+    nichesTitle: "Для кого Timviz",
+    nichesSubtitle: "Timviz подходит мастерам и салонам, которые работают по записи",
+    prosFooter: "Для мастеров"
   },
   uk: {
     navAria: "Головне меню",
@@ -169,7 +173,10 @@ const copy = {
     legal: "Юридична інформація",
     privacy: "Політика конфіденційності",
     terms: "Умови використання",
-    cityIn: "у"
+    cityIn: "у",
+    nichesTitle: "Для кого Timviz",
+    nichesSubtitle: "Timviz підходить майстрам і салонам, які працюють за записом",
+    prosFooter: "Для майстрів"
   },
   en: {
     navAria: "Main menu",
@@ -223,7 +230,10 @@ const copy = {
     legal: "Legal",
     privacy: "Privacy policy",
     terms: "Terms of use",
-    cityIn: "in"
+    cityIn: "in",
+    nichesTitle: "Who Timviz is for",
+    nichesSubtitle: "Timviz is built for professionals and salons who work by appointment",
+    prosFooter: "For professionals"
   }
 } satisfies Record<PublicLanguage, Record<string, string | string[][]>>;
 
@@ -428,6 +438,12 @@ export default function PublicHome({ searchIndex, initialLanguage = "ru" }: Publ
           </div>
         </div>
       </section>
+      <NicheLinksSection
+        language={language}
+        title={String(t.nichesTitle)}
+        subtitle={String(t.nichesSubtitle)}
+        className="niche-links-section niche-links-section--home"
+      />
 
       <section className="public-cities-section">
         <div className="public-country-tabs">
@@ -463,6 +479,14 @@ export default function PublicHome({ searchIndex, initialLanguage = "ru" }: Publ
           <a href={getLocalizedPath(language, "/for-business")}>{String(t.create)}</a>
           <a href="/pro/login">{String(t.login)}</a>
           <a href={getLocalizedPath(language, "/for-business")}>{String(t.features)}</a>
+        </div>
+        <div>
+          <h3>{String(t.prosFooter)}</h3>
+          <a href={getLocalizedPath(language, "/dlya-manikyuru")}>{language === "uk" ? "Майстри манікюру" : language === "ru" ? "Мастера маникюра" : "Nail artists"}</a>
+          <a href={getLocalizedPath(language, "/dlya-perukariv")}>{language === "uk" ? "Перукарі" : language === "ru" ? "Парикмахеры" : "Hairdressers"}</a>
+          <a href={getLocalizedPath(language, "/dlya-barberiv")}>{language === "uk" ? "Барбери" : language === "ru" ? "Барберы" : "Barbers"}</a>
+          <a href={getLocalizedPath(language, "/dlya-kosmetologiv")}>{language === "uk" ? "Косметологи" : language === "ru" ? "Косметологи" : "Cosmetologists"}</a>
+          <a href={getLocalizedPath(language, "/dlya-masazhu")}>{language === "uk" ? "Масажисти" : language === "ru" ? "Массажисты" : "Massage therapists"}</a>
         </div>
         <div>
           <h3>{String(t.legal)}</h3>

@@ -104,6 +104,9 @@ export default function GlobalLanguageSwitcher({ mode = "fixed" }: GlobalLanguag
     pathname === "/ru/terms" ||
     pathname === "/uk/terms" ||
     pathname === "/en/terms" ||
+    pathname?.startsWith("/ru/dlya-") ||
+    pathname?.startsWith("/uk/dlya-") ||
+    pathname?.startsWith("/en/dlya-") ||
     pathname?.startsWith("/businesses/") ||
     pathname?.startsWith("/ru/businesses/") ||
     pathname?.startsWith("/uk/businesses/") ||

@@ -2134,7 +2134,7 @@
 
 .public-footer {
   display: grid;
-  grid-template-columns: 1.4fr repeat(3, 1fr);
+  grid-template-columns: 1.4fr repeat(4, 1fr);
   gap: 60px;
   padding: 64px 0;
   border-top: 1px solid #eee;
@@ -2148,6 +2148,85 @@
   display: block;
   margin: 12px 0;
   color: #333;
+}
+
+.niche-links-section {
+  padding: 24px 0 68px;
+}
+
+.niche-links-section--home,
+.niche-links-section--business {
+  width: min(1340px, calc(100% - 48px));
+  margin: 0 auto;
+}
+
+.niche-links-section--business {
+  padding-top: 12px;
+}
+
+.niche-links-head h2 {
+  margin: 0;
+  font-size: clamp(1.95rem, 3.2vw, 2.8rem);
+  letter-spacing: -0.03em;
+}
+
+.niche-links-head p {
+  margin: 14px 0 0;
+  max-width: 760px;
+  color: #544f5a;
+  font-weight: 700;
+}
+
+.niche-links-grid {
+  margin-top: 26px;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.niche-link-card {
+  position: relative;
+  min-height: 198px;
+  padding: 18px 16px 16px;
+  border: 1px solid rgba(95, 71, 255, 0.14);
+  border-radius: 20px;
+  background: linear-gradient(155deg, #ffffff, #f8f5ff);
+  box-shadow: 0 14px 42px rgba(53, 38, 120, 0.08);
+  color: #221f2e;
+}
+
+.niche-link-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(96, 71, 255, 0.35);
+}
+
+.niche-link-icon {
+  width: 36px;
+  height: 36px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 11px;
+  background: rgba(96, 71, 255, 0.14);
+}
+
+.niche-link-card h3 {
+  margin: 14px 0 8px;
+  font-size: 1.08rem;
+}
+
+.niche-link-card p {
+  margin: 0;
+  color: #5b5668;
+  line-height: 1.42;
+}
+
+.niche-link-arrow {
+  position: absolute;
+  right: 15px;
+  bottom: 14px;
+  color: #6047ff;
+  font-size: 1.2rem;
+  font-weight: 900;
 }
 
 .business-landing {
@@ -2655,6 +2734,104 @@
 
 .business-footer-links a:hover {
   color: #6047ff;
+}
+
+.niche-page {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 82% 14%, rgba(128, 109, 255, 0.2), transparent 32%),
+    radial-gradient(circle at 10% 34%, rgba(255, 223, 245, 0.36), transparent 30%),
+    linear-gradient(180deg, #fff 0%, #fcfbff 52%, #fff 100%);
+}
+
+.niche-page-hero,
+.niche-page-content,
+.niche-page-cta,
+.niche-links-section--inner {
+  width: min(1100px, calc(100% - 48px));
+  margin: 0 auto;
+}
+
+.niche-page-hero {
+  padding: 108px 0 30px;
+}
+
+.niche-page-hero > span {
+  font-size: 1.7rem;
+}
+
+.niche-page-hero h1 {
+  margin: 16px 0 0;
+  font-size: clamp(2rem, 4.2vw, 3.35rem);
+  letter-spacing: -0.04em;
+  line-height: 1.06;
+}
+
+.niche-page-hero p {
+  max-width: 840px;
+  margin-top: 16px;
+  color: #443f4c;
+  font-size: clamp(1rem, 1.45vw, 1.2rem);
+}
+
+.niche-page-content {
+  display: grid;
+  gap: 14px;
+  padding-bottom: 26px;
+}
+
+.niche-page-content p {
+  margin: 0;
+  color: #45404c;
+  line-height: 1.7;
+  font-size: 1.02rem;
+}
+
+.niche-links-section--inner .niche-links-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.niche-page-cta {
+  margin-top: 18px;
+  margin-bottom: 80px;
+  padding: 40px 28px;
+  border-radius: 26px;
+  background: linear-gradient(132deg, rgba(215, 208, 255, 0.7), rgba(255, 233, 247, 0.8));
+  text-align: center;
+}
+
+.niche-page-cta h2 {
+  margin: 0;
+  font-size: clamp(1.6rem, 2.5vw, 2.4rem);
+}
+
+.niche-page-cta p {
+  margin: 12px auto 0;
+  max-width: 760px;
+}
+
+.niche-page-cta .business-primary {
+  margin-top: 22px;
+}
+
+@media (max-width: 1160px) {
+  .niche-links-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 840px) {
+  .niche-links-grid,
+  .niche-links-section--inner .niche-links-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 620px) {
+  .niche-links-grid,
+  .niche-links-section--inner .niche-links-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .legal-page {
