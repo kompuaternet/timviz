@@ -457,7 +457,13 @@ export default function PublicHome({ searchIndex, initialLanguage = "ru" }: Publ
             <div key={city.city.en}>
               <h3>{city.city[language]}</h3>
               {city.links[language].map((link) => (
-                <a href={getLocalizedPath(language, "/catalog")} key={link}>{link} {String(t.cityIn)} {city.city[language]}</a>
+                <a
+                  href={`${getLocalizedPath(language, "/city-preview")}?city=${encodeURIComponent(city.city[language])}&category=${encodeURIComponent(link)}`}
+                  rel="nofollow"
+                  key={link}
+                >
+                  {link} {String(t.cityIn)} {city.city[language]}
+                </a>
               ))}
             </div>
           ))}
