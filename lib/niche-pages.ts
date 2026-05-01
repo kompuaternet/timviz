@@ -9,14 +9,14 @@ export const nicheSlugMap: Record<SiteLanguage, Record<NicheKey, string>> = {
     hairdressers: "dlya-perukariv",
     barbers: "dlya-barberiv",
     cosmetologists: "dlya-kosmetologiv",
-    massage: "dlya-masazhu"
+    massage: "dlya-masazhistiv"
   },
   ru: {
     manicure: "dlya-manikyura",
     hairdressers: "dlya-parikmaherov",
     barbers: "dlya-barberov",
     cosmetologists: "dlya-kosmetologov",
-    massage: "dlya-massazha"
+    massage: "dlya-massazhistov"
   },
   en: {
     manicure: "for-nail-technicians",
