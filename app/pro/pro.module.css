@@ -7825,8 +7825,7 @@
   flex-direction: column;
   background: #fff;
   min-width: 0;
-  overflow-x: hidden;
-  overflow-y: visible;
+  overflow: hidden;
 }
 
 .calendarV2PanelHeader {
@@ -9730,16 +9729,31 @@
   }
 
   .calendarShell {
-    height: auto;
-    overflow: visible;
+    min-height: 0;
+    height: 100%;
+    overflow: hidden;
   }
 
   .calendarScrollFrame,
-  .calendarSidePanel,
-  .calendarV2ScrollFrame,
+  .calendarSidePanel {
+    min-height: 0;
+    height: 100%;
+    overflow: auto;
+  }
+
+  .calendarV2ScrollFrame {
+    min-height: 0;
+    height: 100%;
+    max-height: 100%;
+    overflow-x: auto;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+  }
+
   .calendarV2Drawer {
-    height: auto;
-    overflow: visible;
+    height: 100%;
+    overflow: hidden;
   }
 
   .calendarLeftPanel,

@@ -1282,6 +1282,16 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
   const quickMenuRef = useRef<HTMLDivElement | null>(null);
   const newClientPrefixMenuRef = useRef<HTMLDivElement | null>(null);
   const detailsPrefixMenuRef = useRef<HTMLDivElement | null>(null);
+  const mobileDrawerScrollLockRef = useRef<{
+    scrollY: number;
+    bodyOverflow: string;
+    bodyPosition: string;
+    bodyTop: string;
+    bodyLeft: string;
+    bodyRight: string;
+    bodyWidth: string;
+    htmlOverflow: string;
+  } | null>(null);
 
   const dragRef = useRef<
     | {
@@ -1829,6 +1839,50 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
     return () => window.clearTimeout(timeoutId);
   }, [toast]);
 
+  useEffect(() => {
+    if (typeof window === "undefined" || !isMobileViewport || drawerStage === "closed") {
+      return;
+    }
+
+    const body = document.body;
+    const html = document.documentElement;
+    const scrollY = window.scrollY;
+
+    mobileDrawerScrollLockRef.current = {
+      scrollY,
+      bodyOverflow: body.style.overflow,
+      bodyPosition: body.style.position,
+      bodyTop: body.style.top,
+      bodyLeft: body.style.left,
+      bodyRight: body.style.right,
+      bodyWidth: body.style.width,
+      htmlOverflow: html.style.overflow
+    };
+
+    body.style.overflow = "hidden";
+    body.style.position = "fixed";
+    body.style.top = `-${scrollY}px`;
+    body.style.left = "0";
+    body.style.right = "0";
+    body.style.width = "100%";
+    html.style.overflow = "hidden";
+
+    return () => {
+      const snapshot = mobileDrawerScrollLockRef.current;
+      body.style.overflow = snapshot?.bodyOverflow ?? "";
+      body.style.position = snapshot?.bodyPosition ?? "";
+      body.style.top = snapshot?.bodyTop ?? "";
+      body.style.left = snapshot?.bodyLeft ?? "";
+      body.style.right = snapshot?.bodyRight ?? "";
+      body.style.width = snapshot?.bodyWidth ?? "";
+      html.style.overflow = snapshot?.htmlOverflow ?? "";
+
+      const restoreY = snapshot?.scrollY ?? 0;
+      mobileDrawerScrollLockRef.current = null;
+      window.scrollTo(0, restoreY);
+    };
+  }, [drawerStage, isMobileViewport]);
+
   async function applyLanguage(nextLanguage: AppLanguage) {
     if (nextLanguage === uiLanguage) {
       setActiveToolbarMenu(null);
@@ -2352,6 +2406,36 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
     }
 
     requestAnimationFrame(() => {
+      let scrollParent: HTMLElement | null = target.parentElement;
+
+      while (scrollParent) {
+        const style = window.getComputedStyle(scrollParent);
+        const canScroll =
+          /(auto|scroll)/.test(style.overflowY) && scrollParent.scrollHeight > scrollParent.clientHeight + 4;
+
+        if (canScroll) {
+          const parentRect = scrollParent.getBoundingClientRect();
+          const targetRect = target.getBoundingClientRect();
+          const topGap = Math.max(18, scrollParent.clientHeight * 0.16);
+          const bottomGap = Math.max(18, scrollParent.clientHeight * 0.16);
+          let nextScrollTop = scrollParent.scrollTop;
+
+          if (targetRect.top < parentRect.top + topGap) {
+            nextScrollTop += targetRect.top - parentRect.top - topGap;
+          } else if (targetRect.bottom > parentRect.bottom - bottomGap) {
+            nextScrollTop += targetRect.bottom - parentRect.bottom + bottomGap;
+          }
+
+          scrollParent.scrollTo({
+            top: Math.max(0, nextScrollTop),
+            behavior
+          });
+          return;
+        }
+
+        scrollParent = scrollParent.parentElement;
+      }
+
       target.scrollIntoView({
         block: "center",
         inline: "nearest",
