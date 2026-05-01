@@ -70,15 +70,15 @@ type HairCopy = {
 const ruSeoParagraphs = [
   "Если вы парикмахер и хотите стабильно принимать запись клиентов онлайн, ключевая задача — убрать хаос из мессенджеров. Когда запись на стрижку идет через WhatsApp, Telegram и Instagram одновременно, вы тратите время не на работу, а на ручную координацию. Timviz работает как программа для записи клиентов и помогает собрать все обращения в единую систему. Клиент видит понятную форму, выбирает услугу парикмахера и доступный слот, а вы сразу получаете структурированную запись без лишних звонков.",
   "Для мастера, который ведет плотный график работы парикмахера, критично видеть реальную картину дня. Календарь записей в Timviz показывает длительность каждой процедуры, статус визита и свободные окна между клиентами. Это снижает риск накладок, когда две записи попадают в один и тот же промежуток. Вместо ручного пересчета времени вы работаете с автоматизированным расписанием, где учтены стрижка, окрашивание, укладка и сложные процедуры с индивидуальной длительностью.",
-  "Timviz подходит не только как сервис онлайн-записи, но и как легкая CRM для парикмахера. В одном кабинете находятся услуги, цены, рабочие дни и поток заявок. Это особенно важно, если вы работаете без администратора и управляете всем самостоятельно. Программа для записи клиентов помогает стандартизировать процесс: клиент заранее видит цену, вы заранее видите нагрузку, а значит меньше переносов и меньше недопониманий в день приема.",
+  "Timviz подходит не только как сервис онлайн-записи, но и как легкая CRM для парикмахера. В одном кабинете находятся услуги, длительность, рабочие дни и поток заявок. Это особенно важно, если вы работаете без администратора и управляете всем самостоятельно. Программа для записи клиентов помогает стандартизировать процесс: клиент заранее видит формат услуги, вы заранее видите нагрузку, а значит меньше переносов и меньше недопониманий в день приема.",
   "Онлайн запись для парикмахеров дает измеримый эффект в ежедневной работе: меньше потерянных обращений, быстрее подтверждение записи, выше дисциплина клиентов. Когда система автоматически предлагает только свободное время, запись клиентов без звонков становится реальным рабочим сценарием, а не теорией. Для салонов и частных мастеров это означает более ровную загрузку, снижение пауз между услугами и более предсказуемую выручку в течение недели.",
-  "Отдельный плюс Timviz — управление услугами парикмахера с разной сложностью. В реальной практике простая мужская стрижка и сложное окрашивание требуют разного времени и подготовки. В Timviz вы настраиваете длительность, описание и стоимость каждой услуги, чтобы клиент выбирал корректный формат записи. Так программа для записи клиентов снижает операционные ошибки: меньше случаев, когда записали короткий слот под длинную процедуру.",
+  "Отдельный плюс Timviz — управление услугами парикмахера с разной сложностью. В реальной практике простая мужская стрижка и сложное окрашивание требуют разного времени и подготовки. В Timviz вы настраиваете длительность, описание и параметр услуги каждой услуги, чтобы клиент выбирал корректный формат записи. Так программа для записи клиентов снижает операционные ошибки: меньше случаев, когда записали короткий слот под длинную процедуру.",
   "Календарь записей также решает задачу повторных визитов и планирования вперед. Вы можете быстро оценить неделю, увидеть загруженные часы и предлагать клиентам удобные альтернативы без длительной переписки. Это делает работу более профессиональной: вместо отложенных ответов у вас есть конкретные окна и понятная логика расписания. В результате запись на стрижку и другие услуги становится прозрачной и удобной как для мастера, так и для клиента.",
   "Для многих мастеров ключевой вопрос — как не пропускать новые заявки. Telegram уведомления в Timviz закрывают этот риск: вы сразу получаете сигнал о новой записи, изменении времени или подтверждении визита. Даже если вы заняты у клиента, после процедуры можно быстро открыть календарь и проверить обновления. Такая связка CRM для парикмахера и мгновенных уведомлений помогает держать сервис на высоком уровне без постоянного мониторинга нескольких чатов.",
   "Если вам нужна программа для записи клиентов, которая не требует долгого внедрения, Timviz позволяет стартовать за несколько минут. Вы создаете профиль, добавляете услуги парикмахера, задаете график работы парикмахера и делитесь ссылкой на клиентскую запись онлайн. С этого момента поток заявок идет в понятную систему, а не теряется в сообщениях. Именно так онлайн запись для парикмахеров превращается в инструмент роста, а не просто еще один канал коммуникации.",
   "Реальные сценарии работы показывают эффект очень быстро. Например, утром идут короткие мужские стрижки по 30–45 минут, в середине дня — окрашивания по 120–180 минут, вечером — укладки к мероприятиям. Без структуры эти форматы часто конфликтуют между собой. Timviz позволяет заранее задать длительность каждой услуги и автоматически предотвращает пересечения. В итоге календарь записей заполняется логично: меньше простоев, меньше переработок, больше точности и спокойствия в течение всей смены.",
   "Для салонов с несколькими специалистами важна прозрачная картина загруженности. Когда руководитель видит только разрозненные чаты, сложно управлять потоками клиентов и сменами мастеров. Timviz дает общий контур: кто загружен, где есть свободные окна, какие услуги чаще бронируют. Такая аналитика помогает улучшать расписание, запускать акции в незагруженные часы и перераспределять записи без конфликтов. Программа для записи клиентов в этом случае работает не только как календарь, но и как инструмент управленческих решений.",
-  "Клиентский опыт тоже становится сильнее. Человек получает понятный путь: выбирает услугу, видит цену, длительность и подтверждает удобное время без ожидания ответа. Это снижает вероятность того, что клиент уйдет к конкуренту только потому, что не дождался обратной связи. Запись клиентов онлайн становится быстрым действием в пару кликов, а это напрямую увеличивает конверсию из интереса в визит. Для парикмахера это означает более стабильный поток и меньше маркетинговых потерь.",
+  "Клиентский опыт тоже становится сильнее. Человек получает понятный путь: выбирает услугу, видит формат услуги, длительность и подтверждает удобное время без ожидания ответа. Это снижает вероятность того, что клиент уйдет к конкуренту только потому, что не дождался обратной связи. Запись клиентов онлайн становится быстрым действием в пару кликов, а это напрямую увеличивает конверсию из интереса в визит. Для парикмахера это означает более стабильный поток и меньше маркетинговых потерь.",
   "Если подвести итог, Timviz закрывает весь цикл записи: от первой заявки до повторного визита. Онлайн запись для парикмахеров, календарь записей, программа для записи клиентов и Telegram уведомления работают в одной системе и дают мастеру реальный контроль над днем. Вы не тратите энергию на ручной хаос, а фокусируетесь на качестве услуг и росте среднего чека. Именно эта комбинация делает сервис практичным для ежедневной работы и заметно повышает вероятность, что клиент вернется снова.",
   "Для мастеров, которые развивают личный бренд, скорость и предсказуемость записи часто важнее любой рекламы. Когда клиент один раз легко записался и пришел без накладок, он чаще рекомендует специалиста знакомым. Timviz помогает закрепить этот эффект: запись на стрижку становится простой и стабильной, а график работы парикмахера — прозрачным и управляемым. Поэтому сервис полезен не только для операционки, но и как инструмент роста репутации и повторных продаж."
 ];
@@ -86,8 +86,8 @@ const ruSeoParagraphs = [
 const ukSeoParagraphs = [
   "Для сучасного перукаря онлайн запис для перукарів уже не є додатковою опцією, а стає основою стабільного графіка. Коли клієнти пишуть у різні месенджери, частина заявок губиться, час на відповіді росте, а майстер витрачає енергію не на якість послуги, а на ручну координацію. Timviz вирішує цю проблему як програма для запису клієнтів: усі запити збираються в одному місці, клієнт одразу бачить доступний слот, а перукар працює за передбачуваним планом дня. Це дає кращий сервіс, більше підтверджених візитів і менше стресу в пікові години.",
   "Коли в роботі є різні послуги — коротка чоловіча стрижка, довге фарбування, укладка перед подією або складна процедура відновлення — без системи легко зробити накладку. Календар записів у Timviz показує не просто список клієнтів, а реальну структуру дня: тривалість кожної послуги, вільні вікна, поточні підтвердження та зміни. Завдяки цьому майстер бачить повну картину завантаження й не ставить складні послуги в занадто короткі проміжки. Запис клієнтів онлайн стає керованим процесом, де графік допомагає заробляти, а не створює хаос, а графік роботи перукаря стає передбачуваним.",
-  "Багато перукарів шукають інструмент, який працює як CRM для перукаря, але без складного впровадження та навчання. Timviz дає саме такий формат: у кабінеті є послуги, ціни, тривалість, розклад і клієнтські записи. Вам не потрібно окремо вести таблиці, виписувати час у нотатки чи тримати все в голові. Програма для запису клієнтів підказує структуру: клієнт обирає потрібну послугу, система пропонує коректні вільні слоти, а ви одразу розумієте, як виглядає день. Це скорочує кількість помилок і робить обслуговування стабільно професійним.",
-  "Окремий плюс для майстра — прозора комунікація з клієнтом до візиту. Коли запис робиться вручну, клієнт часто не бачить остаточної ціни, не розуміє тривалість процедури або плутає час. У Timviz це знімається на етапі вибору: опис послуги, ціна і тривалість задані наперед. Онлайн запис клієнтів у такому форматі зменшує кількість уточнень і переносів, а запис клієнтів онлайн стає зрозумілим і швидким для обох сторін. Людина одразу розуміє, на що записується, а перукар не витрачає вечір на повторні підтвердження. В результаті зростає якість сервісу і довіра до майстра як до організованого спеціаліста.",
+  "Багато перукарів шукають інструмент, який працює як CRM для перукаря, але без складного впровадження та навчання. Timviz дає саме такий формат: у кабінеті є послуги, тривалість, розклад і клієнтські записи. Вам не потрібно окремо вести таблиці, виписувати час у нотатки чи тримати все в голові. Програма для запису клієнтів підказує структуру: клієнт обирає потрібну послугу, система пропонує коректні вільні слоти, а ви одразу розумієте, як виглядає день. Це скорочує кількість помилок і робить обслуговування стабільно професійним.",
+  "Окремий плюс для майстра — прозора комунікація з клієнтом до візиту. Коли запис робиться вручну, клієнт часто не бачить остаточного формату візиту, не розуміє тривалість процедури або плутає час. У Timviz це знімається на етапі вибору: опис послуги, формат послуги і тривалість задані наперед. Онлайн запис клієнтів у такому форматі зменшує кількість уточнень і переносів, а запис клієнтів онлайн стає зрозумілим і швидким для обох сторін. Людина одразу розуміє, на що записується, а перукар не витрачає вечір на повторні підтвердження. В результаті зростає якість сервісу і довіра до майстра як до організованого спеціаліста.",
   "Календар записів особливо важливий тим, хто працює у щільному темпі та приймає багато повторних клієнтів. За день може бути десятки дрібних змін: хтось переносить візит, хтось додає послугу, хтось просить інший час. Якщо все це вести в чатах, ризик помилки дуже високий. Timviz збирає ці зміни в єдиній системі, де видно оновлений графік без ручного перерахунку. Запис клієнтів онлайн у поєднанні з таким календарем допомагає тримати дисципліну дня, скорочує простої між візитами й дозволяє швидко пропонувати клієнтам найближчі вільні вікна без довгої переписки.",
   "Ще одна критична потреба перукаря — швидко бачити нові бронювання, не відкриваючи постійно кілька додатків. Саме тому в Timviz є Telegram-сповіщення: майстер одразу отримує сигнал про новий запис, зміну часу або скасування. Це практичний інструмент, особливо коли ви зайняті з клієнтом і не можете контролювати чат щохвилини. CRM для перукаря у зв’язці з миттєвими повідомленнями зменшує ризик пропущених заявок і дозволяє тримати сервіс на високому рівні. Клієнт бачить швидку реакцію, а ви зберігаєте фокус на роботі, а не на ручному адмініструванні.",
   "У реальному робочому дні важлива не тільки кількість записів, а й якість завантаження. Коли між клієнтами з’являються випадкові розриви, майстер втрачає час, а коли записи стоять надто щільно, зростає ризик запізнень. Timviz допомагає вирівнювати графік: календар записів показує слабкі місця, а програма для запису клієнтів дає можливість точніше налаштувати тривалість і доступні вікна. У результаті онлайн запис клієнтів працює не хаотично, а як передбачуваний потік. Це покращує ритм дня, дає стабільніший дохід і робить сервіс для клієнта більш професійним.",
@@ -131,14 +131,14 @@ const copy: Record<SiteLanguage, HairCopy> = {
     solution: [
       { title: "24/7 онлайн-запись", text: "Клиенты записываются сами в любое время без звонков." },
       { title: "Календарь записей", text: "Все записи видны в одном календаре с актуальными статусами." },
-      { title: "Услуги с ценой", text: "Услуги с ценой и длительностью — без путаницы." },
+      { title: "Услуги с форматом услуги", text: "Услуги с длительностью — без путаницы." },
       { title: "Рабочие дни", text: "Настройка рабочих дней и свободных окон под ваш график." },
       { title: "Telegram уведомления", text: "Получайте записи и подтверждения в Telegram." },
       { title: "Клиентская страница", text: "Персональная страница для записи клиентов без лишних шагов." }
     ],
     servicesTitle: "Настройте услуги парикмахера",
     serviceItems: ["стрижка", "женская стрижка", "мужская стрижка", "окрашивание", "укладка", "сложные окрашивания", "уход за волосами", "восстановление"],
-    serviceExample: "Стрижка — 60 мин — 500 грн",
+    serviceExample: "Стрижка — 60 мин",
     calendarTitle: "Календарь записей для парикмахера",
     calendarText: "Видите все записи, длительность процедур и свободное время.",
     howTitle: "Как это работает",
@@ -149,20 +149,20 @@ const copy: Record<SiteLanguage, HairCopy> = {
     telegramTitle: "Получайте записи в Telegram",
     telegramText: "Подключите Telegram-уведомления и оперативно реагируйте на новые визиты и изменения в расписании.",
     nicheTitle: "Подходит для парикмахеров и салонов",
-    nicheText: "Реальные сценарии для плотного дня: система учитывает длительность, цену и формат каждой услуги.",
+    nicheText: "Реальные сценарии для плотного дня: система учитывает длительность, формат визита и тип каждой услуги.",
     nicheItems: [
-      "Женская стрижка — 60 мин — 500 грн: стандартный слот без ручных расчетов.",
-      "Окрашивание корней — 120 мин — 1200 грн: длинная процедура с буфером в календаре.",
-      "Стрижка + укладка — 75 мин — 750 грн: запись сразу с нужной длительностью.",
-      "Сложное окрашивание — 180 мин — 2500 грн: клиент видит цену и выбирает подходящий день."
+      "Женская стрижка — 60 мин: стандартный слот без ручных расчетов.",
+      "Окрашивание корней — 120 мин: длинная процедура с буфером в календаре.",
+      "Стрижка + укладка — 75 мин: запись сразу с нужной длительностью.",
+      "Сложное окрашивание — 180 мин: клиент видит формат услуги и выбирает подходящий день."
     ],
     dayScenarioTitle: "Сценарий рабочего дня парикмахера",
     dayScenarioItems: [
-      "09:00 — Мужская стрижка — 45 мин — 450 грн: быстрый старт дня без перегруза.",
-      "10:00 — Женская стрижка — 60 мин — 500 грн: слот с точной длительностью в календаре.",
-      "12:00 — Окрашивание корней — 120 мин — 1200 грн: длинная услуга с буфером между визитами.",
-      "15:00 — Стрижка + укладка — 75 мин — 750 грн: клиент видит цену и время до бронирования.",
-      "18:00 — Укладка — 40 мин — 450 грн: вечернее окно закрывается без ручных переписок."
+      "09:00 — Мужская стрижка — 45 мин: быстрый старт дня без перегруза.",
+      "10:00 — Женская стрижка — 60 мин: слот с точной длительностью в календаре.",
+      "12:00 — Окрашивание корней — 120 мин: длинная услуга с буфером между визитами.",
+      "15:00 — Стрижка + укладка — 75 мин: клиент видит формат услуги и время до бронирования.",
+      "18:00 — Укладка — 40 мин: вечернее окно закрывается без ручных переписок."
     ],
     socialTitle: "Мастера уже используют Timviz",
     socialText: "Парикмахеры переходят на Timviz, чтобы сократить ручные переписки и быстрее подтверждать записи.",
@@ -186,12 +186,12 @@ const copy: Record<SiteLanguage, HairCopy> = {
     faqTitle: "FAQ",
     faq: [
       { q: "Как работает онлайн-запись для парикмахера?", a: "Клиент выбирает услугу и время, а запись клиентов онлайн сразу попадает в календарь записей." },
-      { q: "Можно ли настроить длительность стрижек?", a: "Да, каждая услуга парикмахера настраивается с ценой и длительностью." },
+      { q: "Можно ли настроить длительность стрижек?", a: "Да, каждая услуга парикмахера настраивается с форматом услуги и длительностью." },
       { q: "Подходит ли для одного мастера?", a: "Да, это CRM для парикмахера и для небольших студий." },
       { q: "Можно ли работать без сайта?", a: "Да, достаточно профиля в Timviz и клиентской ссылки на запись." },
       { q: "Есть ли Telegram уведомления?", a: "Да, сервис отправляет Telegram уведомления о новых записях." },
       { q: "Можно ли принимать запись на стрижку без звонков?", a: "Да, клиентская запись онлайн позволяет клиентам записываться самостоятельно." },
-      { q: "Подходит ли Timviz для сложных окрашиваний?", a: "Да, вы можете задать длительность и стоимость сложных процедур отдельно." }
+      { q: "Подходит ли Timviz для сложных окрашиваний?", a: "Да, вы можете задать длительность и параметр услуги сложных процедур отдельно." }
     ],
     finalTitle: "Готовы увеличить записи без хаоса?",
     finalText: "Создайте профиль, добавьте услуги и начните принимать записи клиентов онлайн без лишних переписок.",
@@ -207,7 +207,7 @@ const copy: Record<SiteLanguage, HairCopy> = {
     privacy: "Политика конфиденциальности",
     terms: "Условия использования",
     altCalendar: "Календарь записей для парикмахера в Timviz",
-    altService: "Услуги парикмахера и цены в Timviz",
+    altService: "Услуги парикмахера и длительность в Timviz",
     altTelegram: "Telegram уведомления о записях для парикмахеров в Timviz"
   },
   uk: {
@@ -237,14 +237,14 @@ const copy: Record<SiteLanguage, HairCopy> = {
     solution: [
       { title: "Онлайн-запис 24/7", text: "Клієнти записуються самі без дзвінків." },
       { title: "Календар записів", text: "Усі записи в одному місці." },
-      { title: "Послуги з ціною", text: "Клієнт бачить ціну і час." },
+      { title: "Послуги з форматом послуги", text: "Клієнт бачить формат послуги і час." },
       { title: "Графік роботи", text: "Контроль робочих днів." },
       { title: "Telegram", text: "Отримуйте записи миттєво." },
       { title: "Сторінка запису", text: "Клієнти записуються самі." }
     ],
     servicesTitle: "Налаштуйте послуги перукаря",
     serviceItems: ["стрижка", "жіноча стрижка", "чоловіча стрижка", "фарбування", "укладка", "складні фарбування", "догляд за волоссям", "відновлення"],
-    serviceExample: "Жіноча стрижка — 60 хв — 500 грн",
+    serviceExample: "Жіноча стрижка — 60 хв",
     calendarTitle: "Календар записів для перукаря",
     calendarText: "Бачите всі записи, тривалість процедур і вільний час.",
     howTitle: "Як це працює",
@@ -259,11 +259,11 @@ const copy: Record<SiteLanguage, HairCopy> = {
     nicheItems: ["жіночі стрижки", "чоловічі стрижки", "фарбування", "укладка", "складні процедури"],
     dayScenarioTitle: "Сценарій робочого дня перукаря",
     dayScenarioItems: [
-      "09:00 — Чоловіча стрижка — 45 хв — 450 грн: швидкий старт зміни без накладок.",
-      "10:00 — Жіноча стрижка — 60 хв — 500 грн: точний слот із контрольованою тривалістю.",
-      "12:00 — Фарбування коренів — 120 хв — 1200 грн: довга послуга з буфером у календарі.",
-      "15:00 — Стрижка + укладка — 75 хв — 750 грн: клієнт бачить ціну до бронювання.",
-      "18:00 — Укладка — 40 хв — 450 грн: вечірнє вікно закривається онлайн без переписок."
+      "09:00 — Чоловіча стрижка — 45 хв: швидкий старт зміни без накладок.",
+      "10:00 — Жіноча стрижка — 60 хв: точний слот із контрольованою тривалістю.",
+      "12:00 — Фарбування коренів — 120 хв: довга послуга з буфером у календарі.",
+      "15:00 — Стрижка + укладка — 75 хв: клієнт бачить формат послуги до бронювання.",
+      "18:00 — Укладка — 40 хв: вечірнє вікно закривається онлайн без переписок."
     ],
     socialTitle: "Майстри вже використовують Timviz",
     socialText: "Перукарі переходять на Timviz, щоб зменшити ручну комунікацію і прискорити підтвердження візитів.",
@@ -287,7 +287,7 @@ const copy: Record<SiteLanguage, HairCopy> = {
     faqTitle: "FAQ",
     faq: [
       { q: "Як працює онлайн-запис для перукаря?", a: "Клієнт обирає послугу і час, а запис одразу потрапляє в календар." },
-      { q: "Чи можна налаштувати тривалість стрижок?", a: "Так, для кожної послуги задається окрема тривалість і вартість." },
+      { q: "Чи можна налаштувати тривалість стрижок?", a: "Так, для кожної послуги задається окрема тривалість і параметр послуги." },
       { q: "Чи підходить Timviz для одного майстра?", a: "Так, сервіс підходить приватним майстрам і невеликим студіям." },
       { q: "Чи можна працювати без сайту?", a: "Так, достатньо профілю Timviz і посилання на запис." },
       { q: "Чи є Telegram сповіщення?", a: "Так, ви отримуєте сповіщення про нові записи й зміни графіка." },
@@ -309,7 +309,7 @@ const copy: Record<SiteLanguage, HairCopy> = {
     privacy: "Політика конфіденційності",
     terms: "Умови використання",
     altCalendar: "Календар записів для перукарів у Timviz",
-    altService: "Послуги перукаря та ціни у Timviz",
+    altService: "Послуги перукаря та тривалість у Timviz",
     altTelegram: "Telegram сповіщення про нові записи для перукарів у Timviz"
   },
   en: {
@@ -339,14 +339,14 @@ const copy: Record<SiteLanguage, HairCopy> = {
     solution: [
       { title: "24/7 online booking", text: "Clients book on their own anytime." },
       { title: "Booking calendar", text: "All appointments in one schedule." },
-      { title: "Priced services", text: "Each service has duration and price." },
+      { title: "Priced services", text: "Each service has duration and service details." },
       { title: "Working days", text: "Set your workdays and free slots." },
       { title: "Telegram alerts", text: "Get instant booking updates." },
       { title: "Client booking page", text: "Share one page for self-booking." }
     ],
     servicesTitle: "Set up hairdresser services",
     serviceItems: ["haircut", "women's haircut", "men's haircut", "coloring", "styling", "complex coloring", "hair care", "restoration"],
-    serviceExample: "Haircut — 60 min — 500 UAH",
+    serviceExample: "Haircut — 60 min",
     calendarTitle: "Booking calendar for hairdressers",
     calendarText: "See all bookings, service duration and free time.",
     howTitle: "How it works",
@@ -361,11 +361,11 @@ const copy: Record<SiteLanguage, HairCopy> = {
     nicheItems: ["haircuts", "coloring", "styling", "complex procedures"],
     dayScenarioTitle: "Hairdresser day scenario",
     dayScenarioItems: [
-      "09:00 — Men’s haircut — 45 min — 450 UAH: fast opening slot with predictable timing.",
-      "10:00 — Women’s haircut — 60 min — 500 UAH: standard service scheduled with no overlap.",
-      "12:00 — Root coloring — 120 min — 1200 UAH: long procedure with automatic calendar buffer.",
-      "15:00 — Haircut + styling — 75 min — 750 UAH: client sees duration and pricing before booking.",
-      "18:00 — Styling — 40 min — 450 UAH: evening slot gets filled online without chat coordination."
+      "09:00 — Men’s haircut — 45 min: fast opening slot with predictable timing.",
+      "10:00 — Women’s haircut — 60 min: standard service scheduled with no overlap.",
+      "12:00 — Root coloring — 120 min: long procedure with automatic calendar buffer.",
+      "15:00 — Haircut + styling — 75 min: client sees duration and service setup before booking.",
+      "18:00 — Styling — 40 min: evening slot gets filled online without chat coordination."
     ],
     socialTitle: "Professionals already use Timviz",
     socialText: "Hairdressers use Timviz to reduce manual messaging and speed up confirmations.",
@@ -387,22 +387,22 @@ const copy: Record<SiteLanguage, HairCopy> = {
     seoBlockTitle: "Client booking software for hairdressers",
     seoParagraphs: [
       "Online booking for hairdressers is one of the biggest levers for stable daily revenue. When booking requests arrive from Instagram, Telegram and messaging apps at the same time, appointments are easy to miss and responses are delayed. Timviz converts this fragmented flow into one structured process. Clients choose service and time independently, while the hairdresser receives a clear confirmed visit in one calendar.",
-      "Hairdresser schedules are complex by nature. A quick men’s haircut, a women’s haircut, root coloring, full-color treatment and styling all require different durations. If timing is handled manually, collisions and idle windows become unavoidable. Timviz solves that by attaching duration and pricing to each service and showing only valid booking slots. This keeps your workday realistic and reduces operational stress.",
-      "Many specialists look for booking software because they want fewer calls and less chat coordination. Timviz provides exactly that. Service catalog, duration setup, pricing and booking statuses are managed in one place. Clients see clear service details before they book, so expectations are aligned and confirmation speed improves.",
+      "Hairdresser schedules are complex by nature. A quick men’s haircut, a women’s haircut, root coloring, full-color treatment and styling all require different durations. If timing is handled manually, collisions and idle windows become unavoidable. Timviz solves that by attaching duration and service setup to each service and showing only valid booking slots. This keeps your workday realistic and reduces operational stress.",
+      "Many specialists look for booking software because they want fewer calls and less chat coordination. Timviz provides exactly that. Service catalog, duration setup, service setup and booking statuses are managed in one place. Clients see clear service details before they book, so expectations are aligned and confirmation speed improves.",
       "For solo professionals, Timviz works as a lightweight CRM with fast onboarding. You do not need a separate website or technical setup. Create profile, add services, define working hours and publish one booking link. From that point, your booking flow runs 24/7 and supports client booking without manual back-and-forth.",
       "A practical day example illustrates the value: short haircuts in the morning, long coloring in the middle of the day, styling slots in the evening. Without a structured calendar, this pattern often creates delays and mismatched gaps. Timviz maintains service logic automatically and keeps your schedule balanced, so you can serve more clients without overloading the shift.",
       "Telegram notifications give hairdressers real-time awareness. New bookings, cancellations and reschedules appear instantly, even while you are with another client. This reduces the risk of missed updates and helps you react before a free slot turns into lost revenue. In busy salons, this speed is critical.",
       "Repeat visits are essential in hair care services. With a clear booking calendar, it is easier to secure the next appointment immediately after checkout. Clients can rebook quickly because available time is transparent. Timviz supports this retention flow and helps turn one-time visits into recurring demand.",
       "For salon teams, centralized booking creates operational consistency. Managers can see where schedules are overloaded and where there is open capacity. That visibility improves shift planning, campaign timing and slot utilization across the week. Timviz is not just a calendar; it is a practical booking operations layer.",
       "Search intent behind queries like online booking for hairdressers, client booking software, or haircut booking calendar is usually direct: increase confirmed appointments and reduce administrative noise. Timviz is designed to satisfy that intent with simple UX for clients and structured workflows for professionals.",
-      "In long-term growth, reliable booking affects both conversion and brand perception. Clients remember how easy it was to book, how clear pricing was, and whether the appointment started on time. Timviz helps hairdressers deliver that professional experience consistently, which improves repeat rate and referrals.",
+      "In long-term growth, reliable booking affects both conversion and brand perception. Clients remember how easy it was to book, how clear service setup was, and whether the appointment started on time. Timviz helps hairdressers deliver that professional experience consistently, which improves repeat rate and referrals.",
       "Another advantage is better control of short windows between long services. Manual scheduling often leaves these windows unused because they are difficult to coordinate quickly. With Timviz, those slots remain visible and bookable, so you can fill them with quick services and improve utilization.",
       "Overall, Timviz gives hairdressers a conversion-focused booking system: online booking flow, duration-aware calendar, structured services, and instant Telegram alerts. It reduces routine admin work and helps transform daily demand into a stable schedule with fewer errors and higher booking efficiency."
     ],
     faqTitle: "FAQ",
     faq: [
       { q: "How does online booking work for hairdressers?", a: "Clients pick a service and time, and bookings appear in your calendar." },
-      { q: "Can I set haircut duration?", a: "Yes, each service has custom duration and price." },
+      { q: "Can I set haircut duration?", a: "Yes, each service has custom duration and service details." },
       { q: "Is it good for solo professionals?", a: "Yes, Timviz works for solo hairdressers and teams." },
       { q: "Can I use it without a website?", a: "Yes, your Timviz page is enough to start." },
       { q: "Are Telegram notifications available?", a: "Yes, you get alerts for new and updated bookings." },
@@ -422,7 +422,7 @@ const copy: Record<SiteLanguage, HairCopy> = {
     privacy: "Privacy policy",
     terms: "Terms of use",
     altCalendar: "Hairdresser booking calendar in Timviz",
-    altService: "Hairdresser services and prices in Timviz",
+    altService: "Hairdresser services and service details in Timviz",
     altTelegram: "Telegram booking notifications for hairdressers in Timviz"
   }
 };
@@ -437,10 +437,10 @@ export function buildHairdresserMetadata(lang: SiteLanguage, pathname: string): 
 
   const description =
     lang === "ru"
-      ? "Timviz — сервис онлайн-записи для парикмахеров: календарь записей, услуги, цены, длительность стрижек и уведомления в Telegram."
+      ? "Timviz — сервис онлайн-записи для парикмахеров: календарь записей, услуги, длительность стрижек и уведомления в Telegram."
       : lang === "uk"
-        ? "Timviz — сервіс онлайн-запису для перукарів: календар записів, послуги, ціни, тривалість стрижок і сповіщення в Telegram."
-        : "Timviz is online booking software for hairdressers with booking calendar, service pricing, haircut duration setup and Telegram notifications.";
+        ? "Timviz — сервіс онлайн-запису для перукарів: календар записів, послуги, тривалість стрижок і сповіщення в Telegram."
+        : "Timviz is online booking software for hairdressers with booking calendar, service service setup, haircut duration setup and Telegram notifications.";
 
   const metadata = buildMetadata(pathname, { title, description }, lang);
   return {

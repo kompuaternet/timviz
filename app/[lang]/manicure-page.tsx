@@ -73,13 +73,13 @@ type Copy = {
 const ukSeoParagraphs = [
   "Для майстрів, які працюють у щільному ритмі, онлайн запис манікюр уже давно став практичною необхідністю. Коли клієнти пишуть одночасно в Instagram, Telegram і Viber, заявки легко губляться, а вільний час витрачається на ручні уточнення. Timviz вирішує цю проблему як програма для манікюру: клієнт бачить доступні слоти, обирає послугу, а запис одразу потрапляє в систему. Це дозволяє перейти від хаотичних переписок до стабільного робочого процесу, де майстер більше часу приділяє якості сервісу, а не адмініструванню.",
   "Запис клієнтів манікюр часто ускладнюється різною тривалістю процедур. Класичний манікюр, гель-лак, дизайн і корекція мають різний таймінг, і без структури легко зробити накладки. Саме тому календар записів у Timviz показує не лише час візиту, а й логіку завантаження дня. Ви бачите, де є вільні вікна, де треба залишити буфер і де краще не ставити довгу процедуру. Такий підхід знижує ризик запізнень, допомагає уникати стресу й підтримує комфортний темп навіть у найбільш завантажені дні.",
-  "Коли майстер веде запис вручну, клієнти часто не мають чіткого розуміння ціни й тривалості послуги. Через це виникають уточнення, переноси та непорозуміння в день візиту. У Timviz кожна послуга налаштовується заздалегідь: назва, вартість, тривалість і доступність у розкладі. Програма для манікюру дає прозорий сценарій для обох сторін: клієнт записується на конкретну процедуру, а майстер отримує коректно сформований графік. У результаті запис клієнтів манікюр стає передбачуваним, а сервіс виглядає професійно з першого контакту.",
+  "Коли майстер веде запис вручну, клієнти часто не мають чіткого розуміння тривалості послуги. Через це виникають уточнення, переноси та непорозуміння в день візиту. У Timviz кожна послуга налаштовується заздалегідь: назва, параметр послуги, тривалість і доступність у розкладі. Програма для манікюру дає прозорий сценарій для обох сторін: клієнт записується на конкретну процедуру, а майстер отримує коректно сформований графік. У результаті запис клієнтів манікюр стає передбачуваним, а сервіс виглядає професійно з першого контакту.",
   "Для приватного майстра важливо, щоб CRM для майстра манікюру не була перевантаженою та складною в запуску. Timviz побудований саме як легкий робочий інструмент: без довгого навчання, без технічного налаштування й без окремого сайту. Ви створюєте профіль, додаєте послуги та відкриваєте посилання на запис. Далі система бере на себе базову організацію потоку заявок. Це особливо зручно, коли потрібно швидко стартувати, не витрачати бюджет на додаткові рішення і при цьому отримати повноцінний календар записів у щоденній роботі.",
   "Окрема перевага Timviz — контроль змін у графіку. У реальній практиці клієнти переносять візити, додають послуги або скасовують запис в останній момент. Якщо все це зберігається в чатах, легко щось пропустити. Календар записів у Timviz миттєво відображає актуальний стан і допомагає приймати рішення без плутанини. Ви швидко бачите, де з’явилося вільне вікно, кому можна запропонувати ранній час і як не зламати структуру дня. Такий формат робить запис клієнтів манікюр системним і суттєво знижує кількість операційних помилок.",
   "Пошукові запити на кшталт «онлайн запис манікюр» або «запис клієнтів манікюр» зазвичай роблять майстри, які хочуть менше ручної комунікації й більше стабільних візитів. Timviz дає саме цей результат: клієнт самостійно бронює час, а ви отримуєте підтверджений запис у своєму кабінеті. Вам не потрібно постійно повертатися до старих повідомлень, щоб перевірити деталі візиту. Усе зібрано в одному місці, і це підвищує конверсію з заявки у реальний візит. Для майстра це означає більш передбачуваний дохід і рівніший графік протягом тижня.",
   "Ще один важливий компонент — Telegram-сповіщення. Навіть якщо ви зайняті процедурою, система повідомляє про нові записи або зміни одразу після їх появи. Це дає швидку реакцію без постійного моніторингу кількох каналів. CRM для майстра манікюру у зв’язці з такими сповіщеннями працює як єдиний центр керування графіком. Ви бачите, що відбувається, і не пропускаєте важливі оновлення, а клієнти отримують більш оперативний сервіс. У підсумку програма для манікюру допомагає тримати високий рівень обслуговування навіть при щільному завантаженні.",
   "Timviz підходить не лише для базових послуг, а й для складніших сценаріїв: комбінацій процедур, тривалих візитів і повторних бронювань. Коли клієнт повертається регулярно, майстру важливо швидко знайти зручне вікно без довгих погоджень. Календар записів дозволяє працювати з повторними візитами значно швидше. Ви бачите повну картину дня, тижня та загального навантаження, а отже можете краще планувати робочі зміни. Такий рівень контролю позитивно впливає і на якість сервісу, і на фінальний дохід майстра.",
-  "Щоб онлайн запис манікюр справді працював на конверсію, важливо правильно оформити клієнтський шлях: зрозумілі назви послуг, актуальні ціни, реальні тривалості та доступний час без прихованих нюансів. У Timviz це налаштовується у кілька кроків, тому навіть новачок може швидко запустити робочу схему. Запис клієнтів манікюр стає простішим для клієнта і прогнозованим для майстра. Ви менше переписуєтесь вручну, менше пояснюєте однакові деталі й більше фокусуєтесь на результаті процедури. У довгій перспективі це підвищує лояльність клієнтів і збільшує частку повторних візитів.",
+  "Щоб онлайн запис манікюр справді працював на конверсію, важливо правильно оформити клієнтський шлях: зрозумілі назви послуг, актуальні тривалість, реальні тривалості та доступний час без прихованих нюансів. У Timviz це налаштовується у кілька кроків, тому навіть новачок може швидко запустити робочу схему. Запис клієнтів манікюр стає простішим для клієнта і прогнозованим для майстра. Ви менше переписуєтесь вручну, менше пояснюєте однакові деталі й більше фокусуєтесь на результаті процедури. У довгій перспективі це підвищує лояльність клієнтів і збільшує частку повторних візитів.",
   "Коли майстер починає працювати з системним інструментом, змінюється не лише графік, а й загальна якість бізнес-процесу. Програма для манікюру допомагає краще планувати навантаження, уникати простоїв і формувати рівномірний потік записів протягом тижня. Календар записів стає базою для прийняття рішень: коли додати новий слот, коли закрити день, коли варто перенести довгу процедуру. CRM для майстра манікюру в цьому випадку працює не як складна таблиця, а як зрозумілий помічник, який підказує, де втрачаються заявки й як перетворити інтерес у підтверджений візит.",
   "Якщо узагальнити, Timviz закриває ключові задачі майстра: онлайн запис манікюр, структурований запис клієнтів манікюр, гнучкий календар записів, зрозуміла CRM для майстра манікюру та швидкий старт без технічних складнощів. Це не складна корпоративна система, а практичний інструмент для щоденної роботи. Програма для манікюру допомагає навести порядок, скоротити хаос у переписках і підвищити конверсію в реальні візити. Саме тому все більше майстрів переходять на такий формат і отримують стабільніший, більш контрольований робочий процес."
 ];
@@ -89,7 +89,7 @@ const copy: Record<SiteLanguage, Copy> = {
     home: "Главная",
     forBusiness: "Для бизнеса",
     title: "Онлайн-запись для мастера маникюра",
-    subtitle: "Принимайте записи клиентов онлайн, ведите календарь, услуги, цены и рабочий график в одном кабинете.",
+    subtitle: "Принимайте записи клиентов онлайн, ведите календарь, услуги, длительность и рабочий график в одном кабинете.",
     ctaPrimary: "Начать принимать записи за 2 минуты",
     ctaSecondary: "Посмотреть возможности",
     ctaAfterSolution: "Начать принимать записи за 2 минуты",
@@ -110,7 +110,7 @@ const copy: Record<SiteLanguage, Copy> = {
         text: "Сложно быстро понять, кто записан, на какое время и какую услугу выбрал."
       },
       {
-        title: "Сложно помнить цену и длительность каждой услуги",
+        title: "Сложно учитывать длительность каждой услуги",
         text: "Маникюр, покрытие, дизайн и коррекция занимают разное время."
       },
       {
@@ -139,8 +139,8 @@ const copy: Record<SiteLanguage, Copy> = {
         text: "Все визиты, длительность процедур и свободные окна видны в одном месте."
       },
       {
-        title: "Услуги с ценой и длительностью",
-        text: "Клиент заранее видит стоимость и понимает, сколько займёт процедура."
+        title: "Услуги с длительностью",
+        text: "Клиент заранее видит параметр услуги и понимает, сколько займёт процедура."
       },
       {
         title: "Рабочие дни и свободные окна",
@@ -157,7 +157,7 @@ const copy: Record<SiteLanguage, Copy> = {
     ],
     servicesTitle: "Настройте услуги маникюра за несколько минут",
     servicesText:
-      "Добавьте услуги, укажите цену и длительность, чтобы клиент сразу понимал, сколько стоит процедура и сколько времени она занимает.",
+      "Добавьте услуги, укажите формат записи и длительность, чтобы клиент сразу понимал содержание процедуры и сколько времени она занимает.",
     servicesList: [
       "Маникюр",
       "Маникюр с покрытием",
@@ -170,7 +170,7 @@ const copy: Record<SiteLanguage, Copy> = {
       "Укрепление ногтей",
       "Ремонт ногтя"
     ],
-    serviceSample: "Маникюр с покрытием — 90 мин — 650 грн",
+    serviceSample: "Маникюр с покрытием — 90 мин",
     calendarTitle: "Календарь записей для мастера маникюра",
     calendarText:
       "В календаре видно все записи, длительность процедур, свободные окна и загруженность дня. Это помогает не ставить клиентов слишком близко и не терять время между визитами.",
@@ -178,7 +178,7 @@ const copy: Record<SiteLanguage, Copy> = {
     howTitle: "Как работает онлайн-запись",
     howSteps: [
       "Создайте профиль мастера",
-      "Добавьте услуги, цены и длительность",
+      "Добавьте услуги и длительность",
       "Настройте рабочие дни",
       "Получайте записи клиентов онлайн"
     ],
@@ -194,7 +194,7 @@ const copy: Record<SiteLanguage, Copy> = {
     compareRight: [
       "запись клиентов онлайн",
       "календарь с доступным временем",
-      "услуги с ценой и длительностью",
+      "услуги с форматом услуги и длительностью",
       "уведомления в Telegram",
       "меньше ручных переписок"
     ],
@@ -204,8 +204,8 @@ const copy: Record<SiteLanguage, Copy> = {
     telegramCta: "Подключить после регистрации",
     reasonsTitle: "Сценарий рабочего дня мастера маникюра",
     reasons: [
-      "Утро: маникюр с покрытием — 90 мин — 650 грн, запись приходит автоматически в календарь.",
-      "День: коррекция + дизайн — 120 мин — 900 грн, клиент сразу видит длительность и цену.",
+      "Утро: маникюр с покрытием — 90 мин, запись приходит автоматически в календарь.",
+      "День: коррекция + дизайн — 120 мин, клиент сразу видит длительность и формат услуги.",
       "Окно между визитами: система показывает свободный слот на 45 минут для снятия покрытия.",
       "Вечер: повторный клиент записывается сам по ссылке без переписки в мессенджерах.",
       "Перенос визита: статус и время обновляются в календаре без ручных таблиц.",
@@ -228,24 +228,24 @@ const copy: Record<SiteLanguage, Copy> = {
     ],
     nicheFitTitle: "Идеально для мастеров маникюра",
     nicheFitItems: [
-      "Гель-лак — 90 мин — от 650 грн",
-      "Наращивание — 150 мин — от 1200 грн",
-      "Коррекция — 120 мин — от 900 грн",
-      "Педикюр — 75 мин — от 700 грн",
-      "Дизайн ногтей — 30 мин — от 250 грн"
+      "Гель-лак — 90 мин",
+      "Наращивание — 150 мин",
+      "Коррекция — 120 мин",
+      "Педикюр — 75 мин",
+      "Дизайн ногтей — 30 мин"
     ],
-    nicheFitSample: "Маникюр + гель-лак — 90 мин — 700 грн",
+    nicheFitSample: "Маникюр + гель-лак — 90 мин",
     seoBlockTitle: "Программа для записи клиентов для мастеров маникюра",
     seoParagraphs: [
       "Онлайн запись для мастера маникюра давно стала не бонусом, а обязательной частью стабильной загрузки. Когда клиентские обращения идут сразу через Instagram, Telegram и мессенджеры, мастер тратит много времени на уточнения и вручную ищет свободные окна. Timviz решает эту проблему как сервис онлайн-записи: клиент видит доступные слоты, выбирает услугу и моментально создает заявку. В результате онлайн-запись клиентов перестает быть хаотичным процессом, а превращается в понятную систему, где меньше ручной рутины и больше подтвержденных визитов.",
       "Главное преимущество для специалиста — прозрачный календарь записей для мастера маникюра. В одном экране видно, какие процедуры запланированы, сколько времени они занимают и где остаются короткие или длинные окна. Это критично, потому что услуги маникюра отличаются по длительности: базовый маникюр, гель-лак, наращивание, дизайн, коррекция и педикюр занимают разное время. Когда календарь считает это автоматически, график работы мастера становится предсказуемым, а риск накладок между клиентами снижается в разы.",
-      "Timviz работает как программа для записи клиентов, в которой можно заранее настроить каждую услугу: название, цену, длительность и доступность по дням. Клиент до записи понимает, сколько стоит процедура и сколько времени она займет, поэтому меньше уточняющих сообщений и спонтанных отмен. Для мастера это дает сильный эффект по конверсии: вместо длинной переписки сразу приходит структурированная запись. Такой формат особенно полезен тем, кто работает один и совмещает обслуживание клиентов с администрированием расписания.",
+      "Timviz работает как программа для записи клиентов, в которой можно заранее настроить каждую услугу: название, формат записи, длительность и доступность по дням. Клиент до записи понимает, что входит в процедуру и сколько времени она займет, поэтому меньше уточняющих сообщений и спонтанных отмен. Для мастера это дает сильный эффект по конверсии: вместо длинной переписки сразу приходит структурированная запись. Такой формат особенно полезен тем, кто работает один и совмещает обслуживание клиентов с администрированием расписания.",
       "Если вы ищете CRM для мастера маникюра без сложного внедрения, Timviz дает быстрый старт без отдельного сайта и технической настройки. Достаточно создать профиль, добавить услуги маникюра и открыть клиентскую страницу по ссылке. После этого запись клиентов онлайн работает 24/7: люди бронируют время даже вне рабочего дня, а утром у вас уже есть готовые заявки в календаре. Программа для ногтевого мастера в таком формате помогает увеличить загрузку без постоянных звонков и ручной координации.",
       "Практический сценарий выглядит так: утром в расписании стоит маникюр с покрытием на 90 минут, далее коррекция на 120 минут, а между ними остается короткое окно на снятие покрытия. Без системы такие слоты часто теряются, потому что их сложно быстро предложить в переписке. Timviz автоматически показывает доступное время для каждой услуги, поэтому клиент сразу видит подходящий вариант. Это повышает плотность графика без перегруза и делает рабочий день более ровным по доходу и нагрузке.",
       "Отдельно стоит отметить Telegram-уведомления: новые заявки, переносы и отмены приходят сразу, без необходимости постоянно проверять несколько каналов. Для специалиста, который работает руками и не может каждые пять минут отвечать в чат, это критичный инструмент. Telegram-уведомления помогают быстро реагировать на изменения и сохранять контроль над расписанием. В связке с календарем и услугами это формирует полноценный цикл: клиентская запись онлайн, подтверждение, выполнение услуги и повторная запись без лишней ручной работы.",
       "Программа для записи клиентов также помогает выстроить повторные визиты. В nail-сфере многие клиенты возвращаются каждые 2–4 недели, и важно заранее понимать, где есть удобные окна. Когда календарь записей для мастера маникюра всегда актуален, вы быстрее предлагаете альтернативы и реже теряете клиента из-за долгого согласования времени. Это напрямую влияет на выручку: выше доля повторных визитов, меньше пустых часов и меньше ситуаций, когда день формально заполнен, но с неэффективными разрывами.",
       "Для небольших студий Timviz тоже работает эффективно: можно стандартизировать процесс записи, разгрузить администраторские задачи и повысить качество клиентского пути. Сервис онлайн-записи показывает одинаково понятный сценарий для новых и постоянных клиентов: выбор услуги, времени и подтверждение визита. Внутри кабинета мастер или администратор видит ту же структуру, что снижает количество ошибок и недопониманий. Это не перегруженная корпоративная система, а практичный рабочий инструмент для ежедневного применения.",
-      "Поисковые запросы вроде «программа для записи клиентов маникюр», «клиентская запись онлайн» или «онлайн-запись клиентов для мастера маникюра» обычно означают конкретный запрос на порядок и конверсию. Timviz закрывает этот запрос: помогает быстро запуститься, держать график под контролем и принимать записи без постоянного ручного администрирования. Вы получаете понятную CRM для мастера маникюра, где услуги, цены, длительность и расписание связаны в одну систему, которая реально экономит время и помогает зарабатывать стабильнее.",
+      "Поисковые запросы вроде «программа для записи клиентов маникюр», «клиентская запись онлайн» или «онлайн-запись клиентов для мастера маникюра» обычно означают конкретный запрос на порядок и конверсию. Timviz закрывает этот запрос: помогает быстро запуститься, держать график под контролем и принимать записи без постоянного ручного администрирования. Вы получаете понятную CRM для мастера маникюра, где услуги, длительность и расписание связаны в одну систему, которая реально экономит время и помогает зарабатывать стабильнее.",
       "Итоговый результат для мастера — не просто красивый календарь, а управляемый поток записей. Программа для ногтевого мастера позволяет уменьшить хаос в коммуникации, ускорить подтверждение заявок и выстроить рабочий ритм без перегрузки. Когда график работы мастера понятен и прозрачен для клиента, доверие к специалисту растет, а запись клиентов онлайн превращается в устойчивый канал продаж. Именно поэтому Timviz подходит как для старта частной практики, так и для роста уже работающего кабинета маникюра.",
       "В повседневной работе особенно ценны микросценарии, которые съедают время: срочный перенос, запись «на сегодня», изменение услуги в последний момент. Когда такие ситуации решаются вручную, мастер быстро устает от администрирования. В Timviz изменения сразу отражаются в календаре, а клиент видит только актуальные слоты. Это повышает операционную устойчивость даже в загруженные дни. Сервис онлайн-записи в таком формате помогает не терять фокус на качестве процедуры и поддерживать высокий стандарт обслуживания без перегруза.",
       "Для продвижения услуг маникюра онлайн важна скорость ответа, и здесь автоматизированная запись выигрывает у чатов. Клиент не ждет подтверждения, а завершает бронирование в тот момент, когда готов записаться. Для мастера это означает больше закрытых заявок и меньше «остывших» лидов. Программа для записи клиентов работает как постоянный конвертер спроса в визиты: пока вы заняты с текущим клиентом, новые заявки продолжают приходить в систему и формировать заполненный, предсказуемый график."
@@ -255,15 +255,15 @@ const copy: Record<SiteLanguage, Copy> = {
     faq: [
       {
         q: "Что такое Timviz для мастера маникюра?",
-        a: "Timviz — это сервис онлайн-записи для мастеров красоты с календарем записей, услугами, ценами и графиком работы."
+        a: "Timviz — это сервис онлайн-записи для мастеров красоты с календарем записей, услугами, параметрами услуг и графиком работы."
       },
       {
         q: "Можно ли принимать онлайн-запись клиентов?",
         a: "Да, клиенты выбирают услугу и время сами, а запись сразу появляется в вашем календаре."
       },
       {
-        q: "Можно ли указать цену и длительность услуг?",
-        a: "Да, вы задаете стоимость и длительность каждой услуги маникюра отдельно."
+        q: "Можно ли указать формат услуги и длительность услуг?",
+        a: "Да, вы задаете параметр услуги и длительность каждой услуги маникюра отдельно."
       },
       {
         q: "Подходит ли Timviz для одного мастера?",
@@ -294,7 +294,7 @@ const copy: Record<SiteLanguage, Copy> = {
     terms: "Условия использования",
     footerText: "Timviz для бизнеса · онлайн-запись клиентов и управление услугами",
     screenshotAltCalendar: "Календарь записей для мастера маникюра в Timviz",
-    screenshotAltServices: "Услуги и цены мастера маникюра в Timviz",
+    screenshotAltServices: "Услуги и длительность мастера маникюра в Timviz",
     screenshotAltTelegram: "Telegram-уведомления о новых записях Timviz"
   },
   uk: {
@@ -351,8 +351,8 @@ const copy: Record<SiteLanguage, Copy> = {
         text: "Усі записи в одному місці."
       },
       {
-        title: "Послуги з ціною",
-        text: "Клієнт бачить вартість і тривалість."
+        title: "Послуги з форматом послуги",
+        text: "Клієнт бачить параметр послуги і тривалість."
       },
       {
         title: "Графік роботи",
@@ -369,7 +369,7 @@ const copy: Record<SiteLanguage, Copy> = {
     ],
     servicesTitle: "Налаштуйте послуги манікюру за кілька хвилин",
     servicesText:
-      "Додайте послуги, вкажіть ціну й тривалість, щоб клієнт одразу розумів вартість і час процедури.",
+      "Додайте послуги, вкажіть формат послуги й тривалість, щоб клієнт одразу розумів параметр послуги і час процедури.",
     servicesList: [
       "Манікюр",
       "Манікюр із покриттям",
@@ -382,7 +382,7 @@ const copy: Record<SiteLanguage, Copy> = {
       "Зміцнення нігтів",
       "Ремонт нігтя"
     ],
-    serviceSample: "Манікюр + гель-лак — 90 хв — 700 грн",
+    serviceSample: "Манікюр + гель-лак — 90 хв",
     calendarTitle: "Календар записів для майстра манікюру",
     calendarText:
       "У календарі видно всі записи, тривалість процедур, вільні вікна та завантаженість дня. Це допомагає не створювати накладок і не втрачати час між візитами.",
@@ -401,7 +401,7 @@ const copy: Record<SiteLanguage, Copy> = {
     compareRight: [
       "запис клієнтів онлайн",
       "календар із доступним часом",
-      "послуги з ціною і тривалістю",
+      "послуги з форматом послуги і тривалістю",
       "сповіщення в Telegram",
       "менше ручних переписок"
     ],
@@ -411,11 +411,11 @@ const copy: Record<SiteLanguage, Copy> = {
     telegramCta: "Підключити після реєстрації",
     reasonsTitle: "Сценарій робочого дня майстра манікюру",
     reasons: [
-      "09:00 — Манікюр із покриттям — 90 хв — 700 грн: запис одразу відображається у календарі.",
-      "11:00 — Корекція — 120 хв — 900 грн: довга процедура планується без накладок.",
-      "14:00 — Зняття покриття — 45 хв — 350 грн: короткий слот закриває вільне вікно.",
-      "15:30 — Дизайн нігтів — 30 хв — 250 грн: клієнт бачить ціну і тривалість до бронювання.",
-      "17:00 — Педикюр — 75 хв — 800 грн: вечірній запис без зайвих узгоджень у месенджерах.",
+      "09:00 — Манікюр із покриттям — 90 хв: запис одразу відображається у календарі.",
+      "11:00 — Корекція — 120 хв: довга процедура планується без накладок.",
+      "14:00 — Зняття покриття — 45 хв: короткий слот закриває вільне вікно.",
+      "15:30 — Дизайн нігтів — 30 хв: клієнт бачить формат послуги і тривалість до бронювання.",
+      "17:00 — Педикюр — 75 хв: вечірній запис без зайвих узгоджень у месенджерах.",
       "20:00 — Нова заявка на завтра: Telegram-сповіщення допомагає не пропустити запис."
     ],
     trustTitle: "Чому майстри манікюру обирають Timviz",
@@ -435,7 +435,7 @@ const copy: Record<SiteLanguage, Copy> = {
     ],
     nicheFitTitle: "Ідеально для майстрів манікюру",
     nicheFitItems: ["гель-лак", "нарощування", "дизайн", "корекція", "педикюр"],
-    nicheFitSample: "Манікюр + гель-лак — 90 хв — 700 грн",
+    nicheFitSample: "Манікюр + гель-лак — 90 хв",
     seoBlockTitle: "Програма для запису клієнтів для майстрів манікюру",
     seoParagraphs: ukSeoParagraphs,
     otherTitle: "Інші напрямки",
@@ -443,15 +443,15 @@ const copy: Record<SiteLanguage, Copy> = {
     faq: [
       {
         q: "Що таке Timviz для майстра манікюру?",
-        a: "Timviz — це сервіс онлайн-запису для майстрів краси з календарем записів, послугами, цінами й графіком роботи."
+        a: "Timviz — це сервіс онлайн-запису для майстрів краси з календарем записів, послугами, параметрами послуг й графіком роботи."
       },
       {
         q: "Чи можна приймати онлайн-запис клієнтів?",
         a: "Так, клієнти самі обирають послугу й час, а запис одразу потрапляє у ваш календар."
       },
       {
-        q: "Чи можна вказати ціну і тривалість послуг?",
-        a: "Так, ви задаєте вартість і тривалість кожної послуги манікюру окремо."
+        q: "Чи можна вказати формат послуги і тривалість послуг?",
+        a: "Так, ви задаєте параметр послуги і тривалість кожної послуги манікюру окремо."
       },
       {
         q: "Чи підходить Timviz для одного майстра?",
@@ -482,14 +482,14 @@ const copy: Record<SiteLanguage, Copy> = {
     terms: "Умови використання",
     footerText: "Timviz для бізнесу · онлайн-запис клієнтів і керування послугами",
     screenshotAltCalendar: "Календар записів для майстра манікюру в Timviz",
-    screenshotAltServices: "Послуги та ціни майстра манікюру в Timviz",
+    screenshotAltServices: "Послуги та тривалість майстра манікюру в Timviz",
     screenshotAltTelegram: "Telegram-сповіщення про нові записи Timviz"
   },
   en: {
     home: "Home",
     forBusiness: "For business",
     title: "Online booking for nail technicians",
-    subtitle: "Accept client bookings online, manage your calendar, services, pricing and working hours in one dashboard.",
+    subtitle: "Accept client bookings online, manage your calendar, services, service setup and working hours in one dashboard.",
     ctaPrimary: "Start taking bookings in 2 minutes",
     ctaSecondary: "See features",
     ctaAfterSolution: "Start taking bookings in 2 minutes",
@@ -510,8 +510,8 @@ const copy: Record<SiteLanguage, Copy> = {
         text: "It is hard to quickly see who booked, for what time and for which service."
       },
       {
-        title: "Service pricing and duration are hard to track",
-        text: "Manicure services often have different duration and pricing rules."
+        title: "Service service setup and duration are hard to track",
+        text: "Manicure services often have different duration and service setup rules."
       },
       {
         title: "Time overlaps happen",
@@ -539,8 +539,8 @@ const copy: Record<SiteLanguage, Copy> = {
         text: "Appointments, service duration and free slots are visible in one place."
       },
       {
-        title: "Services with price and duration",
-        text: "Clients see pricing upfront and understand how long each service takes."
+        title: "Services with duration",
+        text: "Clients see service setup upfront and understand how long each service takes."
       },
       {
         title: "Working days and free slots",
@@ -557,7 +557,7 @@ const copy: Record<SiteLanguage, Copy> = {
     ],
     servicesTitle: "Set up nail services in minutes",
     servicesText:
-      "Add services with price and duration so clients understand cost and timing before booking.",
+      "Add services with duration so clients understand service details and timing before booking.",
     servicesList: [
       "Manicure",
       "Manicure with coating",
@@ -570,7 +570,7 @@ const copy: Record<SiteLanguage, Copy> = {
       "Nail strengthening",
       "Nail repair"
     ],
-    serviceSample: "Manicure with coating — 90 min — 650 UAH",
+    serviceSample: "Manicure with coating — 90 min",
     calendarTitle: "Booking calendar for nail technicians",
     calendarText:
       "In the calendar you can see all bookings, service durations, open slots and daily workload. It helps avoid overlaps and reduce idle gaps between appointments.",
@@ -578,7 +578,7 @@ const copy: Record<SiteLanguage, Copy> = {
     howTitle: "How online booking works",
     howSteps: [
       "Create your professional profile",
-      "Add services, prices and duration",
+      "Add services and duration",
       "Set working days",
       "Receive client bookings online"
     ],
@@ -594,7 +594,7 @@ const copy: Record<SiteLanguage, Copy> = {
     compareRight: [
       "online client booking",
       "calendar with available time",
-      "services with price and duration",
+      "services with duration",
       "Telegram notifications",
       "less manual messaging"
     ],
@@ -604,11 +604,11 @@ const copy: Record<SiteLanguage, Copy> = {
     telegramCta: "Connect after sign up",
     reasonsTitle: "Nail technician day scenario",
     reasons: [
-      "09:00 — Manicure with coating — 90 min — 700 UAH: confirmed booking appears in the calendar instantly.",
-      "11:00 — Nail correction — 120 min — 900 UAH: long procedure is scheduled with no overlap.",
-      "14:00 — Coating removal — 45 min — 350 UAH: short slot fills an idle window.",
-      "15:30 — Nail design — 30 min — 250 UAH: client sees duration and pricing before booking.",
-      "17:00 — Pedicure — 75 min — 800 UAH: evening slot is booked online without extra messaging.",
+      "09:00 — Manicure with coating — 90 min: confirmed booking appears in the calendar instantly.",
+      "11:00 — Nail correction — 120 min: long procedure is scheduled with no overlap.",
+      "14:00 — Coating removal — 45 min: short slot fills an idle window.",
+      "15:30 — Nail design — 30 min: client sees duration and service setup before booking.",
+      "17:00 — Pedicure — 75 min: evening slot is booked online without extra messaging.",
       "20:00 — New booking for tomorrow: Telegram alert helps you react immediately."
     ],
     trustTitle: "Why nail technicians trust Timviz",
@@ -628,18 +628,18 @@ const copy: Record<SiteLanguage, Copy> = {
     ],
     nicheFitTitle: "Perfect for nail technicians",
     nicheFitItems: ["gel polish", "extensions", "nail design", "correction", "pedicure"],
-    nicheFitSample: "Manicure + gel polish — 90 min — 700 UAH",
+    nicheFitSample: "Manicure + gel polish — 90 min",
     seoBlockTitle: "Client booking software for nail technicians",
     seoParagraphs: [
       "For nail technicians, online booking is no longer a nice-to-have feature. It is a core part of predictable daily revenue. When requests come from Instagram, Telegram and other chats at the same time, it is easy to miss a message, confirm the wrong time, or leave a lead without a reply. Timviz fixes that by turning messaging chaos into one structured flow. Clients choose a service and a time slot on their own, while you receive a clear confirmed booking in one calendar.",
       "A manicure business usually combines services with very different durations. Basic manicure, gel polish, nail correction, design and pedicure all require different timing. Without a proper system, appointments overlap, breaks become random, and the day feels overloaded. Timviz helps you manage this complexity by showing service duration inside the booking calendar and by exposing only relevant available time to clients. This improves planning and keeps your work rhythm stable.",
-      "Many specialists search for client booking software because they want fewer manual conversations and more confirmed appointments. Timviz gives exactly that: a practical online booking setup where pricing, service duration and schedule are connected. Clients see what they book before they submit a request. This reduces misunderstandings and improves conversion from inquiry to visit.",
+      "Many specialists search for client booking software because they want fewer manual conversations and more confirmed appointments. Timviz gives exactly that: a practical online booking setup where service setup, service duration and schedule are connected. Clients see what they book before they submit a request. This reduces misunderstandings and improves conversion from inquiry to visit.",
       "Timviz also works as a lightweight CRM for solo nail professionals. You do not need a separate website, custom integrations or long onboarding. You create a profile, add services, set working hours and share one booking link. From that moment, your online booking channel works 24/7. Clients can book when they are ready, even outside your working hours, and your next day starts with a structured calendar instead of scattered chats.",
       "A real workday example shows the impact quickly. In the morning you can run a 90-minute manicure with coating, then a 120-minute correction, and later fill a short 30-minute nail design slot. If you do this manually in chat, the chance of overlap is high. With Timviz, each service carries its own duration and the system protects your schedule logic. This means fewer delays, less stress and better client experience.",
       "Telegram notifications are a major operational advantage. New bookings, cancellations and reschedules arrive instantly while you are busy with a current client. You do not need to constantly monitor multiple channels. This responsiveness helps you keep control over your day and react before empty slots become lost revenue.",
       "Repeat visits are especially important in nail services, where clients return every few weeks. A clear booking calendar makes it easier to offer the next convenient slot and lock the repeat visit faster. Timviz supports this behavior by keeping your availability transparent. As a result, retention grows naturally because clients can rebook in seconds.",
-      "For small studios, Timviz provides the same value at a team level. Structured online booking reduces admin load, helps standardize service setup, and improves quality across all touchpoints. Clients get a consistent experience: service list, duration, pricing and available time in one clear path. This consistency builds trust and increases the chance of repeat booking.",
-      "People searching for terms like online booking for nail technicians, booking calendar, or manicure booking app usually have a direct goal: stable bookings without operational chaos. Timviz matches that intent by combining booking page, scheduling, pricing and notifications in one practical system. It is built for daily work, not for complex enterprise rollout.",
+      "For small studios, Timviz provides the same value at a team level. Structured online booking reduces admin load, helps standardize service setup, and improves quality across all touchpoints. Clients get a consistent experience: service list, duration, service setup and available time in one clear path. This consistency builds trust and increases the chance of repeat booking.",
+      "People searching for terms like online booking for nail technicians, booking calendar, or manicure booking app usually have a direct goal: stable bookings without operational chaos. Timviz matches that intent by combining booking page, scheduling, service setup and notifications in one practical system. It is built for daily work, not for complex enterprise rollout.",
       "In the long run, structured booking is not only about convenience. It affects your brand perception and revenue quality. When clients can book quickly, see transparent service details, and arrive on time to a well-organized schedule, they are more likely to return and recommend you. Timviz helps nail professionals move from manual coordination to scalable booking operations with clear conversion benefits.",
       "Another important benefit is better control of idle windows. In manual scheduling, short gaps between long services are often wasted because they are hard to sell quickly. Timviz makes those windows visible and bookable, so you can fill them with quick procedures and improve daily utilization. Over time, this creates a more balanced workload and a healthier income pattern.",
       "In short, Timviz gives nail technicians what matters most for growth: reliable online client booking, a duration-aware schedule, transparent services, and instant Telegram updates. It reduces routine admin work, improves conversion, and helps you build a stable booking engine that supports both solo practice and studio growth."
@@ -649,15 +649,15 @@ const copy: Record<SiteLanguage, Copy> = {
     faq: [
       {
         q: "What is Timviz for nail technicians?",
-        a: "Timviz is online booking software with appointment calendar, services, pricing and schedule management."
+        a: "Timviz is online booking software with appointment calendar, services, service setup and schedule management."
       },
       {
         q: "Can I accept online client bookings?",
         a: "Yes, clients choose service and time, and bookings appear instantly in your calendar."
       },
       {
-        q: "Can I set price and duration per service?",
-        a: "Yes, each manicure service can have its own price and duration."
+        q: "Can I set service details and duration per service?",
+        a: "Yes, each manicure service can have its own service details and duration."
       },
       {
         q: "Is Timviz suitable for solo professionals?",
@@ -688,7 +688,7 @@ const copy: Record<SiteLanguage, Copy> = {
     terms: "Terms of use",
     footerText: "Timviz for business · online client booking and service management",
     screenshotAltCalendar: "Booking calendar for nail technicians in Timviz",
-    screenshotAltServices: "Nail technician services and pricing in Timviz",
+    screenshotAltServices: "Nail technician services and service setup in Timviz",
     screenshotAltTelegram: "Telegram notifications for new Timviz bookings"
   }
 };
@@ -715,10 +715,10 @@ export function buildManicureMetadata(lang: SiteLanguage, pathname: string): Met
 
   const description =
     lang === "ru"
-      ? "Timviz — сервис онлайн-записи для мастеров маникюра: календарь клиентов, услуги, цены, длительность процедур, график работы и Telegram-уведомления."
+      ? "Timviz — сервис онлайн-записи для мастеров маникюра: календарь клиентов, услуги, длительность процедур, график работы и Telegram-уведомления."
       : lang === "uk"
-        ? "Timviz — сервіс онлайн-запису для майстрів манікюру: календар клієнтів, послуги, ціни, тривалість процедур, графік роботи та Telegram-сповіщення."
-        : "Timviz is online booking software for nail technicians: client calendar, services, pricing, procedure duration, work schedule and Telegram notifications.";
+        ? "Timviz — сервіс онлайн-запису для майстрів манікюру: календар клієнтів, послуги, тривалість процедур, графік роботи та Telegram-сповіщення."
+        : "Timviz is online booking software for nail technicians: client calendar, services, service setup, procedure duration, work schedule and Telegram notifications.";
 
   const metadata = buildMetadata(
     pathname,
@@ -816,7 +816,6 @@ export default function ManicureLanding({ language }: { language: SiteLanguage }
           <p>{t.subtitle}</p>
           <div className="business-hero-actions">
             <a className="business-primary" href="/pro/create-account">{ux.cta}</a>
-            <a className="business-secondary" href="/pro/create-account">{ux.cta}</a>
           </div>
           <small>{ux.ctaHint}</small>
         </div>

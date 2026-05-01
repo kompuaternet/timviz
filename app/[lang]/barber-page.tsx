@@ -64,7 +64,7 @@ type Copy = {
 const ukSeoParagraphs = [
   "Для сучасного барбера онлайн запис барбер стає не додатковим каналом, а основою стабільного графіка. Коли клієнти пишуть у кілька месенджерів одночасно, частина звернень губиться, а майстер витрачає час на ручну координацію. Timviz працює як програма для барбершопу, що переводить запис клієнтів онлайн у структурований процес. Клієнт обирає послугу та час самостійно, а барбер отримує готовий візит у календарі. Це зменшує навантаження на адміністративні задачі, прискорює підтвердження і дає змогу більше уваги приділяти сервісу та якості роботи з клієнтом.",
   "У барберській практиці різна тривалість послуг критично впливає на завантаження. Швидка стрижка, оформлення бороди, fade або комплексні послуги мають різний таймінг, і без системи легко зробити накладку. Саме тому календар записів барбер у Timviz показує не просто список візитів, а реальну картину дня: тривалість, вільні вікна, підтвердження та зміни. Ви бачите, де є запас часу, де краще не ставити довгі послуги і як утримувати комфортний ритм без затримок. Такий підхід формує прогнозований день і зменшує стрес для майстра та клієнта.",
-  "Коли запис клієнтів барбершоп ведеться вручну в чатах, легко пропустити важливі деталі: точний час, формат послуги, додаткові побажання клієнта. Timviz прибирає цю невизначеність. Усі дані зберігаються в одному місці, а структура запису залишається зрозумілою навіть у пікові години. Програма для барбершопу дозволяє налаштувати послуги, ціни та тривалість так, щоб клієнт одразу бачив умови і бронював коректний слот. У результаті запис клієнтів онлайн стає передбачуваним процесом, де менше помилок, менше переносів і менше втрат часу на повторні уточнення.",
+  "Коли запис клієнтів барбершоп ведеться вручну в чатах, легко пропустити важливі деталі: точний час, формат послуги, додаткові побажання клієнта. Timviz прибирає цю невизначеність. Усі дані зберігаються в одному місці, а структура запису залишається зрозумілою навіть у пікові години. Програма для барбершопу дозволяє налаштувати послуги й тривалість так, щоб клієнт одразу бачив умови і бронював коректний слот. У результаті запис клієнтів онлайн стає передбачуваним процесом, де менше помилок, менше переносів і менше втрат часу на повторні уточнення.",
   "Для майстра, який працює самостійно, важлива проста CRM для барбера без складного впровадження. Timviz закриває цю потребу: запуск займає кілька хвилин, не потрібен окремий сайт і не потрібні технічні налаштування. Ви створюєте профіль, додаєте послуги й відкриваєте посилання для запису. Далі клієнти бронюють час самостійно, а система збирає все в один календар. Такий формат дає швидкий старт навіть тим, хто раніше працював тільки через месенджери. При цьому онлайн запис барбер не виглядає спрощено: клієнт отримує сучасний, зручний сценарій бронювання і вищий рівень сервісу.",
   "Календар записів барбер особливо корисний, коли в день багато дрібних змін. Хтось переносить візит, хтось додає бороду до стрижки, хтось просить інший слот. У чатах це створює хаос, а в Timviz відображається як оновлений структурований розклад. Ви швидко бачите нову картину та приймаєте рішення без ручного перерахунку. Запис клієнтів барбершоп стає керованим і прозорим, а робочий день — більш дисциплінованим. Це важливо і для приватного барбера, і для команди, де кілька майстрів працюють паралельно й потрібно уникати конфліктів у часі.",
   "Telegram-сповіщення додатково підсилюють контроль. Майстер одразу отримує сигнал про новий запис, зміну або скасування, навіть коли зайнятий з клієнтом. Це допомагає не пропускати важливі оновлення та тримати високий темп без постійного перемикання між застосунками. Для багатьох це ключова частина того, як працює CRM для барбера в реальності: не просто зберігання записів, а швидка реакція на події. Коли запис клієнтів онлайн поєднаний з миттєвими сповіщеннями, зростає точність графіка і знижується ризик ситуацій, коли майстер дізнається про зміну занадто пізно.",
@@ -114,7 +114,7 @@ const copy: Record<SiteLanguage, Copy> = {
     solutionCards: [
       { title: "Онлайн-запис 24/7", text: "Клієнти записуються самі без дзвінків." },
       { title: "Календар записів", text: "Усі записи в одному місці." },
-      { title: "Послуги з ціною", text: "Клієнт бачить ціну і час." },
+      { title: "Послуги з форматом послуги", text: "Клієнт бачить формат послуги і час." },
       { title: "Графік роботи", text: "Контроль робочих днів." },
       { title: "Telegram", text: "Записи приходять миттєво." },
       { title: "Сторінка запису", text: "Клієнти записуються самі." }
@@ -122,14 +122,14 @@ const copy: Record<SiteLanguage, Copy> = {
     nicheTitle: "Ідеально для барберів і барбершопів",
     nicheText: "Timviz підходить для щільного графіка барбершопу та різних форматів чоловічих послуг.",
     nicheItems: ["чоловічі стрижки", "fade", "борода", "комплексні послуги", "укладка"],
-    nicheSample: "Стрижка + борода — 60 хв — 500 грн",
+    nicheSample: "Стрижка + борода — 60 хв",
     dayScenarioTitle: "Сценарій робочого дня барбера",
     dayScenarioItems: [
-      "10:00 — Чоловіча стрижка — 45 хв — 450 грн: короткий слот для швидкого старту зміни.",
-      "11:00 — Оформлення бороди — 30 хв — 300 грн: зручно заповнює проміжок між довгими послугами.",
-      "12:00 — Стрижка + борода — 60 хв — 500 грн: комплекс бронюється без ручних уточнень.",
-      "14:30 — Fade + укладка — 75 хв — 700 грн: довга послуга з правильним буфером часу.",
-      "18:00 — Експрес-стрижка — 30 хв — 350 грн: вечірнє вікно закривається онлайн."
+      "10:00 — Чоловіча стрижка — 45 хв: короткий слот для швидкого старту зміни.",
+      "11:00 — Оформлення бороди — 30 хв: зручно заповнює проміжок між довгими послугами.",
+      "12:00 — Стрижка + борода — 60 хв: комплекс бронюється без ручних уточнень.",
+      "14:30 — Fade + укладка — 75 хв: довга послуга з правильним буфером часу.",
+      "18:00 — Експрес-стрижка — 30 хв: вечірнє вікно закривається онлайн."
     ],
     howTitle: "Як це працює",
     howSteps: ["Створіть профіль", "Додайте послуги", "Почніть приймати записи"],
@@ -160,7 +160,7 @@ const copy: Record<SiteLanguage, Copy> = {
     faqTitle: "FAQ",
     faq: [
       { q: "Як працює онлайн-запис для барбера?", a: "Клієнт обирає послугу й час, а запис одразу з'являється у вашому календарі." },
-      { q: "Чи можна задати різну тривалість послуг?", a: "Так, для стрижки, бороди або комплексу задається окрема тривалість і ціна." },
+      { q: "Чи можна задати різну тривалість послуг?", a: "Так, для стрижки, бороди або комплексу задається окрема тривалість і формат послуги." },
       { q: "Чи підходить Timviz для одного барбера?", a: "Так, сервіс підходить і приватному майстру, і невеликому барбершопу." },
       { q: "Чи потрібен окремий сайт?", a: "Ні, достатньо профілю Timviz і посилання на клієнтську сторінку запису." },
       { q: "Чи є календар записів барбер?", a: "Так, ви бачите всі візити, статуси і вільні вікна в одному календарі." },
@@ -175,7 +175,7 @@ const copy: Record<SiteLanguage, Copy> = {
     terms: "Умови використання",
     footerText: "Timviz для бізнесу · онлайн-запис клієнтів і керування послугами",
     altCalendar: "Календар записів для барберів у Timviz",
-    altServices: "Послуги та ціни барбера у Timviz",
+    altServices: "Послуги та тривалість барбера у Timviz",
     altTelegram: "Telegram сповіщення про записи для барберів у Timviz"
   },
   ru: {
@@ -205,7 +205,7 @@ const copy: Record<SiteLanguage, Copy> = {
     solutionCards: [
       { title: "Онлайн-запись 24/7", text: "Клиенты записываются сами без звонков." },
       { title: "Календарь записей", text: "Все записи в одном месте." },
-      { title: "Услуги с ценой", text: "Клиент видит стоимость и длительность." },
+      { title: "Услуги с форматом услуги", text: "Клиент видит параметр услуги и длительность." },
       { title: "График работы", text: "Настройте рабочие дни." },
       { title: "Telegram", text: "Получайте записи мгновенно." },
       { title: "Страница записи", text: "Клиенты записываются сами." }
@@ -213,19 +213,19 @@ const copy: Record<SiteLanguage, Copy> = {
     nicheTitle: "Идеально для барберов и барбершопов",
     nicheText: "Нишевые сценарии для мужского зала: от экспресс-стрижек до комплексных услуг с бородой.",
     nicheItems: [
-      "Мужская стрижка — 45 мин — 450 грн: быстрый поток без накладок в пиковые часы.",
-      "Стрижка + борода — 60 мин — 500 грн: готовый комплекс с точной длительностью.",
-      "Fade + укладка — 75 мин — 700 грн: длинный слот учитывается в расписании автоматически.",
-      "Оформление бороды — 30 мин — 300 грн: удобно закрывать короткие окна между визитами."
+      "Мужская стрижка — 45 мин: быстрый поток без накладок в пиковые часы.",
+      "Стрижка + борода — 60 мин: готовый комплекс с точной длительностью.",
+      "Fade + укладка — 75 мин: длинный слот учитывается в расписании автоматически.",
+      "Оформление бороды — 30 мин: удобно закрывать короткие окна между визитами."
     ],
-    nicheSample: "Стрижка + борода — 60 мин — 500 грн",
+    nicheSample: "Стрижка + борода — 60 мин",
     dayScenarioTitle: "Сценарий рабочего дня барбера",
     dayScenarioItems: [
-      "10:00 — Мужская стрижка — 45 мин — 450 грн: старт смены с короткого слота.",
-      "11:00 — Оформление бороды — 30 мин — 300 грн: удобное заполнение окна между длинными услугами.",
-      "12:00 — Стрижка + борода — 60 мин — 500 грн: комплексная запись без ручных уточнений.",
-      "14:30 — Fade + укладка — 75 мин — 700 грн: длинная услуга с буфером в календаре.",
-      "18:00 — Экспресс-стрижка — 30 мин — 350 грн: вечерний слот бронируется онлайн за пару кликов."
+      "10:00 — Мужская стрижка — 45 мин: старт смены с короткого слота.",
+      "11:00 — Оформление бороды — 30 мин: удобное заполнение окна между длинными услугами.",
+      "12:00 — Стрижка + борода — 60 мин: комплексная запись без ручных уточнений.",
+      "14:30 — Fade + укладка — 75 мин: длинная услуга с буфером в календаре.",
+      "18:00 — Экспресс-стрижка — 30 мин: вечерний слот бронируется онлайн за пару кликов."
     ],
     howTitle: "Как это работает",
     howSteps: ["Создайте профиль", "Добавьте услуги", "Начните принимать записи"],
@@ -233,7 +233,7 @@ const copy: Record<SiteLanguage, Copy> = {
     compareLeftTitle: "Без Timviz",
     compareRightTitle: "С Timviz",
     compareLeft: ["записи в мессенджерах", "ручные уточнения", "накладки в графике", "потерянные сообщения"],
-    compareRight: ["онлайн-запись клиентов", "единый календарь", "цены и длительность", "Telegram-уведомления"],
+    compareRight: ["онлайн-запись клиентов", "единый календарь", "длительность", "Telegram-уведомления"],
     telegramTitle: "Получайте записи в Telegram",
     telegramText: "Timviz отправляет новые записи и изменения графика в Telegram без задержек.",
     trustTitle: "Почему барберы переходят на Timviz",
@@ -255,13 +255,13 @@ const copy: Record<SiteLanguage, Copy> = {
     seoParagraphs: [
       "Онлайн запись барбер сегодня напрямую влияет на загрузку кресла и ежедневную выручку. Когда клиенты бронируют через разные чаты, барбер тратит часы на согласования, а часть заявок теряется в переписках. Timviz переводит этот процесс в понятный формат: клиент выбирает услугу, время и сразу создает подтвержденную запись. Для мастера это означает меньше ручной рутины и больше контроля над рабочим днём. Запись клиентов онлайн становится стабильным каналом, а не хаотичным потоком сообщений, который сложно администрировать в пиковые часы.",
       "В барбершопе особенно важна точная длительность услуг. Мужская стрижка, fade, оформление бороды и комплексные услуги занимают разное время, и ошибки в планировании быстро приводят к задержкам. Календарь записей барбер в Timviz показывает фактическую структуру дня: где длинные процедуры, где короткие окна, где нужен буфер. Вы видите расписание в реальном времени и не ставите клиентов вплотную, когда это технически невозможно. В итоге сервис становится предсказуемым для клиента, а график — управляемым для мастера.",
-      "Timviz работает как программа для барбершопа, где все базовые процессы собраны в одном кабинете: услуги, цены, длительность, записи и статусы визитов. Клиент до бронирования видит стоимость и время, поэтому меньше уточняющих сообщений и переносов из-за недопонимания. Для бизнеса это повышает конверсию из обращения в подтвержденный визит. Запись клиентов барбершоп проходит быстрее, потому что человек сразу выбирает подходящий слот, а администратор или барбер получает структурированную заявку без дополнительных переписок.",
+      "Timviz работает как программа для барбершопа, где все базовые процессы собраны в одном кабинете: услуги, длительность, записи и статусы визитов. Клиент до бронирования видит параметры записи и время, поэтому меньше уточняющих сообщений и переносов из-за недопонимания. Для бизнеса это повышает конверсию из обращения в подтвержденный визит. Запись клиентов барбершоп проходит быстрее, потому что человек сразу выбирает подходящий слот, а администратор или барбер получает структурированную заявку без дополнительных переписок.",
       "Если мастер работает самостоятельно, ему нужна CRM для барбера без тяжёлого внедрения и долгой настройки. В Timviz можно стартовать за несколько минут: создать профиль, добавить услуги и открыть ссылку на запись в Instagram или Telegram. Отдельный сайт не обязателен, а клиентская запись онлайн уже готова к работе. Такой подход особенно удобен частным барберам, которые хотят выглядеть профессионально и при этом не тратить бюджет на сложные CRM-системы. Все ключевые задачи решаются в одном интерфейсе.",
       "Для команды из нескольких мастеров система полезна ещё сильнее. Запись клиентов барбершопа часто страдает от пересечений, когда разные администраторы ведут расписание в отдельных чатах. Timviz устраняет этот риск за счёт централизованного календаря: каждый специалист видит свои слоты, а руководитель — общую картину загрузки. Это помогает распределять поток по мастерам, быстро находить окна и избегать конфликтов времени. В результате растет качество сервиса и снижается количество «ручных» операционных ошибок на смене.",
       "Реальный рабочий сценарий: утром идут короткие стрижки по 30–45 минут, в обед — комплекс стрижка + борода на 60 минут, вечером — более длинные услуги с укладкой. Без системы такие комбинации часто дают каскад задержек. Календарь записей барбер в Timviz автоматически держит структуру, показывает доступность и защищает от двойных броней. Для клиента это выглядит как быстрый и понятный сервис онлайн-записи, а для барбера — как ровный рабочий день без лишнего стресса и провалов между визитами.",
       "Ещё один ключевой инструмент — Telegram-уведомления. Новые заявки, переносы и отмены приходят моментально, поэтому мастер не пропускает изменения, даже когда работает с клиентом. Это особенно важно для барбера в плотном графике, где каждая пропущенная запись — потерянный доход. В связке с CRM для барбера уведомления дают оперативность: вы быстро реагируете, подтверждаете визиты и держите расписание актуальным. Такой цикл повышает дисциплину клиентов и снижает число пустых слотов в течение недели.",
       "По поисковым запросам вроде «онлайн запись барбершоп», «программа для барбершопа» или «запись клиентов онлайн для барбера» пользователи обычно ищут конкретный результат: меньше хаоса и больше подтвержденных визитов. Timviz закрывает этот запрос за счёт прозрачного клиентского пути и чёткого календаря. Человек выбирает услугу и время без ожидания ответа, а бизнес получает заявку уже в готовом формате. Это улучшает конверсию и уменьшает нагрузку на администратора, потому что меньше действий выполняется вручную.",
-      "Для роста барбершопа важен не только маркетинг, но и предсказуемая операционка. Программа для барбершопа должна помогать не терять клиентов и равномерно заполнять день. Timviz именно это и делает: поддерживает структуру расписания, дает контроль над ценами и длительностью, а также упрощает повторные визиты. Когда запись клиентов барбершоп ведется системно, легче планировать загрузку мастеров, удерживать лояльных клиентов и увеличивать средний чек за счёт комплексных услуг.",
+      "Для роста барбершопа важен не только маркетинг, но и предсказуемая операционка. Программа для барбершопа должна помогать не терять клиентов и равномерно заполнять день. Timviz именно это и делает: поддерживает структуру расписания, дает контроль над параметрами услуг и длительностью, а также упрощает повторные визиты. Когда запись клиентов барбершоп ведется системно, легче планировать загрузку мастеров, удерживать лояльных клиентов и увеличивать средний чек за счёт комплексных услуг.",
       "В итоге Timviz — это практичный сервис онлайн-записи, который помогает барберам перейти от переписок к управляемому процессу. Онлайн запись барбер, централизованный календарь, клиентская страница, Telegram-уведомления и удобная CRM для барбера работают как единая система. Вы меньше времени тратите на администрирование и больше — на качество стрижек и сервис. А клиент получает то, что ценит больше всего: понятную запись, точное время и уверенность, что визит состоится без накладок.",
       "Дополнительная ценность сервиса — контроль коротких и длинных услуг в одном графике. В барбер-практике часто чередуются стрижки на 30–45 минут и комплексные визиты на 60–90 минут. Если эти потоки не структурировать, появляются провалы между клиентами или переработки в конце дня. Timviz автоматически удерживает ритм расписания и помогает использовать каждое окно рационально. Это делает запись клиентов барбершоп более прибыльной: меньше потерь времени, выше плотность визитов и стабильнее средняя выручка по смене.",
       "Важно и то, что система легко масштабируется по мере роста. Сегодня вы ведете запись как частный мастер, а через несколько месяцев подключаете второго и третьего специалиста. При этом не нужно менять инструмент или переносить данные в новую CRM. Программа для барбершопа остается той же, а процессы становятся только прозрачнее. Такой подход снижает операционные риски и помогает расти без организационного хаоса, сохраняя высокое качество сервиса для каждого клиента."
@@ -269,7 +269,7 @@ const copy: Record<SiteLanguage, Copy> = {
     faqTitle: "FAQ",
     faq: [
       { q: "Как работает онлайн-запись для барбера?", a: "Клиент выбирает услугу и время, а запись сразу попадает в календарь." },
-      { q: "Можно ли указать разную длительность услуг?", a: "Да, для каждой услуги задается отдельная длительность и цена." },
+      { q: "Можно ли указать разную длительность услуг?", a: "Да, для каждой услуги задается отдельная длительность и формат услуги." },
       { q: "Подходит ли Timviz одному мастеру?", a: "Да, сервис подходит частным мастерам и небольшим барбершопам." },
       { q: "Нужен ли отдельный сайт?", a: "Нет, достаточно профиля Timviz и ссылки на страницу записи." },
       { q: "Есть ли Telegram-уведомления?", a: "Да, вы получаете уведомления о новых записях и переносах." },
@@ -282,7 +282,7 @@ const copy: Record<SiteLanguage, Copy> = {
     terms: "Условия использования",
     footerText: "Timviz для бизнеса · онлайн-запись клиентов и управление услугами",
     altCalendar: "Календарь записей для барберов в Timviz",
-    altServices: "Услуги и цены барбера в Timviz",
+    altServices: "Услуги и длительность барбера в Timviz",
     altTelegram: "Telegram уведомления о записях для барберов в Timviz"
   },
   en: {
@@ -312,7 +312,7 @@ const copy: Record<SiteLanguage, Copy> = {
     solutionCards: [
       { title: "24/7 online booking", text: "Clients book on their own without calls." },
       { title: "Booking calendar", text: "All bookings in one place." },
-      { title: "Services with pricing", text: "Clients see duration and price upfront." },
+      { title: "Services with service setup", text: "Clients see duration and service details upfront." },
       { title: "Work schedule", text: "Set working days and hours." },
       { title: "Telegram", text: "Get booking updates instantly." },
       { title: "Booking page", text: "Clients book by link on their own." }
@@ -320,14 +320,14 @@ const copy: Record<SiteLanguage, Copy> = {
     nicheTitle: "Perfect for barbers",
     nicheText: "Built for high-load barbershop schedules and mixed service durations.",
     nicheItems: ["men's haircuts", "beard", "combo services", "fade", "styling"],
-    nicheSample: "Haircut + beard — 60 min — 500 UAH",
+    nicheSample: "Haircut + beard — 60 min",
     dayScenarioTitle: "Barber day scenario",
     dayScenarioItems: [
-      "10:00 — Men’s haircut — 45 min — 450 UAH: quick start slot that keeps morning flow smooth.",
-      "11:00 — Beard shaping — 30 min — 300 UAH: efficient filler between longer appointments.",
-      "12:00 — Haircut + beard — 60 min — 500 UAH: combo service booked without manual chat confirmation.",
-      "14:30 — Fade + styling — 75 min — 700 UAH: long service scheduled with automatic buffer control.",
-      "18:00 — Express haircut — 30 min — 350 UAH: evening slot closes online in a few clicks."
+      "10:00 — Men’s haircut — 45 min: quick start slot that keeps morning flow smooth.",
+      "11:00 — Beard shaping — 30 min: efficient filler between longer appointments.",
+      "12:00 — Haircut + beard — 60 min: combo service booked without manual chat confirmation.",
+      "14:30 — Fade + styling — 75 min: long service scheduled with automatic buffer control.",
+      "18:00 — Express haircut — 30 min: evening slot closes online in a few clicks."
     ],
     howTitle: "How it works",
     howSteps: ["Create profile", "Add services", "Start taking bookings"],
@@ -335,7 +335,7 @@ const copy: Record<SiteLanguage, Copy> = {
     compareLeftTitle: "Without Timviz",
     compareRightTitle: "With Timviz",
     compareLeft: ["messenger-based bookings", "manual checks", "time conflicts", "lost messages"],
-    compareRight: ["online bookings", "single calendar", "pricing + duration", "Telegram alerts"],
+    compareRight: ["online bookings", "single calendar", "service setup + duration", "Telegram alerts"],
     telegramTitle: "Receive bookings in Telegram",
     telegramText: "Timviz sends new bookings and schedule updates directly to Telegram.",
     trustTitle: "Why barbers trust Timviz",
@@ -356,22 +356,22 @@ const copy: Record<SiteLanguage, Copy> = {
     seoBlockTitle: "Client booking software for barbers",
     seoParagraphs: [
       "Online booking for barbers directly affects chair utilization and daily revenue. When booking requests are scattered across Instagram and messaging apps, time is lost on manual replies and appointment conflicts. Timviz centralizes this flow: clients choose service and time on their own, and confirmed bookings appear in one calendar instantly.",
-      "Barber service mix is timing-sensitive. A quick haircut, beard trim, fade, or combo package all require different durations. Manual planning usually leads to overlaps or unproductive gaps. Timviz connects each service with duration and pricing, then exposes only valid available slots. This keeps your day operationally realistic and easier to manage.",
-      "Most barbers searching for booking software want fewer chats and more confirmed visits. Timviz supports this with a practical workflow: service catalog, pricing, booking status and schedule in one interface. Clients see clear details before they book, which reduces back-and-forth communication and increases conversion quality.",
+      "Barber service mix is timing-sensitive. A quick haircut, beard trim, fade, or combo package all require different durations. Manual planning usually leads to overlaps or unproductive gaps. Timviz connects each service with duration and service setup, then exposes only valid available slots. This keeps your day operationally realistic and easier to manage.",
+      "Most barbers searching for booking software want fewer chats and more confirmed visits. Timviz supports this with a practical workflow: service catalog, service setup, booking status and schedule in one interface. Clients see clear details before they book, which reduces back-and-forth communication and increases conversion quality.",
       "For solo barbers, Timviz acts as a lightweight CRM with fast setup. You do not need a separate website, complex integrations or long onboarding. Create profile, add services, set working hours and share one booking link. From that moment, your online booking channel runs 24/7 and captures demand even when you are offline.",
       "A real barbershop day often combines short and long services. Morning might include 30–45 minute cuts, midday combo services, and evening fade sessions with styling. Without structure, this creates cascading delays. Timviz keeps service duration logic intact and helps maintain a smooth shift without overbooking.",
       "Telegram notifications add real-time control. New bookings, cancellations and reschedules arrive instantly, so you can react before empty slots become lost revenue. This is especially valuable during peak hours when you cannot constantly monitor multiple channels.",
       "Client retention is another major benefit. When the booking path is fast and transparent, customers are more likely to rebook. Timviz makes repeat booking easy because availability is clear and service options are standardized. This improves long-term demand stability for both solo specialists and teams.",
       "For multi-barber shops, centralized scheduling improves coordination. Managers can see load distribution, identify bottlenecks and shift appointments without conflict. Timviz provides operational visibility that supports better staffing decisions and stronger weekly planning.",
       "Search intent behind terms like online barber booking, barbershop booking software, or booking calendar for barbers is usually transactional: get more confirmed appointments with less admin friction. Timviz is built for that exact outcome with clear UX for clients and structured workflows for professionals.",
-      "In brand terms, reliable booking also improves client perception. People value clear service pricing, accurate timing and appointments that start as expected. Timviz helps barbers deliver that level of consistency, which increases trust, referrals and repeat visits.",
+      "In brand terms, reliable booking also improves client perception. People value clear service service setup, accurate timing and appointments that start as expected. Timviz helps barbers deliver that level of consistency, which increases trust, referrals and repeat visits.",
       "Timviz also helps monetize short windows between long services. Manual scheduling often leaves those windows unsold because they are hard to coordinate quickly. With visible real-time availability, you can fill them with quick trims and improve utilization without adding operational chaos.",
       "Overall, Timviz gives barbers a conversion-focused online booking system: duration-aware calendar, service structure, instant Telegram updates and a client-friendly booking page. It reduces admin overhead and helps convert demand into predictable, high-quality bookings."
     ],
     faqTitle: "FAQ",
     faq: [
       { q: "How does online barber booking work?", a: "Clients pick a service and time, and the visit appears in your calendar." },
-      { q: "Can I set different durations?", a: "Yes, each barber service has independent duration and price." },
+      { q: "Can I set different durations?", a: "Yes, each barber service has independent duration and service details." },
       { q: "Is it suitable for solo barbers?", a: "Yes, Timviz works for solo specialists and barbershop teams." },
       { q: "Do I need a website?", a: "No, your Timviz profile and booking link are enough." },
       { q: "Are Telegram alerts available?", a: "Yes, you receive alerts for new and updated bookings." },
@@ -384,7 +384,7 @@ const copy: Record<SiteLanguage, Copy> = {
     terms: "Terms of use",
     footerText: "Timviz for business · online client booking and service management",
     altCalendar: "Barber booking calendar in Timviz",
-    altServices: "Barber services and pricing in Timviz",
+    altServices: "Barber services and service setup in Timviz",
     altTelegram: "Telegram booking notifications for barbers in Timviz"
   }
 };
@@ -399,10 +399,10 @@ export function buildBarberMetadata(lang: SiteLanguage, pathname: string): Metad
 
   const description =
     lang === "uk"
-      ? "Timviz — онлайн-запис для барберів: календар записів, послуги, ціни, графік роботи і Telegram-сповіщення."
+      ? "Timviz — онлайн-запис для барберів: календар записів, послуги, тривалість, графік роботи і Telegram-сповіщення."
       : lang === "ru"
-        ? "Timviz — онлайн-запись для барберов: календарь записей, услуги, цены, график работы и Telegram-уведомления."
-        : "Timviz is online booking software for barbers with booking calendar, service pricing, work schedule and Telegram alerts.";
+        ? "Timviz — онлайн-запись для барберов: календарь записей, услуги, длительность, график работы и Telegram-уведомления."
+        : "Timviz is online booking software for barbers with booking calendar, service service setup, work schedule and Telegram alerts.";
 
   const metadata = buildMetadata(pathname, { title, description }, lang);
   return {

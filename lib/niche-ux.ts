@@ -32,7 +32,7 @@ const byLanguage: Record<SiteLanguage, Record<NicheUxKey, NicheUxContent>> = {
       valueItems: ["менше дзвінків", "більше записів", "порядок", "контроль графіка"],
       howTitle: "Як працює онлайн запис",
       howText: [
-        "Ви додаєте послуги манікюру, тривалість і ціни, а клієнт бронює вільний час самостійно.",
+        "Ви додаєте послуги манікюру та тривалість, а клієнт бронює вільний час самостійно.",
         "Запис одразу потрапляє у календар, а зміни приходять у Telegram без ручних переписок."
       ],
       importanceTitle: "Чому це важливо для майстрів манікюру",
@@ -41,15 +41,15 @@ const byLanguage: Record<SiteLanguage, Record<NicheUxKey, NicheUxContent>> = {
       trustTitle: "Вже використовують майстри по Україні",
       seoTitle: "Програма для запису клієнтів для майстрів манікюру",
       seoIntro:
-        "Timviz — це практична програма для онлайн запису клієнтів у сфері манікюру. Клієнт бачить послугу, ціну, тривалість і вільний час, а ви отримуєте підтверджений візит без хаосу в месенджерах.",
+        "Timviz допомагає майстрам манікюру автоматизувати запис без переписок у чатах. Клієнт обирає процедуру та вільний слот, а майстер одразу бачить підтверджений візит у календарі.",
       seoChecklist: [
-        "онлайн запис клієнтів",
-        "календар записів",
-        "послуги з ціною і тривалістю",
-        "контроль графіка"
+        "онлайн запис манікюр",
+        "календар корекцій і повторних візитів",
+        "послуги з тривалістю процедур",
+        "контроль вільних вікон"
       ],
       seoOutro:
-        "Такий формат зменшує пропуски, допомагає заповнювати вікна між процедурами і робить запис зрозумілим для нових та постійних клієнтів."
+        "Такий формат зменшує пропуски, допомагає щільніше заповнювати день і підвищує частку повторних записів."
     },
     hairdressers: {
       cta: "Почати приймати записи за 2 хвилини",
@@ -58,7 +58,7 @@ const byLanguage: Record<SiteLanguage, Record<NicheUxKey, NicheUxContent>> = {
       valueItems: ["менше дзвінків", "більше записів", "порядок", "контроль графіка"],
       howTitle: "Як працює онлайн запис",
       howText: [
-        "Перукар налаштовує послуги: стрижки, фарбування, укладки, тривалість і вартість.",
+        "Перукар налаштовує стрижки, фарбування, укладки та тривалість кожної послуги.",
         "Клієнти бронюють час онлайн, а календар одразу показує завантаження дня без накладок."
       ],
       importanceTitle: "Чому це важливо для перукарів",
@@ -67,15 +67,15 @@ const byLanguage: Record<SiteLanguage, Record<NicheUxKey, NicheUxContent>> = {
       trustTitle: "Вже використовують майстри по Україні",
       seoTitle: "Програма для запису клієнтів для перукарів",
       seoIntro:
-        "Timviz допомагає перукарям приймати записи без втрат у чатах. Клієнт сам обирає послугу і вільний слот, а майстер бачить повну картину завантаження в одному календарі.",
+        "Timviz для перукарів прибирає хаос у записах на стрижки та фарбування. Клієнт бронює зручний час сам, а майстер працює з чітким графіком без ручних підтверджень.",
       seoChecklist: [
-        "онлайн запис клієнтів",
-        "календар записів",
-        "послуги з ціною і тривалістю",
-        "контроль графіка"
+        "онлайн запис для перукарів",
+        "календар стрижок і фарбувань",
+        "тривалість коротких і довгих послуг",
+        "контроль завантаження зміни"
       ],
       seoOutro:
-        "Сервіс знижує кількість ручних узгоджень, прискорює підтвердження візитів і підвищує конверсію у реальні прийоми."
+        "Сервіс прискорює підтвердження візитів, знижує накладки та дає стабільніший потік записів протягом тижня."
     },
     barbers: {
       cta: "Почати приймати записи за 2 хвилини",
@@ -93,15 +93,15 @@ const byLanguage: Record<SiteLanguage, Record<NicheUxKey, NicheUxContent>> = {
       trustTitle: "Вже використовують майстри по Україні",
       seoTitle: "Програма для запису клієнтів для барберів",
       seoIntro:
-        "Timviz дає барберам керований онлайн запис клієнтів: послуги, тривалість, ціни і графік в одному інтерфейсі. Клієнт бронює самостійно, а команда бачить актуальний розклад без ручних чатів.",
+        "Timviz для барберів і барбершопів структурує запис на стрижки, бороду та комплекси. Клієнт бронює слот онлайн, а команда бачить актуальний розклад у реальному часі.",
       seoChecklist: [
-        "онлайн запис клієнтів",
-        "календар записів",
-        "послуги з ціною і тривалістю",
-        "контроль графіка"
+        "онлайн запис барбер",
+        "календар стрижок і бороди",
+        "контроль щільного графіка зміни",
+        "швидкі повторні записи клієнтів"
       ],
       seoOutro:
-        "У результаті менше накладок, краща щоденна завантаженість і стабільніший потік повторних візитів у барбершопі."
+        "У результаті менше затримок, рівніша посадка по часу і вища конверсія звернень у візити."
     },
     cosmetologists: {
       cta: "Почати приймати записи за 2 хвилини",
@@ -110,7 +110,7 @@ const byLanguage: Record<SiteLanguage, Record<NicheUxKey, NicheUxContent>> = {
       valueItems: ["менше дзвінків", "більше записів", "порядок", "контроль графіка"],
       howTitle: "Як працює онлайн запис",
       howText: [
-        "Ви задаєте процедури, ціну, тривалість і доступні години для прийому.",
+        "Ви додаєте процедури, тривалість і доступні години для прийому.",
         "Клієнт записується онлайн, а система фіксує візит у календарі та надсилає оновлення миттєво."
       ],
       importanceTitle: "Чому це важливо для косметологів",
@@ -119,15 +119,15 @@ const byLanguage: Record<SiteLanguage, Record<NicheUxKey, NicheUxContent>> = {
       trustTitle: "Вже використовують майстри по Україні",
       seoTitle: "Програма для запису клієнтів для косметологів",
       seoIntro:
-        "Timviz допомагає косметологам приймати онлайн записи без плутанини. Клієнти бачать процедури, ціну і час, а ви отримуєте прогнозований розклад з урахуванням довгих і коротких сеансів.",
+        "Timviz допомагає косметологам вести записи на процедури без плутанини в чатах. Клієнти обирають зручний час онлайн, а ви контролюєте навантаження по днях і курсах.",
       seoChecklist: [
-        "онлайн запис клієнтів",
-        "календар записів",
-        "послуги з ціною і тривалістю",
-        "контроль графіка"
+        "онлайн запис косметолог",
+        "календар процедур і курсів",
+        "контроль повторних візитів",
+        "планування довгих і коротких сеансів"
       ],
       seoOutro:
-        "Це покращує дисципліну графіка, спрощує повторні курси і підвищує якість сервісу без складної CRM-інфраструктури."
+        "Це покращує дисципліну графіка, спрощує повторні курси та зменшує навантаження на ручну комунікацію."
     },
     massage: {
       cta: "Почати приймати записи за 2 хвилини",
@@ -136,7 +136,7 @@ const byLanguage: Record<SiteLanguage, Record<NicheUxKey, NicheUxContent>> = {
       valueItems: ["менше дзвінків", "більше записів", "порядок", "контроль графіка"],
       howTitle: "Як працює онлайн запис",
       howText: [
-        "Масажист задає сеанси на 30, 60, 90 хвилин, ціни та робочі вікна.",
+        "Масажист задає сеанси на 30, 60, 90 хвилин і налаштовує робочі вікна.",
         "Клієнти обирають зручний час онлайн, а записи одразу з'являються у календарі без дублювань."
       ],
       importanceTitle: "Чому це важливо для масажистів",
@@ -145,15 +145,15 @@ const byLanguage: Record<SiteLanguage, Record<NicheUxKey, NicheUxContent>> = {
       trustTitle: "Вже використовують майстри по Україні",
       seoTitle: "Програма для запису клієнтів для масажистів",
       seoIntro:
-        "Timviz допомагає масажистам перейти від чатів до структурованої онлайн-запису. Клієнт бачить тип масажу, тривалість і ціну, а ви керуєте завантаженням у календарі в реальному часі.",
+        "Timviz допомагає масажистам перейти від хаотичних заявок у месенджерах до структурованого запису. Клієнт обирає тип масажу і час, а ви керуєте щільністю дня у календарі.",
       seoChecklist: [
-        "онлайн запис клієнтів",
-        "календар записів",
-        "послуги з ціною і тривалістю",
-        "контроль графіка"
+        "онлайн запис масаж",
+        "календар сеансів 30/60/90 хв",
+        "контроль буферів між сеансами",
+        "менше накладок у розкладі"
       ],
       seoOutro:
-        "Це дозволяє уникати накладок, краще заповнювати короткі вікна і стабільно приймати більше підтверджених сеансів."
+        "Це дозволяє уникати накладок, краще заповнювати короткі вікна та стабільно приймати більше підтверджених сеансів."
     }
   },
   ru: {
@@ -164,7 +164,7 @@ const byLanguage: Record<SiteLanguage, Record<NicheUxKey, NicheUxContent>> = {
       valueItems: ["меньше звонков", "больше записей", "порядок", "контроль графика"],
       howTitle: "Как работает онлайн запись",
       howText: [
-        "Вы добавляете услуги маникюра, длительность и цены, а клиент сам выбирает свободное время.",
+        "Вы добавляете услуги маникюра и длительность, а клиент сам выбирает свободное время.",
         "Запись сразу попадает в календарь, а изменения приходят в Telegram без ручных переписок."
       ],
       importanceTitle: "Почему это важно для мастера маникюра",
@@ -173,15 +173,15 @@ const byLanguage: Record<SiteLanguage, Record<NicheUxKey, NicheUxContent>> = {
       trustTitle: "Уже используют мастера по Украине",
       seoTitle: "Программа для записи клиентов для мастеров маникюра",
       seoIntro:
-        "Timviz — это удобная программа для онлайн записи клиентов в сфере маникюра. Клиент видит услугу, цену, длительность и свободное время, а вы получаете подтвержденный визит без хаоса в мессенджерах.",
+        "Timviz помогает мастерам маникюра автоматизировать запись без бесконечных переписок. Клиент выбирает процедуру и свободное окно, а мастер сразу получает подтвержденный визит в календаре.",
       seoChecklist: [
-        "онлайн запись клиентов",
-        "календарь записей",
-        "услуги с ценой и длительностью",
-        "контроль графика"
+        "онлайн запись маникюр",
+        "календарь коррекций и повторных визитов",
+        "услуги с длительностью процедур",
+        "контроль свободных окон"
       ],
       seoOutro:
-        "Такой формат снижает количество пропусков, помогает закрывать окна между процедурами и улучшает конверсию в повторные записи."
+        "Такой формат снижает пропуски, помогает плотнее заполнять день и повышает долю повторных записей."
     },
     hairdressers: {
       cta: "Начать принимать записи за 2 минуты",
@@ -190,7 +190,7 @@ const byLanguage: Record<SiteLanguage, Record<NicheUxKey, NicheUxContent>> = {
       valueItems: ["меньше звонков", "больше записей", "порядок", "контроль графика"],
       howTitle: "Как работает онлайн запись",
       howText: [
-        "Парикмахер настраивает услуги, длительность и стоимость в одном кабинете.",
+        "Парикмахер настраивает стрижки, окрашивания, укладки и длительность каждой услуги.",
         "Клиент бронирует время онлайн, а календарь сразу показывает актуальную загрузку без накладок."
       ],
       importanceTitle: "Почему это важно для парикмахеров",
@@ -199,15 +199,15 @@ const byLanguage: Record<SiteLanguage, Record<NicheUxKey, NicheUxContent>> = {
       trustTitle: "Уже используют мастера по Украине",
       seoTitle: "Программа для записи клиентов для парикмахеров",
       seoIntro:
-        "Timviz помогает парикмахерам принимать записи без потерь в чатах. Клиент выбирает услугу и время самостоятельно, а мастер видит полную картину дня в одном календаре.",
+        "Timviz для парикмахеров убирает хаос в записях на стрижки и окрашивания. Клиент бронирует время сам, а мастер работает по четкому графику без ручных подтверждений.",
       seoChecklist: [
-        "онлайн запись клиентов",
-        "календарь записей",
-        "услуги с ценой и длительностью",
-        "контроль графика"
+        "онлайн запись для парикмахеров",
+        "календарь стрижек и окрашиваний",
+        "контроль коротких и длинных услуг",
+        "ровная загрузка смены"
       ],
       seoOutro:
-        "Сервис сокращает ручные согласования, повышает дисциплину визитов и помогает стабильно увеличивать количество подтвержденных записей."
+        "Сервис сокращает ручные согласования, снижает накладки и помогает стабильно наращивать количество подтвержденных визитов."
     },
     barbers: {
       cta: "Начать принимать записи за 2 минуты",
@@ -225,15 +225,15 @@ const byLanguage: Record<SiteLanguage, Record<NicheUxKey, NicheUxContent>> = {
       trustTitle: "Уже используют мастера по Украине",
       seoTitle: "Программа для записи клиентов для барберов",
       seoIntro:
-        "Timviz дает барберам структурированную онлайн запись клиентов: услуги, цена, длительность и график в одном интерфейсе. Клиент записывается сам, а мастер работает по понятному расписанию без хаоса в мессенджерах.",
+        "Timviz для барберов и барбершопов структурирует запись на стрижки, бороду и комплексы. Клиент бронирует слот онлайн, а команда видит актуальный график в реальном времени.",
       seoChecklist: [
-        "онлайн запись клиентов",
-        "календарь записей",
-        "услуги с ценой и длительностью",
-        "контроль графика"
+        "онлайн запись барбер",
+        "календарь стрижек и бороды",
+        "контроль плотного графика",
+        "быстрые повторные записи"
       ],
       seoOutro:
-        "В итоге меньше накладок, выше ежедневная загрузка и больше повторных визитов благодаря прозрачному клиентскому пути."
+        "В итоге меньше задержек, выше загрузка кресла и больше повторных визитов благодаря прозрачному пути записи."
     },
     cosmetologists: {
       cta: "Начать принимать записи за 2 минуты",
@@ -242,7 +242,7 @@ const byLanguage: Record<SiteLanguage, Record<NicheUxKey, NicheUxContent>> = {
       valueItems: ["меньше звонков", "больше записей", "порядок", "контроль графика"],
       howTitle: "Как работает онлайн запись",
       howText: [
-        "Вы добавляете процедуры, стоимость, длительность и рабочие окна.",
+        "Вы добавляете процедуры, длительность и рабочие окна.",
         "Клиенты записываются онлайн, а система сразу фиксирует визит и обновляет календарь."
       ],
       importanceTitle: "Почему это важно для косметологов",
@@ -251,15 +251,15 @@ const byLanguage: Record<SiteLanguage, Record<NicheUxKey, NicheUxContent>> = {
       trustTitle: "Уже используют мастера по Украине",
       seoTitle: "Программа для записи клиентов для косметологов",
       seoIntro:
-        "Timviz помогает косметологам принимать онлайн записи без путаницы. Клиенты видят процедуры, стоимость и время, а вы получаете управляемый график с учетом коротких и длинных сеансов.",
+        "Timviz помогает косметологам вести запись на процедуры без хаоса в чатах. Клиенты выбирают удобное время онлайн, а вы контролируете загрузку по дням и курсам.",
       seoChecklist: [
-        "онлайн запись клиентов",
-        "календарь записей",
-        "услуги с ценой и длительностью",
-        "контроль графика"
+        "онлайн запись косметолог",
+        "календарь процедур и курсов",
+        "контроль повторных визитов",
+        "планирование длинных и коротких сеансов"
       ],
       seoOutro:
-        "Это повышает конверсию в визиты, упрощает повторные записи по курсам и снижает нагрузку на ручную коммуникацию."
+        "Это повышает конверсию в визиты, упрощает повторные записи по курсам и снижает нагрузку на администрирование."
     },
     massage: {
       cta: "Начать принимать записи за 2 минуты",
@@ -268,7 +268,7 @@ const byLanguage: Record<SiteLanguage, Record<NicheUxKey, NicheUxContent>> = {
       valueItems: ["меньше звонков", "больше записей", "порядок", "контроль графика"],
       howTitle: "Как работает онлайн запись",
       howText: [
-        "Массажист настраивает сеансы 30, 60 и 90 минут, цены и рабочие часы.",
+        "Массажист настраивает сеансы 30, 60 и 90 минут, длительность и рабочие часы.",
         "Клиенты выбирают удобный слот онлайн, а записи сразу появляются в календаре без дублей."
       ],
       importanceTitle: "Почему это важно для массажистов",
@@ -277,12 +277,12 @@ const byLanguage: Record<SiteLanguage, Record<NicheUxKey, NicheUxContent>> = {
       trustTitle: "Уже используют мастера по Украине",
       seoTitle: "Программа для записи клиентов для массажистов",
       seoIntro:
-        "Timviz помогает массажистам перейти от чатов к структурированной онлайн записи. Клиент видит тип массажа, длительность и цену, а специалист управляет загрузкой в календаре в реальном времени.",
+        "Timviz помогает массажистам перейти от чатов к структурированной онлайн записи. Клиент выбирает тип массажа и время, а специалист управляет загрузкой в календаре в реальном времени.",
       seoChecklist: [
-        "онлайн запись клиентов",
-        "календарь записей",
-        "услуги с ценой и длительностью",
-        "контроль графика"
+        "онлайн запись массаж",
+        "календарь сеансов 30/60/90 минут",
+        "контроль буферов между сеансами",
+        "меньше накладок в расписании"
       ],
       seoOutro:
         "Система уменьшает накладки, помогает заполнять короткие окна и стабильно увеличивает количество подтвержденных сеансов."
@@ -296,7 +296,7 @@ const byLanguage: Record<SiteLanguage, Record<NicheUxKey, NicheUxContent>> = {
       valueItems: ["fewer calls", "more bookings", "clear workflow", "schedule control"],
       howTitle: "How online booking works",
       howText: [
-        "You set services, duration and pricing once, and clients book available time on their own.",
+        "You set nail services and duration once, and clients book available time on their own.",
         "Each booking appears in your calendar instantly, with Telegram updates for changes."
       ],
       importanceTitle: "Why this matters for nail technicians",
@@ -305,10 +305,15 @@ const byLanguage: Record<SiteLanguage, Record<NicheUxKey, NicheUxContent>> = {
       trustTitle: "Already used by professionals across Ukraine",
       seoTitle: "Client booking software for nail technicians",
       seoIntro:
-        "Timviz is practical online booking software for nail professionals. Clients see services, price, duration and free slots, while you receive confirmed appointments in one structured calendar instead of scattered chats.",
-      seoChecklist: ["online client booking", "booking calendar", "services with price and duration", "schedule control"],
+        "Timviz helps nail technicians automate booking without endless chat back-and-forth. Clients choose a procedure and time slot, while you get confirmed visits directly in one calendar.",
+      seoChecklist: [
+        "online manicure booking",
+        "calendar for corrections and repeat visits",
+        "duration-based service setup",
+        "free-slot control"
+      ],
       seoOutro:
-        "This setup reduces no-shows, helps fill short gaps between procedures and improves conversion into repeat visits."
+        "This setup reduces no-shows, fills short gaps between appointments and increases repeat booking share."
     },
     hairdressers: {
       cta: "Start taking bookings in 2 minutes",
@@ -317,7 +322,7 @@ const byLanguage: Record<SiteLanguage, Record<NicheUxKey, NicheUxContent>> = {
       valueItems: ["fewer calls", "more bookings", "clear workflow", "schedule control"],
       howTitle: "How online booking works",
       howText: [
-        "You configure hair services, duration and pricing in one dashboard.",
+        "You configure haircuts, coloring, styling and duration in one dashboard.",
         "Clients book time online and your calendar updates immediately with real capacity."
       ],
       importanceTitle: "Why this matters for hairdressers",
@@ -326,10 +331,15 @@ const byLanguage: Record<SiteLanguage, Record<NicheUxKey, NicheUxContent>> = {
       trustTitle: "Already used by professionals across Ukraine",
       seoTitle: "Client booking software for hairdressers",
       seoIntro:
-        "Timviz helps hairdressers accept bookings without losing leads in messengers. Clients choose service and time themselves, while professionals get a clear day plan with pricing and duration in one place.",
-      seoChecklist: ["online client booking", "booking calendar", "services with price and duration", "schedule control"],
+        "Timviz for hairdressers removes booking chaos for cuts and coloring. Clients self-book online, while professionals run a clean day plan without manual confirmations.",
+      seoChecklist: [
+        "online booking for hairdressers",
+        "calendar for cuts and coloring",
+        "short and long service control",
+        "balanced shift workload"
+      ],
       seoOutro:
-        "You spend less time on manual coordination, confirm visits faster and keep your daily utilization more stable."
+        "You spend less time on coordination, prevent overlaps and keep chair utilization stable throughout the week."
     },
     barbers: {
       cta: "Start taking bookings in 2 minutes",
@@ -347,10 +357,15 @@ const byLanguage: Record<SiteLanguage, Record<NicheUxKey, NicheUxContent>> = {
       trustTitle: "Already used by professionals across Ukraine",
       seoTitle: "Client booking software for barbers",
       seoIntro:
-        "Timviz gives barbers a conversion-focused booking flow: service structure, pricing, duration and real-time calendar updates in one interface. Clients book fast, and teams operate with less scheduling friction.",
-      seoChecklist: ["online client booking", "booking calendar", "services with price and duration", "schedule control"],
+        "Timviz for barbers and barbershops structures bookings for haircuts, beard work and combos. Clients book fast online, while teams keep schedules aligned in real time.",
+      seoChecklist: [
+        "online barber booking",
+        "haircut and beard calendar",
+        "dense-shift schedule control",
+        "faster repeat appointments"
+      ],
       seoOutro:
-        "Result: fewer collisions, better daily chair utilization and stronger repeat booking behavior."
+        "Result: fewer collisions, better daily chair utilization and stronger repeat-booking behavior."
     },
     cosmetologists: {
       cta: "Start taking bookings in 2 minutes",
@@ -359,7 +374,7 @@ const byLanguage: Record<SiteLanguage, Record<NicheUxKey, NicheUxContent>> = {
       valueItems: ["fewer calls", "more bookings", "clear workflow", "schedule control"],
       howTitle: "How online booking works",
       howText: [
-        "Add treatments with duration, price and work windows.",
+        "Add treatments, duration and working windows.",
         "Clients book online, and visits are saved to one live calendar with instant updates."
       ],
       importanceTitle: "Why this matters for cosmetologists",
@@ -368,10 +383,15 @@ const byLanguage: Record<SiteLanguage, Record<NicheUxKey, NicheUxContent>> = {
       trustTitle: "Already used by professionals across Ukraine",
       seoTitle: "Client booking software for cosmetologists",
       seoIntro:
-        "Timviz helps cosmetologists run structured online booking without manual chat chaos. Clients see treatment details before booking, while professionals get predictable schedules and fewer operational conflicts.",
-      seoChecklist: ["online client booking", "booking calendar", "services with price and duration", "schedule control"],
+        "Timviz helps cosmetologists run treatment bookings without messenger chaos. Clients pick convenient time online, while specialists control workload across days and repeat courses.",
+      seoChecklist: [
+        "online booking for cosmetologists",
+        "treatment and course calendar",
+        "repeat-visit management",
+        "short and long session planning"
+      ],
       seoOutro:
-        "This improves conversion quality, supports repeat-course planning and reduces admin overhead."
+        "This improves visit conversion, supports course continuity and reduces administrative overhead."
     },
     massage: {
       cta: "Start taking bookings in 2 minutes",
@@ -380,7 +400,7 @@ const byLanguage: Record<SiteLanguage, Record<NicheUxKey, NicheUxContent>> = {
       valueItems: ["fewer calls", "more bookings", "clear workflow", "schedule control"],
       howTitle: "How online booking works",
       howText: [
-        "Configure massage sessions for 30, 60 and 90 minutes with pricing.",
+        "Configure massage sessions for 30, 60 and 90 minutes with working windows.",
         "Clients book online and all appointments appear in one duration-aware calendar."
       ],
       importanceTitle: "Why this matters for massage therapists",
@@ -389,8 +409,13 @@ const byLanguage: Record<SiteLanguage, Record<NicheUxKey, NicheUxContent>> = {
       trustTitle: "Already used by professionals across Ukraine",
       seoTitle: "Client booking software for massage therapists",
       seoIntro:
-        "Timviz helps massage therapists switch from fragmented chat requests to structured online booking. Clients choose service type, duration and price, while specialists manage workload and free windows from one place.",
-      seoChecklist: ["online client booking", "booking calendar", "services with price and duration", "schedule control"],
+        "Timviz helps massage therapists move from fragmented chat requests to structured online booking. Clients choose massage type and time, while specialists manage workload and buffers from one calendar.",
+      seoChecklist: [
+        "online massage booking",
+        "30/60/90-minute session calendar",
+        "buffer control between sessions",
+        "fewer schedule overlaps"
+      ],
       seoOutro:
         "You reduce overlaps, improve slot utilization and keep bookings predictable even in dense schedules."
     }
