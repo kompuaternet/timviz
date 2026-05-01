@@ -177,42 +177,42 @@ export const seoCopy = {
   },
   forBusiness: {
     ru: {
-      title: "Timviz для бизнеса — онлайн-запись клиентов, календарь и база клиентов",
+      title: "Онлайн-запись клиентов для мастеров и салонов — Timviz",
       description:
-        "Timviz для бизнеса помогает принимать записи онлайн, вести календарь мастеров, услуги, клиентов, фото компании и рабочие графики в одном кабинете.",
+        "Timviz — сервис для онлайн-записи клиентов, календаря записей, услуг, графика работы и Telegram-уведомлений для мастеров и салонов.",
       keywords: [
-        "онлайн запись клиентов",
-        "программа для салона красоты",
-        "crm для мастера",
-        "календарь записи клиентов",
-        "программа для барбершопа",
-        "учет клиентов салона"
+        "онлайн-запис клієнтів",
+        "програма для запису клієнтів",
+        "календар записів",
+        "CRM для салону",
+        "запис клієнтів онлайн",
+        "онлайн-запис для майстрів"
       ]
     },
     uk: {
-      title: "Timviz для бізнесу — онлайн-запис клієнтів, календар і база клієнтів",
+      title: "Онлайн-запис клієнтів для майстрів і салонів — Timviz",
       description:
-        "Timviz для бізнесу допомагає приймати записи онлайн, вести календар майстрів, послуги, клієнтів, фото компанії та робочі графіки в одному кабінеті.",
+        "Timviz — сервіс для онлайн-запису клієнтів, календаря записів, послуг, графіка роботи та Telegram-сповіщень для майстрів і салонів.",
       keywords: [
-        "онлайн запис клієнтів",
-        "програма для салону краси",
-        "crm для майстра",
-        "календар запису клієнтів",
-        "програма для барбершопу",
-        "облік клієнтів салону"
+        "онлайн-запис клієнтів",
+        "календар записів",
+        "програма для запису клієнтів",
+        "CRM для салону",
+        "онлайн-запис для майстрів",
+        "запис клієнтів онлайн"
       ]
     },
     en: {
-      title: "Timviz for business — client booking, schedule and salon management",
+      title: "Online client booking for masters and salons — Timviz",
       description:
-        "Run online bookings, team schedules, services, clients and business photos in one workspace built for salons, studios, barbershops and independent professionals.",
+        "Timviz helps service businesses run online client booking, appointment calendar, services, team schedule and Telegram notifications in one place.",
       keywords: [
-        "booking software for salons",
-        "appointment calendar for professionals",
-        "beauty salon crm",
-        "client booking system",
-        "barbershop scheduling software",
-        "booking software for small business"
+        "online client booking",
+        "appointment calendar",
+        "crm for salon",
+        "booking software for professionals",
+        "online booking for masters",
+        "salon scheduling software"
       ]
     }
   },

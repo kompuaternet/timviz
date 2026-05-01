@@ -2443,6 +2443,18 @@
   line-height: 1.48;
 }
 
+.business-feature-grid--compact {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.business-feature-grid--4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.business-inline-cta {
+  margin-top: 28px;
+}
+
 .business-screen-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2508,6 +2520,19 @@
   box-shadow: 0 16px 42px rgba(0, 0, 0, 0.05);
 }
 
+.business-workflow-section li strong {
+  display: block;
+  margin-bottom: 6px;
+}
+
+.business-workflow-section li p {
+  margin: 0;
+  color: #5d554f;
+  font-size: 0.98rem;
+  line-height: 1.45;
+  font-weight: 700;
+}
+
 .business-workflow-section li::before {
   content: counter(business-step);
   width: 54px;
@@ -2542,6 +2567,70 @@
 
 .business-final-section .business-primary {
   margin-top: 32px;
+}
+
+.business-final-section small {
+  margin-top: 14px;
+  color: #5f5851;
+  font-weight: 700;
+}
+
+.business-compare-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.business-compare-grid article {
+  padding: 24px;
+  border: 1px solid rgba(17, 17, 17, 0.09);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.business-compare-grid h3 {
+  margin: 0 0 10px;
+  font-size: 1.3rem;
+}
+
+.business-compare-grid ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+
+.business-compare-grid li {
+  color: #3c3834;
+  font-weight: 760;
+}
+
+.business-compare-grid li::before {
+  content: "• ";
+  color: #6047ff;
+}
+
+.business-faq-list {
+  display: grid;
+  gap: 12px;
+}
+
+.business-faq-item {
+  border: 1px solid rgba(17, 17, 17, 0.1);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.82);
+  padding: 14px 16px;
+}
+
+.business-faq-item summary {
+  cursor: pointer;
+  font-weight: 860;
+}
+
+.business-faq-item p {
+  margin: 10px 0 0;
+  color: #5d554f;
 }
 
 .business-footer {
@@ -4404,6 +4493,12 @@ a {
   .business-feature-grid article {
     min-height: auto;
     padding: 22px;
+  }
+
+  .business-feature-grid--compact,
+  .business-feature-grid--4,
+  .business-compare-grid {
+    grid-template-columns: 1fr;
   }
 
   .business-workflow-section {
