@@ -119,6 +119,7 @@ export default function GlobalLanguageSwitcher({ mode = "fixed" }: GlobalLanguag
     pathname?.startsWith("/ru/programma-dlya-zapisi-klientov") ||
     pathname?.startsWith("/uk/programma-dlya-zapisi-klientov") ||
     pathname?.startsWith("/en/programma-dlya-zapisi-klientov") ||
+    pathname?.startsWith("/en/for-hairdressers") ||
     pathname?.startsWith("/businesses/") ||
     pathname?.startsWith("/ru/businesses/") ||
     pathname?.startsWith("/uk/businesses/") ||

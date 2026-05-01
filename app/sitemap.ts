@@ -40,6 +40,26 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "weekly" as const,
       priority: 0.8
     })),
+    ...(language === "ru"
+      ? [
+          {
+            url: `${siteUrl}/ru/dlya-parikmaherov`,
+            lastModified: now,
+            changeFrequency: "weekly" as const,
+            priority: 0.82
+          }
+        ]
+      : []),
+    ...(language === "en"
+      ? [
+          {
+            url: `${siteUrl}/en/for-hairdressers`,
+            lastModified: now,
+            changeFrequency: "weekly" as const,
+            priority: 0.82
+          }
+        ]
+      : []),
     {
       url: `${siteUrl}${getLocalizedPath(language, "/privacy")}`,
       lastModified: now,
