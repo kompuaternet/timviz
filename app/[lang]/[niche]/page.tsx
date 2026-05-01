@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import BrandLogo from "../../BrandLogo";
+import BusinessIcon from "../../BusinessIcon";
 import GlobalLanguageSwitcher from "../../GlobalLanguageSwitcher";
 import { nichePageBySlug, nichePages, type NicheSlug } from "../../../lib/niche-pages";
 import {
@@ -24,7 +25,10 @@ const pageCopy = {
     ctaTitle: "Запустите онлайн-запись с Timviz",
     ctaText: "Создайте профиль, добавьте услуги и принимайте записи без хаоса в мессенджерах.",
     ctaButton: "Создать профиль компании",
-    otherTitle: "Другие направления"
+    otherTitle: "Другие направления",
+    privacy: "Политика конфиденциальности",
+    terms: "Условия использования",
+    footerText: "Timviz для бизнеса · онлайн-запись клиентов и управление услугами"
   },
   uk: {
     home: "Головна",
@@ -32,7 +36,10 @@ const pageCopy = {
     ctaTitle: "Запустіть онлайн-запис із Timviz",
     ctaText: "Створіть профіль, додайте послуги й приймайте записи без хаосу в месенджерах.",
     ctaButton: "Створити профіль компанії",
-    otherTitle: "Інші напрямки"
+    otherTitle: "Інші напрямки",
+    privacy: "Політика конфіденційності",
+    terms: "Умови використання",
+    footerText: "Timviz для бізнесу · онлайн-запис клієнтів і керування послугами"
   },
   en: {
     home: "Home",
@@ -40,7 +47,10 @@ const pageCopy = {
     ctaTitle: "Launch online booking with Timviz",
     ctaText: "Create your profile, add services and accept bookings with less manual admin.",
     ctaButton: "Create company profile",
-    otherTitle: "Other directions"
+    otherTitle: "Other directions",
+    privacy: "Privacy policy",
+    terms: "Terms of use",
+    footerText: "Timviz for business · online client booking and service management"
   }
 } satisfies Record<SiteLanguage, Record<string, string>>;
 
@@ -91,7 +101,7 @@ export default async function LocalizedNichePage({ params }: LocalizedSeoPagePro
     ? nichePageBySlug[canonicalSlug].page[language]
     : forBusinessFeatureBySlug[canonicalSlug].copy[language];
   const related = isNichePage ? nichePages.filter((entry) => entry.slug !== canonicalSlug) : [];
-  const icon = isNichePage ? nichePageBySlug[canonicalSlug].card[language].icon : "⚙";
+  const iconName = isNichePage ? canonicalSlug : "default";
 
   return (
     <main className="niche-page">
@@ -106,7 +116,7 @@ export default async function LocalizedNichePage({ params }: LocalizedSeoPagePro
       </header>
 
       <section className="niche-page-hero">
-        <span>{icon}</span>
+        <span className="niche-page-hero-icon"><BusinessIcon name={iconName} className="niche-page-hero-icon-svg" /></span>
         <h1>{content.h1}</h1>
         <p>{content.lead}</p>
       </section>
@@ -127,7 +137,9 @@ export default async function LocalizedNichePage({ params }: LocalizedSeoPagePro
               const card = entry.card[language];
               return (
                 <a className="niche-link-card" href={getLocalizedPath(language, `/${entry.slug}`)} key={entry.slug}>
-                  <span className="niche-link-icon" aria-hidden="true">{card.icon}</span>
+                  <span className="niche-link-icon" aria-hidden="true">
+                    <BusinessIcon name={entry.slug} className="niche-link-icon-svg" />
+                  </span>
                   <h3>{card.shortTitle}</h3>
                   <p>{card.description}</p>
                   <span className="niche-link-arrow" aria-hidden="true">→</span>
@@ -143,6 +155,16 @@ export default async function LocalizedNichePage({ params }: LocalizedSeoPagePro
         <p>{t.ctaText}</p>
         <a className="business-primary" href="/pro/create-account">{t.ctaButton}</a>
       </section>
+
+      <footer className="business-footer">
+        <a className="public-logo" href={getLocalizedPath(language)}><BrandLogo /></a>
+        <span>{t.footerText}</span>
+        <div className="business-footer-links">
+          <a href={getLocalizedPath(language, "/for-business")}>{t.forBusiness}</a>
+          <a href={getLocalizedPath(language, "/privacy")}>{t.privacy}</a>
+          <a href={getLocalizedPath(language, "/terms")}>{t.terms}</a>
+        </div>
+      </footer>
     </main>
   );
 }
