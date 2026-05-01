@@ -1208,7 +1208,23 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
   const timeOptionCount = (24 * 60) / TIME_SELECT_STEP_MINUTES;
 
   const [selectedDate, setSelectedDate] = useState(initialDate);
-  const [viewMode, setViewMode] = useState<CalendarViewMode>("day");
+  const [viewMode, setViewMode] = useState<CalendarViewMode>(() => {
+    if (typeof window === "undefined") {
+      return "day";
+    }
+
+    const storedViewMode = window.localStorage.getItem("rezervo-pro-calendar-view-mode");
+    if (
+      storedViewMode === "day" ||
+      storedViewMode === "threeDay" ||
+      storedViewMode === "week" ||
+      storedViewMode === "month"
+    ) {
+      return storedViewMode;
+    }
+
+    return "day";
+  });
   const [selectedProfessionalId, setSelectedProfessionalId] = useState(professionalId);
   const [visibleProfessionalIds, setVisibleProfessionalIds] = useState<string[]>([professionalId]);
   const [activeToolbarMenu, setActiveToolbarMenu] = useState<null | "view" | "team" | "share" | "account">(null);
@@ -1436,6 +1452,14 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
     window.addEventListener("rezervo-language-change", handleLanguageChange);
     return () => window.removeEventListener("rezervo-language-change", handleLanguageChange);
   }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    window.localStorage.setItem("rezervo-pro-calendar-view-mode", viewMode);
+  }, [viewMode]);
 
   useEffect(() => {
     if (!snapshot?.viewer.language) {
@@ -4980,7 +5004,9 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
                 const schedule = snapshot
                   ? resolveDaySchedule(dayKey, snapshot.workspace.memberSchedule.workSchedule, scheduleOverrides)
                   : null;
-                const dayAppointments = dayKey === selectedDate ? focusedAppointments : [];
+                const dayAppointments = allVisibleAppointments.filter(
+                  (appointment) => appointment.appointmentDate === dayKey
+                );
                 return (
                   <button
                     key={dayKey}
@@ -5007,7 +5033,7 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
               {monthGrid.map((day) => {
                 const schedule = monthSchedules.get(day.key) ?? null;
                 const isWorkingDay = Boolean(schedule?.enabled);
-                const dayAppointments = day.key === selectedDate ? focusedAppointments : [];
+                const dayAppointments = visibleAppointmentsByDay.get(day.key) ?? [];
                 return (
                   <button
                     key={day.key}
