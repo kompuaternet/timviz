@@ -2958,6 +2958,56 @@
   box-shadow: 0 24px 66px rgba(57, 45, 110, 0.12);
 }
 
+.hair-card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.hair-card-grid article {
+  min-height: 132px;
+  max-height: 140px;
+  padding: 12px;
+  border: 1px solid rgba(17, 17, 17, 0.08);
+  border-radius: 14px;
+  background: #fff;
+  overflow: hidden;
+}
+
+.hair-card-grid h3 {
+  margin: 0 0 6px;
+  font-size: 1rem;
+}
+
+.hair-card-grid p {
+  margin: 0;
+  color: #5d554f;
+  font-size: 0.92rem;
+  line-height: 1.35;
+}
+
+.hair-card-grid small {
+  display: block;
+  margin-top: 6px;
+  color: #6047ff;
+  font-weight: 800;
+}
+
+.hair-seo-text {
+  display: grid;
+  gap: 12px;
+}
+
+.hair-seo-text p {
+  margin: 0;
+  color: #3d3843;
+  line-height: 1.68;
+}
+
+.hair-cta-inline .business-primary {
+  min-width: 220px;
+}
+
 @media (max-width: 1160px) {
   .niche-links-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -2970,6 +3020,10 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
+  .hair-card-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .niche-links-grid,
   .niche-links-section--inner .niche-links-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2977,6 +3031,10 @@
 }
 
 @media (max-width: 620px) {
+  .hair-card-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .niche-links-grid,
   .niche-links-section--inner .niche-links-grid {
     grid-template-columns: minmax(0, 1fr);
