@@ -106,7 +106,7 @@ export default function GlobalLanguageSwitcher({ mode = "fixed" }: GlobalLanguag
     pathname === "/en/terms" ||
     pathname?.startsWith("/ru/dlya-") ||
     pathname?.startsWith("/uk/dlya-") ||
-    pathname?.startsWith("/en/dlya-") ||
+    pathname?.startsWith("/en/for-") ||
     pathname?.startsWith("/ru/kalendar-zapisey") ||
     pathname?.startsWith("/uk/kalendar-zapisey") ||
     pathname?.startsWith("/en/kalendar-zapisey") ||

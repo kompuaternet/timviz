@@ -1,14 +1,15 @@
 import type { MetadataRoute } from "next";
+import { getAllNicheParams } from "../lib/niche-pages";
 import { getBusinessDirectorySnapshot } from "../lib/pro-data";
 import { getPublicBusinessPathId } from "../lib/public-business-path";
 import { forBusinessFeaturePages } from "../lib/for-business-seo-pages";
-import { nichePages } from "../lib/niche-pages";
 import { siteUrl } from "../lib/seo";
 import { getLocalizedPath, siteLanguages } from "../lib/site-language";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const now = new Date();
   const directory = await getBusinessDirectorySnapshot();
+  const nicheParams = getAllNicheParams();
   const staticRoutes: MetadataRoute.Sitemap = siteLanguages.flatMap((language) => [
     {
       url: `${siteUrl}${getLocalizedPath(language)}`,
@@ -28,8 +29,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "weekly",
       priority: 0.9
     },
-    ...nichePages.map((niche) => ({
-      url: `${siteUrl}${getLocalizedPath(language, `/${niche.slug}`)}`,
+    ...nicheParams.filter((item) => item.lang === language).map((item) => ({
+      url: `${siteUrl}${getLocalizedPath(language, `/${item.niche}`)}`,
       lastModified: now,
       changeFrequency: "weekly" as const,
       priority: 0.82
@@ -40,26 +41,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "weekly" as const,
       priority: 0.8
     })),
-    ...(language === "ru"
-      ? [
-          {
-            url: `${siteUrl}/ru/dlya-parikmaherov`,
-            lastModified: now,
-            changeFrequency: "weekly" as const,
-            priority: 0.82
-          }
-        ]
-      : []),
-    ...(language === "en"
-      ? [
-          {
-            url: `${siteUrl}/en/for-hairdressers`,
-            lastModified: now,
-            changeFrequency: "weekly" as const,
-            priority: 0.82
-          }
-        ]
-      : []),
     {
       url: `${siteUrl}${getLocalizedPath(language, "/privacy")}`,
       lastModified: now,

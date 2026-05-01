@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { getNicheSlug } from "../../lib/niche-pages";
 import { getLocalizedPath, type SiteLanguage } from "../../lib/site-language";
 import BrandLogo from "../BrandLogo";
 import GlobalLanguageSwitcher from "../GlobalLanguageSwitcher";
@@ -431,11 +432,11 @@ export default function BusinessLanding({ initialLanguage = "ru" }: BusinessLand
   ];
   const usefulLinks: Array<{ label: string; href: string }> = [
     { label: language === "uk" ? "Онлайн-запис для майстрів" : language === "ru" ? "Онлайн-запись для мастеров" : "Online booking for professionals", href: getLocalizedPath(language, "/for-business") },
-    { label: language === "uk" ? "Для майстрів манікюру" : language === "ru" ? "Для мастеров маникюра" : "For nail artists", href: getLocalizedPath(language, "/dlya-manikyura") },
-    { label: language === "uk" ? "Для перукарів" : language === "ru" ? "Для парикмахеров" : "For hairdressers", href: getLocalizedPath(language, "/dlya-parikmaherov") },
-    { label: language === "uk" ? "Для барберів" : language === "ru" ? "Для барберов" : "For barbers", href: getLocalizedPath(language, "/dlya-barberov") },
-    { label: language === "uk" ? "Для косметологів" : language === "ru" ? "Для косметологов" : "For cosmetologists", href: getLocalizedPath(language, "/dlya-kosmetologov") },
-    { label: language === "uk" ? "Для масажистів" : language === "ru" ? "Для массажистов" : "For massage therapists", href: getLocalizedPath(language, "/dlya-massazhistov") }
+    { label: language === "uk" ? "Для майстрів манікюру" : language === "ru" ? "Для мастеров маникюра" : "For nail artists", href: getLocalizedPath(language, `/${getNicheSlug(language, "manicure")}`) },
+    { label: language === "uk" ? "Для перукарів" : language === "ru" ? "Для парикмахеров" : "For hairdressers", href: getLocalizedPath(language, `/${getNicheSlug(language, "hairdressers")}`) },
+    { label: language === "uk" ? "Для барберів" : language === "ru" ? "Для барберов" : "For barbers", href: getLocalizedPath(language, `/${getNicheSlug(language, "barbers")}`) },
+    { label: language === "uk" ? "Для косметологів" : language === "ru" ? "Для косметологов" : "For cosmetologists", href: getLocalizedPath(language, `/${getNicheSlug(language, "cosmetologists")}`) },
+    { label: language === "uk" ? "Для масажистів" : language === "ru" ? "Для массажистов" : "For massage therapists", href: getLocalizedPath(language, `/${getNicheSlug(language, "massage")}`) }
   ];
 
   useEffect(() => {

@@ -7,20 +7,6 @@ export type FeatureSlug =
   | "crm-dlya-salona"
   | "programma-dlya-zapisi-klientov";
 
-export type NicheAliasSlug =
-  | "dlya-manikyura"
-  | "dlya-parikmaherov"
-  | "dlya-barberov"
-  | "dlya-kosmetologov"
-  | "dlya-massazhistov";
-
-export const nicheAliasToPrimary: Record<NicheAliasSlug, "dlya-manikyuru" | "dlya-perukariv" | "dlya-barberiv" | "dlya-kosmetologiv" | "dlya-masazhu"> = {
-  "dlya-manikyura": "dlya-manikyuru",
-  "dlya-parikmaherov": "dlya-perukariv",
-  "dlya-barberov": "dlya-barberiv",
-  "dlya-kosmetologov": "dlya-kosmetologiv",
-  "dlya-massazhistov": "dlya-masazhu"
-};
 
 type FeaturePage = {
   slug: FeatureSlug;
@@ -173,8 +159,4 @@ export const forBusinessFeatureBySlug = Object.fromEntries(
 
 export function isFeatureSlug(value: string): value is FeatureSlug {
   return value in forBusinessFeatureBySlug;
-}
-
-export function isNicheAliasSlug(value: string): value is NicheAliasSlug {
-  return value in nicheAliasToPrimary;
 }

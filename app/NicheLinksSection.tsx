@@ -1,5 +1,5 @@
 import { getLocalizedPath, type SiteLanguage } from "../lib/site-language";
-import { nichePages } from "../lib/niche-pages";
+import { getNicheSlug, nicheCards, nicheKeys } from "../lib/niche-pages";
 import BusinessIcon from "./BusinessIcon";
 
 type NicheLinksSectionProps = {
@@ -17,12 +17,13 @@ export default function NicheLinksSection({ language, title, subtitle, className
         <p>{subtitle}</p>
       </div>
       <div className="niche-links-grid">
-        {nichePages.map((item) => {
-          const card = item.card[language];
+        {nicheKeys.map((key) => {
+          const card = nicheCards[key][language];
+          const slug = getNicheSlug(language, key);
           return (
-            <a className="niche-link-card" href={getLocalizedPath(language, `/${item.slug}`)} key={item.slug}>
+            <a className="niche-link-card" href={getLocalizedPath(language, `/${slug}`)} key={key}>
               <span className="niche-link-icon" aria-hidden="true">
-                <BusinessIcon name={item.slug} className="niche-link-icon-svg" />
+                <BusinessIcon name={key} className="niche-link-icon-svg" />
               </span>
               <h3>{card.shortTitle}</h3>
               <p>{card.description}</p>

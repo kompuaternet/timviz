@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { PublicSearchIndex } from "../lib/public-search";
+import { getNicheSlug } from "../lib/niche-pages";
 import { getLocalizedPath, isSiteLanguage, type SiteLanguage } from "../lib/site-language";
 import BrandLogo from "./BrandLogo";
 import GlobalLanguageSwitcher from "./GlobalLanguageSwitcher";
@@ -482,11 +483,11 @@ export default function PublicHome({ searchIndex, initialLanguage = "ru" }: Publ
         </div>
         <div>
           <h3>{String(t.prosFooter)}</h3>
-          <a href={getLocalizedPath(language, "/dlya-manikyuru")}>{language === "uk" ? "Майстри манікюру" : language === "ru" ? "Мастера маникюра" : "Nail artists"}</a>
-          <a href={getLocalizedPath(language, "/dlya-perukariv")}>{language === "uk" ? "Перукарі" : language === "ru" ? "Парикмахеры" : "Hairdressers"}</a>
-          <a href={getLocalizedPath(language, "/dlya-barberiv")}>{language === "uk" ? "Барбери" : language === "ru" ? "Барберы" : "Barbers"}</a>
-          <a href={getLocalizedPath(language, "/dlya-kosmetologiv")}>{language === "uk" ? "Косметологи" : language === "ru" ? "Косметологи" : "Cosmetologists"}</a>
-          <a href={getLocalizedPath(language, "/dlya-masazhu")}>{language === "uk" ? "Масажисти" : language === "ru" ? "Массажисты" : "Massage therapists"}</a>
+          <a href={getLocalizedPath(language, `/${getNicheSlug(language, "manicure")}`)}>{language === "uk" ? "Майстри манікюру" : language === "ru" ? "Мастера маникюра" : "Nail artists"}</a>
+          <a href={getLocalizedPath(language, `/${getNicheSlug(language, "hairdressers")}`)}>{language === "uk" ? "Перукарі" : language === "ru" ? "Парикмахеры" : "Hairdressers"}</a>
+          <a href={getLocalizedPath(language, `/${getNicheSlug(language, "barbers")}`)}>{language === "uk" ? "Барбери" : language === "ru" ? "Барберы" : "Barbers"}</a>
+          <a href={getLocalizedPath(language, `/${getNicheSlug(language, "cosmetologists")}`)}>{language === "uk" ? "Косметологи" : language === "ru" ? "Косметологи" : "Cosmetologists"}</a>
+          <a href={getLocalizedPath(language, `/${getNicheSlug(language, "massage")}`)}>{language === "uk" ? "Масажисти" : language === "ru" ? "Массажисты" : "Massage therapists"}</a>
         </div>
         <div>
           <h3>{String(t.legal)}</h3>

@@ -1,9 +1,9 @@
 type BusinessIconName =
-  | "dlya-manikyuru"
-  | "dlya-perukariv"
-  | "dlya-barberiv"
-  | "dlya-kosmetologiv"
-  | "dlya-masazhu"
+  | "manicure"
+  | "hairdressers"
+  | "barbers"
+  | "cosmetologists"
+  | "massage"
   | "default";
 
 type BusinessIconProps = {
@@ -13,15 +13,15 @@ type BusinessIconProps = {
 
 function IconPath({ name }: { name: BusinessIconName }) {
   switch (name) {
-    case "dlya-manikyuru":
+    case "manicure":
       return <path d="M8 20h16M9 16c2-3 4-5 7-8l3 3c-3 3-5 5-8 7" />;
-    case "dlya-perukariv":
+    case "hairdressers":
       return <path d="M8 10l8 8M16 10l-8 8M19 8l2-2M5 20l2-2" />;
-    case "dlya-barberiv":
+    case "barbers":
       return <path d="M8 20l12-12M11 9l9 9M8 8h4M18 18v4" />;
-    case "dlya-kosmetologiv":
+    case "cosmetologists":
       return <path d="M14 7l1.5 3.5L19 12l-3.5 1.5L14 17l-1.5-3.5L9 12l3.5-1.5L14 7zM7 18h14" />;
-    case "dlya-masazhu":
+    case "massage":
       return <path d="M8 17c2-2 4-3 6-3s4 1 6 3M9 12c1-1 2-2 5-2s4 1 5 2M8 20h12" />;
     default:
       return <path d="M8 20h12M8 12h12M8 8h8" />;

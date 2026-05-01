@@ -3,15 +3,21 @@ import { notFound } from "next/navigation";
 import BrandLogo from "../../BrandLogo";
 import BusinessIcon from "../../BusinessIcon";
 import GlobalLanguageSwitcher from "../../GlobalLanguageSwitcher";
-import { nichePageBySlug, nichePages, type NicheSlug } from "../../../lib/niche-pages";
+import {
+  getAllNicheParams,
+  getNicheKeyBySlug,
+  getNicheSlug,
+  nicheCards,
+  nicheContent,
+  nicheKeys,
+  nicheSeo
+} from "../../../lib/niche-pages";
 import {
   forBusinessFeatureBySlug,
   forBusinessFeaturePages,
-  isFeatureSlug,
-  isNicheAliasSlug,
-  nicheAliasToPrimary
+  isFeatureSlug
 } from "../../../lib/for-business-seo-pages";
-import { buildLanguageAlternates, buildMetadata } from "../../../lib/seo";
+import { buildMetadata } from "../../../lib/seo";
 import { getLocalizedPath, isSiteLanguage, siteLanguages, type SiteLanguage } from "../../../lib/site-language";
 
 type LocalizedSeoPageProps = {
@@ -54,16 +60,10 @@ const pageCopy = {
   }
 } satisfies Record<SiteLanguage, Record<string, string>>;
 
-function isNicheSlug(value: string): value is NicheSlug {
-  return value in nichePageBySlug;
-}
-
 export async function generateStaticParams() {
-  const aliasSlugs = Object.keys(nicheAliasToPrimary);
   return siteLanguages.flatMap((lang) => [
-    ...nichePages.map((item) => ({ lang, niche: item.slug })),
-    ...forBusinessFeaturePages.map((item) => ({ lang, niche: item.slug })),
-    ...aliasSlugs.map((slug) => ({ lang, niche: slug }))
+    ...getAllNicheParams().filter((item) => item.lang === lang).map((item) => ({ lang, niche: item.niche })),
+    ...forBusinessFeaturePages.map((item) => ({ lang, niche: item.slug }))
   ]);
 }
 
@@ -71,37 +71,46 @@ export async function generateMetadata({ params }: LocalizedSeoPageProps): Promi
   const { lang, niche } = await params;
   if (!isSiteLanguage(lang)) return {};
 
-  const canonicalSlug = isNicheAliasSlug(niche) ? nicheAliasToPrimary[niche] : niche;
-  if (!isNicheSlug(canonicalSlug) && !isFeatureSlug(canonicalSlug)) {
+  const nicheKey = getNicheKeyBySlug(lang, niche);
+  const featurePage = isFeatureSlug(niche) ? forBusinessFeatureBySlug[niche] : null;
+  if (!nicheKey && !featurePage) {
     return {};
   }
 
-  const seoCopy = isNicheSlug(canonicalSlug)
-    ? nichePageBySlug[canonicalSlug].seo[lang]
-    : forBusinessFeatureBySlug[canonicalSlug].seo[lang];
-  const metadata = buildMetadata(`/${lang}/${canonicalSlug}`, seoCopy, lang);
+  const pathname = `/${lang}/${niche}`;
+  const seoCopy = nicheKey ? nicheSeo[nicheKey][lang] : featurePage!.seo[lang];
+  const metadata = buildMetadata(pathname, seoCopy, lang);
   return {
     ...metadata,
-    alternates: buildLanguageAlternates(`/${canonicalSlug}`, lang)
+    alternates: nicheKey
+      ? {
+          canonical: `https://timviz.com${pathname}`,
+          languages: {
+            uk: `https://timviz.com/uk/${getNicheSlug("uk", nicheKey)}`,
+            ru: `https://timviz.com/ru/${getNicheSlug("ru", nicheKey)}`,
+            en: `https://timviz.com/en/${getNicheSlug("en", nicheKey)}`,
+            "x-default": `https://timviz.com/en/${getNicheSlug("en", nicheKey)}`
+          }
+        }
+      : metadata.alternates
   };
 }
 
 export default async function LocalizedNichePage({ params }: LocalizedSeoPageProps) {
   const { lang, niche } = await params;
-  const canonicalSlug = isNicheAliasSlug(niche) ? nicheAliasToPrimary[niche] : niche;
+  const nicheKey = isSiteLanguage(lang) ? getNicheKeyBySlug(lang, niche) : null;
+  const featurePage = isFeatureSlug(niche) ? forBusinessFeatureBySlug[niche] : null;
 
-  if (!isSiteLanguage(lang) || (!isNicheSlug(canonicalSlug) && !isFeatureSlug(canonicalSlug))) {
+  if (!isSiteLanguage(lang) || (!nicheKey && !featurePage)) {
     notFound();
   }
 
   const language = lang as SiteLanguage;
   const t = pageCopy[language];
-  const isNichePage = isNicheSlug(canonicalSlug);
-  const content = isNichePage
-    ? nichePageBySlug[canonicalSlug].page[language]
-    : forBusinessFeatureBySlug[canonicalSlug].copy[language];
-  const related = isNichePage ? nichePages.filter((entry) => entry.slug !== canonicalSlug) : [];
-  const iconName = isNichePage ? canonicalSlug : "default";
+  const isNichePage = Boolean(nicheKey);
+  const content = nicheKey ? nicheContent[nicheKey][language] : featurePage!.copy[language];
+  const related = nicheKey ? nicheKeys.filter((key) => key !== nicheKey) : [];
+  const iconName = nicheKey ?? "default";
 
   return (
     <main className="niche-page">
@@ -122,7 +131,7 @@ export default async function LocalizedNichePage({ params }: LocalizedSeoPagePro
       </section>
 
       <section className="niche-page-content">
-        {content.body.map((paragraph) => (
+        {content.body.map((paragraph: string) => (
           <p key={paragraph}>{paragraph}</p>
         ))}
       </section>
@@ -133,12 +142,12 @@ export default async function LocalizedNichePage({ params }: LocalizedSeoPagePro
             <h2>{t.otherTitle}</h2>
           </div>
           <div className="niche-links-grid">
-            {related.map((entry) => {
-              const card = entry.card[language];
+            {related.map((key) => {
+              const card = nicheCards[key][language];
               return (
-                <a className="niche-link-card" href={getLocalizedPath(language, `/${entry.slug}`)} key={entry.slug}>
+                <a className="niche-link-card" href={getLocalizedPath(language, `/${getNicheSlug(language, key)}`)} key={key}>
                   <span className="niche-link-icon" aria-hidden="true">
-                    <BusinessIcon name={entry.slug} className="niche-link-icon-svg" />
+                    <BusinessIcon name={key} className="niche-link-icon-svg" />
                   </span>
                   <h3>{card.shortTitle}</h3>
                   <p>{card.description}</p>

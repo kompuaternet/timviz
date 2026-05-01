@@ -134,7 +134,7 @@ const copy: Record<SiteLanguage, HairCopy> = {
     linksTitle: "Полезные ссылки",
     links: [
       { label: "Для бизнеса", href: "/for-business" },
-      { label: "Для мастеров маникюра", href: "/dlya-manikyuru" },
+      { label: "Для мастеров маникюра", href: "/dlya-manikyura" },
       { label: "Для барберов", href: "/dlya-barberov" },
       { label: "Для косметологов", href: "/dlya-kosmetologov" }
     ],
@@ -212,8 +212,8 @@ const copy: Record<SiteLanguage, HairCopy> = {
     links: [
       { label: "Для бізнесу", href: "/for-business" },
       { label: "Для майстрів манікюру", href: "/dlya-manikyuru" },
-      { label: "Для барберів", href: "/dlya-barberov" },
-      { label: "Для косметологів", href: "/dlya-kosmetologov" }
+      { label: "Для барберів", href: "/dlya-barberiv" },
+      { label: "Для косметологів", href: "/dlya-kosmetologiv" }
     ],
     footerText: "Timviz для бізнесу · онлайн-запис клієнтів і керування послугами",
     privacy: "Політика конфіденційності",
@@ -288,9 +288,9 @@ const copy: Record<SiteLanguage, HairCopy> = {
     linksTitle: "Useful links",
     links: [
       { label: "For business", href: "/for-business" },
-      { label: "For nail artists", href: "/dlya-manikyuru" },
-      { label: "For barbers", href: "/dlya-barberov" },
-      { label: "For cosmetologists", href: "/dlya-kosmetologov" }
+      { label: "For nail artists", href: "/for-nail-technicians" },
+      { label: "For barbers", href: "/for-barbers" },
+      { label: "For cosmetologists", href: "/for-cosmetologists" }
     ],
     footerText: "Timviz for business · online client booking and service management",
     privacy: "Privacy policy",
