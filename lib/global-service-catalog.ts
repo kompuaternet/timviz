@@ -4,6 +4,7 @@ import { getSupabaseAdmin, isSupabaseConfigured } from "./supabase";
 import {
   CategoryTemplate,
   SERVICE_TEMPLATE_CATALOG,
+  getServiceLocalizedText,
   type ServiceTemplate
 } from "./service-templates";
 
@@ -105,6 +106,7 @@ function buildTemplateServices(items: GlobalCatalogItem[]): ServiceTemplate[] {
     .sort((left, right) => left.sortOrder - right.sortOrder || left.name.localeCompare(right.name))
     .map((item) => ({
       name: item.name,
+      localizedName: getServiceLocalizedText(item.name),
       durationMinutes: item.durationMinutes,
       price: item.price
     }));

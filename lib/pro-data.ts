@@ -5,6 +5,8 @@ import { isMailerConfigured, sendMail } from "./mailer";
 import { getSupabaseAdmin, isSupabaseConfigured } from "./supabase";
 import { hashPassword, verifyPassword } from "./pro-auth";
 import { getPublicBusinessPathId } from "./public-business-path";
+import { convertBaseUahPriceToCountryPrice, inferCurrencyFromCountryName, type PricingContext } from "./service-pricing";
+import { getTemplateBasePriceUah } from "./service-templates";
 import {
   createEmptyCustomSchedule,
   createDefaultWorkSchedule,
@@ -329,12 +331,12 @@ function normalizeServiceModerationStatus(value: unknown): "pending" | "approved
   return value === "pending" ? "pending" : "approved";
 }
 
-function normalizeServiceRecord(service: ServiceRecord): ServiceRecord {
+function normalizeServiceRecord(service: ServiceRecord, context: PricingContext = {}): ServiceRecord {
   const source = normalizeServiceSource(service.source);
 
   return {
     ...service,
-    price: typeof service.price === "number" ? service.price : inferServicePrice(service.name),
+    price: typeof service.price === "number" ? service.price : inferServicePrice(service.name, context),
     category: service.category || "Без категории",
     durationMinutes:
       typeof service.durationMinutes === "number"
@@ -352,29 +354,7 @@ function normalizeServiceRecord(service: ServiceRecord): ServiceRecord {
 }
 
 export function inferCurrencyFromCountry(country = "") {
-  const normalized = country.toLowerCase();
-
-  if (normalized.includes("ukraine") || normalized.includes("укра")) {
-    return "UAH";
-  }
-
-  if (normalized.includes("russia") || normalized.includes("росси")) {
-    return "RUB";
-  }
-
-  if (normalized.includes("poland") || normalized.includes("поль")) {
-    return "PLN";
-  }
-
-  if (normalized.includes("united kingdom") || normalized.includes("britain") || normalized.includes("англ")) {
-    return "GBP";
-  }
-
-  if (normalized.includes("united states") || normalized.includes("usa") || normalized.includes("сша")) {
-    return "USD";
-  }
-
-  return "USD";
+  return inferCurrencyFromCountryName(country);
 }
 
 function normalizeProfessionalRecord(professional: ProfessionalRecord): ProfessionalRecord {
@@ -699,12 +679,12 @@ function mapSupabaseServiceRow(row: {
   moderated_at?: string | null;
   is_blocked?: boolean | null;
   created_at: string;
-}): ServiceRecord {
+}, context: PricingContext = {}): ServiceRecord {
   return normalizeServiceRecord({
     id: row.id,
     businessId: row.business_id,
     name: row.name,
-    price: typeof row.price === "number" ? row.price : inferServicePrice(row.name),
+    price: typeof row.price === "number" ? row.price : inferServicePrice(row.name, context),
     category: row.category || "Без категории",
     durationMinutes:
       typeof row.duration_minutes === "number" ? row.duration_minutes : inferServiceDuration(row.name),
@@ -716,7 +696,7 @@ function mapSupabaseServiceRow(row: {
     moderatedAt: row.moderated_at ?? undefined,
     isBlocked: row.is_blocked === true,
     createdAt: row.created_at
-  });
+  }, context);
 }
 
 function getDefaultServiceColor(serviceName: string, index = 0) {
@@ -794,24 +774,34 @@ function isDemoBusinessRecord(input: {
   });
 }
 
-function inferServicePrice(serviceName: string) {
-  if (/балаяж|окраш|цвет/i.test(serviceName)) {
+function inferBaseServicePriceUah(serviceName: string) {
+  const fromTemplate = getTemplateBasePriceUah(serviceName);
+  if (typeof fromTemplate === "number" && Number.isFinite(fromTemplate) && fromTemplate > 0) {
+    return fromTemplate;
+  }
+
+  if (/балаяж|окраш|цвет|фарб|color|balayage|toning/i.test(serviceName)) {
     return 1200;
   }
 
-  if (/педикюр|наращ|массаж|спа/i.test(serviceName)) {
+  if (/педикюр|наращ|массаж|масаж|spa|спа|facial|peel|пілінг|пилинг/i.test(serviceName)) {
     return 900;
   }
 
-  if (/маникюр|укладк|бород/i.test(serviceName)) {
+  if (/маникюр|манікюр|укладк|уклад|бород|beard|lash|brow|бров|вії|ресниц/i.test(serviceName)) {
     return 650;
   }
 
-  if (/стрижк/i.test(serviceName)) {
+  if (/стрижк|haircut|cut|fade|барбер|перукар/i.test(serviceName)) {
     return 500;
   }
 
   return 700;
+}
+
+function inferServicePrice(serviceName: string, context: PricingContext = {}) {
+  const basePriceUah = inferBaseServicePriceUah(serviceName);
+  return convertBaseUahPriceToCountryPrice(basePriceUah, context);
 }
 
 function inferServiceDuration(serviceName: string) {
@@ -948,7 +938,7 @@ async function loadBusinessDirectorySnapshot(): Promise<BusinessDirectorySnapsho
       businesses: (businesses ?? []).map(mapSupabaseBusinessRow).filter((business) => !isDemoBusinessRecord(business)),
       professionals: (professionals ?? []).map(mapSupabaseProfessionalRow),
       memberships: (memberships ?? []).map(mapSupabaseMembershipRow),
-      services: (services ?? []).map(mapSupabaseServiceRow),
+      services: (services ?? []).map((service) => mapSupabaseServiceRow(service)),
       joinRequests: (joinRequests ?? []).map(mapSupabaseJoinRequestRow),
       staffInvitations: (staffInvitations ?? []).map(mapSupabaseStaffInvitationRow)
     };
@@ -1119,7 +1109,10 @@ export async function createProfessionalSetup(input: {
           id: makeId("svc"),
           business_id: businessId,
           name: service,
-          price: inferServicePrice(service),
+          price: inferServicePrice(service, {
+            country: input.account.country,
+            currency: input.account.currency
+          }),
           category: input.setup.categories[0] || "Без категории",
           duration_minutes: inferServiceDuration(service),
           color: getDefaultServiceColor(service, index),
@@ -1382,7 +1375,10 @@ export async function createProfessionalSetup(input: {
         id: makeId("svc"),
         businessId,
         name: service,
-        price: inferServicePrice(service),
+        price: inferServicePrice(service, {
+          country: input.account.country,
+          currency: input.account.currency
+        }),
         category: input.setup.categories[0] || "Без категории",
         durationMinutes: inferServiceDuration(service),
         createdByProfessionalId: professionalId,
@@ -3343,6 +3339,16 @@ export async function ensureServiceForProfessional(input: {
   const source = input.source === "catalog" ? "catalog" : "custom";
   const moderationStatus = source === "custom" ? "pending" : "approved";
   const moderatedAt = source === "custom" ? null : createdAt;
+  const countryPricingContext: PricingContext = {
+    country: workspace.professional.country,
+    currency: workspace.professional.currency
+  };
+  const resolvedPrice =
+    typeof input.price === "number" && Number.isFinite(input.price)
+      ? source === "catalog"
+        ? convertBaseUahPriceToCountryPrice(Math.max(0, input.price), countryPricingContext)
+        : Math.max(0, input.price)
+      : inferServicePrice(serviceName, countryPricingContext);
 
   if (isSupabaseConfigured()) {
     const supabase = getSupabaseAdmin();
@@ -3354,10 +3360,7 @@ export async function ensureServiceForProfessional(input: {
       id: makeId("svc"),
       business_id: workspace.business.id,
       name: serviceName,
-      price:
-        typeof input.price === "number" && Number.isFinite(input.price)
-          ? Math.max(0, input.price)
-          : inferServicePrice(serviceName),
+      price: resolvedPrice,
       category: input.category || "Без категории",
       duration_minutes:
         typeof input.durationMinutes === "number" && Number.isFinite(input.durationMinutes)
@@ -3397,7 +3400,13 @@ export async function ensureServiceForProfessional(input: {
       id: service.id,
       businessId: service.business_id,
       name: service.name,
-      price: typeof service.price === "number" ? service.price : inferServicePrice(service.name),
+      price:
+        typeof service.price === "number"
+          ? service.price
+          : inferServicePrice(service.name, {
+              country: workspace.professional.country,
+              currency: workspace.professional.currency
+            }),
       category: service.category,
       durationMinutes: service.duration_minutes,
       color: service.color,
@@ -3417,10 +3426,7 @@ export async function ensureServiceForProfessional(input: {
     id: makeId("svc"),
     businessId: workspace.business.id,
     name: serviceName,
-    price:
-      typeof input.price === "number" && Number.isFinite(input.price)
-        ? Math.max(0, input.price)
-        : inferServicePrice(serviceName),
+    price: resolvedPrice,
     category: input.category || "Без категории",
     durationMinutes:
       typeof input.durationMinutes === "number" && Number.isFinite(input.durationMinutes)

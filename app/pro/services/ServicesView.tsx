@@ -4,7 +4,12 @@ import { useMemo, useState } from "react";
 import ProSidebar from "../ProSidebar";
 import ProWorkspaceHeader from "../ProWorkspaceHeader";
 import styles from "../pro.module.css";
-import type { CategoryTemplate } from "../../../lib/service-templates";
+import {
+  getServiceLocalizationKey,
+  localizeCategoryName,
+  localizeServiceName,
+  type CategoryTemplate
+} from "../../../lib/service-templates";
 import type { ServiceRecord, WorkspaceSnapshot } from "../../../lib/pro-data";
 import { useProLanguage } from "../useProLanguage";
 
@@ -143,10 +148,14 @@ export default function ServicesView({ initialWorkspace, catalog }: ServicesView
       return scopedServices;
     }
 
-    return scopedServices.filter((service) =>
-      `${service.name} ${service.category || ""}`.toLowerCase().includes(query)
-    );
-  }, [activeCategory, serviceQuery, services, t.common.noCategory]);
+    return scopedServices.filter((service) => {
+      const localizedName = localizeServiceName(service.name, language);
+      const localizedCategory = service.category ? localizeCategoryName(service.category, language) : "";
+      return `${service.name} ${localizedName} ${service.category || ""} ${localizedCategory}`
+        .toLowerCase()
+        .includes(query);
+    });
+  }, [activeCategory, language, serviceQuery, services, t.common.noCategory]);
 
   const categoryCounts = useMemo(() => {
     const counts = new Map<string, number>();
@@ -162,7 +171,7 @@ export default function ServicesView({ initialWorkspace, catalog }: ServicesView
     () =>
       new Map(
         services.map((service) => [
-          `${service.name.trim().toLowerCase()}::${(service.category || t.common.noCategory).trim().toLowerCase()}`,
+          `${getServiceLocalizationKey(service.name)}::${(service.category || t.common.noCategory).trim().toLowerCase()}`,
           service
         ])
       ),
@@ -175,11 +184,21 @@ export default function ServicesView({ initialWorkspace, catalog }: ServicesView
     return catalog
       .map((category) => {
         const categoryServices = [...category.topSuggestions, ...category.popularServices]
+          .map((service) => ({
+            ...service,
+            localizedLabel: localizeServiceName(service.name, language, service.localizedName),
+            localizationKey: getServiceLocalizationKey(service.name)
+          }))
           .filter(
-            (service, index, list) =>
-              list.findIndex((item) => item.name.toLowerCase() === service.name.toLowerCase()) === index
+            (service, index, list) => list.findIndex((item) => item.localizationKey === service.localizationKey) === index
           )
-          .filter((service) => !query || `${service.name} ${category.title}`.toLowerCase().includes(query));
+          .filter(
+            (service) =>
+              !query ||
+              `${service.name} ${service.localizedLabel} ${category.title} ${localizeCategoryName(category.title, language)}`
+                .toLowerCase()
+                .includes(query)
+          );
 
         return {
           category: category.title,
@@ -187,7 +206,7 @@ export default function ServicesView({ initialWorkspace, catalog }: ServicesView
         };
       })
       .filter((group) => group.services.length > 0);
-  }, [catalog, catalogQuery]);
+  }, [catalog, catalogQuery, language]);
 
   async function reloadServices() {
     const response = await fetch("/api/pro/services");
@@ -300,7 +319,13 @@ export default function ServicesView({ initialWorkspace, catalog }: ServicesView
     await persistOrder(ordered);
   }
 
-  async function addCatalogService(service: { name: string; category: string; durationMinutes?: number; price?: number }) {
+  async function addCatalogService(service: {
+    name: string;
+    category: string;
+    durationMinutes?: number;
+    price?: number;
+    localizedLabel?: string;
+  }) {
     setIsSaving(true);
     setStatusText("");
 
@@ -325,11 +350,11 @@ export default function ServicesView({ initialWorkspace, catalog }: ServicesView
     }
 
     await reloadServices();
-    setStatusText(copy.addedNamed(service.name));
+    setStatusText(copy.addedNamed(service.localizedLabel || localizeServiceName(service.name, language)));
     setIsSaving(false);
   }
 
-  async function removeCatalogService(service: ServiceRecord) {
+  async function removeCatalogService(service: ServiceRecord, localizedLabel?: string) {
     setIsSaving(true);
     setStatusText("");
 
@@ -345,7 +370,7 @@ export default function ServicesView({ initialWorkspace, catalog }: ServicesView
     }
 
     await reloadServices();
-    setStatusText(copy.removedNamed(service.name));
+    setStatusText(copy.removedNamed(localizedLabel || localizeServiceName(service.name, language)));
     setIsSaving(false);
   }
 
@@ -455,7 +480,11 @@ export default function ServicesView({ initialWorkspace, catalog }: ServicesView
                     className={activeCategory === category ? styles.servicesCategoryActive : ""}
                     onClick={() => setActiveCategory(category)}
                   >
-                    <span>{category === ALL_CATEGORIES_KEY ? t.common.allCategories : category}</span>
+                    <span>
+                      {category === ALL_CATEGORIES_KEY
+                        ? t.common.allCategories
+                        : localizeCategoryName(category, language)}
+                    </span>
                     <em>{categoryCounts.get(category) || 0}</em>
                   </button>
                 ))}
@@ -521,7 +550,7 @@ export default function ServicesView({ initialWorkspace, catalog }: ServicesView
                           {categories
                             .map((category) => (
                               <option key={category} value={category}>
-                                {category}
+                                {localizeCategoryName(category, language)}
                               </option>
                             ))}
                         </select>
@@ -570,8 +599,11 @@ export default function ServicesView({ initialWorkspace, catalog }: ServicesView
                     ) : (
                       <>
                         <div className={styles.serviceMenuMain}>
-                          <strong>{service.name}</strong>
-                          <span>{service.category || t.common.noCategory} · {formatDuration(service.durationMinutes || 60, t.common)}</span>
+                          <strong>{localizeServiceName(service.name, language)}</strong>
+                          <span>
+                            {(service.category ? localizeCategoryName(service.category, language) : t.common.noCategory)} ·{" "}
+                            {formatDuration(service.durationMinutes || 60, t.common)}
+                          </span>
                         </div>
                         <strong className={styles.serviceMenuPrice}>{formatServicePrice(service.price || 0, language, accountCurrency)}</strong>
                         <div className={styles.serviceRowActions}>
@@ -622,7 +654,7 @@ export default function ServicesView({ initialWorkspace, catalog }: ServicesView
                     {categories
                       .map((category) => (
                         <option key={category} value={category}>
-                          {category}
+                          {localizeCategoryName(category, language)}
                         </option>
                       ))}
                   </select>
@@ -687,7 +719,7 @@ export default function ServicesView({ initialWorkspace, catalog }: ServicesView
                         className={styles.catalogCategoryHeader}
                         onClick={() => toggleCatalogCategory(group.category)}
                       >
-                        <span>{group.category}</span>
+                        <span>{localizeCategoryName(group.category, language)}</span>
                         <em>{group.services.length} {t.services.count}</em>
                         <strong>{isExpanded ? "−" : "+"}</strong>
                       </button>
@@ -697,25 +729,25 @@ export default function ServicesView({ initialWorkspace, catalog }: ServicesView
                           {group.services.map((service) => {
                             const existingService =
                               servicesByCatalogKey.get(
-                                `${service.name.trim().toLowerCase()}::${group.category.trim().toLowerCase()}`
+                                `${service.localizationKey}::${group.category.trim().toLowerCase()}`
                               ) ||
-                              services.find((item) => item.name.trim().toLowerCase() === service.name.trim().toLowerCase()) ||
+                              services.find((item) => getServiceLocalizationKey(item.name) === service.localizationKey) ||
                               null;
                             const exists = Boolean(existingService);
 
                             return (
                               <button
-                                key={`${group.category}-${service.name}`}
+                                key={`${group.category}-${service.localizationKey}`}
                                 type="button"
                                 className={`${styles.catalogServiceLine} ${exists ? styles.catalogServiceLineActive : ""}`}
                                 disabled={isSaving}
                                 onClick={() =>
                                   exists && existingService
-                                    ? void removeCatalogService(existingService)
-                                    : void addCatalogService({ ...service, category: group.category })
+                                    ? void removeCatalogService(existingService, service.localizedLabel)
+                                    : void addCatalogService({ ...service, category: group.category, localizedLabel: service.localizedLabel })
                                 }
                               >
-                                <span>{service.name}</span>
+                                <span>{service.localizedLabel}</span>
                                 <em>{formatDuration(service.durationMinutes || 60, t.common)} · {formatServicePrice(service.price || 0, language, accountCurrency)}</em>
                                 <strong>{exists ? "−" : "+"}</strong>
                                 <small>{exists ? t.services.inMyServices : t.services.addFromCatalog}</small>
@@ -743,8 +775,11 @@ export default function ServicesView({ initialWorkspace, catalog }: ServicesView
             </div>
             <div className={styles.servicesDeletePreview}>
               <span style={{ background: serviceToDelete.color || colorPalette[0] }} />
-              <strong>{serviceToDelete.name}</strong>
-              <em>{serviceToDelete.category || t.common.noCategory} · {formatDuration(serviceToDelete.durationMinutes || 60, t.common)}</em>
+              <strong>{localizeServiceName(serviceToDelete.name, language)}</strong>
+              <em>
+                {(serviceToDelete.category ? localizeCategoryName(serviceToDelete.category, language) : t.common.noCategory)} ·{" "}
+                {formatDuration(serviceToDelete.durationMinutes || 60, t.common)}
+              </em>
             </div>
             <div className={styles.servicesDeleteActions}>
               <button type="button" className={styles.calendarSecondaryAction} onClick={() => setServiceToDelete(null)}>

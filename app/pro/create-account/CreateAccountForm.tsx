@@ -32,17 +32,17 @@ const countryConfigs: CountryConfig[] = [
   { country: "France", currency: "EUR", timezone: "Europe/Paris" },
   { country: "Spain", currency: "EUR", timezone: "Europe/Madrid" },
   { country: "Italy", currency: "EUR", timezone: "Europe/Rome" },
-  { country: "Czech Republic", currency: "EUR", timezone: "Europe/Prague" },
+  { country: "Czech Republic", currency: "CZK", timezone: "Europe/Prague" },
   { country: "Slovakia", currency: "EUR", timezone: "Europe/Prague" },
-  { country: "Moldova", currency: "EUR", timezone: "Europe/Kiev" },
-  { country: "Romania", currency: "EUR", timezone: "Europe/Kiev" },
+  { country: "Moldova", currency: "MDL", timezone: "Europe/Chisinau" },
+  { country: "Romania", currency: "RON", timezone: "Europe/Bucharest" },
   { country: "Georgia", currency: "GEL", timezone: "Asia/Tbilisi" },
-  { country: "Armenia", currency: "USD", timezone: "Asia/Yerevan" },
+  { country: "Armenia", currency: "AMD", timezone: "Asia/Yerevan" },
   { country: "Kazakhstan", currency: "KZT", timezone: "Asia/Almaty" },
-  { country: "Lithuania", currency: "EUR", timezone: "Europe/Kiev" },
-  { country: "Latvia", currency: "EUR", timezone: "Europe/Kiev" },
-  { country: "Estonia", currency: "EUR", timezone: "Europe/Kiev" },
-  { country: "Turkey", currency: "USD", timezone: "Europe/Kiev" },
+  { country: "Lithuania", currency: "EUR", timezone: "Europe/Vilnius" },
+  { country: "Latvia", currency: "EUR", timezone: "Europe/Riga" },
+  { country: "Estonia", currency: "EUR", timezone: "Europe/Tallinn" },
+  { country: "Turkey", currency: "TRY", timezone: "Europe/Istanbul" },
   { country: "United Arab Emirates", currency: "AED", timezone: "Asia/Dubai" },
   { country: "Russia", currency: "RUB", timezone: "Europe/Moscow" },
   { country: "International", currency: "USD", timezone: "" }
@@ -50,7 +50,7 @@ const countryConfigs: CountryConfig[] = [
 
 const countries = countryConfigs.map((item) => item.country);
 const languages: ProLanguage[] = ["ru", "uk", "en"];
-const currencies = ["USD", "RUB", "UAH", "EUR", "PLN", "GBP", "KZT", "GEL", "AED", "CAD"];
+const currencies = ["USD", "RUB", "UAH", "EUR", "PLN", "GBP", "KZT", "GEL", "AED", "CAD", "CZK", "MDL", "RON", "AMD", "TRY"];
 const liveDraftKey = "rezervo-pro-create-account-draft";
 const setupDraftKey = "rezervo-pro-account-draft";
 const timezones = [
@@ -70,6 +70,11 @@ const timezones = [
   { value: "Europe/Paris", label: "UTC+1 · Paris" },
   { value: "Europe/Madrid", label: "UTC+1 · Madrid" },
   { value: "Europe/Rome", label: "UTC+1 · Rome" },
+  { value: "Europe/Bucharest", label: "UTC+2 · Bucharest" },
+  { value: "Europe/Chisinau", label: "UTC+2 · Chisinau" },
+  { value: "Europe/Vilnius", label: "UTC+2 · Vilnius" },
+  { value: "Europe/Riga", label: "UTC+2 · Riga" },
+  { value: "Europe/Tallinn", label: "UTC+2 · Tallinn" },
   { value: "Europe/Kiev", label: "UTC+2 · Kyiv" },
   { value: "Europe/Kaliningrad", label: "UTC+2 · Kaliningrad" },
   { value: "Europe/Moscow", label: "UTC+3 · Moscow" },
@@ -151,6 +156,8 @@ function getCountryFromTimezone(timezone: string) {
     "Europe/Madrid": "Spain",
     "Europe/Rome": "Italy",
     "Europe/Prague": "Czech Republic",
+    "Europe/Chisinau": "Moldova",
+    "Europe/Bucharest": "Romania",
     "Asia/Tbilisi": "Georgia",
     "Asia/Yerevan": "Armenia",
     "Asia/Almaty": "Kazakhstan",

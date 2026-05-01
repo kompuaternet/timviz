@@ -14,7 +14,9 @@ import {
 import {
   getCategoryOptions,
   type CategoryTemplate,
-  getServicesForCategories
+  getServicesForCategories,
+  localizeCategoryName,
+  localizeServiceName
 } from "../../../lib/service-templates";
 
 const serviceModes = [
@@ -24,78 +26,6 @@ const serviceModes = [
 ] as const;
 
 type ServiceMode = (typeof serviceModes)[number];
-
-const categoryNameTranslations: Record<string, Record<ProLanguage, string>> = {
-  "Парикмахерская": {
-    ru: "Парикмахерская",
-    uk: "Перукарня",
-    en: "Hair salon"
-  },
-  "Ногти": {
-    ru: "Ногти",
-    uk: "Нігті",
-    en: "Nails"
-  },
-  "Брови и ресницы": {
-    ru: "Брови и ресницы",
-    uk: "Брови та вії",
-    en: "Brows and lashes"
-  },
-  "Салон красоты": {
-    ru: "Салон красоты",
-    uk: "Салон краси",
-    en: "Beauty salon"
-  },
-  "Медспа": {
-    ru: "Медспа",
-    uk: "Медспа",
-    en: "Medspa"
-  },
-  "Парикмахер": {
-    ru: "Парикмахер",
-    uk: "Перукар",
-    en: "Hairdresser"
-  },
-  "Массажный салон": {
-    ru: "Массажный салон",
-    uk: "Масажний салон",
-    en: "Massage studio"
-  },
-  "Спа-салон и сауна": {
-    ru: "Спа-салон и сауна",
-    uk: "Спа-салон і сауна",
-    en: "Spa and sauna"
-  },
-  "Салон депиляции": {
-    ru: "Салон депиляции",
-    uk: "Салон депіляції",
-    en: "Hair removal salon"
-  },
-  "Тату и пирсинг": {
-    ru: "Тату и пирсинг",
-    uk: "Тату та пірсинг",
-    en: "Tattoo and piercing"
-  },
-  "Студия загара": {
-    ru: "Студия загара",
-    uk: "Студія засмаги",
-    en: "Tanning studio"
-  },
-  "Физиотерапия": {
-    ru: "Физиотерапия",
-    uk: "Фізіотерапія",
-    en: "Physiotherapy"
-  },
-  "Другая": {
-    ru: "Другая",
-    uk: "Інша",
-    en: "Other"
-  }
-};
-
-function getLocalizedCategoryName(category: string, language: ProLanguage) {
-  return categoryNameTranslations[category]?.[language] ?? category;
-}
 
 function CategoryScissorsIcon(props: SVGProps<SVGSVGElement>) {
   return (
@@ -1436,7 +1366,7 @@ export default function ProSetupFlow({
                     <span className={styles.categoryIcon} aria-hidden="true">
                       {getCategoryIcon(category)}
                     </span>
-                    <span className={styles.choiceTitle}>{getLocalizedCategoryName(category, language)}</span>
+                    <span className={styles.choiceTitle}>{localizeCategoryName(category, language)}</span>
                     <span className={styles.categoryMeta}>
                       {getCategoryServicesMeta(category, catalog, language)}
                     </span>
@@ -1460,24 +1390,27 @@ export default function ProSetupFlow({
               {draft.services.length > 0 ? (
                 <>
                   <div className={styles.generatedList}>
-                    {visibleSuggestedServices.map((service) => (
-                      <button
-                        key={service}
-                        type="button"
-                        className={styles.generatedChipButton}
-                        onClick={() =>
-                          setDraft((current) => ({
-                            ...current,
-                            services: current.services.filter((item) => item !== service)
-                          }))
-                        }
-                        aria-label={`${t.categories.deleteService} ${service}`}
-                        title={t.categories.deleteService}
-                      >
-                        <span className={styles.generatedChip}>{service}</span>
-                        <span className={styles.generatedChipRemove}>×</span>
-                      </button>
-                    ))}
+                    {visibleSuggestedServices.map((service) => {
+                      const localizedServiceName = localizeServiceName(service, language);
+                      return (
+                        <button
+                          key={service}
+                          type="button"
+                          className={styles.generatedChipButton}
+                          onClick={() =>
+                            setDraft((current) => ({
+                              ...current,
+                              services: current.services.filter((item) => item !== service)
+                            }))
+                          }
+                          aria-label={`${t.categories.deleteService} ${localizedServiceName}`}
+                          title={t.categories.deleteService}
+                        >
+                          <span className={styles.generatedChip}>{localizedServiceName}</span>
+                          <span className={styles.generatedChipRemove}>×</span>
+                        </button>
+                      );
+                    })}
                   </div>
 
                   {hiddenSuggestedServicesCount > 0 ? (
@@ -1688,7 +1621,7 @@ export default function ProSetupFlow({
                 >
                   {manualCategoryOptions.map((category) => (
                     <option key={category} value={category}>
-                      {getLocalizedCategoryName(category, language)}
+                      {localizeCategoryName(category, language)}
                     </option>
                   ))}
                 </select>
