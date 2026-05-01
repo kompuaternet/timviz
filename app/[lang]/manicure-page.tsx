@@ -872,12 +872,15 @@ export default function ManicureLanding({ language }: { language: SiteLanguage }
         <ul className="business-seo-list">{t.reasons.map((item) => <li key={item}>{item}</li>)}</ul>
       </section>
 
-      <section className="business-feature-section">
-        <div className="business-section-head">
-          <h2>{t.nicheFitTitle}</h2>
+      <section className="business-feature-section niche-showcase-section">
+        <div className="niche-showcase-copy">
+          <div className="business-section-head">
+            <h2>{t.nicheFitTitle}</h2>
+          </div>
+          <ul className="business-seo-list">{t.nicheFitItems.map((item) => <li key={item}>{item}</li>)}</ul>
         </div>
-        <ul className="business-seo-list">{t.nicheFitItems.map((item) => <li key={item}>{item}</li>)}</ul>
-        <article className="manicure-service-card">
+        <article className="manicure-service-card niche-showcase-card">
+          <img src={screenshots.week} alt={t.screenshotAltServices} loading="lazy" />
           <strong>{t.nicheFitSample}</strong>
         </article>
       </section>

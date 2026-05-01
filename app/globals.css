@@ -2950,6 +2950,47 @@
   padding: 12px 14px;
 }
 
+.niche-showcase-section {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+  gap: 18px;
+  align-items: stretch;
+}
+
+.niche-showcase-copy {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+}
+
+.niche-showcase-copy .business-section-head {
+  max-width: none;
+  margin-bottom: 6px;
+}
+
+.niche-showcase-copy .business-seo-list {
+  gap: 8px;
+}
+
+.niche-showcase-card {
+  display: grid;
+  grid-template-rows: minmax(230px, 1fr) auto;
+  border-radius: 20px;
+  box-shadow: 0 20px 58px rgba(57, 45, 110, 0.12);
+}
+
+.niche-showcase-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+}
+
+.niche-showcase-card strong {
+  padding: 14px 16px;
+  font-weight: 860;
+}
+
 .manicure-telegram-image {
   margin: 20px auto;
   max-width: 720px;
@@ -3025,6 +3066,19 @@
   .manicure-hero,
   .manicure-services-grid {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .niche-showcase-section {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+  }
+
+  .niche-showcase-card {
+    grid-template-rows: auto auto;
+  }
+
+  .niche-showcase-card img {
+    max-height: 340px;
   }
 
   .hair-card-grid {

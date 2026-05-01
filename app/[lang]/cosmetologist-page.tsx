@@ -448,13 +448,15 @@ export default function CosmetologistLanding({ language }: { language: SiteLangu
         <small className="hair-cta-caption">{t.ctaHint}</small>
       </section>
 
-      <section className="business-feature-section">
-        <div className="business-section-head">
-          <h2>{t.nicheTitle}</h2>
-          <p>{t.nicheText}</p>
+      <section className="business-feature-section niche-showcase-section">
+        <div className="niche-showcase-copy">
+          <div className="business-section-head">
+            <h2>{t.nicheTitle}</h2>
+            <p>{t.nicheText}</p>
+          </div>
+          <ul className="business-seo-list">{t.nicheItems.map((item) => <li key={item}>{item}</li>)}</ul>
         </div>
-        <ul className="business-seo-list">{t.nicheItems.map((item) => <li key={item}>{item}</li>)}</ul>
-        <article className="manicure-service-card">
+        <article className="manicure-service-card niche-showcase-card">
           <img src={screenshots.week} alt={t.altServices} loading="lazy" />
           <strong>{t.nicheSample}</strong>
         </article>

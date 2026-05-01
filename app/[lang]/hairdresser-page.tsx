@@ -432,7 +432,13 @@ export default function HairdresserLanding({ language }: { language: SiteLanguag
 
       <section className="business-seo-section"><h2>{t.telegramTitle}</h2><p>{t.telegramText}</p><img src={screenshots.month} alt={t.altTelegram} loading="lazy" className="manicure-telegram-image" /></section>
 
-      <section className="business-feature-section"><div className="business-section-head"><h2>{t.nicheTitle}</h2><p>{t.nicheText}</p></div><ul className="business-seo-list">{t.nicheItems.map((item) => <li key={item}>{item}</li>)}</ul></section>
+      <section className="business-feature-section niche-showcase-section">
+        <div className="niche-showcase-copy">
+          <div className="business-section-head"><h2>{t.nicheTitle}</h2><p>{t.nicheText}</p></div>
+          <ul className="business-seo-list">{t.nicheItems.map((item) => <li key={item}>{item}</li>)}</ul>
+        </div>
+        <article className="manicure-service-card niche-showcase-card"><img src={screenshots.week} alt={t.altService} loading="lazy" /><strong>{t.serviceExample}</strong></article>
+      </section>
       <section className="business-feature-section"><div className="business-section-head"><h2>{t.socialTitle}</h2><p>{t.socialText}</p></div></section>
 
       <section className="business-feature-section">
