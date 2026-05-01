@@ -409,7 +409,6 @@ export default function BarberLanding({ language }: { language: SiteLanguage }) 
           <p>{t.subtitle}</p>
           <div className="business-hero-actions">
             <a className="business-primary" href="/pro/create-account">{t.ctaPrimary}</a>
-            <a className="business-secondary" href="/pro/create-account">{t.ctaSecondary}</a>
           </div>
           <small>{t.microcopy}</small>
         </div>
