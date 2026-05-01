@@ -17,9 +17,9 @@ type HairCopy = {
   subtitle: string;
   cta: string;
   ctaSecondary: string;
-  ctaAfterHero: string;
   ctaAfterFeatures: string;
   ctaBottom: string;
+  ctaHint: string;
   microcopy: string;
   sampleClient: string;
   sampleService: string;
@@ -39,8 +39,10 @@ type HairCopy = {
   without: string[];
   with: string[];
   telegramTitle: string;
+  telegramText: string;
   nicheTitle: string;
   nicheText: string;
+  nicheItems: string[];
   socialTitle: string;
   socialText: string;
   seoBlockTitle: string;
@@ -48,6 +50,7 @@ type HairCopy = {
   faqTitle: string;
   faq: Array<{ q: string; a: string }>;
   finalTitle: string;
+  finalText: string;
   finalButton: string;
   linksTitle: string;
   links: Array<{ label: string; href: string }>;
@@ -56,6 +59,7 @@ type HairCopy = {
   terms: string;
   altCalendar: string;
   altService: string;
+  altTelegram: string;
 };
 
 const ruSeoParagraphs = [
@@ -69,6 +73,25 @@ const ruSeoParagraphs = [
   "Если вам нужна программа для записи клиентов, которая не требует долгого внедрения, Timviz позволяет стартовать за несколько минут. Вы создаете профиль, добавляете услуги парикмахера, задаете график работы парикмахера и делитесь ссылкой на клиентскую запись онлайн. С этого момента поток заявок идет в понятную систему, а не теряется в сообщениях. Именно так онлайн запись для парикмахеров превращается в инструмент роста, а не просто еще один канал коммуникации."
 ];
 
+const ukSeoParagraphs = [
+  "Для сучасного перукаря онлайн запис клієнтів уже не є додатковою опцією, а стає основою стабільного графіка. Коли клієнти пишуть у різні месенджери, частина заявок губиться, час на відповіді росте, а майстер витрачає енергію не на якість послуги, а на ручну координацію. Timviz вирішує цю проблему як програма для запису клієнтів: усі запити збираються в одному місці, клієнт одразу бачить доступний слот, а перукар працює за передбачуваним планом дня. Це дає кращий сервіс, більше підтверджених візитів і менше стресу в пікові години.",
+  "Коли в роботі є різні послуги — коротка чоловіча стрижка, довге фарбування, укладка перед подією або складна процедура відновлення — без системи легко зробити накладку. Календар записів у Timviz показує не просто список клієнтів, а реальну структуру дня: тривалість кожної послуги, вільні вікна, поточні підтвердження та зміни. Завдяки цьому майстер бачить повну картину завантаження й не ставить складні послуги в занадто короткі проміжки. Запис клієнтів онлайн стає керованим процесом, де графік допомагає заробляти, а не створює хаос.",
+  "Багато перукарів шукають інструмент, який працює як CRM для перукаря, але без складного впровадження та навчання. Timviz дає саме такий формат: у кабінеті є послуги, ціни, тривалість, розклад і клієнтські записи. Вам не потрібно окремо вести таблиці, виписувати час у нотатки чи тримати все в голові. Програма для запису клієнтів підказує структуру: клієнт обирає потрібну послугу, система пропонує коректні вільні слоти, а ви одразу розумієте, як виглядає день. Це скорочує кількість помилок і робить обслуговування стабільно професійним.",
+  "Окремий плюс для майстра — прозора комунікація з клієнтом до візиту. Коли запис робиться вручну, клієнт часто не бачить остаточної ціни, не розуміє тривалість процедури або плутає час. У Timviz це знімається на етапі вибору: опис послуги, ціна і тривалість задані наперед. Онлайн запис клієнтів у такому форматі зменшує кількість уточнень і переносів. Людина одразу розуміє, на що записується, а перукар не витрачає вечір на повторні підтвердження. В результаті зростає якість сервісу і довіра до майстра як до організованого спеціаліста.",
+  "Календар записів особливо важливий тим, хто працює у щільному темпі та приймає багато повторних клієнтів. За день може бути десятки дрібних змін: хтось переносить візит, хтось додає послугу, хтось просить інший час. Якщо все це вести в чатах, ризик помилки дуже високий. Timviz збирає ці зміни в єдиній системі, де видно оновлений графік без ручного перерахунку. Запис клієнтів онлайн у поєднанні з таким календарем допомагає тримати дисципліну дня, скорочує простої між візитами й дозволяє швидко пропонувати клієнтам найближчі вільні вікна без довгої переписки.",
+  "Ще одна критична потреба перукаря — швидко бачити нові бронювання, не відкриваючи постійно кілька додатків. Саме тому в Timviz є Telegram-сповіщення: майстер одразу отримує сигнал про новий запис, зміну часу або скасування. Це практичний інструмент, особливо коли ви зайняті з клієнтом і не можете контролювати чат щохвилини. CRM для перукаря у зв’язці з миттєвими повідомленнями зменшує ризик пропущених заявок і дозволяє тримати сервіс на високому рівні. Клієнт бачить швидку реакцію, а ви зберігаєте фокус на роботі, а не на ручному адмініструванні.",
+  "У реальному робочому дні важлива не тільки кількість записів, а й якість завантаження. Коли між клієнтами з’являються випадкові розриви, майстер втрачає час, а коли записи стоять надто щільно, зростає ризик запізнень. Timviz допомагає вирівнювати графік: календар записів показує слабкі місця, а програма для запису клієнтів дає можливість точніше налаштувати тривалість і доступні вікна. У результаті онлайн запис клієнтів працює не хаотично, а як передбачуваний потік. Це покращує ритм дня, дає стабільніший дохід і робить сервіс для клієнта більш професійним.",
+  "Для салонів і команд із кількох майстрів Timviz також працює як зрозуміла програма для запису клієнтів. Кожен спеціаліст може вести свій графік, а адміністратор або керівник бачить загальну картину завантаження. Це важливо для планування робочих змін, запуску акцій та розподілу потоку клієнтів між майстрами. Онлайн запис клієнтів у такій моделі не створює хаос у спільному календарі, а навпаки, дає контроль над усією системою запису. Навіть якщо ви починаєте як приватний майстер, у майбутньому легко масштабувати роботу без переходу на інший інструмент.",
+  "Сильна сторона Timviz у тому, що сервіс швидко запускається й не вимагає окремого сайту. Перукар створює профіль, додає послуги, налаштовує робочі дні та одразу може приймати записи. Клієнтська сторінка працює за посиланням: це зручно для Instagram, Telegram, Viber та будь-яких інших каналів. Запис клієнтів онлайн перестає бути хаотичним листуванням і перетворюється на зрозумілий процес із чіткими правилами. У підсумку майстер отримує більше підтверджених візитів, менше втрат і стабільніше планування доходу на тиждень або місяць.",
+  "Якщо підсумувати, Timviz дає перукарю саме те, що впливає на результат: календар записів, структуровану CRM для перукаря, контроль цін і тривалості послуг, швидкі сповіщення та простий старт без технічних бар’єрів. Це не перевантажена система, а практичний сервіс, який закриває щоденні задачі майстра. Програма для запису клієнтів допомагає не лише навести порядок, а й підвищити конверсію у реальні візити. Тому онлайн запис клієнтів стає не просто зручністю для клієнта, а повноцінним інструментом росту для вашої перукарської практики. Усе працює в єдиному ритмі: від першого кліку клієнта до підтвердженого візиту у вашому календарі."
+];
+
+const screenshotsByLanguage: Record<SiteLanguage, { day: string; week: string; month: string }> = {
+  ru: { day: "/for-business/ru-day.png", week: "/for-business/ru-week.png", month: "/for-business/ru-month.png" },
+  uk: { day: "/for-business/uk-day.png", week: "/for-business/uk-week.png", month: "/for-business/uk-month.png" },
+  en: { day: "/for-business/en-day.png", week: "/for-business/en-week.png", month: "/for-business/en-month.png" }
+};
+
 const copy: Record<SiteLanguage, HairCopy> = {
   ru: {
     home: "Главная",
@@ -77,9 +100,9 @@ const copy: Record<SiteLanguage, HairCopy> = {
     subtitle: "Принимайте записи клиентов онлайн, управляйте расписанием и не теряйте клиентов",
     cta: "Начать бесплатно",
     ctaSecondary: "Посмотреть возможности",
-    ctaAfterHero: "Начать бесплатно",
     ctaAfterFeatures: "Начать бесплатно",
     ctaBottom: "Создать профиль парикмахера",
+    ctaHint: "Без сайта • без сложных настроек",
     microcopy: "Без сложных настроек • запуск за 2 минуты",
     sampleClient: "Клиент: Ольга М.",
     sampleService: "Стрижка + укладка · 75 мин",
@@ -95,12 +118,12 @@ const copy: Record<SiteLanguage, HairCopy> = {
     ],
     solutionTitle: "Timviz решает это",
     solution: [
-      { title: "24/7 онлайн-запись", text: "Клиенты записываются сами в любое время без звонков.", benefit: "Меньше ручной работы" },
-      { title: "Календарь записей", text: "Все записи видны в одном календаре с актуальными статусами.", benefit: "Полный контроль дня" },
-      { title: "Услуги с ценой", text: "Услуги с ценой и длительностью — без путаницы.", benefit: "Прозрачность для клиента" },
-      { title: "Рабочие дни", text: "Настройка рабочих дней и свободных окон под ваш график.", benefit: "Гибкий ритм работы" },
-      { title: "Telegram уведомления", text: "Получайте записи и подтверждения в Telegram.", benefit: "Быстрая реакция" },
-      { title: "Клиентская страница", text: "Персональная страница для записи клиентов без лишних шагов.", benefit: "Больше завершенных записей" }
+      { title: "24/7 онлайн-запись", text: "Клиенты записываются сами в любое время без звонков." },
+      { title: "Календарь записей", text: "Все записи видны в одном календаре с актуальными статусами." },
+      { title: "Услуги с ценой", text: "Услуги с ценой и длительностью — без путаницы." },
+      { title: "Рабочие дни", text: "Настройка рабочих дней и свободных окон под ваш график." },
+      { title: "Telegram уведомления", text: "Получайте записи и подтверждения в Telegram." },
+      { title: "Клиентская страница", text: "Персональная страница для записи клиентов без лишних шагов." }
     ],
     servicesTitle: "Настройте услуги парикмахера",
     serviceItems: ["стрижка", "женская стрижка", "мужская стрижка", "окрашивание", "укладка", "сложные окрашивания", "уход за волосами", "восстановление"],
@@ -113,8 +136,10 @@ const copy: Record<SiteLanguage, HairCopy> = {
     without: ["записи в мессенджерах", "путаница"],
     with: ["календарь", "онлайн запись", "структура"],
     telegramTitle: "Получайте записи в Telegram",
+    telegramText: "Подключите Telegram-уведомления и оперативно реагируйте на новые визиты и изменения в расписании.",
     nicheTitle: "Подходит для парикмахеров и салонов",
     nicheText: "Удобно для стрижек, окрашивания, укладки и сложных процедур с разной длительностью.",
+    nicheItems: ["стрижки", "окрашивание", "укладки", "сложные процедуры"],
     socialTitle: "Мастера уже используют Timviz",
     socialText: "Парикмахеры переходят на Timviz, чтобы сократить ручные переписки и быстрее подтверждать записи.",
     seoBlockTitle: "Программа для записи клиентов для парикмахеров",
@@ -130,6 +155,7 @@ const copy: Record<SiteLanguage, HairCopy> = {
       { q: "Подходит ли Timviz для сложных окрашиваний?", a: "Да, вы можете задать длительность и стоимость сложных процедур отдельно." }
     ],
     finalTitle: "Готовы увеличить записи без хаоса?",
+    finalText: "Создайте профиль, добавьте услуги и начните принимать записи клиентов онлайн без лишних переписок.",
     finalButton: "Создать профиль парикмахера",
     linksTitle: "Полезные ссылки",
     links: [
@@ -142,39 +168,40 @@ const copy: Record<SiteLanguage, HairCopy> = {
     privacy: "Политика конфиденциальности",
     terms: "Условия использования",
     altCalendar: "Календарь записей для парикмахера в Timviz",
-    altService: "Услуги парикмахера и цены в Timviz"
+    altService: "Услуги парикмахера и цены в Timviz",
+    altTelegram: "Telegram уведомления о записях для парикмахеров в Timviz"
   },
   uk: {
     home: "Головна",
     forBusiness: "Для бізнесу",
     title: "Онлайн-запис для перукарів",
-    subtitle: "Приймайте записи клієнтів онлайн, керуйте розкладом і не втрачайте клієнтів",
-    cta: "Почати безкоштовно",
+    subtitle: "Приймайте записи клієнтів онлайн, керуйте графіком і не втрачайте клієнтів",
+    cta: "Почати приймати записи за 2 хвилини",
     ctaSecondary: "Подивитися можливості",
-    ctaAfterHero: "Почати безкоштовно",
-    ctaAfterFeatures: "Почати безкоштовно",
-    ctaBottom: "Створити профіль перукаря",
+    ctaAfterFeatures: "Почати приймати записи за 2 хвилини",
+    ctaBottom: "Почати приймати записи за 2 хвилини",
+    ctaHint: "Без сайту • без складних налаштувань",
     microcopy: "Без складних налаштувань • запуск за 2 хвилини",
     sampleClient: "Клієнт: Ольга М.",
     sampleService: "Стрижка + укладка · 75 хв",
     sampleStatus: "Статус: Підтверджено",
     problemsTitle: "Знайомо перукарю?",
     problems: [
-      { title: "Клієнти пишуть у месенджери", text: "Записи з Instagram, Telegram і Viber легко губляться." },
-      { title: "Складно вести вручну", text: "Важко швидко оновлювати записи й зміни вручну." },
-      { title: "Плутається тривалість", text: "Стрижки та фарбування мають різний таймінг, що створює хаос." },
-      { title: "Накладки за часом", text: "Без єдиного календаря легко допустити перетини в розкладі." },
-      { title: "Клієнти забувають", text: "Без нагадувань частіше виникають пропуски візитів." },
-      { title: "Не видно вільні вікна", text: "Складно швидко запропонувати клієнту вільний час." }
+      { title: "Клієнти пишуть в Instagram і Telegram", text: "Записи залишаються в чатах і їх легко втратити." },
+      { title: "Записи губляться", text: "Складно зрозуміти хто і коли записаний." },
+      { title: "Різна тривалість послуг", text: "Стрижка, фарбування і укладка займають різний час." },
+      { title: "Накладки по часу", text: "Клієнти можуть бути записані на один і той самий час." },
+      { title: "Клієнти забувають", text: "Без нагадувань клієнти не приходять." },
+      { title: "Немає чіткої картини дня", text: "Складно швидко побачити вільні вікна." }
     ],
     solutionTitle: "Timviz вирішує це",
     solution: [
-      { title: "Онлайн-запис 24/7", text: "Клієнти записуються самостійно у зручний час.", benefit: "Менше дзвінків" },
-      { title: "Календар записів", text: "Усі записи в одному календарі.", benefit: "Чіткий контроль" },
-      { title: "Послуги з ціною", text: "Ціна і тривалість кожної послуги фіксуються одразу.", benefit: "Менше помилок" },
-      { title: "Робочі дні", text: "Гнучко налаштовуйте графік і вільні вікна.", benefit: "Зручний розклад" },
-      { title: "Telegram", text: "Отримуйте нові записи і підтвердження в Telegram.", benefit: "Швидкий відгук" },
-      { title: "Сторінка запису", text: "Клієнтська сторінка для запису без зайвих кроків.", benefit: "Вища конверсія" }
+      { title: "Онлайн-запис 24/7", text: "Клієнти записуються самі без дзвінків." },
+      { title: "Календар записів", text: "Усі записи в одному місці." },
+      { title: "Послуги з ціною", text: "Клієнт бачить ціну і тривалість." },
+      { title: "Робочі дні", text: "Налаштуйте графік і вихідні." },
+      { title: "Telegram", text: "Отримуйте записи миттєво." },
+      { title: "Сторінка запису", text: "Клієнти записуються за посиланням." }
     ],
     servicesTitle: "Налаштуйте послуги перукаря",
     serviceItems: ["стрижка", "жіноча стрижка", "чоловіча стрижка", "фарбування", "укладка", "складні фарбування", "догляд за волоссям", "відновлення"],
@@ -182,32 +209,33 @@ const copy: Record<SiteLanguage, HairCopy> = {
     calendarTitle: "Календар записів для перукаря",
     calendarText: "Бачите всі записи, тривалість процедур і вільний час.",
     howTitle: "Як це працює",
-    howSteps: ["Створіть профіль", "Додайте послуги", "Почніть отримувати записи"],
+    howSteps: ["Створіть профіль", "Додайте послуги", "Почніть приймати записи"],
     compareTitle: "Без Timviz і з Timviz",
     without: ["записи в месенджерах", "плутанина"],
     with: ["календар", "онлайн запис", "структура"],
     telegramTitle: "Отримуйте записи у Telegram",
-    nicheTitle: "Підходить для перукарів і салонів",
-    nicheText: "Для стрижки, фарбування, укладки й складних процедур різної тривалості.",
+    telegramText: "Підключіть Telegram-сповіщення, щоб одразу бачити нові бронювання, переноси й підтвердження.",
+    nicheTitle: "Ідеально для перукарів",
+    nicheText: "Timviz закриває щоденні задачі майстра з різними форматами послуг і різною тривалістю.",
+    nicheItems: ["стрижки", "фарбування", "укладки", "складні процедури"],
     socialTitle: "Майстри вже використовують Timviz",
     socialText: "Перукарі переходять на Timviz, щоб зменшити ручну комунікацію і прискорити підтвердження візитів.",
     seoBlockTitle: "Програма для запису клієнтів для перукарів",
-    seoParagraphs: [
-      "Timviz допомагає перукарям приймати онлайн-запис клієнтів без хаосу в месенджерах.",
-      "Календар записів показує зайнятість, вільні вікна та тривалість послуг.",
-      "Ви керуєте послугами, цінами та робочими днями в одному кабінеті."
-    ],
+    seoParagraphs: ukSeoParagraphs,
     faqTitle: "FAQ",
     faq: [
       { q: "Як працює онлайн-запис для перукаря?", a: "Клієнт обирає послугу і час, а запис одразу потрапляє в календар." },
-      { q: "Чи можна налаштувати тривалість стрижок?", a: "Так, кожна послуга налаштовується з ціною і тривалістю." },
-      { q: "Чи підходить для одного майстра?", a: "Так, Timviz підходить для одного перукаря й команди." },
+      { q: "Чи можна налаштувати тривалість стрижок?", a: "Так, для кожної послуги задається окрема тривалість і вартість." },
+      { q: "Чи підходить Timviz для одного майстра?", a: "Так, сервіс підходить приватним майстрам і невеликим студіям." },
       { q: "Чи можна працювати без сайту?", a: "Так, достатньо профілю Timviz і посилання на запис." },
-      { q: "Чи є Telegram сповіщення?", a: "Так, сервіс надсилає сповіщення про нові записи." },
-      { q: "Чи є календар записів?", a: "Так, ви бачите всі візити й вільні слоти в одному місці." }
+      { q: "Чи є Telegram сповіщення?", a: "Так, ви отримуєте сповіщення про нові записи й зміни графіка." },
+      { q: "Чи є календар записів?", a: "Так, у календарі видно всі візити та вільні вікна." },
+      { q: "Чи підходить сервіс для фарбувань і складних процедур?", a: "Так, Timviz враховує різну тривалість і допомагає уникати накладок." },
+      { q: "Чи можна почати безкоштовно?", a: "Так, запуск займає кілька хвилин, а старт доступний безкоштовно." }
     ],
-    finalTitle: "Готові збільшити записи без хаосу?",
-    finalButton: "Створити профіль перукаря",
+    finalTitle: "Готові отримувати більше записів без хаосу?",
+    finalText: "Створіть профіль, додайте послуги й відкрийте клієнтам онлайн-запис з прозорим графіком.",
+    finalButton: "Почати приймати записи за 2 хвилини",
     linksTitle: "Корисні посилання",
     links: [
       { label: "Для бізнесу", href: "/for-business" },
@@ -218,8 +246,9 @@ const copy: Record<SiteLanguage, HairCopy> = {
     footerText: "Timviz для бізнесу · онлайн-запис клієнтів і керування послугами",
     privacy: "Політика конфіденційності",
     terms: "Умови використання",
-    altCalendar: "Календар записів для перукаря в Timviz",
-    altService: "Послуги перукаря і ціни в Timviz"
+    altCalendar: "Календар записів для перукарів у Timviz",
+    altService: "Послуги перукаря та ціни у Timviz",
+    altTelegram: "Telegram сповіщення про нові записи для перукарів у Timviz"
   },
   en: {
     home: "Home",
@@ -228,9 +257,9 @@ const copy: Record<SiteLanguage, HairCopy> = {
     subtitle: "Accept bookings online, manage schedule and keep clients from dropping off",
     cta: "Start for free",
     ctaSecondary: "See features",
-    ctaAfterHero: "Start for free",
     ctaAfterFeatures: "Start for free",
     ctaBottom: "Create hairdresser profile",
+    ctaHint: "No website needed • no complex setup",
     microcopy: "No complex setup • launch in 2 minutes",
     sampleClient: "Client: Olga M.",
     sampleService: "Haircut + styling · 75 min",
@@ -246,12 +275,12 @@ const copy: Record<SiteLanguage, HairCopy> = {
     ],
     solutionTitle: "Timviz fixes this",
     solution: [
-      { title: "24/7 online booking", text: "Clients book on their own anytime.", benefit: "Fewer calls" },
-      { title: "Booking calendar", text: "All appointments in one schedule.", benefit: "Clear control" },
-      { title: "Priced services", text: "Each service has duration and price.", benefit: "No confusion" },
-      { title: "Working days", text: "Set your workdays and free slots.", benefit: "Flexible planning" },
-      { title: "Telegram alerts", text: "Get instant booking updates.", benefit: "Fast response" },
-      { title: "Client booking page", text: "Share one page for self-booking.", benefit: "Better conversion" }
+      { title: "24/7 online booking", text: "Clients book on their own anytime." },
+      { title: "Booking calendar", text: "All appointments in one schedule." },
+      { title: "Priced services", text: "Each service has duration and price." },
+      { title: "Working days", text: "Set your workdays and free slots." },
+      { title: "Telegram alerts", text: "Get instant booking updates." },
+      { title: "Client booking page", text: "Share one page for self-booking." }
     ],
     servicesTitle: "Set up hairdresser services",
     serviceItems: ["haircut", "women's haircut", "men's haircut", "coloring", "styling", "complex coloring", "hair care", "restoration"],
@@ -264,8 +293,10 @@ const copy: Record<SiteLanguage, HairCopy> = {
     without: ["messenger-only booking", "confusion"],
     with: ["calendar", "online booking", "structure"],
     telegramTitle: "Get bookings in Telegram",
+    telegramText: "Enable Telegram notifications to react quickly to new appointments and schedule updates.",
     nicheTitle: "Built for hairdressers and salons",
     nicheText: "Suitable for haircuts, coloring, styling and complex long procedures.",
+    nicheItems: ["haircuts", "coloring", "styling", "complex procedures"],
     socialTitle: "Professionals already use Timviz",
     socialText: "Hairdressers use Timviz to reduce manual messaging and speed up confirmations.",
     seoBlockTitle: "Client booking software for hairdressers",
@@ -284,6 +315,7 @@ const copy: Record<SiteLanguage, HairCopy> = {
       { q: "Can I manage complex procedures?", a: "Yes, long services can be configured with accurate duration." }
     ],
     finalTitle: "Ready to increase bookings?",
+    finalText: "Create your profile and launch structured online booking for your hair services.",
     finalButton: "Create hairdresser profile",
     linksTitle: "Useful links",
     links: [
@@ -296,7 +328,8 @@ const copy: Record<SiteLanguage, HairCopy> = {
     privacy: "Privacy policy",
     terms: "Terms of use",
     altCalendar: "Hairdresser booking calendar in Timviz",
-    altService: "Hairdresser services and prices in Timviz"
+    altService: "Hairdresser services and prices in Timviz",
+    altTelegram: "Telegram booking notifications for hairdressers in Timviz"
   }
 };
 
@@ -332,6 +365,7 @@ export function buildHairdresserMetadata(lang: SiteLanguage, pathname: string): 
 
 export default function HairdresserLanding({ language }: { language: SiteLanguage }) {
   const t = copy[language];
+  const screenshots = screenshotsByLanguage[language];
   const faqSchema = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
@@ -362,12 +396,10 @@ export default function HairdresserLanding({ language }: { language: SiteLanguag
           <small>{t.microcopy}</small>
         </div>
         <aside className="manicure-hero-card">
-          <img src="/for-business/ru-day.png" alt={t.altCalendar} loading="lazy" />
+          <img src={screenshots.day} alt={t.altCalendar} loading="lazy" />
           <div><strong>{t.sampleClient}</strong><p>{t.sampleService}</p><span>{t.sampleStatus}</span></div>
         </aside>
       </section>
-
-      <section className="business-seo-section hair-cta-inline"><a className="business-primary" href="/pro/create-account">{t.ctaAfterHero}</a></section>
 
       <section className="business-feature-section">
         <div className="business-section-head"><h2>{t.problemsTitle}</h2></div>
@@ -376,16 +408,19 @@ export default function HairdresserLanding({ language }: { language: SiteLanguag
 
       <section className="business-feature-section" id="solution">
         <div className="business-section-head"><h2>{t.solutionTitle}</h2></div>
-        <div className="hair-card-grid">{t.solution.map((card) => <article key={card.title}><h3>{card.title}</h3><p>{card.text}</p><small>{card.benefit}</small></article>)}</div>
+        <div className="hair-card-grid">{t.solution.map((card) => <article key={card.title}><h3>{card.title}</h3><p>{card.text}</p>{card.benefit ? <small>{card.benefit}</small> : null}</article>)}</div>
       </section>
 
-      <section className="business-seo-section hair-cta-inline"><a className="business-primary" href="/pro/create-account">{t.ctaAfterFeatures}</a></section>
+      <section className="business-seo-section hair-cta-inline">
+        <a className="business-primary" href="/pro/create-account">{t.ctaAfterFeatures}</a>
+        <small className="hair-cta-caption">{t.ctaHint}</small>
+      </section>
 
       <section className="business-screens-section">
         <div className="business-section-head"><h2>{t.servicesTitle}</h2></div>
         <div className="manicure-services-grid">
           <div className="manicure-services-list">{t.serviceItems.map((item) => <span key={item}>{item}</span>)}</div>
-          <article className="manicure-service-card"><img src="/for-business/ru-week.png" alt={t.altService} loading="lazy" /><strong>{t.serviceExample}</strong></article>
+          <article className="manicure-service-card"><img src={screenshots.week} alt={t.altService} loading="lazy" /><strong>{t.serviceExample}</strong></article>
         </div>
       </section>
 
@@ -393,10 +428,11 @@ export default function HairdresserLanding({ language }: { language: SiteLanguag
 
       <section className="business-workflow-section"><div><h2>{t.howTitle}</h2></div><ol>{t.howSteps.map((step) => <li key={step}><div><strong>{step}</strong></div></li>)}</ol></section>
 
-      <section className="business-feature-section"><div className="business-section-head"><h2>{t.compareTitle}</h2></div><div className="business-compare-grid"><article><h3>{language === "en" ? "Without Timviz" : "Без Timviz"}</h3><ul>{t.without.map((item) => <li key={item}>{item}</li>)}</ul></article><article><h3>{language === "en" ? "With Timviz" : "С Timviz"}</h3><ul>{t.with.map((item) => <li key={item}>{item}</li>)}</ul></article></div></section>
+      <section className="business-feature-section"><div className="business-section-head"><h2>{t.compareTitle}</h2></div><div className="business-compare-grid"><article><h3>{language === "en" ? "Without Timviz" : "Без Timviz"}</h3><ul>{t.without.map((item) => <li key={item}>{item}</li>)}</ul></article><article><h3>{language === "en" ? "With Timviz" : language === "uk" ? "З Timviz" : "С Timviz"}</h3><ul>{t.with.map((item) => <li key={item}>{item}</li>)}</ul></article></div></section>
 
-      <section className="business-seo-section"><h2>{t.telegramTitle}</h2></section>
-      <section className="business-feature-section"><div className="business-section-head"><h2>{t.nicheTitle}</h2><p>{t.nicheText}</p></div></section>
+      <section className="business-seo-section"><h2>{t.telegramTitle}</h2><p>{t.telegramText}</p><img src={screenshots.month} alt={t.altTelegram} loading="lazy" className="manicure-telegram-image" /></section>
+
+      <section className="business-feature-section"><div className="business-section-head"><h2>{t.nicheTitle}</h2><p>{t.nicheText}</p></div><ul className="business-seo-list">{t.nicheItems.map((item) => <li key={item}>{item}</li>)}</ul></section>
       <section className="business-feature-section"><div className="business-section-head"><h2>{t.socialTitle}</h2><p>{t.socialText}</p></div></section>
 
       <section className="business-feature-section">
@@ -406,11 +442,9 @@ export default function HairdresserLanding({ language }: { language: SiteLanguag
 
       <section className="business-feature-section"><div className="business-section-head"><h2>{t.faqTitle}</h2></div><div className="business-faq-list">{t.faq.map((item) => <details key={item.q} className="business-faq-item"><summary>{item.q}</summary><p>{item.a}</p></details>)}</div></section>
 
-      <section className="business-final-section"><h2>{t.finalTitle}</h2><a className="business-primary" href="/pro/create-account">{t.finalButton}</a></section>
+      <section className="business-final-section"><h2>{t.finalTitle}</h2><p>{t.finalText}</p><a className="business-primary" href="/pro/create-account">{t.finalButton}</a><small className="hair-cta-caption">{t.ctaHint}</small></section>
 
       <section className="business-feature-section"><div className="business-section-head"><h2>{t.linksTitle}</h2></div><div className="business-footer-links">{t.links.map((link) => <a key={link.href} href={getLocalizedPath(language, link.href)}>{link.label}</a>)}</div></section>
-
-      <section className="business-seo-section hair-cta-inline"><a className="business-primary" href="/pro/create-account">{t.ctaBottom}</a></section>
 
       <footer className="business-footer"><a className="public-logo" href={getLocalizedPath(language)}><BrandLogo /></a><span>{t.footerText}</span><div className="business-footer-links"><a href={getLocalizedPath(language, "/privacy")}>{t.privacy}</a><a href={getLocalizedPath(language, "/terms")}>{t.terms}</a></div></footer>
     </main>
