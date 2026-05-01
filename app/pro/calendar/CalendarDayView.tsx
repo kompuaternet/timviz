@@ -1797,6 +1797,46 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
     });
   }
 
+  function removeAppointmentsFromSnapshotCache(appointmentIds: string[]) {
+    if (!appointmentIds.length || snapshotCacheRef.current.size === 0) {
+      return;
+    }
+
+    const ids = new Set(appointmentIds);
+    let changed = false;
+    const nextCache = new Map<string, CalendarSnapshot>();
+
+    for (const [cacheKey, cachedSnapshot] of snapshotCacheRef.current.entries()) {
+      const nextSnapshot = {
+        ...cachedSnapshot,
+        appointments: cachedSnapshot.appointments.filter((appointment) => !ids.has(appointment.id)),
+        memberCalendars: cachedSnapshot.memberCalendars.map((member) => ({
+          ...member,
+          appointments: member.appointments.filter((appointment) => !ids.has(appointment.id))
+        })),
+        recentActivity: cachedSnapshot.recentActivity.filter((activity) => !ids.has(activity.id))
+      };
+
+      if (
+        nextSnapshot.appointments.length !== cachedSnapshot.appointments.length ||
+        nextSnapshot.recentActivity.length !== cachedSnapshot.recentActivity.length ||
+        nextSnapshot.memberCalendars.some(
+          (member, index) =>
+            member.appointments.length !== cachedSnapshot.memberCalendars[index]?.appointments.length
+        )
+      ) {
+        changed = true;
+      }
+
+      nextCache.set(cacheKey, nextSnapshot);
+    }
+
+    if (changed) {
+      snapshotCacheRef.current = nextCache;
+      setSnapshotCacheVersion((current) => current + 1);
+    }
+  }
+
   function replaceAppointmentsById(appointmentsToReplace: CalendarAppointment[]) {
     if (!appointmentsToReplace.length) {
       return;
@@ -3728,8 +3768,17 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
       return false;
     }
 
+    const optimisticId = appointment.id;
+    removeAppointmentsByIds([optimisticId]);
+    removeAppointmentsFromSnapshotCache([optimisticId]);
+
+    if (closeDrawer || selectedAppointmentId === optimisticId) {
+      setDrawerStage("closed");
+      setSelectedAppointmentId(null);
+    }
+
     const params = new URLSearchParams({
-      appointmentId: appointment.id,
+      appointmentId: optimisticId,
       targetProfessionalId: appointment.professionalId
     });
     const response = await fetch(`/api/pro/calendar?${params.toString()}`, {
@@ -3738,15 +3787,13 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
     const payload = await response.json();
 
     if (!response.ok) {
+      await refreshSnapshot({ preserveUi: true });
       showToast(payload.error || t.deleteBlockFailed, "error");
       return false;
     }
 
-    await refreshSnapshot();
-    if (closeDrawer || selectedAppointmentId === appointment.id) {
-      setDrawerStage("closed");
-      setSelectedAppointmentId(null);
-    }
+    void refreshSnapshot({ preserveUi: true });
+    void loadNotifications(selectedDate).catch(() => undefined);
     showToast(appointment.kind === "blocked" ? t.blockedRemoved : t.visitRemoved, "success");
     return true;
   }
