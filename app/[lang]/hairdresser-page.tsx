@@ -43,8 +43,12 @@ type HairCopy = {
   nicheTitle: string;
   nicheText: string;
   nicheItems: string[];
+  dayScenarioTitle?: string;
+  dayScenarioItems?: string[];
   socialTitle: string;
   socialText: string;
+  trustTitle?: string;
+  trustCards?: InfoCard[];
   seoBlockTitle: string;
   seoParagraphs: string[];
   faqTitle: string;
@@ -151,8 +155,31 @@ const copy: Record<SiteLanguage, HairCopy> = {
       "Стрижка + укладка — 75 мин — 750 грн: запись сразу с нужной длительностью.",
       "Сложное окрашивание — 180 мин — 2500 грн: клиент видит цену и выбирает подходящий день."
     ],
+    dayScenarioTitle: "Сценарий рабочего дня парикмахера",
+    dayScenarioItems: [
+      "09:00 — Мужская стрижка — 45 мин — 450 грн: быстрый старт дня без перегруза.",
+      "10:00 — Женская стрижка — 60 мин — 500 грн: слот с точной длительностью в календаре.",
+      "12:00 — Окрашивание корней — 120 мин — 1200 грн: длинная услуга с буфером между визитами.",
+      "15:00 — Стрижка + укладка — 75 мин — 750 грн: клиент видит цену и время до бронирования.",
+      "18:00 — Укладка — 40 мин — 450 грн: вечернее окно закрывается без ручных переписок."
+    ],
     socialTitle: "Мастера уже используют Timviz",
     socialText: "Парикмахеры переходят на Timviz, чтобы сократить ручные переписки и быстрее подтверждать записи.",
+    trustTitle: "Почему парикмахеры доверяют Timviz",
+    trustCards: [
+      {
+        title: "Понятный календарь без накладок",
+        text: "Разные услуги по длительности не конфликтуют: система показывает только реальные слоты."
+      },
+      {
+        title: "Запись клиентов без звонков",
+        text: "Клиенты выбирают услугу и время сами, а вы получаете уже структурированную заявку."
+      },
+      {
+        title: "Контроль смены в реальном времени",
+        text: "Telegram-уведомления помогают быстро реагировать на переносы и новые записи."
+      }
+    ],
     seoBlockTitle: "Программа для записи клиентов для парикмахеров",
     seoParagraphs: ruSeoParagraphs,
     faqTitle: "FAQ",
@@ -449,7 +476,29 @@ export default function HairdresserLanding({ language }: { language: SiteLanguag
         </div>
         <article className="manicure-service-card niche-showcase-card"><img src={screenshots.week} alt={t.altService} loading="lazy" /><strong>{t.serviceExample}</strong></article>
       </section>
-      <section className="business-feature-section"><div className="business-section-head"><h2>{t.socialTitle}</h2><p>{t.socialText}</p></div></section>
+
+      {t.dayScenarioTitle && t.dayScenarioItems?.length ? (
+        <section className="business-feature-section">
+          <div className="business-section-head"><h2>{t.dayScenarioTitle}</h2></div>
+          <ul className="business-seo-list">{t.dayScenarioItems.map((item) => <li key={item}>{item}</li>)}</ul>
+        </section>
+      ) : null}
+
+      {t.trustTitle && t.trustCards?.length ? (
+        <section className="business-feature-section">
+          <div className="business-section-head"><h2>{t.trustTitle}</h2></div>
+          <div className="hair-card-grid">
+            {t.trustCards.map((item) => (
+              <article key={item.title}>
+                <h3>{item.title}</h3>
+                <p>{item.text}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : (
+        <section className="business-feature-section"><div className="business-section-head"><h2>{t.socialTitle}</h2><p>{t.socialText}</p></div></section>
+      )}
 
       <section className="business-feature-section">
         <div className="business-section-head"><h2>{t.seoBlockTitle}</h2></div>

@@ -2900,7 +2900,7 @@
 }
 
 .manicure-page .niche-link-card {
-  min-height: 172px;
+  min-height: 152px;
   padding: 14px 14px 12px;
 }
 
@@ -3047,13 +3047,15 @@
 }
 
 .hair-card-grid article {
-  min-height: 118px;
-  max-height: 130px;
-  padding: 10px 11px;
+  min-height: 0;
+  max-height: none;
+  padding: 12px;
   border: 1px solid rgba(17, 17, 17, 0.08);
   border-radius: 14px;
   background: #fff;
-  overflow: hidden;
+  display: grid;
+  align-content: start;
+  gap: 6px;
 }
 
 .hair-card-grid h3 {

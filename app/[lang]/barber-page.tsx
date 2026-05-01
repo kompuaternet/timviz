@@ -32,6 +32,8 @@ type Copy = {
   nicheText: string;
   nicheItems: string[];
   nicheSample: string;
+  dayScenarioTitle?: string;
+  dayScenarioItems?: string[];
   howTitle: string;
   howSteps: string[];
   compareTitle: string;
@@ -41,6 +43,8 @@ type Copy = {
   compareRight: string[];
   telegramTitle: string;
   telegramText: string;
+  trustTitle?: string;
+  trustCards?: InfoCard[];
   seoBlockTitle: string;
   seoParagraphs: string[];
   faqTitle: string;
@@ -191,6 +195,14 @@ const copy: Record<SiteLanguage, Copy> = {
       "Оформление бороды — 30 мин — 300 грн: удобно закрывать короткие окна между визитами."
     ],
     nicheSample: "Стрижка + борода — 60 мин — 500 грн",
+    dayScenarioTitle: "Сценарий рабочего дня барбера",
+    dayScenarioItems: [
+      "10:00 — Мужская стрижка — 45 мин — 450 грн: старт смены с короткого слота.",
+      "11:00 — Оформление бороды — 30 мин — 300 грн: удобное заполнение окна между длинными услугами.",
+      "12:00 — Стрижка + борода — 60 мин — 500 грн: комплексная запись без ручных уточнений.",
+      "14:30 — Fade + укладка — 75 мин — 700 грн: длинная услуга с буфером в календаре.",
+      "18:00 — Экспресс-стрижка — 30 мин — 350 грн: вечерний слот бронируется онлайн за пару кликов."
+    ],
     howTitle: "Как это работает",
     howSteps: ["Создайте профиль", "Добавьте услуги", "Начните принимать записи"],
     compareTitle: "Без Timviz / С Timviz",
@@ -200,6 +212,21 @@ const copy: Record<SiteLanguage, Copy> = {
     compareRight: ["онлайн-запись клиентов", "единый календарь", "цены и длительность", "Telegram-уведомления"],
     telegramTitle: "Получайте записи в Telegram",
     telegramText: "Timviz отправляет новые записи и изменения графика в Telegram без задержек.",
+    trustTitle: "Почему барберы переходят на Timviz",
+    trustCards: [
+      {
+        title: "Плотный график без двойных броней",
+        text: "Календарь учитывает длительность стрижки, бороды и комплексов, чтобы избежать накладок."
+      },
+      {
+        title: "Быстрая запись клиентов онлайн",
+        text: "Клиент сам выбирает свободный слот, а мастер не тратит время на согласования в чатах."
+      },
+      {
+        title: "Оперативные Telegram-апдейты",
+        text: "Новые записи и переносы приходят мгновенно, поэтому смена остается под контролем."
+      }
+    ],
     seoBlockTitle: "Программа для записи клиентов для барберов",
     seoParagraphs: [
       "Онлайн запись барбер сегодня напрямую влияет на загрузку кресла и ежедневную выручку. Когда клиенты бронируют через разные чаты, барбер тратит часы на согласования, а часть заявок теряется в переписках. Timviz переводит этот процесс в понятный формат: клиент выбирает услугу, время и сразу создает подтвержденную запись. Для мастера это означает меньше ручной рутины и больше контроля над рабочим днём. Запись клиентов онлайн становится стабильным каналом, а не хаотичным потоком сообщений, который сложно администрировать в пиковые часы.",
@@ -479,11 +506,32 @@ export default function BarberLanding({ language }: { language: SiteLanguage }) 
         </div>
       </section>
 
+      {t.dayScenarioTitle && t.dayScenarioItems?.length ? (
+        <section className="business-feature-section">
+          <div className="business-section-head"><h2>{t.dayScenarioTitle}</h2></div>
+          <ul className="business-seo-list">{t.dayScenarioItems.map((item) => <li key={item}>{item}</li>)}</ul>
+        </section>
+      ) : null}
+
       <section className="business-seo-section">
         <h2>{t.telegramTitle}</h2>
         <p>{t.telegramText}</p>
         <img src={screenshots.month} alt={t.altTelegram} loading="lazy" className="manicure-telegram-image" />
       </section>
+
+      {t.trustTitle && t.trustCards?.length ? (
+        <section className="business-feature-section">
+          <div className="business-section-head"><h2>{t.trustTitle}</h2></div>
+          <div className="hair-card-grid">
+            {t.trustCards.map((item) => (
+              <article key={item.title}>
+                <h3>{item.title}</h3>
+                <p>{item.text}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <section className="business-feature-section">
         <div className="business-section-head"><h2>{t.seoBlockTitle}</h2></div>

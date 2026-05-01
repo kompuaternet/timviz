@@ -48,6 +48,8 @@ type Copy = {
   telegramCta: string;
   reasonsTitle: string;
   reasons: string[];
+  trustTitle?: string;
+  trustCards?: InfoCard[];
   nicheFitTitle: string;
   nicheFitItems: string[];
   nicheFitSample: string;
@@ -199,7 +201,7 @@ const copy: Record<SiteLanguage, Copy> = {
     telegramText:
       "Подключите Telegram-бот Timviz, чтобы получать уведомления о новых записях, подтверждать заявки и быстро открывать календарь.",
     telegramCta: "Подключить после регистрации",
-    reasonsTitle: "Реальные сценарии работы мастера маникюра",
+    reasonsTitle: "Сценарий рабочего дня мастера маникюра",
     reasons: [
       "Утро: маникюр с покрытием — 90 мин — 650 грн, запись приходит автоматически в календарь.",
       "День: коррекция + дизайн — 120 мин — 900 грн, клиент сразу видит длительность и цену.",
@@ -207,6 +209,21 @@ const copy: Record<SiteLanguage, Copy> = {
       "Вечер: повторный клиент записывается сам по ссылке без переписки в мессенджерах.",
       "Перенос визита: статус и время обновляются в календаре без ручных таблиц.",
       "Новая заявка: Telegram-уведомления помогают не пропустить запись в загруженный день."
+    ],
+    trustTitle: "Почему мастера маникюра выбирают Timviz",
+    trustCards: [
+      {
+        title: "Быстрый запуск без технической боли",
+        text: "Профиль, услуги и календарь можно настроить за несколько минут даже без опыта в CRM."
+      },
+      {
+        title: "Стабильный поток повторных визитов",
+        text: "Клиенты видят свободные окна и легче возвращаются на коррекцию и регулярные процедуры."
+      },
+      {
+        title: "Меньше ручной рутины в чатах",
+        text: "Онлайн-запись и Telegram-уведомления сокращают переписки и освобождают время на работу с клиентом."
+      }
     ],
     nicheFitTitle: "Идеально для мастеров маникюра",
     nicheFitItems: [
@@ -863,6 +880,20 @@ export default function ManicureLanding({ language }: { language: SiteLanguage }
         <div className="business-section-head"><h2>{t.reasonsTitle}</h2></div>
         <ul className="business-seo-list">{t.reasons.map((item) => <li key={item}>{item}</li>)}</ul>
       </section>
+
+      {t.trustTitle && t.trustCards?.length ? (
+        <section className="business-feature-section">
+          <div className="business-section-head"><h2>{t.trustTitle}</h2></div>
+          <div className="hair-card-grid">
+            {t.trustCards.map((item) => (
+              <article key={item.title}>
+                <h3>{item.title}</h3>
+                <p>{item.text}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <section className="business-feature-section niche-showcase-section">
         <div className="niche-showcase-copy">

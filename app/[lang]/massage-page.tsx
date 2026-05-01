@@ -31,6 +31,8 @@ type Copy = {
   nicheText: string;
   nicheItems: string[];
   nicheSample: string;
+  dayScenarioTitle?: string;
+  dayScenarioItems?: string[];
   sessionTitle: string;
   sessionText: string;
   howTitle: string;
@@ -42,6 +44,8 @@ type Copy = {
   compareRight: string[];
   telegramTitle: string;
   telegramText: string;
+  trustTitle?: string;
+  trustCards?: InfoCard[];
   seoBlockTitle: string;
   seoParagraphs: string[];
   faqTitle: string;
@@ -194,6 +198,14 @@ const copy: Record<SiteLanguage, Copy> = {
       "Реабилитационный сеанс — 90 мин — 1100 грн: удобный формат для курсовых посещений."
     ],
     nicheSample: "Классический массаж — 60 мин — 700 грн",
+    dayScenarioTitle: "Сценарий рабочего дня массажиста",
+    dayScenarioItems: [
+      "09:00 — Лечебный массаж — 45 мин — 750 грн: утренний слот с короткой длительностью.",
+      "10:00 — Классический массаж — 60 мин — 700 грн: базовый прием без накладок.",
+      "12:00 — Релакс массаж — 90 мин — 950 грн: длинный сеанс с автоматическим буфером.",
+      "15:00 — Спортивный массаж — 60 мин — 850 грн: удобная запись в середине дня.",
+      "18:00 — Антицеллюлитный массаж — 75 мин — 900 грн: вечерний слот бронируется онлайн."
+    ],
     sessionTitle: "Управляйте сеансами разной длительности",
     sessionText: "Настройте 30, 60, 90 минут и система автоматически покажет свободное время.",
     howTitle: "Как это работает",
@@ -205,6 +217,21 @@ const copy: Record<SiteLanguage, Copy> = {
     compareRight: ["календарь", "порядок", "контроль времени", "меньше переписок"],
     telegramTitle: "Получайте записи в Telegram",
     telegramText: "Timviz отправляет новые записи и изменения расписания в Telegram без задержек.",
+    trustTitle: "Почему массажисты доверяют Timviz",
+    trustCards: [
+      {
+        title: "Гибкое управление длительностью сеансов",
+        text: "Сеансы на 30, 60 и 90 минут учитываются автоматически, без ручного пересчета расписания."
+      },
+      {
+        title: "Запись клиентов без хаоса в чатах",
+        text: "Клиент выбирает услугу и время сам, а мастер получает четко структурированный визит."
+      },
+      {
+        title: "Стабильный контроль через Telegram",
+        text: "Новые записи, переносы и отмены приходят сразу, поэтому рабочий день остается управляемым."
+      }
+    ],
     seoBlockTitle: "Программа для записи клиентов для массажистов",
     seoParagraphs: [
       "Онлайн запись на массаж помогает специалисту выстроить стабильный поток клиентов без перегрузки переписками. Когда заявки приходят в разных мессенджерах, часть сообщений теряется, а согласование времени затягивается. Timviz решает эту задачу как сервис онлайн-записи: клиент выбирает услугу, длительность и доступный слот, а мастер получает уже структурированную запись. Благодаря этому запись клиентов онлайн становится предсказуемой и аккуратной, а рабочий день не разваливается из-за постоянных ручных уточнений.",
@@ -491,11 +518,32 @@ export default function MassageLanding({ language }: { language: SiteLanguage })
         </div>
       </section>
 
+      {t.dayScenarioTitle && t.dayScenarioItems?.length ? (
+        <section className="business-feature-section">
+          <div className="business-section-head"><h2>{t.dayScenarioTitle}</h2></div>
+          <ul className="business-seo-list">{t.dayScenarioItems.map((item) => <li key={item}>{item}</li>)}</ul>
+        </section>
+      ) : null}
+
       <section className="business-seo-section">
         <h2>{t.telegramTitle}</h2>
         <p>{t.telegramText}</p>
         <img src={screenshots.month} alt={t.altTelegram} loading="lazy" className="manicure-telegram-image" />
       </section>
+
+      {t.trustTitle && t.trustCards?.length ? (
+        <section className="business-feature-section">
+          <div className="business-section-head"><h2>{t.trustTitle}</h2></div>
+          <div className="hair-card-grid">
+            {t.trustCards.map((item) => (
+              <article key={item.title}>
+                <h3>{item.title}</h3>
+                <p>{item.text}</p>
+              </article>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       <section className="business-feature-section">
         <div className="business-section-head"><h2>{t.seoBlockTitle}</h2></div>
