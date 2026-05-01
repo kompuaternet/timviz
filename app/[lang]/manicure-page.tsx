@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import BrandLogo from "../BrandLogo";
 import GlobalLanguageSwitcher from "../GlobalLanguageSwitcher";
 import { getNicheSlug, nicheCards, nicheKeys } from "../../lib/niche-pages";
+import { getNicheUxContent } from "../../lib/niche-ux";
 import { buildMetadata } from "../../lib/seo";
 import { getLocalizedPath, type SiteLanguage } from "../../lib/site-language";
 
@@ -752,6 +753,7 @@ export function buildManicureMetadata(lang: SiteLanguage, pathname: string): Met
 
 export default function ManicureLanding({ language }: { language: SiteLanguage }) {
   const t = copy[language];
+  const ux = getNicheUxContent(language, "manicure");
   const screenshots = screenshotByLanguage[language];
   const otherKeys = nicheKeys.filter((key) => key !== "manicure");
 
@@ -813,10 +815,10 @@ export default function ManicureLanding({ language }: { language: SiteLanguage }
           <h1>{t.title}</h1>
           <p>{t.subtitle}</p>
           <div className="business-hero-actions">
-            <a className="business-primary" href="/pro/create-account">{t.ctaPrimary}</a>
-            <a className="business-secondary" href="#solution">{t.ctaSecondary}</a>
+            <a className="business-primary" href="/pro/create-account">{ux.cta}</a>
+            <a className="business-secondary" href="/pro/create-account">{ux.cta}</a>
           </div>
-          <small>{t.microcopy}</small>
+          <small>{ux.ctaHint}</small>
         </div>
         <aside className="manicure-hero-card">
           <img src={screenshots.day} alt={t.screenshotAltCalendar} loading="lazy" />
@@ -854,9 +856,18 @@ export default function ManicureLanding({ language }: { language: SiteLanguage }
           ))}
         </div>
         <div className="business-inline-cta">
-          <a className="business-primary" href="/pro/create-account">{t.ctaAfterSolution}</a>
-          <small className="hair-cta-caption">{t.ctaHint}</small>
+          <a className="business-primary" href="/pro/create-account">{ux.cta}</a>
+          <small className="hair-cta-caption">{ux.ctaHint}</small>
         </div>
+      </section>
+
+      <section className="business-feature-section">
+        <div className="business-section-head">
+          <h2>{ux.valueTitle}</h2>
+        </div>
+        <ul className="business-seo-list">
+          {ux.valueItems.map((item) => <li key={item}>{item}</li>)}
+        </ul>
       </section>
 
       <section className="business-screens-section">
@@ -886,7 +897,12 @@ export default function ManicureLanding({ language }: { language: SiteLanguage }
       </section>
 
       <section className="business-workflow-section">
-        <div><h2>{t.howTitle}</h2></div>
+        <div>
+          <h2>{ux.howTitle}</h2>
+          <div className="hair-seo-text">
+            {ux.howText.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
+          </div>
+        </div>
         <ol>
           {t.howSteps.map((step) => (
             <li key={step}><div><strong>{step}</strong></div></li>
@@ -912,7 +928,7 @@ export default function ManicureLanding({ language }: { language: SiteLanguage }
         <h2>{t.telegramTitle}</h2>
         <p>{t.telegramText}</p>
         <img src={screenshots.month} alt={t.screenshotAltTelegram} loading="lazy" className="manicure-telegram-image" />
-        <a className="business-secondary" href="/pro/create-account">{t.telegramCta}</a>
+        <a className="business-secondary" href="/pro/create-account">{ux.cta}</a>
       </section>
 
       <section className="business-feature-section">
@@ -922,7 +938,7 @@ export default function ManicureLanding({ language }: { language: SiteLanguage }
 
       {t.trustTitle && t.trustCards?.length ? (
         <section className="business-feature-section">
-          <div className="business-section-head"><h2>{t.trustTitle}</h2></div>
+          <div className="business-section-head"><h2>{ux.trustTitle}</h2></div>
           <div className="hair-card-grid">
             {t.trustCards.map((item) => (
               <article key={item.title}>
@@ -937,7 +953,8 @@ export default function ManicureLanding({ language }: { language: SiteLanguage }
       <section className="business-feature-section niche-showcase-section">
         <div className="niche-showcase-copy">
           <div className="business-section-head">
-            <h2>{t.nicheFitTitle}</h2>
+            <h2>{ux.importanceTitle}</h2>
+            <p>{ux.importanceText}</p>
           </div>
           <ul className="business-seo-list">{t.nicheFitItems.map((item) => <li key={item}>{item}</li>)}</ul>
         </div>
@@ -949,10 +966,14 @@ export default function ManicureLanding({ language }: { language: SiteLanguage }
 
       <section className="business-feature-section">
         <div className="business-section-head">
-          <h2>{t.seoBlockTitle}</h2>
+          <h2>{ux.seoTitle}</h2>
         </div>
         <div className="hair-seo-text">
-          {t.seoParagraphs.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
+          <p>{ux.seoIntro}</p>
+          <ul className="business-seo-list">
+            {ux.seoChecklist.map((item) => <li key={item}>{item}</li>)}
+          </ul>
+          <p>{ux.seoOutro}</p>
         </div>
       </section>
 
@@ -987,8 +1008,8 @@ export default function ManicureLanding({ language }: { language: SiteLanguage }
       <section className="business-final-section">
         <h2>{t.finalTitle}</h2>
         <p>{t.finalText}</p>
-        <a className="business-primary" href="/pro/create-account">{t.ctaFinal}</a>
-        <small className="hair-cta-caption">{t.ctaHint}</small>
+        <a className="business-primary" href="/pro/create-account">{ux.cta}</a>
+        <small className="hair-cta-caption">{ux.ctaHint}</small>
         <small>{t.finalMicrocopy}</small>
       </section>
 

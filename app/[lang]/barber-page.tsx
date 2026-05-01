@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import BrandLogo from "../BrandLogo";
 import GlobalLanguageSwitcher from "../GlobalLanguageSwitcher";
 import { getNicheSlug, nicheCards, nicheKeys } from "../../lib/niche-pages";
+import { getNicheUxContent } from "../../lib/niche-ux";
 import { buildMetadata } from "../../lib/seo";
 import { getLocalizedPath, type SiteLanguage } from "../../lib/site-language";
 
@@ -420,6 +421,7 @@ export function buildBarberMetadata(lang: SiteLanguage, pathname: string): Metad
 
 export default function BarberLanding({ language }: { language: SiteLanguage }) {
   const t = copy[language];
+  const ux = getNicheUxContent(language, "barbers");
   const screenshots = screenshotsByLanguage[language];
   const otherKeys = nicheKeys.filter((key) => key !== "barbers");
 
@@ -481,9 +483,9 @@ export default function BarberLanding({ language }: { language: SiteLanguage }) 
           <h1>{t.title}</h1>
           <p>{t.subtitle}</p>
           <div className="business-hero-actions">
-            <a className="business-primary" href="/pro/create-account">{t.ctaPrimary}</a>
+            <a className="business-primary" href="/pro/create-account">{ux.cta}</a>
           </div>
-          <small>{t.microcopy}</small>
+          <small>{ux.ctaHint}</small>
         </div>
         <aside className="manicure-hero-card">
           <img src={screenshots.day} alt={t.altCalendar} loading="lazy" />
@@ -520,15 +522,20 @@ export default function BarberLanding({ language }: { language: SiteLanguage }) 
       </section>
 
       <section className="business-seo-section hair-cta-inline">
-        <a className="business-primary" href="/pro/create-account">{t.ctaAfterFeatures}</a>
-        <small className="hair-cta-caption">{t.ctaHint}</small>
+        <a className="business-primary" href="/pro/create-account">{ux.cta}</a>
+        <small className="hair-cta-caption">{ux.ctaHint}</small>
+      </section>
+
+      <section className="business-feature-section">
+        <div className="business-section-head"><h2>{ux.valueTitle}</h2></div>
+        <ul className="business-seo-list">{ux.valueItems.map((item) => <li key={item}>{item}</li>)}</ul>
       </section>
 
       <section className="business-feature-section niche-showcase-section">
         <div className="niche-showcase-copy">
           <div className="business-section-head">
-            <h2>{t.nicheTitle}</h2>
-            <p>{t.nicheText}</p>
+            <h2>{ux.importanceTitle}</h2>
+            <p>{ux.importanceText}</p>
           </div>
           <ul className="business-seo-list">{t.nicheItems.map((item) => <li key={item}>{item}</li>)}</ul>
         </div>
@@ -539,7 +546,10 @@ export default function BarberLanding({ language }: { language: SiteLanguage }) 
       </section>
 
       <section className="business-workflow-section">
-        <div><h2>{t.howTitle}</h2></div>
+        <div>
+          <h2>{ux.howTitle}</h2>
+          <div className="hair-seo-text">{ux.howText.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}</div>
+        </div>
         <ol>
           {t.howSteps.map((step) => (
             <li key={step}><div><strong>{step}</strong></div></li>
@@ -576,7 +586,7 @@ export default function BarberLanding({ language }: { language: SiteLanguage }) 
 
       {t.trustTitle && t.trustCards?.length ? (
         <section className="business-feature-section">
-          <div className="business-section-head"><h2>{t.trustTitle}</h2></div>
+          <div className="business-section-head"><h2>{ux.trustTitle}</h2></div>
           <div className="hair-card-grid">
             {t.trustCards.map((item) => (
               <article key={item.title}>
@@ -589,9 +599,11 @@ export default function BarberLanding({ language }: { language: SiteLanguage }) 
       ) : null}
 
       <section className="business-feature-section">
-        <div className="business-section-head"><h2>{t.seoBlockTitle}</h2></div>
+        <div className="business-section-head"><h2>{ux.seoTitle}</h2></div>
         <div className="hair-seo-text">
-          {t.seoParagraphs.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}
+          <p>{ux.seoIntro}</p>
+          <ul className="business-seo-list">{ux.seoChecklist.map((item) => <li key={item}>{item}</li>)}</ul>
+          <p>{ux.seoOutro}</p>
         </div>
       </section>
 
@@ -626,8 +638,8 @@ export default function BarberLanding({ language }: { language: SiteLanguage }) 
       <section className="business-final-section">
         <h2>{t.finalTitle}</h2>
         <p>{t.finalText}</p>
-        <a className="business-primary" href="/pro/create-account">{t.ctaFinal}</a>
-        <small className="hair-cta-caption">{t.ctaHint}</small>
+        <a className="business-primary" href="/pro/create-account">{ux.cta}</a>
+        <small className="hair-cta-caption">{ux.ctaHint}</small>
       </section>
 
       <footer className="business-footer">

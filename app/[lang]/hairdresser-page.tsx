@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import BrandLogo from "../BrandLogo";
 import GlobalLanguageSwitcher from "../GlobalLanguageSwitcher";
+import { getNicheUxContent } from "../../lib/niche-ux";
 import { buildMetadata } from "../../lib/seo";
 import { getLocalizedPath, type SiteLanguage } from "../../lib/site-language";
 
@@ -458,6 +459,7 @@ export function buildHairdresserMetadata(lang: SiteLanguage, pathname: string): 
 
 export default function HairdresserLanding({ language }: { language: SiteLanguage }) {
   const t = copy[language];
+  const ux = getNicheUxContent(language, "hairdressers");
   const screenshots = screenshotsByLanguage[language];
   const faqSchema = {
     "@context": "https://schema.org",
@@ -483,9 +485,9 @@ export default function HairdresserLanding({ language }: { language: SiteLanguag
           <h1>{t.title}</h1>
           <p>{t.subtitle}</p>
           <div className="business-hero-actions">
-            <a className="business-primary" href="/pro/create-account">{t.cta}</a>
+            <a className="business-primary" href="/pro/create-account">{ux.cta}</a>
           </div>
-          <small>{t.microcopy}</small>
+          <small>{ux.ctaHint}</small>
         </div>
         <aside className="manicure-hero-card">
           <img src={screenshots.day} alt={t.altCalendar} loading="lazy" />
@@ -504,8 +506,13 @@ export default function HairdresserLanding({ language }: { language: SiteLanguag
       </section>
 
       <section className="business-seo-section hair-cta-inline">
-        <a className="business-primary" href="/pro/create-account">{t.ctaAfterFeatures}</a>
-        <small className="hair-cta-caption">{t.ctaHint}</small>
+        <a className="business-primary" href="/pro/create-account">{ux.cta}</a>
+        <small className="hair-cta-caption">{ux.ctaHint}</small>
+      </section>
+
+      <section className="business-feature-section">
+        <div className="business-section-head"><h2>{ux.valueTitle}</h2></div>
+        <ul className="business-seo-list">{ux.valueItems.map((item) => <li key={item}>{item}</li>)}</ul>
       </section>
 
       <section className="business-screens-section">
@@ -518,7 +525,7 @@ export default function HairdresserLanding({ language }: { language: SiteLanguag
 
       <section className="business-feature-section"><div className="business-section-head"><h2>{t.calendarTitle}</h2><p>{t.calendarText}</p></div></section>
 
-      <section className="business-workflow-section"><div><h2>{t.howTitle}</h2></div><ol>{t.howSteps.map((step) => <li key={step}><div><strong>{step}</strong></div></li>)}</ol></section>
+      <section className="business-workflow-section"><div><h2>{ux.howTitle}</h2><div className="hair-seo-text">{ux.howText.map((paragraph) => <p key={paragraph}>{paragraph}</p>)}</div></div><ol>{t.howSteps.map((step) => <li key={step}><div><strong>{step}</strong></div></li>)}</ol></section>
 
       <section className="business-feature-section"><div className="business-section-head"><h2>{t.compareTitle}</h2></div><div className="business-compare-grid"><article><h3>{language === "en" ? "Without Timviz" : "Без Timviz"}</h3><ul>{t.without.map((item) => <li key={item}>{item}</li>)}</ul></article><article><h3>{language === "en" ? "With Timviz" : language === "uk" ? "З Timviz" : "С Timviz"}</h3><ul>{t.with.map((item) => <li key={item}>{item}</li>)}</ul></article></div></section>
 
@@ -526,7 +533,7 @@ export default function HairdresserLanding({ language }: { language: SiteLanguag
 
       <section className="business-feature-section niche-showcase-section">
         <div className="niche-showcase-copy">
-          <div className="business-section-head"><h2>{t.nicheTitle}</h2><p>{t.nicheText}</p></div>
+          <div className="business-section-head"><h2>{ux.importanceTitle}</h2><p>{ux.importanceText}</p></div>
           <ul className="business-seo-list">{t.nicheItems.map((item) => <li key={item}>{item}</li>)}</ul>
         </div>
         <article className="manicure-service-card niche-showcase-card"><img src={screenshots.week} alt={t.altService} loading="lazy" /><strong>{t.serviceExample}</strong></article>
@@ -541,7 +548,7 @@ export default function HairdresserLanding({ language }: { language: SiteLanguag
 
       {t.trustTitle && t.trustCards?.length ? (
         <section className="business-feature-section">
-          <div className="business-section-head"><h2>{t.trustTitle}</h2></div>
+          <div className="business-section-head"><h2>{ux.trustTitle}</h2></div>
           <div className="hair-card-grid">
             {t.trustCards.map((item) => (
               <article key={item.title}>
@@ -556,13 +563,17 @@ export default function HairdresserLanding({ language }: { language: SiteLanguag
       )}
 
       <section className="business-feature-section">
-        <div className="business-section-head"><h2>{t.seoBlockTitle}</h2></div>
-        <div className="hair-seo-text">{t.seoParagraphs.map((p) => <p key={p}>{p}</p>)}</div>
+        <div className="business-section-head"><h2>{ux.seoTitle}</h2></div>
+        <div className="hair-seo-text">
+          <p>{ux.seoIntro}</p>
+          <ul className="business-seo-list">{ux.seoChecklist.map((item) => <li key={item}>{item}</li>)}</ul>
+          <p>{ux.seoOutro}</p>
+        </div>
       </section>
 
       <section className="business-feature-section"><div className="business-section-head"><h2>{t.faqTitle}</h2></div><div className="business-faq-list">{t.faq.map((item) => <details key={item.q} className="business-faq-item"><summary>{item.q}</summary><p>{item.a}</p></details>)}</div></section>
 
-      <section className="business-final-section"><h2>{t.finalTitle}</h2><p>{t.finalText}</p><a className="business-primary" href="/pro/create-account">{t.finalButton}</a><small className="hair-cta-caption">{t.ctaHint}</small></section>
+      <section className="business-final-section"><h2>{t.finalTitle}</h2><p>{t.finalText}</p><a className="business-primary" href="/pro/create-account">{ux.cta}</a><small className="hair-cta-caption">{ux.ctaHint}</small></section>
 
       <section className="business-feature-section"><div className="business-section-head"><h2>{t.linksTitle}</h2></div><div className="business-footer-links">{t.links.map((link) => <a key={link.href} href={getLocalizedPath(language, link.href)}>{link.label}</a>)}</div></section>
 

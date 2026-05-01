@@ -3047,8 +3047,8 @@
 }
 
 .hair-card-grid article {
-  min-height: 0;
-  max-height: none;
+  min-height: 122px;
+  max-height: 130px;
   padding: 12px;
   border: 1px solid rgba(17, 17, 17, 0.08);
   border-radius: 14px;
@@ -3056,11 +3056,17 @@
   display: grid;
   align-content: start;
   gap: 6px;
+  overflow: hidden;
 }
 
 .hair-card-grid h3 {
   margin: 0 0 6px;
   font-size: 1rem;
+  line-height: 1.2;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .hair-card-grid p {
@@ -3068,6 +3074,10 @@
   color: #5d554f;
   font-size: 0.89rem;
   line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .hair-card-grid small {
