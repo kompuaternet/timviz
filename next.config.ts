@@ -29,6 +29,8 @@ const nextConfig: NextConfig = {
       { source: "/uk/for-hairdressers", destination: "/uk/dlya-perukariv", permanent: true },
       { source: "/ru/for-barbers", destination: "/ru/dlya-barberov", permanent: true },
       { source: "/uk/for-barbers", destination: "/uk/dlya-barberiv", permanent: true },
+      { source: "/ru/for-cosmetologists", destination: "/ru/dlya-kosmetologov", permanent: true },
+      { source: "/uk/for-cosmetologists", destination: "/uk/dlya-kosmetologiv", permanent: true },
       { source: "/en/dlya-barberiv", destination: "/en/for-barbers", permanent: true },
       { source: "/en/dlya-barberov", destination: "/en/for-barbers", permanent: true },
       { source: "/en/dlya-kosmetologiv", destination: "/en/for-cosmetologists", permanent: true },
