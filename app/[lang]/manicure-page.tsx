@@ -408,14 +408,29 @@ const copy: Record<SiteLanguage, Copy> = {
     telegramText:
       "Підключіть Telegram-бот Timviz, щоб отримувати сповіщення про нові записи, підтверджувати заявки й швидко відкривати календар.",
     telegramCta: "Підключити після реєстрації",
-    reasonsTitle: "Чому майстру зручно почати з Timviz",
+    reasonsTitle: "Сценарій робочого дня майстра манікюру",
     reasons: [
-      "можна почати безкоштовно",
-      "не потрібен окремий сайт",
-      "підходить для одного майстра",
-      "можна працювати без складної CRM",
-      "усе українською та російською",
-      "клієнтам зручно записуватись із телефона"
+      "09:00 — Манікюр із покриттям — 90 хв — 700 грн: запис одразу відображається у календарі.",
+      "11:00 — Корекція — 120 хв — 900 грн: довга процедура планується без накладок.",
+      "14:00 — Зняття покриття — 45 хв — 350 грн: короткий слот закриває вільне вікно.",
+      "15:30 — Дизайн нігтів — 30 хв — 250 грн: клієнт бачить ціну і тривалість до бронювання.",
+      "17:00 — Педикюр — 75 хв — 800 грн: вечірній запис без зайвих узгоджень у месенджерах.",
+      "20:00 — Нова заявка на завтра: Telegram-сповіщення допомагає не пропустити запис."
+    ],
+    trustTitle: "Чому майстри манікюру обирають Timviz",
+    trustCards: [
+      {
+        title: "Швидкий старт без складної CRM",
+        text: "Профіль, послуги і календар налаштовуються за кілька хвилин без технічних інтеграцій."
+      },
+      {
+        title: "Більше повторних візитів",
+        text: "Клієнти бачать вільні вікна онлайн і легше повертаються на корекцію або покриття."
+      },
+      {
+        title: "Менше ручних переписок",
+        text: "Онлайн-запис і Telegram-апдейти зменшують хаос у чатах та економлять час майстра."
+      }
     ],
     nicheFitTitle: "Ідеально для майстрів манікюру",
     nicheFitItems: ["гель-лак", "нарощування", "дизайн", "корекція", "педикюр"],
@@ -474,12 +489,12 @@ const copy: Record<SiteLanguage, Copy> = {
     forBusiness: "For business",
     title: "Online booking for nail technicians",
     subtitle: "Accept client bookings online, manage your calendar, services, pricing and working hours in one dashboard.",
-    ctaPrimary: "Start for free",
+    ctaPrimary: "Start taking bookings in 2 minutes",
     ctaSecondary: "See features",
-    ctaAfterSolution: "Create professional profile",
-    ctaFinal: "Launch online booking",
-    ctaHint: "No website needed • no complex setup",
-    microcopy: "No complex setup • launch in minutes",
+    ctaAfterSolution: "Start taking bookings in 2 minutes",
+    ctaFinal: "Start taking bookings in 2 minutes",
+    ctaHint: "No website needed • no complex setup • free start",
+    microcopy: "No complex setup • no website • launch in 2 minutes",
     sampleClient: "Client: Anna K.",
     sampleService: "Manicure with coating · 90 min",
     sampleStatus: "Status: Confirmed",
@@ -586,23 +601,47 @@ const copy: Record<SiteLanguage, Copy> = {
     telegramText:
       "Connect Timviz Telegram bot to receive booking alerts, confirmations and quick access to your calendar.",
     telegramCta: "Connect after sign up",
-    reasonsTitle: "Why Timviz is easy to start",
+    reasonsTitle: "Nail technician day scenario",
     reasons: [
-      "free start",
-      "no separate website needed",
-      "works for solo professionals",
-      "no complex CRM setup required",
-      "available in Ukrainian and Russian",
-      "easy mobile booking experience for clients"
+      "09:00 — Manicure with coating — 90 min — 700 UAH: confirmed booking appears in the calendar instantly.",
+      "11:00 — Nail correction — 120 min — 900 UAH: long procedure is scheduled with no overlap.",
+      "14:00 — Coating removal — 45 min — 350 UAH: short slot fills an idle window.",
+      "15:30 — Nail design — 30 min — 250 UAH: client sees duration and pricing before booking.",
+      "17:00 — Pedicure — 75 min — 800 UAH: evening slot is booked online without extra messaging.",
+      "20:00 — New booking for tomorrow: Telegram alert helps you react immediately."
+    ],
+    trustTitle: "Why nail technicians trust Timviz",
+    trustCards: [
+      {
+        title: "Fast launch without heavy setup",
+        text: "You can configure profile, services and schedule in minutes without technical overhead."
+      },
+      {
+        title: "More repeat bookings",
+        text: "Clients see available time online and return faster for regular manicure sessions."
+      },
+      {
+        title: "Less manual chat coordination",
+        text: "Online booking and Telegram updates reduce back-and-forth messaging and booking mistakes."
+      }
     ],
     nicheFitTitle: "Perfect for nail technicians",
     nicheFitItems: ["gel polish", "extensions", "nail design", "correction", "pedicure"],
     nicheFitSample: "Manicure + gel polish — 90 min — 700 UAH",
     seoBlockTitle: "Client booking software for nail technicians",
     seoParagraphs: [
-      "Timviz helps nail technicians run online booking with clear scheduling and less messenger chaos.",
-      "You can manage services, durations and prices from one calendar-based workflow.",
-      "This is a practical lightweight CRM setup for professionals who need higher booking conversion."
+      "For nail technicians, online booking is no longer a nice-to-have feature. It is a core part of predictable daily revenue. When requests come from Instagram, Telegram and other chats at the same time, it is easy to miss a message, confirm the wrong time, or leave a lead without a reply. Timviz fixes that by turning messaging chaos into one structured flow. Clients choose a service and a time slot on their own, while you receive a clear confirmed booking in one calendar.",
+      "A manicure business usually combines services with very different durations. Basic manicure, gel polish, nail correction, design and pedicure all require different timing. Without a proper system, appointments overlap, breaks become random, and the day feels overloaded. Timviz helps you manage this complexity by showing service duration inside the booking calendar and by exposing only relevant available time to clients. This improves planning and keeps your work rhythm stable.",
+      "Many specialists search for client booking software because they want fewer manual conversations and more confirmed appointments. Timviz gives exactly that: a practical online booking setup where pricing, service duration and schedule are connected. Clients see what they book before they submit a request. This reduces misunderstandings and improves conversion from inquiry to visit.",
+      "Timviz also works as a lightweight CRM for solo nail professionals. You do not need a separate website, custom integrations or long onboarding. You create a profile, add services, set working hours and share one booking link. From that moment, your online booking channel works 24/7. Clients can book when they are ready, even outside your working hours, and your next day starts with a structured calendar instead of scattered chats.",
+      "A real workday example shows the impact quickly. In the morning you can run a 90-minute manicure with coating, then a 120-minute correction, and later fill a short 30-minute nail design slot. If you do this manually in chat, the chance of overlap is high. With Timviz, each service carries its own duration and the system protects your schedule logic. This means fewer delays, less stress and better client experience.",
+      "Telegram notifications are a major operational advantage. New bookings, cancellations and reschedules arrive instantly while you are busy with a current client. You do not need to constantly monitor multiple channels. This responsiveness helps you keep control over your day and react before empty slots become lost revenue.",
+      "Repeat visits are especially important in nail services, where clients return every few weeks. A clear booking calendar makes it easier to offer the next convenient slot and lock the repeat visit faster. Timviz supports this behavior by keeping your availability transparent. As a result, retention grows naturally because clients can rebook in seconds.",
+      "For small studios, Timviz provides the same value at a team level. Structured online booking reduces admin load, helps standardize service setup, and improves quality across all touchpoints. Clients get a consistent experience: service list, duration, pricing and available time in one clear path. This consistency builds trust and increases the chance of repeat booking.",
+      "People searching for terms like online booking for nail technicians, booking calendar, or manicure booking app usually have a direct goal: stable bookings without operational chaos. Timviz matches that intent by combining booking page, scheduling, pricing and notifications in one practical system. It is built for daily work, not for complex enterprise rollout.",
+      "In the long run, structured booking is not only about convenience. It affects your brand perception and revenue quality. When clients can book quickly, see transparent service details, and arrive on time to a well-organized schedule, they are more likely to return and recommend you. Timviz helps nail professionals move from manual coordination to scalable booking operations with clear conversion benefits.",
+      "Another important benefit is better control of idle windows. In manual scheduling, short gaps between long services are often wasted because they are hard to sell quickly. Timviz makes those windows visible and bookable, so you can fill them with quick procedures and improve daily utilization. Over time, this creates a more balanced workload and a healthier income pattern.",
+      "In short, Timviz gives nail technicians what matters most for growth: reliable online client booking, a duration-aware schedule, transparent services, and instant Telegram updates. It reduces routine admin work, improves conversion, and helps you build a stable booking engine that supports both solo practice and studio growth."
     ],
     otherTitle: "Other directions",
     faqTitle: "FAQ",

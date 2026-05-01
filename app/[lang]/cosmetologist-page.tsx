@@ -121,6 +121,14 @@ const copy: Record<SiteLanguage, Copy> = {
     nicheText: "Timviz підходить для щоденної косметологічної практики та студій із щільним графіком процедур.",
     nicheItems: ["чистка обличчя", "пілінги", "ін'єкції", "доглядові процедури", "апаратна косметологія"],
     nicheSample: "Чистка обличчя — 60 хв — 900 грн",
+    dayScenarioTitle: "Сценарій робочого дня косметолога",
+    dayScenarioItems: [
+      "09:30 — Консультація + діагностика — 30 хв — 500 грн: чіткий старт дня з планом процедур.",
+      "10:30 — Чистка обличчя — 60 хв — 900 грн: базовий прийом із фіксованим таймінгом.",
+      "12:00 — Пілінг — 45 хв — 800 грн: коротка процедура для щільного розкладу.",
+      "14:00 — Доглядовий комплекс — 90 хв — 1400 грн: довгий слот із буфером між візитами.",
+      "17:30 — Повторний курс — 40 хв — 700 грн: клієнт сам бронює зручний час онлайн."
+    ],
     howTitle: "Як це працює",
     howSteps: ["Створіть профіль", "Додайте послуги", "Почніть приймати записи"],
     compareTitle: "Без Timviz / З Timviz",
@@ -130,6 +138,21 @@ const copy: Record<SiteLanguage, Copy> = {
     compareRight: ["календар", "структура", "повторні записи", "нагадування"],
     telegramTitle: "Отримуйте записи і нагадування в Telegram",
     telegramText: "Timviz надсилає нові записи та зміни розкладу в Telegram, щоб ви не втрачали важливі оновлення.",
+    trustTitle: "Чому косметологи довіряють Timviz",
+    trustCards: [
+      {
+        title: "Контроль процедур різної тривалості",
+        text: "Календар допомагає планувати короткі і довгі сеанси без накладок у графіку."
+      },
+      {
+        title: "Прозора онлайн-запис клієнтів",
+        text: "Клієнт заздалегідь бачить ціну і формат послуги, тому менше уточнень та скасувань."
+      },
+      {
+        title: "Зручна база для повторних візитів",
+        text: "Історія записів і Telegram-апдейти полегшують курсові програми та утримання клієнтів."
+      }
+    ],
     seoBlockTitle: "Програма для запису клієнтів для косметологів",
     seoParagraphs: ukSeoParagraphs,
     faqTitle: "FAQ",
@@ -296,6 +319,14 @@ const copy: Record<SiteLanguage, Copy> = {
     nicheText: "Built for cosmetology specialists and studios with multi-duration procedures.",
     nicheItems: ["facial cleansing", "peelings", "injections", "care procedures", "hardware cosmetology"],
     nicheSample: "Facial cleansing — 60 min — 900 UAH",
+    dayScenarioTitle: "Cosmetologist day scenario",
+    dayScenarioItems: [
+      "09:30 — Consultation + diagnostics — 30 min — 500 UAH: clear day opening with treatment planning.",
+      "10:30 — Facial cleansing — 60 min — 900 UAH: core procedure scheduled with exact duration.",
+      "12:00 — Peel treatment — 45 min — 800 UAH: short service that fits dense calendars.",
+      "14:00 — Advanced care package — 90 min — 1400 UAH: long session with safe buffer.",
+      "17:30 — Follow-up course visit — 40 min — 700 UAH: repeat booking captured online without chat friction."
+    ],
     howTitle: "How it works",
     howSteps: ["Create profile", "Add services", "Start taking bookings"],
     compareTitle: "Without Timviz / With Timviz",
@@ -305,11 +336,35 @@ const copy: Record<SiteLanguage, Copy> = {
     compareRight: ["calendar", "clear structure", "repeat bookings", "reminders"],
     telegramTitle: "Receive bookings and reminders in Telegram",
     telegramText: "Timviz sends new bookings and schedule updates directly to Telegram.",
+    trustTitle: "Why cosmetologists trust Timviz",
+    trustCards: [
+      {
+        title: "Precise control of procedure-heavy schedules",
+        text: "Different treatment durations stay organized in one calendar with fewer operational errors."
+      },
+      {
+        title: "Clear client booking path",
+        text: "Clients see service details, duration and pricing before booking, improving conversion quality."
+      },
+      {
+        title: "Better repeat-visit retention",
+        text: "Structured records and instant alerts support course-based workflows and follow-up appointments."
+      }
+    ],
     seoBlockTitle: "Client booking software for cosmetologists",
     seoParagraphs: [
-      "Timviz helps cosmetologists organize online client booking in one clear workflow.",
-      "You can keep procedures, prices and durations structured in one calendar.",
-      "This improves conversion from inquiries to confirmed appointments."
+      "Online booking for cosmetologists is crucial for both schedule stability and conversion. When inquiries arrive across several messengers, key requests are missed and response time grows. Timviz centralizes this process: clients choose treatment and time on their own, and you receive structured confirmed bookings in one calendar.",
+      "Cosmetology services are timing-sensitive. Facial cleansing, peel sessions, injections and аппарат-based treatments require different durations and preparation buffers. Manual planning often creates conflicts. Timviz links each service with duration and price, then protects the booking flow from invalid time choices.",
+      "Many specialists search for booking software because they need less manual coordination and more predictable appointments. Timviz offers a practical setup where service catalog, prices, durations and booking statuses are unified. Clients know what they are booking before submission, which reduces misunderstandings.",
+      "For solo professionals, Timviz works as a lightweight CRM with quick onboarding. No separate website or technical launch is required. Create profile, configure procedures and share one booking link. Your online booking channel then runs 24/7 and captures demand even outside working hours.",
+      "A real cosmetology day combines short and long sessions. Consultation may take 30 minutes, cleansing 60 minutes, and advanced care procedures 90 minutes or more. Without structure, this mix leads to overlaps and late starts. Timviz keeps service timing logic intact and improves operational flow.",
+      "Telegram notifications improve reaction speed. New bookings, reschedules and cancellations are delivered instantly, so you can adjust the day before capacity is lost. This is especially important in high-load weeks when one missed update can cascade into multiple schedule issues.",
+      "Repeat appointments are a major revenue driver in cosmetology. Course-based procedures require consistent follow-up timing. With a clear booking calendar and structured services, it is easier to secure the next visit during or right after checkout. This strengthens retention and client lifetime value.",
+      "For multi-specialist studios, centralized booking improves management visibility. You can see demand distribution, identify overloaded windows and rebalance schedules across team members. Timviz supports operational decisions, not just appointment storage.",
+      "Search intent behind phrases like online booking for cosmetologists, cosmetology booking calendar, or client booking software is usually transactional. Specialists want higher confirmed bookings with lower admin load. Timviz is built for exactly that outcome with clear user flow and practical controls.",
+      "A transparent booking experience also strengthens trust. Clients value clear treatment details, accurate timing and reliable confirmations. When booking feels simple and professional, they are more likely to return and recommend your studio.",
+      "Timviz additionally helps monetize short windows between long procedures. In manual operations these windows are often lost. With visible availability and duration-aware slots, quick treatments can fill those gaps and improve schedule utilization.",
+      "Overall, Timviz gives cosmetologists a conversion-focused booking system: service-driven scheduling, clear pricing, repeat-visit support and real-time Telegram alerts. It reduces administrative friction and turns fragmented demand into predictable, high-quality appointments."
     ],
     faqTitle: "FAQ",
     faq: [

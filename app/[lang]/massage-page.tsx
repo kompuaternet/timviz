@@ -123,6 +123,14 @@ const copy: Record<SiteLanguage, Copy> = {
     nicheText: "Timviz підходить для приватної практики та студій, де важливо гнучко керувати сеансами різної тривалості.",
     nicheItems: ["класичний масаж", "релакс масаж", "лікувальний масаж", "антицелюлітний", "спортивний масаж", "реабілітація"],
     nicheSample: "Класичний масаж — 60 хв — 700 грн",
+    dayScenarioTitle: "Сценарій робочого дня масажиста",
+    dayScenarioItems: [
+      "09:00 — Лікувальний масаж — 45 хв — 750 грн: ранковий короткий слот для точного старту дня.",
+      "10:00 — Класичний масаж — 60 хв — 700 грн: базовий сеанс без накладок у календарі.",
+      "12:00 — Релакс масаж — 90 хв — 950 грн: довга процедура з буфером між записами.",
+      "15:00 — Спортивний масаж — 60 хв — 850 грн: щільний денний слот з контрольованим таймінгом.",
+      "18:00 — Антицелюлітний масаж — 75 хв — 900 грн: вечірній запис закривається онлайн."
+    ],
     sessionTitle: "Керуйте сеансами різної тривалості",
     sessionText: "Налаштовуйте 30, 60, 90 хвилин і система автоматично покаже вільний час.",
     howTitle: "Як це працює",
@@ -134,6 +142,21 @@ const copy: Record<SiteLanguage, Copy> = {
     compareRight: ["календар", "порядок", "контроль часу", "менше переписок"],
     telegramTitle: "Отримуйте записи в Telegram",
     telegramText: "Timviz надсилає нові записи та зміни графіка в Telegram, щоб ви не втрачали важливі оновлення.",
+    trustTitle: "Чому масажисти обирають Timviz",
+    trustCards: [
+      {
+        title: "Гнучке керування тривалістю сеансів",
+        text: "Сеанси на 30, 60 і 90 хвилин плануються в одному календарі без ручного перерахунку."
+      },
+      {
+        title: "Онлайн-запис без хаосу в чатах",
+        text: "Клієнт бронює час самостійно, а майстер отримує структурований візит із ціною і тривалістю."
+      },
+      {
+        title: "Миттєва реакція на зміни",
+        text: "Telegram-сповіщення допомагають швидко обробляти нові записи, переноси та скасування."
+      }
+    ],
     seoBlockTitle: "Програма для запису клієнтів для масажистів",
     seoParagraphs: ukSeoParagraphs,
     faqTitle: "FAQ",
@@ -302,6 +325,14 @@ const copy: Record<SiteLanguage, Copy> = {
     nicheText: "Built for solo specialists and studios with mixed session lengths.",
     nicheItems: ["classic massage", "relax massage", "therapeutic massage", "anti-cellulite", "sports massage", "rehabilitation"],
     nicheSample: "Classic massage — 60 min — 700 UAH",
+    dayScenarioTitle: "Massage therapist day scenario",
+    dayScenarioItems: [
+      "09:00 — Therapeutic massage — 45 min — 750 UAH: precise morning slot to start the day.",
+      "10:00 — Classic massage — 60 min — 700 UAH: core session with predictable timing.",
+      "12:00 — Relax massage — 90 min — 950 UAH: long treatment with automatic buffer handling.",
+      "15:00 — Sports massage — 60 min — 850 UAH: daytime slot optimized without overlaps.",
+      "18:00 — Anti-cellulite massage — 75 min — 900 UAH: evening booking captured online."
+    ],
     sessionTitle: "Manage sessions of different length",
     sessionText: "Set 30, 60, 90 minute services and the system shows available slots automatically.",
     howTitle: "How it works",
@@ -313,11 +344,35 @@ const copy: Record<SiteLanguage, Copy> = {
     compareRight: ["calendar", "structure", "time control", "fewer messages"],
     telegramTitle: "Receive bookings in Telegram",
     telegramText: "Timviz sends new bookings and schedule changes directly to Telegram.",
+    trustTitle: "Why massage therapists trust Timviz",
+    trustCards: [
+      {
+        title: "Reliable control of mixed-duration sessions",
+        text: "Short and long massage services are scheduled accurately in one duration-aware calendar."
+      },
+      {
+        title: "Stronger conversion from inquiry to booking",
+        text: "Clients choose service and time instantly without waiting for manual chat confirmation."
+      },
+      {
+        title: "Instant updates during the workday",
+        text: "Telegram notifications keep you aware of new bookings and changes in real time."
+      }
+    ],
     seoBlockTitle: "Client booking software for massage therapists",
     seoParagraphs: [
-      "Timviz helps massage therapists handle online bookings with less manual coordination.",
-      "You can manage service durations, pricing and schedule in one calendar.",
-      "This improves conversion from inquiries to confirmed appointments."
+      "Online booking for massage therapists is essential for stable schedule utilization. When requests are handled in multiple chats, appointments are often missed or confirmed too late. Timviz centralizes the process: clients select service and time on their own, and confirmed sessions appear in one calendar immediately.",
+      "Massage businesses usually combine sessions of different duration: 30, 60 and 90 minutes, sometimes longer. Manual planning of mixed-length services often leads to overlaps and idle gaps. Timviz maps duration to each service and keeps booking logic consistent, so your day remains predictable.",
+      "Specialists looking for massage booking software usually want fewer calls, fewer chat messages and more confirmed appointments. Timviz delivers that with a practical setup: service catalog, pricing, durations and booking statuses in one workflow. Clients understand what they book before submitting a request.",
+      "For solo professionals, Timviz functions as a lightweight CRM without heavy onboarding. No separate website is required. You can launch quickly, share a booking link and start receiving online bookings 24/7. That means your booking channel works even when you are busy with current clients.",
+      "A real day often includes short therapeutic sessions, standard classic massage and longer relaxation treatments. Without structured scheduling, those services create timing conflicts. Timviz maintains slot integrity and helps balance the day, reducing delays and preserving service quality.",
+      "Telegram notifications increase operational responsiveness. New sessions, cancellations and reschedules are delivered instantly, so you can react before capacity is lost. This is especially valuable when the schedule is dense and each missed update affects multiple upcoming sessions.",
+      "Repeat visits are a major part of massage revenue, especially for course-based or recovery plans. With a clear calendar and transparent availability, clients can rebook quickly. Timviz supports this retention loop and helps specialists build predictable recurring demand.",
+      "For studios with multiple therapists, centralized booking improves coordination and staffing decisions. Managers can see utilization by day, identify bottlenecks and redistribute appointments when needed. Timviz provides visibility that supports both operations and growth.",
+      "Search intent behind queries like online massage booking, booking calendar for massage therapists, or client booking software is highly practical: get more confirmed sessions with less admin friction. Timviz is designed for that intent with straightforward UX and operational controls.",
+      "Booking quality also impacts client trust. Clear service duration, visible pricing and reliable confirmations make the experience professional. Clients are more likely to return when booking is fast and predictable.",
+      "Another benefit is better monetization of short windows between longer sessions. Manual processes often leave these windows unused. With real-time visible availability, quick services can fill them and improve daily utilization.",
+      "Overall, Timviz gives massage therapists a conversion-focused booking system: duration-based calendar, transparent services, repeat-booking support and instant Telegram alerts. It reduces manual coordination and turns fragmented requests into structured, high-quality appointments."
     ],
     faqTitle: "FAQ",
     faq: [

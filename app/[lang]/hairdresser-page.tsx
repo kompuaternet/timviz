@@ -256,8 +256,31 @@ const copy: Record<SiteLanguage, HairCopy> = {
     nicheTitle: "Ідеально для перукарів",
     nicheText: "Timviz закриває щоденні задачі майстра з різними форматами послуг і різною тривалістю.",
     nicheItems: ["жіночі стрижки", "чоловічі стрижки", "фарбування", "укладка", "складні процедури"],
+    dayScenarioTitle: "Сценарій робочого дня перукаря",
+    dayScenarioItems: [
+      "09:00 — Чоловіча стрижка — 45 хв — 450 грн: швидкий старт зміни без накладок.",
+      "10:00 — Жіноча стрижка — 60 хв — 500 грн: точний слот із контрольованою тривалістю.",
+      "12:00 — Фарбування коренів — 120 хв — 1200 грн: довга послуга з буфером у календарі.",
+      "15:00 — Стрижка + укладка — 75 хв — 750 грн: клієнт бачить ціну до бронювання.",
+      "18:00 — Укладка — 40 хв — 450 грн: вечірнє вікно закривається онлайн без переписок."
+    ],
     socialTitle: "Майстри вже використовують Timviz",
     socialText: "Перукарі переходять на Timviz, щоб зменшити ручну комунікацію і прискорити підтвердження візитів.",
+    trustTitle: "Чому перукарі довіряють Timviz",
+    trustCards: [
+      {
+        title: "Календар без накладок",
+        text: "Різна тривалість стрижок і фарбувань враховується автоматично в одному графіку."
+      },
+      {
+        title: "Менше дзвінків і чатів",
+        text: "Клієнти обирають послугу і час самостійно, а майстер отримує готовий запис."
+      },
+      {
+        title: "Контроль змін у реальному часі",
+        text: "Telegram-сповіщення допомагають швидко реагувати на нові бронювання та переноси."
+      }
+    ],
     seoBlockTitle: "Програма для запису клієнтів для перукарів",
     seoParagraphs: ukSeoParagraphs,
     faqTitle: "FAQ",
@@ -293,11 +316,11 @@ const copy: Record<SiteLanguage, HairCopy> = {
     forBusiness: "For business",
     title: "Online booking for hairdressers",
     subtitle: "Accept bookings online, manage schedule and keep clients from dropping off",
-    cta: "Start for free",
+    cta: "Start taking bookings in 2 minutes",
     ctaSecondary: "See features",
-    ctaAfterFeatures: "Start for free",
-    ctaBottom: "Create hairdresser profile",
-    ctaHint: "No website needed • no complex setup",
+    ctaAfterFeatures: "Start taking bookings in 2 minutes",
+    ctaBottom: "Start taking bookings in 2 minutes",
+    ctaHint: "No website needed • no complex setup • free start",
     microcopy: "No complex setup • launch in 2 minutes",
     sampleClient: "Client: Olga M.",
     sampleService: "Haircut + styling · 75 min",
@@ -335,13 +358,45 @@ const copy: Record<SiteLanguage, HairCopy> = {
     nicheTitle: "Built for hairdressers and salons",
     nicheText: "Suitable for haircuts, coloring, styling and complex long procedures.",
     nicheItems: ["haircuts", "coloring", "styling", "complex procedures"],
+    dayScenarioTitle: "Hairdresser day scenario",
+    dayScenarioItems: [
+      "09:00 — Men’s haircut — 45 min — 450 UAH: fast opening slot with predictable timing.",
+      "10:00 — Women’s haircut — 60 min — 500 UAH: standard service scheduled with no overlap.",
+      "12:00 — Root coloring — 120 min — 1200 UAH: long procedure with automatic calendar buffer.",
+      "15:00 — Haircut + styling — 75 min — 750 UAH: client sees duration and pricing before booking.",
+      "18:00 — Styling — 40 min — 450 UAH: evening slot gets filled online without chat coordination."
+    ],
     socialTitle: "Professionals already use Timviz",
     socialText: "Hairdressers use Timviz to reduce manual messaging and speed up confirmations.",
+    trustTitle: "Why hairdressers trust Timviz",
+    trustCards: [
+      {
+        title: "Schedule clarity for mixed-duration services",
+        text: "Short and long services stay organized in one booking calendar without time collisions."
+      },
+      {
+        title: "Higher conversion from inquiry to booking",
+        text: "Clients book their own slot instantly instead of waiting for replies in messengers."
+      },
+      {
+        title: "Real-time control through Telegram alerts",
+        text: "New bookings and reschedules arrive immediately, helping keep the workday stable."
+      }
+    ],
     seoBlockTitle: "Client booking software for hairdressers",
     seoParagraphs: [
-      "Timviz helps hairdressers run online client booking from one dashboard.",
-      "You can manage services, duration, pricing and schedule in a single booking calendar.",
-      "It reduces manual messaging and improves booking conversion."
+      "Online booking for hairdressers is one of the biggest levers for stable daily revenue. When booking requests arrive from Instagram, Telegram and messaging apps at the same time, appointments are easy to miss and responses are delayed. Timviz converts this fragmented flow into one structured process. Clients choose service and time independently, while the hairdresser receives a clear confirmed visit in one calendar.",
+      "Hairdresser schedules are complex by nature. A quick men’s haircut, a women’s haircut, root coloring, full-color treatment and styling all require different durations. If timing is handled manually, collisions and idle windows become unavoidable. Timviz solves that by attaching duration and pricing to each service and showing only valid booking slots. This keeps your workday realistic and reduces operational stress.",
+      "Many specialists look for booking software because they want fewer calls and less chat coordination. Timviz provides exactly that. Service catalog, duration setup, pricing and booking statuses are managed in one place. Clients see clear service details before they book, so expectations are aligned and confirmation speed improves.",
+      "For solo professionals, Timviz works as a lightweight CRM with fast onboarding. You do not need a separate website or technical setup. Create profile, add services, define working hours and publish one booking link. From that point, your booking flow runs 24/7 and supports client booking without manual back-and-forth.",
+      "A practical day example illustrates the value: short haircuts in the morning, long coloring in the middle of the day, styling slots in the evening. Without a structured calendar, this pattern often creates delays and mismatched gaps. Timviz maintains service logic automatically and keeps your schedule balanced, so you can serve more clients without overloading the shift.",
+      "Telegram notifications give hairdressers real-time awareness. New bookings, cancellations and reschedules appear instantly, even while you are with another client. This reduces the risk of missed updates and helps you react before a free slot turns into lost revenue. In busy salons, this speed is critical.",
+      "Repeat visits are essential in hair care services. With a clear booking calendar, it is easier to secure the next appointment immediately after checkout. Clients can rebook quickly because available time is transparent. Timviz supports this retention flow and helps turn one-time visits into recurring demand.",
+      "For salon teams, centralized booking creates operational consistency. Managers can see where schedules are overloaded and where there is open capacity. That visibility improves shift planning, campaign timing and slot utilization across the week. Timviz is not just a calendar; it is a practical booking operations layer.",
+      "Search intent behind queries like online booking for hairdressers, client booking software, or haircut booking calendar is usually direct: increase confirmed appointments and reduce administrative noise. Timviz is designed to satisfy that intent with simple UX for clients and structured workflows for professionals.",
+      "In long-term growth, reliable booking affects both conversion and brand perception. Clients remember how easy it was to book, how clear pricing was, and whether the appointment started on time. Timviz helps hairdressers deliver that professional experience consistently, which improves repeat rate and referrals.",
+      "Another advantage is better control of short windows between long services. Manual scheduling often leaves these windows unused because they are difficult to coordinate quickly. With Timviz, those slots remain visible and bookable, so you can fill them with quick services and improve utilization.",
+      "Overall, Timviz gives hairdressers a conversion-focused booking system: online booking flow, duration-aware calendar, structured services, and instant Telegram alerts. It reduces routine admin work and helps transform daily demand into a stable schedule with fewer errors and higher booking efficiency."
     ],
     faqTitle: "FAQ",
     faq: [
