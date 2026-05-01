@@ -599,6 +599,26 @@ export default function SuperadminView({
     }, "Корневой каталог обновлён.");
   }
 
+  async function seedCatalogDefaults(force = false) {
+    await withStatus(async () => {
+      const response = await fetch("/api/superadmin/catalog", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "seed_defaults",
+          force
+        })
+      });
+      const payload = await readJson(response);
+      if (!response.ok) {
+        throw new Error(payload.error || "Не удалось загрузить базовые услуги каталога.");
+      }
+      if (Array.isArray(payload.items)) {
+        setCatalog(payload.items);
+      }
+    }, force ? "Базовый каталог принудительно обновлён." : "Базовый каталог загружен.");
+  }
+
   async function deleteCatalogItem(itemId: string) {
     await withStatus(async () => {
       const response = await fetch(`/api/superadmin/catalog?itemId=${encodeURIComponent(itemId)}`, {
@@ -925,7 +945,10 @@ export default function SuperadminView({
         <div className={styles.sectionHeader}>
           <div>
             <h2>Корневой каталог услуг</h2>
-            <p>Редактируется отдельно, чтобы менять базу предложений для всего сайта в одном месте.</p>
+            <p>
+              Редактируется отдельно, чтобы менять базу предложений для всего сайта в одном месте. Для каждого
+              элемента можно задать названия на RU/UK/EN и цену.
+            </p>
           </div>
           <input
             className={styles.searchInput}
@@ -933,6 +956,24 @@ export default function SuperadminView({
             value={catalogQuery}
             onChange={(event) => setCatalogQuery(event.target.value)}
           />
+        </div>
+        <div className={styles.catalogTools}>
+          <button
+            type="button"
+            className={styles.secondaryButton}
+            onClick={() => void seedCatalogDefaults(false)}
+            disabled={isBusy}
+          >
+            Загрузить базовые услуги
+          </button>
+          <button
+            type="button"
+            className={styles.secondaryButton}
+            onClick={() => setCatalogDraft(defaultCatalogDraft)}
+            disabled={isBusy}
+          >
+            Новая услуга
+          </button>
         </div>
         <div className={styles.catalogComposer}>
           <label className={styles.field}>
@@ -1037,55 +1078,63 @@ export default function SuperadminView({
           </button>
         </div>
         <div className={styles.tableLike}>
-          {filteredCatalog.map((item) => (
-            <div key={item.id} className={styles.tableRow}>
-              <div>
-                <strong>{item.name}</strong>
-                <div className={styles.rowMeta}>
-                  {item.category} · {item.groupKey === "popularServices" ? "Популярные" : "Основные"}
-                </div>
-                {item.localizedName?.ru || item.localizedName?.uk || item.localizedName?.en ? (
+          {filteredCatalog.length > 0 ? (
+            filteredCatalog.map((item) => (
+              <div key={item.id} className={styles.tableRow}>
+                <div>
+                  <strong>{item.name}</strong>
                   <div className={styles.rowMeta}>
-                    RU: {item.localizedName?.ru || "—"} · UK: {item.localizedName?.uk || "—"} · EN:{" "}
-                    {item.localizedName?.en || "—"}
+                    {item.category} · {item.groupKey === "popularServices" ? "Популярные" : "Основные"}
                   </div>
-                ) : null}
+                  {item.localizedName?.ru || item.localizedName?.uk || item.localizedName?.en ? (
+                    <div className={styles.rowMeta}>
+                      RU: {item.localizedName?.ru || "—"} · UK: {item.localizedName?.uk || "—"} · EN:{" "}
+                      {item.localizedName?.en || "—"}
+                    </div>
+                  ) : null}
+                </div>
+                <div className={styles.rowMeta}>
+                  {item.durationMinutes || 60} мин · {item.price || 0}
+                </div>
+                <div className={styles.rowActions}>
+                  <button
+                    type="button"
+                    className={styles.secondaryButton}
+                    onClick={() =>
+                      setCatalogDraft({
+                        id: item.id,
+                        category: item.category,
+                        groupKey: item.groupKey,
+                        name: item.name,
+                        localizedNameRu: item.localizedName?.ru || "",
+                        localizedNameUk: item.localizedName?.uk || "",
+                        localizedNameEn: item.localizedName?.en || "",
+                        durationMinutes: item.durationMinutes || 60,
+                        price: item.price || 0,
+                        sortOrder: item.sortOrder
+                      })
+                    }
+                  >
+                    Редактировать RU/UK/EN и цену
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.dangerButton}
+                    onClick={() => void deleteCatalogItem(item.id)}
+                    disabled={isBusy}
+                  >
+                    Удалить
+                  </button>
+                </div>
               </div>
-              <div className={styles.rowMeta}>
-                {item.durationMinutes || 60} мин · {item.price || 0}
-              </div>
-              <div className={styles.rowActions}>
-                <button
-                  type="button"
-                  className={styles.secondaryButton}
-                  onClick={() =>
-                    setCatalogDraft({
-                      id: item.id,
-                      category: item.category,
-                      groupKey: item.groupKey,
-                      name: item.name,
-                      localizedNameRu: item.localizedName?.ru || "",
-                      localizedNameUk: item.localizedName?.uk || "",
-                      localizedNameEn: item.localizedName?.en || "",
-                      durationMinutes: item.durationMinutes || 60,
-                      price: item.price || 0,
-                      sortOrder: item.sortOrder
-                    })
-                  }
-                >
-                  Изменить
-                </button>
-                <button
-                  type="button"
-                  className={styles.dangerButton}
-                  onClick={() => void deleteCatalogItem(item.id)}
-                  disabled={isBusy}
-                >
-                  Удалить
-                </button>
-              </div>
+            ))
+          ) : (
+            <div className={styles.emptyState}>
+              {catalog.length === 0
+                ? "Каталог пока пуст. Нажми «Загрузить базовые услуги», чтобы открыть полный список для редактирования."
+                : "По текущему фильтру ничего не найдено."}
             </div>
-          ))}
+          )}
         </div>
       </section>
     </main>

@@ -12,6 +12,7 @@ import { getSupabaseAdmin, isSupabaseConfigured } from "./supabase";
 import {
   deleteRootCatalogItem,
   getRootCatalogItems,
+  seedRootCatalogDefaults,
   upsertRootCatalogItem,
   type GlobalCatalogGroupKey
 } from "./global-service-catalog";
@@ -589,6 +590,12 @@ export async function deletePhotoAsSuperadmin(input: { businessId: string; photo
 }
 
 export async function getSuperadminCatalogItems() {
+  const items = await getRootCatalogItems();
+  if (items.length > 0) {
+    return items;
+  }
+
+  await seedRootCatalogDefaults();
   return getRootCatalogItems();
 }
 
@@ -607,6 +614,10 @@ export async function saveSuperadminCatalogItem(input: {
 
 export async function removeSuperadminCatalogItem(itemId: string) {
   return deleteRootCatalogItem(itemId);
+}
+
+export async function seedSuperadminCatalogDefaults(options?: { force?: boolean }) {
+  return seedRootCatalogDefaults(options);
 }
 
 export async function getProfessionalWorkspaceForAdmin(professionalId: string) {

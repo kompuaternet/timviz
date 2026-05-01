@@ -128,6 +128,21 @@ function flattenStaticCatalog(): GlobalCatalogItem[] {
   ]);
 }
 
+function toSupabaseCatalogRows(items: GlobalCatalogItem[]) {
+  return items.map((item) => ({
+    id: item.id,
+    category: item.category,
+    group_key: item.groupKey,
+    name: item.name,
+    duration_minutes: item.durationMinutes ?? 60,
+    price: item.price ?? 0,
+    sort_order: item.sortOrder,
+    localized_name_ru: item.localizedName?.ru ?? null,
+    localized_name_uk: item.localizedName?.uk ?? null,
+    localized_name_en: item.localizedName?.en ?? null
+  }));
+}
+
 function buildTemplateServices(items: GlobalCatalogItem[]): ServiceTemplate[] {
   return items
     .sort((left, right) => left.sortOrder - right.sortOrder || left.name.localeCompare(right.name))
@@ -226,6 +241,61 @@ export async function getRootCatalogItems(): Promise<GlobalCatalogItem[]> {
 export async function getServiceTemplateCatalog(): Promise<CategoryTemplate[]> {
   const items = await getRootCatalogItems();
   return buildCatalogFromItems(items);
+}
+
+export async function seedRootCatalogDefaults(options?: { force?: boolean }) {
+  const force = options?.force === true;
+  const defaults = flattenStaticCatalog();
+
+  if (isSupabaseConfigured()) {
+    const supabase = getSupabaseAdmin();
+    if (supabase) {
+      const { count, error: countError } = await supabase
+        .from("global_service_catalog")
+        .select("id", { count: "exact", head: true });
+
+      if (!countError) {
+        const existingCount = Number(count || 0);
+        if (existingCount > 0 && !force) {
+          return { seeded: false, count: existingCount };
+        }
+
+        const withLocalized = toSupabaseCatalogRows(defaults);
+        let { error: upsertError } = await supabase.from("global_service_catalog").upsert(withLocalized);
+
+        if (upsertError && /localized_name_ru|localized_name_uk|localized_name_en/i.test(upsertError.message)) {
+          const fallbackRows = withLocalized.map((row) => ({
+            id: row.id,
+            category: row.category,
+            group_key: row.group_key,
+            name: row.name,
+            duration_minutes: row.duration_minutes,
+            price: row.price,
+            sort_order: row.sort_order
+          }));
+          ({ error: upsertError } = await supabase.from("global_service_catalog").upsert(fallbackRows));
+        }
+
+        if (!upsertError) {
+          return { seeded: true, count: defaults.length };
+        }
+
+        if (!isMissingTableError(upsertError.message)) {
+          throw new Error(upsertError.message);
+        }
+      } else if (!isMissingTableError(countError.message)) {
+        throw new Error(countError.message);
+      }
+    }
+  }
+
+  const localItems = await readLocalCatalogItems();
+  if (localItems.length > 0 && !force) {
+    return { seeded: false, count: localItems.length };
+  }
+
+  await writeLocalCatalogItems(defaults);
+  return { seeded: true, count: defaults.length };
 }
 
 export async function upsertRootCatalogItem(input: {

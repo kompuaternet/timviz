@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import {
   getSuperadminCatalogItems,
   removeSuperadminCatalogItem,
-  saveSuperadminCatalogItem
+  saveSuperadminCatalogItem,
+  seedSuperadminCatalogDefaults
 } from "../../../../lib/admin-data";
 import { requireSuperadminSession } from "../../../../lib/admin-auth";
 
@@ -22,6 +23,16 @@ export async function POST(request: Request) {
   try {
     await requireSuperadminSession();
     const body = await request.json();
+    if (body?.action === "seed_defaults") {
+      const seedResult = await seedSuperadminCatalogDefaults({ force: body.force === true });
+      const items = await getSuperadminCatalogItems();
+      return NextResponse.json({
+        ok: true,
+        ...seedResult,
+        items
+      });
+    }
+
     const nestedLocalized =
       body.localizedName && typeof body.localizedName === "object" ? body.localizedName : {};
     const localizedNameRu = String(body.localizedNameRu ?? nestedLocalized.ru ?? "").trim();
