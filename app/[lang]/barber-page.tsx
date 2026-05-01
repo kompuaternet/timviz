@@ -47,8 +47,6 @@ type Copy = {
   faq: Array<{ q: string; a: string }>;
   finalTitle: string;
   finalText: string;
-  usefulLinksTitle: string;
-  usefulLinks: Array<{ label: string; href: string }>;
   otherTitle: string;
   privacy: string;
   terms: string;
@@ -144,13 +142,6 @@ const copy: Record<SiteLanguage, Copy> = {
     ],
     finalTitle: "Запустіть онлайн-запис для барбера вже сьогодні",
     finalText: "Створіть профіль, додайте послуги та відкрийте клієнтам зручний онлайн-запис без хаосу.",
-    usefulLinksTitle: "Корисні посилання",
-    usefulLinks: [
-      { label: "Для бізнесу", href: "/for-business" },
-      { label: "Для майстрів манікюру", href: "/dlya-manikyuru" },
-      { label: "Для перукарів", href: "/dlya-perukariv" },
-      { label: "Для косметологів", href: "/dlya-kosmetologiv" }
-    ],
     otherTitle: "Інші напрямки",
     privacy: "Політика конфіденційності",
     terms: "Умови використання",
@@ -221,13 +212,6 @@ const copy: Record<SiteLanguage, Copy> = {
     ],
     finalTitle: "Запустите онлайн-запись для барбера уже сегодня",
     finalText: "Создайте профиль, добавьте услуги и откройте клиентам удобную онлайн-запись.",
-    usefulLinksTitle: "Полезные ссылки",
-    usefulLinks: [
-      { label: "Для бизнеса", href: "/for-business" },
-      { label: "Для мастеров маникюра", href: "/dlya-manikyura" },
-      { label: "Для парикмахеров", href: "/dlya-parikmaherov" },
-      { label: "Для косметологов", href: "/dlya-kosmetologov" }
-    ],
     otherTitle: "Другие направления",
     privacy: "Политика конфиденциальности",
     terms: "Условия использования",
@@ -298,13 +282,6 @@ const copy: Record<SiteLanguage, Copy> = {
     ],
     finalTitle: "Launch barber online booking today",
     finalText: "Create profile, add services and open convenient online booking for your clients.",
-    usefulLinksTitle: "Useful links",
-    usefulLinks: [
-      { label: "For business", href: "/for-business" },
-      { label: "For nail technicians", href: "/for-nail-technicians" },
-      { label: "For hairdressers", href: "/for-hairdressers" },
-      { label: "For cosmetologists", href: "/for-cosmetologists" }
-    ],
     otherTitle: "Other directions",
     privacy: "Privacy policy",
     terms: "Terms of use",
@@ -514,15 +491,6 @@ export default function BarberLanding({ language }: { language: SiteLanguage }) 
               </a>
             );
           })}
-        </div>
-      </section>
-
-      <section className="business-feature-section">
-        <div className="business-section-head"><h2>{t.usefulLinksTitle}</h2></div>
-        <div className="business-footer-links">
-          {t.usefulLinks.map((link) => (
-            <a key={link.href} href={getLocalizedPath(language, link.href)}>{link.label}</a>
-          ))}
         </div>
       </section>
 

@@ -158,12 +158,12 @@ const copy: Record<SiteLanguage, HairCopy> = {
     finalTitle: "Готовы увеличить записи без хаоса?",
     finalText: "Создайте профиль, добавьте услуги и начните принимать записи клиентов онлайн без лишних переписок.",
     finalButton: "Создать профиль парикмахера",
-    linksTitle: "Полезные ссылки",
+    linksTitle: "Другие направления",
     links: [
-      { label: "Для бизнеса", href: "/for-business" },
       { label: "Для мастеров маникюра", href: "/dlya-manikyura" },
       { label: "Для барберов", href: "/dlya-barberov" },
-      { label: "Для косметологов", href: "/dlya-kosmetologov" }
+      { label: "Для косметологов", href: "/dlya-kosmetologov" },
+      { label: "Для массажистов", href: "/dlya-massazhistov" }
     ],
     footerText: "Timviz для бизнеса · онлайн-запись клиентов и управление услугами",
     privacy: "Политика конфиденциальности",
@@ -318,12 +318,12 @@ const copy: Record<SiteLanguage, HairCopy> = {
     finalTitle: "Ready to increase bookings?",
     finalText: "Create your profile and launch structured online booking for your hair services.",
     finalButton: "Create hairdresser profile",
-    linksTitle: "Useful links",
+    linksTitle: "Other directions",
     links: [
-      { label: "For business", href: "/for-business" },
       { label: "For nail artists", href: "/for-nail-technicians" },
       { label: "For barbers", href: "/for-barbers" },
-      { label: "For cosmetologists", href: "/for-cosmetologists" }
+      { label: "For cosmetologists", href: "/for-cosmetologists" },
+      { label: "For massage therapists", href: "/for-massage-therapists" }
     ],
     footerText: "Timviz for business · online client booking and service management",
     privacy: "Privacy policy",

@@ -54,8 +54,6 @@ type Copy = {
   seoBlockTitle: string;
   seoParagraphs: string[];
   otherTitle: string;
-  usefulLinksTitle: string;
-  usefulLinks: Array<{ label: string; href: string }>;
   faqTitle: string;
   faq: Array<{ q: string; a: string }>;
   finalTitle: string;
@@ -220,13 +218,6 @@ const copy: Record<SiteLanguage, Copy> = {
       "Это практичный формат для специалистов, которым нужна легкая CRM и меньше хаоса в мессенджерах."
     ],
     otherTitle: "Другие направления",
-    usefulLinksTitle: "Полезные ссылки",
-    usefulLinks: [
-      { label: "Для бизнеса", href: "/for-business" },
-      { label: "Для парикмахеров", href: "/dlya-parikmaherov" },
-      { label: "Для барберов", href: "/dlya-barberov" },
-      { label: "Для косметологов", href: "/dlya-kosmetologov" }
-    ],
     faqTitle: "FAQ",
     faq: [
       {
@@ -400,13 +391,6 @@ const copy: Record<SiteLanguage, Copy> = {
     seoBlockTitle: "Програма для запису клієнтів для майстрів манікюру",
     seoParagraphs: ukSeoParagraphs,
     otherTitle: "Інші напрямки",
-    usefulLinksTitle: "Корисні посилання",
-    usefulLinks: [
-      { label: "Для бізнесу", href: "/for-business" },
-      { label: "Для перукарів", href: "/dlya-perukariv" },
-      { label: "Для барберів", href: "/dlya-barberiv" },
-      { label: "Для косметологів", href: "/dlya-kosmetologiv" }
-    ],
     faqTitle: "FAQ",
     faq: [
       {
@@ -589,13 +573,6 @@ const copy: Record<SiteLanguage, Copy> = {
       "This is a practical lightweight CRM setup for professionals who need higher booking conversion."
     ],
     otherTitle: "Other directions",
-    usefulLinksTitle: "Useful links",
-    usefulLinks: [
-      { label: "For business", href: "/for-business" },
-      { label: "For hairdressers", href: "/for-hairdressers" },
-      { label: "For barbers", href: "/for-barbers" },
-      { label: "For cosmetologists", href: "/for-cosmetologists" }
-    ],
     faqTitle: "FAQ",
     faq: [
       {
@@ -907,15 +884,6 @@ export default function ManicureLanding({ language }: { language: SiteLanguage }
               </a>
             );
           })}
-        </div>
-      </section>
-
-      <section className="business-feature-section">
-        <div className="business-section-head"><h2>{t.usefulLinksTitle}</h2></div>
-        <div className="business-footer-links">
-          {t.usefulLinks.map((link) => (
-            <a key={link.href} href={getLocalizedPath(language, link.href)}>{link.label}</a>
-          ))}
         </div>
       </section>
 
