@@ -15,6 +15,7 @@ import {
   upsertRootCatalogItem,
   type GlobalCatalogGroupKey
 } from "./global-service-catalog";
+import { getServiceLocalizedText, type LocalizedServiceText } from "./service-templates";
 
 export type SuperadminUserRecord = {
   professionalId: string;
@@ -465,6 +466,7 @@ export async function promoteServiceToRootCatalog(input: {
     category: input.category.trim() || service.category || "Без категории",
     groupKey: input.groupKey,
     name: service.name,
+    localizedName: getServiceLocalizedText(service.name),
     durationMinutes: service.durationMinutes || 60,
     price: service.price || 0,
     sortOrder: 0
@@ -595,6 +597,7 @@ export async function saveSuperadminCatalogItem(input: {
   category: string;
   groupKey: GlobalCatalogGroupKey;
   name: string;
+  localizedName?: Partial<LocalizedServiceText>;
   durationMinutes?: number;
   price?: number;
   sortOrder?: number;

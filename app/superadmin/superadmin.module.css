@@ -439,7 +439,8 @@
 }
 
 .catalogComposer {
-  grid-template-columns: repeat(5, minmax(0, 1fr)) auto;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  align-items: end;
   margin-bottom: 16px;
 }
 

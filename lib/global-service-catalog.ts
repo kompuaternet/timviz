@@ -5,6 +5,7 @@ import {
   CategoryTemplate,
   SERVICE_TEMPLATE_CATALOG,
   getServiceLocalizedText,
+  type LocalizedServiceText,
   type ServiceTemplate
 } from "./service-templates";
 
@@ -15,6 +16,7 @@ export type GlobalCatalogItem = {
   category: string;
   groupKey: GlobalCatalogGroupKey;
   name: string;
+  localizedName?: Partial<LocalizedServiceText>;
   durationMinutes?: number;
   price?: number;
   sortOrder: number;
@@ -34,6 +36,27 @@ function staticMetaForCategory(category: string) {
   );
 }
 
+function normalizeLocalizedName(input: unknown): Partial<LocalizedServiceText> | undefined {
+  if (!input || typeof input !== "object") {
+    return undefined;
+  }
+
+  const candidate = input as Partial<Record<"ru" | "uk" | "en", unknown>>;
+  const ru = typeof candidate.ru === "string" ? candidate.ru.trim() : "";
+  const uk = typeof candidate.uk === "string" ? candidate.uk.trim() : "";
+  const en = typeof candidate.en === "string" ? candidate.en.trim() : "";
+
+  if (!ru && !uk && !en) {
+    return undefined;
+  }
+
+  return {
+    ...(ru ? { ru } : {}),
+    ...(uk ? { uk } : {}),
+    ...(en ? { en } : {})
+  };
+}
+
 function normalizeItems(input: unknown): GlobalCatalogItem[] {
   if (!Array.isArray(input)) {
     return [];
@@ -46,6 +69,7 @@ function normalizeItems(input: unknown): GlobalCatalogItem[] {
       }
 
       const candidate = item as Partial<GlobalCatalogItem>;
+      const candidateRaw = item as Record<string, unknown>;
       const category = typeof candidate.category === "string" ? candidate.category.trim() : "";
       const name = typeof candidate.name === "string" ? candidate.name.trim() : "";
 
@@ -58,6 +82,7 @@ function normalizeItems(input: unknown): GlobalCatalogItem[] {
         category,
         groupKey: candidate.groupKey === "popularServices" ? "popularServices" : "topSuggestions",
         name,
+        localizedName: normalizeLocalizedName(candidateRaw.localizedName),
         durationMinutes:
           typeof candidate.durationMinutes === "number" && Number.isFinite(candidate.durationMinutes)
             ? Math.max(5, Math.round(candidate.durationMinutes))
@@ -85,6 +110,7 @@ function flattenStaticCatalog(): GlobalCatalogItem[] {
       category: category.title,
       groupKey: "topSuggestions" as const,
       name: service.name,
+      localizedName: service.localizedName,
       durationMinutes: service.durationMinutes,
       price: service.price,
       sortOrder: index
@@ -94,6 +120,7 @@ function flattenStaticCatalog(): GlobalCatalogItem[] {
       category: category.title,
       groupKey: "popularServices" as const,
       name: service.name,
+      localizedName: service.localizedName,
       durationMinutes: service.durationMinutes,
       price: service.price,
       sortOrder: index
@@ -106,7 +133,7 @@ function buildTemplateServices(items: GlobalCatalogItem[]): ServiceTemplate[] {
     .sort((left, right) => left.sortOrder - right.sortOrder || left.name.localeCompare(right.name))
     .map((item) => ({
       name: item.name,
-      localizedName: getServiceLocalizedText(item.name),
+      localizedName: getServiceLocalizedText(item.name, item.localizedName),
       durationMinutes: item.durationMinutes,
       price: item.price
     }));
@@ -174,6 +201,11 @@ export async function getRootCatalogItems(): Promise<GlobalCatalogItem[]> {
             category: item.category,
             groupKey: item.group_key,
             name: item.name,
+            localizedName: normalizeLocalizedName({
+              ru: item.localized_name_ru,
+              uk: item.localized_name_uk,
+              en: item.localized_name_en
+            }),
             durationMinutes: item.duration_minutes,
             price: item.price,
             sortOrder: item.sort_order
@@ -201,6 +233,7 @@ export async function upsertRootCatalogItem(input: {
   category: string;
   groupKey: GlobalCatalogGroupKey;
   name: string;
+  localizedName?: Partial<LocalizedServiceText>;
   durationMinutes?: number;
   price?: number;
   sortOrder?: number;
@@ -210,6 +243,7 @@ export async function upsertRootCatalogItem(input: {
     category: input.category.trim(),
     groupKey: input.groupKey,
     name: input.name.trim(),
+    localizedName: normalizeLocalizedName(input.localizedName),
     durationMinutes:
       typeof input.durationMinutes === "number" && Number.isFinite(input.durationMinutes)
         ? Math.max(5, Math.round(input.durationMinutes))
@@ -225,7 +259,7 @@ export async function upsertRootCatalogItem(input: {
   if (isSupabaseConfigured()) {
     const supabase = getSupabaseAdmin();
     if (supabase) {
-      const { error } = await supabase.from("global_service_catalog").upsert({
+      const basePayload = {
         id: item.id,
         category: item.category,
         group_key: item.groupKey,
@@ -233,7 +267,18 @@ export async function upsertRootCatalogItem(input: {
         duration_minutes: item.durationMinutes ?? 60,
         price: item.price ?? 0,
         sort_order: item.sortOrder
+      };
+
+      let { error } = await supabase.from("global_service_catalog").upsert({
+        ...basePayload,
+        localized_name_ru: item.localizedName?.ru ?? null,
+        localized_name_uk: item.localizedName?.uk ?? null,
+        localized_name_en: item.localizedName?.en ?? null
       });
+
+      if (error && /localized_name_ru|localized_name_uk|localized_name_en/i.test(error.message)) {
+        ({ error } = await supabase.from("global_service_catalog").upsert(basePayload));
+      }
 
       if (!error) {
         return item;

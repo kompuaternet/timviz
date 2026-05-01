@@ -22,11 +22,25 @@ export async function POST(request: Request) {
   try {
     await requireSuperadminSession();
     const body = await request.json();
+    const nestedLocalized =
+      body.localizedName && typeof body.localizedName === "object" ? body.localizedName : {};
+    const localizedNameRu = String(body.localizedNameRu ?? nestedLocalized.ru ?? "").trim();
+    const localizedNameUk = String(body.localizedNameUk ?? nestedLocalized.uk ?? "").trim();
+    const localizedNameEn = String(body.localizedNameEn ?? nestedLocalized.en ?? "").trim();
+    const localizedName =
+      localizedNameRu || localizedNameUk || localizedNameEn
+        ? {
+            ...(localizedNameRu ? { ru: localizedNameRu } : {}),
+            ...(localizedNameUk ? { uk: localizedNameUk } : {}),
+            ...(localizedNameEn ? { en: localizedNameEn } : {})
+          }
+        : undefined;
     const item = await saveSuperadminCatalogItem({
       id: typeof body.id === "string" ? body.id : undefined,
       category: String(body.category || ""),
       groupKey: body.groupKey === "popularServices" ? "popularServices" : "topSuggestions",
       name: String(body.name || ""),
+      localizedName,
       durationMinutes:
         typeof body.durationMinutes === "number"
           ? body.durationMinutes

@@ -23,6 +23,9 @@ type CatalogDraft = {
   category: string;
   groupKey: "topSuggestions" | "popularServices";
   name: string;
+  localizedNameRu: string;
+  localizedNameUk: string;
+  localizedNameEn: string;
   durationMinutes: number;
   price: number;
   sortOrder: number;
@@ -49,6 +52,9 @@ const defaultCatalogDraft: CatalogDraft = {
   category: categoryOptions[0] || "Другая",
   groupKey: "topSuggestions",
   name: "",
+  localizedNameRu: "",
+  localizedNameUk: "",
+  localizedNameEn: "",
   durationMinutes: 60,
   price: 0,
   sortOrder: 0
@@ -166,16 +172,21 @@ export default function SuperadminView({
     users.find((user) => user.professionalId === selectedUserId) ??
     null;
 
+  const customServices = useMemo(
+    () => services.filter((service) => service.source === "custom"),
+    [services]
+  );
+
   const filteredServices = useMemo(() => {
     const query = serviceQuery.trim().toLowerCase();
-    if (!query) return services;
-    return services.filter((service) =>
+    if (!query) return customServices;
+    return customServices.filter((service) =>
       [service.name, service.category, service.businessName, service.addedByName]
         .join(" ")
         .toLowerCase()
         .includes(query)
     );
-  }, [serviceQuery, services]);
+  }, [serviceQuery, customServices]);
 
   const groupedServices = useMemo(() => groupServices(filteredServices), [filteredServices]);
   const pendingServices = useMemo(
@@ -208,7 +219,10 @@ export default function SuperadminView({
     const query = catalogQuery.trim().toLowerCase();
     if (!query) return catalog;
     return catalog.filter((item) =>
-      [item.category, item.name, item.groupKey].join(" ").toLowerCase().includes(query)
+      [item.category, item.name, item.groupKey, item.localizedName?.ru, item.localizedName?.uk, item.localizedName?.en]
+        .join(" ")
+        .toLowerCase()
+        .includes(query)
     );
   }, [catalogQuery, catalog]);
 
@@ -561,7 +575,14 @@ export default function SuperadminView({
       const response = await fetch("/api/superadmin/catalog", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(draft)
+        body: JSON.stringify({
+          ...draft,
+          localizedName: {
+            ru: draft.localizedNameRu.trim(),
+            uk: draft.localizedNameUk.trim(),
+            en: draft.localizedNameEn.trim()
+          }
+        })
       });
       const payload = await readJson(response);
       if (!response.ok) {
@@ -622,7 +643,7 @@ export default function SuperadminView({
           <span>Пользователей</span>
         </article>
         <article className={styles.metricCard}>
-          <strong>{services.length}</strong>
+          <strong>{customServices.length}</strong>
           <span>Услуг</span>
         </article>
         <article className={styles.metricCard}>
@@ -908,7 +929,7 @@ export default function SuperadminView({
           </div>
           <input
             className={styles.searchInput}
-            placeholder="Поиск по категории, названию или группе"
+            placeholder="Поиск по категории, названию, группе или локализациям"
             value={catalogQuery}
             onChange={(event) => setCatalogQuery(event.target.value)}
           />
@@ -954,6 +975,36 @@ export default function SuperadminView({
             />
           </label>
           <label className={styles.field}>
+            <span>Название RU</span>
+            <input
+              className={styles.input}
+              value={catalogDraft.localizedNameRu}
+              onChange={(event) =>
+                setCatalogDraft((current) => ({ ...current, localizedNameRu: event.target.value }))
+              }
+            />
+          </label>
+          <label className={styles.field}>
+            <span>Название UK</span>
+            <input
+              className={styles.input}
+              value={catalogDraft.localizedNameUk}
+              onChange={(event) =>
+                setCatalogDraft((current) => ({ ...current, localizedNameUk: event.target.value }))
+              }
+            />
+          </label>
+          <label className={styles.field}>
+            <span>Название EN</span>
+            <input
+              className={styles.input}
+              value={catalogDraft.localizedNameEn}
+              onChange={(event) =>
+                setCatalogDraft((current) => ({ ...current, localizedNameEn: event.target.value }))
+              }
+            />
+          </label>
+          <label className={styles.field}>
             <span>Минуты</span>
             <input
               className={styles.input}
@@ -993,6 +1044,12 @@ export default function SuperadminView({
                 <div className={styles.rowMeta}>
                   {item.category} · {item.groupKey === "popularServices" ? "Популярные" : "Основные"}
                 </div>
+                {item.localizedName?.ru || item.localizedName?.uk || item.localizedName?.en ? (
+                  <div className={styles.rowMeta}>
+                    RU: {item.localizedName?.ru || "—"} · UK: {item.localizedName?.uk || "—"} · EN:{" "}
+                    {item.localizedName?.en || "—"}
+                  </div>
+                ) : null}
               </div>
               <div className={styles.rowMeta}>
                 {item.durationMinutes || 60} мин · {item.price || 0}
@@ -1007,6 +1064,9 @@ export default function SuperadminView({
                       category: item.category,
                       groupKey: item.groupKey,
                       name: item.name,
+                      localizedNameRu: item.localizedName?.ru || "",
+                      localizedNameUk: item.localizedName?.uk || "",
+                      localizedNameEn: item.localizedName?.en || "",
                       durationMinutes: item.durationMinutes || 60,
                       price: item.price || 0,
                       sortOrder: item.sortOrder

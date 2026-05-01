@@ -94,6 +94,9 @@ create table if not exists public.global_service_catalog (
   category text not null,
   group_key text not null,
   name text not null,
+  localized_name_ru text,
+  localized_name_uk text,
+  localized_name_en text,
   duration_minutes integer not null default 60,
   price integer not null default 0,
   sort_order integer not null default 0,
@@ -211,6 +214,9 @@ alter table public.business_services add column if not exists source text not nu
 alter table public.business_services add column if not exists moderation_status text not null default 'approved';
 alter table public.business_services add column if not exists moderated_at timestamptz;
 alter table public.business_services add column if not exists is_blocked boolean not null default false;
+alter table public.global_service_catalog add column if not exists localized_name_ru text;
+alter table public.global_service_catalog add column if not exists localized_name_uk text;
+alter table public.global_service_catalog add column if not exists localized_name_en text;
 alter table public.business_memberships add column if not exists work_schedule_mode text;
 alter table public.business_memberships add column if not exists work_schedule jsonb;
 alter table public.business_memberships add column if not exists custom_schedule jsonb;
