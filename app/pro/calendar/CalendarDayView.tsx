@@ -1277,6 +1277,12 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
   const [deleteConfirmTarget, setDeleteConfirmTarget] = useState<CalendarAppointment | null>(null);
   const [isDeletingAppointment, setIsDeletingAppointment] = useState(false);
   const [isMobileViewport, setIsMobileViewport] = useState(false);
+  const [isOffHoursCompressed, setIsOffHoursCompressed] = useState<boolean>(() => {
+    if (typeof window === "undefined") {
+      return true;
+    }
+    return window.localStorage.getItem("rezervo-pro-calendar-offhours-compressed") !== "0";
+  });
   const [mobileTeamButtonPosition, setMobileTeamButtonPosition] = useState<{ top: number; left: number } | null>(null);
   const [teamQuery, setTeamQuery] = useState("");
   const mobileDayHourColumnWidth = 52;
@@ -1460,6 +1466,17 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
 
     window.localStorage.setItem("rezervo-pro-calendar-view-mode", viewMode);
   }, [viewMode]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    window.localStorage.setItem(
+      "rezervo-pro-calendar-offhours-compressed",
+      isOffHoursCompressed ? "1" : "0"
+    );
+  }, [isOffHoursCompressed]);
 
   useEffect(() => {
     if (!snapshot?.viewer.language) {
@@ -2418,6 +2435,18 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
         : viewMode === "threeDay"
           ? selectedThreeDayLabel
           : selectedDateLong;
+  const densityToggleLabel =
+    uiLanguage === "uk"
+      ? isOffHoursCompressed
+        ? "Стиснутий"
+        : "Звичайний"
+      : uiLanguage === "en"
+        ? isOffHoursCompressed
+          ? "Compact"
+          : "Normal"
+        : isOffHoursCompressed
+          ? "Сжатый"
+          : "Обычный";
   const viewModeOptions: Array<{ value: CalendarViewMode; label: string }> = [
     { value: "day", label: t.day },
     { value: "threeDay", label: t.threeDays },
@@ -2559,7 +2588,7 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
 
   const workStartMinutes = daySchedule ? timeToMinutes(daySchedule.startTime) : 9 * 60;
   const workEndMinutes = daySchedule ? timeToMinutes(daySchedule.endTime) : 18 * 60;
-  const nonWorkingScale = viewMode === "day" ? 0.2 : 1;
+  const nonWorkingScale = viewMode === "day" && isOffHoursCompressed ? 0.2 : 1;
   const dayBreaks = useMemo(
     () =>
       getDayBreaks(daySchedule).map((breakItem) => ({
@@ -4496,6 +4525,17 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
             ) : null}
 
             <div className={styles.calendarTopRightActionGroup}>
+              {viewMode === "day" ? (
+                <button
+                  type="button"
+                  className={styles.calendarViewPill}
+                  onClick={() => setIsOffHoursCompressed((current) => !current)}
+                  title={densityToggleLabel}
+                >
+                  <span>{densityToggleLabel}</span>
+                </button>
+              ) : null}
+
               <button
                 ref={viewMenuButtonRef}
                 type="button"
