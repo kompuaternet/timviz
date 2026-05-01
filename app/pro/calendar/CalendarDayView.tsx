@@ -1,6 +1,6 @@
 "use client";
 
-import { startTransition, useEffect, useMemo, useRef, useState } from "react";
+import { startTransition, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import ProfileAvatar from "../../ProfileAvatar";
 import styles from "../pro.module.css";
@@ -2559,6 +2559,7 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
 
   const workStartMinutes = daySchedule ? timeToMinutes(daySchedule.startTime) : 9 * 60;
   const workEndMinutes = daySchedule ? timeToMinutes(daySchedule.endTime) : 18 * 60;
+  const nonWorkingScale = viewMode === "day" ? 0.2 : 1;
   const dayBreaks = useMemo(
     () =>
       getDayBreaks(daySchedule).map((breakItem) => ({
@@ -2569,6 +2570,76 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
     [daySchedule]
   );
   const selectedDayIsWorking = Boolean(daySchedule?.enabled);
+  const minuteToY = useCallback(
+    (minutes: number) => {
+      const clamped = Math.max(dayStartMinutes, Math.min(dayEndMinutes, minutes));
+
+      if (nonWorkingScale === 1) {
+        return clamped * minuteHeight;
+      }
+
+      if (!selectedDayIsWorking) {
+        return clamped * minuteHeight * nonWorkingScale;
+      }
+
+      const compressedWorkStart = workStartMinutes * minuteHeight * nonWorkingScale;
+      const compressedWorkEnd =
+        compressedWorkStart + Math.max(0, workEndMinutes - workStartMinutes) * minuteHeight;
+
+      if (clamped <= workStartMinutes) {
+        return clamped * minuteHeight * nonWorkingScale;
+      }
+
+      if (clamped <= workEndMinutes) {
+        return compressedWorkStart + (clamped - workStartMinutes) * minuteHeight;
+      }
+
+      return compressedWorkEnd + (clamped - workEndMinutes) * minuteHeight * nonWorkingScale;
+    },
+    [
+      dayEndMinutes,
+      dayStartMinutes,
+      minuteHeight,
+      nonWorkingScale,
+      selectedDayIsWorking,
+      workEndMinutes,
+      workStartMinutes
+    ]
+  );
+  const yToMinute = useCallback(
+    (yOffset: number) => {
+      const clampedY = Math.max(0, yOffset);
+      if (nonWorkingScale === 1) {
+        return clampedY / minuteHeight;
+      }
+
+      if (!selectedDayIsWorking) {
+        return clampedY / (minuteHeight * nonWorkingScale);
+      }
+
+      const compressedWorkStart = workStartMinutes * minuteHeight * nonWorkingScale;
+      const compressedWorkEnd =
+        compressedWorkStart + Math.max(0, workEndMinutes - workStartMinutes) * minuteHeight;
+
+      if (clampedY <= compressedWorkStart) {
+        return clampedY / (minuteHeight * nonWorkingScale);
+      }
+
+      if (clampedY <= compressedWorkEnd) {
+        return workStartMinutes + (clampedY - compressedWorkStart) / minuteHeight;
+      }
+
+      return workEndMinutes + (clampedY - compressedWorkEnd) / (minuteHeight * nonWorkingScale);
+    },
+    [
+      minuteHeight,
+      nonWorkingScale,
+      selectedDayIsWorking,
+      workEndMinutes,
+      workStartMinutes
+    ]
+  );
+  const dayDisplayGridHeight = topOffset + minuteToY(dayEndMinutes);
 
   useEffect(() => {
     if (!snapshot || visibleRangeKeys.length <= 1) {
@@ -2787,10 +2858,10 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
         : Math.max(dayStartMinutes, workStartMinutes - 2);
 
     frame.scrollTo({
-      top: Math.max(0, topOffset + targetMinutes * minuteHeight - 40),
+      top: Math.max(0, topOffset + minuteToY(targetMinutes) - 40),
       behavior: "smooth"
     });
-  }, [selectedDate, todayDate, workStartMinutes, minuteHeight]);
+  }, [selectedDate, todayDate, workStartMinutes, minuteToY]);
 
   function ensureFormFieldVisible(target: HTMLElement | null, behavior: ScrollBehavior = "smooth") {
     if (!target || typeof window === "undefined" || window.innerWidth > 820) {
@@ -2843,7 +2914,7 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
     }
 
     frame.scrollTo({
-      top: Math.max(0, topOffset + targetMinutes * minuteHeight - Math.max(40, frame.clientHeight * 0.22)),
+      top: Math.max(0, topOffset + minuteToY(targetMinutes) - Math.max(40, frame.clientHeight * 0.22)),
       behavior
     });
   }
@@ -2856,7 +2927,7 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
 
     return Math.max(
       dayStartMinutes,
-      roundMinutesToStep(Math.round((frame.scrollTop + frame.clientHeight * 0.28 - topOffset) / minuteHeight))
+      roundMinutesToStep(Math.round(yToMinute(frame.scrollTop + frame.clientHeight * 0.28 - topOffset)))
     );
   }
 
@@ -2900,8 +2971,8 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
       return null;
     }
     const now = new Date();
-    return Math.max(0, now.getHours() * 60 + now.getMinutes()) * minuteHeight;
-  }, [minuteHeight, selectedDate, todayDate]);
+    return minuteToY(Math.max(0, now.getHours() * 60 + now.getMinutes()));
+  }, [minuteToY, selectedDate, todayDate]);
 
   const filteredServices = useMemo(() => {
     const items = snapshot?.workspace.services ?? [];
@@ -4616,10 +4687,10 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
               })}
             </div>
           </div>
-          <div className={styles.calendarV2Grid} style={{ minHeight: `${calendarGridHeight}px` }}>
+          <div className={styles.calendarV2Grid} style={{ minHeight: `${dayDisplayGridHeight}px` }}>
             <div className={styles.calendarV2HourColumn}>
               {hours.map((hour) => (
-                <div key={hour} className={styles.calendarV2HourLabel} style={{ top: `${topOffset + hour * calendarHourHeight}px` }}>
+                <div key={hour} className={styles.calendarV2HourLabel} style={{ top: `${topOffset + minuteToY(hour * 60)}px` }}>
                   {`${String(hour).padStart(2, "0")}:00`}
                 </div>
               ))}
@@ -4662,7 +4733,7 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
                     key={member.professionalId}
                     className={`${styles.calendarV2Body} ${styles.calendarDayMemberColumn} ${selectedProfessionalId === member.professionalId ? styles.calendarDayMemberColumnActive : ""}`}
                     style={{
-                      minHeight: `${calendarGridHeight}px`,
+                      minHeight: `${dayDisplayGridHeight}px`,
                       ["--calendar-slot-step-height" as never]: `${slotHeight}px`,
                       ["--calendar-hour-block-height" as never]: `${calendarHourHeight}px`
                     }}
@@ -4670,17 +4741,23 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
                     {!memberIsWorking ? (
                       <div
                         className={styles.nonWorkingZone}
-                        style={{ top: `${topOffset}px`, height: `${dayEndMinutes * minuteHeight}px` }}
+                        style={{ top: `${topOffset}px`, height: `${minuteToY(dayEndMinutes) - minuteToY(0)}px` }}
                       />
                     ) : (
                       <>
                         <div
                           className={styles.nonWorkingZone}
-                          style={{ top: `${topOffset}px`, height: `${Math.max(0, memberWorkStartMinutes) * minuteHeight}px` }}
+                          style={{
+                            top: `${topOffset + minuteToY(0)}px`,
+                            height: `${Math.max(0, minuteToY(memberWorkStartMinutes) - minuteToY(0))}px`
+                          }}
                         />
                         <div
                           className={styles.nonWorkingZone}
-                          style={{ top: `${topOffset + memberWorkEndMinutes * minuteHeight}px`, height: `${Math.max(0, dayEndMinutes - memberWorkEndMinutes) * minuteHeight}px` }}
+                          style={{
+                            top: `${topOffset + minuteToY(memberWorkEndMinutes)}px`,
+                            height: `${Math.max(0, minuteToY(dayEndMinutes) - minuteToY(memberWorkEndMinutes))}px`
+                          }}
                         />
                       </>
                     )}
@@ -4691,8 +4768,11 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
                             key={`${member.professionalId}-${breakItem.startTime}-${breakItem.endTime}`}
                             className={styles.nonWorkingZone}
                             style={{
-                              top: `${topOffset + breakItem.startMinutes * minuteHeight}px`,
-                              height: `${(breakItem.endMinutes - breakItem.startMinutes) * minuteHeight}px`
+                              top: `${topOffset + minuteToY(breakItem.startMinutes)}px`,
+                              height: `${Math.max(
+                                0,
+                                minuteToY(breakItem.endMinutes) - minuteToY(breakItem.startMinutes)
+                              )}px`
                             }}
                           />
                         ))
@@ -4711,7 +4791,9 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
                     {Array.from({ length: (dayEndMinutes - dayStartMinutes) / CALENDAR_GRID_STEP_MINUTES }, (_, index) => {
                       const slotMinutes = dayStartMinutes + index * CALENDAR_GRID_STEP_MINUTES;
                       const slot = minutesToTime(slotMinutes);
-                      const top = topOffset + index * slotHeight;
+                      const nextSlotMinutes = Math.min(dayEndMinutes, slotMinutes + CALENDAR_GRID_STEP_MINUTES);
+                      const top = topOffset + minuteToY(slotMinutes);
+                      const computedSlotHeight = Math.max(2, minuteToY(nextSlotMinutes) - minuteToY(slotMinutes));
                       const inWorkingHours = isWithinWorkingWindow(slot, memberSchedule);
 
                       return (
@@ -4719,7 +4801,7 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
                           key={`${member.professionalId}-${slot}`}
                           type="button"
                           className={`${styles.calendarSlotButton} ${selectedTime === slot && selectedProfessionalId === member.professionalId ? styles.calendarSlotActive : ""} ${!inWorkingHours ? styles.calendarSlotOffHours : ""}`}
-                          style={{ top: `${top}px`, height: `${slotHeight}px` }}
+                          style={{ top: `${top}px`, height: `${computedSlotHeight}px` }}
                           onClick={(event) => {
                             const bodyRect = (event.currentTarget.parentElement as HTMLDivElement).getBoundingClientRect();
                             handleSlotClick(slot, event.clientX - bodyRect.left, top, bodyRect.width, member.professionalId);
@@ -4764,8 +4846,10 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
                     ) : null}
 
                     {member.appointments.map((appointment) => {
-                      const top = topOffset + timeToMinutes(appointment.startTime) * minuteHeight;
-                      const height = Math.max(bookingCardMinHeight, (timeToMinutes(appointment.endTime) - timeToMinutes(appointment.startTime)) * minuteHeight);
+                      const startMinutes = timeToMinutes(appointment.startTime);
+                      const endMinutes = timeToMinutes(appointment.endTime);
+                      const top = topOffset + minuteToY(startMinutes);
+                      const height = Math.max(bookingCardMinHeight, minuteToY(endMinutes) - minuteToY(startMinutes));
                       const isPastAppointment = getDateTimeValue(appointment.appointmentDate, appointment.endTime) < Date.now();
                       const isBlocked = appointment.kind === "blocked";
                       const isPendingApproval = appointment.attendance === "pending";
