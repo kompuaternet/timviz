@@ -17,10 +17,10 @@ type PublicHomeProps = {
   initialLanguage?: PublicLanguage;
 };
 
-const HOME_COUNTER_BONUS = {
-  partnerBusinesses: 2,
-  countries: 3,
-  totalUsers: 7
+const HOME_COUNTER_BASE = {
+  partnerBusinesses: 1026,
+  countries: 57,
+  totalUsers: 1226
 } as const;
 
 function getLanguageLocale(language: PublicLanguage) {
@@ -451,9 +451,9 @@ export default function PublicHome({ searchIndex, stats, initialLanguage = "ru" 
         <strong>{formatStatsBig(stats.totalBookings, language)}</strong>
         <span>{String(t.statsLabel)}</span>
         <div className="public-stats-row">
-          <div><b>{formatNumberWithPlus(stats.partnerBusinesses + HOME_COUNTER_BONUS.partnerBusinesses, language)}</b><span>{String(t.partners)}</span></div>
-          <div><b>{formatNumberWithPlus(stats.countries + HOME_COUNTER_BONUS.countries, language)}</b><span>{String(t.countries)}</span></div>
-          <div><b>{formatNumberWithPlus(stats.totalUsers + HOME_COUNTER_BONUS.totalUsers, language)}</b><span>{String(t.users)}</span></div>
+          <div><b>{formatNumberWithPlus(stats.partnerBusinesses + HOME_COUNTER_BASE.partnerBusinesses, language)}</b><span>{String(t.partners)}</span></div>
+          <div><b>{formatNumberWithPlus(stats.countries + HOME_COUNTER_BASE.countries, language)}</b><span>{String(t.countries)}</span></div>
+          <div><b>{formatNumberWithPlus(stats.totalUsers + HOME_COUNTER_BASE.totalUsers, language)}</b><span>{String(t.users)}</span></div>
         </div>
       </section>
 
