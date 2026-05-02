@@ -6188,28 +6188,29 @@
 }
 
 .calendarOnboardingCta {
-  min-height: 34px;
-  padding: 0 12px;
+  min-height: 38px;
+  padding: 0 14px;
   border-radius: 999px;
-  border: 1px solid rgba(101, 83, 230, 0.3);
-  background: linear-gradient(135deg, #7f66ff 0%, #4f3ad1 100%);
+  border: 1px solid rgba(79, 70, 229, 0.35);
+  background: linear-gradient(135deg, #8b5cf6 0%, #4f46e5 100%);
   color: #fff;
   font: inherit;
-  font-size: 0.82rem;
+  font-size: 0.84rem;
   font-weight: 700;
   letter-spacing: -0.01em;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   white-space: nowrap;
-  box-shadow: 0 10px 20px rgba(95, 73, 221, 0.28);
+  box-shadow: 0 8px 18px rgba(79, 70, 229, 0.24);
   transition: transform 0.16s ease, box-shadow 0.16s ease, filter 0.16s ease;
+  position: relative;
 }
 
 .calendarOnboardingCta:hover {
   filter: brightness(1.03);
   transform: translateY(-1px);
-  box-shadow: 0 12px 24px rgba(95, 73, 221, 0.34);
+  box-shadow: 0 10px 20px rgba(79, 70, 229, 0.28);
 }
 
 .calendarOnboardingCta:active {
@@ -6219,7 +6220,7 @@
 .calendarOnboardingCtaDone {
   opacity: 0.72;
   cursor: default;
-  box-shadow: 0 6px 14px rgba(95, 73, 221, 0.16);
+  box-shadow: 0 5px 12px rgba(79, 70, 229, 0.14);
 }
 
 .calendarOnboardingCtaShort {
@@ -10974,9 +10975,9 @@
   }
 
   .calendarOnboardingCta {
-    min-height: 32px;
-    padding: 0 9px;
-    font-size: 0.72rem;
+    min-height: 36px;
+    padding: 0 12px;
+    font-size: 0.78rem;
     flex: 0 0 auto;
   }
 
@@ -12375,13 +12376,13 @@
 
 @media (max-width: 767px) {
   .calendarOnboardingCta {
-    min-width: 34px;
-    width: 34px;
-    height: 34px;
-    min-height: 34px;
+    min-width: 36px;
+    width: 36px;
+    height: 36px;
+    min-height: 36px;
     padding: 0;
-    border-radius: 12px;
-    font-size: 0.85rem;
+    border-radius: 999px;
+    font-size: 0.9rem;
     flex: 0 0 auto;
   }
 
@@ -12395,6 +12396,24 @@
     justify-content: center;
     width: 100%;
     line-height: 1;
+  }
+
+  .calendarOnboardingCta[data-tooltip]:focus-visible::after,
+  .calendarOnboardingCta[data-tooltip]:active::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    right: 0;
+    top: calc(100% + 8px);
+    padding: 8px 10px;
+    border-radius: 10px;
+    background: rgba(24, 27, 37, 0.94);
+    color: #fff;
+    font-size: 0.74rem;
+    font-weight: 600;
+    white-space: nowrap;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+    pointer-events: none;
+    z-index: 18;
   }
 }
 

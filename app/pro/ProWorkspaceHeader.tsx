@@ -54,7 +54,7 @@ const headerCopy = {
     helpSupport: "Помощь и поддержка",
     language: "Язык",
     logout: "Выйти",
-    onboardingDone: "Готово ✅",
+    onboardingDone: "✔ Готово",
     onboardingServices: "Додати послуги",
     onboardingSchedule: "Налаштувати графік",
     onboardingBooking: "Увімкнути запис",
@@ -86,7 +86,7 @@ const headerCopy = {
     helpSupport: "Допомога і підтримка",
     language: "Мова",
     logout: "Вийти",
-    onboardingDone: "Готово ✅",
+    onboardingDone: "✔ Готово",
     onboardingServices: "Додати послуги",
     onboardingSchedule: "Налаштувати графік",
     onboardingBooking: "Увімкнути запис",
@@ -118,7 +118,7 @@ const headerCopy = {
     helpSupport: "Help and support",
     language: "Language",
     logout: "Log out",
-    onboardingDone: "Done ✅",
+    onboardingDone: "✔ Done",
     onboardingServices: "Add services",
     onboardingSchedule: "Set schedule",
     onboardingBooking: "Enable booking",
@@ -378,6 +378,7 @@ export default function ProWorkspaceHeader({
             }}
             title={onboardingTooltip || copy.onboardingDone}
             aria-label={onboardingTooltip || copy.onboardingDone}
+            data-tooltip={onboardingTooltip || copy.onboardingDone}
             disabled={onboardingCta.completed}
           >
             <span className={styles.calendarOnboardingCtaFull}>

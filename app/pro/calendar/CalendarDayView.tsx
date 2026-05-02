@@ -538,7 +538,7 @@ const CALENDAR_TEXT: Record<AppLanguage, {
     helpSupport: "Помощь и поддержка",
     logout: "Выйти",
     language: "Язык",
-    onboardingDone: "Готово ✅",
+    onboardingDone: "✔ Готово",
     onboardingServices: "Додати послуги",
     onboardingSchedule: "Налаштувати графік",
     onboardingBooking: "Увімкнути запис",
@@ -700,7 +700,7 @@ const CALENDAR_TEXT: Record<AppLanguage, {
     helpSupport: "Допомога і підтримка",
     logout: "Вийти",
     language: "Мова",
-    onboardingDone: "Готово ✅",
+    onboardingDone: "✔ Готово",
     onboardingServices: "Додати послуги",
     onboardingSchedule: "Налаштувати графік",
     onboardingBooking: "Увімкнути запис",
@@ -862,7 +862,7 @@ const CALENDAR_TEXT: Record<AppLanguage, {
     helpSupport: "Help and support",
     logout: "Log out",
     language: "Language",
-    onboardingDone: "Done ✅",
+    onboardingDone: "✔ Done",
     onboardingServices: "Add services",
     onboardingSchedule: "Set schedule",
     onboardingBooking: "Enable booking",
@@ -4308,6 +4308,7 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
                 }}
                 title={onboardingStepText || t.onboardingDone}
                 aria-label={onboardingStepText || t.onboardingDone}
+                data-tooltip={onboardingStepText || t.onboardingDone}
                 disabled={onboardingCta.completed}
               >
                 <span className={styles.calendarOnboardingCtaFull}>
