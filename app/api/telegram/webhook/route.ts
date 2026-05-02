@@ -65,6 +65,12 @@ type TelegramUpdate = {
   };
 };
 
+const supportModeTtlMs = Math.max(
+  60_000,
+  Number.parseInt(process.env.TELEGRAM_BOOKING_SUPPORT_MODE_TTL_MS || "900000", 10) || 900_000
+);
+const supportModeByChat = new Map<string, number>();
+
 function normalizeText(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
 }
@@ -94,6 +100,41 @@ function parseCommand(text: string) {
   };
 }
 
+function takeSupportMode(chatId: string) {
+  const expiresAt = supportModeByChat.get(chatId);
+  if (!expiresAt) {
+    return false;
+  }
+
+  supportModeByChat.delete(chatId);
+  if (expiresAt < Date.now()) {
+    return false;
+  }
+
+  return true;
+}
+
+function enableSupportMode(chatId: string) {
+  supportModeByChat.set(chatId, Date.now() + supportModeTtlMs);
+}
+
+function parseSupportPrefix(text: string) {
+  const normalized = text.trim();
+  const prefixes = [
+    /^support\s*[:\-]\s*/i,
+    /^поддержка\s*[:\-]\s*/i,
+    /^підтримка\s*[:\-]\s*/i
+  ];
+
+  for (const pattern of prefixes) {
+    if (pattern.test(normalized)) {
+      return normalized.replace(pattern, "").trim();
+    }
+  }
+
+  return "";
+}
+
 function isForwardedMessage(message: TelegramUpdate["message"]) {
   if (!message) {
     return false;
@@ -116,6 +157,10 @@ function buildDashboardKeyboard(preferredLanguage?: string | null) {
         }
       ],
       [
+        {
+          text: text.menuSupport,
+          callback_data: buildMenuCallbackData("support")
+        },
         {
           text: text.openDashboard,
           url: getDashboardUrl("/pro/calendar")
@@ -233,6 +278,67 @@ async function handleSettingsCommand(chatId: string, preferredLanguage?: string 
   });
 }
 
+async function handleSupportMessage(input: {
+  chatId: string;
+  preferredLanguage?: string | null;
+  text?: string;
+}) {
+  const connection = await getTelegramConnectionByChatId(input.chatId);
+  if (!connection) {
+    const t = getTelegramText(normalizeTelegramUserLanguage(input.preferredLanguage));
+    await sendTelegramTextMessage({
+      chatId: input.chatId,
+      text: `${t.noConnection}\n${t.connectHint}`,
+      replyMarkup: buildDashboardKeyboard(input.preferredLanguage)
+    });
+    return;
+  }
+
+  const nextConnection = await touchTelegramConnection(connection, input.preferredLanguage || undefined);
+  const activeConnection = nextConnection || connection;
+  const t = getTelegramText(activeConnection.language);
+
+  if (!input.text?.trim()) {
+    enableSupportMode(input.chatId);
+    await sendTelegramTextMessage({
+      chatId: input.chatId,
+      text: t.supportPrompt,
+      replyMarkup: buildDashboardKeyboard(activeConnection.language)
+    });
+    return;
+  }
+
+  if (!activeConnection.forwardingEnabled) {
+    await sendTelegramTextMessage({
+      chatId: input.chatId,
+      text: t.forwardDisabled,
+      replyMarkup: buildDashboardKeyboard(activeConnection.language)
+    });
+    return;
+  }
+
+  const sent = await forwardTelegramMessageToSupport({
+    connection: activeConnection,
+    text: input.text,
+    chatId: input.chatId
+  });
+
+  if (sent) {
+    await sendTelegramTextMessage({
+      chatId: input.chatId,
+      text: t.forwardSuccess,
+      replyMarkup: buildDashboardKeyboard(activeConnection.language)
+    });
+    return;
+  }
+
+  await sendTelegramTextMessage({
+    chatId: input.chatId,
+    text: t.forwardDisabled,
+    replyMarkup: buildDashboardKeyboard(activeConnection.language)
+  });
+}
+
 async function handleForwardedText(input: {
   chatId: string;
   text: string;
@@ -305,6 +411,11 @@ async function handleCallbackQuery(update: TelegramUpdate) {
 
     if (menuAction === "settings") {
       await handleSettingsCommand(chatId, activeConnection.language);
+      return;
+    }
+
+    if (menuAction === "support") {
+      await handleSupportMessage({ chatId, preferredLanguage: activeConnection.language });
       return;
     }
 
@@ -439,6 +550,35 @@ async function handleMessage(update: TelegramUpdate) {
 
   if (command?.command === "/settings") {
     await handleSettingsCommand(chatId, preferredLanguage);
+    return;
+  }
+
+  if (command?.command === "/support") {
+    const supportText = normalizeText(command.args.join(" "));
+    await handleSupportMessage({
+      chatId,
+      preferredLanguage,
+      text: supportText
+    });
+    return;
+  }
+
+  const supportPrefixedText = text ? parseSupportPrefix(text) : "";
+  if (supportPrefixedText) {
+    await handleSupportMessage({
+      chatId,
+      preferredLanguage,
+      text: supportPrefixedText
+    });
+    return;
+  }
+
+  if (text && takeSupportMode(chatId)) {
+    await handleSupportMessage({
+      chatId,
+      preferredLanguage,
+      text
+    });
     return;
   }
 

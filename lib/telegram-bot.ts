@@ -35,7 +35,7 @@ export type TelegramSettingKey =
   | "notificationsToday"
   | "forwardingEnabled";
 
-export type TelegramMenuAction = "today" | "settings" | "menu";
+export type TelegramMenuAction = "today" | "settings" | "menu" | "support";
 
 type TelegramReminderEvent = {
   id: string;
@@ -83,6 +83,7 @@ type TelegramText = {
   menuToday: string;
   menuSettings: string;
   menuHome: string;
+  menuSupport: string;
   todayEmpty: string;
   todayHeader: string;
   settingsTitle: string;
@@ -106,6 +107,7 @@ type TelegramText = {
   actionDoneConfirm: string;
   actionDoneCancel: string;
   actionNotFound: string;
+  supportPrompt: string;
 };
 
 type TodayBookingItem = Pick<
@@ -153,6 +155,7 @@ const textByLanguage: Record<TelegramLanguage, TelegramText> = {
     menuToday: "📅 Записи на сегодня",
     menuSettings: "⚙️ Настройки",
     menuHome: "🏠 Меню",
+    menuSupport: "💬 Поддержка",
     todayEmpty: "📭 На сегодня записей нет.",
     todayHeader: "📅 Записи на сегодня",
     settingsTitle: "⚙️ Настройки уведомлений",
@@ -175,7 +178,9 @@ const textByLanguage: Record<TelegramLanguage, TelegramText> = {
     forwardDisabled: "⚠️ Пересылка в поддержку сейчас выключена.",
     actionDoneConfirm: "✅ Запись подтверждена.",
     actionDoneCancel: "❌ Запись отменена.",
-    actionNotFound: "⚠️ Запись уже обработана или не найдена."
+    actionNotFound: "⚠️ Запись уже обработана или не найдена.",
+    supportPrompt:
+      "💬 Напишите ваш вопрос одним сообщением — я передам его в поддержку Timviz.\n\nМожно просто отправить текст в ответ на это сообщение."
   },
   uk: {
     connected:
@@ -189,6 +194,7 @@ const textByLanguage: Record<TelegramLanguage, TelegramText> = {
     menuToday: "📅 Записи на сьогодні",
     menuSettings: "⚙️ Налаштування",
     menuHome: "🏠 Меню",
+    menuSupport: "💬 Підтримка",
     todayEmpty: "📭 На сьогодні записів немає.",
     todayHeader: "📅 Записи на сьогодні",
     settingsTitle: "⚙️ Налаштування сповіщень",
@@ -211,7 +217,9 @@ const textByLanguage: Record<TelegramLanguage, TelegramText> = {
     forwardDisabled: "⚠️ Пересилку в підтримку зараз вимкнено.",
     actionDoneConfirm: "✅ Запис підтверджено.",
     actionDoneCancel: "❌ Запис скасовано.",
-    actionNotFound: "⚠️ Запис уже оброблено або не знайдено."
+    actionNotFound: "⚠️ Запис уже оброблено або не знайдено.",
+    supportPrompt:
+      "💬 Напишіть ваше питання одним повідомленням — я передам його в підтримку Timviz.\n\nМожна просто надіслати текст у відповідь на це повідомлення."
   },
   en: {
     connected:
@@ -225,6 +233,7 @@ const textByLanguage: Record<TelegramLanguage, TelegramText> = {
     menuToday: "📅 Today bookings",
     menuSettings: "⚙️ Settings",
     menuHome: "🏠 Menu",
+    menuSupport: "💬 Support",
     todayEmpty: "📭 No bookings for today.",
     todayHeader: "📅 Today's bookings",
     settingsTitle: "⚙️ Notification settings",
@@ -247,7 +256,9 @@ const textByLanguage: Record<TelegramLanguage, TelegramText> = {
     forwardDisabled: "⚠️ Forwarding to support is currently off.",
     actionDoneConfirm: "✅ Booking confirmed.",
     actionDoneCancel: "❌ Booking cancelled.",
-    actionNotFound: "⚠️ Booking is already handled or not found."
+    actionNotFound: "⚠️ Booking is already handled or not found.",
+    supportPrompt:
+      "💬 Send your question in one message — I will forward it to Timviz support.\n\nYou can simply reply with text to this message."
   }
 };
 
@@ -895,7 +906,7 @@ export function parseMenuCallbackData(value: string): TelegramMenuAction | null 
   if (prefix !== MENU_CALLBACK_PREFIX) {
     return null;
   }
-  if (action === "today" || action === "settings" || action === "menu") {
+  if (action === "today" || action === "settings" || action === "menu" || action === "support") {
     return action;
   }
   return null;
@@ -939,6 +950,10 @@ export function buildSettingsMessage(connection: TelegramConnection) {
           {
             text: text.menuToday,
             callback_data: buildMenuCallbackData("today")
+          },
+          {
+            text: text.menuSupport,
+            callback_data: buildMenuCallbackData("support")
           },
           {
             text: text.menuHome,
