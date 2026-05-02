@@ -474,7 +474,7 @@ export async function createBusinessBooking(input: PublicBusinessBookingInput) {
       durationMinutes: item.durationMinutes ?? 60
     }))
   };
-  const publicAppointments = await getPublicCalendarAppointments();
+  const publicAppointments = await getPublicCalendarAppointments({ bypassCache: true });
 
   const professionalId = candidateProfessionalIds.find((candidateId) => {
     const candidateBookings = publicAppointments

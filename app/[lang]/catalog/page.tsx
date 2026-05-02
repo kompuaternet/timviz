@@ -1,14 +1,11 @@
 import type { Metadata } from "next";
-import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import CatalogView from "../../catalog/CatalogView";
-import { getPublicCustomerCookieName, verifyPublicCustomerSession } from "../../../lib/public-customer-auth";
 import { filterPublicSearchResults, getPublicSearchIndex } from "../../../lib/public-search";
-import { getSessionCookieName, verifySessionValue } from "../../../lib/pro-auth";
 import { buildLanguageAlternates, buildMetadata, seoCopy } from "../../../lib/seo";
 import { isSiteLanguage, type SiteLanguage } from "../../../lib/site-language";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 type LocalizedCatalogPageProps = {
   params: Promise<{
@@ -115,11 +112,6 @@ export default async function LocalizedCatalogPage({
   };
   const index = await getPublicSearchIndex(publicParams);
   const results = filterPublicSearchResults(index, publicParams);
-  const cookieStore = await cookies();
-  const customerSession = verifyPublicCustomerSession(
-    cookieStore.get(getPublicCustomerCookieName())?.value
-  );
-  const professionalId = verifySessionValue(cookieStore.get(getSessionCookieName())?.value);
 
   return (
     <CatalogView
@@ -130,9 +122,6 @@ export default async function LocalizedCatalogPage({
       time={time}
       location={location}
       hasCoords={publicParams.lat !== null && publicParams.lon !== null}
-      isCustomerAuthenticated={Boolean(customerSession)}
-      customerDisplayName={customerSession?.fullName ?? ""}
-      isProAuthenticated={Boolean(professionalId)}
       initialLanguage={lang as SiteLanguage}
     />
   );

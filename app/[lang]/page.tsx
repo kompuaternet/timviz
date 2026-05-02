@@ -6,7 +6,7 @@ import { getPublicSearchIndex } from "../../lib/public-search";
 import { buildLanguageAlternates, buildMetadata, seoCopy } from "../../lib/seo";
 import { isSiteLanguage, type SiteLanguage } from "../../lib/site-language";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 type LocalizedHomePageProps = {
   params: Promise<{

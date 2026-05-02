@@ -126,6 +126,9 @@ type CalendarAppointmentRow = {
 };
 
 const storePath = path.join(process.cwd(), "data", "pro-calendar.json");
+const PUBLIC_APPOINTMENTS_CACHE_TTL_MS = Number(process.env.PUBLIC_APPOINTMENTS_CACHE_TTL_MS || 5000);
+let cachedPublicCalendarAppointments: PublicCalendarAppointment[] | null = null;
+let cachedPublicCalendarAppointmentsAt = 0;
 
 function makeId(prefix: string) {
   return `${prefix}_${crypto.randomUUID()}`;
@@ -239,6 +242,8 @@ async function readStore() {
 }
 
 async function writeStore(data: CalendarStore) {
+  cachedPublicCalendarAppointments = null;
+  cachedPublicCalendarAppointmentsAt = 0;
   await fs.writeFile(storePath, JSON.stringify(data, null, 2) + "\n", "utf8");
 }
 
@@ -315,7 +320,17 @@ export async function getAppointmentsForBusiness(businessId: string) {
     );
 }
 
-export async function getPublicCalendarAppointments(): Promise<PublicCalendarAppointment[]> {
+export async function getPublicCalendarAppointments(input: { bypassCache?: boolean } = {}): Promise<PublicCalendarAppointment[]> {
+  if (
+    !input.bypassCache &&
+    cachedPublicCalendarAppointments &&
+    Date.now() - cachedPublicCalendarAppointmentsAt < PUBLIC_APPOINTMENTS_CACHE_TTL_MS
+  ) {
+    return cachedPublicCalendarAppointments;
+  }
+
+  let appointments: PublicCalendarAppointment[] = [];
+
   if (isSupabaseConfigured()) {
     const supabase = getSupabaseAdmin();
     if (!supabase) {
@@ -332,7 +347,7 @@ export async function getPublicCalendarAppointments(): Promise<PublicCalendarApp
       throw new Error(error.message);
     }
 
-    return (data ?? []).map((row) => ({
+    appointments = (data ?? []).map((row) => ({
       businessId: row.business_id,
       professionalId: row.professional_id,
       appointmentDate: row.appointment_date,
@@ -341,18 +356,22 @@ export async function getPublicCalendarAppointments(): Promise<PublicCalendarApp
       kind: normalizeKind(row.kind),
       attendance: normalizeAttendance(row.attendance)
     }));
+  } else {
+    const store = await readStore();
+    appointments = store.appointments.map((appointment) => ({
+      businessId: appointment.businessId,
+      professionalId: appointment.professionalId,
+      appointmentDate: appointment.appointmentDate,
+      startTime: appointment.startTime,
+      endTime: appointment.endTime,
+      kind: appointment.kind,
+      attendance: appointment.attendance
+    }));
   }
 
-  const store = await readStore();
-  return store.appointments.map((appointment) => ({
-    businessId: appointment.businessId,
-    professionalId: appointment.professionalId,
-    appointmentDate: appointment.appointmentDate,
-    startTime: appointment.startTime,
-    endTime: appointment.endTime,
-    kind: appointment.kind,
-    attendance: appointment.attendance
-  }));
+  cachedPublicCalendarAppointments = appointments;
+  cachedPublicCalendarAppointmentsAt = Date.now();
+  return appointments;
 }
 
 function getWeekRange(dateKey: string) {

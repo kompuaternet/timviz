@@ -242,6 +242,9 @@ const defaultServiceColors = [
 export const DEFAULT_BOOKING_CREDITS = 500;
 
 let activeDirectorySnapshotPromise: Promise<BusinessDirectorySnapshot> | null = null;
+let cachedDirectorySnapshot: BusinessDirectorySnapshot | null = null;
+let cachedDirectorySnapshotAt = 0;
+const DIRECTORY_SNAPSHOT_TTL_MS = Number(process.env.DIRECTORY_SNAPSHOT_TTL_MS || 15000);
 
 function isMissingTableError(message: string | undefined, tableName: string) {
   return (
@@ -832,6 +835,8 @@ async function readStore() {
 
 async function writeStore(data: ProDataStore) {
   activeDirectorySnapshotPromise = null;
+  cachedDirectorySnapshot = null;
+  cachedDirectorySnapshotAt = 0;
   await fs.writeFile(storePath, JSON.stringify(data, null, 2) + "\n", "utf8");
 }
 
@@ -969,13 +974,26 @@ async function loadBusinessDirectorySnapshot(): Promise<BusinessDirectorySnapsho
 }
 
 export async function getBusinessDirectorySnapshot(): Promise<BusinessDirectorySnapshot> {
+  if (
+    cachedDirectorySnapshot &&
+    Date.now() - cachedDirectorySnapshotAt < DIRECTORY_SNAPSHOT_TTL_MS
+  ) {
+    return cachedDirectorySnapshot;
+  }
+
   if (activeDirectorySnapshotPromise) {
     return activeDirectorySnapshotPromise;
   }
 
-  activeDirectorySnapshotPromise = loadBusinessDirectorySnapshot().finally(() => {
-    activeDirectorySnapshotPromise = null;
-  });
+  activeDirectorySnapshotPromise = loadBusinessDirectorySnapshot()
+    .then((snapshot) => {
+      cachedDirectorySnapshot = snapshot;
+      cachedDirectorySnapshotAt = Date.now();
+      return snapshot;
+    })
+    .finally(() => {
+      activeDirectorySnapshotPromise = null;
+    });
 
   return activeDirectorySnapshotPromise;
 }

@@ -266,7 +266,9 @@ function isBusinessAvailable(input: {
 }
 
 export async function getPublicSearchIndex(params: PublicSearchParams = {}): Promise<PublicSearchIndex> {
-  const [store, calendarStore] = await Promise.all([readProStore(), readCalendarStore()]);
+  const store = await readProStore();
+  const needsAvailabilityCalculation = Boolean(params.date && params.time);
+  const calendarAppointments = needsAvailabilityCalculation ? (await readCalendarStore()).appointments : [];
   const publicPathMap = buildPublicBusinessPathMap(store.businesses);
   const businessesById = new Map(store.businesses.map((business) => [business.id, business]));
   const servicesByBusiness = new Map<string, ServiceRecord[]>();
@@ -312,7 +314,7 @@ export async function getPublicSearchIndex(params: PublicSearchParams = {}): Pro
       business: normalizedBusiness,
       professionalIds: memberships.map((membership) => membership.professionalId),
       services: businessServices,
-      appointments: calendarStore.appointments,
+      appointments: calendarAppointments,
       date: params.date,
       time: params.time,
       query: params.query
