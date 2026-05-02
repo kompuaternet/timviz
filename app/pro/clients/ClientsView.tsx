@@ -22,6 +22,7 @@ type ClientsViewProps = {
   accountCurrency: string;
   businessName: string;
   canManageStaff: boolean;
+  showOnboardingCta: boolean;
   initialClients: ClientListItem[];
   header: {
     viewerName: string;
@@ -280,6 +281,7 @@ export default function ClientsView({
   accountCurrency,
   businessName,
   canManageStaff,
+  showOnboardingCta,
   initialClients,
   header
 }: ClientsViewProps) {
@@ -461,6 +463,7 @@ export default function ClientsView({
             publicBookingUrl={header.publicBookingUrl}
             publicBookingEnabled={header.publicBookingEnabled === true}
             canTogglePublicBooking={canManageStaff}
+            showOnboardingCta={showOnboardingCta}
           />
 
           <header className={styles.clientsHeader}>

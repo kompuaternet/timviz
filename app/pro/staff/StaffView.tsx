@@ -20,6 +20,7 @@ type StaffViewProps = {
   professionalId: string;
   snapshot: BusinessStaffSnapshot;
   initialAddOpen?: boolean;
+  showOnboardingCta: boolean;
   header: {
     viewerName: string;
     viewerAvatarUrl?: string;
@@ -382,7 +383,7 @@ function PendingInvitationCard({
   );
 }
 
-export default function StaffView({ professionalId, snapshot, initialAddOpen = false, header }: StaffViewProps) {
+export default function StaffView({ professionalId, snapshot, initialAddOpen = false, showOnboardingCta, header }: StaffViewProps) {
   const router = useRouter();
   const { language } = useProLanguage();
   const copy = staffText[language];
@@ -582,6 +583,7 @@ export default function StaffView({ professionalId, snapshot, initialAddOpen = f
           publicBookingUrl={header.publicBookingUrl}
           publicBookingEnabled={header.publicBookingEnabled === true}
           canTogglePublicBooking
+          showOnboardingCta={showOnboardingCta}
         />
 
         <aside className={styles.staffStudioSidebar}>

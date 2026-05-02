@@ -6173,6 +6173,39 @@
   gap: 8px;
 }
 
+.calendarOnboardingCta {
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(101, 83, 230, 0.3);
+  background: linear-gradient(135deg, #7f66ff 0%, #4f3ad1 100%);
+  color: #fff;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  box-shadow: 0 10px 20px rgba(95, 73, 221, 0.28);
+  transition: transform 0.16s ease, box-shadow 0.16s ease, filter 0.16s ease;
+}
+
+.calendarOnboardingCta:hover {
+  filter: brightness(1.03);
+  transform: translateY(-1px);
+  box-shadow: 0 12px 24px rgba(95, 73, 221, 0.34);
+}
+
+.calendarOnboardingCta:active {
+  transform: translateY(0);
+}
+
+.calendarOnboardingCtaShort {
+  display: none;
+}
+
 .calendarTopBarV2 {
   display: flex;
   align-items: center;
@@ -9707,10 +9740,10 @@
   }
 
   .mobileWorkspaceNav {
-    position: fixed;
+    position: fixed !important;
     left: 12px;
     right: 12px;
-    bottom: calc(12px + env(safe-area-inset-bottom));
+    bottom: max(12px, calc(12px + env(safe-area-inset-bottom)));
     z-index: 85;
     display: grid;
     gap: 4px;
@@ -9720,6 +9753,9 @@
     background: transparent;
     box-shadow: none;
     backdrop-filter: none;
+    -webkit-transform: translateZ(0);
+    transform: translateZ(0);
+    will-change: transform;
     pointer-events: none;
   }
 
@@ -10908,6 +10944,20 @@
     justify-content: flex-end;
   }
 
+  .calendarOnboardingCta {
+    min-height: 32px;
+    padding: 0 10px;
+    font-size: 0.76rem;
+  }
+
+  .calendarOnboardingCtaFull {
+    display: none;
+  }
+
+  .calendarOnboardingCtaShort {
+    display: inline;
+  }
+
   .calendarProfileButton {
     min-height: 36px;
     padding: 3px 6px 3px 3px;
@@ -11271,6 +11321,12 @@
 
   .calendarTopRight {
     gap: 5px;
+  }
+
+  .calendarOnboardingCta {
+    min-height: 31px;
+    padding: 0 9px;
+    font-size: 0.74rem;
   }
 
   .calendarViewPill,

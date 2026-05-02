@@ -16,6 +16,7 @@ import { useProLanguage } from "../useProLanguage";
 type ServicesViewProps = {
   initialWorkspace: WorkspaceSnapshot;
   catalog: CategoryTemplate[];
+  showOnboardingCta: boolean;
 };
 
 type DraftService = {
@@ -104,7 +105,7 @@ function formatServicePrice(value: number, language: "ru" | "uk" | "en", currenc
   }).format(value || 0);
 }
 
-export default function ServicesView({ initialWorkspace, catalog }: ServicesViewProps) {
+export default function ServicesView({ initialWorkspace, catalog, showOnboardingCta }: ServicesViewProps) {
   const { t, language } = useProLanguage();
   const copy = serviceExtras[language];
   const accountCurrency = initialWorkspace.professional.currency || "USD";
@@ -449,6 +450,7 @@ export default function ServicesView({ initialWorkspace, catalog }: ServicesView
           publicBookingUrl={initialWorkspace.business.publicBookingUrl}
           publicBookingEnabled={initialWorkspace.business.allowOnlineBooking === true}
           canTogglePublicBooking={initialWorkspace.membership.scope === "owner"}
+          showOnboardingCta={showOnboardingCta}
         />
 
         <header className={styles.servicesHeroCompact}>

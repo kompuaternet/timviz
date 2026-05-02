@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getSessionCookieName, verifySessionValue } from "../../../lib/pro-auth";
 import { getWorkspaceSnapshot } from "../../../lib/pro-data";
+import ScheduleView from "./ScheduleView";
 
 export default async function ProSchedulePage() {
   const cookieStore = await cookies();
@@ -21,5 +22,5 @@ export default async function ProSchedulePage() {
     redirect("/pro/staff/schedule");
   }
 
-  redirect("/pro/calendar");
+  return <ScheduleView professionalId={professionalId} />;
 }

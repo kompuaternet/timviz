@@ -29,6 +29,7 @@ import {
 type StaffScheduleViewProps = {
   professionalId: string;
   snapshot: BusinessStaffSnapshot;
+  showOnboardingCta: boolean;
   header: {
     viewerName: string;
     viewerAvatarUrl?: string;
@@ -1684,7 +1685,7 @@ function DayScheduleModal({
   );
 }
 
-export default function StaffScheduleView({ professionalId, snapshot, header }: StaffScheduleViewProps) {
+export default function StaffScheduleView({ professionalId, snapshot, showOnboardingCta, header }: StaffScheduleViewProps) {
   const { language, t } = useProLanguage();
   const copy = scheduleText[language];
   const locale = getLocale(language);
@@ -1877,6 +1878,7 @@ export default function StaffScheduleView({ professionalId, snapshot, header }: 
           publicBookingUrl={header.publicBookingUrl}
           publicBookingEnabled={header.publicBookingEnabled === true}
           canTogglePublicBooking
+          showOnboardingCta={showOnboardingCta}
         />
 
         <aside className={styles.staffStudioSidebar}>

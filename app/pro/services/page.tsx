@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import { getServiceTemplateCatalog } from "../../../lib/global-service-catalog";
 import { getSessionCookieName, verifySessionValue } from "../../../lib/pro-auth";
 import { getWorkspaceSnapshot } from "../../../lib/pro-data";
+import { isWorkspaceSetupComplete } from "../../../lib/pro-onboarding";
+import { getTelegramConnectionByProfessionalId } from "../../../lib/telegram-bot";
 import ServicesView from "./ServicesView";
 
 export default async function ProServicesPage() {
@@ -13,9 +15,10 @@ export default async function ProServicesPage() {
     redirect("/pro/login");
   }
 
-  const [workspace, catalog] = await Promise.all([
+  const [workspace, catalog, telegramConnection] = await Promise.all([
     getWorkspaceSnapshot(professionalId),
-    getServiceTemplateCatalog()
+    getServiceTemplateCatalog(),
+    getTelegramConnectionByProfessionalId(professionalId)
   ]);
 
   if (!workspace) {
@@ -26,6 +29,7 @@ export default async function ProServicesPage() {
     <ServicesView
       initialWorkspace={workspace}
       catalog={catalog}
+      showOnboardingCta={!isWorkspaceSetupComplete(workspace, Boolean(telegramConnection?.chatId))}
     />
   );
 }

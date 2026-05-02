@@ -2,7 +2,9 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getSessionCookieName, verifySessionValue } from "../../../../lib/pro-auth";
 import { getWorkspaceSnapshot } from "../../../../lib/pro-data";
+import { isWorkspaceSetupComplete } from "../../../../lib/pro-onboarding";
 import { getBusinessStaffSnapshot } from "../../../../lib/pro-staff";
+import { getTelegramConnectionByProfessionalId } from "../../../../lib/telegram-bot";
 import StaffScheduleView from "../StaffScheduleView";
 
 export default async function ProStaffSchedulePage() {
@@ -13,9 +15,10 @@ export default async function ProStaffSchedulePage() {
     redirect("/pro/login");
   }
 
-  const [snapshot, workspace] = await Promise.all([
+  const [snapshot, workspace, telegramConnection] = await Promise.all([
     getBusinessStaffSnapshot(professionalId),
-    getWorkspaceSnapshot(professionalId)
+    getWorkspaceSnapshot(professionalId),
+    getTelegramConnectionByProfessionalId(professionalId)
   ]);
 
   if (!workspace) {
@@ -30,6 +33,7 @@ export default async function ProStaffSchedulePage() {
     <StaffScheduleView
       professionalId={professionalId}
       snapshot={snapshot}
+      showOnboardingCta={!isWorkspaceSetupComplete(workspace, Boolean(telegramConnection?.chatId))}
       header={{
         viewerName: `${workspace.professional.firstName} ${workspace.professional.lastName}`.trim() || workspace.professional.email,
         viewerAvatarUrl: workspace.professional.avatarUrl,

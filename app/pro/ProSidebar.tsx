@@ -89,8 +89,7 @@ const mainLinks = [
   { key: "workspace", href: "/pro/calendar", icon: <HomeIcon /> },
   { key: "calendar", href: "/pro/calendar", icon: <CalendarIcon /> },
   { key: "services", href: "/pro/services", icon: <TagIcon /> },
-  { key: "clients", href: "/pro/clients", icon: <ClientIcon /> },
-  { key: "staff", href: "/pro/staff/schedule", icon: <StaffIcon /> }
+  { key: "clients", href: "/pro/clients", icon: <ClientIcon /> }
 ] as const;
 
 export default function ProSidebar({
@@ -133,15 +132,22 @@ export default function ProSidebar({
     setShowScheduleReminder(hasPendingScheduleReminder(professionalId));
   }, [active, professionalId]);
 
-  const visibleMainLinks = mainLinks.filter((link) => canManageStaff || link.key !== "staff");
+  const visibleMainLinks = [
+    ...mainLinks,
+    canManageStaff
+      ? ({ key: "staff" as const, href: "/pro/staff/schedule", icon: <StaffIcon /> } as const)
+      : ({ key: "schedule" as const, href: "/pro/schedule", icon: <CalendarIcon /> } as const)
+  ];
 
   const mobileLinks = [
     { key: "calendar" as const, href: "/pro/calendar", label: t.nav.home, icon: <HomeIcon />, active: active === "workspace" || active === "calendar" },
     { key: "services" as const, href: "/pro/services", label: t.nav.services, icon: <TagIcon />, active: active === "services" },
     { key: "clients" as const, href: "/pro/clients", label: t.nav.clients, icon: <ClientIcon />, active: active === "clients" },
-    { key: "staff" as const, href: "/pro/staff/schedule", label: t.nav.staff, icon: <StaffIcon />, active: active === "staff" },
+    canManageStaff
+      ? { key: "staff" as const, href: "/pro/staff/schedule", label: t.nav.staff, icon: <StaffIcon />, active: active === "staff" }
+      : { key: "schedule" as const, href: "/pro/schedule", label: t.nav.schedule, icon: <CalendarIcon />, active: active === "schedule" },
     { key: "settings" as const, href: "/pro/settings", label: t.nav.settings, icon: <SettingsIcon />, active: active === "settings" }
-  ].filter((link) => canManageStaff || link.key !== "staff");
+  ];
 
   async function handleLogout() {
     setIsLoggingOut(true);

@@ -697,6 +697,7 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
 
   const skippedOnboardingStepIdSet = useMemo(() => new Set(skippedOnboardingStepIds), [skippedOnboardingStepIds]);
   const onboardingCompletedCount = onboardingSteps.filter((step) => step.completed).length;
+  const onboardingChecklistComplete = onboardingCompletedCount === onboardingSteps.length;
   const activeOnboardingStep =
     onboardingSteps.find((step) => !step.completed && !skippedOnboardingStepIdSet.has(step.id)) ??
     onboardingSteps.find((step) => !step.completed) ??
@@ -706,6 +707,8 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
     activeSection === "services" &&
     !photoReady &&
     !isPhotoTooltipDismissed;
+  const scheduleSettingsPath =
+    data.membership.scope === "owner" ? "/pro/staff/schedule" : "/pro/schedule";
 
   const profileReadyPercent = useMemo(() => {
     const checks = [
@@ -781,7 +784,7 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
     }
 
     if (stepId === "schedule") {
-      router.push("/pro/staff/schedule");
+      router.push(scheduleSettingsPath);
       return;
     }
 
@@ -1601,6 +1604,7 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
           publicBookingUrl={data.business.publicBookingUrl}
           publicBookingEnabled={data.business.allowOnlineBooking === true}
           canTogglePublicBooking={data.membership.scope === "owner"}
+          showOnboardingCta={!onboardingChecklistComplete}
         />
 
         <header className={styles.settingsHero}>
@@ -2092,7 +2096,7 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
                       <button
                         type="button"
                         className={styles.primaryButton}
-                        onClick={() => router.push("/pro/staff/schedule")}
+                        onClick={() => router.push(scheduleSettingsPath)}
                       >
                         {copy.scheduleOpenButton}
                       </button>

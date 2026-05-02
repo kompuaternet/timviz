@@ -17,6 +17,7 @@ type ProWorkspaceHeaderProps = {
   publicBookingUrl?: string;
   publicBookingEnabled?: boolean;
   canTogglePublicBooking?: boolean;
+  showOnboardingCta?: boolean;
 };
 
 function formatDateKey(date: Date) {
@@ -51,7 +52,9 @@ const headerCopy = {
     personalSettings: "Личные настройки",
     helpSupport: "Помощь и поддержка",
     language: "Язык",
-    logout: "Выйти"
+    logout: "Выйти",
+    onboardingStart: "🚀 Начать",
+    onboardingContinue: "Продолжить →"
   },
   uk: {
     workspace: "Робочий простір",
@@ -77,7 +80,9 @@ const headerCopy = {
     personalSettings: "Особисті налаштування",
     helpSupport: "Допомога і підтримка",
     language: "Мова",
-    logout: "Вийти"
+    logout: "Вийти",
+    onboardingStart: "🚀 Почати",
+    onboardingContinue: "Продовжити →"
   },
   en: {
     workspace: "Workspace",
@@ -103,7 +108,9 @@ const headerCopy = {
     personalSettings: "Personal settings",
     helpSupport: "Help and support",
     language: "Language",
-    logout: "Log out"
+    logout: "Log out",
+    onboardingStart: "🚀 Start",
+    onboardingContinue: "Continue →"
   }
 } as const;
 
@@ -162,7 +169,8 @@ export default function ProWorkspaceHeader({
   viewerInitials,
   publicBookingUrl = "",
   publicBookingEnabled = false,
-  canTogglePublicBooking = false
+  canTogglePublicBooking = false,
+  showOnboardingCta = false
 }: ProWorkspaceHeaderProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -317,6 +325,22 @@ export default function ProWorkspaceHeader({
       </div>
 
       <div className={styles.calendarWorkspaceActions}>
+        {showOnboardingCta ? (
+          <button
+            type="button"
+            className={styles.calendarOnboardingCta}
+            onClick={() => router.push("/pro/settings")}
+            title={copy.onboardingContinue}
+          >
+            <span className={styles.calendarOnboardingCtaFull}>
+              {copy.onboardingStart}
+            </span>
+            <span className={styles.calendarOnboardingCtaShort}>
+              {copy.onboardingContinue}
+            </span>
+          </button>
+        ) : null}
+
         <button
           ref={shareMenuButtonRef}
           type="button"
