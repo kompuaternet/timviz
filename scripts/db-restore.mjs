@@ -60,7 +60,9 @@ const primaryKeyByTable = {
   calendar_appointments: "id",
   pro_clients: "id",
   support_tickets: "id",
-  support_messages: "id"
+  support_messages: "id",
+  telegram_connections: "id",
+  telegram_reminder_events: "id"
 };
 
 const restoreOrder = [
@@ -76,7 +78,9 @@ const restoreOrder = [
   "calendar_appointments",
   "pro_clients",
   "support_tickets",
-  "support_messages"
+  "support_messages",
+  "telegram_connections",
+  "telegram_reminder_events"
 ];
 
 function log(message) {

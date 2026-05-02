@@ -19,3 +19,5 @@ alter table if exists public.calendar_appointments enable row level security;
 alter table if exists public.pro_clients enable row level security;
 alter table if exists public.support_tickets enable row level security;
 alter table if exists public.support_messages enable row level security;
+alter table if exists public.telegram_connections enable row level security;
+alter table if exists public.telegram_reminder_events enable row level security;

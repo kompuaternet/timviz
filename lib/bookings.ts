@@ -5,6 +5,7 @@ import { getPublicBookingSlots } from "./public-booking";
 import { getBusinessDirectorySnapshot, type BusinessRecord, type ServiceRecord } from "./pro-data";
 import { createCalendarAppointment, getPublicCalendarAppointments } from "./pro-calendar";
 import { getSupabaseAdmin, isSupabaseConfigured } from "./supabase";
+import { sendBookingTelegramNotification } from "./telegram-bot";
 import { addMinutesToTime } from "./work-schedule";
 
 export type BookingStatus = "pending" | "confirmed" | "completed" | "cancelled";
@@ -567,8 +568,10 @@ export async function createBusinessBooking(input: PublicBusinessBookingInput) {
     await writeLocalBookings(bookings);
   }
 
+  let createdAppointment: Awaited<ReturnType<typeof createCalendarAppointment>> | null = null;
+
   try {
-    await createCalendarAppointment({
+    createdAppointment = await createCalendarAppointment({
       professionalId,
       appointmentDate: input.appointmentDate,
       startTime: input.appointmentTime,
@@ -584,6 +587,18 @@ export async function createBusinessBooking(input: PublicBusinessBookingInput) {
   } catch (error) {
     await deleteBooking(booking.id).catch(() => undefined);
     throw error;
+  }
+
+  if (createdAppointment) {
+    await sendBookingTelegramNotification({
+      professionalId,
+      businessId: business.id,
+      appointmentId: createdAppointment.id,
+      appointmentDate: createdAppointment.appointmentDate,
+      appointmentTime: createdAppointment.startTime,
+      customerName: createdAppointment.customerName,
+      serviceName: createdAppointment.serviceName
+    }).catch(() => undefined);
   }
 
   return booking;

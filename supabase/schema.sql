@@ -196,6 +196,39 @@ create table if not exists public.support_messages (
   telegram_update_id bigint
 );
 
+create table if not exists public.telegram_connections (
+  id text primary key,
+  professional_id text not null references public.professionals(id) on delete cascade,
+  business_id text not null references public.businesses(id) on delete cascade,
+  connect_token text not null,
+  connect_token_expires_at timestamptz not null,
+  chat_id text,
+  telegram_user_id bigint,
+  telegram_username text not null default '',
+  telegram_first_name text not null default '',
+  telegram_last_name text not null default '',
+  language text not null default 'en',
+  timezone text not null default 'UTC',
+  notifications_new_booking boolean not null default true,
+  notifications_reminder boolean not null default true,
+  notifications_today boolean not null default true,
+  forwarding_enabled boolean not null default true,
+  connected_at timestamptz,
+  last_interaction_at timestamptz,
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now())
+);
+
+create table if not exists public.telegram_reminder_events (
+  id text primary key,
+  appointment_id text not null,
+  professional_id text not null references public.professionals(id) on delete cascade,
+  business_id text not null references public.businesses(id) on delete cascade,
+  chat_id text not null,
+  reminder_type text not null default '2h',
+  sent_at timestamptz not null default timezone('utc', now())
+);
+
 alter table public.professionals add column if not exists currency text not null default 'USD';
 alter table public.professionals add column if not exists booking_credits_total integer not null default 500;
 alter table public.professionals add column if not exists wallet_balance integer not null default 0;
@@ -220,6 +253,20 @@ alter table public.global_service_catalog add column if not exists localized_nam
 alter table public.business_memberships add column if not exists work_schedule_mode text;
 alter table public.business_memberships add column if not exists work_schedule jsonb;
 alter table public.business_memberships add column if not exists custom_schedule jsonb;
+alter table public.telegram_connections add column if not exists chat_id text;
+alter table public.telegram_connections add column if not exists telegram_user_id bigint;
+alter table public.telegram_connections add column if not exists telegram_username text not null default '';
+alter table public.telegram_connections add column if not exists telegram_first_name text not null default '';
+alter table public.telegram_connections add column if not exists telegram_last_name text not null default '';
+alter table public.telegram_connections add column if not exists language text not null default 'en';
+alter table public.telegram_connections add column if not exists timezone text not null default 'UTC';
+alter table public.telegram_connections add column if not exists notifications_new_booking boolean not null default true;
+alter table public.telegram_connections add column if not exists notifications_reminder boolean not null default true;
+alter table public.telegram_connections add column if not exists notifications_today boolean not null default true;
+alter table public.telegram_connections add column if not exists forwarding_enabled boolean not null default true;
+alter table public.telegram_connections add column if not exists connected_at timestamptz;
+alter table public.telegram_connections add column if not exists last_interaction_at timestamptz;
+alter table public.telegram_connections add column if not exists updated_at timestamptz not null default timezone('utc', now());
 
 create index if not exists bookings_salon_date_idx on public.bookings (salon_slug, appointment_date, appointment_time);
 create index if not exists bookings_customer_email_idx on public.bookings (customer_email, created_at desc);
@@ -237,6 +284,12 @@ create index if not exists pro_clients_professional_idx on public.pro_clients (p
 create index if not exists support_messages_ticket_idx on public.support_messages (ticket_id, created_at);
 create unique index if not exists support_messages_telegram_update_uidx on public.support_messages (telegram_update_id) where telegram_update_id is not null;
 create unique index if not exists support_messages_telegram_message_uidx on public.support_messages (telegram_message_id) where telegram_message_id is not null;
+create unique index if not exists telegram_connections_professional_uidx on public.telegram_connections (professional_id);
+create unique index if not exists telegram_connections_connect_token_uidx on public.telegram_connections (connect_token);
+create index if not exists telegram_connections_business_idx on public.telegram_connections (business_id);
+create index if not exists telegram_connections_chat_idx on public.telegram_connections (chat_id);
+create unique index if not exists telegram_reminder_events_unique_idx on public.telegram_reminder_events (appointment_id, professional_id, reminder_type);
+create index if not exists telegram_reminder_events_sent_idx on public.telegram_reminder_events (sent_at desc);
 
 -- Security hardening
 --
@@ -261,3 +314,5 @@ alter table if exists public.calendar_appointments enable row level security;
 alter table if exists public.pro_clients enable row level security;
 alter table if exists public.support_tickets enable row level security;
 alter table if exists public.support_messages enable row level security;
+alter table if exists public.telegram_connections enable row level security;
+alter table if exists public.telegram_reminder_events enable row level security;
