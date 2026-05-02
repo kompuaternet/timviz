@@ -141,6 +141,7 @@ type SaveSnapshot = {
     categories: string[];
     accountType: "solo" | "team";
     serviceMode: string;
+    allowOnlineBooking: boolean;
   };
 };
 
@@ -585,7 +586,8 @@ function buildSaveSnapshot(data: SettingsData): SaveSnapshot {
       photos: data.business.photos ?? [],
       categories: data.business.categories,
       accountType: data.business.accountType,
-      serviceMode: data.business.serviceMode
+      serviceMode: data.business.serviceMode,
+      allowOnlineBooking: data.business.allowOnlineBooking === true
     }
   };
 }
@@ -1060,7 +1062,6 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
     };
 
     setData(nextData);
-    setAddressSearchValue(next.workspace.business.address || "");
     lastSavedSnapshotRef.current = JSON.stringify(buildSaveSnapshot(nextData));
     setPassword("");
     setStatus(topUpCredits ? t.settings.creditsAdded : silent ? t.common.savedAuto : t.settings.saved);
@@ -1528,7 +1529,8 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
             photos: data.business.photos ?? [],
             categories: data.business.categories,
             accountType: data.business.accountType,
-            serviceMode: data.business.serviceMode
+            serviceMode: data.business.serviceMode,
+            allowOnlineBooking: data.business.allowOnlineBooking === true
           },
           newPassword: password,
           topUpCredits
@@ -2341,8 +2343,6 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
                       <input
                         className={styles.input}
                         value={addressSearchValue}
-                        onFocus={(event) => event.currentTarget.select()}
-                        onClick={(event) => event.currentTarget.select()}
                         onChange={(event) => setAddressSearchValue(event.target.value)}
                         placeholder={t.settings.addressPlaceholder}
                       />
