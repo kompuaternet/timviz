@@ -1,0 +1,58 @@
+name: Telegram Booking Reminders
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/5 * * * *"
+
+concurrency:
+  group: telegram-booking-reminders
+  cancel-in-progress: true
+
+jobs:
+  trigger-reminders:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    env:
+      APP_URL: ${{ secrets.APP_URL }}
+      TELEGRAM_BOOKING_REMINDERS_SECRET: ${{ secrets.TELEGRAM_BOOKING_REMINDERS_SECRET }}
+
+    steps:
+      - name: Trigger reminders endpoint
+        run: |
+          set -euo pipefail
+
+          BASE_URL="${APP_URL:-https://timviz.com}"
+          BASE_URL="${BASE_URL%/}"
+          ENDPOINT="${BASE_URL}/api/telegram/reminders"
+
+          echo "Triggering: ${ENDPOINT}"
+
+          CURL_ARGS=(-sS --max-time 45 -X POST "${ENDPOINT}")
+          if [ -n "${TELEGRAM_BOOKING_REMINDERS_SECRET:-}" ]; then
+            CURL_ARGS+=(-H "x-cron-secret: ${TELEGRAM_BOOKING_REMINDERS_SECRET}")
+          else
+            echo "::warning::TELEGRAM_BOOKING_REMINDERS_SECRET is empty in GitHub secrets. Request will be sent without auth header."
+          fi
+
+          RESPONSE="$(curl "${CURL_ARGS[@]}" -w '\nHTTP_STATUS:%{http_code}')"
+          STATUS="${RESPONSE##*HTTP_STATUS:}"
+          BODY="${RESPONSE%HTTP_STATUS:*}"
+
+          echo "${BODY}"
+
+          if [ "${STATUS}" -lt 200 ] || [ "${STATUS}" -ge 300 ]; then
+            echo "::error::Reminders endpoint returned HTTP ${STATUS}"
+            exit 1
+          fi
+
+          OK_VALUE="$(
+            printf '%s' "${BODY}" \
+              | node -e 'let raw="";process.stdin.on("data",(c)=>raw+=c);process.stdin.on("end",()=>{try{const p=JSON.parse(raw||"{}");process.stdout.write(String(Boolean(p.ok)));}catch{process.stdout.write("false");}})'
+          )"
+
+          if [ "${OK_VALUE}" != "true" ]; then
+            echo "::error::Endpoint responded without ok=true"
+            exit 1
+          fi

@@ -12772,7 +12772,7 @@
   .calendarCenterShell,
   .workspaceMain,
   .calendarV2ScrollFrame {
-    background: transparent;
+    background: #f7f8fc !important;
   }
 
   .mobileWorkspaceNav {
