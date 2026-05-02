@@ -5985,13 +5985,54 @@
   gap: 10px;
 }
 
+.checklistProgress {
+  margin-bottom: 2px;
+  color: #5f49dd;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
 .checkItem {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  padding: 14px 0;
-  border-bottom: 1px solid #ede8e1;
+  padding: 12px;
+  border: 1px solid #ede8e1;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.checkItemActive {
+  border-color: #d7ccff;
+  background: #f5f1ff;
+  box-shadow: 0 10px 20px rgba(95, 73, 221, 0.1);
+}
+
+.checkItemText {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+  color: #241d17;
+  font-weight: 700;
+}
+
+.checkHint {
+  color: #767180;
+  font-size: 0.82rem;
+  line-height: 1.4;
+  font-weight: 500;
+}
+
+.checkTodo {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #f6f3ef;
+  color: #8a8177;
+  border: 1px solid #e3ddd4;
 }
 
 .checkDone {
@@ -6006,7 +6047,25 @@
 }
 
 .checkPending {
-  color: #8a8177;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #efe9ff;
+  color: #5f49dd;
+  border: 1px solid #d7ccff;
+}
+
+.checklistComplete {
+  margin-top: 2px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #effcf4;
+  border: 1px solid #b8ebc8;
+  color: #189d4b;
+  font-size: 0.9rem;
+  font-weight: 800;
 }
 
 .miniList {

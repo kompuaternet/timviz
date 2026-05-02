@@ -31,17 +31,58 @@ type WorkspaceSnapshot = {
     serviceMode: string;
     workScheduleMode: WorkScheduleMode;
     workSchedule: WorkSchedule;
+    address: string;
     addressDetails: string;
+    allowOnlineBooking?: boolean;
+    photos?: Array<{
+      id: string;
+      url: string;
+      isPrimary?: boolean;
+      status?: "active" | "blocked";
+    }>;
   };
   membership: {
     role: string;
     scope: "owner" | "member";
   };
+  memberSchedule: {
+    workScheduleMode: WorkScheduleMode;
+    workSchedule: WorkSchedule;
+  };
   services: Array<{
     id: string;
     name: string;
+    price: number;
+    durationMinutes?: number;
   }>;
+  telegram?: {
+    connected: boolean;
+    chatId: string | null;
+  };
 };
+
+function timeToMinutes(value: string) {
+  const [hours = 0, minutes = 0] = value.split(":").map(Number);
+  return hours * 60 + minutes;
+}
+
+function hasWorkingHoursConfigured(schedule: WorkSchedule | undefined) {
+  if (!schedule) {
+    return false;
+  }
+
+  return Object.values(schedule).some((day) => {
+    if (!day?.enabled) {
+      return false;
+    }
+
+    if (!day.startTime || !day.endTime) {
+      return false;
+    }
+
+    return timeToMinutes(day.endTime) > timeToMinutes(day.startTime);
+  });
+}
 
 const workspaceCopy = {
   ru: {
@@ -70,6 +111,15 @@ const workspaceCopy = {
     links: "Переходы",
     openCatalog: "Открыть клиентский каталог",
     servicesCount: "услуг",
+    checklistProgress: (done: number, total: number) => `${done} из ${total} выполнено`,
+    profileReadyComplete: "Профиль полностью готов 🚀",
+    stepServices: "Додайте послуги і встановіть ціни",
+    stepSchedule: "Налаштуйте графік роботи",
+    stepBooking: "Увімкніть онлайн-запис",
+    stepPhoto: "Додайте фото бізнесу",
+    stepPhotoHint: "Додайте фото — профіль виглядатиме професійніше і викликатиме більше довіри",
+    stepAddress: "Додайте адресу",
+    stepTelegram: "Підключіть Telegram",
     bookings: {
       owner: [
         { start: 165, height: 56, time: "11:00 - 11:45", client: "John Doe", service: "Стрижка" },
@@ -107,6 +157,15 @@ const workspaceCopy = {
     links: "Переходи",
     openCatalog: "Відкрити клієнтський каталог",
     servicesCount: "послуг",
+    checklistProgress: (done: number, total: number) => `${done} з ${total} виконано`,
+    profileReadyComplete: "Профіль повністю готовий 🚀",
+    stepServices: "Додайте послуги і встановіть ціни",
+    stepSchedule: "Налаштуйте графік роботи",
+    stepBooking: "Увімкніть онлайн-запис",
+    stepPhoto: "Додайте фото бізнесу",
+    stepPhotoHint: "Додайте фото — профіль виглядатиме професійніше і викликатиме більше довіри",
+    stepAddress: "Додайте адресу",
+    stepTelegram: "Підключіть Telegram",
     bookings: {
       owner: [
         { start: 165, height: 56, time: "11:00 - 11:45", client: "John Doe", service: "Стрижка" },
@@ -144,6 +203,15 @@ const workspaceCopy = {
     links: "Links",
     openCatalog: "Open client catalog",
     servicesCount: "services",
+    checklistProgress: (done: number, total: number) => `${done} of ${total} completed`,
+    profileReadyComplete: "Profile is fully ready 🚀",
+    stepServices: "Add services and set prices",
+    stepSchedule: "Configure working schedule",
+    stepBooking: "Enable online booking",
+    stepPhoto: "Add business photo",
+    stepPhotoHint: "Add a photo to make your profile look more professional and build trust",
+    stepAddress: "Add address",
+    stepTelegram: "Connect Telegram",
     bookings: {
       owner: [
         { start: 165, height: 56, time: "11:00 - 11:45", client: "John Doe", service: "Haircut" },
@@ -181,6 +249,24 @@ export default function WorkspaceView({ professionalId }: WorkspaceViewProps) {
   const copy = workspaceCopy[language];
   const bookings = isOwner ? copy.bookings.owner : copy.bookings.member;
   const scheduleHref = isOwner ? "/pro/staff/schedule" : "/pro/calendar";
+  const hasAddress = Boolean(snapshot?.business.address?.trim() || snapshot?.business.addressDetails?.trim());
+  const hasValidService =
+    (snapshot?.services ?? []).length > 0 &&
+    (snapshot?.services ?? []).some(
+      (service) =>
+        Number.isFinite(service.price) &&
+        service.price > 0 &&
+        Number.isFinite(service.durationMinutes ?? Number.NaN) &&
+        (service.durationMinutes ?? 0) > 0
+    );
+  const scheduleReady = hasWorkingHoursConfigured(
+    isOwner ? snapshot?.business.workSchedule : snapshot?.memberSchedule.workSchedule
+  );
+  const bookingReady = snapshot?.business.allowOnlineBooking === true;
+  const photoReady = (snapshot?.business.photos ?? []).some(
+    (photo) => photo.status !== "blocked" && photo.url.trim().length > 0
+  );
+  const telegramReady = Boolean(snapshot?.telegram?.chatId);
 
   const initials = useMemo(() => {
     if (!snapshot) {
@@ -201,6 +287,49 @@ export default function WorkspaceView({ professionalId }: WorkspaceViewProps) {
       </main>
     );
   }
+
+  const checklistItems = [
+    {
+      id: "services",
+      title: copy.stepServices,
+      completed: hasValidService
+    },
+    {
+      id: "schedule",
+      title: copy.stepSchedule,
+      completed: scheduleReady
+    },
+    {
+      id: "booking",
+      title: copy.stepBooking,
+      completed: bookingReady
+    },
+    {
+      id: "photo",
+      title: copy.stepPhoto,
+      hint: copy.stepPhotoHint,
+      completed: photoReady
+    },
+    ...(!hasAddress
+      ? [
+          {
+            id: "address",
+            title: copy.stepAddress,
+            completed: false
+          }
+        ]
+      : []),
+    {
+      id: "telegram",
+      title: copy.stepTelegram,
+      completed: telegramReady
+    }
+  ];
+  const completedChecklistCount = checklistItems.filter((item) => item.completed).length;
+  const checklistTotal = checklistItems.length;
+  const checklistActiveId =
+    checklistItems.find((item) => !item.completed)?.id ?? null;
+  const checklistComplete = completedChecklistCount === checklistTotal;
 
   return (
     <main className={styles.workspaceShell}>
@@ -310,18 +439,34 @@ export default function WorkspaceView({ professionalId }: WorkspaceViewProps) {
 
         <div className={styles.asideCard}>
           <div className={styles.checklist}>
-            <div className={styles.checkItem}>
-              <span>{copy.accountSaved}</span>
-              <span className={styles.checkDone}>✓</span>
+            <div className={styles.checklistProgress}>
+              {copy.checklistProgress(completedChecklistCount, checklistTotal)}
             </div>
-            <div className={styles.checkItem}>
-              <span>{isOwner ? copy.businessCreated : copy.salonConnected}</span>
-              <span className={styles.checkDone}>✓</span>
-            </div>
-            <div className={styles.checkItem}>
-              <span>{isOwner ? copy.setupMasters : copy.checkSchedule}</span>
-              <span className={styles.checkPending}>→</span>
-            </div>
+            {checklistItems.map((item) => (
+              <div
+                key={item.id}
+                className={`${styles.checkItem} ${checklistActiveId === item.id ? styles.checkItemActive : ""}`}
+              >
+                <div className={styles.checkItemText}>
+                  <span>{item.title}</span>
+                  {item.hint ? (
+                    <small className={styles.checkHint}>{item.hint}</small>
+                  ) : null}
+                </div>
+                {item.completed ? (
+                  <span className={styles.checkDone}>✓</span>
+                ) : checklistActiveId === item.id ? (
+                  <span className={styles.checkPending}>→</span>
+                ) : (
+                  <span className={styles.checkTodo}>•</span>
+                )}
+              </div>
+            ))}
+            {checklistComplete ? (
+              <div className={styles.checklistComplete}>
+                {copy.profileReadyComplete}
+              </div>
+            ) : null}
           </div>
         </div>
 

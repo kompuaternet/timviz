@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { getSessionCookieName, verifySessionValue } from "../../../../../lib/pro-auth";
 import { getWorkspaceSnapshot } from "../../../../../lib/pro-data";
+import { getTelegramConnectionByProfessionalId } from "../../../../../lib/telegram-bot";
 
 type RouteProps = {
   params: Promise<{
@@ -30,7 +31,28 @@ export async function GET(_: Request, { params }: RouteProps) {
       return NextResponse.json({ error: "Workspace not found." }, { status: 404 });
     }
 
-    return NextResponse.json(snapshot);
+    let telegram = {
+      connected: false,
+      chatId: null as string | null
+    };
+
+    try {
+      const connection = await getTelegramConnectionByProfessionalId(professionalId);
+      telegram = {
+        connected: Boolean(connection?.chatId && connection.connectedAt),
+        chatId: connection?.chatId || null
+      };
+    } catch {
+      telegram = {
+        connected: false,
+        chatId: null
+      };
+    }
+
+    return NextResponse.json({
+      ...snapshot,
+      telegram
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to load workspace.";
     return NextResponse.json({ error: message }, { status: 400 });
