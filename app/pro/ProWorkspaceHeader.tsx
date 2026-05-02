@@ -54,7 +54,8 @@ const headerCopy = {
     language: "Язык",
     logout: "Выйти",
     onboardingStart: "🚀 Начать",
-    onboardingContinue: "Продолжить →"
+    onboardingContinue: "Продолжить →",
+    onboardingCompact: "Дальше →"
   },
   uk: {
     workspace: "Робочий простір",
@@ -82,7 +83,8 @@ const headerCopy = {
     language: "Мова",
     logout: "Вийти",
     onboardingStart: "🚀 Почати",
-    onboardingContinue: "Продовжити →"
+    onboardingContinue: "Продовжити →",
+    onboardingCompact: "Далі →"
   },
   en: {
     workspace: "Workspace",
@@ -110,7 +112,8 @@ const headerCopy = {
     language: "Language",
     logout: "Log out",
     onboardingStart: "🚀 Start",
-    onboardingContinue: "Continue →"
+    onboardingContinue: "Continue →",
+    onboardingCompact: "Next →"
   }
 } as const;
 
@@ -321,22 +324,24 @@ export default function ProWorkspaceHeader({
     <div className={`${styles.calendarWorkspaceHeader} ${styles.proPageWorkspaceHeader}`}>
       <div className={styles.calendarWorkspaceMeta}>
         <span>{businessName || "Timviz"}</span>
-        <strong>{pageTitle}</strong>
-        {showOnboardingCta ? (
-          <button
-            type="button"
-            className={`${styles.calendarOnboardingCta} ${styles.calendarWorkspaceMetaOnboarding}`}
-            onClick={() => router.push("/pro/settings")}
-            title={copy.onboardingContinue}
-          >
-            <span className={styles.calendarOnboardingCtaFull}>
-              {copy.onboardingStart}
-            </span>
-            <span className={styles.calendarOnboardingCtaShort}>
-              {copy.onboardingContinue}
-            </span>
-          </button>
-        ) : null}
+        <div className={styles.calendarWorkspaceTitleRow}>
+          <strong>{pageTitle}</strong>
+          {showOnboardingCta ? (
+            <button
+              type="button"
+              className={styles.calendarOnboardingCta}
+              onClick={() => router.push("/pro/settings")}
+              title={copy.onboardingContinue}
+            >
+              <span className={styles.calendarOnboardingCtaFull}>
+                {copy.onboardingStart}
+              </span>
+              <span className={styles.calendarOnboardingCtaShort}>
+                {copy.onboardingCompact}
+              </span>
+            </button>
+          ) : null}
+        </div>
       </div>
 
       <div className={styles.calendarWorkspaceActions}>

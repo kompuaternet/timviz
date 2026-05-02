@@ -377,6 +377,7 @@ const CALENDAR_TEXT: Record<AppLanguage, {
   language: string;
   onboardingStart: string;
   onboardingContinue: string;
+  onboardingCompact: string;
   publicLink: string;
   publicLinkTitle: string;
   publicLinkHint: string;
@@ -535,6 +536,7 @@ const CALENDAR_TEXT: Record<AppLanguage, {
     language: "Язык",
     onboardingStart: "🚀 Начать",
     onboardingContinue: "Продолжить →",
+    onboardingCompact: "Дальше →",
     publicLink: "Публичная ссылка",
     publicLinkTitle: "Ссылка для онлайн-записи",
     publicLinkHint: "Отправляйте ссылку клиентам, публикуйте в соцсетях или копируйте в один тап.",
@@ -693,6 +695,7 @@ const CALENDAR_TEXT: Record<AppLanguage, {
     language: "Мова",
     onboardingStart: "🚀 Почати",
     onboardingContinue: "Продовжити →",
+    onboardingCompact: "Далі →",
     publicLink: "Публічне посилання",
     publicLinkTitle: "Посилання для онлайн-запису",
     publicLinkHint: "Надсилайте посилання клієнтам, публікуйте в соцмережах або копіюйте в один дотик.",
@@ -851,6 +854,7 @@ const CALENDAR_TEXT: Record<AppLanguage, {
     language: "Language",
     onboardingStart: "🚀 Start",
     onboardingContinue: "Continue →",
+    onboardingCompact: "Next →",
     publicLink: "Public link",
     publicLinkTitle: "Online booking link",
     publicLinkHint: "Send it to clients, post it on social media, or copy it in one tap.",
@@ -4250,24 +4254,26 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
         <div className={styles.calendarWorkspaceHeader}>
           <div className={styles.calendarWorkspaceMeta}>
             <span>{snapshot?.workspace.business.name ?? "Timviz"}</span>
-            <strong>{t.dailyCalendar}</strong>
-            {showOnboardingCta ? (
-              <button
-                type="button"
-                className={`${styles.calendarOnboardingCta} ${styles.calendarWorkspaceMetaOnboarding}`}
-                onClick={() => {
-                  router.push("/pro/settings");
-                }}
-                title={t.onboardingContinue}
-              >
-                <span className={styles.calendarOnboardingCtaFull}>
-                  {t.onboardingStart}
-                </span>
-                <span className={styles.calendarOnboardingCtaShort}>
-                  {t.onboardingContinue}
-                </span>
-              </button>
-            ) : null}
+            <div className={styles.calendarWorkspaceTitleRow}>
+              <strong>{t.dailyCalendar}</strong>
+              {showOnboardingCta ? (
+                <button
+                  type="button"
+                  className={styles.calendarOnboardingCta}
+                  onClick={() => {
+                    router.push("/pro/settings");
+                  }}
+                  title={t.onboardingContinue}
+                >
+                  <span className={styles.calendarOnboardingCtaFull}>
+                    {t.onboardingStart}
+                  </span>
+                  <span className={styles.calendarOnboardingCtaShort}>
+                    {t.onboardingCompact}
+                  </span>
+                </button>
+              ) : null}
+            </div>
           </div>
 
           <div className={styles.calendarWorkspaceActions}>

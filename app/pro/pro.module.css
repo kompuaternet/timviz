@@ -6150,12 +6150,14 @@
   display: grid;
   gap: 2px;
   padding-left: 6px;
+  min-width: 0;
 }
 
-.calendarWorkspaceMetaOnboarding {
-  margin-top: 6px;
-  margin-left: 2px;
-  align-self: start;
+.calendarWorkspaceTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
 }
 
 .calendarWorkspaceMeta span {
@@ -6166,11 +6168,15 @@
   text-transform: uppercase;
 }
 
-.calendarWorkspaceMeta strong {
+.calendarWorkspaceTitleRow strong {
   font-size: 1rem;
   letter-spacing: -0.04em;
   line-height: 1.02;
   color: #1f2433;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .calendarWorkspaceActions {
@@ -10941,7 +10947,11 @@
     display: none;
   }
 
-  .calendarWorkspaceMeta strong {
+  .calendarWorkspaceTitleRow {
+    gap: 6px;
+  }
+
+  .calendarWorkspaceTitleRow strong {
     font-size: 0.98rem;
   }
 
@@ -10952,13 +10962,9 @@
 
   .calendarOnboardingCta {
     min-height: 32px;
-    padding: 0 10px;
-    font-size: 0.76rem;
-  }
-
-  .calendarWorkspaceMetaOnboarding {
-    margin-top: 7px;
-    margin-left: 0;
+    padding: 0 9px;
+    font-size: 0.72rem;
+    flex: 0 0 auto;
   }
 
   .calendarOnboardingCtaFull {
@@ -11318,6 +11324,10 @@
     min-width: 0;
   }
 
+  .calendarWorkspaceTitleRow {
+    gap: 5px;
+  }
+
   .calendarTopLeft {
     gap: 5px;
   }
@@ -11335,9 +11345,10 @@
   }
 
   .calendarOnboardingCta {
-    min-height: 31px;
-    padding: 0 9px;
-    font-size: 0.74rem;
+    min-height: 30px;
+    padding: 0 8px;
+    font-size: 0.7rem;
+    max-width: 106px;
   }
 
   .calendarViewPill,
@@ -11367,7 +11378,7 @@
     font-size: 1rem;
   }
 
-  .calendarWorkspaceMeta strong {
+  .calendarWorkspaceTitleRow strong {
     font-size: 0.92rem;
   }
 
@@ -12916,7 +12927,7 @@
     font-size: 0.62rem;
   }
 
-  .calendarWorkspaceMeta strong {
+  .calendarWorkspaceTitleRow strong {
     font-size: 0.9rem;
   }
 
