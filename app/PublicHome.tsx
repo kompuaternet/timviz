@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { PublicHomeStats } from "../lib/public-home-stats";
 import type { PublicSearchIndex } from "../lib/public-search";
 import { getNicheSlug } from "../lib/niche-pages";
 import { getLocalizedPath, isSiteLanguage, type SiteLanguage } from "../lib/site-language";
@@ -12,8 +13,47 @@ type PublicLanguage = SiteLanguage;
 
 type PublicHomeProps = {
   searchIndex: PublicSearchIndex;
+  stats: PublicHomeStats;
   initialLanguage?: PublicLanguage;
 };
+
+function getLanguageLocale(language: PublicLanguage) {
+  if (language === "uk") return "uk-UA";
+  if (language === "en") return "en-US";
+  return "ru-RU";
+}
+
+function formatNumber(value: number, language: PublicLanguage) {
+  return new Intl.NumberFormat(getLanguageLocale(language)).format(Math.max(0, Math.floor(value)));
+}
+
+function formatNumberWithPlus(value: number, language: PublicLanguage) {
+  return `${formatNumber(value, language)}+`;
+}
+
+function formatCompactThousands(value: number, language: PublicLanguage) {
+  if (value < 1000) {
+    return formatNumber(value, language);
+  }
+
+  const thousands = Math.max(1, Math.floor(value / 1000));
+  if (language === "en") {
+    return `${formatNumber(thousands, language)}K`;
+  }
+
+  return `${formatNumber(thousands, language)} к`;
+}
+
+function formatStatsBig(totalBookings: number, language: PublicLanguage) {
+  const compact = formatCompactThousands(totalBookings, language);
+  if (language === "uk") {
+    return `Понад ${compact}`;
+  }
+  if (language === "en") {
+    return `Over ${compact}`;
+  }
+  return `Более ${compact}`;
+}
 
 function getInitialLanguage(): PublicLanguage {
   if (typeof window === "undefined") return "ru";
@@ -100,11 +140,10 @@ const copy = {
     ],
     statsTitle: "Лучшая платформа для записи на услуги",
     statsText: "Одно решение для клиентов, мастеров и владельцев бизнеса.",
-    statsBig: "Более 1 млрд",
     statsLabel: "записей забронировано на Timviz",
     partners: "компаний-партнеров",
     countries: "стран используют Timviz",
-    pros: "мастеров и профессионалов",
+    users: "пользователей Timviz",
     businessTitle: "Timviz для бизнеса",
     businessText: "Управляйте записями, услугами, клиентами, графиком мастеров и поддержкой из одного кабинета.",
     more: "Подробнее →",
@@ -157,11 +196,10 @@ const copy = {
     ],
     statsTitle: "Найкраща платформа для запису на послуги",
     statsText: "Одне рішення для клієнтів, майстрів і власників бізнесу.",
-    statsBig: "Понад 1 млрд",
     statsLabel: "записів заброньовано на Timviz",
     partners: "компаній-партнерів",
     countries: "країн використовують Timviz",
-    pros: "майстрів і професіоналів",
+    users: "користувачів Timviz",
     businessTitle: "Timviz для бізнесу",
     businessText: "Керуйте записами, послугами, клієнтами, графіком майстрів і підтримкою з одного кабінету.",
     more: "Детальніше →",
@@ -214,11 +252,10 @@ const copy = {
     ],
     statsTitle: "A better platform for appointment services",
     statsText: "One solution for clients, professionals and business owners.",
-    statsBig: "Over 1B",
     statsLabel: "bookings made on Timviz",
     partners: "partner businesses",
     countries: "countries use Timviz",
-    pros: "professionals and experts",
+    users: "Timviz users",
     businessTitle: "Timviz for business",
     businessText: "Manage bookings, services, clients, team schedules and support from one workspace.",
     more: "Learn more →",
@@ -269,7 +306,7 @@ const dashboardServices = {
   en: ["Haircut", "Color", "Massage", "Manicure"]
 } satisfies Record<PublicLanguage, string[]>;
 
-export default function PublicHome({ searchIndex, initialLanguage = "ru" }: PublicHomeProps) {
+export default function PublicHome({ searchIndex, stats, initialLanguage = "ru" }: PublicHomeProps) {
   const [language, setLanguage] = useState<PublicLanguage>(initialLanguage);
   const t = copy[language];
 
@@ -332,7 +369,7 @@ export default function PublicHome({ searchIndex, initialLanguage = "ru" }: Publ
         <PublicSearch index={searchIndex} language={language} />
 
         <div className="public-hero-count">
-          <strong>597 087</strong> {String(t.bookedToday)}
+          <strong>{formatNumber(stats.bookedToday, language)}</strong> {String(t.bookedToday)}
         </div>
       </section>
 
@@ -405,12 +442,12 @@ export default function PublicHome({ searchIndex, initialLanguage = "ru" }: Publ
       <section className="public-stats-section">
         <h2>{String(t.statsTitle)}</h2>
         <p>{String(t.statsText)}</p>
-        <strong>{String(t.statsBig)}</strong>
+        <strong>{formatStatsBig(stats.totalBookings, language)}</strong>
         <span>{String(t.statsLabel)}</span>
         <div className="public-stats-row">
-          <div><b>130 000+</b><span>{String(t.partners)}</span></div>
-          <div><b>120+</b><span>{String(t.countries)}</span></div>
-          <div><b>450 000+</b><span>{String(t.pros)}</span></div>
+          <div><b>{formatNumberWithPlus(stats.partnerBusinesses, language)}</b><span>{String(t.partners)}</span></div>
+          <div><b>{formatNumberWithPlus(stats.countries, language)}</b><span>{String(t.countries)}</span></div>
+          <div><b>{formatNumberWithPlus(stats.totalUsers, language)}</b><span>{String(t.users)}</span></div>
         </div>
       </section>
 

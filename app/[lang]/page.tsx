@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import PublicHome from "../PublicHome";
+import { getPublicHomeStats } from "../../lib/public-home-stats";
 import { getPublicSearchIndex } from "../../lib/public-search";
 import { buildLanguageAlternates, buildMetadata, seoCopy } from "../../lib/seo";
 import { isSiteLanguage, type SiteLanguage } from "../../lib/site-language";
@@ -36,6 +37,6 @@ export default async function LocalizedHomePage({ params }: LocalizedHomePagePro
     notFound();
   }
 
-  const searchIndex = await getPublicSearchIndex();
-  return <PublicHome searchIndex={searchIndex} initialLanguage={lang as SiteLanguage} />;
+  const [searchIndex, stats] = await Promise.all([getPublicSearchIndex(), getPublicHomeStats()]);
+  return <PublicHome searchIndex={searchIndex} stats={stats} initialLanguage={lang as SiteLanguage} />;
 }
