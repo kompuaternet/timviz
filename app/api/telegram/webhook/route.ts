@@ -3,6 +3,7 @@ import {
   answerTelegramCallbackQuery,
   buildSettingsMessage,
   connectTelegramChatByToken,
+  ensureTelegramBotCommandsConfigured,
   forwardTelegramMessageToSupport,
   formatTodayBookingsMessage,
   getDashboardUrl,
@@ -10,6 +11,7 @@ import {
   getTelegramText,
   getTodayBookingsForConnection,
   getTelegramWebhookSecret,
+  normalizeTelegramUserLanguage,
   parseBookingCallbackData,
   parseSettingsCallbackData,
   sendTelegramTextMessage,
@@ -38,6 +40,7 @@ type TelegramUpdate = {
       username?: string;
       first_name?: string;
       last_name?: string;
+      language_code?: string;
     };
     forward_origin?: unknown;
     forward_from?: unknown;
@@ -51,6 +54,7 @@ type TelegramUpdate = {
       username?: string;
       first_name?: string;
       last_name?: string;
+      language_code?: string;
     };
     message?: {
       message_id?: number;
@@ -95,12 +99,13 @@ function isForwardedMessage(message: TelegramUpdate["message"]) {
   return Boolean(message.forward_origin || message.forward_from || message.forward_from_chat);
 }
 
-function buildDashboardKeyboard() {
+function buildDashboardKeyboard(preferredLanguage?: string | null) {
+  const text = getTelegramText(normalizeTelegramUserLanguage(preferredLanguage));
   return {
     inline_keyboard: [
       [
         {
-          text: "Open dashboard",
+          text: text.openDashboard,
           url: getDashboardUrl("/pro/calendar")
         }
       ]
@@ -123,7 +128,8 @@ async function handleStartCommand(input: {
       telegramUserId: input.user?.id ?? null,
       telegramUsername: input.user?.username ?? "",
       telegramFirstName: input.user?.first_name ?? "",
-      telegramLastName: input.user?.last_name ?? ""
+      telegramLastName: input.user?.last_name ?? "",
+      telegramLanguageCode: input.user?.language_code ?? ""
     });
 
     if (connected) {
@@ -131,64 +137,67 @@ async function handleStartCommand(input: {
       await sendTelegramTextMessage({
         chatId: input.chatId,
         text: t.connected,
-        replyMarkup: buildDashboardKeyboard()
+        replyMarkup: buildDashboardKeyboard(connected.language)
       });
       return;
     }
 
-    const fallbackText = getTelegramText("en");
+    const fallbackText = getTelegramText(normalizeTelegramUserLanguage(input.user?.language_code));
     await sendTelegramTextMessage({
       chatId: input.chatId,
       text: fallbackText.invalidToken,
-      replyMarkup: buildDashboardKeyboard()
+      replyMarkup: buildDashboardKeyboard(input.user?.language_code)
     });
     return;
   }
 
-  const fallbackText = getTelegramText("en");
+  const fallbackText = getTelegramText(normalizeTelegramUserLanguage(input.user?.language_code));
   await sendTelegramTextMessage({
     chatId: input.chatId,
     text: fallbackText.help,
-    replyMarkup: buildDashboardKeyboard()
+    replyMarkup: buildDashboardKeyboard(input.user?.language_code)
   });
 }
 
-async function handleTodayCommand(chatId: string) {
+async function handleTodayCommand(chatId: string, preferredLanguage?: string | null) {
   const connection = await getTelegramConnectionByChatId(chatId);
   if (!connection) {
-    const t = getTelegramText("en");
+    const t = getTelegramText(normalizeTelegramUserLanguage(preferredLanguage));
     await sendTelegramTextMessage({
       chatId,
       text: `${t.noConnection}\n${t.connectHint}`,
-      replyMarkup: buildDashboardKeyboard()
+      replyMarkup: buildDashboardKeyboard(preferredLanguage)
     });
     return;
   }
 
-  await touchTelegramConnection(connection);
-  const bookings = await getTodayBookingsForConnection(connection);
-  const text = formatTodayBookingsMessage(connection, bookings);
+  const nextConnection = await touchTelegramConnection(connection, preferredLanguage || undefined);
+  const activeConnection = nextConnection || connection;
+  const bookings = await getTodayBookingsForConnection(activeConnection);
+  const text = formatTodayBookingsMessage(activeConnection, bookings);
 
   await sendTelegramTextMessage({
     chatId,
     text,
-    replyMarkup: buildDashboardKeyboard()
+    replyMarkup: buildDashboardKeyboard(activeConnection.language)
   });
 }
 
-async function handleSettingsCommand(chatId: string) {
+async function handleSettingsCommand(chatId: string, preferredLanguage?: string | null) {
   const connection = await getTelegramConnectionByChatId(chatId);
   if (!connection) {
-    const t = getTelegramText("en");
+    const t = getTelegramText(normalizeTelegramUserLanguage(preferredLanguage));
     await sendTelegramTextMessage({
       chatId,
       text: `${t.noConnection}\n${t.connectHint}`,
-      replyMarkup: buildDashboardKeyboard()
+      replyMarkup: buildDashboardKeyboard(preferredLanguage)
     });
     return;
   }
 
-  const payload = buildSettingsMessage(connection);
+  const nextConnection = await touchTelegramConnection(connection, preferredLanguage || undefined);
+  const activeConnection = nextConnection || connection;
+  const payload = buildSettingsMessage(activeConnection);
   await sendTelegramTextMessage({
     chatId,
     text: payload.text,
@@ -199,24 +208,27 @@ async function handleSettingsCommand(chatId: string) {
 async function handleForwardedText(input: {
   chatId: string;
   text: string;
+  preferredLanguage?: string | null;
 }) {
   const connection = await getTelegramConnectionByChatId(input.chatId);
   if (!connection) {
     return;
   }
 
-  const t = getTelegramText(connection.language);
-  if (!connection.forwardingEnabled) {
+  const nextConnection = await touchTelegramConnection(connection, input.preferredLanguage || undefined);
+  const activeConnection = nextConnection || connection;
+  const t = getTelegramText(activeConnection.language);
+  if (!activeConnection.forwardingEnabled) {
     await sendTelegramTextMessage({
       chatId: input.chatId,
       text: t.forwardDisabled,
-      replyMarkup: buildDashboardKeyboard()
+      replyMarkup: buildDashboardKeyboard(activeConnection.language)
     });
     return;
   }
 
   const sent = await forwardTelegramMessageToSupport({
-    connection,
+    connection: activeConnection,
     text: input.text,
     chatId: input.chatId
   });
@@ -225,7 +237,7 @@ async function handleForwardedText(input: {
     await sendTelegramTextMessage({
       chatId: input.chatId,
       text: t.forwardSuccess,
-      replyMarkup: buildDashboardKeyboard()
+      replyMarkup: buildDashboardKeyboard(activeConnection.language)
     });
   }
 }
@@ -241,18 +253,23 @@ async function handleCallbackQuery(update: TelegramUpdate) {
   const connection = chatId ? await getTelegramConnectionByChatId(chatId) : null;
 
   if (!connection) {
-    const fallback = getTelegramText("en");
+    const fallback = getTelegramText(normalizeTelegramUserLanguage(callback.from?.language_code));
     await answerTelegramCallbackQuery(callback.id, fallback.noConnection).catch(() => undefined);
     return;
   }
 
-  await touchTelegramConnection(connection).catch(() => undefined);
+  const preferredLanguage = callback.from?.language_code;
+  const touchedConnection = await touchTelegramConnection(
+    connection,
+    preferredLanguage
+  ).catch(() => null);
+  const activeConnection = touchedConnection || connection;
 
-  const t = getTelegramText(connection.language);
+  const t = getTelegramText(activeConnection.language);
   const settingsKey = parseSettingsCallbackData(data);
 
   if (settingsKey) {
-    const nextConnection = await toggleTelegramConnectionSetting(connection, settingsKey);
+    const nextConnection = await toggleTelegramConnectionSetting(activeConnection, settingsKey);
     await answerTelegramCallbackQuery(callback.id, t.settingUpdated).catch(() => undefined);
 
     if (nextConnection) {
@@ -272,12 +289,12 @@ async function handleCallbackQuery(update: TelegramUpdate) {
     return;
   }
 
-  const businessAppointments = await getAppointmentsForBusiness(connection.businessId);
+  const businessAppointments = await getAppointmentsForBusiness(activeConnection.businessId);
   const appointment = businessAppointments.find(
     (item) =>
       item.id === bookingAction.appointmentId &&
       item.kind === "appointment" &&
-      item.professionalId === connection.professionalId
+      item.professionalId === activeConnection.professionalId
   );
 
   if (!appointment) {
@@ -287,7 +304,7 @@ async function handleCallbackQuery(update: TelegramUpdate) {
 
   if (bookingAction.action === "confirm") {
     const updated = await updateCalendarAppointmentMeta({
-      professionalId: connection.professionalId,
+      professionalId: activeConnection.professionalId,
       appointmentId: appointment.id,
       attendance: "confirmed",
       priceAmount: appointment.priceAmount,
@@ -314,13 +331,13 @@ async function handleCallbackQuery(update: TelegramUpdate) {
     await sendTelegramTextMessage({
       chatId,
       text: t.actionDoneConfirm,
-      replyMarkup: buildDashboardKeyboard()
+      replyMarkup: buildDashboardKeyboard(activeConnection.language)
     }).catch(() => undefined);
     return;
   }
 
   const deleted = await deleteCalendarAppointment({
-    professionalId: connection.professionalId,
+    professionalId: activeConnection.professionalId,
     appointmentId: appointment.id
   });
 
@@ -340,7 +357,7 @@ async function handleCallbackQuery(update: TelegramUpdate) {
   await sendTelegramTextMessage({
     chatId,
     text: t.actionDoneCancel,
-    replyMarkup: buildDashboardKeyboard()
+    replyMarkup: buildDashboardKeyboard(activeConnection.language)
   }).catch(() => undefined);
 }
 
@@ -353,6 +370,7 @@ async function handleMessage(update: TelegramUpdate) {
   }
 
   const text = normalizeText(message.text || message.caption);
+  const preferredLanguage = message.from?.language_code;
   const command = parseCommand(text);
 
   if (command?.command === "/start") {
@@ -365,26 +383,28 @@ async function handleMessage(update: TelegramUpdate) {
   }
 
   if (command?.command === "/today") {
-    await handleTodayCommand(chatId);
+    await handleTodayCommand(chatId, preferredLanguage);
     return;
   }
 
   if (command?.command === "/settings") {
-    await handleSettingsCommand(chatId);
+    await handleSettingsCommand(chatId, preferredLanguage);
     return;
   }
 
   if (isForwardedMessage(message) && text) {
-    await handleForwardedText({ chatId, text });
+    await handleForwardedText({ chatId, text, preferredLanguage });
     return;
   }
 
   const connection = await getTelegramConnectionByChatId(chatId);
-  const t = getTelegramText(connection?.language || "en");
+  const t = getTelegramText(
+    connection?.language || normalizeTelegramUserLanguage(preferredLanguage)
+  );
   await sendTelegramTextMessage({
     chatId,
     text: t.help,
-    replyMarkup: buildDashboardKeyboard()
+    replyMarkup: buildDashboardKeyboard(connection?.language || preferredLanguage)
   });
 }
 
@@ -410,6 +430,8 @@ export async function POST(request: Request) {
     if (!update) {
       return NextResponse.json({ ok: true });
     }
+
+    await ensureTelegramBotCommandsConfigured().catch(() => false);
 
     if (update.callback_query) {
       await handleCallbackQuery(update);

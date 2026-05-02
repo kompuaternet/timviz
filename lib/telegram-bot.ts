@@ -56,6 +56,11 @@ type TelegramApiResponse<T> = {
   description?: string;
 };
 
+type TelegramBotCommand = {
+  command: string;
+  description: string;
+};
+
 type TelegramInlineKeyboardButton = {
   text: string;
   callback_data?: string;
@@ -113,9 +118,15 @@ const connectTokenTtlHours = Math.max(
   Number.parseInt(process.env.TELEGRAM_CONNECT_TOKEN_TTL_HOURS || "72", 10) || 72
 );
 const reminderWindowMin = Number.parseInt(process.env.TELEGRAM_REMINDER_WINDOW_MIN || "15", 10) || 15;
+const commandsSyncTtlMs = Math.max(
+  60_000,
+  Number.parseInt(process.env.TELEGRAM_BOOKING_COMMANDS_SYNC_TTL_MS || "21600000", 10) || 21_600_000
+);
 
 let cachedBotUsername: string | null = null;
 let cachedBotUsernameFetchedAt = 0;
+let cachedCommandsSyncedAt = 0;
+let activeCommandsSyncPromise: Promise<boolean> | null = null;
 
 const BOOKING_CALLBACK_PREFIX = "tvbk";
 const SETTINGS_CALLBACK_PREFIX = "tvst";
@@ -207,6 +218,21 @@ const textByLanguage: Record<TelegramLanguage, TelegramText> = {
   }
 };
 
+const commandsByLanguage: Record<TelegramLanguage, TelegramBotCommand[]> = {
+  ru: [
+    { command: "today", description: "Записи на сегодня" },
+    { command: "settings", description: "Настройки уведомлений" }
+  ],
+  uk: [
+    { command: "today", description: "Записи на сьогодні" },
+    { command: "settings", description: "Налаштування сповіщень" }
+  ],
+  en: [
+    { command: "today", description: "Today bookings" },
+    { command: "settings", description: "Notification settings" }
+  ]
+};
+
 function nowIso() {
   return new Date().toISOString();
 }
@@ -216,6 +242,27 @@ function normalizeLanguage(input: string | null | undefined): TelegramLanguage {
     return input;
   }
   return "en";
+}
+
+export function normalizeTelegramUserLanguage(
+  languageCode: string | null | undefined,
+  fallbackLanguage?: string | null
+): TelegramLanguage {
+  const normalized = (languageCode || "").trim().toLowerCase();
+
+  if (normalized.startsWith("ru")) {
+    return "ru";
+  }
+
+  if (normalized === "ua" || normalized.startsWith("uk")) {
+    return "uk";
+  }
+
+  if (normalized.startsWith("en")) {
+    return "en";
+  }
+
+  return normalizeLanguage(fallbackLanguage);
 }
 
 function parseNumber(value: unknown) {
@@ -328,6 +375,58 @@ export function isTelegramBotConfigured() {
 
 export function getTelegramWebhookSecret() {
   return getWebhookSecret();
+}
+
+async function setTelegramCommandsForLanguage(
+  language: TelegramLanguage | null
+) {
+  const commands = language ? commandsByLanguage[language] : commandsByLanguage.en;
+  const payload: Record<string, unknown> = {
+    commands
+  };
+
+  if (language) {
+    payload.language_code = language;
+  }
+
+  await telegramApiRequest<boolean>("setMyCommands", payload);
+}
+
+export async function ensureTelegramBotCommandsConfigured(input: { force?: boolean } = {}) {
+  if (!isTelegramBotConfigured()) {
+    return false;
+  }
+
+  const force = input.force === true;
+  if (!force && Date.now() - cachedCommandsSyncedAt < commandsSyncTtlMs) {
+    return true;
+  }
+
+  if (!force && activeCommandsSyncPromise) {
+    return activeCommandsSyncPromise;
+  }
+
+  const promise = (async () => {
+    try {
+      await setTelegramCommandsForLanguage(null);
+      await setTelegramCommandsForLanguage("ru");
+      await setTelegramCommandsForLanguage("uk");
+      await setTelegramCommandsForLanguage("en");
+      cachedCommandsSyncedAt = Date.now();
+      return true;
+    } catch {
+      return false;
+    }
+  })();
+
+  if (!force) {
+    activeCommandsSyncPromise = promise.finally(() => {
+      activeCommandsSyncPromise = null;
+    });
+    return activeCommandsSyncPromise;
+  }
+
+  return promise;
 }
 
 async function telegramApiRequest<T>(method: string, payload: Record<string, unknown>) {
@@ -633,6 +732,7 @@ export async function connectTelegramChatByToken(input: {
   telegramUsername?: string;
   telegramFirstName?: string;
   telegramLastName?: string;
+  telegramLanguageCode?: string;
 }) {
   const connection = await findConnectionByConnectToken(input.token);
   if (!connection) {
@@ -655,6 +755,7 @@ export async function connectTelegramChatByToken(input: {
     telegramUsername: input.telegramUsername?.trim() || connection.telegramUsername,
     telegramFirstName: input.telegramFirstName?.trim() || connection.telegramFirstName,
     telegramLastName: input.telegramLastName?.trim() || connection.telegramLastName,
+    language: normalizeTelegramUserLanguage(input.telegramLanguageCode, connection.language),
     connectedAt: connection.connectedAt || now,
     lastInteractionAt: now,
     updatedAt: now
@@ -663,9 +764,17 @@ export async function connectTelegramChatByToken(input: {
   return upsertConnection(next);
 }
 
-export async function touchTelegramConnection(connection: TelegramConnection) {
+export async function touchTelegramConnection(
+  connection: TelegramConnection,
+  languageCode?: string
+) {
+  const nextLanguage = languageCode
+    ? normalizeTelegramUserLanguage(languageCode, connection.language)
+    : connection.language;
+
   const next: TelegramConnection = {
     ...connection,
+    language: nextLanguage,
     lastInteractionAt: nowIso(),
     updatedAt: nowIso()
   };
