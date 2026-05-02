@@ -8,6 +8,7 @@ import styles from "../pro.module.css";
 import { languageFromProfile, languageLabels, type ProLanguage } from "../i18n";
 import { useProLanguage } from "../useProLanguage";
 import { type BusinessPhoto } from "../../../lib/pro-data";
+import type { WorkSchedule } from "../../../lib/work-schedule";
 
 const MAX_BUSINESS_PHOTOS = 5;
 
@@ -40,7 +41,14 @@ type SettingsData = {
     addressLat: number | null;
     addressLon: number | null;
     allowOnlineBooking?: boolean;
+    workSchedule?: WorkSchedule;
   };
+  services: Array<{
+    id: string;
+    name: string;
+    price: number;
+    durationMinutes?: number;
+  }>;
   membership: {
     scope: "owner" | "member" | "pending";
     role: string;
@@ -106,6 +114,14 @@ type TelegramBooleanSettingKey = Exclude<
 >;
 
 type SettingsSectionId = "general" | "online-booking" | "services" | "schedule" | "telegram" | "address";
+type OnboardingStepId = "services" | "schedule" | "booking" | "photo" | "address" | "telegram";
+
+type OnboardingStep = {
+  id: OnboardingStepId;
+  title: string;
+  completed: boolean;
+  canSkip?: boolean;
+};
 
 const telegramReminderLeadOptions = [15, 30, 60, 120, 180, 1440] as const;
 
@@ -261,7 +277,26 @@ const settingsExtras = {
     scheduleHint: "Выберите часовой пояс и язык. Рабочие дни настраиваются отдельно в расписании.",
     scheduleOpenButton: "Открыть расписание",
     telegramSettingsOpen: "Настроить уведомления",
-    telegramSettingsHide: "Скрыть расширенные настройки"
+    telegramSettingsHide: "Скрыть расширенные настройки",
+    onboardingChecklistTitle: "Чеклист запуска",
+    onboardingProgress: (done: number, total: number) => `${done} из ${total} выполнено`,
+    onboardingStepServices: "Добавьте услуги и цены",
+    onboardingStepSchedule: "Настройте график работы",
+    onboardingStepBooking: "Включите онлайн-запись",
+    onboardingStepPhoto: "Добавьте фото бизнеса",
+    onboardingStepAddress: "Добавьте адрес",
+    onboardingStepTelegram: "Подключите Telegram",
+    onboardingStepDone: "Готово",
+    onboardingStepActive: "Текущий шаг",
+    onboardingStepReminder: "Напоминание",
+    onboardingSkip: "Пропустить",
+    onboardingOpenStep: "Открыть шаг",
+    onboardingPhotoTooltipTitle: "Добавьте фото бизнеса",
+    onboardingPhotoTooltipText: "Профили с фото получают больше клиентов и выглядят профессиональнее",
+    onboardingPhotoTooltipNext: "Далее",
+    onboardingPhotoHintTitle: "Предпросмотр профиля",
+    onboardingPhotoHintText: "Покажите интерьер, рабочее место или результат — это повышает доверие клиентов.",
+    onboardingPhotoHintAction: "Добавить фото"
   },
   uk: {
     readFileFailed: "Не вдалося прочитати файл.",
@@ -335,7 +370,26 @@ const settingsExtras = {
     scheduleHint: "Оберіть часовий пояс і мову. Робочі дні налаштовуються окремо в розкладі.",
     scheduleOpenButton: "Відкрити розклад",
     telegramSettingsOpen: "Налаштувати сповіщення",
-    telegramSettingsHide: "Сховати розширені налаштування"
+    telegramSettingsHide: "Сховати розширені налаштування",
+    onboardingChecklistTitle: "Чеклист запуску",
+    onboardingProgress: (done: number, total: number) => `${done} з ${total} виконано`,
+    onboardingStepServices: "Додайте послуги і ціни",
+    onboardingStepSchedule: "Налаштуйте графік роботи",
+    onboardingStepBooking: "Увімкніть онлайн-запис",
+    onboardingStepPhoto: "Додайте фото бізнесу",
+    onboardingStepAddress: "Додайте адресу",
+    onboardingStepTelegram: "Підключіть Telegram",
+    onboardingStepDone: "Готово",
+    onboardingStepActive: "Поточний крок",
+    onboardingStepReminder: "Нагадування",
+    onboardingSkip: "Пропустити",
+    onboardingOpenStep: "Відкрити крок",
+    onboardingPhotoTooltipTitle: "Додайте фото бізнесу",
+    onboardingPhotoTooltipText: "Профілі з фото отримують більше клієнтів і виглядають професійніше",
+    onboardingPhotoTooltipNext: "Далі",
+    onboardingPhotoHintTitle: "Попередній вигляд профілю",
+    onboardingPhotoHintText: "Покажіть інтер’єр, робоче місце або результат — це підвищує довіру клієнтів.",
+    onboardingPhotoHintAction: "Додати фото"
   },
   en: {
     readFileFailed: "Could not read the file.",
@@ -409,7 +463,26 @@ const settingsExtras = {
     scheduleHint: "Choose timezone and language. Working days are managed in the schedule module.",
     scheduleOpenButton: "Open schedule",
     telegramSettingsOpen: "Open advanced settings",
-    telegramSettingsHide: "Hide advanced settings"
+    telegramSettingsHide: "Hide advanced settings",
+    onboardingChecklistTitle: "Launch checklist",
+    onboardingProgress: (done: number, total: number) => `${done} of ${total} completed`,
+    onboardingStepServices: "Add services and prices",
+    onboardingStepSchedule: "Set working schedule",
+    onboardingStepBooking: "Enable online booking",
+    onboardingStepPhoto: "Add business photo",
+    onboardingStepAddress: "Add address",
+    onboardingStepTelegram: "Connect Telegram",
+    onboardingStepDone: "Done",
+    onboardingStepActive: "Current step",
+    onboardingStepReminder: "Reminder",
+    onboardingSkip: "Skip",
+    onboardingOpenStep: "Open step",
+    onboardingPhotoTooltipTitle: "Add business photo",
+    onboardingPhotoTooltipText: "Profiles with photos look more professional and convert better.",
+    onboardingPhotoTooltipNext: "Next",
+    onboardingPhotoHintTitle: "Profile preview",
+    onboardingPhotoHintText: "Show your workspace or results to build trust with new clients.",
+    onboardingPhotoHintAction: "Add photo"
   }
 } as const;
 
@@ -429,6 +502,29 @@ function inferCurrency(country: string) {
   if (lower.includes("kingdom")) return "GBP";
   if (lower.includes("states")) return "USD";
   return "USD";
+}
+
+function timeToMinutes(value: string) {
+  const [hours = 0, minutes = 0] = value.split(":").map(Number);
+  return hours * 60 + minutes;
+}
+
+function hasWorkingHoursConfigured(schedule: WorkSchedule | undefined) {
+  if (!schedule) {
+    return false;
+  }
+
+  return Object.values(schedule).some((day) => {
+    if (!day?.enabled) {
+      return false;
+    }
+
+    if (!day.startTime || !day.endTime) {
+      return false;
+    }
+
+    return timeToMinutes(day.endTime) > timeToMinutes(day.startTime);
+  });
 }
 
 function normalizePhotos(photos: BusinessPhoto[] = []) {
@@ -494,10 +590,16 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
   const autoSaveTimerRef = useRef<number | null>(null);
   const lastSavedSnapshotRef = useRef("");
   const latestSnapshotRef = useRef("");
+  const photoTransitionInitializedRef = useRef(false);
+  const previousPhotoReadyRef = useRef(false);
   const publicBookingInputRef = useRef<HTMLInputElement | null>(null);
+  const photoUploaderInputRef = useRef<HTMLInputElement | null>(null);
+  const photoSectionRef = useRef<HTMLElement | null>(null);
   const publicBookingUrl = data.business.publicBookingUrl ?? "";
   const canUseNativeShare =
     typeof navigator !== "undefined" && typeof navigator.share === "function";
+  const [skippedOnboardingStepIds, setSkippedOnboardingStepIds] = useState<OnboardingStepId[]>([]);
+  const [isPhotoTooltipDismissed, setIsPhotoTooltipDismissed] = useState(false);
 
   const sectionItems = useMemo(
     () =>
@@ -511,6 +613,73 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
       ] satisfies Array<{ id: SettingsSectionId; label: string }>,
     [copy]
   );
+
+  const hasAddress = Boolean(data.business.address.trim() || data.business.addressDetails.trim());
+  const servicesReady = data.services.some(
+    (service) =>
+      Number.isFinite(service.price) &&
+      service.price > 0 &&
+      Number.isFinite(service.durationMinutes ?? Number.NaN) &&
+      (service.durationMinutes ?? 0) > 0
+  );
+  const scheduleReady = hasWorkingHoursConfigured(data.business.workSchedule);
+  const bookingReady = data.business.allowOnlineBooking === true;
+  const photoReady = normalizePhotos(data.business.photos ?? []).length > 0;
+  const telegramReady = Boolean(telegramPanel?.connected);
+
+  const onboardingSteps = useMemo(() => {
+    const steps: OnboardingStep[] = [
+      {
+        id: "services",
+        title: copy.onboardingStepServices,
+        completed: servicesReady
+      },
+      {
+        id: "schedule",
+        title: copy.onboardingStepSchedule,
+        completed: scheduleReady
+      },
+      {
+        id: "booking",
+        title: copy.onboardingStepBooking,
+        completed: bookingReady
+      },
+      {
+        id: "photo",
+        title: copy.onboardingStepPhoto,
+        completed: photoReady,
+        canSkip: true
+      },
+      ...(!hasAddress
+        ? [
+            {
+              id: "address" as const,
+              title: copy.onboardingStepAddress,
+              completed: false
+            }
+          ]
+        : []),
+      {
+        id: "telegram",
+        title: copy.onboardingStepTelegram,
+        completed: telegramReady
+      }
+    ];
+
+    return steps;
+  }, [bookingReady, copy, hasAddress, photoReady, scheduleReady, servicesReady, telegramReady]);
+
+  const skippedOnboardingStepIdSet = useMemo(() => new Set(skippedOnboardingStepIds), [skippedOnboardingStepIds]);
+  const onboardingCompletedCount = onboardingSteps.filter((step) => step.completed).length;
+  const activeOnboardingStep =
+    onboardingSteps.find((step) => !step.completed && !skippedOnboardingStepIdSet.has(step.id)) ??
+    onboardingSteps.find((step) => !step.completed) ??
+    null;
+  const showPhotoGuidance =
+    activeOnboardingStep?.id === "photo" &&
+    activeSection === "services" &&
+    !photoReady &&
+    !isPhotoTooltipDismissed;
 
   const profileReadyPercent = useMemo(() => {
     const checks = [
@@ -571,6 +740,52 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
     if (language === "uk") return `${safe} хв`;
     if (language === "ru") return `${safe} мин`;
     return `${safe} min`;
+  }
+
+  function openPhotoUploader() {
+    photoUploaderInputRef.current?.click();
+  }
+
+  function openOnboardingStep(stepId: OnboardingStepId) {
+    setSkippedOnboardingStepIds((current) => current.filter((id) => id !== stepId));
+
+    if (stepId === "services") {
+      router.push("/pro/services");
+      return;
+    }
+
+    if (stepId === "schedule") {
+      router.push("/pro/staff/schedule");
+      return;
+    }
+
+    if (stepId === "booking") {
+      setActiveSection("online-booking");
+      return;
+    }
+
+    if (stepId === "photo") {
+      setActiveSection("services");
+      setIsPhotoTooltipDismissed(false);
+      window.requestAnimationFrame(() => {
+        photoSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+      return;
+    }
+
+    if (stepId === "address") {
+      setActiveSection("address");
+      return;
+    }
+
+    setActiveSection("telegram");
+  }
+
+  function skipOnboardingStep(stepId: OnboardingStepId) {
+    setSkippedOnboardingStepIds((current) => (current.includes(stepId) ? current : [...current, stepId]));
+    if (stepId === "photo") {
+      setIsPhotoTooltipDismissed(true);
+    }
   }
 
   async function loadTelegramPanel(silent = false) {
@@ -877,6 +1092,8 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
       );
 
       updateBusinessPhotos([...currentPhotos, ...uploaded]);
+      setSkippedOnboardingStepIds((current) => current.filter((id) => id !== "photo"));
+      setIsPhotoTooltipDismissed(true);
       setStatus("");
     } catch (error) {
       setStatus(error instanceof Error ? error.message : copy.uploadPhotoFailed);
@@ -1016,6 +1233,51 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
   }, [activeSection, isTelegramAdvancedOpen]);
 
   useEffect(() => {
+    if (!showPhotoGuidance) {
+      return;
+    }
+
+    const frameId = window.requestAnimationFrame(() => {
+      photoSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+    };
+  }, [showPhotoGuidance]);
+
+  useEffect(() => {
+    if (!photoTransitionInitializedRef.current) {
+      photoTransitionInitializedRef.current = true;
+      previousPhotoReadyRef.current = photoReady;
+      return;
+    }
+
+    const wasReady = previousPhotoReadyRef.current;
+
+    if (!wasReady && photoReady) {
+      setSkippedOnboardingStepIds((current) => current.filter((id) => id !== "photo"));
+      setIsPhotoTooltipDismissed(true);
+
+      const photoIndex = onboardingSteps.findIndex((step) => step.id === "photo");
+      const nextStep =
+        photoIndex >= 0
+          ? onboardingSteps
+              .slice(photoIndex + 1)
+              .find((step) => !step.completed && !skippedOnboardingStepIdSet.has(step.id))
+          : null;
+
+      if (nextStep?.id === "address") {
+        setActiveSection("address");
+      } else if (nextStep?.id === "telegram") {
+        setActiveSection("telegram");
+      }
+    }
+
+    previousPhotoReadyRef.current = photoReady;
+  }, [onboardingSteps, photoReady, skippedOnboardingStepIdSet]);
+
+  useEffect(() => {
     lastSavedSnapshotRef.current = JSON.stringify({
       professional: {
         firstName: initialData.professional.firstName,
@@ -1043,6 +1305,9 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
     });
     isHydratedRef.current = true;
     setJoinRequests(initialData.joinRequests);
+    setSkippedOnboardingStepIds([]);
+    setIsPhotoTooltipDismissed(false);
+    photoTransitionInitializedRef.current = false;
   }, [initialData]);
 
   async function handleJoinRequestAction(requestId: string, action: "approve" | "reject") {
@@ -1164,6 +1429,7 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
           professional: SettingsData["professional"];
           business: SettingsData["business"];
           membership: SettingsData["membership"];
+          services: SettingsData["services"];
         };
         bookingCredits: SettingsData["bookingCredits"];
       };
@@ -1179,6 +1445,7 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
         },
         business: next.workspace.business,
         membership: next.workspace.membership,
+        services: Array.isArray(next.workspace.services) ? next.workspace.services : data.services,
         joinRequests,
         bookingCredits: next.bookingCredits
       });
@@ -1302,6 +1569,53 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
                 <span style={{ width: `${profileReadyPercent}%` }} />
               </div>
               <p>{copy.onboardingHint}</p>
+              <div className={styles.settingsOnboardingChecklist}>
+                <div className={styles.settingsOnboardingChecklistHead}>
+                  <h3>{copy.onboardingChecklistTitle}</h3>
+                  <span>{copy.onboardingProgress(onboardingCompletedCount, onboardingSteps.length)}</span>
+                </div>
+                <div className={styles.settingsOnboardingList}>
+                  {onboardingSteps.map((step) => {
+                    const isCompleted = step.completed;
+                    const isActive = activeOnboardingStep?.id === step.id;
+                    const isSkipped = skippedOnboardingStepIdSet.has(step.id) && !isCompleted;
+                    const statusLabel = isCompleted
+                      ? copy.onboardingStepDone
+                      : isActive
+                        ? copy.onboardingStepActive
+                        : copy.onboardingStepReminder;
+
+                    return (
+                      <div key={step.id} className={styles.settingsOnboardingItemWrap}>
+                        <div
+                          className={`${styles.settingsOnboardingItem} ${isActive ? styles.settingsOnboardingItemActive : ""} ${isCompleted ? styles.settingsOnboardingItemDone : ""}`}
+                        >
+                          <button
+                            type="button"
+                            className={styles.settingsOnboardingItemButton}
+                            onClick={() => openOnboardingStep(step.id)}
+                          >
+                            <span>{step.title}</span>
+                            <small>{statusLabel}</small>
+                          </button>
+                          <span className={styles.settingsOnboardingItemMark} aria-hidden="true">
+                            {isCompleted ? "✓" : isActive ? "→" : isSkipped ? "!" : "•"}
+                          </span>
+                        </div>
+                        {isActive && step.canSkip && !isCompleted ? (
+                          <button
+                            type="button"
+                            className={styles.settingsOnboardingSkip}
+                            onClick={() => skipOnboardingStep(step.id)}
+                          >
+                            {copy.onboardingSkip}
+                          </button>
+                        ) : null}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
             <nav className={styles.settingsSectionNav} aria-label={t.settings.title}>
               {sectionItems.map((item) => (
@@ -1546,7 +1860,7 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
                     </div>
                   </section>
 
-                  <section className={styles.settingsCard}>
+                  <section className={styles.settingsCard} ref={photoSectionRef}>
                     <div className={styles.settingsCardHeader}>
                       <div>
                         <span>{t.settings.photos}</span>
@@ -1554,6 +1868,20 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
                       </div>
                     </div>
                     <p className={styles.settingsCardHint}>{t.settings.photosHint}</p>
+                    {(data.business.photos ?? []).length === 0 ? (
+                      <div
+                        className={`${styles.settingsPhotoOnboardingPreview} ${showPhotoGuidance ? styles.settingsPhotoOnboardingPreviewActive : ""}`}
+                      >
+                        <div className={styles.settingsPhotoOnboardingPreviewPlaceholder} aria-hidden="true" />
+                        <div className={styles.settingsPhotoOnboardingPreviewContent}>
+                          <strong>{copy.onboardingPhotoHintTitle}</strong>
+                          <p>{copy.onboardingPhotoHintText}</p>
+                          <button type="button" className={styles.primaryButton} onClick={openPhotoUploader}>
+                            {copy.onboardingPhotoHintAction}
+                          </button>
+                        </div>
+                      </div>
+                    ) : null}
                     <div className={styles.settingsPhotoGrid}>
                       {(data.business.photos ?? []).map((photo) => (
                         <article key={photo.id} className={styles.settingsPhotoCard}>
@@ -1595,16 +1923,37 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
                         </article>
                       ))}
                       {(data.business.photos ?? []).length < MAX_BUSINESS_PHOTOS ? (
-                        <label className={styles.settingsPhotoUploader}>
-                          <span>{(data.business.photos ?? []).length === 0 ? t.settings.uploadPhotos : t.settings.uploadMorePhotos}</span>
-                          <small>{t.settings.photoLimit}</small>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            multiple
-                            onChange={(event) => void handleBusinessPhotoUpload(event)}
-                          />
-                        </label>
+                        <div className={styles.settingsPhotoUploaderWrap}>
+                          <label className={`${styles.settingsPhotoUploader} ${showPhotoGuidance ? styles.settingsPhotoUploaderHighlight : ""}`}>
+                            <span>{(data.business.photos ?? []).length === 0 ? t.settings.uploadPhotos : t.settings.uploadMorePhotos}</span>
+                            <small>{t.settings.photoLimit}</small>
+                            <input
+                              ref={photoUploaderInputRef}
+                              type="file"
+                              accept="image/*"
+                              multiple
+                              onChange={(event) => void handleBusinessPhotoUpload(event)}
+                            />
+                          </label>
+                          {showPhotoGuidance ? (
+                            <div className={styles.settingsOnboardingTooltip} role="dialog" aria-live="polite">
+                              <strong>{copy.onboardingPhotoTooltipTitle}</strong>
+                              <p>{copy.onboardingPhotoTooltipText}</p>
+                              <div className={styles.settingsOnboardingTooltipActions}>
+                                <button type="button" className={styles.primaryButton} onClick={openPhotoUploader}>
+                                  {copy.onboardingPhotoTooltipNext}
+                                </button>
+                                <button
+                                  type="button"
+                                  className={styles.ghostButton}
+                                  onClick={() => skipOnboardingStep("photo")}
+                                >
+                                  {copy.onboardingSkip}
+                                </button>
+                              </div>
+                            </div>
+                          ) : null}
+                        </div>
                       ) : null}
                     </div>
                     {(data.business.photos ?? []).length === 0 ? (

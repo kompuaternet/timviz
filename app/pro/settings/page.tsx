@@ -41,6 +41,7 @@ export default async function ProSettingsPage() {
         },
         business: workspace.business,
         membership: workspace.membership,
+        services: workspace.services,
         joinRequests: joinRequests.map((request) => ({
           id: request.id,
           role: request.role,
