@@ -15,6 +15,7 @@ import {
   phoneCountries
 } from "../../../lib/phone-format";
 import { getPublicBookingSlots } from "../../../lib/public-booking";
+import { localizeCategoryName, localizeServiceName } from "../../../lib/service-templates";
 import { getLocalizedPath, type SiteLanguage } from "../../../lib/site-language";
 import {
   addMinutesToTime,
@@ -546,7 +547,9 @@ export default function BusinessView({
     const groups = new Map<string, ServiceRecord[]>();
 
     for (const service of services) {
-      const category = service.category?.trim() || t.services;
+      const category = service.category?.trim()
+        ? localizeCategoryName(service.category.trim(), language)
+        : t.services;
       const bucket = groups.get(category) ?? [];
       bucket.push(service);
       groups.set(category, bucket);
@@ -556,7 +559,20 @@ export default function BusinessView({
       category,
       items
     }));
-  }, [services, t.services]);
+  }, [language, services, t.services]);
+
+  const businessCategoryLabel = useMemo(() => {
+    const primaryCategory = business.categories[0]?.trim();
+    if (!primaryCategory) {
+      return t.reviews;
+    }
+
+    return localizeCategoryName(primaryCategory, language);
+  }, [business.categories, language, t.reviews]);
+
+  function getLocalizedServiceNameLabel(service: ServiceRecord) {
+    return localizeServiceName(service.name, language);
+  }
 
   const selectedServices = useMemo(
     () => services.filter((service) => selectedServiceIds.includes(service.id)),
@@ -959,7 +975,7 @@ export default function BusinessView({
                 {selectedServices.map((service) => (
                   <div key={service.id} className="company-booking-summary-line">
                     <div>
-                      <strong>{service.name}</strong>
+                      <strong>{getLocalizedServiceNameLabel(service)}</strong>
                       <span>
                         {service.durationMinutes ?? 60} {t.minuteShort}
                       </span>
@@ -1100,7 +1116,7 @@ export default function BusinessView({
           <div className="company-hero-main">
             <div className="company-hero-copy">
               <h1>{business.name}</h1>
-              <p>{business.categories[0] || t.reviews}</p>
+              <p>{businessCategoryLabel}</p>
               <div className="company-hero-meta">
                 <span>{t.openUntil} 18:00</span>
                 <span>{business.address}</span>
@@ -1172,7 +1188,7 @@ export default function BusinessView({
                 {(serviceGroups.find((group) => group.category === serviceCategory)?.items ?? services).map((service) => (
                   <article className="company-service-card" key={service.id}>
                     <div>
-                      <h3>{service.name}</h3>
+                      <h3>{getLocalizedServiceNameLabel(service)}</h3>
                       <p>
                         {service.durationMinutes ?? 60} {t.minuteShort}
                       </p>
@@ -1331,11 +1347,15 @@ export default function BusinessView({
                             onClick={() => toggleService(service.id)}
                           >
                             <div>
-                              <strong>{service.name}</strong>
+                              <strong>{getLocalizedServiceNameLabel(service)}</strong>
                               <span>
                                 {service.durationMinutes ?? 60} {t.minuteShort}
                               </span>
-                              <small>{service.category || t.services}</small>
+                              <small>
+                                {service.category?.trim()
+                                  ? localizeCategoryName(service.category.trim(), language)
+                                  : t.services}
+                              </small>
                             </div>
                             <div className="company-flow-card-side">
                               <strong>{formatMoney(service.price, locale)}</strong>

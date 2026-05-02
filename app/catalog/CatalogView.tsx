@@ -3,6 +3,8 @@
 import Link from "next/link";
 import type { PublicSearchResult } from "../../lib/public-search";
 import { getLocalizedPath, type SiteLanguage } from "../../lib/site-language";
+import BrandLogo from "../BrandLogo";
+import GlobalLanguageSwitcher from "../GlobalLanguageSwitcher";
 import { useSiteLanguage } from "../useSiteLanguage";
 
 type CatalogViewProps = {
@@ -248,83 +250,112 @@ export default function CatalogView({
 }: CatalogViewProps) {
   const language = useSiteLanguage(initialLanguage, true);
   const t = catalogCopy[language];
+  const catalogLabel = language === "en" ? "Catalog" : "Каталог";
+  const menuLabel = language === "en" ? "Menu" : "Меню";
+  const menuSearchLabel = language === "en" ? "Search and filters" : language === "uk" ? "Пошук і фільтри" : "Поиск и фильтры";
+  const menuResultsLabel = language === "en" ? "Results" : language === "uk" ? "Результати" : "Результаты";
+  const navLabel = language === "en" ? "Catalog navigation" : language === "uk" ? "Навігація каталогу" : "Навигация каталога";
 
   return (
-    <main className="catalog-shell">
-      <section className="catalog-hero">
-        <div>
-          <p className="eyebrow">{t.eyebrow}</p>
-          <h1>{query ? t.searchTitle(query) : t.defaultTitle}</h1>
-          <p className="hero-text">{t.heroText}</p>
-        </div>
-
-        <div className="catalog-filters">
-          <span>{t.resultCount(results.length)}</span>
-          <span>{t.kindLabel(kind)}</span>
-          <span>{formatDateTime(date, time, language)}</span>
-          <span>{hasCoords ? t.sortedByDistance : location || t.withoutGeolocation}</span>
-        </div>
-      </section>
-
-      <section className="catalog-grid">
-        {results.map((result, index) => (
-          <article key={result.id} className={`catalog-card ${["accent-coral", "accent-forest", "accent-sand"][index % 3]}`}>
-            <img className="catalog-card-image" src={result.image} alt={result.title} />
-            <div className="catalog-card-top">
-              <p>{getLocalizedText(result.category, result.localizedCategory, language)}</p>
-              <span>{t.resultType(result.type)}</span>
+    <main className="company-page catalog-page">
+      <header className="public-header company-header">
+        <a className="public-logo" href={getLocalizedPath(language)}>
+          <BrandLogo />
+        </a>
+        <nav className="public-nav" aria-label={navLabel}>
+          <a href={getLocalizedPath(language, "/catalog")} className="public-login">
+            {catalogLabel}
+          </a>
+          <details className="public-menu">
+            <summary>
+              <span>{menuLabel}</span>
+              <span className="public-burger" aria-hidden="true" />
+            </summary>
+            <div className="public-menu-panel">
+              <a href="#catalog-hero">{menuSearchLabel}</a>
+              <a href="#catalog-results">{menuResultsLabel}</a>
             </div>
+          </details>
+          <GlobalLanguageSwitcher mode="inline" />
+        </nav>
+      </header>
 
-            <div>
-              <h2>{result.title}</h2>
-              <p className="catalog-description">
-                {getLocalizedText(result.subtitle, result.localizedSubtitle, language)} · {getLocalizedText(result.address, result.localizedAddress, language)}
-              </p>
-            </div>
-
-            <div className="catalog-meta">
-              <strong>
-                {result.services[0]
-                  ? t.priceFrom(formatPrice(Math.min(...result.services.map((service) => service.price || 0)), language))
-                  : t.pricePending}
-              </strong>
-              <span>{`${result.rating} · ${t.reviewCount(result.reviews)} · ${formatDistance(result.distanceKm, language)}`}</span>
-            </div>
-
-            <div className="chip-row">
-              {shouldShowAvailabilityChip(result, language) ? (
-                <span className={`chip ${result.available ? "chip-success" : "chip-muted"}`}>
-                  {getLocalizedText(result.availabilityLabel, result.localizedAvailabilityLabel, language) || (time ? t.availableAt(time) : t.chooseTime)}
-                </span>
-              ) : null}
-              <span className={`chip ${result.onlineBookingEnabled ? "chip-success" : "chip-muted"}`}>
-                {result.onlineBookingEnabled ? t.onlineBookingEnabled : t.onlineBookingDisabled}
-              </span>
-              {result.services.slice(0, 5).map((service) => (
-                <span key={service.id} className="chip">
-                  {getLocalizedText(service.name, service.localizedName, language)}
-                </span>
-              ))}
-              {result.services.length > 5 ? (
-                <span className="chip">{`+${result.services.length - 5}`}</span>
-              ) : null}
-            </div>
-
-            <Link
-              href={getLocalizedPath(language, `/businesses/${result.pathId}`)}
-              className="primary-button"
-            >
-              {result.onlineBookingEnabled ? t.action : t.viewProfile}
-            </Link>
-          </article>
-        ))}
-        {results.length === 0 ? (
-          <div className="catalog-empty">
-            <h2>{t.emptyTitle}</h2>
-            <p>{t.emptyText}</p>
-            <Link href={getLocalizedPath(language)} className="primary-button">{t.backToSearch}</Link>
+      <section className="catalog-shell">
+        <section id="catalog-hero" className="catalog-hero">
+          <div>
+            <p className="eyebrow">{t.eyebrow}</p>
+            <h1>{query ? t.searchTitle(query) : t.defaultTitle}</h1>
+            <p className="hero-text">{t.heroText}</p>
           </div>
-        ) : null}
+
+          <div className="catalog-filters">
+            <span>{t.resultCount(results.length)}</span>
+            <span>{t.kindLabel(kind)}</span>
+            <span>{formatDateTime(date, time, language)}</span>
+            <span>{hasCoords ? t.sortedByDistance : location || t.withoutGeolocation}</span>
+          </div>
+        </section>
+
+        <section id="catalog-results" className="catalog-grid">
+          {results.map((result, index) => (
+            <article key={result.id} className={`catalog-card ${["accent-coral", "accent-forest", "accent-sand"][index % 3]}`}>
+              <img className="catalog-card-image" src={result.image} alt={result.title} />
+              <div className="catalog-card-top">
+                <p>{getLocalizedText(result.category, result.localizedCategory, language)}</p>
+                <span>{t.resultType(result.type)}</span>
+              </div>
+
+              <div>
+                <h2>{result.title}</h2>
+                <p className="catalog-description">
+                  {getLocalizedText(result.subtitle, result.localizedSubtitle, language)} · {getLocalizedText(result.address, result.localizedAddress, language)}
+                </p>
+              </div>
+
+              <div className="catalog-meta">
+                <strong>
+                  {result.services[0]
+                    ? t.priceFrom(formatPrice(Math.min(...result.services.map((service) => service.price || 0)), language))
+                    : t.pricePending}
+                </strong>
+                <span>{`${result.rating} · ${t.reviewCount(result.reviews)} · ${formatDistance(result.distanceKm, language)}`}</span>
+              </div>
+
+              <div className="chip-row">
+                {shouldShowAvailabilityChip(result, language) ? (
+                  <span className={`chip ${result.available ? "chip-success" : "chip-muted"}`}>
+                    {getLocalizedText(result.availabilityLabel, result.localizedAvailabilityLabel, language) || (time ? t.availableAt(time) : t.chooseTime)}
+                  </span>
+                ) : null}
+                <span className={`chip ${result.onlineBookingEnabled ? "chip-success" : "chip-muted"}`}>
+                  {result.onlineBookingEnabled ? t.onlineBookingEnabled : t.onlineBookingDisabled}
+                </span>
+                {result.services.slice(0, 5).map((service) => (
+                  <span key={service.id} className="chip">
+                    {getLocalizedText(service.name, service.localizedName, language)}
+                  </span>
+                ))}
+                {result.services.length > 5 ? (
+                  <span className="chip">{`+${result.services.length - 5}`}</span>
+                ) : null}
+              </div>
+
+              <Link
+                href={getLocalizedPath(language, `/businesses/${result.pathId}`)}
+                className="primary-button"
+              >
+                {result.onlineBookingEnabled ? t.action : t.viewProfile}
+              </Link>
+            </article>
+          ))}
+          {results.length === 0 ? (
+            <div className="catalog-empty">
+              <h2>{t.emptyTitle}</h2>
+              <p>{t.emptyText}</p>
+              <Link href={getLocalizedPath(language)} className="primary-button">{t.backToSearch}</Link>
+            </div>
+          ) : null}
+        </section>
       </section>
     </main>
   );

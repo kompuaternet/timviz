@@ -20,6 +20,7 @@ import {
 } from "./pro-data";
 import { getPublicCalendarAppointments, type PublicCalendarAppointment } from "./pro-calendar";
 import { buildPublicBusinessPathMap } from "./public-business-path";
+import { getServiceLocalizedText, localizeCategoryName } from "./service-templates";
 
 export type PublicSearchSuggestion = {
   id: string;
@@ -318,10 +319,13 @@ export async function getPublicSearchIndex(params: PublicSearchParams = {}): Pro
     });
 
     const fallbackCategory = normalizedBusiness.categories[0] || genericCopy.services.ru;
-    const localizedCategory =
-      normalizedBusiness.categories[0]
-        ? undefined
-        : genericCopy.services;
+    const localizedCategory = normalizedBusiness.categories[0]
+      ? {
+          ru: localizeCategoryName(normalizedBusiness.categories[0], "ru"),
+          uk: localizeCategoryName(normalizedBusiness.categories[0], "uk"),
+          en: localizeCategoryName(normalizedBusiness.categories[0], "en")
+        }
+      : genericCopy.services;
     const localizedSubtitle =
       type === "professional"
         ? normalizedBusiness.categories[0]
@@ -355,6 +359,7 @@ export async function getPublicSearchIndex(params: PublicSearchParams = {}): Pro
       services: businessServices.map((service) => ({
         id: service.id,
         name: service.name,
+        localizedName: getServiceLocalizedText(service.name),
         price: service.price || 0,
         durationMinutes: service.durationMinutes || 60,
         color: service.color

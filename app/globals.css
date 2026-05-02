@@ -3794,6 +3794,11 @@ a {
   padding: 32px 0 72px;
 }
 
+.catalog-page .catalog-shell {
+  width: min(1320px, calc(100% - 36px));
+  padding: 18px 0 72px;
+}
+
 .salon-page {
   position: relative;
   min-height: 100vh;
