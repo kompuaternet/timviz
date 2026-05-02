@@ -36,6 +36,8 @@ export type TelegramSettingKey =
   | "forwardingEnabled";
 
 export type TelegramMenuAction = "today" | "settings" | "menu" | "support";
+export type TelegramSettingsSection = "home" | "notifications" | "support" | "bot";
+export type TelegramBotControlAction = "all_on" | "all_off";
 
 type TelegramReminderEvent = {
   id: string;
@@ -87,6 +89,16 @@ type TelegramText = {
   todayEmpty: string;
   todayHeader: string;
   settingsTitle: string;
+  settingsSectionsHint: string;
+  settingsNotificationsSection: string;
+  settingsSupportSection: string;
+  settingsBotSection: string;
+  settingsBack: string;
+  settingsBotHint: string;
+  settingsBotEnableAll: string;
+  settingsBotDisableAll: string;
+  settingsSupportHint: string;
+  settingsNotificationsHint: string;
   noConnection: string;
   bookingCreated: string;
   reminderPrefix: string;
@@ -108,6 +120,8 @@ type TelegramText = {
   actionDoneCancel: string;
   actionNotFound: string;
   supportPrompt: string;
+  botUpdatedAllOn: string;
+  botUpdatedAllOff: string;
 };
 
 type TodayBookingItem = Pick<
@@ -141,6 +155,8 @@ let activeCommandsSyncPromise: Promise<boolean> | null = null;
 const BOOKING_CALLBACK_PREFIX = "tvbk";
 const SETTINGS_CALLBACK_PREFIX = "tvst";
 const MENU_CALLBACK_PREFIX = "tvmn";
+const SETTINGS_SECTION_CALLBACK_PREFIX = "tvss";
+const BOT_CONTROL_CALLBACK_PREFIX = "tvbc";
 
 const textByLanguage: Record<TelegramLanguage, TelegramText> = {
   ru: {
@@ -159,6 +175,16 @@ const textByLanguage: Record<TelegramLanguage, TelegramText> = {
     todayEmpty: "📭 На сегодня записей нет.",
     todayHeader: "📅 Записи на сегодня",
     settingsTitle: "⚙️ Настройки уведомлений",
+    settingsSectionsHint: "Выберите нужный раздел настроек:",
+    settingsNotificationsSection: "🔔 Уведомления о записях",
+    settingsSupportSection: "💬 Поддержка и пересылка",
+    settingsBotSection: "🤖 Управление Telegram-ботом",
+    settingsBack: "⬅️ Назад к разделам",
+    settingsBotHint: "Управляйте ботом: массово включайте или отключайте уведомления.",
+    settingsBotEnableAll: "🔔 Включить всё",
+    settingsBotDisableAll: "🔕 Выключить всё",
+    settingsSupportHint: "Настройте пересылку сообщений в поддержку и отправьте запрос в один клик.",
+    settingsNotificationsHint: "Включайте только нужные уведомления, чтобы не перегружать чат.",
     noConnection: "🔌 Этот чат пока не подключен к Timviz.",
     bookingCreated: "🆕 Новая онлайн-запись",
     reminderPrefix: "⏰ Напоминание: запись через 2 часа",
@@ -180,7 +206,9 @@ const textByLanguage: Record<TelegramLanguage, TelegramText> = {
     actionDoneCancel: "❌ Запись отменена.",
     actionNotFound: "⚠️ Запись уже обработана или не найдена.",
     supportPrompt:
-      "💬 Напишите ваш вопрос одним сообщением — я передам его в поддержку Timviz.\n\nМожно просто отправить текст в ответ на это сообщение."
+      "💬 Напишите ваш вопрос одним сообщением — я передам его в поддержку Timviz.\n\nМожно просто отправить текст в ответ на это сообщение.",
+    botUpdatedAllOn: "✅ Все уведомления включены.",
+    botUpdatedAllOff: "✅ Все уведомления выключены."
   },
   uk: {
     connected:
@@ -198,6 +226,16 @@ const textByLanguage: Record<TelegramLanguage, TelegramText> = {
     todayEmpty: "📭 На сьогодні записів немає.",
     todayHeader: "📅 Записи на сьогодні",
     settingsTitle: "⚙️ Налаштування сповіщень",
+    settingsSectionsHint: "Оберіть потрібний розділ налаштувань:",
+    settingsNotificationsSection: "🔔 Сповіщення про записи",
+    settingsSupportSection: "💬 Підтримка і пересилка",
+    settingsBotSection: "🤖 Керування Telegram-ботом",
+    settingsBack: "⬅️ Назад до розділів",
+    settingsBotHint: "Керуйте ботом: масово вмикайте або вимикайте сповіщення.",
+    settingsBotEnableAll: "🔔 Увімкнути все",
+    settingsBotDisableAll: "🔕 Вимкнути все",
+    settingsSupportHint: "Налаштуйте пересилку повідомлень у підтримку та надішліть запит в один дотик.",
+    settingsNotificationsHint: "Вмикайте лише потрібні сповіщення, щоб не перевантажувати чат.",
     noConnection: "🔌 Цей чат поки не підключено до Timviz.",
     bookingCreated: "🆕 Новий онлайн-запис",
     reminderPrefix: "⏰ Нагадування: запис через 2 години",
@@ -219,7 +257,9 @@ const textByLanguage: Record<TelegramLanguage, TelegramText> = {
     actionDoneCancel: "❌ Запис скасовано.",
     actionNotFound: "⚠️ Запис уже оброблено або не знайдено.",
     supportPrompt:
-      "💬 Напишіть ваше питання одним повідомленням — я передам його в підтримку Timviz.\n\nМожна просто надіслати текст у відповідь на це повідомлення."
+      "💬 Напишіть ваше питання одним повідомленням — я передам його в підтримку Timviz.\n\nМожна просто надіслати текст у відповідь на це повідомлення.",
+    botUpdatedAllOn: "✅ Усі сповіщення увімкнено.",
+    botUpdatedAllOff: "✅ Усі сповіщення вимкнено."
   },
   en: {
     connected:
@@ -237,6 +277,16 @@ const textByLanguage: Record<TelegramLanguage, TelegramText> = {
     todayEmpty: "📭 No bookings for today.",
     todayHeader: "📅 Today's bookings",
     settingsTitle: "⚙️ Notification settings",
+    settingsSectionsHint: "Choose a settings section:",
+    settingsNotificationsSection: "🔔 Booking notifications",
+    settingsSupportSection: "💬 Support and forwarding",
+    settingsBotSection: "🤖 Telegram bot control",
+    settingsBack: "⬅️ Back to sections",
+    settingsBotHint: "Manage bot behavior: quickly turn all notifications on or off.",
+    settingsBotEnableAll: "🔔 Enable all",
+    settingsBotDisableAll: "🔕 Disable all",
+    settingsSupportHint: "Configure forwarding to support and send a request in one tap.",
+    settingsNotificationsHint: "Enable only the notifications you really need.",
     noConnection: "🔌 This chat is not connected to Timviz yet.",
     bookingCreated: "🆕 New online booking",
     reminderPrefix: "⏰ Reminder: booking in 2 hours",
@@ -258,7 +308,9 @@ const textByLanguage: Record<TelegramLanguage, TelegramText> = {
     actionDoneCancel: "❌ Booking cancelled.",
     actionNotFound: "⚠️ Booking is already handled or not found.",
     supportPrompt:
-      "💬 Send your question in one message — I will forward it to Timviz support.\n\nYou can simply reply with text to this message."
+      "💬 Send your question in one message — I will forward it to Timviz support.\n\nYou can simply reply with text to this message.",
+    botUpdatedAllOn: "✅ All notifications are now enabled.",
+    botUpdatedAllOff: "✅ All notifications are now disabled."
   }
 };
 
@@ -897,6 +949,46 @@ export function parseSettingsCallbackData(value: string): TelegramSettingKey | n
   return null;
 }
 
+export function buildSettingsSectionCallbackData(section: TelegramSettingsSection) {
+  const key = section === "home"
+    ? "h"
+    : section === "notifications"
+      ? "n"
+      : section === "support"
+        ? "s"
+        : "b";
+  return `${SETTINGS_SECTION_CALLBACK_PREFIX}:${key}`;
+}
+
+export function parseSettingsSectionCallbackData(value: string): TelegramSettingsSection | null {
+  const [prefix, key] = value.split(":");
+  if (prefix !== SETTINGS_SECTION_CALLBACK_PREFIX) {
+    return null;
+  }
+
+  if (key === "h") return "home";
+  if (key === "n") return "notifications";
+  if (key === "s") return "support";
+  if (key === "b") return "bot";
+  return null;
+}
+
+export function buildBotControlCallbackData(action: TelegramBotControlAction) {
+  const key = action === "all_on" ? "on" : "off";
+  return `${BOT_CONTROL_CALLBACK_PREFIX}:${key}`;
+}
+
+export function parseBotControlCallbackData(value: string): TelegramBotControlAction | null {
+  const [prefix, key] = value.split(":");
+  if (prefix !== BOT_CONTROL_CALLBACK_PREFIX) {
+    return null;
+  }
+
+  if (key === "on") return "all_on";
+  if (key === "off") return "all_off";
+  return null;
+}
+
 export function buildMenuCallbackData(action: TelegramMenuAction) {
   return `${MENU_CALLBACK_PREFIX}:${action}`;
 }
@@ -916,44 +1008,178 @@ function toggleText(enabled: boolean, text: TelegramText) {
   return enabled ? text.enabled : text.disabled;
 }
 
-export function buildSettingsMessage(connection: TelegramConnection) {
+export async function setTelegramConnectionSettings(
+  connection: TelegramConnection,
+  values: Partial<Record<TelegramSettingKey, boolean>>
+) {
+  const next: TelegramConnection = {
+    ...connection,
+    notificationsNewBooking:
+      typeof values.notificationsNewBooking === "boolean"
+        ? values.notificationsNewBooking
+        : connection.notificationsNewBooking,
+    notificationsReminder:
+      typeof values.notificationsReminder === "boolean"
+        ? values.notificationsReminder
+        : connection.notificationsReminder,
+    notificationsToday:
+      typeof values.notificationsToday === "boolean"
+        ? values.notificationsToday
+        : connection.notificationsToday,
+    forwardingEnabled:
+      typeof values.forwardingEnabled === "boolean"
+        ? values.forwardingEnabled
+        : connection.forwardingEnabled,
+    updatedAt: nowIso()
+  };
+
+  return upsertConnection(next);
+}
+
+export function buildSettingsMessage(
+  connection: TelegramConnection,
+  section: TelegramSettingsSection = "home"
+) {
   const text = getTelegramText(connection.language);
+
+  if (section === "notifications") {
+    return {
+      text: `${text.settingsNotificationsSection}\n${text.settingsNotificationsHint}`,
+      replyMarkup: {
+        inline_keyboard: [
+          [
+            {
+              text: `🔔 ${text.newBookingsLabel}: ${toggleText(connection.notificationsNewBooking, text)}`,
+              callback_data: buildSettingsCallbackData("notificationsNewBooking")
+            }
+          ],
+          [
+            {
+              text: `⏰ ${text.remindersLabel}: ${toggleText(connection.notificationsReminder, text)}`,
+              callback_data: buildSettingsCallbackData("notificationsReminder")
+            }
+          ],
+          [
+            {
+              text: `📅 ${text.todayLabel}: ${toggleText(connection.notificationsToday, text)}`,
+              callback_data: buildSettingsCallbackData("notificationsToday")
+            }
+          ],
+          [
+            {
+              text: text.settingsBack,
+              callback_data: buildSettingsSectionCallbackData("home")
+            },
+            {
+              text: text.menuHome,
+              callback_data: buildMenuCallbackData("menu")
+            }
+          ],
+          [
+            {
+              text: text.openDashboard,
+              url: getDashboardUrl("/pro/settings")
+            }
+          ]
+        ]
+      } satisfies TelegramReplyMarkup
+    };
+  }
+
+  if (section === "support") {
+    return {
+      text: `${text.settingsSupportSection}\n${text.settingsSupportHint}`,
+      replyMarkup: {
+        inline_keyboard: [
+          [
+            {
+              text: `💬 ${text.forwardingLabel}: ${toggleText(connection.forwardingEnabled, text)}`,
+              callback_data: buildSettingsCallbackData("forwardingEnabled")
+            }
+          ],
+          [
+            {
+              text: text.menuSupport,
+              callback_data: buildMenuCallbackData("support")
+            },
+            {
+              text: text.settingsBack,
+              callback_data: buildSettingsSectionCallbackData("home")
+            }
+          ],
+          [
+            {
+              text: text.openDashboard,
+              url: getDashboardUrl("/pro/settings")
+            }
+          ]
+        ]
+      } satisfies TelegramReplyMarkup
+    };
+  }
+
+  if (section === "bot") {
+    return {
+      text: `${text.settingsBotSection}\n${text.settingsBotHint}`,
+      replyMarkup: {
+        inline_keyboard: [
+          [
+            {
+              text: text.settingsBotEnableAll,
+              callback_data: buildBotControlCallbackData("all_on")
+            },
+            {
+              text: text.settingsBotDisableAll,
+              callback_data: buildBotControlCallbackData("all_off")
+            }
+          ],
+          [
+            {
+              text: text.settingsBack,
+              callback_data: buildSettingsSectionCallbackData("home")
+            },
+            {
+              text: text.menuHome,
+              callback_data: buildMenuCallbackData("menu")
+            }
+          ],
+          [
+            {
+              text: text.openDashboard,
+              url: getDashboardUrl("/pro/settings")
+            }
+          ]
+        ]
+      } satisfies TelegramReplyMarkup
+    };
+  }
+
   return {
-    text: `${text.settingsTitle}\n${text.mainMenuHint}\n\n${text.help}`,
+    text: `${text.settingsTitle}\n${text.settingsSectionsHint}`,
     replyMarkup: {
       inline_keyboard: [
         [
           {
-            text: `🔔 ${text.newBookingsLabel}: ${toggleText(connection.notificationsNewBooking, text)}`,
-            callback_data: buildSettingsCallbackData("notificationsNewBooking")
+            text: text.settingsNotificationsSection,
+            callback_data: buildSettingsSectionCallbackData("notifications")
           }
         ],
         [
           {
-            text: `⏰ ${text.remindersLabel}: ${toggleText(connection.notificationsReminder, text)}`,
-            callback_data: buildSettingsCallbackData("notificationsReminder")
+            text: text.settingsSupportSection,
+            callback_data: buildSettingsSectionCallbackData("support")
           }
         ],
         [
           {
-            text: `📅 ${text.todayLabel}: ${toggleText(connection.notificationsToday, text)}`,
-            callback_data: buildSettingsCallbackData("notificationsToday")
-          }
-        ],
-        [
-          {
-            text: `💬 ${text.forwardingLabel}: ${toggleText(connection.forwardingEnabled, text)}`,
-            callback_data: buildSettingsCallbackData("forwardingEnabled")
+            text: text.settingsBotSection,
+            callback_data: buildSettingsSectionCallbackData("bot")
           }
         ],
         [
           {
             text: text.menuToday,
             callback_data: buildMenuCallbackData("today")
-          },
-          {
-            text: text.menuSupport,
-            callback_data: buildMenuCallbackData("support")
           },
           {
             text: text.menuHome,
@@ -963,7 +1189,7 @@ export function buildSettingsMessage(connection: TelegramConnection) {
         [
           {
             text: text.openDashboard,
-            url: getDashboardUrl("/pro/calendar")
+            url: getDashboardUrl("/pro/settings")
           }
         ]
       ]

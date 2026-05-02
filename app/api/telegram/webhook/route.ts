@@ -13,9 +13,12 @@ import {
   getTodayBookingsForConnection,
   getTelegramWebhookSecret,
   normalizeTelegramUserLanguage,
+  parseBotControlCallbackData,
   parseMenuCallbackData,
   parseBookingCallbackData,
+  parseSettingsSectionCallbackData,
   parseSettingsCallbackData,
+  setTelegramConnectionSettings,
   sendTelegramTextMessage,
   toggleTelegramConnectionSetting,
   touchTelegramConnection
@@ -270,7 +273,7 @@ async function handleSettingsCommand(chatId: string, preferredLanguage?: string 
 
   const nextConnection = await touchTelegramConnection(connection, preferredLanguage || undefined);
   const activeConnection = nextConnection || connection;
-  const payload = buildSettingsMessage(activeConnection);
+  const payload = buildSettingsMessage(activeConnection, "home");
   await sendTelegramTextMessage({
     chatId,
     text: payload.text,
@@ -428,13 +431,48 @@ async function handleCallbackQuery(update: TelegramUpdate) {
   }
 
   const settingsKey = parseSettingsCallbackData(data);
+  const settingsSection = parseSettingsSectionCallbackData(data);
+  const botControlAction = parseBotControlCallbackData(data);
+
+  if (settingsSection) {
+    await answerTelegramCallbackQuery(callback.id).catch(() => undefined);
+    const payload = buildSettingsMessage(activeConnection, settingsSection);
+    await sendTelegramTextMessage({
+      chatId,
+      text: payload.text,
+      replyMarkup: payload.replyMarkup
+    }).catch(() => undefined);
+    return;
+  }
+
+  if (botControlAction) {
+    const nextConnection = await setTelegramConnectionSettings(activeConnection, {
+      notificationsNewBooking: botControlAction === "all_on",
+      notificationsReminder: botControlAction === "all_on",
+      notificationsToday: botControlAction === "all_on"
+    });
+
+    await answerTelegramCallbackQuery(
+      callback.id,
+      botControlAction === "all_on" ? t.botUpdatedAllOn : t.botUpdatedAllOff
+    ).catch(() => undefined);
+
+    const payload = buildSettingsMessage(nextConnection || activeConnection, "bot");
+    await sendTelegramTextMessage({
+      chatId,
+      text: payload.text,
+      replyMarkup: payload.replyMarkup
+    }).catch(() => undefined);
+    return;
+  }
 
   if (settingsKey) {
     const nextConnection = await toggleTelegramConnectionSetting(activeConnection, settingsKey);
     await answerTelegramCallbackQuery(callback.id, t.settingUpdated).catch(() => undefined);
 
     if (nextConnection) {
-      const payload = buildSettingsMessage(nextConnection);
+      const section = settingsKey === "forwardingEnabled" ? "support" : "notifications";
+      const payload = buildSettingsMessage(nextConnection, section);
       await sendTelegramTextMessage({
         chatId,
         text: payload.text,
