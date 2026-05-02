@@ -105,6 +105,8 @@ type TelegramBooleanSettingKey = Exclude<
   "reminderLeadMinutes"
 >;
 
+type SettingsSectionId = "general" | "online-booking" | "services" | "schedule" | "telegram" | "address";
+
 const telegramReminderLeadOptions = [15, 30, 60, 120, 180, 1440] as const;
 
 const countries = [
@@ -242,7 +244,24 @@ const settingsExtras = {
     telegramReminderLead: "Напоминать заранее",
     telegramToday: "Сводка на сегодня",
     telegramForwarding: "Пересылка в поддержку",
-    telegramTokenExpires: "Ссылка активна до"
+    telegramTokenExpires: "Ссылка активна до",
+    sectionGeneral: "Основное",
+    sectionOnlineBooking: "Онлайн-запись",
+    sectionServices: "Услуги",
+    sectionSchedule: "График",
+    sectionTelegram: "Telegram",
+    sectionAddress: "Адрес",
+    profileReadyLabel: "Профиль готов на",
+    onboardingHint: "Завершите настройку, чтобы получать клиентов",
+    onlineBookingSettingsTitle: "Настройки онлайн-записи",
+    onlineBookingSettingsHint: "Включите онлайн-запись и опубликуйте ссылку для клиентов.",
+    bookingLinkTitle: "Ссылка для записи",
+    bookingLinkHint: "Используйте ссылку в Instagram, Telegram и на сайте.",
+    scheduleTitle: "График и локализация",
+    scheduleHint: "Выберите часовой пояс и язык. Рабочие дни настраиваются отдельно в расписании.",
+    scheduleOpenButton: "Открыть расписание",
+    telegramSettingsOpen: "Настроить уведомления",
+    telegramSettingsHide: "Скрыть расширенные настройки"
   },
   uk: {
     readFileFailed: "Не вдалося прочитати файл.",
@@ -299,7 +318,24 @@ const settingsExtras = {
     telegramReminderLead: "Нагадувати заздалегідь",
     telegramToday: "Зведення на сьогодні",
     telegramForwarding: "Пересилка в підтримку",
-    telegramTokenExpires: "Посилання активне до"
+    telegramTokenExpires: "Посилання активне до",
+    sectionGeneral: "Основне",
+    sectionOnlineBooking: "Онлайн-запис",
+    sectionServices: "Послуги",
+    sectionSchedule: "Графік",
+    sectionTelegram: "Telegram",
+    sectionAddress: "Адреса",
+    profileReadyLabel: "Профіль готовий на",
+    onboardingHint: "Завершіть налаштування, щоб отримувати клієнтів",
+    onlineBookingSettingsTitle: "Налаштування онлайн-запису",
+    onlineBookingSettingsHint: "Увімкніть онлайн-запис і опублікуйте посилання для клієнтів.",
+    bookingLinkTitle: "Посилання для запису",
+    bookingLinkHint: "Використовуйте посилання в Instagram, Telegram та на сайті.",
+    scheduleTitle: "Графік і локалізація",
+    scheduleHint: "Оберіть часовий пояс і мову. Робочі дні налаштовуються окремо в розкладі.",
+    scheduleOpenButton: "Відкрити розклад",
+    telegramSettingsOpen: "Налаштувати сповіщення",
+    telegramSettingsHide: "Сховати розширені налаштування"
   },
   en: {
     readFileFailed: "Could not read the file.",
@@ -356,7 +392,24 @@ const settingsExtras = {
     telegramReminderLead: "Reminder lead time",
     telegramToday: "Today summary",
     telegramForwarding: "Forward to support",
-    telegramTokenExpires: "Link is active until"
+    telegramTokenExpires: "Link is active until",
+    sectionGeneral: "General",
+    sectionOnlineBooking: "Online booking",
+    sectionServices: "Services",
+    sectionSchedule: "Schedule",
+    sectionTelegram: "Telegram",
+    sectionAddress: "Address",
+    profileReadyLabel: "Profile is",
+    onboardingHint: "Complete setup to start getting clients",
+    onlineBookingSettingsTitle: "Online booking settings",
+    onlineBookingSettingsHint: "Enable online booking and share your booking page with clients.",
+    bookingLinkTitle: "Booking link",
+    bookingLinkHint: "Use this link in Instagram, Telegram, and your website.",
+    scheduleTitle: "Schedule and localization",
+    scheduleHint: "Choose timezone and language. Working days are managed in the schedule module.",
+    scheduleOpenButton: "Open schedule",
+    telegramSettingsOpen: "Open advanced settings",
+    telegramSettingsHide: "Hide advanced settings"
   }
 } as const;
 
@@ -435,6 +488,8 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
   const [isTelegramLoading, setIsTelegramLoading] = useState(true);
   const [isTelegramSaving, setIsTelegramSaving] = useState(false);
   const [telegramError, setTelegramError] = useState("");
+  const [activeSection, setActiveSection] = useState<SettingsSectionId>("general");
+  const [isTelegramAdvancedOpen, setIsTelegramAdvancedOpen] = useState(false);
   const isHydratedRef = useRef(false);
   const autoSaveTimerRef = useRef<number | null>(null);
   const lastSavedSnapshotRef = useRef("");
@@ -443,6 +498,49 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
   const publicBookingUrl = data.business.publicBookingUrl ?? "";
   const canUseNativeShare =
     typeof navigator !== "undefined" && typeof navigator.share === "function";
+
+  const sectionItems = useMemo(
+    () =>
+      [
+        { id: "general", label: copy.sectionGeneral },
+        { id: "online-booking", label: copy.sectionOnlineBooking },
+        { id: "services", label: copy.sectionServices },
+        { id: "schedule", label: copy.sectionSchedule },
+        { id: "telegram", label: copy.sectionTelegram },
+        { id: "address", label: copy.sectionAddress }
+      ] satisfies Array<{ id: SettingsSectionId; label: string }>,
+    [copy]
+  );
+
+  const profileReadyPercent = useMemo(() => {
+    const checks = [
+      data.professional.firstName.trim().length > 0,
+      data.professional.lastName.trim().length > 0,
+      data.professional.phone.trim().length > 0,
+      data.business.name.trim().length > 0,
+      data.business.categories.some((item) => item.trim().length > 0),
+      data.business.allowOnlineBooking === true,
+      (data.business.photos ?? []).length > 0,
+      Number.isFinite(data.business.addressLat ?? Number.NaN) &&
+        Number.isFinite(data.business.addressLon ?? Number.NaN),
+      Boolean(data.professional.timezone.trim()),
+      Boolean(telegramPanel?.connected)
+    ];
+    const completed = checks.filter(Boolean).length;
+    return Math.round((completed / checks.length) * 100);
+  }, [
+    data.professional.firstName,
+    data.professional.lastName,
+    data.professional.phone,
+    data.professional.timezone,
+    data.business.name,
+    data.business.categories,
+    data.business.allowOnlineBooking,
+    data.business.photos,
+    data.business.addressLat,
+    data.business.addressLon,
+    telegramPanel?.connected
+  ]);
 
   function formatTelegramExpiry(value: string) {
     if (!value) {
@@ -912,6 +1010,12 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
   }, [autosaveSnapshot]);
 
   useEffect(() => {
+    if (activeSection !== "telegram" && isTelegramAdvancedOpen) {
+      setIsTelegramAdvancedOpen(false);
+    }
+  }, [activeSection, isTelegramAdvancedOpen]);
+
+  useEffect(() => {
     lastSavedSnapshotRef.current = JSON.stringify({
       professional: {
         firstName: initialData.professional.firstName,
@@ -1139,6 +1243,9 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
     router.refresh();
   }
 
+  const useSingleColumnGrid =
+    activeSection === "telegram" || activeSection === "address";
+
   return (
     <main className={`${styles.workspaceShell} ${styles.scheduleShell}`}>
       <ProSidebar
@@ -1187,653 +1294,760 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
 
         {status ? <div className={styles.settingsStatus}>{status}</div> : null}
 
-        <div className={styles.settingsGrid}>
-          {data.membership.scope === "owner" ? (
-            <section className={styles.settingsCard}>
-              <div className={styles.settingsCardHeader}>
-                <div>
-                  <span>{copy.joinOwner}</span>
-                  <h2>{copy.joinRequestsTitle}</h2>
-                  <p className={styles.choiceText}>{copy.joinRequestsText}</p>
-                </div>
+        <div className={styles.settingsLayout}>
+          <aside className={styles.settingsSectionSidebar}>
+            <div className={styles.settingsSectionProgress}>
+              <strong>{copy.profileReadyLabel} {profileReadyPercent}%</strong>
+              <div className={styles.settingsSectionProgressRail}>
+                <span style={{ width: `${profileReadyPercent}%` }} />
               </div>
-              <div className={styles.serviceStack}>
-                {joinRequests.length === 0 ? (
-                  <div className={styles.generatedBlock}>{copy.joinEmpty}</div>
-                ) : (
-                  joinRequests.map((request) => (
-                    <div key={request.id} className={styles.serviceOption}>
-                      <span className={styles.choiceTitle}>
-                        {request.professional ? `${request.professional.firstName} ${request.professional.lastName}`.trim() : copy.joinOwner}
-                      </span>
-                      <span className={styles.choiceText}>{request.professional?.email || ""}</span>
-                      <span className={styles.choiceText}>{request.professional?.phone || ""}</span>
-                      <span className={styles.choiceText}>{copy.joinRole}: {request.role}</span>
-                      <div className={styles.templateActions}>
-                        <button type="button" className={styles.primaryButton} onClick={() => void handleJoinRequestAction(request.id, "approve")}>
-                          {copy.joinApprove}
-                        </button>
-                        <button type="button" className={styles.ghostButton} onClick={() => void handleJoinRequestAction(request.id, "reject")}>
-                          {copy.joinReject}
-                        </button>
+              <p>{copy.onboardingHint}</p>
+            </div>
+            <nav className={styles.settingsSectionNav} aria-label={t.settings.title}>
+              {sectionItems.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  className={`${styles.settingsSectionNavButton} ${activeSection === item.id ? styles.settingsSectionNavButtonActive : ""}`}
+                  onClick={() => setActiveSection(item.id)}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </nav>
+          </aside>
+
+          <div className={styles.settingsSectionContent}>
+            <div className={`${styles.settingsGrid} ${useSingleColumnGrid ? styles.settingsGridSingle : ""}`}>
+              {activeSection === "general" ? (
+                <>
+                  <section className={styles.settingsCard}>
+                    <div className={styles.settingsCardHeader}>
+                      <div>
+                        <span>{t.settings.owner}</span>
+                        <h2>{t.settings.contacts}</h2>
                       </div>
                     </div>
-                  ))
-                )}
-              </div>
-            </section>
-          ) : null}
-
-          <section className={styles.settingsCard}>
-            <div className={styles.settingsCardHeader}>
-              <div>
-                <span>Telegram</span>
-                <h2>{copy.telegramTitle}</h2>
-              </div>
-              <span
-                className={`${styles.settingsShareStatus} ${telegramPanel?.connected ? styles.settingsShareStatusActive : ""}`}
-              >
-                {telegramPanel?.connected ? copy.telegramConnected : copy.telegramNotConnected}
-              </span>
-            </div>
-            <p className={styles.settingsCardHint}>{copy.telegramHint}</p>
-
-            {isTelegramLoading ? (
-              <div className={styles.generatedBlock}>{copy.telegramLoading}</div>
-            ) : null}
-
-            {!isTelegramLoading && telegramError ? (
-              <div className={styles.generatedBlock}>
-                <strong>{copy.telegramUnavailable}</strong>
-                <p className={styles.generatedHint}>{telegramError}</p>
-                <div className={styles.templateActions}>
-                  <button
-                    type="button"
-                    className={styles.ghostButton}
-                    onClick={() => void loadTelegramPanel()}
-                  >
-                    {copy.telegramRefreshLink}
-                  </button>
-                </div>
-              </div>
-            ) : null}
-
-            {!isTelegramLoading && !telegramError && telegramPanel ? (
-              <div className={styles.serviceStack}>
-                <div className={styles.generatedBlock}>
-                  <span className={styles.choiceText}>
-                    {copy.telegramChat}: {telegramPanel.chatId || "—"}
-                  </span>
-                  <span className={styles.choiceText}>
-                    {copy.telegramTokenExpires}: {formatTelegramExpiry(telegramPanel.tokenExpiresAt) || "—"}
-                  </span>
-
-                  <div className={styles.templateActions}>
-                    <button
-                      type="button"
-                      className={styles.primaryButton}
-                      onClick={openTelegramBotLink}
-                      disabled={!telegramPanel.deepLink}
-                    >
-                      {telegramPanel.connected ? copy.telegramOpenBot : copy.telegramConnectButton}
-                    </button>
-                    <button
-                      type="button"
-                      className={styles.ghostButton}
-                      onClick={() => void copyTelegramLink()}
-                      disabled={!telegramPanel.deepLink}
-                    >
-                      {copy.telegramCopyLink}
-                    </button>
-                    <button
-                      type="button"
-                      className={styles.ghostButton}
-                      onClick={() => void loadTelegramPanel()}
-                      disabled={isTelegramSaving}
-                    >
-                      {copy.telegramRefreshLink}
-                    </button>
-                  </div>
-                </div>
-
-                <div className={styles.templateActions}>
-                  <button
-                    type="button"
-                    className={telegramSection === "notifications" ? styles.primaryButton : styles.ghostButton}
-                    onClick={() => setTelegramSection("notifications")}
-                  >
-                    {copy.telegramSectionNotifications}
-                  </button>
-                  <button
-                    type="button"
-                    className={telegramSection === "reminders" ? styles.primaryButton : styles.ghostButton}
-                    onClick={() => setTelegramSection("reminders")}
-                  >
-                    {copy.telegramSectionReminders}
-                  </button>
-                  <button
-                    type="button"
-                    className={telegramSection === "support" ? styles.primaryButton : styles.ghostButton}
-                    onClick={() => setTelegramSection("support")}
-                  >
-                    {copy.telegramSectionSupport}
-                  </button>
-                  <button
-                    type="button"
-                    className={telegramSection === "bot" ? styles.primaryButton : styles.ghostButton}
-                    onClick={() => setTelegramSection("bot")}
-                  >
-                    {copy.telegramSectionBot}
-                  </button>
-                </div>
-
-                {telegramSection === "notifications" ? (
-                  <div className={styles.generatedBlock}>
-                    <p className={styles.generatedHint}>{copy.telegramNotificationsHint}</p>
-                    <button
-                      type="button"
-                      className={buildTelegramToggleClass(telegramPanel.settings.notificationsNewBooking)}
-                      onClick={() => void toggleTelegramSetting("notificationsNewBooking")}
-                      disabled={isTelegramSaving}
-                    >
-                      <span className={styles.settingsToggleText}>{copy.telegramOnlineBookings}</span>
-                      <span className={styles.settingsToggleTrack}>
-                        <span className={styles.settingsToggleThumb} />
-                      </span>
-                    </button>
-                    <button
-                      type="button"
-                      className={buildTelegramToggleClass(telegramPanel.settings.notificationsCabinetBooking)}
-                      onClick={() => void toggleTelegramSetting("notificationsCabinetBooking")}
-                      disabled={isTelegramSaving}
-                    >
-                      <span className={styles.settingsToggleText}>{copy.telegramCabinetBookings}</span>
-                      <span className={styles.settingsToggleTrack}>
-                        <span className={styles.settingsToggleThumb} />
-                      </span>
-                    </button>
-                    <button
-                      type="button"
-                      className={buildTelegramToggleClass(telegramPanel.settings.notificationsRescheduled)}
-                      onClick={() => void toggleTelegramSetting("notificationsRescheduled")}
-                      disabled={isTelegramSaving}
-                    >
-                      <span className={styles.settingsToggleText}>{copy.telegramRescheduled}</span>
-                      <span className={styles.settingsToggleTrack}>
-                        <span className={styles.settingsToggleThumb} />
-                      </span>
-                    </button>
-                    <button
-                      type="button"
-                      className={buildTelegramToggleClass(telegramPanel.settings.notificationsCancelled)}
-                      onClick={() => void toggleTelegramSetting("notificationsCancelled")}
-                      disabled={isTelegramSaving}
-                    >
-                      <span className={styles.settingsToggleText}>{copy.telegramCancelled}</span>
-                      <span className={styles.settingsToggleTrack}>
-                        <span className={styles.settingsToggleThumb} />
-                      </span>
-                    </button>
-                  </div>
-                ) : null}
-
-                {telegramSection === "reminders" ? (
-                  <div className={styles.generatedBlock}>
-                    <p className={styles.generatedHint}>{copy.telegramRemindersHint}</p>
-                    <button
-                      type="button"
-                      className={buildTelegramToggleClass(telegramPanel.settings.notificationsReminder)}
-                      onClick={() => void toggleTelegramSetting("notificationsReminder")}
-                      disabled={isTelegramSaving}
-                    >
-                      <span className={styles.settingsToggleText}>{copy.telegramReminders}</span>
-                      <span className={styles.settingsToggleTrack}>
-                        <span className={styles.settingsToggleThumb} />
-                      </span>
-                    </button>
-                    <button
-                      type="button"
-                      className={buildTelegramToggleClass(telegramPanel.settings.notificationsToday)}
-                      onClick={() => void toggleTelegramSetting("notificationsToday")}
-                      disabled={isTelegramSaving}
-                    >
-                      <span className={styles.settingsToggleText}>{copy.telegramToday}</span>
-                      <span className={styles.settingsToggleTrack}>
-                        <span className={styles.settingsToggleThumb} />
-                      </span>
-                    </button>
-                    <label>
-                      {copy.telegramReminderLead}
-                      <select
-                        className={styles.input}
-                        value={String(telegramPanel.settings.reminderLeadMinutes)}
-                        onChange={(event) => void setTelegramReminderLead(Number.parseInt(event.target.value, 10) || 120)}
-                        disabled={isTelegramSaving}
-                      >
-                        {telegramReminderLeadOptions.map((minutes) => (
-                          <option key={minutes} value={minutes}>
-                            {formatReminderLead(minutes)}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-                  </div>
-                ) : null}
-
-                {telegramSection === "support" ? (
-                  <div className={styles.generatedBlock}>
-                    <p className={styles.generatedHint}>{copy.telegramSupportHint}</p>
-                    <button
-                      type="button"
-                      className={buildTelegramToggleClass(telegramPanel.settings.forwardingEnabled)}
-                      onClick={() => void toggleTelegramSetting("forwardingEnabled")}
-                      disabled={isTelegramSaving}
-                    >
-                      <span className={styles.settingsToggleText}>{copy.telegramForwarding}</span>
-                      <span className={styles.settingsToggleTrack}>
-                        <span className={styles.settingsToggleThumb} />
-                      </span>
-                    </button>
-                    <div className={styles.templateActions}>
-                      <button
-                        type="button"
-                        className={styles.ghostButton}
-                        onClick={openTelegramBotLink}
-                        disabled={!telegramPanel.deepLink}
-                      >
-                        {copy.telegramOpenBot}
-                      </button>
+                    <div className={styles.settingsFormGrid}>
+                      <label>
+                        {t.settings.firstName}
+                        <input className={styles.input} value={data.professional.firstName} onChange={(event) => updateProfessional("firstName", event.target.value)} />
+                      </label>
+                      <label>
+                        {t.settings.lastName}
+                        <input className={styles.input} value={data.professional.lastName} onChange={(event) => updateProfessional("lastName", event.target.value)} />
+                      </label>
+                      <label>
+                        {t.settings.email}
+                        <input className={styles.input} type="email" value={data.professional.email} onChange={(event) => updateProfessional("email", event.target.value)} />
+                      </label>
+                      <label>
+                        {t.settings.phone}
+                        <input className={styles.input} value={data.professional.phone} onChange={(event) => updateProfessional("phone", event.target.value)} placeholder="+38 067 000 00 00" />
+                      </label>
+                      <label className={styles.settingsWideField}>
+                        {t.settings.newPassword}
+                        <input className={styles.input} type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder={t.settings.passwordPlaceholder} />
+                      </label>
                     </div>
-                  </div>
-                ) : null}
+                  </section>
 
-                {telegramSection === "bot" ? (
-                  <div className={styles.generatedBlock}>
-                    <p className={styles.generatedHint}>{copy.telegramBotHint}</p>
+                  <section className={styles.settingsCard}>
+                    <div className={styles.settingsCardHeader}>
+                      <div>
+                        <span>{t.settings.business}</span>
+                        <h2>{t.settings.businessFormat}</h2>
+                      </div>
+                    </div>
+                    <div className={styles.settingsFormGrid}>
+                      <label>
+                        {t.settings.businessName}
+                        <input className={styles.input} value={data.business.name} onChange={(event) => updateBusiness("name", event.target.value)} />
+                      </label>
+                      <label>
+                        {t.settings.website}
+                        <input className={styles.input} value={data.business.website} onChange={(event) => updateBusiness("website", event.target.value)} placeholder="www.yoursite.com" />
+                      </label>
+                      <label>
+                        {t.settings.accountType}
+                        <select className={styles.select} value={data.business.accountType} onChange={(event) => updateBusiness("accountType", event.target.value as "solo" | "team")}>
+                          <option value="solo">{t.settings.solo}</option>
+                          <option value="team">{t.settings.team}</option>
+                        </select>
+                      </label>
+                    </div>
+                  </section>
+
+                  {data.membership.scope === "owner" ? (
+                    <section className={styles.settingsCard}>
+                      <div className={styles.settingsCardHeader}>
+                        <div>
+                          <span>{copy.joinOwner}</span>
+                          <h2>{copy.joinRequestsTitle}</h2>
+                          <p className={styles.choiceText}>{copy.joinRequestsText}</p>
+                        </div>
+                      </div>
+                      <div className={styles.serviceStack}>
+                        {joinRequests.length === 0 ? (
+                          <div className={styles.generatedBlock}>{copy.joinEmpty}</div>
+                        ) : (
+                          joinRequests.map((request) => (
+                            <div key={request.id} className={styles.serviceOption}>
+                              <span className={styles.choiceTitle}>
+                                {request.professional ? `${request.professional.firstName} ${request.professional.lastName}`.trim() : copy.joinOwner}
+                              </span>
+                              <span className={styles.choiceText}>{request.professional?.email || ""}</span>
+                              <span className={styles.choiceText}>{request.professional?.phone || ""}</span>
+                              <span className={styles.choiceText}>{copy.joinRole}: {request.role}</span>
+                              <div className={styles.templateActions}>
+                                <button type="button" className={styles.primaryButton} onClick={() => void handleJoinRequestAction(request.id, "approve")}>
+                                  {copy.joinApprove}
+                                </button>
+                                <button type="button" className={styles.ghostButton} onClick={() => void handleJoinRequestAction(request.id, "reject")}>
+                                  {copy.joinReject}
+                                </button>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </section>
+                  ) : null}
+                </>
+              ) : null}
+
+              {activeSection === "online-booking" ? (
+                <>
+                  <section className={styles.settingsCard}>
+                    <div className={styles.settingsCardHeader}>
+                      <div>
+                        <span>{copy.sectionOnlineBooking}</span>
+                        <h2>{copy.onlineBookingSettingsTitle}</h2>
+                      </div>
+                    </div>
+                    <p className={styles.settingsCardHint}>{copy.onlineBookingSettingsHint}</p>
+                    <div className={styles.settingsShareCard}>
+                      <div className={styles.settingsShareCardHeader}>
+                        <div>
+                          <strong>{copy.publicBookingTitle}</strong>
+                          <p>{copy.publicBookingText}</p>
+                        </div>
+                        {data.membership.scope === "owner" ? (
+                          <button
+                            type="button"
+                            className={`${styles.settingsShareToggle} ${data.business.allowOnlineBooking ? styles.settingsShareToggleActive : ""}`}
+                            onClick={() =>
+                              updateBusiness("allowOnlineBooking", !(data.business.allowOnlineBooking === true))
+                            }
+                            aria-pressed={data.business.allowOnlineBooking === true}
+                            aria-label={t.settings.onlineBooking}
+                          >
+                            <span className={styles.settingsShareToggleLabel}>
+                              {data.business.allowOnlineBooking ? copy.publicBookingEnabled : copy.publicBookingDisabled}
+                            </span>
+                            <span className={styles.settingsShareToggleTrack}>
+                              <span className={styles.settingsShareToggleThumb} />
+                            </span>
+                          </button>
+                        ) : (
+                          <span className={`${styles.settingsShareStatus} ${data.business.allowOnlineBooking ? styles.settingsShareStatusActive : ""}`}>
+                            {data.business.allowOnlineBooking ? copy.publicBookingEnabled : copy.publicBookingDisabled}
+                          </span>
+                        )}
+                      </div>
+                      <small className={styles.settingsInlineHint}>{t.settings.onlineBookingHint}</small>
+                    </div>
+                  </section>
+
+                  <section className={styles.settingsCard}>
+                    <div className={styles.settingsCardHeader}>
+                      <div>
+                        <span>{copy.sectionOnlineBooking}</span>
+                        <h2>{copy.bookingLinkTitle}</h2>
+                      </div>
+                    </div>
+                    <p className={styles.settingsCardHint}>{copy.bookingLinkHint}</p>
+                    <div className={styles.settingsShareCard}>
+                      <div className={styles.settingsShareField}>
+                        <input
+                          ref={publicBookingInputRef}
+                          className={styles.input}
+                          readOnly
+                          value={publicBookingUrl}
+                          onFocus={(event) => event.currentTarget.select()}
+                          onClick={(event) => event.currentTarget.select()}
+                        />
+                      </div>
+                      <div className={styles.settingsShareActions}>
+                        <button
+                          type="button"
+                          className={styles.primaryButton}
+                          onClick={() => void copyPublicBookingUrl()}
+                          disabled={!publicBookingUrl}
+                        >
+                          {copy.copyLink}
+                        </button>
+                        <button
+                          type="button"
+                          className={styles.ghostButton}
+                          onClick={() => {
+                            if (!publicBookingUrl) {
+                              return;
+                            }
+                            window.open(publicBookingUrl, "_blank", "noopener,noreferrer");
+                          }}
+                          disabled={!publicBookingUrl}
+                        >
+                          {copy.openLink}
+                        </button>
+                        {canUseNativeShare ? (
+                          <button
+                            type="button"
+                            className={styles.ghostButton}
+                            onClick={() => void sharePublicBookingUrl()}
+                            disabled={!publicBookingUrl}
+                          >
+                            {copy.shareLink}
+                          </button>
+                        ) : null}
+                      </div>
+                    </div>
+                  </section>
+                </>
+              ) : null}
+
+              {activeSection === "services" ? (
+                <>
+                  <section className={styles.settingsCard}>
+                    <div className={styles.settingsCardHeader}>
+                      <div>
+                        <span>{copy.sectionServices}</span>
+                        <h2>{t.settings.businessFormat}</h2>
+                      </div>
+                    </div>
+                    <div className={styles.settingsFormGrid}>
+                      <label>
+                        {t.settings.serviceModel}
+                        <select className={styles.select} value={selectedServiceMode} onChange={(event) => updateBusiness("serviceMode", event.target.value)}>
+                          {serviceModes.map((mode) => (
+                            <option key={mode} value={mode}>{mode}</option>
+                          ))}
+                        </select>
+                      </label>
+                      <label className={styles.settingsWideField}>
+                        {t.settings.categories}
+                        <input
+                          className={styles.input}
+                          value={data.business.categories.join(", ")}
+                          onChange={(event) => updateBusiness("categories", event.target.value.split(","))}
+                          placeholder={copy.categoriesPlaceholder}
+                        />
+                      </label>
+                    </div>
+                  </section>
+
+                  <section className={styles.settingsCard}>
+                    <div className={styles.settingsCardHeader}>
+                      <div>
+                        <span>{t.settings.photos}</span>
+                        <h2>{t.settings.photosTitle}</h2>
+                      </div>
+                    </div>
+                    <p className={styles.settingsCardHint}>{t.settings.photosHint}</p>
+                    <div className={styles.settingsPhotoGrid}>
+                      {(data.business.photos ?? []).map((photo) => (
+                        <article key={photo.id} className={styles.settingsPhotoCard}>
+                          <img src={photo.url} alt={data.business.name || t.settings.photosTitle} className={styles.settingsPhotoImage} />
+                          <div className={styles.settingsPhotoActions}>
+                            <span className={photo.isPrimary ? styles.settingsPhotoBadgePrimary : styles.settingsPhotoBadge}>
+                              {photo.isPrimary ? t.settings.mainPhoto : t.settings.photos}
+                            </span>
+                            <div className={styles.settingsPhotoButtons}>
+                              {!photo.isPrimary ? (
+                                <button
+                                  type="button"
+                                  className={styles.photoActionButton}
+                                  onClick={() =>
+                                    updateBusinessPhotos(
+                                      (data.business.photos ?? []).map((item) => ({
+                                        ...item,
+                                        isPrimary: item.id === photo.id
+                                      }))
+                                    )
+                                  }
+                                >
+                                  {t.settings.makeMainPhoto}
+                                </button>
+                              ) : null}
+                              <button
+                                type="button"
+                                className={styles.photoActionButton}
+                                onClick={() =>
+                                  updateBusinessPhotos(
+                                    (data.business.photos ?? []).filter((item) => item.id !== photo.id)
+                                  )
+                                }
+                              >
+                                {t.common.delete}
+                              </button>
+                            </div>
+                          </div>
+                        </article>
+                      ))}
+                      {(data.business.photos ?? []).length < MAX_BUSINESS_PHOTOS ? (
+                        <label className={styles.settingsPhotoUploader}>
+                          <span>{(data.business.photos ?? []).length === 0 ? t.settings.uploadPhotos : t.settings.uploadMorePhotos}</span>
+                          <small>{t.settings.photoLimit}</small>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            multiple
+                            onChange={(event) => void handleBusinessPhotoUpload(event)}
+                          />
+                        </label>
+                      ) : null}
+                    </div>
+                    {(data.business.photos ?? []).length === 0 ? (
+                      <p className={styles.settingsEmptyText}>{t.settings.noPhotos}</p>
+                    ) : null}
+                  </section>
+                </>
+              ) : null}
+
+              {activeSection === "schedule" ? (
+                <>
+                  <section className={styles.settingsCard}>
+                    <div className={styles.settingsCardHeader}>
+                      <div>
+                        <span>{t.settings.localization}</span>
+                        <h2>{t.settings.countryLanguageCurrency}</h2>
+                      </div>
+                    </div>
+                    <div className={styles.settingsFormGrid}>
+                      <label>
+                        {t.settings.country}
+                        <select className={styles.select} value={data.professional.country} onChange={(event) => updateProfessional("country", event.target.value)}>
+                          {countries.map((country) => (
+                            <option key={country} value={country}>{country}</option>
+                          ))}
+                        </select>
+                      </label>
+                      <label>
+                        {t.settings.timezone}
+                        <select className={styles.select} value={data.professional.timezone} onChange={(event) => updateProfessional("timezone", event.target.value)}>
+                          {timezones.map((timezone) => (
+                            <option key={timezone.value} value={timezone.value}>{timezone.label}</option>
+                          ))}
+                        </select>
+                      </label>
+                      <label>
+                        {t.settings.language}
+                        <select
+                          className={styles.select}
+                          value={languageFromProfile(data.professional.language)}
+                          onChange={(event) => updateProfessional("language", languageLabels[event.target.value as ProLanguage])}
+                        >
+                          {languages.map((languageOption) => (
+                            <option key={languageOption} value={languageOption}>{languageLabels[languageOption]}</option>
+                          ))}
+                        </select>
+                      </label>
+                      <label>
+                        {t.settings.currency}
+                        <select className={styles.select} value={data.professional.currency} onChange={(event) => updateProfessional("currency", event.target.value)}>
+                          {currencies.map((currency) => (
+                            <option key={currency} value={currency}>{currency}</option>
+                          ))}
+                        </select>
+                      </label>
+                    </div>
+                  </section>
+
+                  <section className={styles.settingsCard}>
+                    <div className={styles.settingsCardHeader}>
+                      <div>
+                        <span>{copy.sectionSchedule}</span>
+                        <h2>{copy.scheduleTitle}</h2>
+                      </div>
+                    </div>
+                    <p className={styles.settingsCardHint}>{copy.scheduleHint}</p>
                     <div className={styles.templateActions}>
                       <button
                         type="button"
                         className={styles.primaryButton}
-                        onClick={() =>
-                          void updateTelegramSettings({
-                            notificationsNewBooking: true,
-                            notificationsCabinetBooking: true,
-                            notificationsRescheduled: true,
-                            notificationsCancelled: true,
-                            notificationsReminder: true,
-                            notificationsToday: true
-                          })
-                        }
-                        disabled={isTelegramSaving}
+                        onClick={() => router.push("/pro/staff/schedule")}
                       >
-                        {copy.telegramAllOn}
-                      </button>
-                      <button
-                        type="button"
-                        className={styles.ghostButton}
-                        onClick={() =>
-                          void updateTelegramSettings({
-                            notificationsNewBooking: false,
-                            notificationsCabinetBooking: false,
-                            notificationsRescheduled: false,
-                            notificationsCancelled: false,
-                            notificationsReminder: false,
-                            notificationsToday: false
-                          })
-                        }
-                        disabled={isTelegramSaving}
-                      >
-                        {copy.telegramAllOff}
+                        {copy.scheduleOpenButton}
                       </button>
                     </div>
-                  </div>
-                ) : null}
-              </div>
-            ) : null}
-          </section>
+                  </section>
+                </>
+              ) : null}
 
-          <section className={styles.settingsCard}>
-            <div className={styles.settingsCardHeader}>
-              <div>
-                <span>{t.settings.owner}</span>
-                <h2>{t.settings.contacts}</h2>
-              </div>
-            </div>
-            <div className={styles.settingsFormGrid}>
-              <label>
-                {t.settings.firstName}
-                <input className={styles.input} value={data.professional.firstName} onChange={(event) => updateProfessional("firstName", event.target.value)} />
-              </label>
-              <label>
-                {t.settings.lastName}
-                <input className={styles.input} value={data.professional.lastName} onChange={(event) => updateProfessional("lastName", event.target.value)} />
-              </label>
-              <label>
-                {t.settings.email}
-                <input className={styles.input} type="email" value={data.professional.email} onChange={(event) => updateProfessional("email", event.target.value)} />
-              </label>
-              <label>
-                {t.settings.phone}
-                <input className={styles.input} value={data.professional.phone} onChange={(event) => updateProfessional("phone", event.target.value)} placeholder="+38 067 000 00 00" />
-              </label>
-              <label className={styles.settingsWideField}>
-                {t.settings.newPassword}
-                <input className={styles.input} type="password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder={t.settings.passwordPlaceholder} />
-              </label>
-            </div>
-          </section>
-
-          <section className={styles.settingsCard}>
-            <div className={styles.settingsCardHeader}>
-              <div>
-                <span>{t.settings.business}</span>
-                <h2>{t.settings.businessFormat}</h2>
-              </div>
-            </div>
-            <div className={styles.settingsFormGrid}>
-              <label>
-                {t.settings.businessName}
-                <input className={styles.input} value={data.business.name} onChange={(event) => updateBusiness("name", event.target.value)} />
-              </label>
-              <label>
-                {t.settings.website}
-                <input className={styles.input} value={data.business.website} onChange={(event) => updateBusiness("website", event.target.value)} placeholder="www.yoursite.com" />
-              </label>
-              <label>
-                {t.settings.accountType}
-                <select className={styles.select} value={data.business.accountType} onChange={(event) => updateBusiness("accountType", event.target.value as "solo" | "team")}>
-                  <option value="solo">{t.settings.solo}</option>
-                  <option value="team">{t.settings.team}</option>
-                </select>
-              </label>
-              <label>
-                {t.settings.serviceModel}
-                <select className={styles.select} value={selectedServiceMode} onChange={(event) => updateBusiness("serviceMode", event.target.value)}>
-                  {serviceModes.map((mode) => (
-                    <option key={mode} value={mode}>{mode}</option>
-                  ))}
-                </select>
-              </label>
-              <label className={styles.settingsWideField}>
-                {t.settings.categories}
-                <input
-                  className={styles.input}
-                  value={data.business.categories.join(", ")}
-                  onChange={(event) => updateBusiness("categories", event.target.value.split(","))}
-                  placeholder={copy.categoriesPlaceholder}
-                />
-              </label>
-              <div className={`${styles.settingsWideField} ${styles.settingsShareCard}`}>
-                <div className={styles.settingsShareCardHeader}>
-                  <div>
-                    <strong>{copy.publicBookingTitle}</strong>
-                    <p>{copy.publicBookingText}</p>
-                  </div>
-                  {data.membership.scope === "owner" ? (
-                    <button
-                      type="button"
-                      className={`${styles.settingsShareToggle} ${data.business.allowOnlineBooking ? styles.settingsShareToggleActive : ""}`}
-                      onClick={() =>
-                        updateBusiness("allowOnlineBooking", !(data.business.allowOnlineBooking === true))
-                      }
-                      aria-pressed={data.business.allowOnlineBooking === true}
-                      aria-label={t.settings.onlineBooking}
+              {activeSection === "telegram" ? (
+                <section className={styles.settingsCard}>
+                  <div className={styles.settingsCardHeader}>
+                    <div>
+                      <span>Telegram</span>
+                      <h2>{copy.telegramTitle}</h2>
+                    </div>
+                    <span
+                      className={`${styles.settingsShareStatus} ${telegramPanel?.connected ? styles.settingsShareStatusActive : ""}`}
                     >
-                      <span className={styles.settingsShareToggleLabel}>
-                        {data.business.allowOnlineBooking ? copy.publicBookingEnabled : copy.publicBookingDisabled}
-                      </span>
-                      <span className={styles.settingsShareToggleTrack}>
-                        <span className={styles.settingsShareToggleThumb} />
-                      </span>
-                    </button>
-                  ) : (
-                    <span className={`${styles.settingsShareStatus} ${data.business.allowOnlineBooking ? styles.settingsShareStatusActive : ""}`}>
-                      {data.business.allowOnlineBooking ? copy.publicBookingEnabled : copy.publicBookingDisabled}
+                      {telegramPanel?.connected ? copy.telegramConnected : copy.telegramNotConnected}
                     </span>
-                  )}
-                </div>
+                  </div>
+                  <p className={styles.settingsCardHint}>{copy.telegramHint}</p>
 
-                <small className={styles.settingsInlineHint}>{t.settings.onlineBookingHint}</small>
-
-                <div className={styles.settingsShareField}>
-                  <input
-                    ref={publicBookingInputRef}
-                    className={styles.input}
-                    readOnly
-                    value={publicBookingUrl}
-                    onFocus={(event) => event.currentTarget.select()}
-                    onClick={(event) => event.currentTarget.select()}
-                  />
-                </div>
-
-                <div className={styles.settingsShareActions}>
-                  <button
-                    type="button"
-                    className={styles.primaryButton}
-                    onClick={() => void copyPublicBookingUrl()}
-                  >
-                    {copy.copyLink}
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.ghostButton}
-                    onClick={() => {
-                      if (!publicBookingUrl) {
-                        return;
-                      }
-
-                      window.open(publicBookingUrl, "_blank", "noopener,noreferrer");
-                    }}
-                  >
-                    {copy.openLink}
-                  </button>
-                  {canUseNativeShare ? (
-                    <button
-                      type="button"
-                      className={styles.ghostButton}
-                      onClick={() => void sharePublicBookingUrl()}
-                    >
-                      {copy.shareLink}
-                    </button>
+                  {isTelegramLoading ? (
+                    <div className={styles.generatedBlock}>{copy.telegramLoading}</div>
                   ) : null}
-                </div>
-              </div>
-            </div>
-          </section>
 
-          <section className={styles.settingsCard}>
-            <div className={styles.settingsCardHeader}>
-              <div>
-                <span>{t.settings.photos}</span>
-                <h2>{t.settings.photosTitle}</h2>
-              </div>
-            </div>
-            <p className={styles.settingsCardHint}>{t.settings.photosHint}</p>
-            <div className={styles.settingsPhotoGrid}>
-              {(data.business.photos ?? []).map((photo) => (
-                <article key={photo.id} className={styles.settingsPhotoCard}>
-                  <img src={photo.url} alt={data.business.name || t.settings.photosTitle} className={styles.settingsPhotoImage} />
-                  <div className={styles.settingsPhotoActions}>
-                    <span className={photo.isPrimary ? styles.settingsPhotoBadgePrimary : styles.settingsPhotoBadge}>
-                      {photo.isPrimary ? t.settings.mainPhoto : t.settings.photos}
-                    </span>
-                    <div className={styles.settingsPhotoButtons}>
-                      {!photo.isPrimary ? (
+                  {!isTelegramLoading && telegramError ? (
+                    <div className={styles.generatedBlock}>
+                      <strong>{copy.telegramUnavailable}</strong>
+                      <p className={styles.generatedHint}>{telegramError}</p>
+                      <div className={styles.templateActions}>
                         <button
                           type="button"
-                          className={styles.photoActionButton}
-                          onClick={() =>
-                            updateBusinessPhotos(
-                              (data.business.photos ?? []).map((item) => ({
-                                ...item,
-                                isPrimary: item.id === photo.id
-                              }))
-                            )
-                          }
+                          className={styles.ghostButton}
+                          onClick={() => void loadTelegramPanel()}
                         >
-                          {t.settings.makeMainPhoto}
+                          {copy.telegramRefreshLink}
                         </button>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {!isTelegramLoading && !telegramError && telegramPanel ? (
+                    <div className={styles.serviceStack}>
+                      <div className={`${styles.generatedBlock} ${styles.settingsTelegramCompact}`}>
+                        <span className={styles.choiceText}>
+                          {copy.telegramChat}: {telegramPanel.chatId || "—"}
+                        </span>
+                        <span className={styles.choiceText}>
+                          {copy.telegramTokenExpires}: {formatTelegramExpiry(telegramPanel.tokenExpiresAt) || "—"}
+                        </span>
+                        <div className={styles.templateActions}>
+                          <button
+                            type="button"
+                            className={styles.primaryButton}
+                            onClick={openTelegramBotLink}
+                            disabled={!telegramPanel.deepLink}
+                          >
+                            {telegramPanel.connected ? copy.telegramOpenBot : copy.telegramConnectButton}
+                          </button>
+                          <button
+                            type="button"
+                            className={styles.ghostButton}
+                            onClick={() => setIsTelegramAdvancedOpen((current) => !current)}
+                          >
+                            {isTelegramAdvancedOpen ? copy.telegramSettingsHide : copy.telegramSettingsOpen}
+                          </button>
+                          <button
+                            type="button"
+                            className={styles.ghostButton}
+                            onClick={() => void loadTelegramPanel()}
+                            disabled={isTelegramSaving}
+                          >
+                            {copy.telegramRefreshLink}
+                          </button>
+                        </div>
+                      </div>
+
+                      {isTelegramAdvancedOpen ? (
+                        <>
+                          <div className={styles.templateActions}>
+                            <button
+                              type="button"
+                              className={telegramSection === "notifications" ? styles.primaryButton : styles.ghostButton}
+                              onClick={() => setTelegramSection("notifications")}
+                            >
+                              {copy.telegramSectionNotifications}
+                            </button>
+                            <button
+                              type="button"
+                              className={telegramSection === "reminders" ? styles.primaryButton : styles.ghostButton}
+                              onClick={() => setTelegramSection("reminders")}
+                            >
+                              {copy.telegramSectionReminders}
+                            </button>
+                            <button
+                              type="button"
+                              className={telegramSection === "support" ? styles.primaryButton : styles.ghostButton}
+                              onClick={() => setTelegramSection("support")}
+                            >
+                              {copy.telegramSectionSupport}
+                            </button>
+                            <button
+                              type="button"
+                              className={telegramSection === "bot" ? styles.primaryButton : styles.ghostButton}
+                              onClick={() => setTelegramSection("bot")}
+                            >
+                              {copy.telegramSectionBot}
+                            </button>
+                          </div>
+
+                          {telegramSection === "notifications" ? (
+                            <div className={styles.generatedBlock}>
+                              <p className={styles.generatedHint}>{copy.telegramNotificationsHint}</p>
+                              <button
+                                type="button"
+                                className={buildTelegramToggleClass(telegramPanel.settings.notificationsNewBooking)}
+                                onClick={() => void toggleTelegramSetting("notificationsNewBooking")}
+                                disabled={isTelegramSaving}
+                              >
+                                <span className={styles.settingsToggleText}>{copy.telegramOnlineBookings}</span>
+                                <span className={styles.settingsToggleTrack}>
+                                  <span className={styles.settingsToggleThumb} />
+                                </span>
+                              </button>
+                              <button
+                                type="button"
+                                className={buildTelegramToggleClass(telegramPanel.settings.notificationsCabinetBooking)}
+                                onClick={() => void toggleTelegramSetting("notificationsCabinetBooking")}
+                                disabled={isTelegramSaving}
+                              >
+                                <span className={styles.settingsToggleText}>{copy.telegramCabinetBookings}</span>
+                                <span className={styles.settingsToggleTrack}>
+                                  <span className={styles.settingsToggleThumb} />
+                                </span>
+                              </button>
+                              <button
+                                type="button"
+                                className={buildTelegramToggleClass(telegramPanel.settings.notificationsRescheduled)}
+                                onClick={() => void toggleTelegramSetting("notificationsRescheduled")}
+                                disabled={isTelegramSaving}
+                              >
+                                <span className={styles.settingsToggleText}>{copy.telegramRescheduled}</span>
+                                <span className={styles.settingsToggleTrack}>
+                                  <span className={styles.settingsToggleThumb} />
+                                </span>
+                              </button>
+                              <button
+                                type="button"
+                                className={buildTelegramToggleClass(telegramPanel.settings.notificationsCancelled)}
+                                onClick={() => void toggleTelegramSetting("notificationsCancelled")}
+                                disabled={isTelegramSaving}
+                              >
+                                <span className={styles.settingsToggleText}>{copy.telegramCancelled}</span>
+                                <span className={styles.settingsToggleTrack}>
+                                  <span className={styles.settingsToggleThumb} />
+                                </span>
+                              </button>
+                            </div>
+                          ) : null}
+
+                          {telegramSection === "reminders" ? (
+                            <div className={styles.generatedBlock}>
+                              <p className={styles.generatedHint}>{copy.telegramRemindersHint}</p>
+                              <button
+                                type="button"
+                                className={buildTelegramToggleClass(telegramPanel.settings.notificationsReminder)}
+                                onClick={() => void toggleTelegramSetting("notificationsReminder")}
+                                disabled={isTelegramSaving}
+                              >
+                                <span className={styles.settingsToggleText}>{copy.telegramReminders}</span>
+                                <span className={styles.settingsToggleTrack}>
+                                  <span className={styles.settingsToggleThumb} />
+                                </span>
+                              </button>
+                              <button
+                                type="button"
+                                className={buildTelegramToggleClass(telegramPanel.settings.notificationsToday)}
+                                onClick={() => void toggleTelegramSetting("notificationsToday")}
+                                disabled={isTelegramSaving}
+                              >
+                                <span className={styles.settingsToggleText}>{copy.telegramToday}</span>
+                                <span className={styles.settingsToggleTrack}>
+                                  <span className={styles.settingsToggleThumb} />
+                                </span>
+                              </button>
+                              <label>
+                                {copy.telegramReminderLead}
+                                <select
+                                  className={styles.input}
+                                  value={String(telegramPanel.settings.reminderLeadMinutes)}
+                                  onChange={(event) => void setTelegramReminderLead(Number.parseInt(event.target.value, 10) || 120)}
+                                  disabled={isTelegramSaving}
+                                >
+                                  {telegramReminderLeadOptions.map((minutes) => (
+                                    <option key={minutes} value={minutes}>
+                                      {formatReminderLead(minutes)}
+                                    </option>
+                                  ))}
+                                </select>
+                              </label>
+                            </div>
+                          ) : null}
+
+                          {telegramSection === "support" ? (
+                            <div className={styles.generatedBlock}>
+                              <p className={styles.generatedHint}>{copy.telegramSupportHint}</p>
+                              <button
+                                type="button"
+                                className={buildTelegramToggleClass(telegramPanel.settings.forwardingEnabled)}
+                                onClick={() => void toggleTelegramSetting("forwardingEnabled")}
+                                disabled={isTelegramSaving}
+                              >
+                                <span className={styles.settingsToggleText}>{copy.telegramForwarding}</span>
+                                <span className={styles.settingsToggleTrack}>
+                                  <span className={styles.settingsToggleThumb} />
+                                </span>
+                              </button>
+                              <div className={styles.templateActions}>
+                                <button
+                                  type="button"
+                                  className={styles.ghostButton}
+                                  onClick={openTelegramBotLink}
+                                  disabled={!telegramPanel.deepLink}
+                                >
+                                  {copy.telegramOpenBot}
+                                </button>
+                              </div>
+                            </div>
+                          ) : null}
+
+                          {telegramSection === "bot" ? (
+                            <div className={styles.generatedBlock}>
+                              <p className={styles.generatedHint}>{copy.telegramBotHint}</p>
+                              <div className={styles.templateActions}>
+                                <button
+                                  type="button"
+                                  className={styles.primaryButton}
+                                  onClick={() =>
+                                    void updateTelegramSettings({
+                                      notificationsNewBooking: true,
+                                      notificationsCabinetBooking: true,
+                                      notificationsRescheduled: true,
+                                      notificationsCancelled: true,
+                                      notificationsReminder: true,
+                                      notificationsToday: true
+                                    })
+                                  }
+                                  disabled={isTelegramSaving}
+                                >
+                                  {copy.telegramAllOn}
+                                </button>
+                                <button
+                                  type="button"
+                                  className={styles.ghostButton}
+                                  onClick={() =>
+                                    void updateTelegramSettings({
+                                      notificationsNewBooking: false,
+                                      notificationsCabinetBooking: false,
+                                      notificationsRescheduled: false,
+                                      notificationsCancelled: false,
+                                      notificationsReminder: false,
+                                      notificationsToday: false
+                                    })
+                                  }
+                                  disabled={isTelegramSaving}
+                                >
+                                  {copy.telegramAllOff}
+                                </button>
+                                <button
+                                  type="button"
+                                  className={styles.ghostButton}
+                                  onClick={() => void copyTelegramLink()}
+                                  disabled={!telegramPanel.deepLink}
+                                >
+                                  {copy.telegramCopyLink}
+                                </button>
+                              </div>
+                            </div>
+                          ) : null}
+                        </>
                       ) : null}
-                      <button
-                        type="button"
-                        className={styles.photoActionButton}
-                        onClick={() =>
-                          updateBusinessPhotos(
-                            (data.business.photos ?? []).filter((item) => item.id !== photo.id)
-                          )
-                        }
-                      >
-                        {t.common.delete}
-                      </button>
+                    </div>
+                  ) : null}
+                </section>
+              ) : null}
+
+              {activeSection === "address" ? (
+                <section className={styles.settingsCard}>
+                  <div className={styles.settingsCardHeader}>
+                    <div>
+                      <span>{t.settings.address}</span>
+                      <h2>{t.settings.addressTitle}</h2>
                     </div>
                   </div>
-                </article>
-              ))}
-              {(data.business.photos ?? []).length < MAX_BUSINESS_PHOTOS ? (
-                <label className={styles.settingsPhotoUploader}>
-                  <span>{(data.business.photos ?? []).length === 0 ? t.settings.uploadPhotos : t.settings.uploadMorePhotos}</span>
-                  <small>{t.settings.photoLimit}</small>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={(event) => void handleBusinessPhotoUpload(event)}
-                  />
-                </label>
+                  <div className={styles.settingsFormGrid}>
+                    <label className={styles.settingsWideField}>
+                      {t.settings.findAddress}
+                      <input
+                        className={styles.input}
+                        value={data.business.address}
+                        onFocus={(event) => event.currentTarget.select()}
+                        onClick={(event) => event.currentTarget.select()}
+                        onChange={(event) =>
+                          setData((current) => ({
+                            ...current,
+                            business: {
+                              ...current.business,
+                              address: event.target.value,
+                              addressDetails: "",
+                              addressLat: null,
+                              addressLon: null
+                            }
+                          }))
+                        }
+                        placeholder={t.settings.addressPlaceholder}
+                      />
+                    </label>
+                    <div className={`${styles.settingsWideField} ${styles.settingsAddressSearchList}`}>
+                      {isSearchingAddress ? <div className={styles.addressHint}>{t.settings.searchingAddress}</div> : null}
+                      {addressSuggestions.map((item) => (
+                        <button
+                          key={`${item.label}-${item.lat}-${item.lon}`}
+                          type="button"
+                          className={styles.addressSearchItem}
+                          onClick={() => applyAddress(item)}
+                        >
+                          <span className={styles.addressSearchText}>
+                            <strong>{[item.street, item.house].filter(Boolean).join(", ") || item.label}</strong>
+                            <span>{[item.city, item.region, item.postcode, item.country].filter(Boolean).join(", ")}</span>
+                          </span>
+                          <span className={styles.addressSearchAction}>{t.settings.selectAddress}</span>
+                        </button>
+                      ))}
+                    </div>
+                    {hasSelectedMapAddress ? (
+                      <div className={`${styles.settingsWideField} ${styles.settingsAddressSummary}`}>
+                        <div>
+                          <span>{t.settings.streetHouse}</span>
+                          <strong>{structuredAddress.street || t.settings.addressNotSelected}</strong>
+                        </div>
+                        <div>
+                          <span>{t.settings.city}</span>
+                          <strong>{structuredAddress.city || "—"}</strong>
+                        </div>
+                        <div>
+                          <span>{t.settings.region}</span>
+                          <strong>{structuredAddress.region || "—"}</strong>
+                        </div>
+                        <div>
+                          <span>{t.settings.country}</span>
+                          <strong>{structuredAddress.country || "—"}</strong>
+                        </div>
+                      </div>
+                    ) : null}
+                    {mapEmbedUrl ? (
+                      <iframe
+                        title="Business address map"
+                        className={`${styles.mapFrame} ${styles.settingsMapFrame}`}
+                        src={mapEmbedUrl}
+                      />
+                    ) : addressSuggestions.length === 0 && !isSearchingAddress ? (
+                      <div className={`${styles.settingsWideField} ${styles.addressWarning}`}>
+                        {t.settings.chooseAddressWarning}
+                      </div>
+                    ) : null}
+                  </div>
+                </section>
               ) : null}
             </div>
-            {(data.business.photos ?? []).length === 0 ? (
-              <p className={styles.settingsEmptyText}>{t.settings.noPhotos}</p>
-            ) : null}
-          </section>
-
-          <section className={styles.settingsCard}>
-            <div className={styles.settingsCardHeader}>
-              <div>
-                <span>{t.settings.localization}</span>
-                <h2>{t.settings.countryLanguageCurrency}</h2>
-              </div>
-            </div>
-            <div className={styles.settingsFormGrid}>
-              <label>
-                {t.settings.country}
-                <select className={styles.select} value={data.professional.country} onChange={(event) => updateProfessional("country", event.target.value)}>
-                  {countries.map((country) => (
-                    <option key={country} value={country}>{country}</option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                {t.settings.timezone}
-                <select className={styles.select} value={data.professional.timezone} onChange={(event) => updateProfessional("timezone", event.target.value)}>
-                  {timezones.map((timezone) => (
-                    <option key={timezone.value} value={timezone.value}>{timezone.label}</option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                {t.settings.language}
-                <select
-                  className={styles.select}
-                  value={languageFromProfile(data.professional.language)}
-                  onChange={(event) => updateProfessional("language", languageLabels[event.target.value as ProLanguage])}
-                >
-                  {languages.map((language) => (
-                    <option key={language} value={language}>{languageLabels[language]}</option>
-                  ))}
-                </select>
-              </label>
-              <label>
-                {t.settings.currency}
-                <select className={styles.select} value={data.professional.currency} onChange={(event) => updateProfessional("currency", event.target.value)}>
-                  {currencies.map((currency) => (
-                    <option key={currency} value={currency}>{currency}</option>
-                  ))}
-                </select>
-              </label>
-            </div>
-          </section>
-
-          <section className={styles.settingsCard}>
-            <div className={styles.settingsCardHeader}>
-              <div>
-                <span>{t.settings.address}</span>
-                <h2>{t.settings.addressTitle}</h2>
-              </div>
-            </div>
-            <div className={styles.settingsFormGrid}>
-              <label className={styles.settingsWideField}>
-                {t.settings.findAddress}
-                <input
-                  className={styles.input}
-                  value={data.business.address}
-                  onFocus={(event) => event.currentTarget.select()}
-                  onClick={(event) => event.currentTarget.select()}
-                  onChange={(event) =>
-                    setData((current) => ({
-                      ...current,
-                      business: {
-                        ...current.business,
-                        address: event.target.value,
-                        addressDetails: "",
-                        addressLat: null,
-                        addressLon: null
-                      }
-                    }))
-                  }
-                  placeholder={t.settings.addressPlaceholder}
-                />
-              </label>
-              <div className={`${styles.settingsWideField} ${styles.settingsAddressSearchList}`}>
-                {isSearchingAddress ? <div className={styles.addressHint}>{t.settings.searchingAddress}</div> : null}
-                {addressSuggestions.map((item) => (
-                  <button
-                    key={`${item.label}-${item.lat}-${item.lon}`}
-                    type="button"
-                    className={styles.addressSearchItem}
-                    onClick={() => applyAddress(item)}
-                  >
-                    <span className={styles.addressSearchText}>
-                      <strong>{[item.street, item.house].filter(Boolean).join(", ") || item.label}</strong>
-                      <span>{[item.city, item.region, item.postcode, item.country].filter(Boolean).join(", ")}</span>
-                    </span>
-                    <span className={styles.addressSearchAction}>{t.settings.selectAddress}</span>
-                  </button>
-                ))}
-              </div>
-              {hasSelectedMapAddress ? (
-                <div className={`${styles.settingsWideField} ${styles.settingsAddressSummary}`}>
-                  <div>
-                    <span>{t.settings.streetHouse}</span>
-                    <strong>{structuredAddress.street || t.settings.addressNotSelected}</strong>
-                  </div>
-                  <div>
-                    <span>{t.settings.city}</span>
-                    <strong>{structuredAddress.city || "—"}</strong>
-                  </div>
-                  <div>
-                    <span>{t.settings.region}</span>
-                    <strong>{structuredAddress.region || "—"}</strong>
-                  </div>
-                  <div>
-                    <span>{t.settings.country}</span>
-                    <strong>{structuredAddress.country || "—"}</strong>
-                  </div>
-                </div>
-              ) : null}
-              {mapEmbedUrl ? (
-                <iframe
-                  title="Business address map"
-                  className={`${styles.mapFrame} ${styles.settingsMapFrame}`}
-                  src={mapEmbedUrl}
-                />
-              ) : addressSuggestions.length === 0 && !isSearchingAddress ? (
-                <div className={`${styles.settingsWideField} ${styles.addressWarning}`}>
-                  {t.settings.chooseAddressWarning}
-                </div>
-              ) : null}
-            </div>
-          </section>
+          </div>
         </div>
       </section>
     </main>

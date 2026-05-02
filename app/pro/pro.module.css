@@ -9961,8 +9961,104 @@
   margin-top: 18px;
 }
 
+.settingsGridSingle {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.settingsLayout {
+  display: grid;
+  grid-template-columns: minmax(220px, 260px) minmax(0, 1fr);
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.settingsSectionSidebar {
+  position: sticky;
+  top: 88px;
+  align-self: start;
+  display: grid;
+  gap: 12px;
+}
+
+.settingsSectionProgress {
+  padding: 16px;
+  border: 1px solid #e2e7f3;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 14px 30px rgba(90, 103, 151, 0.08);
+}
+
+.settingsSectionProgress strong {
+  display: block;
+  color: #171411;
+  font-size: 1rem;
+  font-weight: 900;
+}
+
+.settingsSectionProgress p {
+  margin: 10px 0 0;
+  color: #6f768b;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.settingsSectionProgressRail {
+  height: 9px;
+  margin-top: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e5ebfb;
+}
+
+.settingsSectionProgressRail span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(135deg, #6f4bff, #7ed6bd);
+}
+
+.settingsSectionNav {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid #e2e7f3;
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 14px 30px rgba(90, 103, 151, 0.08);
+}
+
+.settingsSectionNavButton {
+  min-height: 40px;
+  padding: 0 13px;
+  border: 1px solid #e5e9f5;
+  border-radius: 12px;
+  background: #fff;
+  color: #303446;
+  font: inherit;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.2s ease, background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.settingsSectionNavButton:hover {
+  border-color: #d1dbf1;
+  background: #f8faff;
+}
+
+.settingsSectionNavButtonActive {
+  border-color: rgba(96, 70, 255, 0.26);
+  background: rgba(118, 95, 255, 0.08);
+  color: #3a2ca7;
+  box-shadow: 0 10px 20px rgba(68, 41, 191, 0.08);
+}
+
+.settingsSectionContent {
+  min-width: 0;
+}
+
 .settingsCard {
-  padding: 24px;
+  padding: 20px;
   border: 1px solid #e2e7f3;
   border-radius: 28px;
   background: rgba(255, 255, 255, 0.84);
@@ -9980,7 +10076,7 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 20px;
+  margin-bottom: 14px;
 }
 
 .settingsCardHeader span {
@@ -10143,15 +10239,15 @@
 }
 
 .settingsCardHint {
-  margin: -6px 0 18px;
+  margin: 0 0 12px;
   color: #737d94;
-  line-height: 1.6;
+  line-height: 1.5;
 }
 
 .settingsShareCard {
   display: grid;
-  gap: 14px;
-  padding: 18px;
+  gap: 12px;
+  padding: 14px;
   border-radius: 22px;
   background:
     radial-gradient(circle at top right, rgba(111, 92, 255, 0.12), transparent 34%),
@@ -10268,7 +10364,11 @@
 .settingsShareActions {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
+}
+
+.settingsTelegramCompact .templateActions {
+  margin-top: 6px;
 }
 
 .settingsPhotoGrid {
@@ -10449,6 +10549,18 @@
 }
 
 @media (max-width: 1080px) {
+  .settingsLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .settingsSectionSidebar {
+    position: static;
+  }
+
+  .settingsSectionNav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .settingsGrid {
     grid-template-columns: 1fr;
   }
@@ -10459,6 +10571,10 @@
 }
 
 @media (max-width: 720px) {
+  .settingsSectionNav {
+    grid-template-columns: 1fr;
+  }
+
   .settingsFormGrid,
   .settingsMetrics,
   .settingsAddressSummary,
