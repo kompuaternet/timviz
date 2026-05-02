@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import {
   answerTelegramCallbackQuery,
+  buildMenuCallbackData,
   buildSettingsMessage,
   connectTelegramChatByToken,
   ensureTelegramBotCommandsConfigured,
@@ -12,6 +13,7 @@ import {
   getTodayBookingsForConnection,
   getTelegramWebhookSecret,
   normalizeTelegramUserLanguage,
+  parseMenuCallbackData,
   parseBookingCallbackData,
   parseSettingsCallbackData,
   sendTelegramTextMessage,
@@ -105,6 +107,16 @@ function buildDashboardKeyboard(preferredLanguage?: string | null) {
     inline_keyboard: [
       [
         {
+          text: text.menuToday,
+          callback_data: buildMenuCallbackData("today")
+        },
+        {
+          text: text.menuSettings,
+          callback_data: buildMenuCallbackData("settings")
+        }
+      ],
+      [
+        {
           text: text.openDashboard,
           url: getDashboardUrl("/pro/calendar")
         }
@@ -136,7 +148,7 @@ async function handleStartCommand(input: {
       const t = getTelegramText(connected.language);
       await sendTelegramTextMessage({
         chatId: input.chatId,
-        text: t.connected,
+        text: `${t.connected}\n\n${t.mainMenuTitle}\n${t.mainMenuHint}`,
         replyMarkup: buildDashboardKeyboard(connected.language)
       });
       return;
@@ -151,10 +163,26 @@ async function handleStartCommand(input: {
     return;
   }
 
+  const existingConnection = await getTelegramConnectionByChatId(input.chatId).catch(() => null);
+  if (existingConnection) {
+    const activeConnection =
+      (await touchTelegramConnection(
+        existingConnection,
+        input.user?.language_code || undefined
+      ).catch(() => null)) || existingConnection;
+    const t = getTelegramText(activeConnection.language);
+    await sendTelegramTextMessage({
+      chatId: input.chatId,
+      text: `${t.mainMenuTitle}\n${t.help}`,
+      replyMarkup: buildDashboardKeyboard(activeConnection.language)
+    });
+    return;
+  }
+
   const fallbackText = getTelegramText(normalizeTelegramUserLanguage(input.user?.language_code));
   await sendTelegramTextMessage({
     chatId: input.chatId,
-    text: fallbackText.help,
+    text: `${fallbackText.mainMenuTitle}\n${fallbackText.help}\n\n${fallbackText.connectHint}`,
     replyMarkup: buildDashboardKeyboard(input.user?.language_code)
   });
 }
@@ -266,6 +294,28 @@ async function handleCallbackQuery(update: TelegramUpdate) {
   const activeConnection = touchedConnection || connection;
 
   const t = getTelegramText(activeConnection.language);
+  const menuAction = parseMenuCallbackData(data);
+  if (menuAction) {
+    await answerTelegramCallbackQuery(callback.id).catch(() => undefined);
+
+    if (menuAction === "today") {
+      await handleTodayCommand(chatId, activeConnection.language);
+      return;
+    }
+
+    if (menuAction === "settings") {
+      await handleSettingsCommand(chatId, activeConnection.language);
+      return;
+    }
+
+    await sendTelegramTextMessage({
+      chatId,
+      text: `${t.mainMenuTitle}\n${t.help}`,
+      replyMarkup: buildDashboardKeyboard(activeConnection.language)
+    }).catch(() => undefined);
+    return;
+  }
+
   const settingsKey = parseSettingsCallbackData(data);
 
   if (settingsKey) {
@@ -403,7 +453,7 @@ async function handleMessage(update: TelegramUpdate) {
   );
   await sendTelegramTextMessage({
     chatId,
-    text: t.help,
+    text: `${t.mainMenuTitle}\n${t.help}`,
     replyMarkup: buildDashboardKeyboard(connection?.language || preferredLanguage)
   });
 }

@@ -35,6 +35,8 @@ export type TelegramSettingKey =
   | "notificationsToday"
   | "forwardingEnabled";
 
+export type TelegramMenuAction = "today" | "settings" | "menu";
+
 type TelegramReminderEvent = {
   id: string;
   appointmentId: string;
@@ -76,6 +78,11 @@ type TelegramText = {
   invalidToken: string;
   connectHint: string;
   help: string;
+  mainMenuTitle: string;
+  mainMenuHint: string;
+  menuToday: string;
+  menuSettings: string;
+  menuHome: string;
   todayEmpty: string;
   todayHeader: string;
   settingsTitle: string;
@@ -90,6 +97,7 @@ type TelegramText = {
   remindersLabel: string;
   todayLabel: string;
   forwardingLabel: string;
+  unknownClient: string;
   enabled: string;
   disabled: string;
   settingUpdated: string;
@@ -130,91 +138,116 @@ let activeCommandsSyncPromise: Promise<boolean> | null = null;
 
 const BOOKING_CALLBACK_PREFIX = "tvbk";
 const SETTINGS_CALLBACK_PREFIX = "tvst";
+const MENU_CALLBACK_PREFIX = "tvmn";
 
 const textByLanguage: Record<TelegramLanguage, TelegramText> = {
   ru: {
-    connected: "Telegram подключен. Теперь вы получаете новые записи прямо здесь.",
-    invalidToken: "Ссылка подключения недействительна. Сгенерируйте новую ссылку в кабинете.",
-    connectHint: "Подключите Telegram через кабинет Timviz и повторите команду.",
-    help: "Timviz bot: /today — записи на сегодня, /settings — уведомления.",
-    todayEmpty: "На сегодня записей нет.",
-    todayHeader: "Записи на сегодня",
-    settingsTitle: "Настройки уведомлений",
-    noConnection: "Этот чат не подключен к Timviz.",
-    bookingCreated: "Новая онлайн-запись",
-    reminderPrefix: "Напоминание: запись через 2 часа",
-    confirm: "Подтвердить",
-    cancel: "Отменить",
-    openBooking: "Открыть запись",
-    openDashboard: "Открыть кабинет",
+    connected:
+      "✅ Telegram подключен!\nТеперь вы будете получать новые записи и напоминания прямо в этом чате.",
+    invalidToken:
+      "⚠️ Ссылка подключения уже неактивна.\nСгенерируйте новую ссылку в кабинете Timviz и подключите бот снова.",
+    connectHint: "Откройте Timviz и подключите Telegram в настройках профиля.",
+    help: "Выберите действие ниже — всё можно сделать кнопками.",
+    mainMenuTitle: "🏠 Главное меню Timviz",
+    mainMenuHint: "Управляйте записями и уведомлениями в один тап.",
+    menuToday: "📅 Записи на сегодня",
+    menuSettings: "⚙️ Настройки",
+    menuHome: "🏠 Меню",
+    todayEmpty: "📭 На сегодня записей нет.",
+    todayHeader: "📅 Записи на сегодня",
+    settingsTitle: "⚙️ Настройки уведомлений",
+    noConnection: "🔌 Этот чат пока не подключен к Timviz.",
+    bookingCreated: "🆕 Новая онлайн-запись",
+    reminderPrefix: "⏰ Напоминание: запись через 2 часа",
+    confirm: "✅ Подтвердить",
+    cancel: "❌ Отменить",
+    openBooking: "🔎 Открыть запись",
+    openDashboard: "🗂 Открыть кабинет",
     newBookingsLabel: "Новые записи",
     remindersLabel: "Напоминания",
-    todayLabel: "Команда /today",
+    todayLabel: "Сводка на сегодня",
     forwardingLabel: "Пересылка в поддержку",
-    enabled: "вкл",
-    disabled: "выкл",
-    settingUpdated: "Настройка обновлена.",
-    forwardSuccess: "Сообщение переслано в поддержку.",
-    forwardDisabled: "Пересылка отключена в настройках.",
-    actionDoneConfirm: "Запись подтверждена.",
-    actionDoneCancel: "Запись отменена.",
-    actionNotFound: "Запись уже обработана или не найдена."
+    unknownClient: "Клиент",
+    enabled: "🟢 Вкл",
+    disabled: "⚪️ Выкл",
+    settingUpdated: "✅ Настройка обновлена.",
+    forwardSuccess: "✅ Сообщение отправлено в поддержку.",
+    forwardDisabled: "⚠️ Пересылка в поддержку сейчас выключена.",
+    actionDoneConfirm: "✅ Запись подтверждена.",
+    actionDoneCancel: "❌ Запись отменена.",
+    actionNotFound: "⚠️ Запись уже обработана или не найдена."
   },
   uk: {
-    connected: "Telegram підключено. Тепер нові записи приходять прямо сюди.",
-    invalidToken: "Посилання підключення недійсне. Згенеруйте нове в кабінеті.",
-    connectHint: "Підключіть Telegram у кабінеті Timviz і повторіть команду.",
-    help: "Timviz bot: /today — записи на сьогодні, /settings — сповіщення.",
-    todayEmpty: "На сьогодні записів немає.",
-    todayHeader: "Записи на сьогодні",
-    settingsTitle: "Налаштування сповіщень",
-    noConnection: "Цей чат не підключено до Timviz.",
-    bookingCreated: "Новий онлайн-запис",
-    reminderPrefix: "Нагадування: запис через 2 години",
-    confirm: "Підтвердити",
-    cancel: "Скасувати",
-    openBooking: "Відкрити запис",
-    openDashboard: "Відкрити кабінет",
+    connected:
+      "✅ Telegram підключено!\nТепер ви отримуватимете нові записи та нагадування прямо в цьому чаті.",
+    invalidToken:
+      "⚠️ Посилання підключення вже неактивне.\nЗгенеруйте нове в кабінеті Timviz і підключіть бота ще раз.",
+    connectHint: "Відкрийте Timviz і підключіть Telegram у налаштуваннях профілю.",
+    help: "Оберіть дію нижче — усе можна робити кнопками.",
+    mainMenuTitle: "🏠 Головне меню Timviz",
+    mainMenuHint: "Керуйте записами та сповіщеннями в один дотик.",
+    menuToday: "📅 Записи на сьогодні",
+    menuSettings: "⚙️ Налаштування",
+    menuHome: "🏠 Меню",
+    todayEmpty: "📭 На сьогодні записів немає.",
+    todayHeader: "📅 Записи на сьогодні",
+    settingsTitle: "⚙️ Налаштування сповіщень",
+    noConnection: "🔌 Цей чат поки не підключено до Timviz.",
+    bookingCreated: "🆕 Новий онлайн-запис",
+    reminderPrefix: "⏰ Нагадування: запис через 2 години",
+    confirm: "✅ Підтвердити",
+    cancel: "❌ Скасувати",
+    openBooking: "🔎 Відкрити запис",
+    openDashboard: "🗂 Відкрити кабінет",
     newBookingsLabel: "Нові записи",
     remindersLabel: "Нагадування",
-    todayLabel: "Команда /today",
+    todayLabel: "Зведення на сьогодні",
     forwardingLabel: "Пересилка в підтримку",
-    enabled: "увімк",
-    disabled: "вимк",
-    settingUpdated: "Налаштування оновлено.",
-    forwardSuccess: "Повідомлення переслано в підтримку.",
-    forwardDisabled: "Пересилку вимкнено в налаштуваннях.",
-    actionDoneConfirm: "Запис підтверджено.",
-    actionDoneCancel: "Запис скасовано.",
-    actionNotFound: "Запис уже оброблено або не знайдено."
+    unknownClient: "Клієнт",
+    enabled: "🟢 Увімк",
+    disabled: "⚪️ Вимк",
+    settingUpdated: "✅ Налаштування оновлено.",
+    forwardSuccess: "✅ Повідомлення надіслано в підтримку.",
+    forwardDisabled: "⚠️ Пересилку в підтримку зараз вимкнено.",
+    actionDoneConfirm: "✅ Запис підтверджено.",
+    actionDoneCancel: "❌ Запис скасовано.",
+    actionNotFound: "⚠️ Запис уже оброблено або не знайдено."
   },
   en: {
-    connected: "Telegram is connected. New bookings will arrive here.",
-    invalidToken: "Connection link is invalid. Generate a new one in dashboard.",
-    connectHint: "Connect Telegram in Timviz dashboard and try again.",
-    help: "Timviz bot: /today for today's bookings, /settings for notification toggles.",
-    todayEmpty: "No bookings for today.",
-    todayHeader: "Today's bookings",
-    settingsTitle: "Notification settings",
-    noConnection: "This chat is not connected to Timviz.",
-    bookingCreated: "New online booking",
-    reminderPrefix: "Reminder: booking in 2 hours",
-    confirm: "Confirm",
-    cancel: "Cancel",
-    openBooking: "Open booking",
-    openDashboard: "Open dashboard",
+    connected:
+      "✅ Telegram connected!\nYou will now receive new bookings and reminders in this chat.",
+    invalidToken:
+      "⚠️ This connection link is no longer active.\nGenerate a new one in Timviz dashboard and reconnect.",
+    connectHint: "Open Timviz dashboard and connect Telegram in profile settings.",
+    help: "Choose an action below — no commands needed.",
+    mainMenuTitle: "🏠 Timviz Main Menu",
+    mainMenuHint: "Manage bookings and notifications in one tap.",
+    menuToday: "📅 Today bookings",
+    menuSettings: "⚙️ Settings",
+    menuHome: "🏠 Menu",
+    todayEmpty: "📭 No bookings for today.",
+    todayHeader: "📅 Today's bookings",
+    settingsTitle: "⚙️ Notification settings",
+    noConnection: "🔌 This chat is not connected to Timviz yet.",
+    bookingCreated: "🆕 New online booking",
+    reminderPrefix: "⏰ Reminder: booking in 2 hours",
+    confirm: "✅ Confirm",
+    cancel: "❌ Cancel",
+    openBooking: "🔎 Open booking",
+    openDashboard: "🗂 Open dashboard",
     newBookingsLabel: "New bookings",
     remindersLabel: "Reminders",
-    todayLabel: "/today command",
+    todayLabel: "Today summary",
     forwardingLabel: "Forward to support",
-    enabled: "on",
-    disabled: "off",
-    settingUpdated: "Setting updated.",
-    forwardSuccess: "Message forwarded to support.",
-    forwardDisabled: "Forwarding is disabled in settings.",
-    actionDoneConfirm: "Booking confirmed.",
-    actionDoneCancel: "Booking cancelled.",
-    actionNotFound: "Booking is already handled or not found."
+    unknownClient: "Client",
+    enabled: "🟢 On",
+    disabled: "⚪️ Off",
+    settingUpdated: "✅ Setting updated.",
+    forwardSuccess: "✅ Message sent to support.",
+    forwardDisabled: "⚠️ Forwarding to support is currently off.",
+    actionDoneConfirm: "✅ Booking confirmed.",
+    actionDoneCancel: "❌ Booking cancelled.",
+    actionNotFound: "⚠️ Booking is already handled or not found."
   }
 };
 
@@ -853,6 +886,21 @@ export function parseSettingsCallbackData(value: string): TelegramSettingKey | n
   return null;
 }
 
+export function buildMenuCallbackData(action: TelegramMenuAction) {
+  return `${MENU_CALLBACK_PREFIX}:${action}`;
+}
+
+export function parseMenuCallbackData(value: string): TelegramMenuAction | null {
+  const [prefix, action] = value.split(":");
+  if (prefix !== MENU_CALLBACK_PREFIX) {
+    return null;
+  }
+  if (action === "today" || action === "settings" || action === "menu") {
+    return action;
+  }
+  return null;
+}
+
 function toggleText(enabled: boolean, text: TelegramText) {
   return enabled ? text.enabled : text.disabled;
 }
@@ -860,31 +908,41 @@ function toggleText(enabled: boolean, text: TelegramText) {
 export function buildSettingsMessage(connection: TelegramConnection) {
   const text = getTelegramText(connection.language);
   return {
-    text: `${text.settingsTitle}\n${text.connectHint}`,
+    text: `${text.settingsTitle}\n${text.mainMenuHint}\n\n${text.help}`,
     replyMarkup: {
       inline_keyboard: [
         [
           {
-            text: `${text.newBookingsLabel}: ${toggleText(connection.notificationsNewBooking, text)}`,
+            text: `🔔 ${text.newBookingsLabel}: ${toggleText(connection.notificationsNewBooking, text)}`,
             callback_data: buildSettingsCallbackData("notificationsNewBooking")
           }
         ],
         [
           {
-            text: `${text.remindersLabel}: ${toggleText(connection.notificationsReminder, text)}`,
+            text: `⏰ ${text.remindersLabel}: ${toggleText(connection.notificationsReminder, text)}`,
             callback_data: buildSettingsCallbackData("notificationsReminder")
           }
         ],
         [
           {
-            text: `${text.todayLabel}: ${toggleText(connection.notificationsToday, text)}`,
+            text: `📅 ${text.todayLabel}: ${toggleText(connection.notificationsToday, text)}`,
             callback_data: buildSettingsCallbackData("notificationsToday")
           }
         ],
         [
           {
-            text: `${text.forwardingLabel}: ${toggleText(connection.forwardingEnabled, text)}`,
+            text: `💬 ${text.forwardingLabel}: ${toggleText(connection.forwardingEnabled, text)}`,
             callback_data: buildSettingsCallbackData("forwardingEnabled")
+          }
+        ],
+        [
+          {
+            text: text.menuToday,
+            callback_data: buildMenuCallbackData("today")
+          },
+          {
+            text: text.menuHome,
+            callback_data: buildMenuCallbackData("menu")
           }
         ],
         [
@@ -994,16 +1052,30 @@ export function formatTodayBookingsMessage(connection: TelegramConnection, booki
     return text.todayEmpty;
   }
 
+  const total = bookings.length;
+  const confirmed = bookings.filter(
+    (item) => item.attendance === "confirmed" || item.attendance === "arrived"
+  ).length;
+  const pending = bookings.filter((item) => item.attendance === "pending").length;
+  const noShow = bookings.filter((item) => item.attendance === "no_show").length;
+
+  const summary =
+    connection.language === "uk"
+      ? `📊 Всього: ${total} • ✅ Підтверджено: ${confirmed} • ⏳ Очікують: ${pending} • 🚫 Не прийшли: ${noShow}`
+      : connection.language === "ru"
+        ? `📊 Всего: ${total} • ✅ Подтверждено: ${confirmed} • ⏳ Ожидают: ${pending} • 🚫 Не пришли: ${noShow}`
+        : `📊 Total: ${total} • ✅ Confirmed: ${confirmed} • ⏳ Pending: ${pending} • 🚫 No-show: ${noShow}`;
+
   const lines = bookings
     .slice(0, 20)
     .map((item) => {
       const status = mapAttendanceLabel(item.attendance, connection.language);
-      const name = item.customerName.trim() || "Client";
+      const name = item.customerName.trim() || text.unknownClient;
       const service = item.serviceName.trim() || "-";
-      return `${item.startTime} • ${name} • ${service} • ${status}`;
+      return `• ${item.startTime} — ${name} — ${service} — ${status}`;
     });
 
-  return `${text.todayHeader}\n${lines.join("\n")}`;
+  return `${text.todayHeader}\n${summary}\n\n${lines.join("\n")}`;
 }
 
 async function isReminderAlreadySent(input: {
@@ -1164,7 +1236,7 @@ export async function sendBookingTelegramNotification(input: {
   const message = [
     `${text.bookingCreated}`,
     `${input.appointmentDate} ${input.appointmentTime}`,
-    `${input.customerName.trim() || "Client"}`,
+    `${input.customerName.trim() || text.unknownClient}`,
     `${input.serviceName.trim() || "-"}`
   ].join("\n");
 
@@ -1231,7 +1303,7 @@ export async function processTelegramReminders() {
         const reminderMessage = [
           text.reminderPrefix,
           `${appointment.appointmentDate} ${appointment.startTime}`,
-          `${appointment.customerName.trim() || "Client"}`,
+          `${appointment.customerName.trim() || text.unknownClient}`,
           `${appointment.serviceName.trim() || "-"}`
         ].join("\n");
 
