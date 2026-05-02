@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { getSessionCookieName, verifySessionValue } from "../../../lib/pro-auth";
 import { getWorkspaceSnapshot } from "../../../lib/pro-data";
 import { getClientsList } from "../../../lib/pro-clients";
-import { isWorkspaceSetupComplete } from "../../../lib/pro-onboarding";
+import { getOnboardingCtaState } from "../../../lib/pro-onboarding";
 import { getTelegramConnectionByProfessionalId } from "../../../lib/telegram-bot";
 import ClientsView from "./ClientsView";
 
@@ -32,7 +32,7 @@ export default async function ProClientsPage() {
       accountCurrency={workspace.professional.currency || "USD"}
       businessName={workspace.business.name}
       canManageStaff={workspace.membership.scope === "owner"}
-      showOnboardingCta={!isWorkspaceSetupComplete(workspace, Boolean(telegramConnection?.chatId))}
+      onboardingCta={getOnboardingCtaState(workspace, Boolean(telegramConnection?.chatId))}
       initialClients={clients}
       header={{
         viewerName: `${workspace.professional.firstName} ${workspace.professional.lastName}`.trim() || workspace.professional.email,

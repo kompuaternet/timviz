@@ -8,6 +8,7 @@ import styles from "../pro.module.css";
 import { languageFromProfile, languageLabels, type ProLanguage } from "../i18n";
 import { useProLanguage } from "../useProLanguage";
 import { type BusinessPhoto } from "../../../lib/pro-data";
+import type { OnboardingCtaState } from "../../../lib/pro-onboarding";
 import type { WorkSchedule } from "../../../lib/work-schedule";
 
 const MAX_BUSINESS_PHOTOS = 5;
@@ -74,6 +75,8 @@ type SettingsData = {
 
 type SettingsViewProps = {
   initialData: SettingsData;
+  onboardingCta: OnboardingCtaState;
+  initialSection?: SettingsSectionId;
 };
 
 type AddressSuggestion = {
@@ -244,6 +247,7 @@ const settingsExtras = {
     publicBookingText: "Делитесь этой ссылкой с клиентами, публикуйте её в соцсетях и отправляйте мастерам. По ней откроется страница онлайн-записи.",
     publicBookingEnabled: "Онлайн-запись включена",
     publicBookingDisabled: "Онлайн-запись выключена",
+    onlineBookingSyncError: "Не удалось изменить режим онлайн-записи. Проверьте права доступа.",
     copyLink: "Копировать ссылку",
     openLink: "Открыть страницу",
     shareLink: "Поделиться",
@@ -331,6 +335,7 @@ const settingsExtras = {
     publicBookingText: "Діліться цим посиланням із клієнтами, публікуйте його в соцмережах і надсилайте майстрам. За ним відкриється сторінка онлайн-запису.",
     publicBookingEnabled: "Онлайн-запис увімкнено",
     publicBookingDisabled: "Онлайн-запис вимкнено",
+    onlineBookingSyncError: "Не вдалося змінити режим онлайн-запису. Перевірте права доступу.",
     copyLink: "Скопіювати посилання",
     openLink: "Відкрити сторінку",
     shareLink: "Поділитися",
@@ -418,6 +423,7 @@ const settingsExtras = {
     publicBookingText: "Share this link with clients, post it on social media, and send it to your specialists. It opens the online booking page.",
     publicBookingEnabled: "Online booking is on",
     publicBookingDisabled: "Online booking is off",
+    onlineBookingSyncError: "Unable to change online booking mode. Please check your access rights.",
     copyLink: "Copy link",
     openLink: "Open page",
     shareLink: "Share",
@@ -592,7 +598,7 @@ function buildSaveSnapshot(data: SettingsData): SaveSnapshot {
   };
 }
 
-export default function SettingsView({ initialData }: SettingsViewProps) {
+export default function SettingsView({ initialData, onboardingCta, initialSection }: SettingsViewProps) {
   const router = useRouter();
   const initialLanguage = languageFromProfile(initialData.professional.language);
   const { t, language } = useProLanguage(initialLanguage);
@@ -608,18 +614,20 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
   const [addressSearchValue, setAddressSearchValue] = useState(initialData.business.address ?? "");
   const [addressSuggestions, setAddressSuggestions] = useState<AddressSuggestion[]>([]);
   const [isSearchingAddress, setIsSearchingAddress] = useState(false);
+  const [isOnlineBookingSaving, setIsOnlineBookingSaving] = useState(false);
   const [telegramPanel, setTelegramPanel] = useState<TelegramPanelState | null>(null);
   const [telegramSection, setTelegramSection] = useState<TelegramSettingsSection>("notifications");
   const [isTelegramLoading, setIsTelegramLoading] = useState(true);
   const [isTelegramSaving, setIsTelegramSaving] = useState(false);
   const [telegramError, setTelegramError] = useState("");
-  const [activeSection, setActiveSection] = useState<SettingsSectionId>("general");
+  const [activeSection, setActiveSection] = useState<SettingsSectionId>(initialSection ?? "general");
   const isHydratedRef = useRef(false);
   const autoSaveTimerRef = useRef<number | null>(null);
   const lastSavedSnapshotRef = useRef("");
   const latestSnapshotRef = useRef("");
   const photoTransitionInitializedRef = useRef(false);
   const previousPhotoReadyRef = useRef(false);
+  const onlineBookingRequestIdRef = useRef(0);
   const publicBookingInputRef = useRef<HTMLInputElement | null>(null);
   const photoUploaderInputRef = useRef<HTMLInputElement | null>(null);
   const photoSectionRef = useRef<HTMLElement | null>(null);
@@ -1004,6 +1012,10 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
   }
 
   function handleOnlineBookingToggle() {
+    if (isOnlineBookingSaving) {
+      return;
+    }
+
     const nextValue = !(data.business.allowOnlineBooking === true);
     setData((current) => ({
       ...current,
@@ -1072,6 +1084,9 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
   }
 
   async function saveOnlineBookingSetting(nextValue: boolean) {
+    const requestId = onlineBookingRequestIdRef.current + 1;
+    onlineBookingRequestIdRef.current = requestId;
+    setIsOnlineBookingSaving(true);
     setStatus("");
 
     try {
@@ -1090,8 +1105,20 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
         throw new Error(payload.error || copy.saveFailed);
       }
 
+      if (onlineBookingRequestIdRef.current !== requestId) {
+        return;
+      }
+
+      const persistedValue = payload?.workspace?.business?.allowOnlineBooking === true;
+      if (persistedValue !== nextValue) {
+        throw new Error(copy.onlineBookingSyncError);
+      }
+
       applyWorkspacePayload(payload, { silent: true });
     } catch (error) {
+      if (onlineBookingRequestIdRef.current !== requestId) {
+        return;
+      }
       setData((current) => ({
         ...current,
         business: {
@@ -1100,6 +1127,10 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
         }
       }));
       setStatus(error instanceof Error ? error.message : copy.saveFailed);
+    } finally {
+      if (onlineBookingRequestIdRef.current === requestId) {
+        setIsOnlineBookingSaving(false);
+      }
     }
   }
 
@@ -1377,6 +1408,12 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
     photoTransitionInitializedRef.current = false;
   }, [initialData]);
 
+  useEffect(() => {
+    if (initialSection) {
+      setActiveSection(initialSection);
+    }
+  }, [initialSection]);
+
   async function handleJoinRequestAction(requestId: string, action: "approve" | "reject") {
     setStatus("");
     try {
@@ -1606,7 +1643,7 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
           publicBookingUrl={data.business.publicBookingUrl}
           publicBookingEnabled={data.business.allowOnlineBooking === true}
           canTogglePublicBooking={data.membership.scope === "owner"}
-          showOnboardingCta={!onboardingChecklistComplete}
+          onboardingCta={onboardingCta}
         />
 
         <header className={styles.settingsHero}>
@@ -1877,6 +1914,7 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
                             onClick={handleOnlineBookingToggle}
                             aria-pressed={data.business.allowOnlineBooking === true}
                             aria-label={t.settings.onlineBooking}
+                            disabled={isOnlineBookingSaving}
                           >
                             <span className={styles.settingsShareToggleLabel}>
                               {t.settings.onlineBooking}

@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getSessionCookieName, verifySessionValue } from "../../../lib/pro-auth";
 import { getWorkspaceSnapshot } from "../../../lib/pro-data";
-import { isWorkspaceSetupComplete } from "../../../lib/pro-onboarding";
+import { getOnboardingCtaState } from "../../../lib/pro-onboarding";
 import { getTelegramConnectionByProfessionalId } from "../../../lib/telegram-bot";
 import CalendarDayView from "./CalendarDayView";
 
@@ -45,7 +45,7 @@ export default async function ProCalendarPage({
       professionalId={professionalId}
       initialDate={params.date || formatDateKey(new Date())}
       initialPanel={params.panel === "notifications" ? "notifications" : undefined}
-      showOnboardingCta={!isWorkspaceSetupComplete(workspace, Boolean(telegramConnection?.chatId))}
+      onboardingCta={getOnboardingCtaState(workspace, Boolean(telegramConnection?.chatId))}
     />
   );
 }

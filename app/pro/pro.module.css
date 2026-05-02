@@ -6131,6 +6131,9 @@
   border-bottom: 1px solid #e8ebf4;
   background: rgba(247, 248, 252, 0.96);
   backdrop-filter: blur(16px);
+  position: sticky;
+  top: 0;
+  z-index: 11;
 }
 
 .clientsMain > .proPageWorkspaceHeader,
@@ -6152,7 +6155,6 @@
   padding-left: 6px;
   min-width: 0;
 }
-
 .calendarWorkspaceTitleRow {
   display: flex;
   align-items: center;
@@ -6212,6 +6214,12 @@
 
 .calendarOnboardingCta:active {
   transform: translateY(0);
+}
+
+.calendarOnboardingCtaDone {
+  opacity: 0.72;
+  cursor: default;
+  box-shadow: 0 6px 14px rgba(95, 73, 221, 0.16);
 }
 
 .calendarOnboardingCtaShort {
@@ -10499,6 +10507,11 @@
   border-color: #c8d2ea;
 }
 
+.settingsShareToggle:disabled {
+  opacity: 0.64;
+  cursor: wait;
+}
+
 .settingsShareToggleActive {
   border-color: rgba(96, 70, 255, 0.26);
   background: rgba(118, 95, 255, 0.06);
@@ -10967,14 +10980,6 @@
     flex: 0 0 auto;
   }
 
-  .calendarOnboardingCtaFull {
-    display: none;
-  }
-
-  .calendarOnboardingCtaShort {
-    display: inline;
-  }
-
   .calendarProfileButton {
     min-height: 36px;
     padding: 3px 6px 3px 3px;
@@ -11346,9 +11351,9 @@
 
   .calendarOnboardingCta {
     min-height: 30px;
-    padding: 0 8px;
+    padding: 0 9px;
     font-size: 0.7rem;
-    max-width: 106px;
+    max-width: none;
   }
 
   .calendarViewPill,
@@ -12365,6 +12370,31 @@
     font-size: 0.98rem;
     line-height: 1;
     white-space: nowrap;
+  }
+}
+
+@media (max-width: 767px) {
+  .calendarOnboardingCta {
+    min-width: 34px;
+    width: 34px;
+    height: 34px;
+    min-height: 34px;
+    padding: 0;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    flex: 0 0 auto;
+  }
+
+  .calendarOnboardingCtaFull {
+    display: none;
+  }
+
+  .calendarOnboardingCtaShort {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    line-height: 1;
   }
 }
 

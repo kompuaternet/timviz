@@ -5,6 +5,7 @@ import styles from "../pro.module.css";
 import ProSidebar from "../ProSidebar";
 import ProWorkspaceHeader from "../ProWorkspaceHeader";
 import type { ClientListItem } from "../../../lib/pro-clients";
+import type { OnboardingCtaState } from "../../../lib/pro-onboarding";
 import {
   buildInternationalPhone,
   formatPhoneLocal,
@@ -22,7 +23,7 @@ type ClientsViewProps = {
   accountCurrency: string;
   businessName: string;
   canManageStaff: boolean;
-  showOnboardingCta: boolean;
+  onboardingCta: OnboardingCtaState;
   initialClients: ClientListItem[];
   header: {
     viewerName: string;
@@ -281,7 +282,7 @@ export default function ClientsView({
   accountCurrency,
   businessName,
   canManageStaff,
-  showOnboardingCta,
+  onboardingCta,
   initialClients,
   header
 }: ClientsViewProps) {
@@ -459,12 +460,12 @@ export default function ClientsView({
             businessName={businessName}
             viewerName={header.viewerName}
             viewerAvatarUrl={header.viewerAvatarUrl}
-            viewerInitials={header.viewerInitials}
-            publicBookingUrl={header.publicBookingUrl}
-            publicBookingEnabled={header.publicBookingEnabled === true}
-            canTogglePublicBooking={canManageStaff}
-            showOnboardingCta={showOnboardingCta}
-          />
+          viewerInitials={header.viewerInitials}
+          publicBookingUrl={header.publicBookingUrl}
+          publicBookingEnabled={header.publicBookingEnabled === true}
+          canTogglePublicBooking={canManageStaff}
+          onboardingCta={onboardingCta}
+        />
 
           <header className={styles.clientsHeader}>
             <div>

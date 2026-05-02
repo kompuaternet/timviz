@@ -8,6 +8,7 @@ import SupportWidget from "./SupportWidget";
 import styles from "./pro.module.css";
 import { useProLanguage } from "./useProLanguage";
 import { profileLanguageFromCode, type ProLanguage } from "./i18n";
+import type { OnboardingCtaState, OnboardingStepId } from "../../lib/pro-onboarding";
 
 type ProWorkspaceHeaderProps = {
   businessName: string;
@@ -17,7 +18,7 @@ type ProWorkspaceHeaderProps = {
   publicBookingUrl?: string;
   publicBookingEnabled?: boolean;
   canTogglePublicBooking?: boolean;
-  showOnboardingCta?: boolean;
+  onboardingCta?: OnboardingCtaState | null;
 };
 
 function formatDateKey(date: Date) {
@@ -53,9 +54,12 @@ const headerCopy = {
     helpSupport: "Помощь и поддержка",
     language: "Язык",
     logout: "Выйти",
-    onboardingStart: "🚀 Начать",
-    onboardingContinue: "Продолжить →",
-    onboardingCompact: "Дальше →"
+    onboardingDone: "Готово ✅",
+    onboardingServices: "Додати послуги",
+    onboardingSchedule: "Налаштувати графік",
+    onboardingBooking: "Увімкнути запис",
+    onboardingPhoto: "Додати фото",
+    onboardingTelegram: "Підключити Telegram"
   },
   uk: {
     workspace: "Робочий простір",
@@ -82,9 +86,12 @@ const headerCopy = {
     helpSupport: "Допомога і підтримка",
     language: "Мова",
     logout: "Вийти",
-    onboardingStart: "🚀 Почати",
-    onboardingContinue: "Продовжити →",
-    onboardingCompact: "Далі →"
+    onboardingDone: "Готово ✅",
+    onboardingServices: "Додати послуги",
+    onboardingSchedule: "Налаштувати графік",
+    onboardingBooking: "Увімкнути запис",
+    onboardingPhoto: "Додати фото",
+    onboardingTelegram: "Підключити Telegram"
   },
   en: {
     workspace: "Workspace",
@@ -111,11 +118,15 @@ const headerCopy = {
     helpSupport: "Help and support",
     language: "Language",
     logout: "Log out",
-    onboardingStart: "🚀 Start",
-    onboardingContinue: "Continue →",
-    onboardingCompact: "Next →"
+    onboardingDone: "Done ✅",
+    onboardingServices: "Add services",
+    onboardingSchedule: "Set schedule",
+    onboardingBooking: "Enable booking",
+    onboardingPhoto: "Add photos",
+    onboardingTelegram: "Connect Telegram"
   }
 } as const;
+type HeaderCopy = (typeof headerCopy)[keyof typeof headerCopy];
 
 const accountLanguages: Array<{ value: ProLanguage; short: string }> = [
   { value: "ru", short: "RU" },
@@ -165,6 +176,18 @@ function getPageTitle(pathname: string | null, language: "ru" | "uk" | "en") {
   return copy.workspace;
 }
 
+function getOnboardingStepText(
+  copy: HeaderCopy,
+  step: OnboardingStepId | null
+) {
+  if (step === "services") return copy.onboardingServices;
+  if (step === "schedule") return copy.onboardingSchedule;
+  if (step === "booking") return copy.onboardingBooking;
+  if (step === "photo") return copy.onboardingPhoto;
+  if (step === "telegram") return copy.onboardingTelegram;
+  return "";
+}
+
 export default function ProWorkspaceHeader({
   businessName,
   viewerName,
@@ -173,7 +196,7 @@ export default function ProWorkspaceHeader({
   publicBookingUrl = "",
   publicBookingEnabled = false,
   canTogglePublicBooking = false,
-  showOnboardingCta = false
+  onboardingCta = null
 }: ProWorkspaceHeaderProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -191,6 +214,17 @@ export default function ProWorkspaceHeader({
   const [notificationsCount, setNotificationsCount] = useState(0);
   const [publicBookingState, setPublicBookingState] = useState(publicBookingEnabled);
   const pageTitle = useMemo(() => getPageTitle(pathname, language), [language, pathname]);
+  const onboardingStepText = onboardingCta
+    ? getOnboardingStepText(copy, onboardingCta.step)
+    : "";
+  const onboardingDesktopLabel = onboardingCta?.completed
+    ? copy.onboardingDone
+    : onboardingStepText
+      ? `🚀 ${onboardingStepText}`
+      : "";
+  const onboardingTooltip = onboardingCta?.completed
+    ? copy.onboardingDone
+    : onboardingStepText;
   const canUseNativeShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
   const refreshNotifications = useCallback(() => {
     const todayDate = formatDateKey(new Date());
@@ -326,25 +360,35 @@ export default function ProWorkspaceHeader({
         <span>{businessName || "Timviz"}</span>
         <div className={styles.calendarWorkspaceTitleRow}>
           <strong>{pageTitle}</strong>
-          {showOnboardingCta ? (
-            <button
-              type="button"
-              className={styles.calendarOnboardingCta}
-              onClick={() => router.push("/pro/settings")}
-              title={copy.onboardingContinue}
-            >
-              <span className={styles.calendarOnboardingCtaFull}>
-                {copy.onboardingStart}
-              </span>
-              <span className={styles.calendarOnboardingCtaShort}>
-                {copy.onboardingCompact}
-              </span>
-            </button>
-          ) : null}
         </div>
       </div>
 
       <div className={styles.calendarWorkspaceActions}>
+        {onboardingCta ? (
+          <button
+            type="button"
+            className={`${styles.calendarOnboardingCta} ${
+              onboardingCta.completed ? styles.calendarOnboardingCtaDone : ""
+            }`}
+            onClick={() => {
+              if (onboardingCta.completed || !onboardingCta.href) {
+                return;
+              }
+              router.push(onboardingCta.href);
+            }}
+            title={onboardingTooltip || copy.onboardingDone}
+            aria-label={onboardingTooltip || copy.onboardingDone}
+            disabled={onboardingCta.completed}
+          >
+            <span className={styles.calendarOnboardingCtaFull}>
+              {onboardingDesktopLabel || copy.onboardingDone}
+            </span>
+            <span className={styles.calendarOnboardingCtaShort}>
+              {onboardingCta.completed ? "✅" : "🚀"}
+            </span>
+          </button>
+        ) : null}
+
         <button
           ref={shareMenuButtonRef}
           type="button"

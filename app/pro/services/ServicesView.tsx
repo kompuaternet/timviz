@@ -10,13 +10,14 @@ import {
   localizeServiceName,
   type CategoryTemplate
 } from "../../../lib/service-templates";
+import type { OnboardingCtaState } from "../../../lib/pro-onboarding";
 import type { ServiceRecord, WorkspaceSnapshot } from "../../../lib/pro-data";
 import { useProLanguage } from "../useProLanguage";
 
 type ServicesViewProps = {
   initialWorkspace: WorkspaceSnapshot;
   catalog: CategoryTemplate[];
-  showOnboardingCta: boolean;
+  onboardingCta: OnboardingCtaState;
 };
 
 type DraftService = {
@@ -105,7 +106,7 @@ function formatServicePrice(value: number, language: "ru" | "uk" | "en", currenc
   }).format(value || 0);
 }
 
-export default function ServicesView({ initialWorkspace, catalog, showOnboardingCta }: ServicesViewProps) {
+export default function ServicesView({ initialWorkspace, catalog, onboardingCta }: ServicesViewProps) {
   const { t, language } = useProLanguage();
   const copy = serviceExtras[language];
   const accountCurrency = initialWorkspace.professional.currency || "USD";
@@ -450,7 +451,7 @@ export default function ServicesView({ initialWorkspace, catalog, showOnboarding
           publicBookingUrl={initialWorkspace.business.publicBookingUrl}
           publicBookingEnabled={initialWorkspace.business.allowOnlineBooking === true}
           canTogglePublicBooking={initialWorkspace.membership.scope === "owner"}
-          showOnboardingCta={showOnboardingCta}
+          onboardingCta={onboardingCta}
         />
 
         <header className={styles.servicesHeroCompact}>

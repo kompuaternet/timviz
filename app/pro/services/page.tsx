@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { getServiceTemplateCatalog } from "../../../lib/global-service-catalog";
 import { getSessionCookieName, verifySessionValue } from "../../../lib/pro-auth";
 import { getWorkspaceSnapshot } from "../../../lib/pro-data";
-import { isWorkspaceSetupComplete } from "../../../lib/pro-onboarding";
+import { getOnboardingCtaState } from "../../../lib/pro-onboarding";
 import { getTelegramConnectionByProfessionalId } from "../../../lib/telegram-bot";
 import ServicesView from "./ServicesView";
 
@@ -29,7 +29,7 @@ export default async function ProServicesPage() {
     <ServicesView
       initialWorkspace={workspace}
       catalog={catalog}
-      showOnboardingCta={!isWorkspaceSetupComplete(workspace, Boolean(telegramConnection?.chatId))}
+      onboardingCta={getOnboardingCtaState(workspace, Boolean(telegramConnection?.chatId))}
     />
   );
 }

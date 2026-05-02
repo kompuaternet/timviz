@@ -9,6 +9,7 @@ import ProSidebar from "../ProSidebar";
 import ProWorkspaceHeader from "../ProWorkspaceHeader";
 import styles from "../pro.module.css";
 import { useProLanguage } from "../useProLanguage";
+import type { OnboardingCtaState } from "../../../lib/pro-onboarding";
 import type {
   BusinessStaffSnapshot,
   PendingStaffInvitationSnapshot,
@@ -20,7 +21,7 @@ type StaffViewProps = {
   professionalId: string;
   snapshot: BusinessStaffSnapshot;
   initialAddOpen?: boolean;
-  showOnboardingCta: boolean;
+  onboardingCta: OnboardingCtaState;
   header: {
     viewerName: string;
     viewerAvatarUrl?: string;
@@ -383,7 +384,7 @@ function PendingInvitationCard({
   );
 }
 
-export default function StaffView({ professionalId, snapshot, initialAddOpen = false, showOnboardingCta, header }: StaffViewProps) {
+export default function StaffView({ professionalId, snapshot, initialAddOpen = false, onboardingCta, header }: StaffViewProps) {
   const router = useRouter();
   const { language } = useProLanguage();
   const copy = staffText[language];
@@ -583,7 +584,7 @@ export default function StaffView({ professionalId, snapshot, initialAddOpen = f
           publicBookingUrl={header.publicBookingUrl}
           publicBookingEnabled={header.publicBookingEnabled === true}
           canTogglePublicBooking
-          showOnboardingCta={showOnboardingCta}
+          onboardingCta={onboardingCta}
         />
 
         <aside className={styles.staffStudioSidebar}>

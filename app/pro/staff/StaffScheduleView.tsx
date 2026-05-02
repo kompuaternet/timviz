@@ -8,6 +8,7 @@ import ProSidebar from "../ProSidebar";
 import ProWorkspaceHeader from "../ProWorkspaceHeader";
 import styles from "../pro.module.css";
 import { useProLanguage } from "../useProLanguage";
+import type { OnboardingCtaState } from "../../../lib/pro-onboarding";
 import type { BusinessStaffSnapshot, StaffMemberSnapshot } from "../../../lib/pro-staff";
 import {
   createEmptyCustomSchedule,
@@ -29,7 +30,7 @@ import {
 type StaffScheduleViewProps = {
   professionalId: string;
   snapshot: BusinessStaffSnapshot;
-  showOnboardingCta: boolean;
+  onboardingCta: OnboardingCtaState;
   header: {
     viewerName: string;
     viewerAvatarUrl?: string;
@@ -1685,7 +1686,7 @@ function DayScheduleModal({
   );
 }
 
-export default function StaffScheduleView({ professionalId, snapshot, showOnboardingCta, header }: StaffScheduleViewProps) {
+export default function StaffScheduleView({ professionalId, snapshot, onboardingCta, header }: StaffScheduleViewProps) {
   const { language, t } = useProLanguage();
   const copy = scheduleText[language];
   const locale = getLocale(language);
@@ -1878,7 +1879,7 @@ export default function StaffScheduleView({ professionalId, snapshot, showOnboar
           publicBookingUrl={header.publicBookingUrl}
           publicBookingEnabled={header.publicBookingEnabled === true}
           canTogglePublicBooking
-          showOnboardingCta={showOnboardingCta}
+          onboardingCta={onboardingCta}
         />
 
         <aside className={styles.staffStudioSidebar}>

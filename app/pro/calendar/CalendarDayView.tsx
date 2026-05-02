@@ -8,6 +8,7 @@ import FloatingPopover from "../FloatingPopover";
 import ProSidebar from "../ProSidebar";
 import SupportWidget from "../SupportWidget";
 import { languageFromProfile, profileLanguageFromCode } from "../i18n";
+import type { OnboardingCtaState, OnboardingStepId } from "../../../lib/pro-onboarding";
 import {
   getDayBreaks,
   getDaySchedule as resolveDaySchedule,
@@ -187,7 +188,7 @@ type CalendarDayViewProps = {
   professionalId: string;
   initialDate: string;
   initialPanel?: "notifications";
-  showOnboardingCta?: boolean;
+  onboardingCta?: OnboardingCtaState | null;
 };
 
 type AppLanguage = "ru" | "uk" | "en";
@@ -375,9 +376,12 @@ const CALENDAR_TEXT: Record<AppLanguage, {
   helpSupport: string;
   logout: string;
   language: string;
-  onboardingStart: string;
-  onboardingContinue: string;
-  onboardingCompact: string;
+  onboardingDone: string;
+  onboardingServices: string;
+  onboardingSchedule: string;
+  onboardingBooking: string;
+  onboardingPhoto: string;
+  onboardingTelegram: string;
   publicLink: string;
   publicLinkTitle: string;
   publicLinkHint: string;
@@ -534,9 +538,12 @@ const CALENDAR_TEXT: Record<AppLanguage, {
     helpSupport: "Помощь и поддержка",
     logout: "Выйти",
     language: "Язык",
-    onboardingStart: "🚀 Начать",
-    onboardingContinue: "Продолжить →",
-    onboardingCompact: "Дальше →",
+    onboardingDone: "Готово ✅",
+    onboardingServices: "Додати послуги",
+    onboardingSchedule: "Налаштувати графік",
+    onboardingBooking: "Увімкнути запис",
+    onboardingPhoto: "Додати фото",
+    onboardingTelegram: "Підключити Telegram",
     publicLink: "Публичная ссылка",
     publicLinkTitle: "Ссылка для онлайн-записи",
     publicLinkHint: "Отправляйте ссылку клиентам, публикуйте в соцсетях или копируйте в один тап.",
@@ -693,9 +700,12 @@ const CALENDAR_TEXT: Record<AppLanguage, {
     helpSupport: "Допомога і підтримка",
     logout: "Вийти",
     language: "Мова",
-    onboardingStart: "🚀 Почати",
-    onboardingContinue: "Продовжити →",
-    onboardingCompact: "Далі →",
+    onboardingDone: "Готово ✅",
+    onboardingServices: "Додати послуги",
+    onboardingSchedule: "Налаштувати графік",
+    onboardingBooking: "Увімкнути запис",
+    onboardingPhoto: "Додати фото",
+    onboardingTelegram: "Підключити Telegram",
     publicLink: "Публічне посилання",
     publicLinkTitle: "Посилання для онлайн-запису",
     publicLinkHint: "Надсилайте посилання клієнтам, публікуйте в соцмережах або копіюйте в один дотик.",
@@ -852,9 +862,12 @@ const CALENDAR_TEXT: Record<AppLanguage, {
     helpSupport: "Help and support",
     logout: "Log out",
     language: "Language",
-    onboardingStart: "🚀 Start",
-    onboardingContinue: "Continue →",
-    onboardingCompact: "Next →",
+    onboardingDone: "Done ✅",
+    onboardingServices: "Add services",
+    onboardingSchedule: "Set schedule",
+    onboardingBooking: "Enable booking",
+    onboardingPhoto: "Add photos",
+    onboardingTelegram: "Connect Telegram",
     publicLink: "Public link",
     publicLinkTitle: "Online booking link",
     publicLinkHint: "Send it to clients, post it on social media, or copy it in one tap.",
@@ -873,6 +886,7 @@ const CALENDAR_TEXT: Record<AppLanguage, {
     onlineBookingStatusCancelled: "Cancelled"
   }
 };
+type CalendarCopy = (typeof CALENDAR_TEXT)[keyof typeof CALENDAR_TEXT];
 
 function ContactChannelIcon({ kind }: { kind: "call" | "whatsapp" | "telegram" | "viber" }) {
   if (kind === "call") {
@@ -1232,7 +1246,19 @@ function getAppointmentLayouts(appointments: CalendarAppointment[]) {
   return layouts;
 }
 
-export default function CalendarDayView({ professionalId, initialDate, initialPanel, showOnboardingCta = false }: CalendarDayViewProps) {
+function getOnboardingStepText(
+  copy: CalendarCopy,
+  step: OnboardingStepId | null
+) {
+  if (step === "services") return copy.onboardingServices;
+  if (step === "schedule") return copy.onboardingSchedule;
+  if (step === "booking") return copy.onboardingBooking;
+  if (step === "photo") return copy.onboardingPhoto;
+  if (step === "telegram") return copy.onboardingTelegram;
+  return "";
+}
+
+export default function CalendarDayView({ professionalId, initialDate, initialPanel, onboardingCta = null }: CalendarDayViewProps) {
   const router = useRouter();
   const topOffset = 24;
   const dayStartMinutes = 0;
@@ -2278,6 +2304,14 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
 
   const todayDate = formatDateKey(new Date());
   const t = CALENDAR_TEXT[uiLanguage];
+  const onboardingStepText = onboardingCta
+    ? getOnboardingStepText(t, onboardingCta.step)
+    : "";
+  const onboardingDesktopLabel = onboardingCta?.completed
+    ? t.onboardingDone
+    : onboardingStepText
+      ? `🚀 ${onboardingStepText}`
+      : "";
   const locale = getLocale(uiLanguage);
   const accountCountry = snapshot?.viewer.country || "Ukraine";
   const accountCurrency = snapshot?.viewer.currency;
@@ -4256,27 +4290,35 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
             <span>{snapshot?.workspace.business.name ?? "Timviz"}</span>
             <div className={styles.calendarWorkspaceTitleRow}>
               <strong>{t.dailyCalendar}</strong>
-              {showOnboardingCta ? (
-                <button
-                  type="button"
-                  className={styles.calendarOnboardingCta}
-                  onClick={() => {
-                    router.push("/pro/settings");
-                  }}
-                  title={t.onboardingContinue}
-                >
-                  <span className={styles.calendarOnboardingCtaFull}>
-                    {t.onboardingStart}
-                  </span>
-                  <span className={styles.calendarOnboardingCtaShort}>
-                    {t.onboardingCompact}
-                  </span>
-                </button>
-              ) : null}
             </div>
           </div>
 
           <div className={styles.calendarWorkspaceActions}>
+            {onboardingCta ? (
+              <button
+                type="button"
+                className={`${styles.calendarOnboardingCta} ${
+                  onboardingCta.completed ? styles.calendarOnboardingCtaDone : ""
+                }`}
+                onClick={() => {
+                  if (onboardingCta.completed || !onboardingCta.href) {
+                    return;
+                  }
+                  router.push(onboardingCta.href);
+                }}
+                title={onboardingStepText || t.onboardingDone}
+                aria-label={onboardingStepText || t.onboardingDone}
+                disabled={onboardingCta.completed}
+              >
+                <span className={styles.calendarOnboardingCtaFull}>
+                  {onboardingDesktopLabel || t.onboardingDone}
+                </span>
+                <span className={styles.calendarOnboardingCtaShort}>
+                  {onboardingCta.completed ? "✅" : "🚀"}
+                </span>
+              </button>
+            ) : null}
+
             <button
               ref={shareMenuButtonRef}
               type="button"

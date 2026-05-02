@@ -3,9 +3,18 @@ import { redirect } from "next/navigation";
 import { getAppointmentUsageForProfessional } from "../../../lib/pro-calendar";
 import { getSessionCookieName, verifySessionValue } from "../../../lib/pro-auth";
 import { DEFAULT_BOOKING_CREDITS, getJoinRequestsForOwner, getWorkspaceSnapshot } from "../../../lib/pro-data";
+import { getOnboardingCtaState } from "../../../lib/pro-onboarding";
+import { getTelegramConnectionByProfessionalId } from "../../../lib/telegram-bot";
 import SettingsView from "./SettingsView";
 
-export default async function ProSettingsPage() {
+type ProSettingsPageProps = {
+  searchParams?: Promise<{
+    section?: string;
+  }>;
+};
+
+export default async function ProSettingsPage({ searchParams }: ProSettingsPageProps) {
+  const params = (await searchParams) ?? {};
   const cookieStore = await cookies();
   const professionalId = verifySessionValue(cookieStore.get(getSessionCookieName())?.value) || "";
 
@@ -13,7 +22,10 @@ export default async function ProSettingsPage() {
     redirect("/pro/login");
   }
 
-  const workspace = await getWorkspaceSnapshot(professionalId);
+  const [workspace, telegramConnection] = await Promise.all([
+    getWorkspaceSnapshot(professionalId),
+    getTelegramConnectionByProfessionalId(professionalId)
+  ]);
 
   if (!workspace) {
     redirect("/pro/login");
@@ -62,6 +74,17 @@ export default async function ProSettingsPage() {
           remaining: Math.max(0, totalCredits - usedCredits)
         }
       }}
+      onboardingCta={getOnboardingCtaState(workspace, Boolean(telegramConnection?.chatId))}
+      initialSection={
+        params.section === "general" ||
+        params.section === "online-booking" ||
+        params.section === "services" ||
+        params.section === "schedule" ||
+        params.section === "telegram" ||
+        params.section === "address"
+          ? params.section
+          : undefined
+      }
     />
   );
 }
