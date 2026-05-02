@@ -123,6 +123,27 @@ type OnboardingStep = {
   canSkip?: boolean;
 };
 
+type SaveSnapshot = {
+  professional: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+    country: string;
+    timezone: string;
+    language: string;
+    currency: string;
+  };
+  business: {
+    name: string;
+    website: string;
+    photos: BusinessPhoto[];
+    categories: string[];
+    accountType: "solo" | "team";
+    serviceMode: string;
+  };
+};
+
 const telegramReminderLeadOptions = [15, 30, 60, 120, 180, 1440] as const;
 
 const countries = [
@@ -546,6 +567,29 @@ function readFileAsDataUrl(file: File, errorText: string) {
   });
 }
 
+function buildSaveSnapshot(data: SettingsData): SaveSnapshot {
+  return {
+    professional: {
+      firstName: data.professional.firstName,
+      lastName: data.professional.lastName,
+      email: data.professional.email,
+      phone: data.professional.phone,
+      country: data.professional.country,
+      timezone: data.professional.timezone,
+      language: data.professional.language,
+      currency: data.professional.currency
+    },
+    business: {
+      name: data.business.name,
+      website: data.business.website,
+      photos: data.business.photos ?? [],
+      categories: data.business.categories,
+      accountType: data.business.accountType,
+      serviceMode: data.business.serviceMode
+    }
+  };
+}
+
 export default function SettingsView({ initialData }: SettingsViewProps) {
   const router = useRouter();
   const initialLanguage = languageFromProfile(initialData.professional.language);
@@ -559,6 +603,7 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [isTopUpLoading, setIsTopUpLoading] = useState(false);
   const [joinRequests, setJoinRequests] = useState(initialData.joinRequests);
+  const [addressSearchValue, setAddressSearchValue] = useState(initialData.business.address ?? "");
   const [addressSuggestions, setAddressSuggestions] = useState<AddressSuggestion[]>([]);
   const [isSearchingAddress, setIsSearchingAddress] = useState(false);
   const [telegramPanel, setTelegramPanel] = useState<TelegramPanelState | null>(null);
@@ -953,6 +998,24 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
     }));
   }
 
+  function handleOnlineBookingToggle() {
+    const nextValue = !(data.business.allowOnlineBooking === true);
+    setData((current) => ({
+      ...current,
+      business: {
+        ...current.business,
+        allowOnlineBooking: nextValue
+      }
+    }));
+
+    if (autoSaveTimerRef.current) {
+      window.clearTimeout(autoSaveTimerRef.current);
+      autoSaveTimerRef.current = null;
+    }
+
+    void saveOnlineBookingSetting(nextValue);
+  }
+
   function updateBusinessPhotos(nextPhotos: BusinessPhoto[]) {
     setData((current) => ({
       ...current,
@@ -961,6 +1024,79 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
         photos: normalizePhotos(nextPhotos)
       }
     }));
+  }
+
+  function applyWorkspacePayload(
+    next: {
+      workspace: {
+        professional: SettingsData["professional"];
+        business: SettingsData["business"];
+        membership: SettingsData["membership"];
+        services: SettingsData["services"];
+      };
+      bookingCredits: SettingsData["bookingCredits"];
+    },
+    options?: {
+      topUpCredits?: number;
+      silent?: boolean;
+    }
+  ) {
+    const topUpCredits = options?.topUpCredits ?? 0;
+    const silent = options?.silent ?? false;
+
+    const nextData: SettingsData = {
+      professional: {
+        ...next.workspace.professional,
+        currency: next.workspace.professional.currency || data.professional.currency
+      },
+      business: next.workspace.business,
+      membership: next.workspace.membership,
+      services: Array.isArray(next.workspace.services) ? next.workspace.services : data.services,
+      joinRequests,
+      bookingCredits: next.bookingCredits
+    };
+
+    setData(nextData);
+    setAddressSearchValue(next.workspace.business.address || "");
+    lastSavedSnapshotRef.current = JSON.stringify(buildSaveSnapshot(nextData));
+    setPassword("");
+    setStatus(topUpCredits ? t.settings.creditsAdded : silent ? t.common.savedAuto : t.settings.saved);
+
+    const languageCode = languageFromProfile(nextData.professional.language);
+    window.localStorage.setItem("rezervo-pro-language", languageCode);
+    window.dispatchEvent(new CustomEvent("rezervo-language-change", { detail: languageCode }));
+  }
+
+  async function saveOnlineBookingSetting(nextValue: boolean) {
+    setStatus("");
+
+    try {
+      const response = await fetch("/api/pro/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          business: {
+            allowOnlineBooking: nextValue
+          }
+        })
+      });
+
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload.error || copy.saveFailed);
+      }
+
+      applyWorkspacePayload(payload, { silent: true });
+    } catch (error) {
+      setData((current) => ({
+        ...current,
+        business: {
+          ...current.business,
+          allowOnlineBooking: !(nextValue === true)
+        }
+      }));
+      setStatus(error instanceof Error ? error.message : copy.saveFailed);
+    }
   }
 
   function selectPublicBookingUrl() {
@@ -1111,7 +1247,7 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
   }, [data.business.address, data.business.addressDetails, data.professional.country]);
 
   useEffect(() => {
-    if (data.business.address.trim().length < 3) {
+    if (addressSearchValue.trim().length < 3) {
       setAddressSuggestions([]);
       return;
     }
@@ -1121,7 +1257,7 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
       try {
         setIsSearchingAddress(true);
         const response = await fetch(
-          `/api/address/search?q=${encodeURIComponent(data.business.address)}`,
+          `/api/address/search?q=${encodeURIComponent(addressSearchValue)}`,
           {
             signal: controller.signal,
             headers: { Accept: "application/json" }
@@ -1171,35 +1307,10 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
       controller.abort();
       window.clearTimeout(timeoutId);
     };
-  }, [data.business.address]);
+  }, [addressSearchValue]);
 
   const autosaveSnapshot = useMemo(
-    () =>
-      JSON.stringify({
-        professional: {
-          firstName: data.professional.firstName,
-          lastName: data.professional.lastName,
-          email: data.professional.email,
-          phone: data.professional.phone,
-          country: data.professional.country,
-          timezone: data.professional.timezone,
-          language: data.professional.language,
-          currency: data.professional.currency
-        },
-        business: {
-          name: data.business.name,
-          website: data.business.website,
-          photos: data.business.photos ?? [],
-          categories: data.business.categories,
-          accountType: data.business.accountType,
-          serviceMode: data.business.serviceMode,
-          address: data.business.address,
-          addressDetails: data.business.addressDetails,
-          addressLat: data.business.addressLat,
-          addressLon: data.business.addressLon,
-          allowOnlineBooking: data.business.allowOnlineBooking === true
-        }
-      }),
+    () => JSON.stringify(buildSaveSnapshot(data)),
     [data]
   );
 
@@ -1253,33 +1364,10 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
   }, [onboardingSteps, photoReady, skippedOnboardingStepIdSet]);
 
   useEffect(() => {
-    lastSavedSnapshotRef.current = JSON.stringify({
-      professional: {
-        firstName: initialData.professional.firstName,
-        lastName: initialData.professional.lastName,
-        email: initialData.professional.email,
-        phone: initialData.professional.phone,
-        country: initialData.professional.country,
-        timezone: initialData.professional.timezone,
-        language: initialData.professional.language,
-        currency: initialData.professional.currency
-      },
-      business: {
-        name: initialData.business.name,
-        website: initialData.business.website,
-        photos: initialData.business.photos ?? [],
-        categories: initialData.business.categories,
-        accountType: initialData.business.accountType,
-        serviceMode: initialData.business.serviceMode,
-        address: initialData.business.address,
-        addressDetails: initialData.business.addressDetails,
-        addressLat: initialData.business.addressLat,
-        addressLon: initialData.business.addressLon,
-        allowOnlineBooking: initialData.business.allowOnlineBooking === true
-      }
-    });
+    lastSavedSnapshotRef.current = JSON.stringify(buildSaveSnapshot(initialData));
     isHydratedRef.current = true;
     setJoinRequests(initialData.joinRequests);
+    setAddressSearchValue(initialData.business.address ?? "");
     setSkippedOnboardingStepIds([]);
     setIsPhotoTooltipDismissed(false);
     photoTransitionInitializedRef.current = false;
@@ -1305,7 +1393,21 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
     }
   }
 
-  function applyAddress(suggestion: AddressSuggestion) {
+  async function applyAddress(suggestion: AddressSuggestion) {
+    const previousBusiness = {
+      address: data.business.address,
+      addressDetails: data.business.addressDetails,
+      addressLat: data.business.addressLat,
+      addressLon: data.business.addressLon
+    };
+    const previousProfessional = {
+      country: data.professional.country,
+      currency: data.professional.currency
+    };
+
+    const nextCountry = suggestion.country || data.professional.country;
+    const nextCurrency = suggestion.country ? inferCurrency(suggestion.country) : data.professional.currency;
+
     setData((current) => ({
       ...current,
       business: {
@@ -1317,11 +1419,53 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
       },
       professional: {
         ...current.professional,
-        country: suggestion.country || current.professional.country,
-        currency: suggestion.country ? inferCurrency(suggestion.country) : current.professional.currency
+        country: nextCountry,
+        currency: nextCurrency
       }
     }));
+    setAddressSearchValue(suggestion.label);
     setAddressSuggestions([]);
+    setStatus("");
+
+    try {
+      const response = await fetch("/api/pro/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          professional: {
+            country: nextCountry,
+            currency: nextCurrency
+          },
+          business: {
+            address: suggestion.label,
+            addressDetails: suggestion.details,
+            addressLat: suggestion.lat,
+            addressLon: suggestion.lon
+          }
+        })
+      });
+
+      const payload = await response.json();
+      if (!response.ok) {
+        throw new Error(payload.error || copy.saveFailed);
+      }
+
+      applyWorkspacePayload(payload, { silent: true });
+    } catch (error) {
+      setData((current) => ({
+        ...current,
+        business: {
+          ...current.business,
+          ...previousBusiness
+        },
+        professional: {
+          ...current.professional,
+          ...previousProfessional
+        }
+      }));
+      setAddressSearchValue(previousBusiness.address);
+      setStatus(error instanceof Error ? error.message : copy.saveFailed);
+    }
   }
 
   useEffect(() => {
@@ -1381,12 +1525,7 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
             photos: data.business.photos ?? [],
             categories: data.business.categories,
             accountType: data.business.accountType,
-            serviceMode: data.business.serviceMode,
-            address: data.business.address,
-            addressDetails: data.business.addressDetails,
-            addressLat: data.business.addressLat,
-            addressLon: data.business.addressLon,
-            allowOnlineBooking: data.business.allowOnlineBooking === true
+            serviceMode: data.business.serviceMode
           },
           newPassword: password,
           topUpCredits
@@ -1412,49 +1551,7 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
       if (silent && latestSnapshotRef.current !== snapshotAtRequestStart) {
         return;
       }
-
-      setData({
-        professional: {
-          ...next.workspace.professional,
-          currency: next.workspace.professional.currency || data.professional.currency
-        },
-        business: next.workspace.business,
-        membership: next.workspace.membership,
-        services: Array.isArray(next.workspace.services) ? next.workspace.services : data.services,
-        joinRequests,
-        bookingCredits: next.bookingCredits
-      });
-      lastSavedSnapshotRef.current = JSON.stringify({
-        professional: {
-          firstName: next.workspace.professional.firstName,
-          lastName: next.workspace.professional.lastName,
-          email: next.workspace.professional.email,
-          phone: next.workspace.professional.phone,
-          country: next.workspace.professional.country,
-          timezone: next.workspace.professional.timezone,
-          language: next.workspace.professional.language,
-          currency: next.workspace.professional.currency || data.professional.currency
-        },
-        business: {
-          name: next.workspace.business.name,
-          website: next.workspace.business.website,
-          photos: next.workspace.business.photos ?? [],
-          categories: next.workspace.business.categories,
-          accountType: next.workspace.business.accountType,
-          serviceMode: next.workspace.business.serviceMode,
-          address: next.workspace.business.address,
-          addressDetails: next.workspace.business.addressDetails,
-          addressLat: next.workspace.business.addressLat,
-          addressLon: next.workspace.business.addressLon,
-          allowOnlineBooking: next.workspace.business.allowOnlineBooking === true
-        }
-      });
-      setPassword("");
-      setStatus(topUpCredits ? t.settings.creditsAdded : silent ? t.common.savedAuto : t.settings.saved);
-
-      const languageCode = languageFromProfile(data.professional.language);
-      window.localStorage.setItem("rezervo-pro-language", languageCode);
-      window.dispatchEvent(new CustomEvent("rezervo-language-change", { detail: languageCode }));
+      applyWorkspacePayload(next, { topUpCredits, silent });
     } catch (error) {
       setStatus(error instanceof Error ? error.message : copy.saveFailed);
     } finally {
@@ -1497,13 +1594,13 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
       />
       <section className={styles.settingsShell}>
         <ProWorkspaceHeader
-          businessName={initialData.business.name}
-          viewerName={`${initialData.professional.firstName} ${initialData.professional.lastName}`.trim() || initialData.professional.email}
-          viewerAvatarUrl={initialData.professional.avatarUrl}
-          viewerInitials={`${initialData.professional.firstName?.[0] ?? ""}${initialData.professional.lastName?.[0] ?? ""}`.toUpperCase() || "RZ"}
-          publicBookingUrl={initialData.business.publicBookingUrl}
-          publicBookingEnabled={initialData.business.allowOnlineBooking === true}
-          canTogglePublicBooking={initialData.membership.scope === "owner"}
+          businessName={data.business.name}
+          viewerName={`${data.professional.firstName} ${data.professional.lastName}`.trim() || data.professional.email}
+          viewerAvatarUrl={data.professional.avatarUrl}
+          viewerInitials={`${data.professional.firstName?.[0] ?? ""}${data.professional.lastName?.[0] ?? ""}`.toUpperCase() || "RZ"}
+          publicBookingUrl={data.business.publicBookingUrl}
+          publicBookingEnabled={data.business.allowOnlineBooking === true}
+          canTogglePublicBooking={data.membership.scope === "owner"}
         />
 
         <header className={styles.settingsHero}>
@@ -1766,20 +1863,17 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
                       <div className={styles.settingsShareCardHeader}>
                         <div>
                           <strong>{copy.publicBookingTitle}</strong>
-                          <p>{copy.publicBookingText}</p>
                         </div>
                         {data.membership.scope === "owner" ? (
                           <button
                             type="button"
                             className={`${styles.settingsShareToggle} ${data.business.allowOnlineBooking ? styles.settingsShareToggleActive : ""}`}
-                            onClick={() =>
-                              updateBusiness("allowOnlineBooking", !(data.business.allowOnlineBooking === true))
-                            }
+                            onClick={handleOnlineBookingToggle}
                             aria-pressed={data.business.allowOnlineBooking === true}
                             aria-label={t.settings.onlineBooking}
                           >
                             <span className={styles.settingsShareToggleLabel}>
-                              {data.business.allowOnlineBooking ? copy.publicBookingEnabled : copy.publicBookingDisabled}
+                              {t.settings.onlineBooking}
                             </span>
                             <span className={styles.settingsShareToggleTrack}>
                               <span className={styles.settingsShareToggleThumb} />
@@ -1791,7 +1885,6 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
                           </span>
                         )}
                       </div>
-                      <small className={styles.settingsInlineHint}>{t.settings.onlineBookingHint}</small>
                     </div>
                   </section>
 
@@ -2243,21 +2336,10 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
                       {t.settings.findAddress}
                       <input
                         className={styles.input}
-                        value={data.business.address}
+                        value={addressSearchValue}
                         onFocus={(event) => event.currentTarget.select()}
                         onClick={(event) => event.currentTarget.select()}
-                        onChange={(event) =>
-                          setData((current) => ({
-                            ...current,
-                            business: {
-                              ...current.business,
-                              address: event.target.value,
-                              addressDetails: "",
-                              addressLat: null,
-                              addressLon: null
-                            }
-                          }))
-                        }
+                        onChange={(event) => setAddressSearchValue(event.target.value)}
                         placeholder={t.settings.addressPlaceholder}
                       />
                     </label>
