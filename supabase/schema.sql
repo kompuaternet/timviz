@@ -210,9 +210,13 @@ create table if not exists public.telegram_connections (
   language text not null default 'en',
   timezone text not null default 'UTC',
   notifications_new_booking boolean not null default true,
+  notifications_cabinet_booking boolean not null default true,
+  notifications_rescheduled boolean not null default true,
+  notifications_cancelled boolean not null default true,
   notifications_reminder boolean not null default true,
   notifications_today boolean not null default true,
   forwarding_enabled boolean not null default true,
+  reminder_lead_minutes integer not null default 120,
   connected_at timestamptz,
   last_interaction_at timestamptz,
   created_at timestamptz not null default timezone('utc', now()),
@@ -261,9 +265,13 @@ alter table public.telegram_connections add column if not exists telegram_last_n
 alter table public.telegram_connections add column if not exists language text not null default 'en';
 alter table public.telegram_connections add column if not exists timezone text not null default 'UTC';
 alter table public.telegram_connections add column if not exists notifications_new_booking boolean not null default true;
+alter table public.telegram_connections add column if not exists notifications_cabinet_booking boolean not null default true;
+alter table public.telegram_connections add column if not exists notifications_rescheduled boolean not null default true;
+alter table public.telegram_connections add column if not exists notifications_cancelled boolean not null default true;
 alter table public.telegram_connections add column if not exists notifications_reminder boolean not null default true;
 alter table public.telegram_connections add column if not exists notifications_today boolean not null default true;
 alter table public.telegram_connections add column if not exists forwarding_enabled boolean not null default true;
+alter table public.telegram_connections add column if not exists reminder_lead_minutes integer not null default 120;
 alter table public.telegram_connections add column if not exists connected_at timestamptz;
 alter table public.telegram_connections add column if not exists last_interaction_at timestamptz;
 alter table public.telegram_connections add column if not exists updated_at timestamptz not null default timezone('utc', now());

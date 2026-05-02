@@ -10,6 +10,12 @@ import {
 } from "../../../../lib/bookings";
 import { getSessionCookieName, verifySessionValue } from "../../../../lib/pro-auth";
 import {
+  resetTelegramReminderEventsForAppointment,
+  sendBookingCancelledTelegramNotification,
+  sendBookingRescheduledTelegramNotification,
+  sendCabinetBookingTelegramNotification
+} from "../../../../lib/telegram-bot";
+import {
   createBlockedCalendarTime,
   createCalendarAppointment,
   createCalendarAppointmentsBatch,
@@ -86,6 +92,10 @@ function parseAppointmentTimestamp(date: string, time: string) {
 
   const timestamp = new Date(`${date}T${time}:00`).getTime();
   return Number.isFinite(timestamp) ? timestamp : Number.NaN;
+}
+
+function normalizedTimeValue(value: unknown) {
+  return typeof value === "string" ? value.trim() : "";
 }
 
 function pickMatchingAppointment(
@@ -355,6 +365,22 @@ export async function POST(request: Request) {
         }))
       });
 
+      await Promise.allSettled(
+        appointments
+          .filter((item) => item.kind === "appointment")
+          .map((item) =>
+            sendCabinetBookingTelegramNotification({
+              professionalId: item.professionalId,
+              businessId: item.businessId,
+              appointmentId: item.id,
+              appointmentDate: item.appointmentDate,
+              appointmentTime: item.startTime,
+              customerName: item.customerName,
+              serviceName: item.serviceName
+            })
+          )
+      );
+
       return NextResponse.json({ appointments });
     }
 
@@ -371,6 +397,16 @@ export async function POST(request: Request) {
       priceAmount: typeof body.priceAmount === "number" ? body.priceAmount : undefined,
       attendance: body.attendance
     });
+
+    await sendCabinetBookingTelegramNotification({
+      professionalId: appointment.professionalId,
+      businessId: appointment.businessId,
+      appointmentId: appointment.id,
+      appointmentDate: appointment.appointmentDate,
+      appointmentTime: appointment.startTime,
+      customerName: appointment.customerName,
+      serviceName: appointment.serviceName
+    }).catch(() => undefined);
 
     return NextResponse.json(appointment);
   } catch (error) {
@@ -405,6 +441,21 @@ export async function DELETE(request: Request) {
         customerNotes: deletedAppointment.notes,
         serviceName: deletedAppointment.serviceName
       });
+
+      await resetTelegramReminderEventsForAppointment({
+        appointmentId: deletedAppointment.id,
+        professionalId: deletedAppointment.professionalId
+      }).catch(() => undefined);
+
+      await sendBookingCancelledTelegramNotification({
+        professionalId: deletedAppointment.professionalId,
+        businessId: deletedAppointment.businessId,
+        appointmentId: deletedAppointment.id,
+        appointmentDate: deletedAppointment.appointmentDate,
+        appointmentTime: deletedAppointment.startTime,
+        customerName: deletedAppointment.customerName,
+        serviceName: deletedAppointment.serviceName
+      }).catch(() => undefined);
     }
 
     return NextResponse.json({ ok: true, appointmentId: deletedAppointment.id });
@@ -456,12 +507,42 @@ export async function PATCH(request: Request) {
           serviceName: appointment.serviceName,
           attendance: appointment.attendance
         });
+
+        const previousAppointmentTime = normalizedTimeValue(body.previousAppointmentTime);
+        const previousAppointmentDate =
+          normalizedTimeValue(body.previousAppointmentDate) || appointment.appointmentDate;
+        const hasScheduleChanged =
+          !!previousAppointmentTime &&
+          (
+            previousAppointmentTime !== appointment.startTime ||
+            previousAppointmentDate !== appointment.appointmentDate
+          );
+
+        if (hasScheduleChanged) {
+          await resetTelegramReminderEventsForAppointment({
+            appointmentId: appointment.id,
+            professionalId: appointment.professionalId
+          }).catch(() => undefined);
+
+          await sendBookingRescheduledTelegramNotification({
+            professionalId: appointment.professionalId,
+            businessId: appointment.businessId,
+            appointmentId: appointment.id,
+            appointmentDate: appointment.appointmentDate,
+            appointmentTime: appointment.startTime,
+            previousAppointmentDate,
+            previousAppointmentTime,
+            customerName: appointment.customerName,
+            serviceName: appointment.serviceName
+          }).catch(() => undefined);
+        }
       }
 
       return NextResponse.json(appointment);
     }
 
-    const previousAppointmentTime = body.previousAppointmentTime || "";
+    const previousAppointmentTime = normalizedTimeValue(body.previousAppointmentTime);
+    const previousAppointmentDate = normalizedTimeValue(body.previousAppointmentDate);
     const appointment = await updateCalendarAppointmentTime({
       professionalId,
       targetProfessionalId: body.targetProfessionalId,
@@ -482,6 +563,32 @@ export async function PATCH(request: Request) {
         serviceName: appointment.serviceName,
         attendance: appointment.attendance
       });
+
+      const hasScheduleChanged =
+        !!previousAppointmentTime &&
+        (
+          previousAppointmentTime !== appointment.startTime ||
+          (!!previousAppointmentDate && previousAppointmentDate !== appointment.appointmentDate)
+        );
+
+      if (hasScheduleChanged) {
+        await resetTelegramReminderEventsForAppointment({
+          appointmentId: appointment.id,
+          professionalId: appointment.professionalId
+        }).catch(() => undefined);
+
+        await sendBookingRescheduledTelegramNotification({
+          professionalId: appointment.professionalId,
+          businessId: appointment.businessId,
+          appointmentId: appointment.id,
+          appointmentDate: appointment.appointmentDate,
+          appointmentTime: appointment.startTime,
+          previousAppointmentDate: previousAppointmentDate || appointment.appointmentDate,
+          previousAppointmentTime,
+          customerName: appointment.customerName,
+          serviceName: appointment.serviceName
+        }).catch(() => undefined);
+      }
     }
 
     return NextResponse.json(appointment);

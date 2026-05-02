@@ -20,9 +20,13 @@ export type TelegramConnection = {
   language: TelegramLanguage;
   timezone: string;
   notificationsNewBooking: boolean;
+  notificationsCabinetBooking: boolean;
+  notificationsRescheduled: boolean;
+  notificationsCancelled: boolean;
   notificationsReminder: boolean;
   notificationsToday: boolean;
   forwardingEnabled: boolean;
+  reminderLeadMinutes: number;
   connectedAt: string | null;
   lastInteractionAt: string | null;
   createdAt: string;
@@ -31,13 +35,22 @@ export type TelegramConnection = {
 
 export type TelegramSettingKey =
   | "notificationsNewBooking"
+  | "notificationsCabinetBooking"
+  | "notificationsRescheduled"
+  | "notificationsCancelled"
   | "notificationsReminder"
   | "notificationsToday"
   | "forwardingEnabled";
 
 export type TelegramMenuAction = "today" | "settings" | "menu" | "support";
-export type TelegramSettingsSection = "home" | "notifications" | "support" | "bot";
+export type TelegramSettingsSection = "home" | "notifications" | "reminders" | "support" | "bot";
 export type TelegramBotControlAction = "all_on" | "all_off";
+
+export type TelegramBookingEventType =
+  | "online_created"
+  | "cabinet_created"
+  | "rescheduled"
+  | "cancelled";
 
 type TelegramReminderEvent = {
   id: string;
@@ -91,6 +104,7 @@ type TelegramText = {
   settingsTitle: string;
   settingsSectionsHint: string;
   settingsNotificationsSection: string;
+  settingsRemindersSection: string;
   settingsSupportSection: string;
   settingsBotSection: string;
   settingsBack: string;
@@ -99,18 +113,29 @@ type TelegramText = {
   settingsBotDisableAll: string;
   settingsSupportHint: string;
   settingsNotificationsHint: string;
+  settingsRemindersHint: string;
   noConnection: string;
-  bookingCreated: string;
+  onlineBookingCreated: string;
+  cabinetBookingCreated: string;
+  bookingRescheduled: string;
+  bookingCancelled: string;
   reminderPrefix: string;
   confirm: string;
   cancel: string;
   openBooking: string;
   openDashboard: string;
-  newBookingsLabel: string;
+  onlineBookingsLabel: string;
+  cabinetBookingsLabel: string;
+  rescheduledLabel: string;
+  cancelledLabel: string;
   remindersLabel: string;
+  reminderLeadLabel: string;
+  reminderLeadUpdated: string;
   todayLabel: string;
   forwardingLabel: string;
   unknownClient: string;
+  fromLabel: string;
+  toLabel: string;
   enabled: string;
   disabled: string;
   settingUpdated: string;
@@ -157,6 +182,8 @@ const SETTINGS_CALLBACK_PREFIX = "tvst";
 const MENU_CALLBACK_PREFIX = "tvmn";
 const SETTINGS_SECTION_CALLBACK_PREFIX = "tvss";
 const BOT_CONTROL_CALLBACK_PREFIX = "tvbc";
+const REMINDER_LEAD_CALLBACK_PREFIX = "tvrl";
+const reminderLeadOptions = [15, 30, 60, 120, 180, 1440] as const;
 
 const textByLanguage: Record<TelegramLanguage, TelegramText> = {
   ru: {
@@ -177,6 +204,7 @@ const textByLanguage: Record<TelegramLanguage, TelegramText> = {
     settingsTitle: "⚙️ Настройки уведомлений",
     settingsSectionsHint: "Выберите нужный раздел настроек:",
     settingsNotificationsSection: "🔔 Уведомления о записях",
+    settingsRemindersSection: "⏰ Напоминания и сводка",
     settingsSupportSection: "💬 Поддержка и пересылка",
     settingsBotSection: "🤖 Управление Telegram-ботом",
     settingsBack: "⬅️ Назад к разделам",
@@ -185,18 +213,29 @@ const textByLanguage: Record<TelegramLanguage, TelegramText> = {
     settingsBotDisableAll: "🔕 Выключить всё",
     settingsSupportHint: "Настройте пересылку сообщений в поддержку и отправьте запрос в один клик.",
     settingsNotificationsHint: "Включайте только нужные уведомления, чтобы не перегружать чат.",
+    settingsRemindersHint: "Настройте напоминания о ближайших визитах и сводку на сегодня.",
     noConnection: "🔌 Этот чат пока не подключен к Timviz.",
-    bookingCreated: "🆕 Новая онлайн-запись",
-    reminderPrefix: "⏰ Напоминание: запись через 2 часа",
+    onlineBookingCreated: "🆕 Новая онлайн-запись",
+    cabinetBookingCreated: "📌 Новая запись из кабинета",
+    bookingRescheduled: "🕒 Время записи изменено",
+    bookingCancelled: "❌ Запись отменена",
+    reminderPrefix: "⏰ Напоминание",
     confirm: "✅ Подтвердить",
     cancel: "❌ Отменить",
     openBooking: "🔎 Открыть запись",
     openDashboard: "🗂 Открыть кабинет",
-    newBookingsLabel: "Новые записи",
+    onlineBookingsLabel: "Новые онлайн-записи",
+    cabinetBookingsLabel: "Новые записи из кабинета",
+    rescheduledLabel: "Перенос времени записи",
+    cancelledLabel: "Отмена записи",
     remindersLabel: "Напоминания",
+    reminderLeadLabel: "За сколько напомнить",
+    reminderLeadUpdated: "✅ Время напоминания обновлено.",
     todayLabel: "Сводка на сегодня",
     forwardingLabel: "Пересылка в поддержку",
     unknownClient: "Клиент",
+    fromLabel: "Было",
+    toLabel: "Стало",
     enabled: "🟢 Вкл",
     disabled: "⚪️ Выкл",
     settingUpdated: "✅ Настройка обновлена.",
@@ -228,6 +267,7 @@ const textByLanguage: Record<TelegramLanguage, TelegramText> = {
     settingsTitle: "⚙️ Налаштування сповіщень",
     settingsSectionsHint: "Оберіть потрібний розділ налаштувань:",
     settingsNotificationsSection: "🔔 Сповіщення про записи",
+    settingsRemindersSection: "⏰ Нагадування і зведення",
     settingsSupportSection: "💬 Підтримка і пересилка",
     settingsBotSection: "🤖 Керування Telegram-ботом",
     settingsBack: "⬅️ Назад до розділів",
@@ -236,18 +276,29 @@ const textByLanguage: Record<TelegramLanguage, TelegramText> = {
     settingsBotDisableAll: "🔕 Вимкнути все",
     settingsSupportHint: "Налаштуйте пересилку повідомлень у підтримку та надішліть запит в один дотик.",
     settingsNotificationsHint: "Вмикайте лише потрібні сповіщення, щоб не перевантажувати чат.",
+    settingsRemindersHint: "Налаштуйте нагадування про найближчі візити і зведення на сьогодні.",
     noConnection: "🔌 Цей чат поки не підключено до Timviz.",
-    bookingCreated: "🆕 Новий онлайн-запис",
-    reminderPrefix: "⏰ Нагадування: запис через 2 години",
+    onlineBookingCreated: "🆕 Новий онлайн-запис",
+    cabinetBookingCreated: "📌 Новий запис із кабінету",
+    bookingRescheduled: "🕒 Час запису змінено",
+    bookingCancelled: "❌ Запис скасовано",
+    reminderPrefix: "⏰ Нагадування",
     confirm: "✅ Підтвердити",
     cancel: "❌ Скасувати",
     openBooking: "🔎 Відкрити запис",
     openDashboard: "🗂 Відкрити кабінет",
-    newBookingsLabel: "Нові записи",
+    onlineBookingsLabel: "Нові онлайн-записи",
+    cabinetBookingsLabel: "Нові записи з кабінету",
+    rescheduledLabel: "Перенесення часу запису",
+    cancelledLabel: "Скасування запису",
     remindersLabel: "Нагадування",
+    reminderLeadLabel: "За скільки нагадати",
+    reminderLeadUpdated: "✅ Час нагадування оновлено.",
     todayLabel: "Зведення на сьогодні",
     forwardingLabel: "Пересилка в підтримку",
     unknownClient: "Клієнт",
+    fromLabel: "Було",
+    toLabel: "Стало",
     enabled: "🟢 Увімк",
     disabled: "⚪️ Вимк",
     settingUpdated: "✅ Налаштування оновлено.",
@@ -279,6 +330,7 @@ const textByLanguage: Record<TelegramLanguage, TelegramText> = {
     settingsTitle: "⚙️ Notification settings",
     settingsSectionsHint: "Choose a settings section:",
     settingsNotificationsSection: "🔔 Booking notifications",
+    settingsRemindersSection: "⏰ Reminders and summary",
     settingsSupportSection: "💬 Support and forwarding",
     settingsBotSection: "🤖 Telegram bot control",
     settingsBack: "⬅️ Back to sections",
@@ -287,18 +339,29 @@ const textByLanguage: Record<TelegramLanguage, TelegramText> = {
     settingsBotDisableAll: "🔕 Disable all",
     settingsSupportHint: "Configure forwarding to support and send a request in one tap.",
     settingsNotificationsHint: "Enable only the notifications you really need.",
+    settingsRemindersHint: "Set reminder timing and today summary behavior.",
     noConnection: "🔌 This chat is not connected to Timviz yet.",
-    bookingCreated: "🆕 New online booking",
-    reminderPrefix: "⏰ Reminder: booking in 2 hours",
+    onlineBookingCreated: "🆕 New online booking",
+    cabinetBookingCreated: "📌 New booking from dashboard",
+    bookingRescheduled: "🕒 Booking time changed",
+    bookingCancelled: "❌ Booking cancelled",
+    reminderPrefix: "⏰ Reminder",
     confirm: "✅ Confirm",
     cancel: "❌ Cancel",
     openBooking: "🔎 Open booking",
     openDashboard: "🗂 Open dashboard",
-    newBookingsLabel: "New bookings",
+    onlineBookingsLabel: "New online bookings",
+    cabinetBookingsLabel: "New dashboard bookings",
+    rescheduledLabel: "Rescheduled bookings",
+    cancelledLabel: "Cancelled bookings",
     remindersLabel: "Reminders",
+    reminderLeadLabel: "Reminder lead time",
+    reminderLeadUpdated: "✅ Reminder timing updated.",
     todayLabel: "Today summary",
     forwardingLabel: "Forward to support",
     unknownClient: "Client",
+    fromLabel: "From",
+    toLabel: "To",
     enabled: "🟢 On",
     disabled: "⚪️ Off",
     settingUpdated: "✅ Setting updated.",
@@ -372,6 +435,18 @@ function parseNumber(value: unknown) {
   return null;
 }
 
+function normalizeReminderLeadMinutes(
+  value: unknown,
+  fallback = 120
+) {
+  const raw = parseNumber(value);
+  if (raw === null) {
+    return fallback;
+  }
+  const clamped = Math.max(5, Math.min(1440, raw));
+  return Math.round(clamped / 5) * 5;
+}
+
 function mapConnectionRow(row: Record<string, unknown>): TelegramConnection {
   return {
     id: String(row.id ?? ""),
@@ -387,9 +462,13 @@ function mapConnectionRow(row: Record<string, unknown>): TelegramConnection {
     language: normalizeLanguage(String(row.language ?? "")),
     timezone: String(row.timezone ?? "UTC") || "UTC",
     notificationsNewBooking: row.notifications_new_booking !== false,
+    notificationsCabinetBooking: row.notifications_cabinet_booking !== false,
+    notificationsRescheduled: row.notifications_rescheduled !== false,
+    notificationsCancelled: row.notifications_cancelled !== false,
     notificationsReminder: row.notifications_reminder !== false,
     notificationsToday: row.notifications_today !== false,
     forwardingEnabled: row.forwarding_enabled !== false,
+    reminderLeadMinutes: normalizeReminderLeadMinutes(row.reminder_lead_minutes, 120),
     connectedAt: row.connected_at ? String(row.connected_at) : null,
     lastInteractionAt: row.last_interaction_at ? String(row.last_interaction_at) : null,
     createdAt: String(row.created_at ?? new Date(0).toISOString()),
@@ -640,9 +719,13 @@ function toConnectionInsertPayload(input: TelegramConnection) {
     language: input.language,
     timezone: input.timezone,
     notifications_new_booking: input.notificationsNewBooking,
+    notifications_cabinet_booking: input.notificationsCabinetBooking,
+    notifications_rescheduled: input.notificationsRescheduled,
+    notifications_cancelled: input.notificationsCancelled,
     notifications_reminder: input.notificationsReminder,
     notifications_today: input.notificationsToday,
     forwarding_enabled: input.forwardingEnabled,
+    reminder_lead_minutes: normalizeReminderLeadMinutes(input.reminderLeadMinutes, 120),
     connected_at: input.connectedAt,
     last_interaction_at: input.lastInteractionAt,
     created_at: input.createdAt,
@@ -657,21 +740,44 @@ async function upsertConnection(connection: TelegramConnection) {
       throw new Error("Supabase is not available.");
     }
 
-    const { data, error } = await supabase
+    const fullPayload = toConnectionInsertPayload(connection);
+    let result = await supabase
       .from("telegram_connections")
-      .upsert(toConnectionInsertPayload(connection), { onConflict: "professional_id" })
+      .upsert(fullPayload, { onConflict: "professional_id" })
       .select("*")
       .maybeSingle();
 
-    if (error) {
-      throw new Error(error.message);
+    if (
+      result.error &&
+      /column .* does not exist/i.test(result.error.message) &&
+      /notifications_cabinet_booking|notifications_rescheduled|notifications_cancelled|reminder_lead_minutes/i.test(
+        result.error.message
+      )
+    ) {
+      const legacyPayload = {
+        ...fullPayload
+      } as Record<string, unknown>;
+      delete legacyPayload.notifications_cabinet_booking;
+      delete legacyPayload.notifications_rescheduled;
+      delete legacyPayload.notifications_cancelled;
+      delete legacyPayload.reminder_lead_minutes;
+
+      result = await supabase
+        .from("telegram_connections")
+        .upsert(legacyPayload, { onConflict: "professional_id" })
+        .select("*")
+        .maybeSingle();
     }
 
-    if (!data) {
+    if (result.error) {
+      throw new Error(result.error.message);
+    }
+
+    if (!result.data) {
       throw new Error("Failed to save Telegram connection.");
     }
 
-    return mapConnectionRow(data as Record<string, unknown>);
+    return mapConnectionRow(result.data as Record<string, unknown>);
   }
 
   const store = await readStore();
@@ -769,9 +875,13 @@ export async function ensureTelegramConnectToken(input: {
     language: normalizeLanguage(input.language || existing?.language),
     timezone: (input.timezone || existing?.timezone || "UTC").trim() || "UTC",
     notificationsNewBooking: existing?.notificationsNewBooking ?? true,
+    notificationsCabinetBooking: existing?.notificationsCabinetBooking ?? true,
+    notificationsRescheduled: existing?.notificationsRescheduled ?? true,
+    notificationsCancelled: existing?.notificationsCancelled ?? true,
     notificationsReminder: existing?.notificationsReminder ?? true,
     notificationsToday: existing?.notificationsToday ?? true,
     forwardingEnabled: existing?.forwardingEnabled ?? true,
+    reminderLeadMinutes: normalizeReminderLeadMinutes(existing?.reminderLeadMinutes, 120),
     connectedAt: existing?.connectedAt ?? null,
     lastInteractionAt: existing?.lastInteractionAt ?? null,
     createdAt: existing?.createdAt || now.toISOString(),
@@ -928,6 +1038,12 @@ export function parseBookingCallbackData(value: string) {
 export function buildSettingsCallbackData(key: TelegramSettingKey) {
   const normalized = key === "notificationsNewBooking"
     ? "nb"
+    : key === "notificationsCabinetBooking"
+      ? "cb"
+      : key === "notificationsRescheduled"
+        ? "rs"
+        : key === "notificationsCancelled"
+          ? "cn"
     : key === "notificationsReminder"
       ? "nr"
       : key === "notificationsToday"
@@ -943,6 +1059,9 @@ export function parseSettingsCallbackData(value: string): TelegramSettingKey | n
   }
 
   if (key === "nb") return "notificationsNewBooking";
+  if (key === "cb") return "notificationsCabinetBooking";
+  if (key === "rs") return "notificationsRescheduled";
+  if (key === "cn") return "notificationsCancelled";
   if (key === "nr") return "notificationsReminder";
   if (key === "nt") return "notificationsToday";
   if (key === "fw") return "forwardingEnabled";
@@ -954,6 +1073,8 @@ export function buildSettingsSectionCallbackData(section: TelegramSettingsSectio
     ? "h"
     : section === "notifications"
       ? "n"
+      : section === "reminders"
+        ? "r"
       : section === "support"
         ? "s"
         : "b";
@@ -968,6 +1089,7 @@ export function parseSettingsSectionCallbackData(value: string): TelegramSetting
 
   if (key === "h") return "home";
   if (key === "n") return "notifications";
+  if (key === "r") return "reminders";
   if (key === "s") return "support";
   if (key === "b") return "bot";
   return null;
@@ -989,6 +1111,27 @@ export function parseBotControlCallbackData(value: string): TelegramBotControlAc
   return null;
 }
 
+export function buildReminderLeadCallbackData(minutes: number) {
+  return `${REMINDER_LEAD_CALLBACK_PREFIX}:${normalizeReminderLeadMinutes(minutes, 120)}`;
+}
+
+export function parseReminderLeadCallbackData(value: string) {
+  const [prefix, raw] = value.split(":");
+  if (prefix !== REMINDER_LEAD_CALLBACK_PREFIX) {
+    return null;
+  }
+
+  const parsed = Number.parseInt(raw || "", 10);
+  if (!Number.isFinite(parsed)) {
+    return null;
+  }
+
+  const normalized = normalizeReminderLeadMinutes(parsed, 120);
+  return reminderLeadOptions.includes(normalized as (typeof reminderLeadOptions)[number])
+    ? normalized
+    : null;
+}
+
 export function buildMenuCallbackData(action: TelegramMenuAction) {
   return `${MENU_CALLBACK_PREFIX}:${action}`;
 }
@@ -1008,9 +1151,41 @@ function toggleText(enabled: boolean, text: TelegramText) {
   return enabled ? text.enabled : text.disabled;
 }
 
+function formatReminderLeadLabel(language: TelegramLanguage, minutes: number) {
+  if (minutes % 60 === 0) {
+    const hours = minutes / 60;
+    if (language === "uk") {
+      return hours === 1 ? "за 1 годину" : `за ${hours} год`;
+    }
+    if (language === "ru") {
+      return hours === 1 ? "за 1 час" : `за ${hours} ч`;
+    }
+    return hours === 1 ? "1 hour before" : `${hours} hours before`;
+  }
+
+  if (language === "uk") {
+    return `за ${minutes} хв`;
+  }
+  if (language === "ru") {
+    return `за ${minutes} мин`;
+  }
+  return `${minutes} min before`;
+}
+
+function formatReminderLeadCompact(language: TelegramLanguage, minutes: number) {
+  if (minutes % 60 === 0) {
+    const hours = minutes / 60;
+    return language === "en" ? `${hours}h` : `${hours}ч`;
+  }
+
+  return language === "en" ? `${minutes}m` : `${minutes}м`;
+}
+
 export async function setTelegramConnectionSettings(
   connection: TelegramConnection,
-  values: Partial<Record<TelegramSettingKey, boolean>>
+  values: Partial<Record<TelegramSettingKey, boolean>> & {
+    reminderLeadMinutes?: number;
+  }
 ) {
   const next: TelegramConnection = {
     ...connection,
@@ -1018,6 +1193,18 @@ export async function setTelegramConnectionSettings(
       typeof values.notificationsNewBooking === "boolean"
         ? values.notificationsNewBooking
         : connection.notificationsNewBooking,
+    notificationsCabinetBooking:
+      typeof values.notificationsCabinetBooking === "boolean"
+        ? values.notificationsCabinetBooking
+        : connection.notificationsCabinetBooking,
+    notificationsRescheduled:
+      typeof values.notificationsRescheduled === "boolean"
+        ? values.notificationsRescheduled
+        : connection.notificationsRescheduled,
+    notificationsCancelled:
+      typeof values.notificationsCancelled === "boolean"
+        ? values.notificationsCancelled
+        : connection.notificationsCancelled,
     notificationsReminder:
       typeof values.notificationsReminder === "boolean"
         ? values.notificationsReminder
@@ -1030,6 +1217,10 @@ export async function setTelegramConnectionSettings(
       typeof values.forwardingEnabled === "boolean"
         ? values.forwardingEnabled
         : connection.forwardingEnabled,
+    reminderLeadMinutes:
+      typeof values.reminderLeadMinutes === "number"
+        ? normalizeReminderLeadMinutes(values.reminderLeadMinutes, connection.reminderLeadMinutes)
+        : connection.reminderLeadMinutes,
     updatedAt: nowIso()
   };
 
@@ -1049,10 +1240,57 @@ export function buildSettingsMessage(
         inline_keyboard: [
           [
             {
-              text: `🔔 ${text.newBookingsLabel}: ${toggleText(connection.notificationsNewBooking, text)}`,
+              text: `🌐 ${text.onlineBookingsLabel}: ${toggleText(connection.notificationsNewBooking, text)}`,
               callback_data: buildSettingsCallbackData("notificationsNewBooking")
             }
           ],
+          [
+            {
+              text: `🗂 ${text.cabinetBookingsLabel}: ${toggleText(connection.notificationsCabinetBooking, text)}`,
+              callback_data: buildSettingsCallbackData("notificationsCabinetBooking")
+            }
+          ],
+          [
+            {
+              text: `🕒 ${text.rescheduledLabel}: ${toggleText(connection.notificationsRescheduled, text)}`,
+              callback_data: buildSettingsCallbackData("notificationsRescheduled")
+            }
+          ],
+          [
+            {
+              text: `❌ ${text.cancelledLabel}: ${toggleText(connection.notificationsCancelled, text)}`,
+              callback_data: buildSettingsCallbackData("notificationsCancelled")
+            }
+          ],
+          [
+            {
+              text: text.settingsBack,
+              callback_data: buildSettingsSectionCallbackData("home")
+            },
+            {
+              text: text.settingsRemindersSection,
+              callback_data: buildSettingsSectionCallbackData("reminders")
+            }
+          ],
+          [
+            {
+              text: text.openDashboard,
+              url: getDashboardUrl("/pro/settings")
+            }
+          ]
+        ]
+      } satisfies TelegramReplyMarkup
+    };
+  }
+
+  if (section === "reminders") {
+    return {
+      text: `${text.settingsRemindersSection}\n${text.settingsRemindersHint}\n\n${text.reminderLeadLabel}: ${formatReminderLeadLabel(
+        connection.language,
+        connection.reminderLeadMinutes
+      )}`,
+      replyMarkup: {
+        inline_keyboard: [
           [
             {
               text: `⏰ ${text.remindersLabel}: ${toggleText(connection.notificationsReminder, text)}`,
@@ -1065,14 +1303,28 @@ export function buildSettingsMessage(
               callback_data: buildSettingsCallbackData("notificationsToday")
             }
           ],
+          reminderLeadOptions.slice(0, 3).map((minutes) => ({
+            text: `${connection.reminderLeadMinutes === minutes ? "✅" : "▫️"} ${formatReminderLeadCompact(
+              connection.language,
+              minutes
+            )}`,
+            callback_data: buildReminderLeadCallbackData(minutes)
+          })),
+          reminderLeadOptions.slice(3).map((minutes) => ({
+            text: `${connection.reminderLeadMinutes === minutes ? "✅" : "▫️"} ${formatReminderLeadCompact(
+              connection.language,
+              minutes
+            )}`,
+            callback_data: buildReminderLeadCallbackData(minutes)
+          })),
           [
             {
               text: text.settingsBack,
               callback_data: buildSettingsSectionCallbackData("home")
             },
             {
-              text: text.menuHome,
-              callback_data: buildMenuCallbackData("menu")
+              text: text.settingsNotificationsSection,
+              callback_data: buildSettingsSectionCallbackData("notifications")
             }
           ],
           [
@@ -1162,6 +1414,12 @@ export function buildSettingsMessage(
           {
             text: text.settingsNotificationsSection,
             callback_data: buildSettingsSectionCallbackData("notifications")
+          }
+        ],
+        [
+          {
+            text: text.settingsRemindersSection,
+            callback_data: buildSettingsSectionCallbackData("reminders")
           }
         ],
         [
@@ -1414,6 +1672,52 @@ async function markReminderSent(input: {
   }
 }
 
+export async function resetTelegramReminderEventsForAppointment(input: {
+  appointmentId: string;
+  professionalId?: string;
+}) {
+  const appointmentId = input.appointmentId.trim();
+  if (!appointmentId) {
+    return;
+  }
+
+  const professionalId = input.professionalId?.trim() || "";
+
+  if (isSupabaseConfigured()) {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      return;
+    }
+
+    let query = supabase
+      .from("telegram_reminder_events")
+      .delete()
+      .eq("appointment_id", appointmentId);
+
+    if (professionalId) {
+      query = query.eq("professional_id", professionalId);
+    }
+
+    const { error } = await query;
+    if (error) {
+      throw new Error(error.message);
+    }
+    return;
+  }
+
+  const store = await readStore();
+  store.reminderEvents = store.reminderEvents.filter((item) => {
+    if (item.appointmentId !== appointmentId) {
+      return true;
+    }
+    if (professionalId && item.professionalId !== professionalId) {
+      return true;
+    }
+    return false;
+  });
+  await writeStore(store);
+}
+
 function buildDashboardKeyboard(text: TelegramText, path = "/pro/calendar") {
   return {
     inline_keyboard: [
@@ -1455,6 +1759,108 @@ function buildBookingKeyboard(
   } satisfies TelegramReplyMarkup;
 }
 
+function getBookingEventTitle(text: TelegramText, eventType: TelegramBookingEventType) {
+  if (eventType === "online_created") return text.onlineBookingCreated;
+  if (eventType === "cabinet_created") return text.cabinetBookingCreated;
+  if (eventType === "rescheduled") return text.bookingRescheduled;
+  return text.bookingCancelled;
+}
+
+function canSendBookingEvent(connection: TelegramConnection, eventType: TelegramBookingEventType) {
+  if (eventType === "online_created") {
+    return connection.notificationsNewBooking;
+  }
+
+  if (eventType === "cabinet_created") {
+    return connection.notificationsCabinetBooking;
+  }
+
+  if (eventType === "rescheduled") {
+    return connection.notificationsRescheduled;
+  }
+
+  return connection.notificationsCancelled;
+}
+
+function buildBookingEventMessage(input: {
+  text: TelegramText;
+  eventType: TelegramBookingEventType;
+  appointmentDate: string;
+  appointmentTime: string;
+  previousAppointmentDate?: string;
+  previousAppointmentTime?: string;
+  customerName: string;
+  serviceName: string;
+}) {
+  const lines = [
+    getBookingEventTitle(input.text, input.eventType)
+  ];
+
+  if (input.eventType === "rescheduled") {
+    const fromDate = input.previousAppointmentDate?.trim() || input.appointmentDate;
+    const fromTime = input.previousAppointmentTime?.trim() || input.appointmentTime;
+    lines.push(`🕘 ${input.text.fromLabel}: ${fromDate} ${fromTime}`);
+    lines.push(`✅ ${input.text.toLabel}: ${input.appointmentDate} ${input.appointmentTime}`);
+  } else {
+    lines.push(`🕘 ${input.appointmentDate} ${input.appointmentTime}`);
+  }
+
+  lines.push(`👤 ${input.customerName.trim() || input.text.unknownClient}`);
+  lines.push(`🧾 ${input.serviceName.trim() || "-"}`);
+
+  return lines.join("\n");
+}
+
+async function sendBookingEventTelegramNotification(input: {
+  eventType: TelegramBookingEventType;
+  professionalId: string;
+  businessId: string;
+  appointmentId: string;
+  appointmentDate: string;
+  appointmentTime: string;
+  previousAppointmentDate?: string;
+  previousAppointmentTime?: string;
+  customerName: string;
+  serviceName: string;
+}) {
+  const connection = await getTelegramConnectionByProfessionalId(input.professionalId);
+  if (!connection || !connection.chatId || !connection.connectedAt) {
+    return { sent: false, reason: "not_connected" as const };
+  }
+
+  if (!canSendBookingEvent(connection, input.eventType)) {
+    return { sent: false, reason: "disabled" as const };
+  }
+
+  const text = getTelegramText(connection.language);
+  const message = buildBookingEventMessage({
+    text,
+    eventType: input.eventType,
+    appointmentDate: input.appointmentDate,
+    appointmentTime: input.appointmentTime,
+    previousAppointmentDate: input.previousAppointmentDate,
+    previousAppointmentTime: input.previousAppointmentTime,
+    customerName: input.customerName,
+    serviceName: input.serviceName
+  });
+
+  const replyMarkup =
+    input.eventType === "online_created"
+      ? buildBookingKeyboard(connection.language, input.appointmentId, input.appointmentDate)
+      : buildDashboardKeyboard(
+          text,
+          `/pro/calendar?date=${encodeURIComponent(input.appointmentDate)}`
+        );
+
+  await sendTelegramTextMessage({
+    chatId: connection.chatId,
+    text: message,
+    replyMarkup
+  });
+
+  return { sent: true as const };
+}
+
 export async function sendBookingTelegramNotification(input: {
   professionalId: string;
   businessId: string;
@@ -1464,30 +1870,57 @@ export async function sendBookingTelegramNotification(input: {
   customerName: string;
   serviceName: string;
 }) {
-  const connection = await getTelegramConnectionByProfessionalId(input.professionalId);
-  if (!connection || !connection.chatId || !connection.connectedAt) {
-    return { sent: false, reason: "not_connected" as const };
-  }
-
-  if (!connection.notificationsNewBooking) {
-    return { sent: false, reason: "disabled" as const };
-  }
-
-  const text = getTelegramText(connection.language);
-  const message = [
-    `${text.bookingCreated}`,
-    `${input.appointmentDate} ${input.appointmentTime}`,
-    `${input.customerName.trim() || text.unknownClient}`,
-    `${input.serviceName.trim() || "-"}`
-  ].join("\n");
-
-  await sendTelegramTextMessage({
-    chatId: connection.chatId,
-    text: message,
-    replyMarkup: buildBookingKeyboard(connection.language, input.appointmentId, input.appointmentDate)
+  return sendBookingEventTelegramNotification({
+    eventType: "online_created",
+    ...input
   });
+}
 
-  return { sent: true as const };
+export async function sendCabinetBookingTelegramNotification(input: {
+  professionalId: string;
+  businessId: string;
+  appointmentId: string;
+  appointmentDate: string;
+  appointmentTime: string;
+  customerName: string;
+  serviceName: string;
+}) {
+  return sendBookingEventTelegramNotification({
+    eventType: "cabinet_created",
+    ...input
+  });
+}
+
+export async function sendBookingRescheduledTelegramNotification(input: {
+  professionalId: string;
+  businessId: string;
+  appointmentId: string;
+  appointmentDate: string;
+  appointmentTime: string;
+  previousAppointmentDate?: string;
+  previousAppointmentTime?: string;
+  customerName: string;
+  serviceName: string;
+}) {
+  return sendBookingEventTelegramNotification({
+    eventType: "rescheduled",
+    ...input
+  });
+}
+
+export async function sendBookingCancelledTelegramNotification(input: {
+  professionalId: string;
+  businessId: string;
+  appointmentId: string;
+  appointmentDate: string;
+  appointmentTime: string;
+  customerName: string;
+  serviceName: string;
+}) {
+  return sendBookingEventTelegramNotification({
+    eventType: "cancelled",
+    ...input
+  });
 }
 
 export async function processTelegramReminders() {
@@ -1519,18 +1952,26 @@ export async function processTelegramReminders() {
 
       for (const appointment of ownAppointments) {
         stats.processed += 1;
+        const reminderLeadMinutes = normalizeReminderLeadMinutes(
+          connection.reminderLeadMinutes,
+          120
+        );
         const diff = minutesUntilAppointment(
           connection.timezone,
           appointment.appointmentDate,
           appointment.startTime
         );
 
-        if (!Number.isFinite(diff) || diff < 120 - reminderWindowMin || diff > 120 + reminderWindowMin) {
+        if (
+          !Number.isFinite(diff) ||
+          diff < reminderLeadMinutes - reminderWindowMin ||
+          diff > reminderLeadMinutes + reminderWindowMin
+        ) {
           stats.skipped += 1;
           continue;
         }
 
-        const reminderType = "2h";
+        const reminderType = `lead_${reminderLeadMinutes}m`;
         const alreadySent = await isReminderAlreadySent({
           appointmentId: appointment.id,
           professionalId: connection.professionalId,
@@ -1542,7 +1983,7 @@ export async function processTelegramReminders() {
         }
 
         const reminderMessage = [
-          text.reminderPrefix,
+          `${text.reminderPrefix}: ${formatReminderLeadLabel(connection.language, reminderLeadMinutes)}`,
           `${appointment.appointmentDate} ${appointment.startTime}`,
           `${appointment.customerName.trim() || text.unknownClient}`,
           `${appointment.serviceName.trim() || "-"}`

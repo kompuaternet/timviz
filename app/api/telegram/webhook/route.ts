@@ -15,6 +15,7 @@ import {
   normalizeTelegramUserLanguage,
   parseBotControlCallbackData,
   parseMenuCallbackData,
+  parseReminderLeadCallbackData,
   parseBookingCallbackData,
   parseSettingsSectionCallbackData,
   parseSettingsCallbackData,
@@ -433,6 +434,7 @@ async function handleCallbackQuery(update: TelegramUpdate) {
   const settingsKey = parseSettingsCallbackData(data);
   const settingsSection = parseSettingsSectionCallbackData(data);
   const botControlAction = parseBotControlCallbackData(data);
+  const reminderLeadMinutes = parseReminderLeadCallbackData(data);
 
   if (settingsSection) {
     await answerTelegramCallbackQuery(callback.id).catch(() => undefined);
@@ -448,6 +450,9 @@ async function handleCallbackQuery(update: TelegramUpdate) {
   if (botControlAction) {
     const nextConnection = await setTelegramConnectionSettings(activeConnection, {
       notificationsNewBooking: botControlAction === "all_on",
+      notificationsCabinetBooking: botControlAction === "all_on",
+      notificationsRescheduled: botControlAction === "all_on",
+      notificationsCancelled: botControlAction === "all_on",
       notificationsReminder: botControlAction === "all_on",
       notificationsToday: botControlAction === "all_on"
     });
@@ -466,12 +471,33 @@ async function handleCallbackQuery(update: TelegramUpdate) {
     return;
   }
 
+  if (typeof reminderLeadMinutes === "number") {
+    const nextConnection = await setTelegramConnectionSettings(activeConnection, {
+      reminderLeadMinutes
+    });
+
+    await answerTelegramCallbackQuery(callback.id, t.reminderLeadUpdated).catch(() => undefined);
+
+    const payload = buildSettingsMessage(nextConnection || activeConnection, "reminders");
+    await sendTelegramTextMessage({
+      chatId,
+      text: payload.text,
+      replyMarkup: payload.replyMarkup
+    }).catch(() => undefined);
+    return;
+  }
+
   if (settingsKey) {
     const nextConnection = await toggleTelegramConnectionSetting(activeConnection, settingsKey);
     await answerTelegramCallbackQuery(callback.id, t.settingUpdated).catch(() => undefined);
 
     if (nextConnection) {
-      const section = settingsKey === "forwardingEnabled" ? "support" : "notifications";
+      const section =
+        settingsKey === "forwardingEnabled"
+          ? "support"
+          : settingsKey === "notificationsReminder" || settingsKey === "notificationsToday"
+            ? "reminders"
+            : "notifications";
       const payload = buildSettingsMessage(nextConnection, section);
       await sendTelegramTextMessage({
         chatId,

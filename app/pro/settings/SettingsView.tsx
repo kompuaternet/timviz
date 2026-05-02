@@ -81,7 +81,7 @@ type AddressSuggestion = {
   lon: number;
 };
 
-type TelegramSettingsSection = "notifications" | "support" | "bot";
+type TelegramSettingsSection = "notifications" | "reminders" | "support" | "bot";
 
 type TelegramPanelState = {
   deepLink: string;
@@ -90,11 +90,22 @@ type TelegramPanelState = {
   chatId: string | null;
   settings: {
     notificationsNewBooking: boolean;
+    notificationsCabinetBooking: boolean;
+    notificationsRescheduled: boolean;
+    notificationsCancelled: boolean;
     notificationsReminder: boolean;
     notificationsToday: boolean;
     forwardingEnabled: boolean;
+    reminderLeadMinutes: number;
   };
 };
+
+type TelegramBooleanSettingKey = Exclude<
+  keyof TelegramPanelState["settings"],
+  "reminderLeadMinutes"
+>;
+
+const telegramReminderLeadOptions = [15, 30, 60, 120, 180, 1440] as const;
 
 const countries = [
   "Ukraine",
@@ -208,9 +219,11 @@ const settingsExtras = {
     telegramChat: "Чат",
     telegramUnavailable: "На сервере пока не настроен Telegram-бот.",
     telegramSectionNotifications: "Уведомления",
+    telegramSectionReminders: "Напоминания",
     telegramSectionSupport: "Поддержка",
     telegramSectionBot: "Управление ботом",
     telegramNotificationsHint: "Выберите, какие уведомления бот должен отправлять вам в Telegram.",
+    telegramRemindersHint: "Настройте напоминания о предстоящих записях и ежедневную сводку.",
     telegramSupportHint: "Управляйте пересылкой сообщений в поддержку и быстрым контактом.",
     telegramBotHint: "Массово включайте или выключайте уведомления одним нажатием.",
     telegramConnectButton: "Подключить Telegram",
@@ -221,8 +234,12 @@ const settingsExtras = {
     telegramSaveFailed: "Не удалось обновить Telegram-настройки.",
     telegramAllOn: "Включить всё",
     telegramAllOff: "Выключить всё",
-    telegramNewBookings: "Новые записи",
+    telegramOnlineBookings: "Новые онлайн-записи",
+    telegramCabinetBookings: "Новые записи из кабинета",
+    telegramRescheduled: "Изменение времени записи",
+    telegramCancelled: "Отмена записи",
     telegramReminders: "Напоминания",
+    telegramReminderLead: "Напоминать заранее",
     telegramToday: "Сводка на сегодня",
     telegramForwarding: "Пересылка в поддержку",
     telegramTokenExpires: "Ссылка активна до"
@@ -259,9 +276,11 @@ const settingsExtras = {
     telegramChat: "Чат",
     telegramUnavailable: "На сервері поки не налаштовано Telegram-бота.",
     telegramSectionNotifications: "Сповіщення",
+    telegramSectionReminders: "Нагадування",
     telegramSectionSupport: "Підтримка",
     telegramSectionBot: "Керування ботом",
     telegramNotificationsHint: "Оберіть, які сповіщення бот має надсилати вам у Telegram.",
+    telegramRemindersHint: "Налаштуйте нагадування про майбутні записи і щоденне зведення.",
     telegramSupportHint: "Керуйте пересилкою повідомлень у підтримку та швидким контактом.",
     telegramBotHint: "Масово вмикайте або вимикайте сповіщення одним натисканням.",
     telegramConnectButton: "Підключити Telegram",
@@ -272,8 +291,12 @@ const settingsExtras = {
     telegramSaveFailed: "Не вдалося оновити Telegram-налаштування.",
     telegramAllOn: "Увімкнути все",
     telegramAllOff: "Вимкнути все",
-    telegramNewBookings: "Нові записи",
+    telegramOnlineBookings: "Нові онлайн-записи",
+    telegramCabinetBookings: "Нові записи з кабінету",
+    telegramRescheduled: "Зміна часу запису",
+    telegramCancelled: "Скасування запису",
     telegramReminders: "Нагадування",
+    telegramReminderLead: "Нагадувати заздалегідь",
     telegramToday: "Зведення на сьогодні",
     telegramForwarding: "Пересилка в підтримку",
     telegramTokenExpires: "Посилання активне до"
@@ -310,9 +333,11 @@ const settingsExtras = {
     telegramChat: "Chat",
     telegramUnavailable: "Telegram bot is not configured on the server yet.",
     telegramSectionNotifications: "Notifications",
+    telegramSectionReminders: "Reminders",
     telegramSectionSupport: "Support",
     telegramSectionBot: "Bot control",
     telegramNotificationsHint: "Choose which updates the bot should send you in Telegram.",
+    telegramRemindersHint: "Configure upcoming booking reminders and daily summary.",
     telegramSupportHint: "Control support forwarding and quick contact.",
     telegramBotHint: "Turn all Telegram notifications on or off in one click.",
     telegramConnectButton: "Connect Telegram",
@@ -323,8 +348,12 @@ const settingsExtras = {
     telegramSaveFailed: "Could not update Telegram settings.",
     telegramAllOn: "Enable all",
     telegramAllOff: "Disable all",
-    telegramNewBookings: "New bookings",
+    telegramOnlineBookings: "New online bookings",
+    telegramCabinetBookings: "New dashboard bookings",
+    telegramRescheduled: "Rescheduled bookings",
+    telegramCancelled: "Cancelled bookings",
     telegramReminders: "Reminders",
+    telegramReminderLead: "Reminder lead time",
     telegramToday: "Today summary",
     telegramForwarding: "Forward to support",
     telegramTokenExpires: "Link is active until"
@@ -428,6 +457,24 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
     return parsed.toLocaleString();
   }
 
+  function formatReminderLead(minutes: number) {
+    const safe = Math.max(5, Math.min(1440, Math.round(minutes / 5) * 5));
+    if (safe % 60 === 0) {
+      const hours = safe / 60;
+      if (language === "uk") {
+        return hours === 1 ? "1 година" : `${hours} год`;
+      }
+      if (language === "ru") {
+        return hours === 1 ? "1 час" : `${hours} ч`;
+      }
+      return hours === 1 ? "1 hour" : `${hours} hours`;
+    }
+
+    if (language === "uk") return `${safe} хв`;
+    if (language === "ru") return `${safe} мин`;
+    return `${safe} min`;
+  }
+
   async function loadTelegramPanel(silent = false) {
     if (!silent) {
       setIsTelegramLoading(true);
@@ -460,6 +507,18 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
             "settings" in payload && typeof payload.settings?.notificationsNewBooking === "boolean"
               ? payload.settings.notificationsNewBooking
               : true,
+          notificationsCabinetBooking:
+            "settings" in payload && typeof payload.settings?.notificationsCabinetBooking === "boolean"
+              ? payload.settings.notificationsCabinetBooking
+              : true,
+          notificationsRescheduled:
+            "settings" in payload && typeof payload.settings?.notificationsRescheduled === "boolean"
+              ? payload.settings.notificationsRescheduled
+              : true,
+          notificationsCancelled:
+            "settings" in payload && typeof payload.settings?.notificationsCancelled === "boolean"
+              ? payload.settings.notificationsCancelled
+              : true,
           notificationsReminder:
             "settings" in payload && typeof payload.settings?.notificationsReminder === "boolean"
               ? payload.settings.notificationsReminder
@@ -471,7 +530,11 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
           forwardingEnabled:
             "settings" in payload && typeof payload.settings?.forwardingEnabled === "boolean"
               ? payload.settings.forwardingEnabled
-              : true
+              : true,
+          reminderLeadMinutes:
+            "settings" in payload && typeof payload.settings?.reminderLeadMinutes === "number"
+              ? payload.settings.reminderLeadMinutes
+              : 120
         }
       });
     } catch (error) {
@@ -516,6 +579,18 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
               typeof payload.settings?.notificationsNewBooking === "boolean"
                 ? payload.settings.notificationsNewBooking
                 : telegramPanel?.settings.notificationsNewBooking ?? true,
+            notificationsCabinetBooking:
+              typeof payload.settings?.notificationsCabinetBooking === "boolean"
+                ? payload.settings.notificationsCabinetBooking
+                : telegramPanel?.settings.notificationsCabinetBooking ?? true,
+            notificationsRescheduled:
+              typeof payload.settings?.notificationsRescheduled === "boolean"
+                ? payload.settings.notificationsRescheduled
+                : telegramPanel?.settings.notificationsRescheduled ?? true,
+            notificationsCancelled:
+              typeof payload.settings?.notificationsCancelled === "boolean"
+                ? payload.settings.notificationsCancelled
+                : telegramPanel?.settings.notificationsCancelled ?? true,
             notificationsReminder:
               typeof payload.settings?.notificationsReminder === "boolean"
                 ? payload.settings.notificationsReminder
@@ -527,7 +602,11 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
             forwardingEnabled:
               typeof payload.settings?.forwardingEnabled === "boolean"
                 ? payload.settings.forwardingEnabled
-                : telegramPanel?.settings.forwardingEnabled ?? true
+                : telegramPanel?.settings.forwardingEnabled ?? true,
+            reminderLeadMinutes:
+              typeof payload.settings?.reminderLeadMinutes === "number"
+                ? payload.settings.reminderLeadMinutes
+                : telegramPanel?.settings.reminderLeadMinutes ?? 120
           }
         });
       }
@@ -652,13 +731,23 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
     window.open(deepLink, "_blank", "noopener,noreferrer");
   }
 
-  async function toggleTelegramSetting(key: keyof TelegramPanelState["settings"]) {
+  async function toggleTelegramSetting(key: TelegramBooleanSettingKey) {
     if (!telegramPanel || isTelegramSaving) {
       return;
     }
 
     await updateTelegramSettings({
       [key]: !telegramPanel.settings[key]
+    });
+  }
+
+  async function setTelegramReminderLead(minutes: number) {
+    if (!telegramPanel || isTelegramSaving) {
+      return;
+    }
+
+    await updateTelegramSettings({
+      reminderLeadMinutes: minutes
     });
   }
 
@@ -1217,6 +1306,13 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
                   </button>
                   <button
                     type="button"
+                    className={telegramSection === "reminders" ? styles.primaryButton : styles.ghostButton}
+                    onClick={() => setTelegramSection("reminders")}
+                  >
+                    {copy.telegramSectionReminders}
+                  </button>
+                  <button
+                    type="button"
                     className={telegramSection === "support" ? styles.primaryButton : styles.ghostButton}
                     onClick={() => setTelegramSection("support")}
                   >
@@ -1240,11 +1336,50 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
                       onClick={() => void toggleTelegramSetting("notificationsNewBooking")}
                       disabled={isTelegramSaving}
                     >
-                      <span className={styles.settingsToggleText}>{copy.telegramNewBookings}</span>
+                      <span className={styles.settingsToggleText}>{copy.telegramOnlineBookings}</span>
                       <span className={styles.settingsToggleTrack}>
                         <span className={styles.settingsToggleThumb} />
                       </span>
                     </button>
+                    <button
+                      type="button"
+                      className={buildTelegramToggleClass(telegramPanel.settings.notificationsCabinetBooking)}
+                      onClick={() => void toggleTelegramSetting("notificationsCabinetBooking")}
+                      disabled={isTelegramSaving}
+                    >
+                      <span className={styles.settingsToggleText}>{copy.telegramCabinetBookings}</span>
+                      <span className={styles.settingsToggleTrack}>
+                        <span className={styles.settingsToggleThumb} />
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      className={buildTelegramToggleClass(telegramPanel.settings.notificationsRescheduled)}
+                      onClick={() => void toggleTelegramSetting("notificationsRescheduled")}
+                      disabled={isTelegramSaving}
+                    >
+                      <span className={styles.settingsToggleText}>{copy.telegramRescheduled}</span>
+                      <span className={styles.settingsToggleTrack}>
+                        <span className={styles.settingsToggleThumb} />
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      className={buildTelegramToggleClass(telegramPanel.settings.notificationsCancelled)}
+                      onClick={() => void toggleTelegramSetting("notificationsCancelled")}
+                      disabled={isTelegramSaving}
+                    >
+                      <span className={styles.settingsToggleText}>{copy.telegramCancelled}</span>
+                      <span className={styles.settingsToggleTrack}>
+                        <span className={styles.settingsToggleThumb} />
+                      </span>
+                    </button>
+                  </div>
+                ) : null}
+
+                {telegramSection === "reminders" ? (
+                  <div className={styles.generatedBlock}>
+                    <p className={styles.generatedHint}>{copy.telegramRemindersHint}</p>
                     <button
                       type="button"
                       className={buildTelegramToggleClass(telegramPanel.settings.notificationsReminder)}
@@ -1267,6 +1402,21 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
                         <span className={styles.settingsToggleThumb} />
                       </span>
                     </button>
+                    <label>
+                      {copy.telegramReminderLead}
+                      <select
+                        className={styles.input}
+                        value={String(telegramPanel.settings.reminderLeadMinutes)}
+                        onChange={(event) => void setTelegramReminderLead(Number.parseInt(event.target.value, 10) || 120)}
+                        disabled={isTelegramSaving}
+                      >
+                        {telegramReminderLeadOptions.map((minutes) => (
+                          <option key={minutes} value={minutes}>
+                            {formatReminderLead(minutes)}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
                   </div>
                 ) : null}
 
@@ -1307,6 +1457,9 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
                         onClick={() =>
                           void updateTelegramSettings({
                             notificationsNewBooking: true,
+                            notificationsCabinetBooking: true,
+                            notificationsRescheduled: true,
+                            notificationsCancelled: true,
                             notificationsReminder: true,
                             notificationsToday: true
                           })
@@ -1321,6 +1474,9 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
                         onClick={() =>
                           void updateTelegramSettings({
                             notificationsNewBooking: false,
+                            notificationsCabinetBooking: false,
+                            notificationsRescheduled: false,
+                            notificationsCancelled: false,
                             notificationsReminder: false,
                             notificationsToday: false
                           })

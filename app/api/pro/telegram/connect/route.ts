@@ -50,9 +50,13 @@ export async function GET() {
       chatId: result.connection.chatId || null,
       settings: {
         notificationsNewBooking: result.connection.notificationsNewBooking,
+        notificationsCabinetBooking: result.connection.notificationsCabinetBooking,
+        notificationsRescheduled: result.connection.notificationsRescheduled,
+        notificationsCancelled: result.connection.notificationsCancelled,
         notificationsReminder: result.connection.notificationsReminder,
         notificationsToday: result.connection.notificationsToday,
-        forwardingEnabled: result.connection.forwardingEnabled
+        forwardingEnabled: result.connection.forwardingEnabled,
+        reminderLeadMinutes: result.connection.reminderLeadMinutes
       }
     });
   } catch (error) {
@@ -89,9 +93,13 @@ export async function PATCH(request: Request) {
 
     const body = (await request.json().catch(() => ({}))) as Partial<{
       notificationsNewBooking: boolean;
+      notificationsCabinetBooking: boolean;
+      notificationsRescheduled: boolean;
+      notificationsCancelled: boolean;
       notificationsReminder: boolean;
       notificationsToday: boolean;
       forwardingEnabled: boolean;
+      reminderLeadMinutes: number;
     }>;
 
     let connection = await getTelegramConnectionByProfessionalId(professionalId);
@@ -110,6 +118,18 @@ export async function PATCH(request: Request) {
         typeof body.notificationsNewBooking === "boolean"
           ? body.notificationsNewBooking
           : undefined,
+      notificationsCabinetBooking:
+        typeof body.notificationsCabinetBooking === "boolean"
+          ? body.notificationsCabinetBooking
+          : undefined,
+      notificationsRescheduled:
+        typeof body.notificationsRescheduled === "boolean"
+          ? body.notificationsRescheduled
+          : undefined,
+      notificationsCancelled:
+        typeof body.notificationsCancelled === "boolean"
+          ? body.notificationsCancelled
+          : undefined,
       notificationsReminder:
         typeof body.notificationsReminder === "boolean"
           ? body.notificationsReminder
@@ -121,6 +141,10 @@ export async function PATCH(request: Request) {
       forwardingEnabled:
         typeof body.forwardingEnabled === "boolean"
           ? body.forwardingEnabled
+          : undefined,
+      reminderLeadMinutes:
+        typeof body.reminderLeadMinutes === "number" && Number.isFinite(body.reminderLeadMinutes)
+          ? body.reminderLeadMinutes
           : undefined
     });
 
@@ -139,9 +163,13 @@ export async function PATCH(request: Request) {
       chatId: nextConnection.chatId || null,
       settings: {
         notificationsNewBooking: nextConnection.notificationsNewBooking,
+        notificationsCabinetBooking: nextConnection.notificationsCabinetBooking,
+        notificationsRescheduled: nextConnection.notificationsRescheduled,
+        notificationsCancelled: nextConnection.notificationsCancelled,
         notificationsReminder: nextConnection.notificationsReminder,
         notificationsToday: nextConnection.notificationsToday,
-        forwardingEnabled: nextConnection.forwardingEnabled
+        forwardingEnabled: nextConnection.forwardingEnabled,
+        reminderLeadMinutes: nextConnection.reminderLeadMinutes
       }
     });
   } catch (error) {
