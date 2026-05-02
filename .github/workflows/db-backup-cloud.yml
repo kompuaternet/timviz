@@ -19,11 +19,7 @@ jobs:
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       DB_BACKUP_MODE: auto
       DB_BACKUP_KEEP: 30
-      DB_BACKUP_CLOUD_UPLOAD: auto
-      GDRIVE_FOLDER_ID: ${{ secrets.GDRIVE_FOLDER_ID }}
-      GDRIVE_SERVICE_ACCOUNT_JSON: ${{ secrets.GDRIVE_SERVICE_ACCOUNT_JSON }}
-      GDRIVE_BACKUP_KEEP: ${{ secrets.GDRIVE_BACKUP_KEEP }}
-      GDRIVE_BACKUP_PREFIX: timviz-db-backup-
+      DB_BACKUP_CLOUD_UPLOAD: off
 
     steps:
       - name: Checkout
@@ -43,7 +39,7 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run backup and cloud upload
+      - name: Run backup
         run: npm run db:backup:cloud
 
       - name: Upload backup artifacts to GitHub
@@ -55,4 +51,3 @@ jobs:
             backups/db-archives/**
           if-no-files-found: error
           retention-days: 30
-
