@@ -9,10 +9,13 @@
     "lint": "next lint",
     "migrate:supabase": "node scripts/migrate-local-data-to-supabase.mjs",
     "db:backup": "node scripts/db-backup.mjs",
-    "db:restore": "node scripts/db-restore.mjs"
+    "db:restore": "node scripts/db-restore.mjs",
+    "db:upload:gdrive": "node scripts/db-upload-gdrive.mjs",
+    "db:backup:cloud": "node scripts/db-backup-cloud.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.49.8",
+    "googleapis": "^146.0.0",
     "next": "^15.3.8",
     "nodemailer": "^8.0.6",
     "react": "19.0.0",

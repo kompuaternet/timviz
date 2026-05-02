@@ -36,6 +36,8 @@ npm run dev -- --hostname 127.0.0.1 --port 3005
 
 1. `npm run db:backup`
 2. `npm run db:restore -- --input <папка_бэкапа> --yes`
+3. `npm run db:upload:gdrive`
+4. `npm run db:backup:cloud`
 
 Как работает backup:
 
@@ -55,6 +57,8 @@ npm run dev -- --hostname 127.0.0.1 --port 3005
 3. `DB_BACKUP_KEEP=14`
 4. `DB_BACKUP_PAGE_SIZE=1000`
 5. `SUPABASE_DB_URL=` (для полноценного `pg_dump`)
+6. `DB_BACKUP_ARCHIVE_DIR=backups/db-archives`
+7. `DB_BACKUP_CLOUD_UPLOAD=auto`
 
 Восстановление:
 
@@ -72,11 +76,45 @@ DB_RESTORE_CONFIRM=YES npm run db:restore -- --yes
 DB_RESTORE_CONFIRM=YES npm run db:restore -- --input backups/db/2026-05-02T08-00-00-000Z --truncate --yes
 ```
 
+Загрузка последнего бэкапа в Google Drive:
+
+```bash
+npm run db:upload:gdrive
+```
+
 Пример cron (ежедневно в 03:30):
 
 ```bash
 30 3 * * * cd /Users/Vitaliy/Graviti/Rezervo && /usr/bin/env npm run db:backup >> /Users/Vitaliy/Graviti/Rezervo/logs/db-backup.log 2>&1
 ```
+
+### Автономно без твоего компьютера
+
+Добавлен workflow: `.github/workflows/db-backup-cloud.yml`.
+
+Что делает:
+
+1. Запускается ежедневно в `00:30 UTC` и вручную через `workflow_dispatch`.
+2. Делает backup (`pg_dump`, если доступен, иначе Supabase JSON).
+3. Загружает backup в Google Drive (если заданы секреты).
+4. Сохраняет backup как GitHub Artifact (30 дней).
+
+Секреты для GitHub Actions:
+
+1. `NEXT_PUBLIC_SUPABASE_URL`
+2. `SUPABASE_SERVICE_ROLE_KEY`
+3. `SUPABASE_DB_URL` (рекомендуется)
+4. `GDRIVE_SERVICE_ACCOUNT_JSON`
+5. `GDRIVE_FOLDER_ID`
+6. `GDRIVE_BACKUP_KEEP` (например `30`)
+
+Важно для Google Drive:
+
+1. Создай папку в Google Drive.
+2. Поделись папкой с email service account.
+3. В `GDRIVE_FOLDER_ID` укажи ID этой папки.
+
+Если Google Drive секреты не заданы, workflow все равно сохранит backup в GitHub Artifacts.
 
 ## Профессиональный flow
 

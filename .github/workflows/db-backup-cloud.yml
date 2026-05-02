@@ -1,0 +1,58 @@
+name: DB Backup Cloud
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "30 0 * * *"
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      DB_BACKUP_MODE: auto
+      DB_BACKUP_KEEP: 30
+      DB_BACKUP_CLOUD_UPLOAD: auto
+      GDRIVE_FOLDER_ID: ${{ secrets.GDRIVE_FOLDER_ID }}
+      GDRIVE_SERVICE_ACCOUNT_JSON: ${{ secrets.GDRIVE_SERVICE_ACCOUNT_JSON }}
+      GDRIVE_BACKUP_KEEP: ${{ secrets.GDRIVE_BACKUP_KEEP }}
+      GDRIVE_BACKUP_PREFIX: timviz-db-backup-
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install pg_dump client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run backup and cloud upload
+        run: npm run db:backup:cloud
+
+      - name: Upload backup artifacts to GitHub
+        uses: actions/upload-artifact@v4
+        with:
+          name: db-backups-${{ github.run_id }}
+          path: |
+            backups/db/**
+            backups/db-archives/**
+          if-no-files-found: error
+          retention-days: 30
+
