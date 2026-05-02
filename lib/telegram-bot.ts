@@ -301,7 +301,10 @@ function makeConnectToken() {
 }
 
 function getBotToken() {
-  return (process.env.TELEGRAM_BOT_TOKEN || "").trim();
+  return (
+    process.env.TELEGRAM_BOOKING_BOT_TOKEN ||
+    ""
+  ).trim();
 }
 
 function getSupportChatId() {
@@ -314,8 +317,7 @@ function getSupportChatId() {
 
 function getWebhookSecret() {
   return (
-    process.env.TELEGRAM_WEBHOOK_SECRET ||
-    process.env.SUPPORT_TELEGRAM_WEBHOOK_SECRET ||
+    process.env.TELEGRAM_BOOKING_WEBHOOK_SECRET ||
     ""
   ).trim();
 }
@@ -332,7 +334,7 @@ async function telegramApiRequest<T>(method: string, payload: Record<string, unk
   const token = getBotToken();
 
   if (!token) {
-    throw new Error("TELEGRAM_BOT_TOKEN is not configured.");
+    throw new Error("TELEGRAM_BOOKING_BOT_TOKEN is not configured.");
   }
 
   const response = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
@@ -397,7 +399,7 @@ export async function answerTelegramCallbackQuery(callbackQueryId: string, text?
 }
 
 export async function getTelegramBotUsername() {
-  const fromEnv = (process.env.TELEGRAM_BOT_USERNAME || "").trim().replace(/^@/, "");
+  const fromEnv = (process.env.TELEGRAM_BOOKING_BOT_USERNAME || "").trim().replace(/^@/, "");
   if (fromEnv) {
     return fromEnv;
   }
@@ -584,7 +586,7 @@ export async function ensureTelegramConnectToken(input: {
   const saved = await upsertConnection(nextConnection);
   const botUsername = await getTelegramBotUsername();
   if (!botUsername) {
-    throw new Error("Telegram bot username is missing. Set TELEGRAM_BOT_USERNAME.");
+    throw new Error("Telegram bot username is missing. Set TELEGRAM_BOOKING_BOT_USERNAME.");
   }
   const deepLink = `https://t.me/${botUsername}?start=connect_${saved.connectToken}`;
 

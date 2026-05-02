@@ -3,7 +3,7 @@ import { processTelegramReminders } from "../../../../lib/telegram-bot";
 
 function isAuthorized(request: Request) {
   const expected =
-    (process.env.TELEGRAM_REMINDERS_SECRET || process.env.CRON_SECRET || "").trim();
+    (process.env.TELEGRAM_BOOKING_REMINDERS_SECRET || process.env.CRON_SECRET || "").trim();
 
   if (!expected) {
     return true;
