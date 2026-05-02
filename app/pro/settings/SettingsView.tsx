@@ -273,8 +273,8 @@ const settingsExtras = {
     onlineBookingSettingsHint: "Включите онлайн-запись и опубликуйте ссылку для клиентов.",
     bookingLinkTitle: "Ссылка для записи",
     bookingLinkHint: "Используйте ссылку в Instagram, Telegram и на сайте.",
-    scheduleTitle: "График и локализация",
-    scheduleHint: "Выберите часовой пояс и язык. Рабочие дни настраиваются отдельно в расписании.",
+    scheduleTitle: "График работы",
+    scheduleHint: "Настраивайте рабочие дни, смены и доступные окна в отдельном разделе расписания.",
     scheduleOpenButton: "Открыть расписание",
     telegramSettingsOpen: "Настроить уведомления",
     telegramSettingsHide: "Скрыть расширенные настройки",
@@ -366,8 +366,8 @@ const settingsExtras = {
     onlineBookingSettingsHint: "Увімкніть онлайн-запис і опублікуйте посилання для клієнтів.",
     bookingLinkTitle: "Посилання для запису",
     bookingLinkHint: "Використовуйте посилання в Instagram, Telegram та на сайті.",
-    scheduleTitle: "Графік і локалізація",
-    scheduleHint: "Оберіть часовий пояс і мову. Робочі дні налаштовуються окремо в розкладі.",
+    scheduleTitle: "Графік роботи",
+    scheduleHint: "Налаштовуйте робочі дні, зміни та доступні вікна в окремому розділі розкладу.",
     scheduleOpenButton: "Відкрити розклад",
     telegramSettingsOpen: "Налаштувати сповіщення",
     telegramSettingsHide: "Сховати розширені налаштування",
@@ -459,8 +459,8 @@ const settingsExtras = {
     onlineBookingSettingsHint: "Enable online booking and share your booking page with clients.",
     bookingLinkTitle: "Booking link",
     bookingLinkHint: "Use this link in Instagram, Telegram, and your website.",
-    scheduleTitle: "Schedule and localization",
-    scheduleHint: "Choose timezone and language. Working days are managed in the schedule module.",
+    scheduleTitle: "Working schedule",
+    scheduleHint: "Configure working days, shifts, and available slots in the dedicated schedule section.",
     scheduleOpenButton: "Open schedule",
     telegramSettingsOpen: "Open advanced settings",
     telegramSettingsHide: "Hide advanced settings",
@@ -1692,6 +1692,53 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
                     </div>
                   </section>
 
+                  <section className={styles.settingsCard}>
+                    <div className={styles.settingsCardHeader}>
+                      <div>
+                        <span>{t.settings.localization}</span>
+                        <h2>{t.settings.countryLanguageCurrency}</h2>
+                      </div>
+                    </div>
+                    <div className={styles.settingsFormGrid}>
+                      <label>
+                        {t.settings.country}
+                        <select className={styles.select} value={data.professional.country} onChange={(event) => updateProfessional("country", event.target.value)}>
+                          {countries.map((country) => (
+                            <option key={country} value={country}>{country}</option>
+                          ))}
+                        </select>
+                      </label>
+                      <label>
+                        {t.settings.timezone}
+                        <select className={styles.select} value={data.professional.timezone} onChange={(event) => updateProfessional("timezone", event.target.value)}>
+                          {timezones.map((timezone) => (
+                            <option key={timezone.value} value={timezone.value}>{timezone.label}</option>
+                          ))}
+                        </select>
+                      </label>
+                      <label>
+                        {t.settings.language}
+                        <select
+                          className={styles.select}
+                          value={languageFromProfile(data.professional.language)}
+                          onChange={(event) => updateProfessional("language", languageLabels[event.target.value as ProLanguage])}
+                        >
+                          {languages.map((languageOption) => (
+                            <option key={languageOption} value={languageOption}>{languageLabels[languageOption]}</option>
+                          ))}
+                        </select>
+                      </label>
+                      <label>
+                        {t.settings.currency}
+                        <select className={styles.select} value={data.professional.currency} onChange={(event) => updateProfessional("currency", event.target.value)}>
+                          {currencies.map((currency) => (
+                            <option key={currency} value={currency}>{currency}</option>
+                          ))}
+                        </select>
+                      </label>
+                    </div>
+                  </section>
+
                   {data.membership.scope === "owner" ? (
                     <section className={styles.settingsCard}>
                       <div className={styles.settingsCardHeader}>
@@ -1965,53 +2012,6 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
 
               {activeSection === "schedule" ? (
                 <>
-                  <section className={styles.settingsCard}>
-                    <div className={styles.settingsCardHeader}>
-                      <div>
-                        <span>{t.settings.localization}</span>
-                        <h2>{t.settings.countryLanguageCurrency}</h2>
-                      </div>
-                    </div>
-                    <div className={styles.settingsFormGrid}>
-                      <label>
-                        {t.settings.country}
-                        <select className={styles.select} value={data.professional.country} onChange={(event) => updateProfessional("country", event.target.value)}>
-                          {countries.map((country) => (
-                            <option key={country} value={country}>{country}</option>
-                          ))}
-                        </select>
-                      </label>
-                      <label>
-                        {t.settings.timezone}
-                        <select className={styles.select} value={data.professional.timezone} onChange={(event) => updateProfessional("timezone", event.target.value)}>
-                          {timezones.map((timezone) => (
-                            <option key={timezone.value} value={timezone.value}>{timezone.label}</option>
-                          ))}
-                        </select>
-                      </label>
-                      <label>
-                        {t.settings.language}
-                        <select
-                          className={styles.select}
-                          value={languageFromProfile(data.professional.language)}
-                          onChange={(event) => updateProfessional("language", languageLabels[event.target.value as ProLanguage])}
-                        >
-                          {languages.map((languageOption) => (
-                            <option key={languageOption} value={languageOption}>{languageLabels[languageOption]}</option>
-                          ))}
-                        </select>
-                      </label>
-                      <label>
-                        {t.settings.currency}
-                        <select className={styles.select} value={data.professional.currency} onChange={(event) => updateProfessional("currency", event.target.value)}>
-                          {currencies.map((currency) => (
-                            <option key={currency} value={currency}>{currency}</option>
-                          ))}
-                        </select>
-                      </label>
-                    </div>
-                  </section>
-
                   <section className={styles.settingsCard}>
                     <div className={styles.settingsCardHeader}>
                       <div>
