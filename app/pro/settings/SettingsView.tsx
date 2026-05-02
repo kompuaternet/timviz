@@ -89,7 +89,7 @@ type AddressSuggestion = {
   lon: number;
 };
 
-type TelegramSettingsSection = "notifications" | "reminders" | "support" | "bot";
+type TelegramSettingsSection = "notifications" | "reminders" | "support";
 
 type TelegramPanelState = {
   deepLink: string;
@@ -239,19 +239,15 @@ const settingsExtras = {
     telegramSectionNotifications: "Уведомления",
     telegramSectionReminders: "Напоминания",
     telegramSectionSupport: "Поддержка",
-    telegramSectionBot: "Управление ботом",
     telegramNotificationsHint: "Выберите, какие уведомления бот должен отправлять вам в Telegram.",
     telegramRemindersHint: "Настройте напоминания о предстоящих записях и ежедневную сводку.",
     telegramSupportHint: "Управляйте пересылкой сообщений в поддержку и быстрым контактом.",
-    telegramBotHint: "Массово включайте или выключайте уведомления одним нажатием.",
     telegramConnectButton: "Подключить Telegram",
     telegramOpenBot: "Открыть бота",
     telegramCopyLink: "Копировать ссылку",
     telegramRefreshLink: "Обновить ссылку",
     telegramSaved: "Telegram-настройки обновлены.",
     telegramSaveFailed: "Не удалось обновить Telegram-настройки.",
-    telegramAllOn: "Включить всё",
-    telegramAllOff: "Выключить всё",
     telegramOnlineBookings: "Новые онлайн-записи",
     telegramCabinetBookings: "Новые записи из кабинета",
     telegramRescheduled: "Изменение времени записи",
@@ -276,8 +272,6 @@ const settingsExtras = {
     scheduleTitle: "График работы",
     scheduleHint: "Настраивайте рабочие дни, смены и доступные окна в отдельном разделе расписания.",
     scheduleOpenButton: "Открыть расписание",
-    telegramSettingsOpen: "Настроить уведомления",
-    telegramSettingsHide: "Скрыть расширенные настройки",
     onboardingChecklistTitle: "Чеклист запуска",
     onboardingProgress: (done: number, total: number) => `${done} из ${total} выполнено`,
     onboardingStepServices: "Добавьте услуги и цены",
@@ -332,19 +326,15 @@ const settingsExtras = {
     telegramSectionNotifications: "Сповіщення",
     telegramSectionReminders: "Нагадування",
     telegramSectionSupport: "Підтримка",
-    telegramSectionBot: "Керування ботом",
     telegramNotificationsHint: "Оберіть, які сповіщення бот має надсилати вам у Telegram.",
     telegramRemindersHint: "Налаштуйте нагадування про майбутні записи і щоденне зведення.",
     telegramSupportHint: "Керуйте пересилкою повідомлень у підтримку та швидким контактом.",
-    telegramBotHint: "Масово вмикайте або вимикайте сповіщення одним натисканням.",
     telegramConnectButton: "Підключити Telegram",
     telegramOpenBot: "Відкрити бота",
     telegramCopyLink: "Скопіювати посилання",
     telegramRefreshLink: "Оновити посилання",
     telegramSaved: "Telegram-налаштування оновлено.",
     telegramSaveFailed: "Не вдалося оновити Telegram-налаштування.",
-    telegramAllOn: "Увімкнути все",
-    telegramAllOff: "Вимкнути все",
     telegramOnlineBookings: "Нові онлайн-записи",
     telegramCabinetBookings: "Нові записи з кабінету",
     telegramRescheduled: "Зміна часу запису",
@@ -369,8 +359,6 @@ const settingsExtras = {
     scheduleTitle: "Графік роботи",
     scheduleHint: "Налаштовуйте робочі дні, зміни та доступні вікна в окремому розділі розкладу.",
     scheduleOpenButton: "Відкрити розклад",
-    telegramSettingsOpen: "Налаштувати сповіщення",
-    telegramSettingsHide: "Сховати розширені налаштування",
     onboardingChecklistTitle: "Чеклист запуску",
     onboardingProgress: (done: number, total: number) => `${done} з ${total} виконано`,
     onboardingStepServices: "Додайте послуги і ціни",
@@ -425,19 +413,15 @@ const settingsExtras = {
     telegramSectionNotifications: "Notifications",
     telegramSectionReminders: "Reminders",
     telegramSectionSupport: "Support",
-    telegramSectionBot: "Bot control",
     telegramNotificationsHint: "Choose which updates the bot should send you in Telegram.",
     telegramRemindersHint: "Configure upcoming booking reminders and daily summary.",
     telegramSupportHint: "Control support forwarding and quick contact.",
-    telegramBotHint: "Turn all Telegram notifications on or off in one click.",
     telegramConnectButton: "Connect Telegram",
     telegramOpenBot: "Open bot",
     telegramCopyLink: "Copy link",
     telegramRefreshLink: "Refresh link",
     telegramSaved: "Telegram settings updated.",
     telegramSaveFailed: "Could not update Telegram settings.",
-    telegramAllOn: "Enable all",
-    telegramAllOff: "Disable all",
     telegramOnlineBookings: "New online bookings",
     telegramCabinetBookings: "New dashboard bookings",
     telegramRescheduled: "Rescheduled bookings",
@@ -462,8 +446,6 @@ const settingsExtras = {
     scheduleTitle: "Working schedule",
     scheduleHint: "Configure working days, shifts, and available slots in the dedicated schedule section.",
     scheduleOpenButton: "Open schedule",
-    telegramSettingsOpen: "Open advanced settings",
-    telegramSettingsHide: "Hide advanced settings",
     onboardingChecklistTitle: "Launch checklist",
     onboardingProgress: (done: number, total: number) => `${done} of ${total} completed`,
     onboardingStepServices: "Add services and prices",
@@ -585,7 +567,6 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
   const [isTelegramSaving, setIsTelegramSaving] = useState(false);
   const [telegramError, setTelegramError] = useState("");
   const [activeSection, setActiveSection] = useState<SettingsSectionId>("general");
-  const [isTelegramAdvancedOpen, setIsTelegramAdvancedOpen] = useState(false);
   const isHydratedRef = useRef(false);
   const autoSaveTimerRef = useRef<number | null>(null);
   const lastSavedSnapshotRef = useRef("");
@@ -1225,12 +1206,6 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
   useEffect(() => {
     latestSnapshotRef.current = autosaveSnapshot;
   }, [autosaveSnapshot]);
-
-  useEffect(() => {
-    if (activeSection !== "telegram" && isTelegramAdvancedOpen) {
-      setIsTelegramAdvancedOpen(false);
-    }
-  }, [activeSection, isTelegramAdvancedOpen]);
 
   useEffect(() => {
     if (!showPhotoGuidance) {
@@ -2089,9 +2064,10 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
                           <button
                             type="button"
                             className={styles.ghostButton}
-                            onClick={() => setIsTelegramAdvancedOpen((current) => !current)}
+                            onClick={() => void copyTelegramLink()}
+                            disabled={!telegramPanel.deepLink}
                           >
-                            {isTelegramAdvancedOpen ? copy.telegramSettingsHide : copy.telegramSettingsOpen}
+                            {copy.telegramCopyLink}
                           </button>
                           <button
                             type="button"
@@ -2104,210 +2080,151 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
                         </div>
                       </div>
 
-                      {isTelegramAdvancedOpen ? (
-                        <>
-                          <div className={styles.templateActions}>
+                      <>
+                        <div className={styles.templateActions}>
+                          <button
+                            type="button"
+                            className={telegramSection === "notifications" ? styles.primaryButton : styles.ghostButton}
+                            onClick={() => setTelegramSection("notifications")}
+                          >
+                            {copy.telegramSectionNotifications}
+                          </button>
+                          <button
+                            type="button"
+                            className={telegramSection === "reminders" ? styles.primaryButton : styles.ghostButton}
+                            onClick={() => setTelegramSection("reminders")}
+                          >
+                            {copy.telegramSectionReminders}
+                          </button>
+                          <button
+                            type="button"
+                            className={telegramSection === "support" ? styles.primaryButton : styles.ghostButton}
+                            onClick={() => setTelegramSection("support")}
+                          >
+                            {copy.telegramSectionSupport}
+                          </button>
+                        </div>
+
+                        {telegramSection === "notifications" ? (
+                          <div className={styles.generatedBlock}>
+                            <p className={styles.generatedHint}>{copy.telegramNotificationsHint}</p>
                             <button
                               type="button"
-                              className={telegramSection === "notifications" ? styles.primaryButton : styles.ghostButton}
-                              onClick={() => setTelegramSection("notifications")}
+                              className={buildTelegramToggleClass(telegramPanel.settings.notificationsNewBooking)}
+                              onClick={() => void toggleTelegramSetting("notificationsNewBooking")}
+                              disabled={isTelegramSaving}
                             >
-                              {copy.telegramSectionNotifications}
+                              <span className={styles.settingsToggleText}>{copy.telegramOnlineBookings}</span>
+                              <span className={styles.settingsToggleTrack}>
+                                <span className={styles.settingsToggleThumb} />
+                              </span>
                             </button>
                             <button
                               type="button"
-                              className={telegramSection === "reminders" ? styles.primaryButton : styles.ghostButton}
-                              onClick={() => setTelegramSection("reminders")}
+                              className={buildTelegramToggleClass(telegramPanel.settings.notificationsCabinetBooking)}
+                              onClick={() => void toggleTelegramSetting("notificationsCabinetBooking")}
+                              disabled={isTelegramSaving}
                             >
-                              {copy.telegramSectionReminders}
+                              <span className={styles.settingsToggleText}>{copy.telegramCabinetBookings}</span>
+                              <span className={styles.settingsToggleTrack}>
+                                <span className={styles.settingsToggleThumb} />
+                              </span>
                             </button>
                             <button
                               type="button"
-                              className={telegramSection === "support" ? styles.primaryButton : styles.ghostButton}
-                              onClick={() => setTelegramSection("support")}
+                              className={buildTelegramToggleClass(telegramPanel.settings.notificationsRescheduled)}
+                              onClick={() => void toggleTelegramSetting("notificationsRescheduled")}
+                              disabled={isTelegramSaving}
                             >
-                              {copy.telegramSectionSupport}
+                              <span className={styles.settingsToggleText}>{copy.telegramRescheduled}</span>
+                              <span className={styles.settingsToggleTrack}>
+                                <span className={styles.settingsToggleThumb} />
+                              </span>
                             </button>
                             <button
                               type="button"
-                              className={telegramSection === "bot" ? styles.primaryButton : styles.ghostButton}
-                              onClick={() => setTelegramSection("bot")}
+                              className={buildTelegramToggleClass(telegramPanel.settings.notificationsCancelled)}
+                              onClick={() => void toggleTelegramSetting("notificationsCancelled")}
+                              disabled={isTelegramSaving}
                             >
-                              {copy.telegramSectionBot}
+                              <span className={styles.settingsToggleText}>{copy.telegramCancelled}</span>
+                              <span className={styles.settingsToggleTrack}>
+                                <span className={styles.settingsToggleThumb} />
+                              </span>
                             </button>
                           </div>
+                        ) : null}
 
-                          {telegramSection === "notifications" ? (
-                            <div className={styles.generatedBlock}>
-                              <p className={styles.generatedHint}>{copy.telegramNotificationsHint}</p>
-                              <button
-                                type="button"
-                                className={buildTelegramToggleClass(telegramPanel.settings.notificationsNewBooking)}
-                                onClick={() => void toggleTelegramSetting("notificationsNewBooking")}
+                        {telegramSection === "reminders" ? (
+                          <div className={styles.generatedBlock}>
+                            <p className={styles.generatedHint}>{copy.telegramRemindersHint}</p>
+                            <button
+                              type="button"
+                              className={buildTelegramToggleClass(telegramPanel.settings.notificationsReminder)}
+                              onClick={() => void toggleTelegramSetting("notificationsReminder")}
+                              disabled={isTelegramSaving}
+                            >
+                              <span className={styles.settingsToggleText}>{copy.telegramReminders}</span>
+                              <span className={styles.settingsToggleTrack}>
+                                <span className={styles.settingsToggleThumb} />
+                              </span>
+                            </button>
+                            <button
+                              type="button"
+                              className={buildTelegramToggleClass(telegramPanel.settings.notificationsToday)}
+                              onClick={() => void toggleTelegramSetting("notificationsToday")}
+                              disabled={isTelegramSaving}
+                            >
+                              <span className={styles.settingsToggleText}>{copy.telegramToday}</span>
+                              <span className={styles.settingsToggleTrack}>
+                                <span className={styles.settingsToggleThumb} />
+                              </span>
+                            </button>
+                            <label>
+                              {copy.telegramReminderLead}
+                              <select
+                                className={styles.input}
+                                value={String(telegramPanel.settings.reminderLeadMinutes)}
+                                onChange={(event) => void setTelegramReminderLead(Number.parseInt(event.target.value, 10) || 120)}
                                 disabled={isTelegramSaving}
                               >
-                                <span className={styles.settingsToggleText}>{copy.telegramOnlineBookings}</span>
-                                <span className={styles.settingsToggleTrack}>
-                                  <span className={styles.settingsToggleThumb} />
-                                </span>
-                              </button>
+                                {telegramReminderLeadOptions.map((minutes) => (
+                                  <option key={minutes} value={minutes}>
+                                    {formatReminderLead(minutes)}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+                          </div>
+                        ) : null}
+
+                        {telegramSection === "support" ? (
+                          <div className={styles.generatedBlock}>
+                            <p className={styles.generatedHint}>{copy.telegramSupportHint}</p>
+                            <button
+                              type="button"
+                              className={buildTelegramToggleClass(telegramPanel.settings.forwardingEnabled)}
+                              onClick={() => void toggleTelegramSetting("forwardingEnabled")}
+                              disabled={isTelegramSaving}
+                            >
+                              <span className={styles.settingsToggleText}>{copy.telegramForwarding}</span>
+                              <span className={styles.settingsToggleTrack}>
+                                <span className={styles.settingsToggleThumb} />
+                              </span>
+                            </button>
+                            <div className={styles.templateActions}>
                               <button
                                 type="button"
-                                className={buildTelegramToggleClass(telegramPanel.settings.notificationsCabinetBooking)}
-                                onClick={() => void toggleTelegramSetting("notificationsCabinetBooking")}
-                                disabled={isTelegramSaving}
+                                className={styles.ghostButton}
+                                onClick={openTelegramBotLink}
+                                disabled={!telegramPanel.deepLink}
                               >
-                                <span className={styles.settingsToggleText}>{copy.telegramCabinetBookings}</span>
-                                <span className={styles.settingsToggleTrack}>
-                                  <span className={styles.settingsToggleThumb} />
-                                </span>
-                              </button>
-                              <button
-                                type="button"
-                                className={buildTelegramToggleClass(telegramPanel.settings.notificationsRescheduled)}
-                                onClick={() => void toggleTelegramSetting("notificationsRescheduled")}
-                                disabled={isTelegramSaving}
-                              >
-                                <span className={styles.settingsToggleText}>{copy.telegramRescheduled}</span>
-                                <span className={styles.settingsToggleTrack}>
-                                  <span className={styles.settingsToggleThumb} />
-                                </span>
-                              </button>
-                              <button
-                                type="button"
-                                className={buildTelegramToggleClass(telegramPanel.settings.notificationsCancelled)}
-                                onClick={() => void toggleTelegramSetting("notificationsCancelled")}
-                                disabled={isTelegramSaving}
-                              >
-                                <span className={styles.settingsToggleText}>{copy.telegramCancelled}</span>
-                                <span className={styles.settingsToggleTrack}>
-                                  <span className={styles.settingsToggleThumb} />
-                                </span>
+                                {copy.telegramOpenBot}
                               </button>
                             </div>
-                          ) : null}
-
-                          {telegramSection === "reminders" ? (
-                            <div className={styles.generatedBlock}>
-                              <p className={styles.generatedHint}>{copy.telegramRemindersHint}</p>
-                              <button
-                                type="button"
-                                className={buildTelegramToggleClass(telegramPanel.settings.notificationsReminder)}
-                                onClick={() => void toggleTelegramSetting("notificationsReminder")}
-                                disabled={isTelegramSaving}
-                              >
-                                <span className={styles.settingsToggleText}>{copy.telegramReminders}</span>
-                                <span className={styles.settingsToggleTrack}>
-                                  <span className={styles.settingsToggleThumb} />
-                                </span>
-                              </button>
-                              <button
-                                type="button"
-                                className={buildTelegramToggleClass(telegramPanel.settings.notificationsToday)}
-                                onClick={() => void toggleTelegramSetting("notificationsToday")}
-                                disabled={isTelegramSaving}
-                              >
-                                <span className={styles.settingsToggleText}>{copy.telegramToday}</span>
-                                <span className={styles.settingsToggleTrack}>
-                                  <span className={styles.settingsToggleThumb} />
-                                </span>
-                              </button>
-                              <label>
-                                {copy.telegramReminderLead}
-                                <select
-                                  className={styles.input}
-                                  value={String(telegramPanel.settings.reminderLeadMinutes)}
-                                  onChange={(event) => void setTelegramReminderLead(Number.parseInt(event.target.value, 10) || 120)}
-                                  disabled={isTelegramSaving}
-                                >
-                                  {telegramReminderLeadOptions.map((minutes) => (
-                                    <option key={minutes} value={minutes}>
-                                      {formatReminderLead(minutes)}
-                                    </option>
-                                  ))}
-                                </select>
-                              </label>
-                            </div>
-                          ) : null}
-
-                          {telegramSection === "support" ? (
-                            <div className={styles.generatedBlock}>
-                              <p className={styles.generatedHint}>{copy.telegramSupportHint}</p>
-                              <button
-                                type="button"
-                                className={buildTelegramToggleClass(telegramPanel.settings.forwardingEnabled)}
-                                onClick={() => void toggleTelegramSetting("forwardingEnabled")}
-                                disabled={isTelegramSaving}
-                              >
-                                <span className={styles.settingsToggleText}>{copy.telegramForwarding}</span>
-                                <span className={styles.settingsToggleTrack}>
-                                  <span className={styles.settingsToggleThumb} />
-                                </span>
-                              </button>
-                              <div className={styles.templateActions}>
-                                <button
-                                  type="button"
-                                  className={styles.ghostButton}
-                                  onClick={openTelegramBotLink}
-                                  disabled={!telegramPanel.deepLink}
-                                >
-                                  {copy.telegramOpenBot}
-                                </button>
-                              </div>
-                            </div>
-                          ) : null}
-
-                          {telegramSection === "bot" ? (
-                            <div className={styles.generatedBlock}>
-                              <p className={styles.generatedHint}>{copy.telegramBotHint}</p>
-                              <div className={styles.templateActions}>
-                                <button
-                                  type="button"
-                                  className={styles.primaryButton}
-                                  onClick={() =>
-                                    void updateTelegramSettings({
-                                      notificationsNewBooking: true,
-                                      notificationsCabinetBooking: true,
-                                      notificationsRescheduled: true,
-                                      notificationsCancelled: true,
-                                      notificationsReminder: true,
-                                      notificationsToday: true
-                                    })
-                                  }
-                                  disabled={isTelegramSaving}
-                                >
-                                  {copy.telegramAllOn}
-                                </button>
-                                <button
-                                  type="button"
-                                  className={styles.ghostButton}
-                                  onClick={() =>
-                                    void updateTelegramSettings({
-                                      notificationsNewBooking: false,
-                                      notificationsCabinetBooking: false,
-                                      notificationsRescheduled: false,
-                                      notificationsCancelled: false,
-                                      notificationsReminder: false,
-                                      notificationsToday: false
-                                    })
-                                  }
-                                  disabled={isTelegramSaving}
-                                >
-                                  {copy.telegramAllOff}
-                                </button>
-                                <button
-                                  type="button"
-                                  className={styles.ghostButton}
-                                  onClick={() => void copyTelegramLink()}
-                                  disabled={!telegramPanel.deepLink}
-                                >
-                                  {copy.telegramCopyLink}
-                                </button>
-                              </div>
-                            </div>
-                          ) : null}
-                        </>
-                      ) : null}
+                          </div>
+                        ) : null}
+                      </>
                     </div>
                   ) : null}
                 </section>
