@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "migrate:supabase": "node scripts/migrate-local-data-to-supabase.mjs"
+    "migrate:supabase": "node scripts/migrate-local-data-to-supabase.mjs",
+    "db:backup": "node scripts/db-backup.mjs",
+    "db:restore": "node scripts/db-restore.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "2.49.8",
