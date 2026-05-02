@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import type { PublicSearchResult } from "../../lib/public-search";
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import type { PublicCatalogCardResult } from "../../lib/public-catalog";
 import { getLocalizedPath, type SiteLanguage } from "../../lib/site-language";
 import BrandLogo from "../BrandLogo";
 import GlobalLanguageSwitcher from "../GlobalLanguageSwitcher";
@@ -9,13 +11,6 @@ import PublicHeaderAuthMenu from "../PublicHeaderAuthMenu";
 import { useSiteLanguage } from "../useSiteLanguage";
 
 type CatalogViewProps = {
-  results: PublicSearchResult[];
-  query: string;
-  kind: string;
-  date: string;
-  time: string;
-  location: string;
-  hasCoords: boolean;
   initialLanguage?: SiteLanguage;
 };
 
@@ -40,12 +35,15 @@ type CatalogCopy = {
   distanceUnknown: string;
   distanceUnderOne: string;
   kindLabel: (kind: string) => string;
-  resultType: (type: PublicSearchResult["type"]) => string;
+  resultType: (type: PublicCatalogCardResult["type"]) => string;
   priceFrom: (price: string) => string;
   distanceFromYou: (value: number) => string;
   reviewCount: (count: number) => string;
   resultCount: (count: number) => string;
   availableAt: (time: string) => string;
+  loading: string;
+  loadingText: string;
+  loadError: string;
 };
 
 const catalogCopy: Record<SiteLanguage, CatalogCopy> = {
@@ -83,7 +81,10 @@ const catalogCopy: Record<SiteLanguage, CatalogCopy> = {
     distanceFromYou: (value) => `${value} км от вас`,
     reviewCount: (count) => `${count} ${getSlavicPlural(count, ["отзыв", "отзыва", "отзывов"])}`,
     resultCount: (count) => `${count} ${getSlavicPlural(count, ["результат", "результата", "результатов"])}`,
-    availableAt: (time) => `Свободно на ${time}`
+    availableAt: (time) => `Свободно на ${time}`,
+    loading: "Загружаем результаты",
+    loadingText: "Собираем свободные окна и актуальные карточки. Обычно это занимает несколько секунд.",
+    loadError: "Не удалось загрузить каталог. Обновите страницу или повторите поиск."
   },
   uk: {
     locale: "uk-UA",
@@ -119,7 +120,10 @@ const catalogCopy: Record<SiteLanguage, CatalogCopy> = {
     distanceFromYou: (value) => `${value} км від вас`,
     reviewCount: (count) => `${count} ${getSlavicPlural(count, ["відгук", "відгуки", "відгуків"])}`,
     resultCount: (count) => `${count} ${getSlavicPlural(count, ["результат", "результати", "результатів"])}`,
-    availableAt: (time) => `Є вікно на ${time}`
+    availableAt: (time) => `Є вікно на ${time}`,
+    loading: "Завантажуємо результати",
+    loadingText: "Збираємо вільні вікна й актуальні картки. Зазвичай це займає кілька секунд.",
+    loadError: "Не вдалося завантажити каталог. Оновіть сторінку або повторіть пошук."
   },
   en: {
     locale: "en-US",
@@ -155,17 +159,12 @@ const catalogCopy: Record<SiteLanguage, CatalogCopy> = {
     distanceFromYou: (value) => `${value} km away`,
     reviewCount: (count) => `${count} review${count === 1 ? "" : "s"}`,
     resultCount: (count) => `${count} result${count === 1 ? "" : "s"}`,
-    availableAt: (time) => `Available at ${time}`
+    availableAt: (time) => `Available at ${time}`,
+    loading: "Loading results",
+    loadingText: "Collecting available slots and fresh business cards. This usually takes a few seconds.",
+    loadError: "Could not load the catalog. Refresh the page or try your search again."
   }
 };
-
-function getLocalizedText(
-  value: string | undefined,
-  localized: Partial<Record<SiteLanguage, string>> | undefined,
-  language: SiteLanguage
-) {
-  return localized?.[language] ?? value ?? "";
-}
 
 function getSlavicPlural(value: number, forms: [string, string, string]) {
   const mod10 = value % 10;
@@ -224,13 +223,9 @@ function formatDateTime(date: string, time: string, language: SiteLanguage) {
   return parts.join(" · ");
 }
 
-function shouldShowAvailabilityChip(result: PublicSearchResult, language: SiteLanguage) {
+function shouldShowAvailabilityChip(result: PublicCatalogCardResult, language: SiteLanguage) {
   const disabledLabel = catalogCopy[language].onlineBookingDisabled;
-  const candidate = getLocalizedText(
-    result.availabilityLabel,
-    result.localizedAvailabilityLabel,
-    language
-  );
+  const candidate = result.availabilityLabel;
 
   if (!candidate.trim()) {
     return false;
@@ -240,17 +235,112 @@ function shouldShowAvailabilityChip(result: PublicSearchResult, language: SiteLa
 }
 
 export default function CatalogView({
-  results,
-  query,
-  kind,
-  date,
-  time,
-  location,
-  hasCoords,
   initialLanguage = "ru"
 }: CatalogViewProps) {
+  const searchParams = useSearchParams();
   const language = useSiteLanguage(initialLanguage, true);
   const t = catalogCopy[language];
+  const [results, setResults] = useState<PublicCatalogCardResult[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
+
+  const query = useMemo(() => searchParams.get("query")?.trim() ?? "", [searchParams]);
+  const kind = useMemo(() => searchParams.get("kind")?.trim() ?? "", [searchParams]);
+  const date = useMemo(() => searchParams.get("date")?.trim() ?? "", [searchParams]);
+  const time = useMemo(() => searchParams.get("time")?.trim() ?? "", [searchParams]);
+  const location = useMemo(() => searchParams.get("location")?.trim() ?? "", [searchParams]);
+  const lat = useMemo(() => {
+    const raw = searchParams.get("lat");
+    const value = raw ? Number(raw) : NaN;
+    return Number.isFinite(value) ? value : null;
+  }, [searchParams]);
+  const lon = useMemo(() => {
+    const raw = searchParams.get("lon");
+    const value = raw ? Number(raw) : NaN;
+    return Number.isFinite(value) ? value : null;
+  }, [searchParams]);
+  const hasCoords = lat !== null && lon !== null;
+
+  const searchQuery = useMemo(() => {
+    const params = new URLSearchParams();
+    if (query) params.set("query", query);
+    if (kind) params.set("kind", kind);
+    if (date) params.set("date", date);
+    if (time) params.set("time", time);
+    if (location) params.set("location", location);
+    params.set("lang", language);
+    if (typeof lat === "number" && Number.isFinite(lat)) params.set("lat", String(lat));
+    if (typeof lon === "number" && Number.isFinite(lon)) params.set("lon", String(lon));
+    return params;
+  }, [date, kind, language, lat, location, lon, query, time]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(searchQuery);
+    const storageKey = `timviz.catalog.v2.${params.toString()}`;
+    const now = Date.now();
+    const ttlMs = 30 * 1000;
+    const cachedRaw = window.sessionStorage.getItem(storageKey);
+
+    if (cachedRaw) {
+      try {
+        const cached = JSON.parse(cachedRaw) as {
+          createdAt?: number;
+          results?: PublicCatalogCardResult[];
+        };
+        if (
+          typeof cached.createdAt === "number" &&
+          now - cached.createdAt < ttlMs &&
+          Array.isArray(cached.results)
+        ) {
+          setResults(cached.results);
+          setLoading(false);
+          setLoadFailed(false);
+          return;
+        }
+      } catch {
+        window.sessionStorage.removeItem(storageKey);
+      }
+    }
+
+    setLoading(true);
+    setLoadFailed(false);
+
+    const controller = new AbortController();
+
+    fetch(`/api/public/catalog-search?${params.toString()}`, { signal: controller.signal })
+      .then(async (response) => {
+        if (!response.ok) {
+          throw new Error("Catalog API request failed");
+        }
+
+        const payload = (await response.json()) as { results?: PublicCatalogCardResult[] };
+        const nextResults = Array.isArray(payload.results) ? payload.results : [];
+        setResults(nextResults);
+        setLoadFailed(false);
+        setLoading(false);
+        window.sessionStorage.setItem(
+          storageKey,
+          JSON.stringify({
+            createdAt: now,
+            results: nextResults
+          })
+        );
+      })
+      .catch((error) => {
+        if ((error as { name?: string }).name === "AbortError") {
+          return;
+        }
+
+        setResults([]);
+        setLoadFailed(true);
+        setLoading(false);
+      });
+
+    return () => {
+      controller.abort();
+    };
+  }, [searchQuery]);
+
   const catalogLabel = language === "en" ? "Catalog" : "Каталог";
   const menuLabel = language === "en" ? "Menu" : "Меню";
   const menuSearchLabel = language === "en" ? "Search and filters" : language === "uk" ? "Пошук і фільтри" : "Поиск и фильтры";
@@ -299,25 +389,40 @@ export default function CatalogView({
         </section>
 
         <section id="catalog-results" className="catalog-grid">
+          {loading ? (
+            <div className="catalog-empty">
+              <h2>{t.loading}</h2>
+              <p>{t.loadingText}</p>
+            </div>
+          ) : null}
+          {loadFailed ? (
+            <div className="catalog-empty">
+              <h2>{t.emptyTitle}</h2>
+              <p>{t.loadError}</p>
+              <Link href={getLocalizedPath(language, "/catalog")} className="primary-button">{t.backToSearch}</Link>
+            </div>
+          ) : null}
+          {!loading && !loadFailed ? (
+            <>
           {results.map((result, index) => (
             <article key={result.id} className={`catalog-card ${["accent-coral", "accent-forest", "accent-sand"][index % 3]}`}>
               <img className="catalog-card-image" src={result.image} alt={result.title} />
               <div className="catalog-card-top">
-                <p>{getLocalizedText(result.category, result.localizedCategory, language)}</p>
+                <p>{result.category}</p>
                 <span>{t.resultType(result.type)}</span>
               </div>
 
               <div>
                 <h2>{result.title}</h2>
                 <p className="catalog-description">
-                  {getLocalizedText(result.subtitle, result.localizedSubtitle, language)} · {getLocalizedText(result.address, result.localizedAddress, language)}
+                  {result.subtitle} · {result.address}
                 </p>
               </div>
 
               <div className="catalog-meta">
                 <strong>
-                  {result.services[0]
-                    ? t.priceFrom(formatPrice(Math.min(...result.services.map((service) => service.price || 0)), language))
+                  {typeof result.minPrice === "number" && result.minPrice > 0
+                    ? t.priceFrom(formatPrice(result.minPrice, language))
                     : t.pricePending}
                 </strong>
                 <span>{`${result.rating} · ${t.reviewCount(result.reviews)} · ${formatDistance(result.distanceKm, language)}`}</span>
@@ -326,7 +431,7 @@ export default function CatalogView({
               <div className="chip-row">
                 {shouldShowAvailabilityChip(result, language) ? (
                   <span className={`chip ${result.available ? "chip-success" : "chip-muted"}`}>
-                    {getLocalizedText(result.availabilityLabel, result.localizedAvailabilityLabel, language) || (time ? t.availableAt(time) : t.chooseTime)}
+                    {result.availabilityLabel || (time ? t.availableAt(time) : t.chooseTime)}
                   </span>
                 ) : null}
                 <span className={`chip ${result.onlineBookingEnabled ? "chip-success" : "chip-muted"}`}>
@@ -334,11 +439,11 @@ export default function CatalogView({
                 </span>
                 {result.services.slice(0, 5).map((service) => (
                   <span key={service.id} className="chip">
-                    {getLocalizedText(service.name, service.localizedName, language)}
+                    {service.name}
                   </span>
                 ))}
-                {result.services.length > 5 ? (
-                  <span className="chip">{`+${result.services.length - 5}`}</span>
+                {result.extraServicesCount > 0 ? (
+                  <span className="chip">{`+${result.extraServicesCount}`}</span>
                 ) : null}
               </div>
 
@@ -356,6 +461,8 @@ export default function CatalogView({
               <p>{t.emptyText}</p>
               <Link href={getLocalizedPath(language)} className="primary-button">{t.backToSearch}</Link>
             </div>
+          ) : null}
+            </>
           ) : null}
         </section>
       </section>

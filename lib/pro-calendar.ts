@@ -129,6 +129,7 @@ const storePath = path.join(process.cwd(), "data", "pro-calendar.json");
 const PUBLIC_APPOINTMENTS_CACHE_TTL_MS = Number(process.env.PUBLIC_APPOINTMENTS_CACHE_TTL_MS || 5000);
 let cachedPublicCalendarAppointments: PublicCalendarAppointment[] | null = null;
 let cachedPublicCalendarAppointmentsAt = 0;
+let activePublicCalendarAppointmentsPromise: Promise<PublicCalendarAppointment[]> | null = null;
 
 function makeId(prefix: string) {
   return `${prefix}_${crypto.randomUUID()}`;
@@ -329,49 +330,70 @@ export async function getPublicCalendarAppointments(input: { bypassCache?: boole
     return cachedPublicCalendarAppointments;
   }
 
-  let appointments: PublicCalendarAppointment[] = [];
-
-  if (isSupabaseConfigured()) {
-    const supabase = getSupabaseAdmin();
-    if (!supabase) {
-      return [];
-    }
-
-    const { data, error } = await supabase
-      .from("calendar_appointments")
-      .select("business_id, professional_id, appointment_date, start_time, end_time, kind, attendance")
-      .order("appointment_date", { ascending: true })
-      .order("start_time", { ascending: true });
-
-    if (error) {
-      throw new Error(error.message);
-    }
-
-    appointments = (data ?? []).map((row) => ({
-      businessId: row.business_id,
-      professionalId: row.professional_id,
-      appointmentDate: row.appointment_date,
-      startTime: row.start_time,
-      endTime: row.end_time,
-      kind: normalizeKind(row.kind),
-      attendance: normalizeAttendance(row.attendance)
-    }));
-  } else {
-    const store = await readStore();
-    appointments = store.appointments.map((appointment) => ({
-      businessId: appointment.businessId,
-      professionalId: appointment.professionalId,
-      appointmentDate: appointment.appointmentDate,
-      startTime: appointment.startTime,
-      endTime: appointment.endTime,
-      kind: appointment.kind,
-      attendance: appointment.attendance
-    }));
+  if (!input.bypassCache && activePublicCalendarAppointmentsPromise) {
+    return activePublicCalendarAppointmentsPromise;
   }
 
-  cachedPublicCalendarAppointments = appointments;
-  cachedPublicCalendarAppointmentsAt = Date.now();
-  return appointments;
+  const loadPromise = (async () => {
+    let appointments: PublicCalendarAppointment[] = [];
+
+    if (isSupabaseConfigured()) {
+      const supabase = getSupabaseAdmin();
+      if (!supabase) {
+        return [];
+      }
+
+      const { data, error } = await supabase
+        .from("calendar_appointments")
+        .select("business_id, professional_id, appointment_date, start_time, end_time, kind, attendance")
+        .order("appointment_date", { ascending: true })
+        .order("start_time", { ascending: true });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      appointments = (data ?? []).map((row) => ({
+        businessId: row.business_id,
+        professionalId: row.professional_id,
+        appointmentDate: row.appointment_date,
+        startTime: row.start_time,
+        endTime: row.end_time,
+        kind: normalizeKind(row.kind),
+        attendance: normalizeAttendance(row.attendance)
+      }));
+    } else {
+      const store = await readStore();
+      appointments = store.appointments.map((appointment) => ({
+        businessId: appointment.businessId,
+        professionalId: appointment.professionalId,
+        appointmentDate: appointment.appointmentDate,
+        startTime: appointment.startTime,
+        endTime: appointment.endTime,
+        kind: appointment.kind,
+        attendance: appointment.attendance
+      }));
+    }
+
+    cachedPublicCalendarAppointments = appointments;
+    cachedPublicCalendarAppointmentsAt = Date.now();
+    return appointments;
+  })();
+
+  if (!input.bypassCache) {
+    activePublicCalendarAppointmentsPromise = loadPromise
+      .catch(() => cachedPublicCalendarAppointments ?? [])
+      .finally(() => {
+        activePublicCalendarAppointmentsPromise = null;
+      });
+    return activePublicCalendarAppointmentsPromise;
+  }
+
+  try {
+    return await loadPromise;
+  } catch {
+    return cachedPublicCalendarAppointments ?? [];
+  }
 }
 
 function getWeekRange(dateKey: string) {

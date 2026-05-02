@@ -1,6 +1,8 @@
 import ResetPasswordForm from "./ResetPasswordForm";
 import styles from "../pro.module.css";
 
+export const dynamic = "force-dynamic";
+
 export default function ProResetPasswordPage() {
   return (
     <main className={styles.splitShell}>

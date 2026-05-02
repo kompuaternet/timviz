@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { headers } from "next/headers";
 import type { SiteLanguage } from "./site-language";
 import { defaultSiteLanguage, getLocalizedPath, siteLanguages } from "./site-language";
 
@@ -19,21 +18,6 @@ const localeMap: Record<SiteLanguage, string> = {
 };
 
 const defaultImage = "/brand/timviz-logo-web.png";
-
-export async function getRequestLanguage(defaultLanguage: SiteLanguage = "ru"): Promise<SiteLanguage> {
-  const headerStore = await headers();
-  const acceptLanguage = headerStore.get("accept-language")?.toLowerCase() ?? "";
-
-  if (acceptLanguage.includes("uk")) {
-    return "uk";
-  }
-
-  if (acceptLanguage.includes("en")) {
-    return "en";
-  }
-
-  return defaultLanguage;
-}
 
 export function buildCanonical(pathname: string) {
   if (!pathname || pathname === "/") {

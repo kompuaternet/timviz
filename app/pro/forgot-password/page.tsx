@@ -1,6 +1,8 @@
 import ForgotPasswordForm from "./ForgotPasswordForm";
 import styles from "../pro.module.css";
 
+export const dynamic = "force-dynamic";
+
 export default function ProForgotPasswordPage() {
   return (
     <main className={styles.splitShell}>

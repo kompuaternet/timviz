@@ -2,13 +2,20 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import BusinessLanding from "../../for-business/BusinessLanding";
 import { buildLanguageAlternates, buildMetadata, seoCopy } from "../../../lib/seo";
-import { isSiteLanguage, type SiteLanguage } from "../../../lib/site-language";
+import { isSiteLanguage, siteLanguages, type SiteLanguage } from "../../../lib/site-language";
+
+export const revalidate = 300;
+export const dynamicParams = false;
 
 type LocalizedForBusinessPageProps = {
   params: Promise<{
     lang: string;
   }>;
 };
+
+export function generateStaticParams() {
+  return siteLanguages.map((lang) => ({ lang }));
+}
 
 export async function generateMetadata({
   params

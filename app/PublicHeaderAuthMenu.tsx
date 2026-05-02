@@ -53,24 +53,62 @@ export default function PublicHeaderAuthMenu({ language }: PublicHeaderAuthMenuP
     let cancelled = false;
 
     async function loadSessions() {
-      const [customerPayload, proPayload] = await Promise.all([
-        fetch("/api/public/auth/session", { cache: "no-store" })
-          .then(async (response) =>
-            ((await response.json()) as { authenticated?: boolean; customer?: { fullName?: string } | null })
-          )
-          .catch(() => ({ authenticated: false, customer: null })),
-        fetch("/api/pro/auth/session", { cache: "no-store" })
-          .then(async (response) => ((await response.json()) as { authenticated?: boolean }))
-          .catch(() => ({ authenticated: false }))
-      ]);
+      const cacheKey = "timviz.publicAuthMenuSession.v1";
+      const ttlMs = 60 * 1000;
+      const now = Date.now();
+
+      const cachedRaw = window.sessionStorage.getItem(cacheKey);
+      if (cachedRaw) {
+        try {
+          const cached = JSON.parse(cachedRaw) as {
+            createdAt?: number;
+            customerAuthenticated?: boolean;
+            customerFullName?: string;
+            proAuthenticated?: boolean;
+          };
+          if (typeof cached.createdAt === "number" && now - cached.createdAt < ttlMs) {
+            if (!cancelled) {
+              setCustomerAuthenticated(cached.customerAuthenticated === true);
+              setCustomerFullName(cached.customerFullName?.trim() || "");
+              setProAuthenticated(cached.proAuthenticated === true);
+            }
+            return;
+          }
+        } catch {
+          window.sessionStorage.removeItem(cacheKey);
+        }
+      }
+
+      const payload = await fetch("/api/public/auth/menu-session", { cache: "no-store" })
+        .then(async (response) =>
+          ((await response.json()) as {
+            customer?: { authenticated?: boolean; fullName?: string | null };
+            professional?: { authenticated?: boolean };
+          })
+        )
+        .catch(() => ({ customer: { authenticated: false, fullName: null }, professional: { authenticated: false } }));
 
       if (cancelled) {
         return;
       }
 
-      setCustomerAuthenticated(customerPayload.authenticated === true);
-      setCustomerFullName(customerPayload.customer?.fullName?.trim() || "");
-      setProAuthenticated(proPayload.authenticated === true);
+      const nextCustomerAuthenticated = payload.customer?.authenticated === true;
+      const nextCustomerFullName = payload.customer?.fullName?.trim() || "";
+      const nextProAuthenticated = payload.professional?.authenticated === true;
+
+      setCustomerAuthenticated(nextCustomerAuthenticated);
+      setCustomerFullName(nextCustomerFullName);
+      setProAuthenticated(nextProAuthenticated);
+
+      window.sessionStorage.setItem(
+        cacheKey,
+        JSON.stringify({
+          createdAt: now,
+          customerAuthenticated: nextCustomerAuthenticated,
+          customerFullName: nextCustomerFullName,
+          proAuthenticated: nextProAuthenticated
+        })
+      );
     }
 
     loadSessions();
@@ -95,4 +133,3 @@ export default function PublicHeaderAuthMenu({ language }: PublicHeaderAuthMenuP
     </details>
   );
 }
-

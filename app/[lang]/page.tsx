@@ -2,17 +2,22 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import PublicHome from "../PublicHome";
 import { getPublicHomeStats } from "../../lib/public-home-stats";
-import { getPublicSearchIndex } from "../../lib/public-search";
+import { getPublicSearchIndex, type PublicSearchIndex } from "../../lib/public-search";
 import { buildLanguageAlternates, buildMetadata, seoCopy } from "../../lib/seo";
-import { isSiteLanguage, type SiteLanguage } from "../../lib/site-language";
+import { isSiteLanguage, siteLanguages, type SiteLanguage } from "../../lib/site-language";
 
 export const revalidate = 60;
+export const dynamicParams = false;
 
 type LocalizedHomePageProps = {
   params: Promise<{
     lang: string;
   }>;
 };
+
+export function generateStaticParams() {
+  return siteLanguages.map((lang) => ({ lang }));
+}
 
 export async function generateMetadata({
   params
@@ -38,5 +43,10 @@ export default async function LocalizedHomePage({ params }: LocalizedHomePagePro
   }
 
   const [searchIndex, stats] = await Promise.all([getPublicSearchIndex(), getPublicHomeStats()]);
-  return <PublicHome searchIndex={searchIndex} stats={stats} initialLanguage={lang as SiteLanguage} />;
+  const homeSearchIndex: PublicSearchIndex = {
+    suggestions: searchIndex.suggestions.slice(0, 300),
+    results: []
+  };
+
+  return <PublicHome searchIndex={homeSearchIndex} stats={stats} initialLanguage={lang as SiteLanguage} />;
 }

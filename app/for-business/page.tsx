@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
-import { getRequestLanguage } from "../../lib/seo";
+import { getRequestLanguage } from "../../lib/request-language";
 import { getLocalizedPath } from "../../lib/site-language";
 
 export async function generateMetadata(): Promise<Metadata> {

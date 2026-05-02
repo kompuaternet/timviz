@@ -86,6 +86,31 @@ const fallbackImages = [
   "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=900&q=80"
 ];
 
+function sanitizePublicImageUrl(value: string | undefined, fallback: string) {
+  const candidate = value?.trim() ?? "";
+  if (!candidate) {
+    return fallback;
+  }
+
+  if (candidate.startsWith("http://") || candidate.startsWith("https://")) {
+    return candidate;
+  }
+
+  if (candidate.startsWith("data:")) {
+    return fallback;
+  }
+
+  if (candidate.startsWith("/")) {
+    return candidate;
+  }
+
+  if (candidate.length > 2048) {
+    return fallback;
+  }
+
+  return candidate;
+}
+
 const genericCopy = {
   venue: { ru: "Заведение", uk: "Заклад", en: "Venue" },
   business: { ru: "Бизнес", uk: "Бізнес", en: "Business" },
@@ -101,6 +126,22 @@ const genericCopy = {
   noWorkingHours: { ru: "Нет рабочего времени", uk: "Немає робочого часу", en: "No working hours" },
   busyAtTime: { ru: "На это время занято", uk: "На цей час зайнято", en: "Busy at this time" }
 } satisfies Record<string, LocalizedText>;
+
+type PublicSearchCacheEntry = {
+  value: PublicSearchIndex;
+  createdAt: number;
+};
+
+const PUBLIC_SEARCH_CACHE_TTL_MS = Math.max(
+  1000,
+  Number.parseInt(process.env.PUBLIC_SEARCH_CACHE_TTL_MS ?? "10000", 10) || 10000
+);
+const PUBLIC_SEARCH_CACHE_MAX_ENTRIES = Math.max(
+  10,
+  Number.parseInt(process.env.PUBLIC_SEARCH_CACHE_MAX_ENTRIES ?? "120", 10) || 120
+);
+const publicSearchCache = new Map<string, PublicSearchCacheEntry>();
+const activePublicSearchRequests = new Map<string, Promise<PublicSearchIndex>>();
 
 function normalize(value = "") {
   return value.toLowerCase().trim();
@@ -123,6 +164,38 @@ function getSearchableText(parts: Array<string | undefined>, localizedParts: Arr
     .filter(Boolean)
     .join(" ")
     .toLowerCase();
+}
+
+function normalizeNumericParam(value: number | null | undefined) {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function buildPublicSearchCacheKey(params: PublicSearchParams) {
+  return JSON.stringify({
+    query: params.query?.trim().toLowerCase() ?? "",
+    kind: params.kind?.trim().toLowerCase() ?? "",
+    date: params.date?.trim() ?? "",
+    time: params.time?.trim() ?? "",
+    location: params.location?.trim().toLowerCase() ?? "",
+    lat: normalizeNumericParam(params.lat),
+    lon: normalizeNumericParam(params.lon)
+  });
+}
+
+function trimPublicSearchCache() {
+  if (publicSearchCache.size <= PUBLIC_SEARCH_CACHE_MAX_ENTRIES) {
+    return;
+  }
+
+  const overflow = publicSearchCache.size - PUBLIC_SEARCH_CACHE_MAX_ENTRIES;
+  const keysToRemove = [...publicSearchCache.entries()]
+    .sort((left, right) => left[1].createdAt - right[1].createdAt)
+    .slice(0, overflow)
+    .map(([key]) => key);
+
+  for (const key of keysToRemove) {
+    publicSearchCache.delete(key);
+  }
 }
 
 function uniqueBy<T>(items: T[], getKey: (item: T) => string) {
@@ -265,7 +338,7 @@ function isBusinessAvailable(input: {
     : { available: false, label: genericCopy.busyAtTime.ru, localizedLabel: genericCopy.busyAtTime };
 }
 
-export async function getPublicSearchIndex(params: PublicSearchParams = {}): Promise<PublicSearchIndex> {
+async function loadPublicSearchIndex(params: PublicSearchParams = {}): Promise<PublicSearchIndex> {
   const store = await readProStore();
   const needsAvailabilityCalculation = Boolean(params.date && params.time);
   const calendarAppointments = needsAvailabilityCalculation ? (await readCalendarStore()).appointments : [];
@@ -372,7 +445,10 @@ export async function getPublicSearchIndex(params: PublicSearchParams = {}): Pro
       localizedCategory,
       localizedAddress,
       localizedAvailabilityLabel: availability.localizedLabel,
-      image: getPrimaryBusinessPhoto(normalizedBusiness) || fallbackImages[index % fallbackImages.length],
+      image: sanitizePublicImageUrl(
+        getPrimaryBusinessPhoto(normalizedBusiness),
+        fallbackImages[index % fallbackImages.length]
+      ),
       onlineBookingEnabled: normalizedBusiness.allowOnlineBooking === true
     };
   });
@@ -440,6 +516,37 @@ export async function getPublicSearchIndex(params: PublicSearchParams = {}): Pro
     suggestions: [...procedureSuggestions, ...businessSuggestions, ...professionalSuggestions],
     results
   };
+}
+
+export async function getPublicSearchIndex(params: PublicSearchParams = {}): Promise<PublicSearchIndex> {
+  const key = buildPublicSearchCacheKey(params);
+  const cached = publicSearchCache.get(key);
+
+  if (cached && Date.now() - cached.createdAt < PUBLIC_SEARCH_CACHE_TTL_MS) {
+    return cached.value;
+  }
+
+  const inFlight = activePublicSearchRequests.get(key);
+  if (inFlight) {
+    return inFlight;
+  }
+
+  const loadPromise = loadPublicSearchIndex(params)
+    .then((result) => {
+      publicSearchCache.set(key, {
+        value: result,
+        createdAt: Date.now()
+      });
+      trimPublicSearchCache();
+      return result;
+    })
+    .catch(() => cached?.value ?? { suggestions: [], results: [] })
+    .finally(() => {
+      activePublicSearchRequests.delete(key);
+    });
+
+  activePublicSearchRequests.set(key, loadPromise);
+  return loadPromise;
 }
 
 export function filterPublicSearchResults(index: PublicSearchIndex, params: PublicSearchParams) {

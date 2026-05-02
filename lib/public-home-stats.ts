@@ -17,6 +17,14 @@ const BOOKED_TODAY_BASE = 328;
 const TOTAL_BOOKINGS_BASE = 1000;
 const customerAccountsStorePath = path.join(process.cwd(), "data", "customer-accounts.json");
 const HOME_STATS_TIMEZONE = process.env.PUBLIC_HOME_STATS_TIMEZONE || "Europe/Kyiv";
+const PUBLIC_HOME_STATS_TTL_MS = Math.max(
+  1000,
+  Number.parseInt(process.env.PUBLIC_HOME_STATS_TTL_MS ?? "30000", 10) || 30000
+);
+
+let cachedPublicHomeStats: PublicHomeStats | null = null;
+let cachedPublicHomeStatsAt = 0;
+let activePublicHomeStatsPromise: Promise<PublicHomeStats> | null = null;
 
 function getDateKeyInTimezone(date: Date, timeZone: string) {
   const parts = new Intl.DateTimeFormat("en-CA", {
@@ -58,8 +66,8 @@ async function getCustomerAccountsCount() {
         return Math.max(0, count);
       }
 
-      if (error && !isCustomerAccountsTableMissing(error.message)) {
-        throw new Error(error.message);
+      if (error && isCustomerAccountsTableMissing(error.message)) {
+        return getLocalCustomerAccountsCount();
       }
     }
   }
@@ -67,7 +75,7 @@ async function getCustomerAccountsCount() {
   return getLocalCustomerAccountsCount();
 }
 
-export async function getPublicHomeStats(): Promise<PublicHomeStats> {
+async function loadPublicHomeStats(): Promise<PublicHomeStats> {
   const [appointments, directory, customerAccountsCount] = await Promise.all([
     getPublicCalendarAppointments(),
     getBusinessDirectorySnapshot(),
@@ -98,3 +106,41 @@ export async function getPublicHomeStats(): Promise<PublicHomeStats> {
   };
 }
 
+export async function getPublicHomeStats(): Promise<PublicHomeStats> {
+  if (
+    cachedPublicHomeStats &&
+    Date.now() - cachedPublicHomeStatsAt < PUBLIC_HOME_STATS_TTL_MS
+  ) {
+    return cachedPublicHomeStats;
+  }
+
+  if (activePublicHomeStatsPromise) {
+    return activePublicHomeStatsPromise;
+  }
+
+  activePublicHomeStatsPromise = loadPublicHomeStats()
+    .then((stats) => {
+      cachedPublicHomeStats = stats;
+      cachedPublicHomeStatsAt = Date.now();
+      return stats;
+    })
+    .catch(() => {
+      if (cachedPublicHomeStats) {
+        return cachedPublicHomeStats;
+      }
+
+      return {
+        bookedToday: BOOKED_TODAY_BASE,
+        totalBookings: TOTAL_BOOKINGS_BASE,
+        partnerBusinesses: 0,
+        countries: 0,
+        professionals: 0,
+        totalUsers: 0
+      } satisfies PublicHomeStats;
+    })
+    .finally(() => {
+      activePublicHomeStatsPromise = null;
+    });
+
+  return activePublicHomeStatsPromise;
+}

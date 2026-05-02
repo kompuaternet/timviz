@@ -246,6 +246,17 @@ let cachedDirectorySnapshot: BusinessDirectorySnapshot | null = null;
 let cachedDirectorySnapshotAt = 0;
 const DIRECTORY_SNAPSHOT_TTL_MS = Number(process.env.DIRECTORY_SNAPSHOT_TTL_MS || 15000);
 
+function createEmptyDirectorySnapshot(): BusinessDirectorySnapshot {
+  return {
+    businesses: [],
+    professionals: [],
+    memberships: [],
+    services: [],
+    joinRequests: [],
+    staffInvitations: []
+  };
+}
+
 function isMissingTableError(message: string | undefined, tableName: string) {
   return (
     typeof message === "string" &&
@@ -990,6 +1001,13 @@ export async function getBusinessDirectorySnapshot(): Promise<BusinessDirectoryS
       cachedDirectorySnapshot = snapshot;
       cachedDirectorySnapshotAt = Date.now();
       return snapshot;
+    })
+    .catch(() => {
+      if (cachedDirectorySnapshot) {
+        return cachedDirectorySnapshot;
+      }
+
+      return createEmptyDirectorySnapshot();
     })
     .finally(() => {
       activeDirectorySnapshotPromise = null;

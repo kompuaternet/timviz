@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import GoogleTag, { getGoogleTagManagerId } from "./GoogleTag";
 import GlobalLanguageSwitcher from "./GlobalLanguageSwitcher";
-import { buildMetadata, getRequestLanguage, seoCopy, siteUrl } from "../lib/seo";
+import { buildMetadata, seoCopy, siteUrl } from "../lib/seo";
+import { defaultSiteLanguage } from "../lib/site-language";
 import "./globals.css";
 
 export async function generateMetadata(): Promise<Metadata> {
-  const language = await getRequestLanguage();
+  const language = defaultSiteLanguage;
   const base = buildMetadata("/", seoCopy.home[language], language);
   const googleSiteVerification = process.env.GOOGLE_SITE_VERIFICATION?.trim();
 
@@ -32,7 +33,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const language = await getRequestLanguage();
+  const language = defaultSiteLanguage;
   const tagManagerId = getGoogleTagManagerId();
 
   return (
