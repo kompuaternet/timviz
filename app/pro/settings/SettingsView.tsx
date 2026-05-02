@@ -81,6 +81,21 @@ type AddressSuggestion = {
   lon: number;
 };
 
+type TelegramSettingsSection = "notifications" | "support" | "bot";
+
+type TelegramPanelState = {
+  deepLink: string;
+  tokenExpiresAt: string;
+  connected: boolean;
+  chatId: string | null;
+  settings: {
+    notificationsNewBooking: boolean;
+    notificationsReminder: boolean;
+    notificationsToday: boolean;
+    forwardingEnabled: boolean;
+  };
+};
+
 const countries = [
   "Ukraine",
   "Russia",
@@ -184,7 +199,33 @@ const settingsExtras = {
     linkCopied: "Ссылка для записи скопирована.",
     linkSelected: "Ссылка выделена. Скопируйте её вручную, если браузер запретил буфер обмена.",
     closeSettings: "Закрыть настройки",
-    logoutConfirm: "Выйти из кабинета? Если есть свежие изменения, мы постараемся сохранить их перед выходом."
+    logoutConfirm: "Выйти из кабинета? Если есть свежие изменения, мы постараемся сохранить их перед выходом.",
+    telegramTitle: "Telegram-бот Timviz",
+    telegramHint: "Подключите бот, управляйте уведомлениями и поддержкой прямо из кабинета.",
+    telegramLoading: "Загружаем Telegram-настройки...",
+    telegramConnected: "Бот подключен",
+    telegramNotConnected: "Бот не подключен",
+    telegramChat: "Чат",
+    telegramUnavailable: "На сервере пока не настроен Telegram-бот.",
+    telegramSectionNotifications: "Уведомления",
+    telegramSectionSupport: "Поддержка",
+    telegramSectionBot: "Управление ботом",
+    telegramNotificationsHint: "Выберите, какие уведомления бот должен отправлять вам в Telegram.",
+    telegramSupportHint: "Управляйте пересылкой сообщений в поддержку и быстрым контактом.",
+    telegramBotHint: "Массово включайте или выключайте уведомления одним нажатием.",
+    telegramConnectButton: "Подключить Telegram",
+    telegramOpenBot: "Открыть бота",
+    telegramCopyLink: "Копировать ссылку",
+    telegramRefreshLink: "Обновить ссылку",
+    telegramSaved: "Telegram-настройки обновлены.",
+    telegramSaveFailed: "Не удалось обновить Telegram-настройки.",
+    telegramAllOn: "Включить всё",
+    telegramAllOff: "Выключить всё",
+    telegramNewBookings: "Новые записи",
+    telegramReminders: "Напоминания",
+    telegramToday: "Сводка на сегодня",
+    telegramForwarding: "Пересылка в поддержку",
+    telegramTokenExpires: "Ссылка активна до"
   },
   uk: {
     readFileFailed: "Не вдалося прочитати файл.",
@@ -209,7 +250,33 @@ const settingsExtras = {
     linkCopied: "Посилання для запису скопійовано.",
     linkSelected: "Посилання виділено. Скопіюйте його вручну, якщо браузер заборонив буфер обміну.",
     closeSettings: "Закрити налаштування",
-    logoutConfirm: "Вийти з кабінету? Якщо є свіжі зміни, ми спробуємо зберегти їх перед виходом."
+    logoutConfirm: "Вийти з кабінету? Якщо є свіжі зміни, ми спробуємо зберегти їх перед виходом.",
+    telegramTitle: "Telegram-бот Timviz",
+    telegramHint: "Підключіть бота, керуйте сповіщеннями та підтримкою прямо з кабінету.",
+    telegramLoading: "Завантажуємо Telegram-налаштування...",
+    telegramConnected: "Бот підключений",
+    telegramNotConnected: "Бот не підключений",
+    telegramChat: "Чат",
+    telegramUnavailable: "На сервері поки не налаштовано Telegram-бота.",
+    telegramSectionNotifications: "Сповіщення",
+    telegramSectionSupport: "Підтримка",
+    telegramSectionBot: "Керування ботом",
+    telegramNotificationsHint: "Оберіть, які сповіщення бот має надсилати вам у Telegram.",
+    telegramSupportHint: "Керуйте пересилкою повідомлень у підтримку та швидким контактом.",
+    telegramBotHint: "Масово вмикайте або вимикайте сповіщення одним натисканням.",
+    telegramConnectButton: "Підключити Telegram",
+    telegramOpenBot: "Відкрити бота",
+    telegramCopyLink: "Скопіювати посилання",
+    telegramRefreshLink: "Оновити посилання",
+    telegramSaved: "Telegram-налаштування оновлено.",
+    telegramSaveFailed: "Не вдалося оновити Telegram-налаштування.",
+    telegramAllOn: "Увімкнути все",
+    telegramAllOff: "Вимкнути все",
+    telegramNewBookings: "Нові записи",
+    telegramReminders: "Нагадування",
+    telegramToday: "Зведення на сьогодні",
+    telegramForwarding: "Пересилка в підтримку",
+    telegramTokenExpires: "Посилання активне до"
   },
   en: {
     readFileFailed: "Could not read the file.",
@@ -234,7 +301,33 @@ const settingsExtras = {
     linkCopied: "The booking link has been copied.",
     linkSelected: "The link is selected. Copy it manually if the browser blocked clipboard access.",
     closeSettings: "Close settings",
-    logoutConfirm: "Sign out now? If there are recent changes, we will try to save them before leaving."
+    logoutConfirm: "Sign out now? If there are recent changes, we will try to save them before leaving.",
+    telegramTitle: "Timviz Telegram bot",
+    telegramHint: "Connect the bot and manage alerts and support directly in your dashboard.",
+    telegramLoading: "Loading Telegram settings...",
+    telegramConnected: "Bot connected",
+    telegramNotConnected: "Bot not connected",
+    telegramChat: "Chat",
+    telegramUnavailable: "Telegram bot is not configured on the server yet.",
+    telegramSectionNotifications: "Notifications",
+    telegramSectionSupport: "Support",
+    telegramSectionBot: "Bot control",
+    telegramNotificationsHint: "Choose which updates the bot should send you in Telegram.",
+    telegramSupportHint: "Control support forwarding and quick contact.",
+    telegramBotHint: "Turn all Telegram notifications on or off in one click.",
+    telegramConnectButton: "Connect Telegram",
+    telegramOpenBot: "Open bot",
+    telegramCopyLink: "Copy link",
+    telegramRefreshLink: "Refresh link",
+    telegramSaved: "Telegram settings updated.",
+    telegramSaveFailed: "Could not update Telegram settings.",
+    telegramAllOn: "Enable all",
+    telegramAllOff: "Disable all",
+    telegramNewBookings: "New bookings",
+    telegramReminders: "Reminders",
+    telegramToday: "Today summary",
+    telegramForwarding: "Forward to support",
+    telegramTokenExpires: "Link is active until"
   }
 } as const;
 
@@ -308,6 +401,11 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
   const [joinRequests, setJoinRequests] = useState(initialData.joinRequests);
   const [addressSuggestions, setAddressSuggestions] = useState<AddressSuggestion[]>([]);
   const [isSearchingAddress, setIsSearchingAddress] = useState(false);
+  const [telegramPanel, setTelegramPanel] = useState<TelegramPanelState | null>(null);
+  const [telegramSection, setTelegramSection] = useState<TelegramSettingsSection>("notifications");
+  const [isTelegramLoading, setIsTelegramLoading] = useState(true);
+  const [isTelegramSaving, setIsTelegramSaving] = useState(false);
+  const [telegramError, setTelegramError] = useState("");
   const isHydratedRef = useRef(false);
   const autoSaveTimerRef = useRef<number | null>(null);
   const lastSavedSnapshotRef = useRef("");
@@ -317,10 +415,146 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
   const canUseNativeShare =
     typeof navigator !== "undefined" && typeof navigator.share === "function";
 
+  function formatTelegramExpiry(value: string) {
+    if (!value) {
+      return "";
+    }
+
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) {
+      return "";
+    }
+
+    return parsed.toLocaleString();
+  }
+
+  async function loadTelegramPanel(silent = false) {
+    if (!silent) {
+      setIsTelegramLoading(true);
+    }
+    setTelegramError("");
+
+    try {
+      const response = await fetch("/api/pro/telegram/connect", {
+        method: "GET",
+        headers: {
+          Accept: "application/json"
+        }
+      });
+
+      const payload = (await response.json()) as
+        | (TelegramPanelState & { ok?: boolean })
+        | { error?: string };
+
+      if (!response.ok) {
+        throw new Error(payload && "error" in payload ? payload.error || copy.telegramSaveFailed : copy.telegramSaveFailed);
+      }
+
+      setTelegramPanel({
+        deepLink: "deepLink" in payload && typeof payload.deepLink === "string" ? payload.deepLink : "",
+        tokenExpiresAt: "tokenExpiresAt" in payload && typeof payload.tokenExpiresAt === "string" ? payload.tokenExpiresAt : "",
+        connected: "connected" in payload ? payload.connected === true : false,
+        chatId: "chatId" in payload && typeof payload.chatId === "string" ? payload.chatId : null,
+        settings: {
+          notificationsNewBooking:
+            "settings" in payload && typeof payload.settings?.notificationsNewBooking === "boolean"
+              ? payload.settings.notificationsNewBooking
+              : true,
+          notificationsReminder:
+            "settings" in payload && typeof payload.settings?.notificationsReminder === "boolean"
+              ? payload.settings.notificationsReminder
+              : true,
+          notificationsToday:
+            "settings" in payload && typeof payload.settings?.notificationsToday === "boolean"
+              ? payload.settings.notificationsToday
+              : true,
+          forwardingEnabled:
+            "settings" in payload && typeof payload.settings?.forwardingEnabled === "boolean"
+              ? payload.settings.forwardingEnabled
+              : true
+        }
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : copy.telegramSaveFailed;
+      setTelegramError(message);
+    } finally {
+      setIsTelegramLoading(false);
+    }
+  }
+
+  async function updateTelegramSettings(patch: Partial<TelegramPanelState["settings"]>) {
+    setIsTelegramSaving(true);
+    setTelegramError("");
+
+    try {
+      const response = await fetch("/api/pro/telegram/connect", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json"
+        },
+        body: JSON.stringify(patch)
+      });
+
+      const payload = (await response.json()) as
+        | (TelegramPanelState & { ok?: boolean })
+        | { error?: string };
+
+      if (!response.ok) {
+        throw new Error(payload && "error" in payload ? payload.error || copy.telegramSaveFailed : copy.telegramSaveFailed);
+      }
+
+      if ("connected" in payload) {
+        setTelegramPanel({
+          deepLink: typeof payload.deepLink === "string" ? payload.deepLink : telegramPanel?.deepLink || "",
+          tokenExpiresAt:
+            typeof payload.tokenExpiresAt === "string" ? payload.tokenExpiresAt : telegramPanel?.tokenExpiresAt || "",
+          connected: payload.connected === true,
+          chatId: typeof payload.chatId === "string" ? payload.chatId : null,
+          settings: {
+            notificationsNewBooking:
+              typeof payload.settings?.notificationsNewBooking === "boolean"
+                ? payload.settings.notificationsNewBooking
+                : telegramPanel?.settings.notificationsNewBooking ?? true,
+            notificationsReminder:
+              typeof payload.settings?.notificationsReminder === "boolean"
+                ? payload.settings.notificationsReminder
+                : telegramPanel?.settings.notificationsReminder ?? true,
+            notificationsToday:
+              typeof payload.settings?.notificationsToday === "boolean"
+                ? payload.settings.notificationsToday
+                : telegramPanel?.settings.notificationsToday ?? true,
+            forwardingEnabled:
+              typeof payload.settings?.forwardingEnabled === "boolean"
+                ? payload.settings.forwardingEnabled
+                : telegramPanel?.settings.forwardingEnabled ?? true
+          }
+        });
+      }
+
+      setStatus(copy.telegramSaved);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : copy.telegramSaveFailed;
+      setTelegramError(message);
+      setStatus(message);
+    } finally {
+      setIsTelegramSaving(false);
+    }
+  }
+
+  function buildTelegramToggleClass(active: boolean) {
+    return `${styles.settingsToggle} ${active ? styles.settingsToggleActive : ""}`;
+  }
+
   useEffect(() => {
     window.localStorage.setItem("rezervo-pro-language", initialLanguage);
     window.dispatchEvent(new CustomEvent("rezervo-language-change", { detail: initialLanguage }));
   }, [initialLanguage]);
+
+  useEffect(() => {
+    void loadTelegramPanel();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function updateProfessional(field: keyof SettingsData["professional"], value: string) {
     setData((current) => ({
@@ -394,6 +628,38 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
     } catch {
       // Ignore cancelled native share sheets.
     }
+  }
+
+  async function copyTelegramLink() {
+    const deepLink = telegramPanel?.deepLink || "";
+    if (!deepLink) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(deepLink);
+      setStatus(copy.linkCopied);
+    } catch {
+      setStatus(copy.linkSelected);
+    }
+  }
+
+  function openTelegramBotLink() {
+    const deepLink = telegramPanel?.deepLink || "";
+    if (!deepLink) {
+      return;
+    }
+    window.open(deepLink, "_blank", "noopener,noreferrer");
+  }
+
+  async function toggleTelegramSetting(key: keyof TelegramPanelState["settings"]) {
+    if (!telegramPanel || isTelegramSaving) {
+      return;
+    }
+
+    await updateTelegramSettings({
+      [key]: !telegramPanel.settings[key]
+    });
   }
 
   async function handleBusinessPhotoUpload(event: ChangeEvent<HTMLInputElement>) {
@@ -868,6 +1134,207 @@ export default function SettingsView({ initialData }: SettingsViewProps) {
               </div>
             </section>
           ) : null}
+
+          <section className={styles.settingsCard}>
+            <div className={styles.settingsCardHeader}>
+              <div>
+                <span>Telegram</span>
+                <h2>{copy.telegramTitle}</h2>
+              </div>
+              <span
+                className={`${styles.settingsShareStatus} ${telegramPanel?.connected ? styles.settingsShareStatusActive : ""}`}
+              >
+                {telegramPanel?.connected ? copy.telegramConnected : copy.telegramNotConnected}
+              </span>
+            </div>
+            <p className={styles.settingsCardHint}>{copy.telegramHint}</p>
+
+            {isTelegramLoading ? (
+              <div className={styles.generatedBlock}>{copy.telegramLoading}</div>
+            ) : null}
+
+            {!isTelegramLoading && telegramError ? (
+              <div className={styles.generatedBlock}>
+                <strong>{copy.telegramUnavailable}</strong>
+                <p className={styles.generatedHint}>{telegramError}</p>
+                <div className={styles.templateActions}>
+                  <button
+                    type="button"
+                    className={styles.ghostButton}
+                    onClick={() => void loadTelegramPanel()}
+                  >
+                    {copy.telegramRefreshLink}
+                  </button>
+                </div>
+              </div>
+            ) : null}
+
+            {!isTelegramLoading && !telegramError && telegramPanel ? (
+              <div className={styles.serviceStack}>
+                <div className={styles.generatedBlock}>
+                  <span className={styles.choiceText}>
+                    {copy.telegramChat}: {telegramPanel.chatId || "—"}
+                  </span>
+                  <span className={styles.choiceText}>
+                    {copy.telegramTokenExpires}: {formatTelegramExpiry(telegramPanel.tokenExpiresAt) || "—"}
+                  </span>
+
+                  <div className={styles.templateActions}>
+                    <button
+                      type="button"
+                      className={styles.primaryButton}
+                      onClick={openTelegramBotLink}
+                      disabled={!telegramPanel.deepLink}
+                    >
+                      {telegramPanel.connected ? copy.telegramOpenBot : copy.telegramConnectButton}
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.ghostButton}
+                      onClick={() => void copyTelegramLink()}
+                      disabled={!telegramPanel.deepLink}
+                    >
+                      {copy.telegramCopyLink}
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.ghostButton}
+                      onClick={() => void loadTelegramPanel()}
+                      disabled={isTelegramSaving}
+                    >
+                      {copy.telegramRefreshLink}
+                    </button>
+                  </div>
+                </div>
+
+                <div className={styles.templateActions}>
+                  <button
+                    type="button"
+                    className={telegramSection === "notifications" ? styles.primaryButton : styles.ghostButton}
+                    onClick={() => setTelegramSection("notifications")}
+                  >
+                    {copy.telegramSectionNotifications}
+                  </button>
+                  <button
+                    type="button"
+                    className={telegramSection === "support" ? styles.primaryButton : styles.ghostButton}
+                    onClick={() => setTelegramSection("support")}
+                  >
+                    {copy.telegramSectionSupport}
+                  </button>
+                  <button
+                    type="button"
+                    className={telegramSection === "bot" ? styles.primaryButton : styles.ghostButton}
+                    onClick={() => setTelegramSection("bot")}
+                  >
+                    {copy.telegramSectionBot}
+                  </button>
+                </div>
+
+                {telegramSection === "notifications" ? (
+                  <div className={styles.generatedBlock}>
+                    <p className={styles.generatedHint}>{copy.telegramNotificationsHint}</p>
+                    <button
+                      type="button"
+                      className={buildTelegramToggleClass(telegramPanel.settings.notificationsNewBooking)}
+                      onClick={() => void toggleTelegramSetting("notificationsNewBooking")}
+                      disabled={isTelegramSaving}
+                    >
+                      <span className={styles.settingsToggleText}>{copy.telegramNewBookings}</span>
+                      <span className={styles.settingsToggleTrack}>
+                        <span className={styles.settingsToggleThumb} />
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      className={buildTelegramToggleClass(telegramPanel.settings.notificationsReminder)}
+                      onClick={() => void toggleTelegramSetting("notificationsReminder")}
+                      disabled={isTelegramSaving}
+                    >
+                      <span className={styles.settingsToggleText}>{copy.telegramReminders}</span>
+                      <span className={styles.settingsToggleTrack}>
+                        <span className={styles.settingsToggleThumb} />
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      className={buildTelegramToggleClass(telegramPanel.settings.notificationsToday)}
+                      onClick={() => void toggleTelegramSetting("notificationsToday")}
+                      disabled={isTelegramSaving}
+                    >
+                      <span className={styles.settingsToggleText}>{copy.telegramToday}</span>
+                      <span className={styles.settingsToggleTrack}>
+                        <span className={styles.settingsToggleThumb} />
+                      </span>
+                    </button>
+                  </div>
+                ) : null}
+
+                {telegramSection === "support" ? (
+                  <div className={styles.generatedBlock}>
+                    <p className={styles.generatedHint}>{copy.telegramSupportHint}</p>
+                    <button
+                      type="button"
+                      className={buildTelegramToggleClass(telegramPanel.settings.forwardingEnabled)}
+                      onClick={() => void toggleTelegramSetting("forwardingEnabled")}
+                      disabled={isTelegramSaving}
+                    >
+                      <span className={styles.settingsToggleText}>{copy.telegramForwarding}</span>
+                      <span className={styles.settingsToggleTrack}>
+                        <span className={styles.settingsToggleThumb} />
+                      </span>
+                    </button>
+                    <div className={styles.templateActions}>
+                      <button
+                        type="button"
+                        className={styles.ghostButton}
+                        onClick={openTelegramBotLink}
+                        disabled={!telegramPanel.deepLink}
+                      >
+                        {copy.telegramOpenBot}
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+
+                {telegramSection === "bot" ? (
+                  <div className={styles.generatedBlock}>
+                    <p className={styles.generatedHint}>{copy.telegramBotHint}</p>
+                    <div className={styles.templateActions}>
+                      <button
+                        type="button"
+                        className={styles.primaryButton}
+                        onClick={() =>
+                          void updateTelegramSettings({
+                            notificationsNewBooking: true,
+                            notificationsReminder: true,
+                            notificationsToday: true
+                          })
+                        }
+                        disabled={isTelegramSaving}
+                      >
+                        {copy.telegramAllOn}
+                      </button>
+                      <button
+                        type="button"
+                        className={styles.ghostButton}
+                        onClick={() =>
+                          void updateTelegramSettings({
+                            notificationsNewBooking: false,
+                            notificationsReminder: false,
+                            notificationsToday: false
+                          })
+                        }
+                        disabled={isTelegramSaving}
+                      >
+                        {copy.telegramAllOff}
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+          </section>
 
           <section className={styles.settingsCard}>
             <div className={styles.settingsCardHeader}>
