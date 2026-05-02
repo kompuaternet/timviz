@@ -11,6 +11,7 @@ jobs:
     timeout-minutes: 30
     permissions:
       contents: read
+      actions: write
 
     env:
       NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
@@ -51,3 +52,38 @@ jobs:
             backups/db-archives/**
           if-no-files-found: error
           retention-days: 30
+
+      - name: Keep only 3 latest DB backup artifacts
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          to_delete_ids="$(
+            gh api "repos/${{ github.repository }}/actions/artifacts?per_page=100" \
+              | node -e '
+                let raw = "";
+                process.stdin.on("data", (chunk) => (raw += chunk));
+                process.stdin.on("end", () => {
+                  const payload = JSON.parse(raw || "{}");
+                  const artifacts = Array.isArray(payload.artifacts) ? payload.artifacts : [];
+                  const backupArtifacts = artifacts
+                    .filter((a) => a && typeof a.name === "string" && a.name.startsWith("db-backups-"))
+                    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+                  const stale = backupArtifacts.slice(3);
+                  process.stdout.write(stale.map((a) => String(a.id)).join("\n"));
+                });
+              '
+          )"
+
+          if [ -z "${to_delete_ids}" ]; then
+            echo "No stale DB backup artifacts to delete."
+            exit 0
+          fi
+
+          echo "${to_delete_ids}" | while IFS= read -r artifact_id; do
+            [ -z "${artifact_id}" ] && continue
+            echo "Deleting artifact ${artifact_id}"
+            gh api -X DELETE "repos/${{ github.repository }}/actions/artifacts/${artifact_id}"
+          done
