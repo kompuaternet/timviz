@@ -9,6 +9,7 @@ import {
   type BookingStatus
 } from "../../../../lib/bookings";
 import { getSessionCookieName, verifySessionValue } from "../../../../lib/pro-auth";
+import { getJoinRequestsForOwner } from "../../../../lib/pro-data";
 import {
   resetTelegramReminderEventsForAppointment,
   sendBookingCancelledTelegramNotification,
@@ -45,6 +46,7 @@ type CalendarRouteAppointment = {
 type CalendarRouteSnapshot = Awaited<ReturnType<typeof getCalendarDaySnapshot>> & {
   pendingOnlineBookings?: Array<Record<string, string>>;
   archivedOnlineBookings?: Array<Record<string, string>>;
+  pendingJoinRequests?: Array<Record<string, string>>;
 };
 
 type CalendarRouteTeamMember = {
@@ -147,13 +149,15 @@ function pickMatchingAppointment(
 async function getOnlineBookingNotifications(input: {
   businessId: string;
   teamMembers: CalendarRouteTeamMember[];
+  viewerProfessionalId: string;
 }) {
   const businessId = input.businessId;
 
   if (!businessId) {
     return {
       pendingOnlineBookings: [],
-      archivedOnlineBookings: []
+      archivedOnlineBookings: [],
+      pendingJoinRequests: []
     };
   }
 
@@ -271,9 +275,26 @@ async function getOnlineBookingNotifications(input: {
     );
   }
 
+  const joinRequests = await getJoinRequestsForOwner(input.viewerProfessionalId).catch(() => []);
+  const pendingJoinRequests = joinRequests
+    .filter((item) => item.status === "pending" && !item.viewedAt)
+    .map((request) => ({
+      id: request.id,
+      createdAt: request.createdAt,
+      role: request.role,
+      professionalId: request.professionalId,
+      professionalName:
+        request.professional
+          ? `${request.professional.firstName} ${request.professional.lastName}`.trim() ||
+            request.professional.email ||
+            request.professional.phone
+          : ""
+    }));
+
   return {
     pendingOnlineBookings: notifications.filter((item) => item.status === "pending"),
-    archivedOnlineBookings: notifications.filter((item) => item.status !== "pending").slice(0, 12)
+    archivedOnlineBookings: notifications.filter((item) => item.status !== "pending").slice(0, 12),
+    pendingJoinRequests
   };
 }
 
@@ -295,14 +316,18 @@ export async function GET(request: Request) {
 
     if (mode === "notifications") {
       const context = await getCalendarNotificationsContext({ professionalId });
-      const notifications = await getOnlineBookingNotifications(context);
+      const notifications = await getOnlineBookingNotifications({
+        ...context,
+        viewerProfessionalId: professionalId
+      });
       return NextResponse.json(notifications);
     }
 
     const result = await getCalendarDaySnapshot({ professionalId, appointmentDate, targetProfessionalId });
     const notifications = await getOnlineBookingNotifications({
       businessId: result.workspace.business.id,
-      teamMembers: result.teamMembers
+      teamMembers: result.teamMembers,
+      viewerProfessionalId: professionalId
     });
     const decoratedResult: CalendarRouteSnapshot = {
       ...(result as CalendarRouteSnapshot),

@@ -122,7 +122,8 @@ create table if not exists public.business_join_requests (
   role text not null default 'Specialist',
   status text not null default 'pending',
   created_at timestamptz not null default timezone('utc', now()),
-  resolved_at timestamptz
+  resolved_at timestamptz,
+  viewed_at timestamptz
 );
 
 create table if not exists public.business_staff_invitations (
@@ -257,6 +258,7 @@ alter table public.global_service_catalog add column if not exists localized_nam
 alter table public.business_memberships add column if not exists work_schedule_mode text;
 alter table public.business_memberships add column if not exists work_schedule jsonb;
 alter table public.business_memberships add column if not exists custom_schedule jsonb;
+alter table public.business_join_requests add column if not exists viewed_at timestamptz;
 alter table public.telegram_connections add column if not exists chat_id text;
 alter table public.telegram_connections add column if not exists telegram_user_id bigint;
 alter table public.telegram_connections add column if not exists telegram_username text not null default '';
@@ -279,6 +281,7 @@ alter table public.telegram_connections add column if not exists updated_at time
 create index if not exists bookings_salon_date_idx on public.bookings (salon_slug, appointment_date, appointment_time);
 create index if not exists bookings_customer_email_idx on public.bookings (customer_email, created_at desc);
 create index if not exists business_memberships_professional_idx on public.business_memberships (professional_id);
+create index if not exists business_join_requests_business_status_viewed_idx on public.business_join_requests (business_id, status, viewed_at, created_at desc);
 create index if not exists business_services_business_idx on public.business_services (business_id, sort_order, created_at);
 create index if not exists business_services_blocked_idx on public.business_services (is_blocked, created_at desc);
 create index if not exists business_services_source_idx on public.business_services (source, moderation_status, is_blocked, created_at desc);

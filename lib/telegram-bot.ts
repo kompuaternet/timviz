@@ -119,6 +119,7 @@ type TelegramText = {
   cabinetBookingCreated: string;
   bookingRescheduled: string;
   bookingCancelled: string;
+  joinRequestCreated: string;
   reminderPrefix: string;
   confirm: string;
   cancel: string;
@@ -136,6 +137,7 @@ type TelegramText = {
   unknownClient: string;
   fromLabel: string;
   toLabel: string;
+  roleLabel: string;
   enabled: string;
   disabled: string;
   settingUpdated: string;
@@ -219,6 +221,7 @@ const textByLanguage: Record<TelegramLanguage, TelegramText> = {
     cabinetBookingCreated: "📌 Новая запись из кабинета",
     bookingRescheduled: "🕒 Время записи изменено",
     bookingCancelled: "❌ Запись отменена",
+    joinRequestCreated: "👥 Новый запрос на присоединение к компании",
     reminderPrefix: "⏰ Напоминание",
     confirm: "✅ Подтвердить",
     cancel: "❌ Отменить",
@@ -236,6 +239,7 @@ const textByLanguage: Record<TelegramLanguage, TelegramText> = {
     unknownClient: "Клиент",
     fromLabel: "Было",
     toLabel: "Стало",
+    roleLabel: "Роль",
     enabled: "🟢 Вкл",
     disabled: "⚪️ Выкл",
     settingUpdated: "✅ Настройка обновлена.",
@@ -282,6 +286,7 @@ const textByLanguage: Record<TelegramLanguage, TelegramText> = {
     cabinetBookingCreated: "📌 Новий запис із кабінету",
     bookingRescheduled: "🕒 Час запису змінено",
     bookingCancelled: "❌ Запис скасовано",
+    joinRequestCreated: "👥 Новий запит на приєднання до компанії",
     reminderPrefix: "⏰ Нагадування",
     confirm: "✅ Підтвердити",
     cancel: "❌ Скасувати",
@@ -299,6 +304,7 @@ const textByLanguage: Record<TelegramLanguage, TelegramText> = {
     unknownClient: "Клієнт",
     fromLabel: "Було",
     toLabel: "Стало",
+    roleLabel: "Роль",
     enabled: "🟢 Увімк",
     disabled: "⚪️ Вимк",
     settingUpdated: "✅ Налаштування оновлено.",
@@ -345,6 +351,7 @@ const textByLanguage: Record<TelegramLanguage, TelegramText> = {
     cabinetBookingCreated: "📌 New booking from dashboard",
     bookingRescheduled: "🕒 Booking time changed",
     bookingCancelled: "❌ Booking cancelled",
+    joinRequestCreated: "👥 New request to join your company",
     reminderPrefix: "⏰ Reminder",
     confirm: "✅ Confirm",
     cancel: "❌ Cancel",
@@ -362,6 +369,7 @@ const textByLanguage: Record<TelegramLanguage, TelegramText> = {
     unknownClient: "Client",
     fromLabel: "From",
     toLabel: "To",
+    roleLabel: "Role",
     enabled: "🟢 On",
     disabled: "⚪️ Off",
     settingUpdated: "✅ Setting updated.",
@@ -2039,6 +2047,94 @@ export async function getAllConnectedTelegramConnections() {
 
   const store = await readStore();
   return store.connections.filter((item) => item.chatId && item.connectedAt);
+}
+
+async function getConnectedOwnerTelegramConnectionsForBusiness(businessId: string) {
+  const normalizedBusinessId = businessId.trim();
+  if (!normalizedBusinessId) {
+    return [] as TelegramConnection[];
+  }
+
+  if (isSupabaseConfigured()) {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      return [] as TelegramConnection[];
+    }
+
+    const { data: ownerMemberships, error: ownerError } = await supabase
+      .from("business_memberships")
+      .select("professional_id")
+      .eq("business_id", normalizedBusinessId)
+      .eq("scope", "owner");
+
+    if (ownerError) {
+      throw new Error(ownerError.message);
+    }
+
+    const ownerIds = (ownerMemberships ?? [])
+      .map((row) => String((row as { professional_id?: unknown }).professional_id ?? ""))
+      .filter(Boolean);
+
+    if (!ownerIds.length) {
+      return [] as TelegramConnection[];
+    }
+
+    const { data: connections, error: connectionsError } = await supabase
+      .from("telegram_connections")
+      .select("*")
+      .in("professional_id", ownerIds)
+      .eq("business_id", normalizedBusinessId)
+      .not("chat_id", "is", null);
+
+    if (connectionsError) {
+      throw new Error(connectionsError.message);
+    }
+
+    return (connections ?? [])
+      .map((row) => mapConnectionRow(row as Record<string, unknown>))
+      .filter((item) => item.chatId && item.connectedAt);
+  }
+
+  const store = await readStore();
+  return store.connections.filter(
+    (item) => item.businessId === normalizedBusinessId && item.chatId && item.connectedAt
+  );
+}
+
+export async function sendJoinRequestTelegramNotification(input: {
+  businessId: string;
+  requestId: string;
+  requesterProfessionalId: string;
+  requesterName: string;
+  requesterEmail: string;
+  requesterPhone: string;
+  role: string;
+}) {
+  const ownerConnections = await getConnectedOwnerTelegramConnectionsForBusiness(input.businessId);
+  if (!ownerConnections.length) {
+    return { sent: 0 };
+  }
+
+  let sent = 0;
+  for (const connection of ownerConnections) {
+    const text = getTelegramText(connection.language);
+    const lines = [
+      text.joinRequestCreated,
+      `👤 ${input.requesterName.trim() || input.requesterEmail.trim() || text.unknownClient}`,
+      `✉️ ${input.requesterEmail.trim() || "-"}`,
+      `📞 ${input.requesterPhone.trim() || "-"}`,
+      `🧾 ${text.roleLabel}: ${input.role.trim() || "-"}`
+    ];
+
+    await sendTelegramTextMessage({
+      chatId: connection.chatId,
+      text: lines.join("\n"),
+      replyMarkup: buildDashboardKeyboard(text, "/pro/staff/members")
+    }).catch(() => undefined);
+    sent += 1;
+  }
+
+  return { sent };
 }
 
 export async function forwardTelegramMessageToSupport(input: {

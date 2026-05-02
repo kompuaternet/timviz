@@ -2,7 +2,7 @@
 
 import ProfileAvatar from "../ProfileAvatar";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import FloatingPopover from "./FloatingPopover";
 import SupportWidget from "./SupportWidget";
 import styles from "./pro.module.css";
@@ -181,21 +181,42 @@ export default function ProWorkspaceHeader({
   const [publicBookingState, setPublicBookingState] = useState(publicBookingEnabled);
   const pageTitle = useMemo(() => getPageTitle(pathname, language), [language, pathname]);
   const canUseNativeShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
+  const refreshNotifications = useCallback(() => {
+    const todayDate = formatDateKey(new Date());
+
+    void fetch(`/api/pro/calendar?mode=notifications&date=${todayDate}`)
+      .then((response) => response.json())
+      .then((payload: { pendingOnlineBookings?: Array<unknown>; pendingJoinRequests?: Array<unknown> }) => {
+        const onlineCount = payload.pendingOnlineBookings?.length ?? 0;
+        const joinCount = payload.pendingJoinRequests?.length ?? 0;
+        setNotificationsCount(onlineCount + joinCount);
+      })
+      .catch(() => setNotificationsCount(0));
+  }, []);
 
   useEffect(() => {
     setPublicBookingState(publicBookingEnabled);
   }, [publicBookingEnabled]);
 
   useEffect(() => {
-    const todayDate = formatDateKey(new Date());
+    refreshNotifications();
+  }, [pathname, refreshNotifications]);
 
-    void fetch(`/api/pro/calendar?mode=notifications&date=${todayDate}`)
-      .then((response) => response.json())
-      .then((payload: { pendingOnlineBookings?: Array<unknown> }) => {
-        setNotificationsCount(payload.pendingOnlineBookings?.length ?? 0);
-      })
-      .catch(() => setNotificationsCount(0));
-  }, [pathname]);
+  useEffect(() => {
+    function handleNotificationsRefresh() {
+      refreshNotifications();
+    }
+
+    const intervalId = window.setInterval(() => {
+      refreshNotifications();
+    }, 30000);
+
+    window.addEventListener("rezervo-pro-notifications-refresh", handleNotificationsRefresh);
+    return () => {
+      window.clearInterval(intervalId);
+      window.removeEventListener("rezervo-pro-notifications-refresh", handleNotificationsRefresh);
+    };
+  }, [refreshNotifications]);
 
   async function copyPublicBookingLink() {
     if (!publicBookingUrl) return;

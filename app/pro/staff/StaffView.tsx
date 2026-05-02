@@ -426,6 +426,26 @@ export default function StaffView({ professionalId, snapshot, initialAddOpen = f
     };
   }, []);
 
+  useEffect(() => {
+    if (snapshot.joinRequests.length === 0) {
+      return;
+    }
+
+    void fetch("/api/pro/join-requests", {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json"
+      }
+    })
+      .then((response) => {
+        if (!response.ok) {
+          return;
+        }
+        window.dispatchEvent(new CustomEvent("rezervo-pro-notifications-refresh"));
+      })
+      .catch(() => undefined);
+  }, [snapshot.joinRequests.length]);
+
   const filteredMembers = useMemo(() => {
     const normalized = query.trim().toLowerCase();
 
@@ -459,6 +479,7 @@ export default function StaffView({ professionalId, snapshot, initialAddOpen = f
       }
 
       setStatusText(successText);
+      window.dispatchEvent(new CustomEvent("rezervo-pro-notifications-refresh"));
       router.refresh();
     } catch {
       setStatusText(copy.failed);
