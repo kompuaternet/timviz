@@ -322,13 +322,10 @@ export default function ProWorkspaceHeader({
       <div className={styles.calendarWorkspaceMeta}>
         <span>{businessName || "Timviz"}</span>
         <strong>{pageTitle}</strong>
-      </div>
-
-      <div className={styles.calendarWorkspaceActions}>
         {showOnboardingCta ? (
           <button
             type="button"
-            className={styles.calendarOnboardingCta}
+            className={`${styles.calendarOnboardingCta} ${styles.calendarWorkspaceMetaOnboarding}`}
             onClick={() => router.push("/pro/settings")}
             title={copy.onboardingContinue}
           >
@@ -340,7 +337,9 @@ export default function ProWorkspaceHeader({
             </span>
           </button>
         ) : null}
+      </div>
 
+      <div className={styles.calendarWorkspaceActions}>
         <button
           ref={shareMenuButtonRef}
           type="button"

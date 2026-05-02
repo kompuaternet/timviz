@@ -2932,8 +2932,8 @@
 }
 
 .staffStudioShell > .proPageWorkspaceHeader {
-  padding-left: calc(260px + 40px);
-  padding-right: 40px;
+  padding-left: 24px;
+  padding-right: 24px;
 }
 
 .staffStudioSidebar {
@@ -6150,6 +6150,12 @@
   display: grid;
   gap: 2px;
   padding-left: 6px;
+}
+
+.calendarWorkspaceMetaOnboarding {
+  margin-top: 6px;
+  margin-left: 2px;
+  align-self: start;
 }
 
 .calendarWorkspaceMeta span {
@@ -10948,6 +10954,11 @@
     min-height: 32px;
     padding: 0 10px;
     font-size: 0.76rem;
+  }
+
+  .calendarWorkspaceMetaOnboarding {
+    margin-top: 7px;
+    margin-left: 0;
   }
 
   .calendarOnboardingCtaFull {

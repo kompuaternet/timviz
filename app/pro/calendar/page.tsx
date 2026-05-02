@@ -2,6 +2,8 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getSessionCookieName, verifySessionValue } from "../../../lib/pro-auth";
 import { getWorkspaceSnapshot } from "../../../lib/pro-data";
+import { isWorkspaceSetupComplete } from "../../../lib/pro-onboarding";
+import { getTelegramConnectionByProfessionalId } from "../../../lib/telegram-bot";
 import CalendarDayView from "./CalendarDayView";
 
 function formatDateKey(date: Date) {
@@ -29,7 +31,10 @@ export default async function ProCalendarPage({
     redirect("/pro/login");
   }
 
-  const workspace = await getWorkspaceSnapshot(professionalId);
+  const [workspace, telegramConnection] = await Promise.all([
+    getWorkspaceSnapshot(professionalId),
+    getTelegramConnectionByProfessionalId(professionalId)
+  ]);
 
   if (!workspace) {
     redirect("/pro/login");
@@ -40,6 +45,7 @@ export default async function ProCalendarPage({
       professionalId={professionalId}
       initialDate={params.date || formatDateKey(new Date())}
       initialPanel={params.panel === "notifications" ? "notifications" : undefined}
+      showOnboardingCta={!isWorkspaceSetupComplete(workspace, Boolean(telegramConnection?.chatId))}
     />
   );
 }

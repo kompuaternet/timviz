@@ -187,6 +187,7 @@ type CalendarDayViewProps = {
   professionalId: string;
   initialDate: string;
   initialPanel?: "notifications";
+  showOnboardingCta?: boolean;
 };
 
 type AppLanguage = "ru" | "uk" | "en";
@@ -374,6 +375,8 @@ const CALENDAR_TEXT: Record<AppLanguage, {
   helpSupport: string;
   logout: string;
   language: string;
+  onboardingStart: string;
+  onboardingContinue: string;
   publicLink: string;
   publicLinkTitle: string;
   publicLinkHint: string;
@@ -530,6 +533,8 @@ const CALENDAR_TEXT: Record<AppLanguage, {
     helpSupport: "Помощь и поддержка",
     logout: "Выйти",
     language: "Язык",
+    onboardingStart: "🚀 Начать",
+    onboardingContinue: "Продолжить →",
     publicLink: "Публичная ссылка",
     publicLinkTitle: "Ссылка для онлайн-записи",
     publicLinkHint: "Отправляйте ссылку клиентам, публикуйте в соцсетях или копируйте в один тап.",
@@ -686,6 +691,8 @@ const CALENDAR_TEXT: Record<AppLanguage, {
     helpSupport: "Допомога і підтримка",
     logout: "Вийти",
     language: "Мова",
+    onboardingStart: "🚀 Почати",
+    onboardingContinue: "Продовжити →",
     publicLink: "Публічне посилання",
     publicLinkTitle: "Посилання для онлайн-запису",
     publicLinkHint: "Надсилайте посилання клієнтам, публікуйте в соцмережах або копіюйте в один дотик.",
@@ -842,6 +849,8 @@ const CALENDAR_TEXT: Record<AppLanguage, {
     helpSupport: "Help and support",
     logout: "Log out",
     language: "Language",
+    onboardingStart: "🚀 Start",
+    onboardingContinue: "Continue →",
     publicLink: "Public link",
     publicLinkTitle: "Online booking link",
     publicLinkHint: "Send it to clients, post it on social media, or copy it in one tap.",
@@ -1219,7 +1228,7 @@ function getAppointmentLayouts(appointments: CalendarAppointment[]) {
   return layouts;
 }
 
-export default function CalendarDayView({ professionalId, initialDate, initialPanel }: CalendarDayViewProps) {
+export default function CalendarDayView({ professionalId, initialDate, initialPanel, showOnboardingCta = false }: CalendarDayViewProps) {
   const router = useRouter();
   const topOffset = 24;
   const dayStartMinutes = 0;
@@ -4242,6 +4251,23 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
           <div className={styles.calendarWorkspaceMeta}>
             <span>{snapshot?.workspace.business.name ?? "Timviz"}</span>
             <strong>{t.dailyCalendar}</strong>
+            {showOnboardingCta ? (
+              <button
+                type="button"
+                className={`${styles.calendarOnboardingCta} ${styles.calendarWorkspaceMetaOnboarding}`}
+                onClick={() => {
+                  router.push("/pro/settings");
+                }}
+                title={t.onboardingContinue}
+              >
+                <span className={styles.calendarOnboardingCtaFull}>
+                  {t.onboardingStart}
+                </span>
+                <span className={styles.calendarOnboardingCtaShort}>
+                  {t.onboardingContinue}
+                </span>
+              </button>
+            ) : null}
           </div>
 
           <div className={styles.calendarWorkspaceActions}>
