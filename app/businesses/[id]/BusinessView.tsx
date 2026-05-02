@@ -58,6 +58,9 @@ type BusinessViewProps = {
   image: string;
   photos: string[];
   team: TeamMember[];
+  isCustomerAuthenticated?: boolean;
+  customerDisplayName?: string;
+  isProAuthenticated?: boolean;
   initialLanguage: SiteLanguage;
   returnPath: string;
 };
@@ -478,6 +481,9 @@ export default function BusinessView({
   image,
   photos,
   team,
+  isCustomerAuthenticated = false,
+  customerDisplayName = "",
+  isProAuthenticated = false,
   initialLanguage,
   returnPath
 }: BusinessViewProps) {
@@ -602,6 +608,30 @@ export default function BusinessView({
     () => buildRouteUrl(business.address, business.addressLat, business.addressLon),
     [business.address, business.addressLat, business.addressLon]
   );
+  const headerCustomerAuthenticated = isCustomerAuthenticated || authState.authenticated;
+  const headerCustomerName = authState.customer?.fullName || customerDisplayName;
+  const authMenuLabel = headerCustomerAuthenticated
+    ? headerCustomerName || (language === "en" ? "My account" : language === "uk" ? "Мій кабінет" : "Мой кабинет")
+    : language === "en"
+      ? "Log in"
+      : language === "uk"
+        ? "Увійти"
+        : "Войти";
+  const customerCabinetLabel = language === "en" ? "Customer account" : language === "uk" ? "Кабінет клієнта" : "Кабинет клиента";
+  const customerLoginLabel = language === "en" ? "Client sign in" : language === "uk" ? "Вхід для клієнта" : "Вход для клиента";
+  const proLabel = isProAuthenticated
+    ? language === "en"
+      ? "Master dashboard"
+      : language === "uk"
+        ? "Кабінет майстра"
+        : "Кабинет мастера"
+    : language === "en"
+      ? "Master sign in"
+      : language === "uk"
+        ? "Вхід для майстра"
+        : "Вход для мастера";
+  const proHref = isProAuthenticated ? "/pro" : "/pro/login";
+  const accountHref = getLocalizedPath(language, "/account");
 
   useEffect(() => {
     if (serviceGroups.length && !serviceCategory) {
@@ -1061,6 +1091,13 @@ export default function BusinessView({
           <BrandLogo />
         </a>
         <nav className="public-nav" aria-label="Company page navigation">
+          <details className="public-menu public-entry-menu">
+            <summary className="public-login-entry">{authMenuLabel}</summary>
+            <div className="public-menu-panel public-entry-panel">
+              <a href={accountHref}>{headerCustomerAuthenticated ? customerCabinetLabel : customerLoginLabel}</a>
+              <a href={proHref}>{proLabel}</a>
+            </div>
+          </details>
           <a href={getLocalizedPath(language, "/catalog")} className="public-login">
             {t.breadcrumbCatalog}
           </a>

@@ -89,12 +89,16 @@ export default function GlobalLanguageSwitcher({ mode = "fixed" }: GlobalLanguag
   const isInline = mode === "inline";
   const hasInlinePublicHeader =
     pathname === "/" ||
+    pathname === "/catalog" ||
     pathname === "/for-business" ||
     pathname === "/privacy" ||
     pathname === "/terms" ||
     pathname === "/ru" ||
     pathname === "/uk" ||
     pathname === "/en" ||
+    pathname === "/ru/catalog" ||
+    pathname === "/uk/catalog" ||
+    pathname === "/en/catalog" ||
     pathname === "/ru/for-business" ||
     pathname === "/uk/for-business" ||
     pathname === "/en/for-business" ||

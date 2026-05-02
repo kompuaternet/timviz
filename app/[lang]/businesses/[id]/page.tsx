@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import BusinessView from "../../../businesses/[id]/BusinessView";
+import { getPublicCustomerCookieName, verifyPublicCustomerSession } from "../../../../lib/public-customer-auth";
 import { getPublicBusinessProfile } from "../../../../lib/public-business";
+import { getSessionCookieName, verifySessionValue } from "../../../../lib/pro-auth";
 import { buildLanguageAlternates, buildMetadata } from "../../../../lib/seo";
 import { getLocalizedPath, isSiteLanguage, type SiteLanguage } from "../../../../lib/site-language";
 
@@ -70,6 +73,11 @@ export default async function LocalizedBusinessPage({
   }
 
   const profile = await getPublicBusinessProfile(id);
+  const cookieStore = await cookies();
+  const customerSession = verifyPublicCustomerSession(
+    cookieStore.get(getPublicCustomerCookieName())?.value
+  );
+  const professionalId = verifySessionValue(cookieStore.get(getSessionCookieName())?.value);
 
   if (!profile) {
     notFound();
@@ -83,6 +91,9 @@ export default async function LocalizedBusinessPage({
       image={profile.image}
       photos={profile.photos}
       team={profile.team}
+      isCustomerAuthenticated={Boolean(customerSession)}
+      customerDisplayName={customerSession?.fullName ?? ""}
+      isProAuthenticated={Boolean(professionalId)}
       initialLanguage={lang as SiteLanguage}
       returnPath={getLocalizedPath(lang as SiteLanguage, `/businesses/${profile.publicPathId}`)}
     />

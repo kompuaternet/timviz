@@ -15,6 +15,9 @@ type CatalogViewProps = {
   time: string;
   location: string;
   hasCoords: boolean;
+  isCustomerAuthenticated?: boolean;
+  customerDisplayName?: string;
+  isProAuthenticated?: boolean;
   initialLanguage?: SiteLanguage;
 };
 
@@ -246,6 +249,9 @@ export default function CatalogView({
   time,
   location,
   hasCoords,
+  isCustomerAuthenticated = false,
+  customerDisplayName = "",
+  isProAuthenticated = false,
   initialLanguage = "ru"
 }: CatalogViewProps) {
   const language = useSiteLanguage(initialLanguage, true);
@@ -255,6 +261,28 @@ export default function CatalogView({
   const menuSearchLabel = language === "en" ? "Search and filters" : language === "uk" ? "Пошук і фільтри" : "Поиск и фильтры";
   const menuResultsLabel = language === "en" ? "Results" : language === "uk" ? "Результати" : "Результаты";
   const navLabel = language === "en" ? "Catalog navigation" : language === "uk" ? "Навігація каталогу" : "Навигация каталога";
+  const authMenuLabel = isCustomerAuthenticated
+    ? customerDisplayName || (language === "en" ? "My account" : language === "uk" ? "Мій кабінет" : "Мой кабинет")
+    : language === "en"
+      ? "Log in"
+      : language === "uk"
+        ? "Увійти"
+        : "Войти";
+  const customerCabinetLabel = language === "en" ? "Customer account" : language === "uk" ? "Кабінет клієнта" : "Кабинет клиента";
+  const customerLoginLabel = language === "en" ? "Client sign in" : language === "uk" ? "Вхід для клієнта" : "Вход для клиента";
+  const proLabel = isProAuthenticated
+    ? language === "en"
+      ? "Master dashboard"
+      : language === "uk"
+        ? "Кабінет майстра"
+        : "Кабинет мастера"
+    : language === "en"
+      ? "Master sign in"
+      : language === "uk"
+        ? "Вхід для майстра"
+        : "Вход для мастера";
+  const proHref = isProAuthenticated ? "/pro" : "/pro/login";
+  const accountHref = getLocalizedPath(language, "/account");
 
   return (
     <main className="company-page catalog-page">
@@ -263,6 +291,13 @@ export default function CatalogView({
           <BrandLogo />
         </a>
         <nav className="public-nav" aria-label={navLabel}>
+          <details className="public-menu public-entry-menu">
+            <summary className="public-login-entry">{authMenuLabel}</summary>
+            <div className="public-menu-panel public-entry-panel">
+              <a href={accountHref}>{isCustomerAuthenticated ? customerCabinetLabel : customerLoginLabel}</a>
+              <a href={proHref}>{proLabel}</a>
+            </div>
+          </details>
           <a href={getLocalizedPath(language, "/catalog")} className="public-login">
             {catalogLabel}
           </a>
