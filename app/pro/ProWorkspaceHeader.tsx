@@ -314,6 +314,13 @@ export default function ProWorkspaceHeader({
       if (!response.ok) {
         throw new Error(payload?.error || "toggle_failed");
       }
+
+      const persistedValue = payload?.workspace?.business?.allowOnlineBooking === true;
+      if (persistedValue !== nextValue) {
+        throw new Error("toggle_sync_failed");
+      }
+
+      setPublicBookingState(persistedValue);
     } catch {
       setPublicBookingState(!nextValue);
     } finally {

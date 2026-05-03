@@ -628,6 +628,8 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
   const photoTransitionInitializedRef = useRef(false);
   const previousPhotoReadyRef = useRef(false);
   const onlineBookingRequestIdRef = useRef(0);
+  const saveRequestIdRef = useRef(0);
+  const settingsMutationVersionRef = useRef(0);
   const publicBookingInputRef = useRef<HTMLInputElement | null>(null);
   const photoUploaderInputRef = useRef<HTMLInputElement | null>(null);
   const photoSectionRef = useRef<HTMLElement | null>(null);
@@ -1086,6 +1088,8 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
   async function saveOnlineBookingSetting(nextValue: boolean) {
     const requestId = onlineBookingRequestIdRef.current + 1;
     onlineBookingRequestIdRef.current = requestId;
+    const mutationVersion = settingsMutationVersionRef.current + 1;
+    settingsMutationVersionRef.current = mutationVersion;
     setIsOnlineBookingSaving(true);
     setStatus("");
 
@@ -1105,7 +1109,10 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
         throw new Error(payload.error || copy.saveFailed);
       }
 
-      if (onlineBookingRequestIdRef.current !== requestId) {
+      if (
+        onlineBookingRequestIdRef.current !== requestId ||
+        settingsMutationVersionRef.current !== mutationVersion
+      ) {
         return;
       }
 
@@ -1116,7 +1123,10 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
 
       applyWorkspacePayload(payload, { silent: true });
     } catch (error) {
-      if (onlineBookingRequestIdRef.current !== requestId) {
+      if (
+        onlineBookingRequestIdRef.current !== requestId ||
+        settingsMutationVersionRef.current !== mutationVersion
+      ) {
         return;
       }
       setData((current) => ({
@@ -1435,6 +1445,8 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
   }
 
   async function applyAddress(suggestion: AddressSuggestion) {
+    const mutationVersion = settingsMutationVersionRef.current + 1;
+    settingsMutationVersionRef.current = mutationVersion;
     const previousBusiness = {
       address: data.business.address,
       addressDetails: data.business.addressDetails,
@@ -1491,8 +1503,16 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
         throw new Error(payload.error || copy.saveFailed);
       }
 
+      if (settingsMutationVersionRef.current !== mutationVersion) {
+        return;
+      }
+
       applyWorkspacePayload(payload, { silent: true });
     } catch (error) {
+      if (settingsMutationVersionRef.current !== mutationVersion) {
+        return;
+      }
+
       setData((current) => ({
         ...current,
         business: {
@@ -1510,7 +1530,7 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
   }
 
   useEffect(() => {
-    if (!isHydratedRef.current || isSaving || isTopUpLoading) {
+    if (!isHydratedRef.current || isSaving || isTopUpLoading || isOnlineBookingSaving) {
       return;
     }
 
@@ -1532,10 +1552,14 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
         autoSaveTimerRef.current = null;
       }
     };
-  }, [autosaveSnapshot, isSaving, isTopUpLoading]);
+  }, [autosaveSnapshot, isSaving, isTopUpLoading, isOnlineBookingSaving]);
 
   async function saveSettings(topUpCredits = 0, silent = false) {
     const snapshotAtRequestStart = latestSnapshotRef.current;
+    const requestId = saveRequestIdRef.current + 1;
+    saveRequestIdRef.current = requestId;
+    const mutationVersion = settingsMutationVersionRef.current + 1;
+    settingsMutationVersionRef.current = mutationVersion;
 
     if (autoSaveTimerRef.current) {
       window.clearTimeout(autoSaveTimerRef.current);
@@ -1590,15 +1614,30 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
         bookingCredits: SettingsData["bookingCredits"];
       };
 
-      if (silent && latestSnapshotRef.current !== snapshotAtRequestStart) {
+      if (
+        saveRequestIdRef.current !== requestId ||
+        settingsMutationVersionRef.current !== mutationVersion
+      ) {
+        return;
+      }
+
+      if (latestSnapshotRef.current !== snapshotAtRequestStart) {
         return;
       }
       applyWorkspacePayload(next, { topUpCredits, silent });
     } catch (error) {
+      if (
+        saveRequestIdRef.current !== requestId ||
+        settingsMutationVersionRef.current !== mutationVersion
+      ) {
+        return;
+      }
       setStatus(error instanceof Error ? error.message : copy.saveFailed);
     } finally {
-      setIsSaving(false);
-      setIsTopUpLoading(false);
+      if (saveRequestIdRef.current === requestId) {
+        setIsSaving(false);
+        setIsTopUpLoading(false);
+      }
     }
   }
 

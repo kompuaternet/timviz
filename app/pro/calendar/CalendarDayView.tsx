@@ -2479,6 +2479,30 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
       if (!response.ok) {
         throw new Error(payload?.error || "toggle_failed");
       }
+
+      const persistedValue = payload?.workspace?.business?.allowOnlineBooking === true;
+      if (persistedValue !== nextValue) {
+        throw new Error("toggle_sync_failed");
+      }
+
+      setSnapshot((current) =>
+        current
+          ? {
+              ...current,
+              workspace: {
+                ...current.workspace,
+                business: {
+                  ...current.workspace.business,
+                  allowOnlineBooking: persistedValue,
+                  publicBookingPath:
+                    payload?.workspace?.business?.publicBookingPath ?? current.workspace.business.publicBookingPath,
+                  publicBookingUrl:
+                    payload?.workspace?.business?.publicBookingUrl ?? current.workspace.business.publicBookingUrl
+                }
+              }
+            }
+          : current
+      );
     } catch {
       setSnapshot((current) =>
         current
