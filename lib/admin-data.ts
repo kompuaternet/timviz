@@ -74,6 +74,8 @@ export type SuperadminPhotoRecord = {
 };
 
 const localStorePath = path.join(process.cwd(), "data", "pro-data.json");
+const localCalendarStorePath = path.join(process.cwd(), "data", "pro-calendar.json");
+const localBookingsStorePath = path.join(process.cwd(), "data", "bookings.json");
 
 async function readLocalStore() {
   const content = await fs.readFile(localStorePath, "utf8");
@@ -90,6 +92,65 @@ async function writeLocalStore(input: unknown) {
 
 function normalize(text = "") {
   return text.trim().toLowerCase();
+}
+
+function splitCombinedServiceNames(value = "") {
+  return value
+    .split(/\s*\+\s*/)
+    .map((part) => normalize(part))
+    .filter(Boolean);
+}
+
+function matchesRemovedServiceName(value: string, removedNames: Set<string>) {
+  const normalizedValue = normalize(value);
+  if (!normalizedValue) {
+    return false;
+  }
+
+  if (removedNames.has(normalizedValue)) {
+    return true;
+  }
+
+  const parts = splitCombinedServiceNames(value);
+  return parts.some((part) => removedNames.has(part));
+}
+
+function buildRemovedServiceNameSet(input: {
+  name: string;
+  localizedName?: Partial<LocalizedServiceText>;
+}) {
+  const inferredLocalized = getServiceLocalizedText(input.name, input.localizedName);
+  const candidates = [
+    input.name,
+    input.localizedName?.ru,
+    input.localizedName?.uk,
+    input.localizedName?.en,
+    inferredLocalized.ru,
+    inferredLocalized.uk,
+    inferredLocalized.en
+  ].filter((value): value is string => typeof value === "string" && value.trim().length > 0);
+
+  return new Set(candidates.map((value) => normalize(value)));
+}
+
+function chunk<T>(items: T[], size = 200) {
+  if (items.length <= size) {
+    return [items];
+  }
+
+  const result: T[][] = [];
+  for (let index = 0; index < items.length; index += size) {
+    result.push(items.slice(index, index + size));
+  }
+  return result;
+}
+
+function isMissingOptionalTableOrColumn(message = "") {
+  return (
+    /relation .* does not exist/i.test(message) ||
+    /could not find the table/i.test(message) ||
+    /column .* does not exist/i.test(message)
+  );
 }
 
 function getFullName(input: { firstName?: string; lastName?: string }) {
@@ -613,7 +674,292 @@ export async function saveSuperadminCatalogItem(input: {
 }
 
 export async function removeSuperadminCatalogItem(itemId: string) {
-  return deleteRootCatalogItem(itemId);
+  const normalizedItemId = itemId.trim();
+  if (!normalizedItemId) {
+    throw new Error("Элемент каталога не найден.");
+  }
+
+  const catalogItems = await getRootCatalogItems();
+  const itemToRemove = catalogItems.find((item) => item.id === normalizedItemId);
+
+  if (!itemToRemove) {
+    await deleteRootCatalogItem(normalizedItemId);
+    return {
+      ok: true,
+      removedCatalogItemId: normalizedItemId,
+      removedServicesCount: 0,
+      removedCalendarAppointmentsCount: 0,
+      removedLegacyBookingsCount: 0
+    };
+  }
+
+  const removedNames = buildRemovedServiceNameSet({
+    name: itemToRemove.name,
+    localizedName: itemToRemove.localizedName
+  });
+
+  if (isSupabaseConfigured()) {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      throw new Error("Supabase is not available.");
+    }
+
+    let serviceRows: Array<{
+      id: string;
+      business_id: string;
+      name: string;
+      source?: string | null;
+    }> = [];
+
+    let fetchServicesError: { message?: string } | null = null;
+    let hasSourceColumn = true;
+
+    {
+      const { data, error } = await supabase
+        .from("business_services")
+        .select("id, business_id, name, source");
+      if (error) {
+        if (/source/i.test(error.message)) {
+          hasSourceColumn = false;
+          const fallback = await supabase
+            .from("business_services")
+            .select("id, business_id, name");
+          serviceRows =
+            (fallback.data as Array<{
+              id: string;
+              business_id: string;
+              name: string;
+            }> | null)?.map((row) => ({ ...row, source: null })) ?? [];
+          fetchServicesError = fallback.error;
+        } else {
+          fetchServicesError = error;
+        }
+      } else {
+        serviceRows =
+          (data as Array<{
+            id: string;
+            business_id: string;
+            name: string;
+            source?: string | null;
+          }> | null) ?? [];
+      }
+    }
+
+    if (fetchServicesError) {
+      throw new Error(fetchServicesError.message || "Не удалось загрузить услуги бизнеса.");
+    }
+
+    const matchedServices = serviceRows.filter((service) => {
+      const matchesName = matchesRemovedServiceName(service.name, removedNames);
+      if (!matchesName) {
+        return false;
+      }
+      if (!hasSourceColumn) {
+        return true;
+      }
+      return (service.source || "catalog") === "catalog";
+    });
+
+    const serviceIdsToRemove = matchedServices.map((service) => service.id);
+    const affectedBusinessIds = Array.from(new Set(matchedServices.map((service) => service.business_id)));
+
+    if (serviceIdsToRemove.length > 0) {
+      for (const idsChunk of chunk(serviceIdsToRemove, 200)) {
+        const { error } = await supabase
+          .from("business_services")
+          .delete()
+          .in("id", idsChunk);
+        if (error) {
+          throw new Error(error.message);
+        }
+      }
+    }
+
+    const appointmentIdsToRemove: string[] = [];
+
+    if (affectedBusinessIds.length > 0) {
+      for (const businessChunk of chunk(affectedBusinessIds, 100)) {
+        const { data, error } = await supabase
+          .from("calendar_appointments")
+          .select("id, service_name, kind")
+          .in("business_id", businessChunk)
+          .eq("kind", "appointment");
+
+        if (error) {
+          if (!isMissingOptionalTableOrColumn(error.message)) {
+            throw new Error(error.message);
+          }
+          continue;
+        }
+
+        const rows =
+          (data as Array<{ id: string; service_name?: string | null; kind?: string | null }> | null) ??
+          [];
+
+        for (const row of rows) {
+          if (!row?.id || row.kind === "blocked") {
+            continue;
+          }
+          if (matchesRemovedServiceName(String(row.service_name || ""), removedNames)) {
+            appointmentIdsToRemove.push(row.id);
+          }
+        }
+      }
+    }
+
+    if (appointmentIdsToRemove.length > 0) {
+      for (const idsChunk of chunk(appointmentIdsToRemove, 200)) {
+        const { error } = await supabase
+          .from("calendar_appointments")
+          .delete()
+          .in("id", idsChunk);
+        if (error) {
+          throw new Error(error.message);
+        }
+
+        const reminderDelete = await supabase
+          .from("telegram_reminder_events")
+          .delete()
+          .in("appointment_id", idsChunk);
+        if (reminderDelete.error && !isMissingOptionalTableOrColumn(reminderDelete.error.message)) {
+          throw new Error(reminderDelete.error.message);
+        }
+      }
+    }
+
+    const bookingIdsToRemove: string[] = [];
+    const affectedSalonSlugs = affectedBusinessIds.map((businessId) => `business:${businessId}`);
+
+    if (affectedSalonSlugs.length > 0) {
+      for (const slugsChunk of chunk(affectedSalonSlugs, 100)) {
+        const { data, error } = await supabase
+          .from("bookings")
+          .select("id, service_name")
+          .in("salon_slug", slugsChunk);
+
+        if (error) {
+          if (!isMissingOptionalTableOrColumn(error.message)) {
+            throw new Error(error.message);
+          }
+          continue;
+        }
+
+        const rows =
+          (data as Array<{ id: string; service_name?: string | null }> | null) ?? [];
+
+        for (const row of rows) {
+          if (!row?.id) {
+            continue;
+          }
+          if (matchesRemovedServiceName(String(row.service_name || ""), removedNames)) {
+            bookingIdsToRemove.push(row.id);
+          }
+        }
+      }
+    }
+
+    if (bookingIdsToRemove.length > 0) {
+      for (const idsChunk of chunk(bookingIdsToRemove, 200)) {
+        const { error } = await supabase
+          .from("bookings")
+          .delete()
+          .in("id", idsChunk);
+        if (error) {
+          throw new Error(error.message);
+        }
+      }
+    }
+
+    await deleteRootCatalogItem(normalizedItemId);
+
+    return {
+      ok: true,
+      removedCatalogItemId: normalizedItemId,
+      removedServicesCount: serviceIdsToRemove.length,
+      removedCalendarAppointmentsCount: appointmentIdsToRemove.length,
+      removedLegacyBookingsCount: bookingIdsToRemove.length
+    };
+  }
+
+  const store = (await readLocalStore()) as {
+    professionals: ProfessionalRecord[];
+    businesses: Array<Record<string, unknown>>;
+    services: Array<Record<string, unknown>>;
+    memberships?: Array<Record<string, unknown>>;
+  };
+
+  const localServices = (store.services ?? []) as Array<{
+    id: string;
+    businessId: string;
+    name: string;
+    source?: string;
+  }>;
+  const matchedLocalServices = localServices.filter((service) => {
+    const matchesName = matchesRemovedServiceName(service.name, removedNames);
+    if (!matchesName) {
+      return false;
+    }
+    return (service.source || "catalog") === "catalog";
+  });
+  const localServiceIdsToRemove = new Set(matchedLocalServices.map((service) => service.id));
+  const affectedBusinessIds = new Set(matchedLocalServices.map((service) => service.businessId));
+
+  store.services = localServices.filter((service) => !localServiceIdsToRemove.has(service.id));
+  await writeLocalStore(store);
+
+  try {
+    const calendarRaw = await fs.readFile(localCalendarStorePath, "utf8");
+    const calendarStore = JSON.parse(calendarRaw) as {
+      appointments?: Array<{
+        id: string;
+        businessId: string;
+        kind?: string;
+        serviceName?: string;
+      }>;
+    };
+    const appointments = Array.isArray(calendarStore.appointments)
+      ? calendarStore.appointments
+      : [];
+    calendarStore.appointments = appointments.filter((appointment) => {
+      if (!affectedBusinessIds.has(String(appointment.businessId || ""))) {
+        return true;
+      }
+      if ((appointment.kind || "appointment") === "blocked") {
+        return true;
+      }
+      return !matchesRemovedServiceName(String(appointment.serviceName || ""), removedNames);
+    });
+    await fs.writeFile(localCalendarStorePath, JSON.stringify(calendarStore, null, 2) + "\n", "utf8");
+  } catch {
+    // Ignore missing local calendar store in production.
+  }
+
+  try {
+    const bookingsRaw = await fs.readFile(localBookingsStorePath, "utf8");
+    const parsedBookings = JSON.parse(bookingsRaw);
+    const bookingsStore = (Array.isArray(parsedBookings) ? parsedBookings : []) as Array<{
+      salonSlug?: string;
+      serviceName?: string;
+    }>;
+    const affectedSlugs = new Set(Array.from(affectedBusinessIds).map((businessId) => `business:${businessId}`));
+    const nextBookings = bookingsStore.filter((booking) => {
+      if (!affectedSlugs.has(String(booking.salonSlug || ""))) {
+        return true;
+      }
+      return !matchesRemovedServiceName(String(booking.serviceName || ""), removedNames);
+    });
+    await fs.writeFile(localBookingsStorePath, JSON.stringify(nextBookings, null, 2) + "\n", "utf8");
+  } catch {
+    // Ignore missing local bookings store in production.
+  }
+
+  await deleteRootCatalogItem(normalizedItemId);
+
+  return {
+    ok: true,
+    removedCatalogItemId: normalizedItemId,
+    removedServicesCount: localServiceIdsToRemove.size
+  };
 }
 
 export async function seedSuperadminCatalogDefaults(options?: { force?: boolean }) {
