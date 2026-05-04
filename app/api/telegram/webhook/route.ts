@@ -5,6 +5,7 @@ import {
   buildSettingsMessage,
   connectTelegramChatByToken,
   ensureTelegramBotCommandsConfigured,
+  ensureTelegramMenuButtonConfigured,
   ensureTelegramWebhookConfigured,
   forwardTelegramMessageToSupport,
   formatTodayBookingsMessage,
@@ -156,7 +157,7 @@ function buildDashboardKeyboard(preferredLanguage?: string | null) {
       [
         {
           text: text.menuApp,
-          url: getTelegramMiniAppUrl("/telegram", normalizedLanguage)
+          url: getTelegramMiniAppUrl("/telegram?startapp=calendar", normalizedLanguage)
         }
       ],
       [
@@ -738,6 +739,7 @@ export async function POST(request: Request) {
 
     await Promise.all([
       ensureTelegramBotCommandsConfigured().catch(() => false),
+      ensureTelegramMenuButtonConfigured().catch(() => false),
       ensureTelegramWebhookConfigured().catch(() => false)
     ]);
 

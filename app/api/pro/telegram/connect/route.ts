@@ -4,6 +4,7 @@ import { getSessionCookieName, verifySessionValue } from "../../../../../lib/pro
 import { getWorkspaceSnapshot } from "../../../../../lib/pro-data";
 import {
   ensureTelegramWebhookConfigured,
+  ensureTelegramMenuButtonConfigured,
   ensureTelegramConnectToken,
   getTelegramConnectionByProfessionalId,
   isTelegramBotConfigured,
@@ -36,7 +37,10 @@ export async function GET() {
       return NextResponse.json({ error: "Workspace not found." }, { status: 404 });
     }
 
-    await ensureTelegramWebhookConfigured().catch(() => false);
+    await Promise.all([
+      ensureTelegramWebhookConfigured().catch(() => false),
+      ensureTelegramMenuButtonConfigured().catch(() => false)
+    ]);
 
     const result = await ensureTelegramConnectToken({
       professionalId,
@@ -105,7 +109,10 @@ export async function PATCH(request: Request) {
       reminderLeadMinutes: number;
     }>;
 
-    await ensureTelegramWebhookConfigured().catch(() => false);
+    await Promise.all([
+      ensureTelegramWebhookConfigured().catch(() => false),
+      ensureTelegramMenuButtonConfigured().catch(() => false)
+    ]);
 
     let connection = await getTelegramConnectionByProfessionalId(professionalId);
     if (!connection) {

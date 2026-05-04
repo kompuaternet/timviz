@@ -191,6 +191,8 @@ let cachedCommandsSyncedAt = 0;
 let activeCommandsSyncPromise: Promise<boolean> | null = null;
 let cachedWebhookVerifiedAt = 0;
 let activeWebhookEnsurePromise: Promise<boolean> | null = null;
+let cachedMenuButtonSyncedAt = 0;
+let activeMenuButtonSyncPromise: Promise<boolean> | null = null;
 
 const BOOKING_CALLBACK_PREFIX = "tvbk";
 const SETTINGS_CALLBACK_PREFIX = "tvst";
@@ -202,6 +204,11 @@ const reminderLeadOptions = [15, 30, 60, 120, 180, 1440] as const;
 const webhookVerifyTtlMs = Math.max(
   60_000,
   Number.parseInt(process.env.TELEGRAM_BOOKING_WEBHOOK_VERIFY_TTL_MS || "300000", 10) || 300_000
+);
+const menuButtonSyncTtlMs = Math.max(
+  60_000,
+  Number.parseInt(process.env.TELEGRAM_BOOKING_MENU_BUTTON_SYNC_TTL_MS || "21600000", 10) ||
+    21_600_000
 );
 
 const textByLanguage: Record<TelegramLanguage, TelegramText> = {
@@ -758,6 +765,7 @@ export async function sendTelegramTextMessage(input: {
   }
 
   await ensureTelegramWebhookConfigured().catch(() => false);
+  await ensureTelegramMenuButtonConfigured().catch(() => false);
 
   const payload: Record<string, unknown> = {
     chat_id: input.chatId,
@@ -1005,6 +1013,39 @@ export async function getTelegramConnectionByChatId(chatId: string) {
   return store.connections.find((item) => item.chatId === normalized) ?? null;
 }
 
+export async function getTelegramConnectionByTelegramUserId(telegramUserId: number) {
+  if (!Number.isFinite(telegramUserId)) {
+    return null;
+  }
+
+  if (isSupabaseConfigured()) {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      return null;
+    }
+
+    const { data, error } = await supabase
+      .from("telegram_connections")
+      .select("*")
+      .eq("telegram_user_id", telegramUserId)
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data ? mapConnectionRow(data as Record<string, unknown>) : null;
+  }
+
+  const store = await readStore();
+  const candidates = store.connections
+    .filter((item) => item.telegramUserId === telegramUserId)
+    .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
+  return candidates[0] ?? null;
+}
+
 export async function ensureTelegramConnectToken(input: {
   professionalId: string;
   businessId: string;
@@ -1180,6 +1221,63 @@ export function getTelegramMiniAppUrl(
     url.searchParams.set("lang", normalizeLanguage(language));
   }
   return url.toString();
+}
+
+export async function getTelegramStartAppLink(startParam = "calendar") {
+  const botUsername = await getTelegramBotUsername();
+  if (!botUsername) {
+    return null;
+  }
+
+  const safeStart = startParam.trim() || "calendar";
+  return `https://t.me/${botUsername}/?startapp=${encodeURIComponent(safeStart)}`;
+}
+
+async function setTelegramMenuButton() {
+  const miniAppUrl = getTelegramMiniAppUrl("/telegram?startapp=calendar", "en");
+  await telegramApiRequest<boolean>("setChatMenuButton", {
+    menu_button: {
+      type: "web_app",
+      text: "Open app",
+      web_app: {
+        url: miniAppUrl
+      }
+    }
+  });
+}
+
+export async function ensureTelegramMenuButtonConfigured(input: { force?: boolean } = {}) {
+  if (!isTelegramBotConfigured()) {
+    return false;
+  }
+
+  const force = input.force === true;
+  if (!force && Date.now() - cachedMenuButtonSyncedAt < menuButtonSyncTtlMs) {
+    return true;
+  }
+
+  if (!force && activeMenuButtonSyncPromise) {
+    return activeMenuButtonSyncPromise;
+  }
+
+  const promise = (async () => {
+    try {
+      await setTelegramMenuButton();
+      cachedMenuButtonSyncedAt = Date.now();
+      return true;
+    } catch {
+      return false;
+    }
+  })();
+
+  if (!force) {
+    activeMenuButtonSyncPromise = promise.finally(() => {
+      activeMenuButtonSyncPromise = null;
+    });
+    return activeMenuButtonSyncPromise;
+  }
+
+  return promise;
 }
 
 export function buildBookingCallbackData(action: "confirm" | "cancel", appointmentId: string) {
@@ -1537,7 +1635,7 @@ export function buildSettingsMessage(
           [
             {
               text: text.menuApp,
-              url: getTelegramMiniAppUrl("/telegram", connection.language)
+              url: getTelegramMiniAppUrl("/telegram?startapp=calendar", connection.language)
             }
           ],
           [
@@ -1579,7 +1677,7 @@ export function buildSettingsMessage(
           [
             {
               text: text.menuApp,
-              url: getTelegramMiniAppUrl("/telegram", connection.language)
+              url: getTelegramMiniAppUrl("/telegram?startapp=calendar", connection.language)
             }
           ],
           [
@@ -1634,7 +1732,7 @@ export function buildSettingsMessage(
         [
           {
             text: text.menuApp,
-            url: getTelegramMiniAppUrl("/telegram", connection.language)
+            url: getTelegramMiniAppUrl("/telegram?startapp=calendar", connection.language)
           }
         ],
         [

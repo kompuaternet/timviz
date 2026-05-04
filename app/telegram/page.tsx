@@ -65,12 +65,12 @@ export default async function TelegramPage({ searchParams }: TelegramPageProps) 
 
     if (workspace) {
       const pathname = resolveTelegramStartPath(startParam);
-      const url = new URL(`https://timviz.local${pathname}`);
-      url.searchParams.set("source", "telegram");
+      const params = new URLSearchParams();
+      params.set("source", "telegram");
       if (typeof startParam === "string" && startParam.trim()) {
-        url.searchParams.set("startapp", startParam.trim());
+        params.set("startapp", startParam.trim());
       }
-      redirect(`${url.pathname}${url.search}`);
+      redirect(`${pathname}?${params.toString()}`);
     }
 
     if (pendingJoinRequest) {

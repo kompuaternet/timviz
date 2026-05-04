@@ -42,6 +42,25 @@
   color: #53566b;
 }
 
+.stateInfo,
+.stateError {
+  margin: 12px 0 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.stateInfo {
+  background: rgba(126, 94, 243, 0.1);
+  color: #4a4099;
+}
+
+.stateError {
+  background: rgba(224, 52, 52, 0.12);
+  color: #8f1f1f;
+}
+
 .actions {
   margin-top: 20px;
   display: flex;
@@ -101,4 +120,3 @@
     font-size: 15px;
   }
 }
-
