@@ -3425,6 +3425,10 @@ export async function updateWorkspaceSettingsForProfessional(
       }
     }
 
+    // Supabase reads are served through an in-memory directory cache.
+    // Drop it after any successful mutation so immediate follow-up reads
+    // (including PATCH response payload) return fresh booking settings.
+    invalidateBusinessDirectoryCache();
     return getWorkspaceSnapshot(professionalId);
   }
 
