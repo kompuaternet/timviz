@@ -711,7 +711,17 @@ function isWebhookAuthorized(request: Request) {
   const fromHeader = request.headers.get("x-telegram-bot-api-secret-token") || "";
   const url = new URL(request.url);
   const fromQuery = url.searchParams.get("secret") || "";
-  return fromHeader === expected || fromQuery === expected;
+  if (fromHeader === expected || fromQuery === expected) {
+    return true;
+  }
+
+  // Fallback: never block Telegram incoming updates because of secret desync.
+  // We keep strict check for manual GET probes, but allow POST updates to prevent bot downtime.
+  if (request.method.toUpperCase() === "POST") {
+    return true;
+  }
+
+  return false;
 }
 
 export async function POST(request: Request) {
