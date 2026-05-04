@@ -1,5 +1,6 @@
 import BrandLogo from "./BrandLogo";
 import GlobalLanguageSwitcher from "./GlobalLanguageSwitcher";
+import PublicHeaderAuthMenu from "./PublicHeaderAuthMenu";
 import { getLocalizedPath, type SiteLanguage } from "../lib/site-language";
 import type { legalCopy } from "../lib/legal";
 
@@ -78,13 +79,7 @@ export default function PublicLegalPage({ copy, language }: PublicLegalPageProps
       <header className="public-header">
         <a className="public-logo" href={getLocalizedPath(language)}><BrandLogo /></a>
         <nav className="public-nav" aria-label={t.navAria}>
-          <details className="public-menu public-entry-menu">
-            <summary className="public-login-entry">{t.login}</summary>
-            <div className="public-menu-panel public-entry-panel">
-              <a href={getLocalizedPath(language, "/account")}>{t.clientLogin}</a>
-              <a href="/pro/login">{t.businessLogin}</a>
-            </div>
-          </details>
+          <PublicHeaderAuthMenu language={language} />
           <a href={getLocalizedPath(language, "/for-business")} className="public-company-button">{t.create}</a>
           <details className="public-menu">
             <summary>

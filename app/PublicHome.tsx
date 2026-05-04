@@ -8,6 +8,7 @@ import { getLocalizedPath, isSiteLanguage, type SiteLanguage } from "../lib/site
 import BrandLogo from "./BrandLogo";
 import GlobalLanguageSwitcher from "./GlobalLanguageSwitcher";
 import NicheLinksSection from "./NicheLinksSection";
+import PublicHeaderAuthMenu from "./PublicHeaderAuthMenu";
 import PublicSearch from "./PublicSearch";
 type PublicLanguage = SiteLanguage;
 
@@ -337,13 +338,7 @@ export default function PublicHome({ searchIndex, stats, initialLanguage = "ru" 
       <header className="public-header">
         <a className="public-logo" href={getLocalizedPath(language)}><BrandLogo /></a>
         <nav className="public-nav" aria-label={String(t.navAria)}>
-          <details className="public-menu public-entry-menu">
-            <summary className="public-login-entry">{String(t.login)}</summary>
-            <div className="public-menu-panel public-entry-panel">
-              <a href={getLocalizedPath(language, "/account")}>{String(t.clientLogin)}</a>
-              <a href="/pro/login">{String(t.businessLogin)}</a>
-            </div>
-          </details>
+          <PublicHeaderAuthMenu language={language} />
           <a href={getLocalizedPath(language, "/for-business")} className="public-company-button">{String(t.create)}</a>
           <details className="public-menu">
             <summary>

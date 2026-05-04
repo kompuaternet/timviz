@@ -7,6 +7,7 @@ import BrandLogo from "../BrandLogo";
 import BusinessIcon from "../BusinessIcon";
 import GlobalLanguageSwitcher from "../GlobalLanguageSwitcher";
 import NicheLinksSection from "../NicheLinksSection";
+import PublicHeaderAuthMenu from "../PublicHeaderAuthMenu";
 
 type LandingLanguage = SiteLanguage;
 
@@ -497,13 +498,7 @@ export default function BusinessLanding({ initialLanguage = "ru" }: BusinessLand
       <header className="business-header">
         <a className="public-logo" href={getLocalizedPath(language)}><BrandLogo /></a>
         <nav className="business-nav" aria-label={t.menu}>
-          <details className="public-menu public-entry-menu">
-            <summary className="public-login-entry">{t.login}</summary>
-            <div className="public-menu-panel public-entry-panel">
-              <a href={getLocalizedPath(language, "/account")}>{t.clientLogin}</a>
-              <a href="/pro/login">{t.businessLogin}</a>
-            </div>
-          </details>
+          <PublicHeaderAuthMenu language={language} />
           <a href={createProfileLink} className="public-company-button">{t.create}</a>
           <details className="public-menu">
             <summary>

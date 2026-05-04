@@ -246,6 +246,46 @@
   cursor: pointer;
 }
 
+.public-login-auth {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.public-login-avatar-image,
+.public-login-avatar-fallback {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  flex: 0 0 auto;
+}
+
+.public-login-avatar-image {
+  display: block;
+  object-fit: cover;
+  border: 1px solid rgba(17, 17, 17, 0.12);
+}
+
+.public-login-avatar-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #8b5cf6, #4f46e5);
+  color: #fff;
+  font-size: 0.78rem;
+  font-weight: 900;
+  letter-spacing: 0.01em;
+}
+
+.public-login-name {
+  display: inline-block;
+  white-space: nowrap;
+  max-width: 168px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .public-entry-menu summary::-webkit-details-marker {
   display: none;
 }
@@ -3371,6 +3411,10 @@
 
   .public-company-button {
     display: none;
+  }
+
+  .public-login-name {
+    max-width: 120px;
   }
 
   .public-entry-panel {
