@@ -22,24 +22,24 @@ declare global {
 
 const copyByLanguage = {
   ru: {
-    title: "Timviz в Telegram",
-    subtitle: "Запускайте Timviz как приложение прямо внутри Telegram.",
-    openCatalog: "Открыть каталог",
-    openDashboard: "Открыть кабинет",
+    title: "Timviz Mini App",
+    subtitle: "Вход в приложение Timviz внутри Telegram.",
+    openCatalog: "Каталог",
+    openDashboard: "Войти в кабинет",
     openSettings: "Настройки бизнеса"
   },
   uk: {
-    title: "Timviz у Telegram",
-    subtitle: "Запускайте Timviz як застосунок прямо всередині Telegram.",
-    openCatalog: "Відкрити каталог",
-    openDashboard: "Відкрити кабінет",
+    title: "Timviz Mini App",
+    subtitle: "Вхід у застосунок Timviz всередині Telegram.",
+    openCatalog: "Каталог",
+    openDashboard: "Увійти в кабінет",
     openSettings: "Налаштування бізнесу"
   },
   en: {
-    title: "Timviz in Telegram",
-    subtitle: "Run Timviz as an app directly inside Telegram.",
+    title: "Timviz Mini App",
+    subtitle: "Enter Timviz app inside Telegram.",
     openCatalog: "Open catalog",
-    openDashboard: "Open dashboard",
+    openDashboard: "Sign in to dashboard",
     openSettings: "Business settings"
   }
 } as const;
@@ -111,11 +111,11 @@ export default function TelegramMiniAppView({ initialLanguage }: TelegramMiniApp
         <h1>{copy.title}</h1>
         <p className={styles.subtitle}>{copy.subtitle}</p>
         <div className={styles.actions}>
-          <Link href="/catalog?source=telegram" className={styles.primaryButton}>
-            {copy.openCatalog}
-          </Link>
-          <Link href="/pro/calendar?source=telegram" className={styles.secondaryButton}>
+          <Link href="/pro/login?source=telegram" className={styles.primaryButton}>
             {copy.openDashboard}
+          </Link>
+          <Link href="/catalog?source=telegram" className={styles.secondaryButton}>
+            {copy.openCatalog}
           </Link>
           <Link href="/pro/settings?source=telegram&section=telegram" className={styles.secondaryButton}>
             {copy.openSettings}
