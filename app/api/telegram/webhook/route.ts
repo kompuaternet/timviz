@@ -5,6 +5,7 @@ import {
   buildSettingsMessage,
   connectTelegramChatByToken,
   ensureTelegramBotCommandsConfigured,
+  ensureTelegramWebhookConfigured,
   forwardTelegramMessageToSupport,
   formatTodayBookingsMessage,
   getDashboardUrl,
@@ -735,7 +736,10 @@ export async function POST(request: Request) {
       return NextResponse.json({ ok: true });
     }
 
-    await ensureTelegramBotCommandsConfigured().catch(() => false);
+    await Promise.all([
+      ensureTelegramBotCommandsConfigured().catch(() => false),
+      ensureTelegramWebhookConfigured().catch(() => false)
+    ]);
 
     if (update.callback_query) {
       await handleCallbackQuery(update);

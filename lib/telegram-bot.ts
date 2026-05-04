@@ -73,6 +73,13 @@ type TelegramApiResponse<T> = {
   description?: string;
 };
 
+type TelegramWebhookInfo = {
+  url?: string;
+  allowed_updates?: string[];
+  pending_update_count?: number;
+  last_error_message?: string;
+};
+
 type TelegramBotCommand = {
   command: string;
   description: string;
@@ -182,6 +189,8 @@ let cachedBotUsername: string | null = null;
 let cachedBotUsernameFetchedAt = 0;
 let cachedCommandsSyncedAt = 0;
 let activeCommandsSyncPromise: Promise<boolean> | null = null;
+let cachedWebhookVerifiedAt = 0;
+let activeWebhookEnsurePromise: Promise<boolean> | null = null;
 
 const BOOKING_CALLBACK_PREFIX = "tvbk";
 const SETTINGS_CALLBACK_PREFIX = "tvst";
@@ -190,6 +199,10 @@ const SETTINGS_SECTION_CALLBACK_PREFIX = "tvss";
 const BOT_CONTROL_CALLBACK_PREFIX = "tvbc";
 const REMINDER_LEAD_CALLBACK_PREFIX = "tvrl";
 const reminderLeadOptions = [15, 30, 60, 120, 180, 1440] as const;
+const webhookVerifyTtlMs = Math.max(
+  60_000,
+  Number.parseInt(process.env.TELEGRAM_BOOKING_WEBHOOK_VERIFY_TTL_MS || "300000", 10) || 300_000
+);
 
 const textByLanguage: Record<TelegramLanguage, TelegramText> = {
   ru: {
@@ -572,6 +585,35 @@ export function getTelegramWebhookSecret() {
   return getWebhookSecret();
 }
 
+function getWebhookUrl() {
+  const fromEnv = (
+    process.env.TELEGRAM_BOOKING_WEBHOOK_URL ||
+    process.env.TELEGRAM_WEBHOOK_URL ||
+    ""
+  ).trim();
+
+  if (fromEnv) {
+    return fromEnv;
+  }
+
+  return getDashboardUrl("/api/telegram/webhook");
+}
+
+function normalizeWebhookUrl(value: string) {
+  return value.trim().replace(/\/+$/, "");
+}
+
+function hasWebhookRequiredUpdates(allowedUpdates: string[] | undefined) {
+  if (!Array.isArray(allowedUpdates) || !allowedUpdates.length) {
+    return true;
+  }
+
+  const normalized = new Set(
+    allowedUpdates.map((item) => String(item || "").trim().toLowerCase()).filter(Boolean)
+  );
+  return normalized.has("message") && normalized.has("callback_query");
+}
+
 async function setTelegramCommandsForLanguage(
   language: TelegramLanguage | null
 ) {
@@ -624,6 +666,59 @@ export async function ensureTelegramBotCommandsConfigured(input: { force?: boole
   return promise;
 }
 
+export async function ensureTelegramWebhookConfigured(input: { force?: boolean } = {}) {
+  if (!isTelegramBotConfigured()) {
+    return false;
+  }
+
+  const force = input.force === true;
+  if (!force && Date.now() - cachedWebhookVerifiedAt < webhookVerifyTtlMs) {
+    return true;
+  }
+
+  if (!force && activeWebhookEnsurePromise) {
+    return activeWebhookEnsurePromise;
+  }
+
+  const promise = (async () => {
+    try {
+      const expectedUrl = getWebhookUrl();
+      const expectedNormalized = normalizeWebhookUrl(expectedUrl);
+      const currentInfo = await telegramApiRequest<TelegramWebhookInfo>("getWebhookInfo", {});
+      const currentNormalized = normalizeWebhookUrl(String(currentInfo?.url || ""));
+      const hasRequiredUpdates = hasWebhookRequiredUpdates(currentInfo?.allowed_updates);
+
+      if (currentNormalized !== expectedNormalized || !hasRequiredUpdates) {
+        const payload: Record<string, unknown> = {
+          url: expectedUrl,
+          allowed_updates: ["message", "callback_query", "my_chat_member"]
+        };
+
+        const secretToken = getWebhookSecret();
+        if (secretToken) {
+          payload.secret_token = secretToken;
+        }
+
+        await telegramApiRequest<boolean>("setWebhook", payload);
+      }
+
+      cachedWebhookVerifiedAt = Date.now();
+      return true;
+    } catch {
+      return false;
+    }
+  })();
+
+  if (!force) {
+    activeWebhookEnsurePromise = promise.finally(() => {
+      activeWebhookEnsurePromise = null;
+    });
+    return activeWebhookEnsurePromise;
+  }
+
+  return promise;
+}
+
 async function telegramApiRequest<T>(method: string, payload: Record<string, unknown>) {
   const token = getBotToken();
 
@@ -661,6 +756,8 @@ export async function sendTelegramTextMessage(input: {
   if (!isTelegramBotConfigured()) {
     return false;
   }
+
+  await ensureTelegramWebhookConfigured().catch(() => false);
 
   const payload: Record<string, unknown> = {
     chat_id: input.chatId,
@@ -862,6 +959,8 @@ export async function getTelegramConnectionByProfessionalId(professionalId: stri
       .from("telegram_connections")
       .select("*")
       .eq("professional_id", id)
+      .order("updated_at", { ascending: false })
+      .limit(1)
       .maybeSingle();
 
     if (error) {
@@ -891,6 +990,8 @@ export async function getTelegramConnectionByChatId(chatId: string) {
       .from("telegram_connections")
       .select("*")
       .eq("chat_id", normalized)
+      .order("updated_at", { ascending: false })
+      .limit(1)
       .maybeSingle();
 
     if (error) {
@@ -971,6 +1072,8 @@ async function findConnectionByConnectToken(token: string) {
       .from("telegram_connections")
       .select("*")
       .eq("connect_token", normalized)
+      .order("updated_at", { ascending: false })
+      .limit(1)
       .maybeSingle();
 
     if (error) {

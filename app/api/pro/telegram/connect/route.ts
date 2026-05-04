@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { getSessionCookieName, verifySessionValue } from "../../../../../lib/pro-auth";
 import { getWorkspaceSnapshot } from "../../../../../lib/pro-data";
 import {
+  ensureTelegramWebhookConfigured,
   ensureTelegramConnectToken,
   getTelegramConnectionByProfessionalId,
   isTelegramBotConfigured,
@@ -34,6 +35,8 @@ export async function GET() {
     if (!workspace) {
       return NextResponse.json({ error: "Workspace not found." }, { status: 404 });
     }
+
+    await ensureTelegramWebhookConfigured().catch(() => false);
 
     const result = await ensureTelegramConnectToken({
       professionalId,
@@ -101,6 +104,8 @@ export async function PATCH(request: Request) {
       forwardingEnabled: boolean;
       reminderLeadMinutes: number;
     }>;
+
+    await ensureTelegramWebhookConfigured().catch(() => false);
 
     let connection = await getTelegramConnectionByProfessionalId(professionalId);
     if (!connection) {
