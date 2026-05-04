@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   clearScheduleReminder,
   hasPendingScheduleReminder
@@ -104,6 +105,7 @@ export default function ProSidebar({
   const [showScheduleReminder, setShowScheduleReminder] = useState(
     () => active !== "staff" && hasPendingScheduleReminder(professionalId)
   );
+  const [portalReady, setPortalReady] = useState(false);
   const labels = {
     workspace: t.nav.home,
     calendar: t.nav.calendar,
@@ -131,6 +133,10 @@ export default function ProSidebar({
 
     setShowScheduleReminder(hasPendingScheduleReminder(professionalId));
   }, [active, professionalId]);
+
+  useEffect(() => {
+    setPortalReady(true);
+  }, []);
 
   const visibleMainLinks = [
     ...mainLinks,
@@ -161,6 +167,37 @@ export default function ProSidebar({
       router.refresh();
     }
   }
+
+  const mobileNav = (
+    <nav
+      className={styles.mobileWorkspaceNav}
+      aria-label={t.nav.home}
+      style={{ gridTemplateColumns: `repeat(${mobileLinks.length}, minmax(0, 1fr))` }}
+    >
+      {mobileLinks.map((link) => (
+        <Link
+          key={link.key}
+          href={link.href}
+          className={`${styles.mobileWorkspaceNavLink} ${
+            optimisticMobileActive === link.key || (!optimisticMobileActive && link.active)
+              ? styles.mobileWorkspaceNavActive
+              : ""
+          }`}
+          aria-label={link.label}
+          title={link.label}
+          onClick={() => setOptimisticMobileActive(link.key)}
+        >
+          <span className={styles.mobileWorkspaceNavIcon}>
+            {link.icon}
+            {link.key === "staff" && showScheduleReminder ? (
+              <span className={styles.workspaceNavDot} aria-hidden="true" />
+            ) : null}
+          </span>
+          <span className={styles.mobileWorkspaceNavLabel}>{link.label}</span>
+        </Link>
+      ))}
+    </nav>
+  );
 
   return (
     <>
@@ -206,35 +243,7 @@ export default function ProSidebar({
         </div>
       </aside>
 
-      <nav
-        className={styles.mobileWorkspaceNav}
-        aria-label={t.nav.home}
-        style={{ gridTemplateColumns: `repeat(${mobileLinks.length}, minmax(0, 1fr))` }}
-      >
-        {mobileLinks.map((link) => (
-          <Link
-            key={link.key}
-            href={link.href}
-            className={`${styles.mobileWorkspaceNavLink} ${
-              optimisticMobileActive === link.key || (!optimisticMobileActive && link.active)
-                ? styles.mobileWorkspaceNavActive
-                : ""
-            }`}
-            aria-label={link.label}
-            title={link.label}
-            onClick={() => setOptimisticMobileActive(link.key)}
-          >
-            <span className={styles.mobileWorkspaceNavIcon}>
-              {link.icon}
-              {link.key === "staff" && showScheduleReminder ? (
-                <span className={styles.workspaceNavDot} aria-hidden="true" />
-              ) : null}
-            </span>
-            <span className={styles.mobileWorkspaceNavLabel}>{link.label}</span>
-          </Link>
-        ))}
-      </nav>
-
+      {portalReady ? createPortal(mobileNav, document.body) : mobileNav}
     </>
   );
 }
