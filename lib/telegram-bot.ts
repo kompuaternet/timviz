@@ -543,6 +543,7 @@ function makeConnectToken() {
 function getBotToken() {
   return (
     process.env.TELEGRAM_BOOKING_BOT_TOKEN ||
+    process.env.TELEGRAM_BOT_TOKEN ||
     ""
   ).trim();
 }
@@ -558,6 +559,7 @@ function getSupportChatId() {
 function getWebhookSecret() {
   return (
     process.env.TELEGRAM_BOOKING_WEBHOOK_SECRET ||
+    process.env.TELEGRAM_WEBHOOK_SECRET ||
     ""
   ).trim();
 }
@@ -722,7 +724,9 @@ export async function answerTelegramCallbackQuery(callbackQueryId: string, text?
 }
 
 export async function getTelegramBotUsername() {
-  const fromEnv = (process.env.TELEGRAM_BOOKING_BOT_USERNAME || "").trim().replace(/^@/, "");
+  const fromEnv = (process.env.TELEGRAM_BOOKING_BOT_USERNAME || process.env.TELEGRAM_BOT_USERNAME || "")
+    .trim()
+    .replace(/^@/, "");
   if (fromEnv) {
     return fromEnv;
   }
