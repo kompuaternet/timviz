@@ -1871,8 +1871,8 @@
 .mobileWorkspaceNavLink {
   position: relative;
   min-width: 0;
-  min-height: 54px;
-  padding: 5px 3px;
+  min-height: 62px;
+  padding: 7px 4px;
   border: 1px solid rgba(220, 227, 245, 0.32);
   background: rgba(255, 255, 255, 0.88);
   border-radius: 13px;
@@ -1881,7 +1881,7 @@
   display: grid;
   justify-items: center;
   align-content: center;
-  gap: 4px;
+  gap: 6px;
   cursor: pointer;
   font: inherit;
   pointer-events: auto;
@@ -1900,8 +1900,8 @@
 }
 
 .mobileWorkspaceNavIcon svg {
-  width: 18px;
-  height: 18px;
+  width: 20px;
+  height: 20px;
 }
 
 .mobileWorkspaceNavLabel {
@@ -1909,9 +1909,9 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 0.58rem;
+  font-size: 0.64rem;
   font-weight: 800;
-  line-height: 1;
+  line-height: 1.05;
 }
 
 .mobileWorkspaceNavActive {
@@ -9767,7 +9767,7 @@
     bottom: max(12px, calc(12px + env(safe-area-inset-bottom)));
     z-index: 85;
     display: grid;
-    gap: 4px;
+    gap: 6px;
     padding: 0;
     border: 0;
     border-radius: 0;
@@ -12860,18 +12860,18 @@
   }
 
   .mobileWorkspaceNavLabel {
-    font-size: 0.52rem;
+    font-size: 0.56rem;
   }
 
   .mobileWorkspaceNavLink {
-    min-height: 48px;
-    padding: 4px 1px;
-    gap: 3px;
+    min-height: 56px;
+    padding: 5px 2px;
+    gap: 4px;
   }
 
   .mobileWorkspaceNavIcon svg {
-    width: 16px;
-    height: 16px;
+    width: 18px;
+    height: 18px;
   }
 
   .calendarTopBarV2 {

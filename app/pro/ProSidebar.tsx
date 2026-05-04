@@ -209,7 +209,7 @@ export default function ProSidebar({
       <nav
         className={styles.mobileWorkspaceNav}
         aria-label={t.nav.home}
-        style={{ gridTemplateColumns: `repeat(${mobileLinks.length + 1}, minmax(0, 1fr))` }}
+        style={{ gridTemplateColumns: `repeat(${mobileLinks.length}, minmax(0, 1fr))` }}
       >
         {mobileLinks.map((link) => (
           <Link
@@ -233,23 +233,6 @@ export default function ProSidebar({
             <span className={styles.mobileWorkspaceNavLabel}>{link.label}</span>
           </Link>
         ))}
-        <button
-          type="button"
-          className={styles.mobileWorkspaceNavLink}
-          aria-label={isLoggingOut ? t.settings.logoutLoading : t.settings.logout}
-          title={isLoggingOut ? t.settings.logoutLoading : t.settings.logout}
-          disabled={isLoggingOut}
-          onClick={() => {
-            void handleLogout();
-          }}
-        >
-          <span className={styles.mobileWorkspaceNavIcon}>
-            <LogoutIcon />
-          </span>
-          <span className={styles.mobileWorkspaceNavLabel}>
-            {isLoggingOut ? t.settings.logoutLoading : t.settings.logout}
-          </span>
-        </button>
       </nav>
 
     </>
