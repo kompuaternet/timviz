@@ -670,8 +670,39 @@ export async function sendTelegramTextMessage(input: {
     payload.reply_markup = input.replyMarkup;
   }
 
-  await telegramApiRequest("sendMessage", payload);
-  return true;
+  try {
+    await telegramApiRequest("sendMessage", payload);
+    return true;
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    const canFallback =
+      message.includes("BUTTON_TYPE_INVALID") ||
+      message.includes("can't parse inline keyboard button");
+
+    if (!canFallback || !input.replyMarkup) {
+      throw error;
+    }
+
+    const fallbackMarkup: TelegramReplyMarkup = {
+      inline_keyboard: input.replyMarkup.inline_keyboard.map((row) =>
+        row.map((button) => {
+          if (button.web_app?.url) {
+            return {
+              text: button.text,
+              url: button.web_app.url
+            };
+          }
+          return button;
+        })
+      )
+    };
+
+    await telegramApiRequest("sendMessage", {
+      ...payload,
+      reply_markup: fallbackMarkup
+    });
+    return true;
+  }
 }
 
 export async function answerTelegramCallbackQuery(callbackQueryId: string, text?: string) {
@@ -1399,9 +1430,7 @@ export function buildSettingsMessage(
           [
             {
               text: text.menuApp,
-              web_app: {
-                url: getTelegramMiniAppUrl("/telegram", connection.language)
-              }
+              url: getTelegramMiniAppUrl("/telegram", connection.language)
             }
           ],
           [
@@ -1443,9 +1472,7 @@ export function buildSettingsMessage(
           [
             {
               text: text.menuApp,
-              web_app: {
-                url: getTelegramMiniAppUrl("/telegram", connection.language)
-              }
+              url: getTelegramMiniAppUrl("/telegram", connection.language)
             }
           ],
           [
@@ -1500,9 +1527,7 @@ export function buildSettingsMessage(
         [
           {
             text: text.menuApp,
-            web_app: {
-              url: getTelegramMiniAppUrl("/telegram", connection.language)
-            }
+            url: getTelegramMiniAppUrl("/telegram", connection.language)
           }
         ],
         [

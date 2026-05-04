@@ -155,9 +155,7 @@ function buildDashboardKeyboard(preferredLanguage?: string | null) {
       [
         {
           text: text.menuApp,
-          web_app: {
-            url: getTelegramMiniAppUrl("/telegram", normalizedLanguage)
-          }
+          url: getTelegramMiniAppUrl("/telegram", normalizedLanguage)
         }
       ],
       [
