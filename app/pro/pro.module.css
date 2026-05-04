@@ -4275,7 +4275,7 @@
   .staffStudioSidebar,
   .staffEditorSidebar {
     border-right: 0;
-    padding: 0;
+    padding: 0 16px;
     background: transparent;
   }
 }
@@ -9765,7 +9765,7 @@
     left: 12px;
     right: 12px;
     bottom: max(12px, calc(12px + env(safe-area-inset-bottom)));
-    z-index: 85;
+    z-index: 95;
     display: grid;
     gap: 6px;
     padding: 0;
@@ -9774,9 +9774,6 @@
     background: transparent;
     box-shadow: none;
     backdrop-filter: none;
-    -webkit-transform: translateZ(0);
-    transform: translateZ(0);
-    will-change: transform;
     pointer-events: none;
   }
 
@@ -9784,6 +9781,7 @@
   .clientsMain,
   .servicesPage,
   .settingsShell,
+  .staffStudioShell,
   .calendarCenterShell,
   .schedulePageBody {
     padding-bottom: calc(104px + env(safe-area-inset-bottom));
@@ -12842,6 +12840,7 @@
   .calendarV2Shell,
   .calendarCenterShell,
   .workspaceMain,
+  .staffStudioShell,
   .calendarV2ScrollFrame {
     background: #f7f8fc !important;
   }
@@ -12872,6 +12871,11 @@
   .mobileWorkspaceNavIcon svg {
     width: 18px;
     height: 18px;
+  }
+
+  .staffStudioSidebar {
+    padding-left: 12px;
+    padding-right: 12px;
   }
 
   .calendarTopBarV2 {
