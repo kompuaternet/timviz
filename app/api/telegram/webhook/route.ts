@@ -8,6 +8,7 @@ import {
   forwardTelegramMessageToSupport,
   formatTodayBookingsMessage,
   getDashboardUrl,
+  getTelegramMiniAppUrl,
   getTelegramConnectionByChatId,
   getTelegramText,
   getTodayBookingsForConnection,
@@ -147,9 +148,18 @@ function isForwardedMessage(message: TelegramUpdate["message"]) {
 }
 
 function buildDashboardKeyboard(preferredLanguage?: string | null) {
-  const text = getTelegramText(normalizeTelegramUserLanguage(preferredLanguage));
+  const normalizedLanguage = normalizeTelegramUserLanguage(preferredLanguage);
+  const text = getTelegramText(normalizedLanguage);
   return {
     inline_keyboard: [
+      [
+        {
+          text: text.menuApp,
+          web_app: {
+            url: getTelegramMiniAppUrl("/telegram", normalizedLanguage)
+          }
+        }
+      ],
       [
         {
           text: text.menuToday,
@@ -279,6 +289,28 @@ async function handleSettingsCommand(chatId: string, preferredLanguage?: string 
     chatId,
     text: payload.text,
     replyMarkup: payload.replyMarkup
+  });
+}
+
+async function handleAppCommand(chatId: string, preferredLanguage?: string | null) {
+  const connection = await getTelegramConnectionByChatId(chatId);
+  if (connection) {
+    const nextConnection = await touchTelegramConnection(connection, preferredLanguage || undefined);
+    const activeConnection = nextConnection || connection;
+    const t = getTelegramText(activeConnection.language);
+    await sendTelegramTextMessage({
+      chatId,
+      text: `${t.mainMenuTitle}\n${t.mainMenuHint}`,
+      replyMarkup: buildDashboardKeyboard(activeConnection.language)
+    });
+    return;
+  }
+
+  const t = getTelegramText(normalizeTelegramUserLanguage(preferredLanguage));
+  await sendTelegramTextMessage({
+    chatId,
+    text: `${t.mainMenuTitle}\n${t.help}\n\n${t.connectHint}`,
+    replyMarkup: buildDashboardKeyboard(preferredLanguage)
   });
 }
 
@@ -420,6 +452,11 @@ async function handleCallbackQuery(update: TelegramUpdate) {
 
     if (menuAction === "support") {
       await handleSupportMessage({ chatId, preferredLanguage: activeConnection.language });
+      return;
+    }
+
+    if (menuAction === "app") {
+      await handleAppCommand(chatId, activeConnection.language);
       return;
     }
 
@@ -624,6 +661,11 @@ async function handleMessage(update: TelegramUpdate) {
       preferredLanguage,
       text: supportText
     });
+    return;
+  }
+
+  if (command?.command === "/app") {
+    await handleAppCommand(chatId, preferredLanguage);
     return;
   }
 

@@ -42,7 +42,7 @@ export type TelegramSettingKey =
   | "notificationsToday"
   | "forwardingEnabled";
 
-export type TelegramMenuAction = "today" | "settings" | "menu" | "support";
+export type TelegramMenuAction = "today" | "settings" | "menu" | "support" | "app";
 export type TelegramSettingsSection = "home" | "notifications" | "reminders" | "support" | "bot";
 export type TelegramBotControlAction = "all_on" | "all_off";
 
@@ -82,6 +82,9 @@ type TelegramInlineKeyboardButton = {
   text: string;
   callback_data?: string;
   url?: string;
+  web_app?: {
+    url: string;
+  };
 };
 
 type TelegramReplyMarkup = {
@@ -99,6 +102,7 @@ type TelegramText = {
   menuSettings: string;
   menuHome: string;
   menuSupport: string;
+  menuApp: string;
   todayEmpty: string;
   todayHeader: string;
   settingsTitle: string;
@@ -201,6 +205,7 @@ const textByLanguage: Record<TelegramLanguage, TelegramText> = {
     menuSettings: "⚙️ Настройки",
     menuHome: "🏠 Меню",
     menuSupport: "💬 Поддержка",
+    menuApp: "📱 Открыть приложение",
     todayEmpty: "📭 На сегодня записей нет.",
     todayHeader: "📅 Записи на сегодня",
     settingsTitle: "⚙️ Настройки уведомлений",
@@ -266,6 +271,7 @@ const textByLanguage: Record<TelegramLanguage, TelegramText> = {
     menuSettings: "⚙️ Налаштування",
     menuHome: "🏠 Меню",
     menuSupport: "💬 Підтримка",
+    menuApp: "📱 Відкрити застосунок",
     todayEmpty: "📭 На сьогодні записів немає.",
     todayHeader: "📅 Записи на сьогодні",
     settingsTitle: "⚙️ Налаштування сповіщень",
@@ -331,6 +337,7 @@ const textByLanguage: Record<TelegramLanguage, TelegramText> = {
     menuSettings: "⚙️ Settings",
     menuHome: "🏠 Menu",
     menuSupport: "💬 Support",
+    menuApp: "📱 Open app",
     todayEmpty: "📭 No bookings for today.",
     todayHeader: "📅 Today's bookings",
     settingsTitle: "⚙️ Notification settings",
@@ -388,15 +395,18 @@ const textByLanguage: Record<TelegramLanguage, TelegramText> = {
 const commandsByLanguage: Record<TelegramLanguage, TelegramBotCommand[]> = {
   ru: [
     { command: "today", description: "Записи на сегодня" },
-    { command: "settings", description: "Настройки уведомлений" }
+    { command: "settings", description: "Настройки уведомлений" },
+    { command: "app", description: "Открыть приложение Timviz" }
   ],
   uk: [
     { command: "today", description: "Записи на сьогодні" },
-    { command: "settings", description: "Налаштування сповіщень" }
+    { command: "settings", description: "Налаштування сповіщень" },
+    { command: "app", description: "Відкрити застосунок Timviz" }
   ],
   en: [
     { command: "today", description: "Today bookings" },
-    { command: "settings", description: "Notification settings" }
+    { command: "settings", description: "Notification settings" },
+    { command: "app", description: "Open Timviz app" }
   ]
 };
 
@@ -1021,6 +1031,19 @@ export function getDashboardUrl(pathname = "/pro/calendar") {
   return `${base}${pathname}`;
 }
 
+export function getTelegramMiniAppUrl(
+  pathname = "/telegram",
+  language?: string | null
+) {
+  const absolute = getDashboardUrl(pathname);
+  const url = new URL(absolute);
+  url.searchParams.set("source", "telegram");
+  if (language) {
+    url.searchParams.set("lang", normalizeLanguage(language));
+  }
+  return url.toString();
+}
+
 export function buildBookingCallbackData(action: "confirm" | "cancel", appointmentId: string) {
   const mode = action === "confirm" ? "c" : "x";
   return `${BOOKING_CALLBACK_PREFIX}:${mode}:${appointmentId}`;
@@ -1149,7 +1172,13 @@ export function parseMenuCallbackData(value: string): TelegramMenuAction | null 
   if (prefix !== MENU_CALLBACK_PREFIX) {
     return null;
   }
-  if (action === "today" || action === "settings" || action === "menu" || action === "support") {
+  if (
+    action === "today" ||
+    action === "settings" ||
+    action === "menu" ||
+    action === "support" ||
+    action === "app"
+  ) {
     return action;
   }
   return null;
@@ -1369,6 +1398,14 @@ export function buildSettingsMessage(
           ],
           [
             {
+              text: text.menuApp,
+              web_app: {
+                url: getTelegramMiniAppUrl("/telegram", connection.language)
+              }
+            }
+          ],
+          [
+            {
               text: text.openDashboard,
               url: getDashboardUrl("/pro/settings")
             }
@@ -1401,6 +1438,14 @@ export function buildSettingsMessage(
             {
               text: text.menuHome,
               callback_data: buildMenuCallbackData("menu")
+            }
+          ],
+          [
+            {
+              text: text.menuApp,
+              web_app: {
+                url: getTelegramMiniAppUrl("/telegram", connection.language)
+              }
             }
           ],
           [
@@ -1450,6 +1495,14 @@ export function buildSettingsMessage(
           {
             text: text.menuHome,
             callback_data: buildMenuCallbackData("menu")
+          }
+        ],
+        [
+          {
+            text: text.menuApp,
+            web_app: {
+              url: getTelegramMiniAppUrl("/telegram", connection.language)
+            }
           }
         ],
         [
