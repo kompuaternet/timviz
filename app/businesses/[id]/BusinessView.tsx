@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useFormStatus } from "react-dom";
 import ProfileAvatar from "../../ProfileAvatar";
 import type { PublicCustomerSession } from "../../../lib/public-customer-auth";
 import type { BusinessRecord, ServiceRecord } from "../../../lib/pro-data";
@@ -117,6 +118,7 @@ type BusinessCopy = {
   phoneTitle: string;
   phonePlaceholder: string;
   confirmBooking: string;
+  confirmBookingSubmitting: string;
   pendingHint: string;
   workingHours: string;
   noTimeForDay: string;
@@ -180,6 +182,7 @@ const businessCopy: Record<SiteLanguage, BusinessCopy> = {
     phoneTitle: "Телефон для подтверждения",
     phonePlaceholder: "Ваш номер",
     confirmBooking: "Подтвердить запись",
+    confirmBookingSubmitting: "Отправляем…",
     pendingHint: "После отправки запись появится в календаре владельца и будет ждать подтверждения.",
     workingHours: "График работы",
     noTimeForDay: "На этот день свободного времени нет.",
@@ -241,6 +244,7 @@ const businessCopy: Record<SiteLanguage, BusinessCopy> = {
     phoneTitle: "Телефон для підтвердження",
     phonePlaceholder: "Ваш номер",
     confirmBooking: "Підтвердити запис",
+    confirmBookingSubmitting: "Надсилаємо…",
     pendingHint: "Після відправлення запис з’явиться в календарі власника й чекатиме підтвердження.",
     workingHours: "Графік роботи",
     noTimeForDay: "На цей день вільного часу немає.",
@@ -302,6 +306,7 @@ const businessCopy: Record<SiteLanguage, BusinessCopy> = {
     phoneTitle: "Phone for confirmation",
     phonePlaceholder: "Your phone number",
     confirmBooking: "Confirm booking",
+    confirmBookingSubmitting: "Submitting…",
     pendingHint: "After sending, the booking request appears in the owner calendar and waits for confirmation.",
     workingHours: "Working hours",
     noTimeForDay: "No free time on this day.",
@@ -324,6 +329,29 @@ const businessCopy: Record<SiteLanguage, BusinessCopy> = {
     photosTitle: "Photos"
   }
 };
+
+function ConfirmBookingSubmitButton({
+  disabled,
+  label,
+  loadingLabel
+}: {
+  disabled: boolean;
+  label: string;
+  loadingLabel: string;
+}) {
+  const { pending } = useFormStatus();
+
+  return (
+    <button
+      type="submit"
+      className="primary-button company-booking-gradient-button submit-button"
+      disabled={disabled || pending}
+      aria-disabled={disabled || pending}
+    >
+      {pending ? loadingLabel : label}
+    </button>
+  );
+}
 
 const bookingSteps: BookingStep[] = ["services", "specialists", "time", "confirm"];
 
@@ -1647,13 +1675,11 @@ export default function BusinessView({
 
                         {phoneError ? <p className="field-error">{phoneError}</p> : null}
 
-                        <button
-                          type="submit"
-                          className="primary-button company-booking-gradient-button submit-button"
+                        <ConfirmBookingSubmitButton
                           disabled={!selectedTime || !selectedDate || !selectedServices.length}
-                        >
-                          {t.confirmBooking}
-                        </button>
+                          label={t.confirmBooking}
+                          loadingLabel={t.confirmBookingSubmitting}
+                        />
                       </form>
                     ) : null}
                   </section>

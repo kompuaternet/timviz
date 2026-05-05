@@ -3,7 +3,11 @@ import path from "path";
 import { getSalonBySlug } from "../data/mock-data";
 import { getPublicBookingSlots } from "./public-booking";
 import { getBusinessDirectorySnapshot, type BusinessRecord, type ServiceRecord } from "./pro-data";
-import { createCalendarAppointment, getPublicCalendarAppointments } from "./pro-calendar";
+import {
+  createCalendarAppointment,
+  getPublicCalendarAppointments,
+  type PublicCalendarAppointment
+} from "./pro-calendar";
 import { getSupabaseAdmin, isSupabaseConfigured } from "./supabase";
 import { sendBookingTelegramNotification } from "./telegram-bot";
 import { addMinutesToTime } from "./work-schedule";
@@ -66,6 +70,129 @@ const bookingsPath = path.join(process.cwd(), "data", "bookings.json");
 function createBookingId() {
   const randomPart = Math.random().toString(36).slice(2, 8).toUpperCase();
   return `RZV-${randomPart}`;
+}
+
+function normalizePhoneForMatch(phone: string) {
+  return phone.replace(/\D/g, "");
+}
+
+async function findExistingPublicBusinessDuplicate(input: {
+  salonSlug: string;
+  appointmentDate: string;
+  appointmentTime: string;
+  customerPhone: string;
+  customerEmail: string;
+}) {
+  const normalizedPhone = normalizePhoneForMatch(input.customerPhone);
+
+  if (isSupabaseConfigured()) {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      return null;
+    }
+
+    let primaryQuery = supabase
+      .from("bookings")
+      .select(
+        "id, salon_slug, salon_name, service_name, appointment_date, appointment_time, customer_name, customer_email, customer_phone, customer_notes, status, created_at"
+      )
+      .eq("salon_slug", input.salonSlug)
+      .eq("appointment_date", input.appointmentDate)
+      .eq("appointment_time", input.appointmentTime)
+      .neq("status", "cancelled")
+      .order("created_at", { ascending: false })
+      .limit(20);
+
+    if (input.customerEmail) {
+      primaryQuery = primaryQuery.eq("customer_email", input.customerEmail);
+    }
+
+    const primaryResult = await primaryQuery;
+    let rows = (primaryResult.data as Array<Record<string, unknown>> | null) ?? [];
+    let error = primaryResult.error;
+
+    if (error && /customer_email/i.test(error.message)) {
+      const fallbackResult = await supabase
+        .from("bookings")
+        .select(
+          "id, salon_slug, salon_name, service_name, appointment_date, appointment_time, customer_name, customer_phone, customer_notes, status, created_at"
+        )
+        .eq("salon_slug", input.salonSlug)
+        .eq("appointment_date", input.appointmentDate)
+        .eq("appointment_time", input.appointmentTime)
+        .neq("status", "cancelled")
+        .order("created_at", { ascending: false })
+        .limit(20);
+
+      rows = (fallbackResult.data as Array<Record<string, unknown>> | null) ?? [];
+      error = fallbackResult.error;
+    }
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    const matched = rows
+      .map((row) => mapBookingRow(row as Record<string, unknown>))
+      .find((item) => normalizePhoneForMatch(item.customerPhone) === normalizedPhone);
+
+    return matched ?? null;
+  }
+
+  const localBookings = await readLocalBookings();
+  return (
+    localBookings.find(
+      (item) =>
+        item.salonSlug === input.salonSlug &&
+        item.appointmentDate === input.appointmentDate &&
+        item.appointmentTime === input.appointmentTime &&
+        item.status !== "cancelled" &&
+        normalizePhoneForMatch(item.customerPhone) === normalizedPhone &&
+        (!input.customerEmail || (item.customerEmail ?? "").trim().toLowerCase() === input.customerEmail)
+    ) ?? null
+  );
+}
+
+async function getPublicAppointmentsForBusinessDate(input: {
+  businessId: string;
+  appointmentDate: string;
+}): Promise<PublicCalendarAppointment[]> {
+  if (isSupabaseConfigured()) {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      return [];
+    }
+
+    const { data, error } = await supabase
+      .from("calendar_appointments")
+      .select("business_id, professional_id, appointment_date, start_time, end_time, kind, attendance")
+      .eq("business_id", input.businessId)
+      .eq("appointment_date", input.appointmentDate)
+      .order("start_time", { ascending: true });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return (data ?? []).map((row) => ({
+      businessId: row.business_id,
+      professionalId: row.professional_id,
+      appointmentDate: row.appointment_date,
+      startTime: row.start_time,
+      endTime: row.end_time,
+      kind: row.kind === "blocked" ? "blocked" : "appointment",
+      attendance:
+        row.attendance === "confirmed" || row.attendance === "arrived" || row.attendance === "no_show"
+          ? row.attendance
+          : "pending"
+    }));
+  }
+
+  const items = await getPublicCalendarAppointments({ bypassCache: true });
+  return items.filter(
+    (appointment) =>
+      appointment.businessId === input.businessId && appointment.appointmentDate === input.appointmentDate
+  );
 }
 
 async function readLocalBookings() {
@@ -393,8 +520,45 @@ function isServicePubliclyVisible(service: ServiceRecord) {
 }
 
 export async function createBusinessBooking(input: PublicBusinessBookingInput) {
-  const directory = await getBusinessDirectorySnapshot();
-  const business = directory.businesses.find((item) => item.id === input.businessId);
+  const businessId = input.businessId.trim();
+
+  if (!businessId) {
+    throw new Error("Business not found.");
+  }
+
+  if (!input.customerName.trim()) {
+    throw new Error("Customer name is required.");
+  }
+
+  if (!input.customerPhone.trim()) {
+    throw new Error("Customer phone is required.");
+  }
+
+  if (!input.appointmentDate.trim()) {
+    throw new Error("Appointment date is required.");
+  }
+
+  const normalizedCustomerEmail = input.customerEmail?.trim().toLowerCase() || "";
+  const duplicateBooking = await findExistingPublicBusinessDuplicate({
+    salonSlug: `business:${businessId}`,
+    appointmentDate: input.appointmentDate,
+    appointmentTime: input.appointmentTime,
+    customerPhone: input.customerPhone,
+    customerEmail: normalizedCustomerEmail
+  });
+
+  if (duplicateBooking) {
+    return duplicateBooking;
+  }
+
+  const [directory, publicAppointments] = await Promise.all([
+    getBusinessDirectorySnapshot(),
+    getPublicAppointmentsForBusinessDate({
+      businessId,
+      appointmentDate: input.appointmentDate
+    })
+  ]);
+  const business = directory.businesses.find((item) => item.id === businessId);
 
   if (!business) {
     throw new Error("Business not found.");
@@ -454,18 +618,6 @@ export async function createBusinessBooking(input: PublicBusinessBookingInput) {
     candidateProfessionalIds.push(ownerProfessionalId);
   }
 
-  if (!input.customerName.trim()) {
-    throw new Error("Customer name is required.");
-  }
-
-  if (!input.customerPhone.trim()) {
-    throw new Error("Customer phone is required.");
-  }
-
-  if (!input.appointmentDate.trim()) {
-    throw new Error("Appointment date is required.");
-  }
-
   const bookingConfig = {
     workSchedule: business.workSchedule,
     customSchedule: business.customSchedule,
@@ -475,8 +627,6 @@ export async function createBusinessBooking(input: PublicBusinessBookingInput) {
       durationMinutes: item.durationMinutes ?? 60
     }))
   };
-  const publicAppointments = await getPublicCalendarAppointments({ bypassCache: true });
-
   const professionalId = candidateProfessionalIds.find((candidateId) => {
     const candidateBookings = publicAppointments
       .filter(
@@ -484,7 +634,7 @@ export async function createBusinessBooking(input: PublicBusinessBookingInput) {
           appointment.businessId === business.id &&
           appointment.professionalId === candidateId &&
           (appointment.kind === "blocked" ||
-            (appointment.kind === "appointment" && appointment.attendance !== "pending"))
+            appointment.kind === "appointment")
       )
       .map((appointment) => ({
         appointmentDate: appointment.appointmentDate,
@@ -517,7 +667,7 @@ export async function createBusinessBooking(input: PublicBusinessBookingInput) {
     appointmentDate: input.appointmentDate,
     appointmentTime: input.appointmentTime,
     customerName: input.customerName.trim(),
-    customerEmail: input.customerEmail?.trim().toLowerCase() || "",
+    customerEmail: normalizedCustomerEmail,
     customerPhone: input.customerPhone.trim(),
     customerNotes: input.customerNotes.trim(),
     status: "pending",
