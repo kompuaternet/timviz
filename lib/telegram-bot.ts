@@ -211,6 +211,16 @@ const menuButtonSyncTtlMs = Math.max(
     21_600_000
 );
 
+type TelegramMenuButtonMode = "commands" | "web_app";
+
+function getTelegramMenuButtonMode(): TelegramMenuButtonMode {
+  const raw = (process.env.TELEGRAM_BOOKING_MENU_BUTTON_MODE || "").trim().toLowerCase();
+  if (raw === "web_app") {
+    return "web_app";
+  }
+  return "commands";
+}
+
 const textByLanguage: Record<TelegramLanguage, TelegramText> = {
   ru: {
     connected:
@@ -1234,14 +1244,25 @@ export async function getTelegramStartAppLink(startParam = "calendar") {
 }
 
 async function setTelegramMenuButton() {
-  const miniAppUrl = getTelegramMiniAppUrl("/telegram?startapp=calendar", "en");
+  const mode = getTelegramMenuButtonMode();
+
+  if (mode === "web_app") {
+    const miniAppUrl = getTelegramMiniAppUrl("/telegram?startapp=calendar", "en");
+    await telegramApiRequest<boolean>("setChatMenuButton", {
+      menu_button: {
+        type: "web_app",
+        text: "Open app",
+        web_app: {
+          url: miniAppUrl
+        }
+      }
+    });
+    return;
+  }
+
   await telegramApiRequest<boolean>("setChatMenuButton", {
     menu_button: {
-      type: "web_app",
-      text: "Open app",
-      web_app: {
-        url: miniAppUrl
-      }
+      type: "commands"
     }
   });
 }
