@@ -555,8 +555,7 @@ async function handleCallbackQuery(update: TelegramUpdate) {
   const appointment = businessAppointments.find(
     (item) =>
       item.id === bookingAction.appointmentId &&
-      item.kind === "appointment" &&
-      item.professionalId === activeConnection.professionalId
+      item.kind === "appointment"
   );
 
   if (!appointment) {
@@ -565,18 +564,25 @@ async function handleCallbackQuery(update: TelegramUpdate) {
   }
 
   if (bookingAction.action === "confirm") {
-    const updated = await updateCalendarAppointmentMeta({
-      professionalId: activeConnection.professionalId,
-      appointmentId: appointment.id,
-      attendance: "confirmed",
-      priceAmount: appointment.priceAmount,
-      customerName: appointment.customerName,
-      customerPhone: appointment.customerPhone,
-      startTime: appointment.startTime,
-      endTime: appointment.endTime,
-      serviceName: appointment.serviceName,
-      notes: appointment.notes
-    });
+    let updated;
+    try {
+      updated = await updateCalendarAppointmentMeta({
+        professionalId: activeConnection.professionalId,
+        targetProfessionalId: appointment.professionalId,
+        appointmentId: appointment.id,
+        attendance: "confirmed",
+        priceAmount: appointment.priceAmount,
+        customerName: appointment.customerName,
+        customerPhone: appointment.customerPhone,
+        startTime: appointment.startTime,
+        endTime: appointment.endTime,
+        serviceName: appointment.serviceName,
+        notes: appointment.notes
+      });
+    } catch {
+      await answerTelegramCallbackQuery(callback.id, t.actionNotFound).catch(() => undefined);
+      return;
+    }
 
     await syncBookingStatusFromCalendarAppointment({
       businessId: updated.businessId,
@@ -598,10 +604,17 @@ async function handleCallbackQuery(update: TelegramUpdate) {
     return;
   }
 
-  const deleted = await deleteCalendarAppointment({
-    professionalId: activeConnection.professionalId,
-    appointmentId: appointment.id
-  });
+  let deleted;
+  try {
+    deleted = await deleteCalendarAppointment({
+      professionalId: activeConnection.professionalId,
+      targetProfessionalId: appointment.professionalId,
+      appointmentId: appointment.id
+    });
+  } catch {
+    await answerTelegramCallbackQuery(callback.id, t.actionNotFound).catch(() => undefined);
+    return;
+  }
 
   if (deleted.kind === "appointment") {
     await cancelBookingFromCalendarAppointment({
