@@ -1434,7 +1434,7 @@ async function setTelegramMenuButton() {
   const mode = getTelegramMenuButtonMode();
 
   if (mode === "web_app") {
-    const miniAppUrl = getTelegramMiniAppUrl("/telegram?startapp=calendar", "en");
+    const miniAppUrl = getTelegramMiniAppUrl("/telegram?startapp=calendar");
     await telegramApiRequest<boolean>("setChatMenuButton", {
       menu_button: {
         type: "web_app",
