@@ -221,7 +221,34 @@ const COUNTRY_BY_REGION: Record<string, string> = {
 };
 
 const ADDRESS_COUNTRY_MATCHERS: Array<{ country: string; patterns: string[] }> = [
-  { country: "Ukraine", patterns: ["ukraine", "украина", "україна"] },
+  {
+    country: "Ukraine",
+    patterns: [
+      "ukraine",
+      "украина",
+      "україна",
+      "ukr",
+      "київ",
+      "киев",
+      "kyiv",
+      "kiev",
+      "львів",
+      "львов",
+      "lviv",
+      "одеса",
+      "одесса",
+      "odesa",
+      "харків",
+      "харьков",
+      "kharkiv",
+      "дніпро",
+      "днепр",
+      "dnipro",
+      "запоріжжя",
+      "запорожье",
+      "zaporizhzhia"
+    ]
+  },
   { country: "Poland", patterns: ["poland", "польша", "польща"] },
   { country: "United Kingdom", patterns: ["united kingdom", "great britain", "британия", "велика британія"] },
   { country: "United States", patterns: ["united states", "usa", "сша"] },
