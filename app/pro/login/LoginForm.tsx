@@ -171,6 +171,14 @@ export default function LoginForm({ staleSession = false }: LoginFormProps) {
     return `/api/pro/auth/google/start?${query.toString()}`;
   }, [inviteToken, isTelegramSource, telegramStartParam]);
 
+  function handleGoogleSignIn() {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    window.location.assign(googleAuthHref);
+  }
+
   async function handleLogin() {
     setIsLoading(true);
     setError("");
@@ -251,12 +259,13 @@ export default function LoginForm({ staleSession = false }: LoginFormProps) {
       {!error && staleSessionMessage ? <div className={styles.addressWarning}>{staleSessionMessage}</div> : null}
       {!error && !staleSessionMessage && oauthErrorText ? <div className={styles.addressWarning}>{oauthErrorText}</div> : null}
 
-      <a
-        href={googleAuthHref}
+      <button
+        type="button"
         className={styles.ghostButton}
+        onClick={handleGoogleSignIn}
       >
         {copy.google}
-      </a>
+      </button>
 
       <button
         type="button"

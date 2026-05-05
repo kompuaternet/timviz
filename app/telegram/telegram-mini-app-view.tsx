@@ -231,12 +231,17 @@ export default function TelegramMiniAppView({
 
   const redirectCandidates = useMemo(() => {
     const fallbackDashboard = resolveStartRedirectPath(initialStartParam);
+    const setupParams = new URLSearchParams();
+    setupParams.set("source", "telegram");
+    setupParams.set("startapp", "setup");
     return {
       dashboard: signedInRedirectPath || fallbackDashboard,
-      settings: "/pro/settings?source=telegram&section=telegram",
+      settings: signedInRedirectPath
+        ? "/pro/settings?source=telegram&section=telegram"
+        : `/pro/create-account?${setupParams.toString()}`,
       bot: "https://t.me/Timviz_bot"
     };
-  }, [initialStartParam, signedInRedirectPath]);
+  }, [initialStartParam, runtimeStartParam, signedInRedirectPath]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -337,7 +342,8 @@ export default function TelegramMiniAppView({
     const startParam = runtimeStartParam || "calendar";
     const returnTo = `/telegram?source=telegram&startapp=${encodeURIComponent(startParam)}`;
     const relative = `/api/pro/auth/google/start?mode=login&source=telegram&return_to=${encodeURIComponent(returnTo)}`;
-    window.location.assign(relative);
+    const absolute = new URL(relative, window.location.origin).toString();
+    window.location.assign(absolute);
   }
 
   async function bindCurrentTelegramToSession(initData: string) {

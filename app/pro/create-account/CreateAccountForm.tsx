@@ -472,6 +472,13 @@ export default function CreateAccountForm() {
     return `/api/pro/auth/google/start?${params.toString()}`;
   }, [inviteToken, isTelegramSource, telegramStartParam]);
 
+  function handleGoogleRegister() {
+    if (typeof window === "undefined") {
+      return;
+    }
+    window.location.assign(googleRegisterHref);
+  }
+
   useEffect(() => {
     const savedLanguage = window.localStorage.getItem("rezervo-pro-language");
     const initialLanguage = languages.includes(savedLanguage as ProLanguage)
@@ -789,13 +796,14 @@ export default function CreateAccountForm() {
         <div className={styles.socialDivider}>{t.introOr}</div>
 
         <div className={styles.socialStack}>
-          <a
-            href={googleRegisterHref}
+          <button
+            type="button"
             className={styles.socialButton}
+            onClick={handleGoogleRegister}
           >
             <span className={`${styles.socialIcon} ${styles.google}`}>G</span>
             <span>{t.introGoogle}</span>
-          </a>
+          </button>
         </div>
 
         <div className={styles.helperBlock}>
