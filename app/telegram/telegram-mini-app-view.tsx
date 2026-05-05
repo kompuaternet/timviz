@@ -337,15 +337,7 @@ export default function TelegramMiniAppView({
     const startParam = runtimeStartParam || "calendar";
     const returnTo = `/telegram?source=telegram&startapp=${encodeURIComponent(startParam)}`;
     const relative = `/api/pro/auth/google/start?mode=login&source=telegram&return_to=${encodeURIComponent(returnTo)}`;
-    const absolute = `${window.location.origin}${relative}`;
-    const runtime = getRuntime();
-
-    if (runtime?.openLink) {
-      runtime.openLink(absolute, { try_browser: "chrome" });
-      return;
-    }
-
-    window.location.href = relative;
+    window.location.assign(relative);
   }
 
   async function bindCurrentTelegramToSession(initData: string) {

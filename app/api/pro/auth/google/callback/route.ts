@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { getPublicAppUrl } from "../../../../../../lib/app-url";
 import { getSessionCookieName, signSessionValue } from "../../../../../../lib/pro-auth";
 import { exchangeCodeForGoogleProfile, getGoogleOAuthSettings } from "../../../../../../lib/google-oauth";
+import { getTelegramStartAppLink } from "../../../../../../lib/telegram-bot";
 import {
   acceptStaffInvitation,
   getProfessionalProfileByEmail,
@@ -24,6 +25,68 @@ function normalizeReturnTo(value: string, fallback = "/pro/workspace") {
     return fallback;
   }
   return trimmed;
+}
+
+function isTelegramSourceReturn(returnTo: string, appUrl: string) {
+  try {
+    const parsed = new URL(returnTo, appUrl);
+    return parsed.pathname.startsWith("/telegram") || parsed.searchParams.get("source") === "telegram";
+  } catch {
+    return false;
+  }
+}
+
+function isTelegramWebViewRequest(request: Request) {
+  const userAgent = (request.headers.get("user-agent") || "").toLowerCase();
+  return userAgent.includes("telegram");
+}
+
+function resolveStartParamFromReturnTo(returnTo: string, appUrl: string) {
+  try {
+    const parsed = new URL(returnTo, appUrl);
+    const raw =
+      parsed.searchParams.get("startapp") ||
+      parsed.searchParams.get("start_param") ||
+      parsed.searchParams.get("tgWebAppStartParam") ||
+      "";
+    const normalized = raw.trim().toLowerCase();
+    if (!normalized) {
+      return "calendar";
+    }
+    if (normalized.includes("settings") || normalized.includes("setup")) return "settings";
+    if (normalized.includes("notifications") || normalized.includes("inbox")) return "notifications";
+    if (normalized.includes("clients")) return "clients";
+    if (normalized.includes("services")) return "services";
+    if (normalized.includes("staff") || normalized.includes("team") || normalized.includes("schedule")) {
+      return "staff";
+    }
+    if (normalized.includes("support") || normalized.includes("help")) return "support";
+    return "calendar";
+  } catch {
+    return "calendar";
+  }
+}
+
+async function resolveFinalRedirectUrl(input: {
+  request: Request;
+  appUrl: string;
+  returnTo: string;
+}) {
+  if (!isTelegramSourceReturn(input.returnTo, input.appUrl)) {
+    return new URL(input.returnTo, input.appUrl);
+  }
+
+  if (isTelegramWebViewRequest(input.request)) {
+    return new URL(input.returnTo, input.appUrl);
+  }
+
+  const startParam = resolveStartParamFromReturnTo(input.returnTo, input.appUrl);
+  const deepLink = await getTelegramStartAppLink(startParam);
+  if (deepLink) {
+    return new URL(deepLink);
+  }
+
+  return new URL(input.returnTo, input.appUrl);
 }
 
 function clearOAuthCookies(cookieStore: Awaited<ReturnType<typeof cookies>>, isSecure: boolean) {
@@ -82,7 +145,11 @@ export async function GET(request: Request) {
 
   if (!code || !state || !expectedState || !codeVerifier || state !== expectedState) {
     clearOAuthCookies(cookieStore, isSecure);
-    const errorUrl = new URL(returnTo, appUrl);
+    const errorUrl = await resolveFinalRedirectUrl({
+      request,
+      appUrl,
+      returnTo
+    });
     errorUrl.searchParams.set("google_error", "state");
     return NextResponse.redirect(errorUrl);
   }
@@ -119,7 +186,12 @@ export async function GET(request: Request) {
         secure: isSecure,
         maxAge: 60 * 60 * 24 * 7
       });
-      return NextResponse.redirect(new URL(returnTo, appUrl));
+      const finalRedirect = await resolveFinalRedirectUrl({
+        request,
+        appUrl,
+        returnTo
+      });
+      return NextResponse.redirect(finalRedirect);
     }
 
     const createAccountUrl = new URL("/pro/create-account", appUrl);
@@ -147,7 +219,11 @@ export async function GET(request: Request) {
     return NextResponse.redirect(createAccountUrl);
   } catch {
     clearOAuthCookies(cookieStore, isSecure);
-    const errorUrl = new URL(returnTo, appUrl);
+    const errorUrl = await resolveFinalRedirectUrl({
+      request,
+      appUrl,
+      returnTo
+    });
     errorUrl.searchParams.set("google_error", "oauth");
     return NextResponse.redirect(errorUrl);
   }
