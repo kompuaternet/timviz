@@ -10409,6 +10409,84 @@
   gap: 16px;
 }
 
+.settingsAvatarPanel {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 14px;
+  padding: 12px;
+  border: 1px solid #e3e8f5;
+  border-radius: 16px;
+  background: linear-gradient(180deg, #fff 0%, #fafbff 100%);
+}
+
+.settingsAvatarPreview {
+  flex: 0 0 auto;
+  width: 76px;
+  height: 76px;
+  overflow: hidden;
+  border-radius: 18px;
+  background: #eef3ff;
+  display: grid;
+  place-items: center;
+}
+
+.settingsAvatarPreviewImage,
+.settingsAvatarPreviewFallback {
+  width: 100%;
+  height: 100%;
+  border-radius: 18px;
+}
+
+.settingsAvatarPreviewImage {
+  object-fit: cover;
+}
+
+.settingsAvatarPreviewFallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-size: 1.1rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #6f4bff 0%, #27244f 100%);
+}
+
+.settingsAvatarMeta {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.settingsAvatarMeta strong {
+  color: #171411;
+  font-size: 0.96rem;
+}
+
+.settingsAvatarMeta p {
+  margin: 0;
+  color: #707a93;
+  font-size: 0.88rem;
+  line-height: 1.4;
+}
+
+.settingsAvatarUploadLabel {
+  position: relative;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.settingsAvatarInput {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
 .settingsFormGrid label {
   display: grid;
   gap: 9px;
@@ -10929,6 +11007,14 @@
 
   .settingsPhotoOnboardingPreview {
     grid-template-columns: 1fr;
+  }
+
+  .settingsAvatarPanel {
+    align-items: flex-start;
+  }
+
+  .settingsAvatarMeta {
+    width: 100%;
   }
 
   .settingsFormGrid,

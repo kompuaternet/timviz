@@ -333,6 +333,11 @@ function normalizeAvatarUrl(value: unknown) {
     return "";
   }
 
+  if (candidate.startsWith("data:image/")) {
+    // Allow inline avatar uploads from settings while keeping payload bounded.
+    return candidate.length <= 3_000_000 ? candidate : "";
+  }
+
   try {
     const parsed = new URL(candidate);
     return parsed.protocol === "http:" || parsed.protocol === "https:" ? parsed.toString() : "";
@@ -3153,7 +3158,7 @@ export async function updateProfessionalPasswordByEmail(email: string, nextPassw
 export async function updateProfessionalAvatar(professionalId: string, avatarUrl: string) {
   const normalizedAvatarUrl = normalizeAvatarUrl(avatarUrl);
 
-  if (!professionalId || !normalizedAvatarUrl) {
+  if (!professionalId) {
     return { ok: false };
   }
 
@@ -3312,6 +3317,7 @@ export type WorkspaceSettingsUpdate = {
   professional?: {
     firstName?: string;
     lastName?: string;
+    avatarUrl?: string;
     email?: string;
     phone?: string;
     country?: string;
@@ -3371,6 +3377,7 @@ export async function updateWorkspaceSettingsForProfessional(
     const professionalUpdates: Record<string, string | number> = {};
     if (typeof nextProfessional.firstName === "string") professionalUpdates.first_name = nextProfessional.firstName.trim();
     if (typeof nextProfessional.lastName === "string") professionalUpdates.last_name = nextProfessional.lastName.trim();
+    if (typeof nextProfessional.avatarUrl === "string") professionalUpdates.avatar_url = normalizeAvatarUrl(nextProfessional.avatarUrl);
     if (typeof nextProfessional.email === "string") professionalUpdates.email = nextProfessional.email.trim();
     if (typeof nextProfessional.phone === "string") professionalUpdates.phone = nextProfessional.phone.trim();
     if (typeof nextProfessional.country === "string") professionalUpdates.country = nextProfessional.country.trim();
@@ -3442,6 +3449,7 @@ export async function updateWorkspaceSettingsForProfessional(
 
   if (typeof nextProfessional.firstName === "string") professional.firstName = nextProfessional.firstName.trim();
   if (typeof nextProfessional.lastName === "string") professional.lastName = nextProfessional.lastName.trim();
+  if (typeof nextProfessional.avatarUrl === "string") professional.avatarUrl = normalizeAvatarUrl(nextProfessional.avatarUrl);
   if (typeof nextProfessional.email === "string") professional.email = nextProfessional.email.trim();
   if (typeof nextProfessional.phone === "string") professional.phone = nextProfessional.phone.trim();
   if (typeof nextProfessional.country === "string") professional.country = nextProfessional.country.trim();

@@ -11,8 +11,10 @@ import { useProLanguage } from "../useProLanguage";
 import { type BusinessPhoto } from "../../../lib/pro-data";
 import type { OnboardingCtaState } from "../../../lib/pro-onboarding";
 import type { WorkSchedule } from "../../../lib/work-schedule";
+import ProfileAvatar from "../../ProfileAvatar";
 
 const MAX_BUSINESS_PHOTOS = 5;
+const MAX_PROFILE_AVATAR_BYTES = 2 * 1024 * 1024;
 
 type SettingsData = {
   professional: {
@@ -131,6 +133,7 @@ type SaveSnapshot = {
   professional: {
     firstName: string;
     lastName: string;
+    avatarUrl: string;
     email: string;
     phone: string;
     country: string;
@@ -317,7 +320,14 @@ const settingsExtras = {
     onboardingPhotoTooltipNext: "Далее",
     onboardingPhotoHintTitle: "Предпросмотр профиля",
     onboardingPhotoHintText: "Покажите интерьер, рабочее место или результат — это повышает доверие клиентов.",
-    onboardingPhotoHintAction: "Добавить фото"
+    onboardingPhotoHintAction: "Добавить фото",
+    avatarTitle: "Аватар мастера",
+    avatarHint: "Фото показывается в календаре, карточке мастера и верхнем меню.",
+    avatarUpload: "Загрузить аватар",
+    avatarReplace: "Сменить аватар",
+    avatarRemove: "Удалить аватар",
+    avatarImageOnly: "Выберите файл изображения (JPG, PNG, WEBP).",
+    avatarTooLarge: "Аватар слишком большой. Максимум 2 МБ."
   },
   uk: {
     readFileFailed: "Не вдалося прочитати файл.",
@@ -405,7 +415,14 @@ const settingsExtras = {
     onboardingPhotoTooltipNext: "Далі",
     onboardingPhotoHintTitle: "Попередній вигляд профілю",
     onboardingPhotoHintText: "Покажіть інтер’єр, робоче місце або результат — це підвищує довіру клієнтів.",
-    onboardingPhotoHintAction: "Додати фото"
+    onboardingPhotoHintAction: "Додати фото",
+    avatarTitle: "Аватар майстра",
+    avatarHint: "Фото відображається у календарі, картці майстра та верхньому меню.",
+    avatarUpload: "Завантажити аватар",
+    avatarReplace: "Змінити аватар",
+    avatarRemove: "Видалити аватар",
+    avatarImageOnly: "Оберіть файл зображення (JPG, PNG, WEBP).",
+    avatarTooLarge: "Аватар завеликий. Максимум 2 МБ."
   },
   en: {
     readFileFailed: "Could not read the file.",
@@ -493,7 +510,14 @@ const settingsExtras = {
     onboardingPhotoTooltipNext: "Next",
     onboardingPhotoHintTitle: "Profile preview",
     onboardingPhotoHintText: "Show your workspace or results to build trust with new clients.",
-    onboardingPhotoHintAction: "Add photo"
+    onboardingPhotoHintAction: "Add photo",
+    avatarTitle: "Specialist avatar",
+    avatarHint: "This photo appears in the calendar, specialist cards, and header menu.",
+    avatarUpload: "Upload avatar",
+    avatarReplace: "Replace avatar",
+    avatarRemove: "Remove avatar",
+    avatarImageOnly: "Please choose an image file (JPG, PNG, WEBP).",
+    avatarTooLarge: "Avatar is too large. Maximum size is 2 MB."
   }
 } as const;
 
@@ -580,6 +604,7 @@ function buildSaveSnapshot(data: SettingsData): SaveSnapshot {
     professional: {
       firstName: data.professional.firstName,
       lastName: data.professional.lastName,
+      avatarUrl: data.professional.avatarUrl || "",
       email: data.professional.email,
       phone: data.professional.phone,
       country: data.professional.country,
@@ -1227,6 +1252,38 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
     });
   }
 
+  async function handleProfessionalAvatarUpload(event: ChangeEvent<HTMLInputElement>) {
+    const [file] = Array.from(event.target.files ?? []);
+    event.target.value = "";
+
+    if (!file) {
+      return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+      setStatus(copy.avatarImageOnly);
+      return;
+    }
+
+    if (file.size > MAX_PROFILE_AVATAR_BYTES) {
+      setStatus(copy.avatarTooLarge);
+      return;
+    }
+
+    try {
+      const avatarDataUrl = await readFileAsDataUrl(file, copy.readFileFailed);
+      updateProfessional("avatarUrl", avatarDataUrl);
+      setStatus("");
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : copy.uploadPhotoFailed);
+    }
+  }
+
+  function removeProfessionalAvatar() {
+    updateProfessional("avatarUrl", "");
+    setStatus("");
+  }
+
   async function handleBusinessPhotoUpload(event: ChangeEvent<HTMLInputElement>) {
     const selectedFiles = Array.from(event.target.files ?? []);
     event.target.value = "";
@@ -1578,6 +1635,7 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
           professional: {
             firstName: data.professional.firstName,
             lastName: data.professional.lastName,
+            avatarUrl: data.professional.avatarUrl || "",
             email: data.professional.email,
             phone: data.professional.phone,
             country: data.professional.country,
@@ -1795,6 +1853,36 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
                       <div>
                         <span>{t.settings.owner}</span>
                         <h2>{t.settings.contacts}</h2>
+                      </div>
+                    </div>
+                    <div className={styles.settingsAvatarPanel}>
+                      <ProfileAvatar
+                        avatarUrl={data.professional.avatarUrl}
+                        label={`${data.professional.firstName} ${data.professional.lastName}`.trim() || data.professional.email}
+                        initials={`${data.professional.firstName?.[0] ?? ""}${data.professional.lastName?.[0] ?? ""}`.toUpperCase() || "RZ"}
+                        className={styles.settingsAvatarPreview}
+                        imageClassName={styles.settingsAvatarPreviewImage}
+                        fallbackClassName={styles.settingsAvatarPreviewFallback}
+                      />
+                      <div className={styles.settingsAvatarMeta}>
+                        <strong>{copy.avatarTitle}</strong>
+                        <p>{copy.avatarHint}</p>
+                        <div className={styles.settingsPhotoButtons}>
+                          <label className={`${styles.photoActionButton} ${styles.settingsAvatarUploadLabel}`}>
+                            <span>{data.professional.avatarUrl ? copy.avatarReplace : copy.avatarUpload}</span>
+                            <input
+                              className={styles.settingsAvatarInput}
+                              type="file"
+                              accept="image/*"
+                              onChange={(event) => void handleProfessionalAvatarUpload(event)}
+                            />
+                          </label>
+                          {data.professional.avatarUrl ? (
+                            <button type="button" className={styles.photoActionButton} onClick={removeProfessionalAvatar}>
+                              {copy.avatarRemove}
+                            </button>
+                          ) : null}
+                        </div>
                       </div>
                     </div>
                     <div className={styles.settingsFormGrid}>
