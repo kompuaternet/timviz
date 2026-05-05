@@ -80,7 +80,8 @@ export async function POST(request: Request) {
             category: body.category,
             durationMinutes: body.durationMinutes,
             price: body.price,
-            color: body.color
+            color: body.color,
+            source: body.source
           }
         ];
 
@@ -95,7 +96,7 @@ export async function POST(request: Request) {
         source: services[0].source
       });
 
-      if (!existingServiceIds.has(created.id)) {
+      if (!existingServiceIds.has(created.id) && created.source === "custom") {
         await sendSuperadminTelegramNotification({
           eventType: "service_added",
           professionalId,
@@ -123,7 +124,8 @@ export async function POST(request: Request) {
     });
 
     const actuallyAdded = created.filter((service) => !existingServiceIds.has(service.id));
-    if (actuallyAdded.length) {
+    const customActuallyAdded = actuallyAdded.filter((service) => service.source === "custom");
+    if (customActuallyAdded.length) {
       await sendSuperadminTelegramNotification({
         eventType: "service_added",
         professionalId,
@@ -131,7 +133,7 @@ export async function POST(request: Request) {
         professionalEmail,
         businessId,
         businessName,
-        services: actuallyAdded
+        services: customActuallyAdded
       }).catch(() => undefined);
     }
 
