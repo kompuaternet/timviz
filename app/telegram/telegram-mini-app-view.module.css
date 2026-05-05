@@ -68,6 +68,61 @@
   gap: 10px;
 }
 
+.loginCard {
+  margin-top: 16px;
+  border: 1px solid rgba(111, 95, 225, 0.24);
+  border-radius: 18px;
+  padding: 14px;
+  background: #fcfcff;
+  display: grid;
+  gap: 10px;
+}
+
+.loginCard h2 {
+  margin: 0;
+  font-size: 18px;
+  color: #1e2237;
+}
+
+.fieldLabel {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+  color: #51546d;
+  font-weight: 600;
+}
+
+.fieldInput {
+  width: 100%;
+  min-height: 44px;
+  border-radius: 12px;
+  border: 1px solid rgba(95, 105, 152, 0.3);
+  background: #fff;
+  padding: 0 12px;
+  font-size: 15px;
+  color: #171b2f;
+}
+
+.fieldInput:focus {
+  outline: none;
+  border-color: rgba(95, 74, 225, 0.58);
+  box-shadow: 0 0 0 3px rgba(121, 98, 242, 0.16);
+}
+
+.hintText {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.35;
+  color: #666a85;
+}
+
+.linkButton {
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 700;
+  color: #4f46e5;
+}
+
 .primaryButton,
 .secondaryButton {
   display: inline-flex;
@@ -80,6 +135,8 @@
   font-size: 16px;
   font-weight: 700;
   transition: transform 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+  border: 1px solid transparent;
+  cursor: pointer;
 }
 
 .primaryButton {
@@ -92,6 +149,13 @@
   color: #26273a;
   border: 1px solid rgba(74, 79, 118, 0.26);
   background: #f8f8ff;
+}
+
+.primaryButton:disabled,
+.secondaryButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .primaryButton:hover,

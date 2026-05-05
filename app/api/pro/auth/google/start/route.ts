@@ -12,12 +12,30 @@ const GOOGLE_OAUTH_STATE_COOKIE = "rezervo_google_oauth_state";
 const GOOGLE_OAUTH_MODE_COOKIE = "rezervo_google_oauth_mode";
 const GOOGLE_OAUTH_PKCE_COOKIE = "rezervo_google_oauth_pkce";
 const GOOGLE_OAUTH_INVITE_COOKIE = "rezervo_google_oauth_invite";
+const GOOGLE_OAUTH_RETURN_TO_COOKIE = "rezervo_google_oauth_return_to";
+
+function normalizeReturnTo(value: string, fallback = "/pro/workspace") {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return fallback;
+  }
+  if (!trimmed.startsWith("/") || trimmed.startsWith("//")) {
+    return fallback;
+  }
+  return trimmed;
+}
 
 export async function GET(request: Request) {
   try {
     const url = new URL(request.url);
     const mode = url.searchParams.get("mode") === "register" ? "register" : "login";
     const inviteToken = url.searchParams.get("invite")?.trim() || "";
+    const isTelegramSource = url.searchParams.get("source") === "telegram";
+    const returnToRaw = url.searchParams.get("return_to")?.trim() || "";
+    const returnTo = normalizeReturnTo(
+      returnToRaw,
+      isTelegramSource ? "/telegram?source=telegram" : "/pro/workspace"
+    );
     const isSecure = url.protocol === "https:";
     const settings = getGoogleOAuthSettings(request);
     const state = randomBytes(24).toString("hex");
@@ -46,6 +64,13 @@ export async function GET(request: Request) {
       maxAge: 60 * 10
     });
     cookieStore.set(GOOGLE_OAUTH_INVITE_COOKIE, inviteToken, {
+      httpOnly: true,
+      sameSite: "lax",
+      path: "/",
+      secure: isSecure,
+      maxAge: 60 * 10
+    });
+    cookieStore.set(GOOGLE_OAUTH_RETURN_TO_COOKIE, returnTo, {
       httpOnly: true,
       sameSite: "lax",
       path: "/",

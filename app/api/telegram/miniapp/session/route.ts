@@ -19,7 +19,10 @@ function getTelegramBotToken() {
 export async function POST(request: Request) {
   try {
     if (!isTelegramBotConfigured()) {
-      return NextResponse.json({ error: "Telegram bot is not configured." }, { status: 503 });
+      return NextResponse.json(
+        { errorCode: "bot_not_configured", error: "Telegram bot is not configured." },
+        { status: 503 }
+      );
     }
 
     const body = (await request.json().catch(() => ({}))) as Partial<{
@@ -28,7 +31,10 @@ export async function POST(request: Request) {
     }>;
     const initData = String(body.initData || "").trim();
     if (!initData) {
-      return NextResponse.json({ error: "Missing initData." }, { status: 400 });
+      return NextResponse.json(
+        { errorCode: "missing_init_data", error: "Missing initData." },
+        { status: 400 }
+      );
     }
 
     const botToken = getTelegramBotToken();
@@ -38,13 +44,17 @@ export async function POST(request: Request) {
     });
 
     if (!verified) {
-      return NextResponse.json({ error: "Invalid Telegram initData." }, { status: 401 });
+      return NextResponse.json(
+        { errorCode: "invalid_init_data", error: "Invalid Telegram initData." },
+        { status: 401 }
+      );
     }
 
     const connection = await getTelegramConnectionByTelegramUserId(verified.user.id);
     if (!connection) {
       return NextResponse.json(
         {
+          errorCode: "not_connected",
           error: "This Telegram user is not connected to Timviz yet.",
           connectRequired: true
         },
@@ -85,6 +95,9 @@ export async function POST(request: Request) {
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Failed to create Telegram mini app session.";
-    return NextResponse.json({ error: message }, { status: 400 });
+    return NextResponse.json(
+      { errorCode: "session_failed", error: message },
+      { status: 400 }
+    );
   }
 }

@@ -13,6 +13,18 @@ const GOOGLE_OAUTH_STATE_COOKIE = "rezervo_google_oauth_state";
 const GOOGLE_OAUTH_MODE_COOKIE = "rezervo_google_oauth_mode";
 const GOOGLE_OAUTH_PKCE_COOKIE = "rezervo_google_oauth_pkce";
 const GOOGLE_OAUTH_INVITE_COOKIE = "rezervo_google_oauth_invite";
+const GOOGLE_OAUTH_RETURN_TO_COOKIE = "rezervo_google_oauth_return_to";
+
+function normalizeReturnTo(value: string, fallback = "/pro/workspace") {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return fallback;
+  }
+  if (!trimmed.startsWith("/") || trimmed.startsWith("//")) {
+    return fallback;
+  }
+  return trimmed;
+}
 
 function clearOAuthCookies(cookieStore: Awaited<ReturnType<typeof cookies>>, isSecure: boolean) {
   cookieStore.set(GOOGLE_OAUTH_STATE_COOKIE, "", {
@@ -43,6 +55,13 @@ function clearOAuthCookies(cookieStore: Awaited<ReturnType<typeof cookies>>, isS
     secure: isSecure,
     maxAge: 0
   });
+  cookieStore.set(GOOGLE_OAUTH_RETURN_TO_COOKIE, "", {
+    httpOnly: true,
+    sameSite: "lax",
+    path: "/",
+    secure: isSecure,
+    maxAge: 0
+  });
 }
 
 export async function GET(request: Request) {
@@ -56,10 +75,16 @@ export async function GET(request: Request) {
   const codeVerifier = cookieStore.get(GOOGLE_OAUTH_PKCE_COOKIE)?.value || "";
   const mode = cookieStore.get(GOOGLE_OAUTH_MODE_COOKIE)?.value === "register" ? "register" : "login";
   const inviteToken = cookieStore.get(GOOGLE_OAUTH_INVITE_COOKIE)?.value?.trim() || "";
+  const returnTo = normalizeReturnTo(
+    cookieStore.get(GOOGLE_OAUTH_RETURN_TO_COOKIE)?.value?.trim() || "",
+    "/pro/workspace"
+  );
 
   if (!code || !state || !expectedState || !codeVerifier || state !== expectedState) {
     clearOAuthCookies(cookieStore, isSecure);
-    return NextResponse.redirect(new URL("/pro/login?google_error=state", appUrl));
+    const errorUrl = new URL(returnTo, appUrl);
+    errorUrl.searchParams.set("google_error", "state");
+    return NextResponse.redirect(errorUrl);
   }
 
   try {
@@ -94,7 +119,7 @@ export async function GET(request: Request) {
         secure: isSecure,
         maxAge: 60 * 60 * 24 * 7
       });
-      return NextResponse.redirect(new URL("/pro/workspace", appUrl));
+      return NextResponse.redirect(new URL(returnTo, appUrl));
     }
 
     const createAccountUrl = new URL("/pro/create-account", appUrl);
@@ -122,6 +147,8 @@ export async function GET(request: Request) {
     return NextResponse.redirect(createAccountUrl);
   } catch {
     clearOAuthCookies(cookieStore, isSecure);
-    return NextResponse.redirect(new URL("/pro/login?google_error=oauth", appUrl));
+    const errorUrl = new URL(returnTo, appUrl);
+    errorUrl.searchParams.set("google_error", "oauth");
+    return NextResponse.redirect(errorUrl);
   }
 }
