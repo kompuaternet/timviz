@@ -3,7 +3,6 @@ import { NextResponse } from "next/server";
 import { getPublicAppUrl } from "../../../../../../lib/app-url";
 import { getSessionCookieName, signSessionValue } from "../../../../../../lib/pro-auth";
 import { exchangeCodeForGoogleProfile, getGoogleOAuthSettings } from "../../../../../../lib/google-oauth";
-import { getTelegramStartAppLink } from "../../../../../../lib/telegram-bot";
 import {
   acceptStaffInvitation,
   getProfessionalProfileByEmail,
@@ -36,139 +35,7 @@ function isTelegramSourceReturn(returnTo: string, appUrl: string) {
   }
 }
 
-function isTelegramWebViewRequest(request: Request) {
-  const userAgent = (request.headers.get("user-agent") || "").toLowerCase();
-  return userAgent.includes("telegram");
-}
-
-function resolveStartParamFromReturnTo(returnTo: string, appUrl: string) {
-  try {
-    const parsed = new URL(returnTo, appUrl);
-    const raw =
-      parsed.searchParams.get("startapp") ||
-      parsed.searchParams.get("start_param") ||
-      parsed.searchParams.get("tgWebAppStartParam") ||
-      "";
-    const normalized = raw.trim().toLowerCase();
-    if (!normalized) {
-      return "calendar";
-    }
-    if (normalized.includes("settings") || normalized.includes("setup")) return "settings";
-    if (normalized.includes("notifications") || normalized.includes("inbox")) return "notifications";
-    if (normalized.includes("clients")) return "clients";
-    if (normalized.includes("services")) return "services";
-    if (normalized.includes("staff") || normalized.includes("team") || normalized.includes("schedule")) {
-      return "staff";
-    }
-    if (normalized.includes("support") || normalized.includes("help")) return "support";
-    return "calendar";
-  } catch {
-    return "calendar";
-  }
-}
-
-function buildTelegramProtocolLink(input: string) {
-  try {
-    const parsed = new URL(input);
-    const segments = parsed.pathname.split("/").filter(Boolean);
-    const botUsername = segments[0]?.trim().replace(/^@/, "");
-    if (!botUsername) {
-      return null;
-    }
-
-    const protocolUrl = new URL("tg://resolve");
-    protocolUrl.searchParams.set("domain", botUsername);
-    if (segments[1]) {
-      protocolUrl.searchParams.set("appname", segments[1]);
-    }
-
-    const startApp = parsed.searchParams.get("startapp")?.trim();
-    if (startApp) {
-      protocolUrl.searchParams.set("startapp", startApp);
-    }
-    return protocolUrl.toString();
-  } catch {
-    return null;
-  }
-}
-
-function buildTelegramBridgeResponse(input: {
-  deepLink: string;
-  fallbackUrl: URL;
-  title: string;
-  subtitle: string;
-  continueText: string;
-  openAppText: string;
-}) {
-  const protocolLink = buildTelegramProtocolLink(input.deepLink);
-  const deepLinkJson = JSON.stringify(input.deepLink);
-  const protocolJson = JSON.stringify(protocolLink || "");
-  const fallbackJson = JSON.stringify(input.fallbackUrl.toString());
-  const title = input.title;
-  const subtitle = input.subtitle;
-  const continueText = input.continueText;
-  const openAppText = input.openAppText;
-
-  const html = `<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="robots" content="noindex,nofollow" />
-    <title>${title}</title>
-    <style>
-      body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; background: #f4f5fb; color: #1f2433; }
-      main { min-height: 100dvh; display: grid; place-items: center; padding: 24px; }
-      .card { width: min(520px, 100%); background: #fff; border: 1px solid #e6e9f6; border-radius: 20px; padding: 22px; box-shadow: 0 20px 60px rgba(83, 83, 132, 0.14); }
-      h1 { margin: 0; font-size: 1.32rem; line-height: 1.2; }
-      p { margin: 10px 0 0; color: #5f6883; line-height: 1.45; }
-      .row { display: grid; gap: 10px; margin-top: 18px; }
-      a { display: inline-flex; min-height: 44px; border-radius: 12px; align-items: center; justify-content: center; text-decoration: none; font-weight: 700; }
-      .primary { background: linear-gradient(135deg, #8b5cf6 0%, #4f46e5 100%); color: #fff; }
-      .ghost { border: 1px solid #d8ddf0; color: #23283a; background: #fff; }
-    </style>
-  </head>
-  <body>
-    <main>
-      <section class="card">
-        <h1>${title}</h1>
-        <p>${subtitle}</p>
-        <div class="row">
-          <a id="open-app" class="primary" href=${deepLinkJson}>${openAppText}</a>
-          <a class="ghost" href=${fallbackJson}>${continueText}</a>
-        </div>
-      </section>
-    </main>
-    <script>
-      const protocolLink = ${protocolJson};
-      const deepLink = ${deepLinkJson};
-      const fallbackUrl = ${fallbackJson};
-      const openVia = (target) => {
-        if (!target) return;
-        try {
-          window.location.replace(target);
-        } catch {}
-      };
-      if (protocolLink) {
-        openVia(protocolLink);
-      }
-      window.setTimeout(() => openVia(deepLink), protocolLink ? 360 : 120);
-      window.setTimeout(() => openVia(fallbackUrl), 2600);
-    </script>
-  </body>
-</html>`;
-
-  return new NextResponse(html, {
-    status: 200,
-    headers: {
-      "content-type": "text/html; charset=utf-8",
-      "cache-control": "no-store, max-age=0"
-    }
-  });
-}
-
-async function resolveFinalRedirectTarget(input: {
-  request: Request;
+function resolveFinalRedirectTarget(input: {
   appUrl: string;
   returnTo: string;
   googleError?: "state" | "oauth";
@@ -179,30 +46,9 @@ async function resolveFinalRedirectTarget(input: {
   }
 
   if (!isTelegramSourceReturn(input.returnTo, input.appUrl)) {
-    return { type: "url" as const, url: fallbackUrl };
+    return fallbackUrl;
   }
-
-  if (isTelegramWebViewRequest(input.request)) {
-    return { type: "url" as const, url: fallbackUrl };
-  }
-
-  const startParam = resolveStartParamFromReturnTo(input.returnTo, input.appUrl);
-  const deepLink = await getTelegramStartAppLink(startParam);
-  if (deepLink) {
-    return {
-      type: "bridge" as const,
-      response: buildTelegramBridgeResponse({
-        deepLink,
-        fallbackUrl,
-        title: "Повертаємо в Telegram",
-        subtitle: "Якщо Mini App не відкрилась автоматично, натисніть кнопку нижче.",
-        continueText: "Продовжити у веб-версії",
-        openAppText: "Відкрити Mini App"
-      })
-    };
-  }
-
-  return { type: "url" as const, url: fallbackUrl };
+  return fallbackUrl;
 }
 
 function clearOAuthCookies(cookieStore: Awaited<ReturnType<typeof cookies>>, isSecure: boolean) {
@@ -261,13 +107,12 @@ export async function GET(request: Request) {
 
   if (!code || !state || !expectedState || !codeVerifier || state !== expectedState) {
     clearOAuthCookies(cookieStore, isSecure);
-    const target = await resolveFinalRedirectTarget({
-      request,
+    const target = resolveFinalRedirectTarget({
       appUrl,
       returnTo,
       googleError: "state"
     });
-    return target.type === "bridge" ? target.response : NextResponse.redirect(target.url);
+    return NextResponse.redirect(target);
   }
 
   try {
@@ -302,12 +147,11 @@ export async function GET(request: Request) {
         secure: isSecure,
         maxAge: 60 * 60 * 24 * 7
       });
-      const target = await resolveFinalRedirectTarget({
-        request,
+      const target = resolveFinalRedirectTarget({
         appUrl,
         returnTo
       });
-      return target.type === "bridge" ? target.response : NextResponse.redirect(target.url);
+      return NextResponse.redirect(target);
     }
 
     const createAccountUrl = new URL("/pro/create-account", appUrl);
@@ -335,12 +179,11 @@ export async function GET(request: Request) {
     return NextResponse.redirect(createAccountUrl);
   } catch {
     clearOAuthCookies(cookieStore, isSecure);
-    const target = await resolveFinalRedirectTarget({
-      request,
+    const target = resolveFinalRedirectTarget({
       appUrl,
       returnTo,
       googleError: "oauth"
     });
-    return target.type === "bridge" ? target.response : NextResponse.redirect(target.url);
+    return NextResponse.redirect(target);
   }
 }

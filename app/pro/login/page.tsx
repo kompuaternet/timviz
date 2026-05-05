@@ -5,7 +5,48 @@ import { getPendingJoinRequestForProfessional, getWorkspaceSnapshot } from "../.
 import LoginForm from "./LoginForm";
 import styles from "../pro.module.css";
 
-export default async function ProLoginPage() {
+type ProLoginPageProps = {
+  searchParams?: Promise<{
+    source?: string;
+    startapp?: string;
+    start_param?: string;
+    tgWebAppStartParam?: string;
+    google_error?: string;
+    invite?: string;
+    email?: string;
+  }>;
+};
+
+export default async function ProLoginPage({ searchParams }: ProLoginPageProps) {
+  const params = searchParams ? await searchParams : undefined;
+  const source = typeof params?.source === "string" ? params.source.trim().toLowerCase() : "";
+  const isTelegramSource = source === "telegram";
+  const startParamRaw = [params?.startapp, params?.start_param, params?.tgWebAppStartParam].find(
+    (value) => typeof value === "string" && value.trim()
+  );
+  const startParam = typeof startParamRaw === "string" ? startParamRaw.trim() : "";
+  const googleError = typeof params?.google_error === "string" ? params.google_error.trim() : "";
+  const invite = typeof params?.invite === "string" ? params.invite.trim() : "";
+  const email = typeof params?.email === "string" ? params.email.trim() : "";
+
+  if (isTelegramSource) {
+    const query = new URLSearchParams();
+    query.set("source", "telegram");
+    if (startParam) {
+      query.set("startapp", startParam);
+    }
+    if (googleError) {
+      query.set("google_error", googleError);
+    }
+    if (invite) {
+      query.set("invite", invite);
+    }
+    if (email) {
+      query.set("email", email);
+    }
+    redirect(`/telegram?${query.toString()}`);
+  }
+
   const cookieStore = await cookies();
   const professionalId = verifySessionValue(
     cookieStore.get(getSessionCookieName())?.value

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useProLanguage } from "../useProLanguage";
 import styles from "../pro.module.css";
 
@@ -71,6 +71,8 @@ export default function LoginForm({ staleSession = false }: LoginFormProps) {
   const [oauthErrorText, setOauthErrorText] = useState("");
   const [inviteToken, setInviteToken] = useState("");
   const [staleSessionMessage, setStaleSessionMessage] = useState("");
+  const [isTelegramSource, setIsTelegramSource] = useState(false);
+  const [telegramStartParam, setTelegramStartParam] = useState("calendar");
 
   useEffect(() => {
     let isCancelled = false;
@@ -107,6 +109,12 @@ export default function LoginForm({ staleSession = false }: LoginFormProps) {
     const googleError = params.get("google_error");
     const prefilledEmail = params.get("email")?.trim() || "";
     const inviteFromQuery = params.get("invite")?.trim() || "";
+    const source = params.get("source")?.trim().toLowerCase() || "";
+    const startParam =
+      params.get("startapp")?.trim() ||
+      params.get("start_param")?.trim() ||
+      params.get("tgWebAppStartParam")?.trim() ||
+      "";
     const nextText =
       googleError === "config"
         ? copy.googleConfigError
@@ -116,9 +124,29 @@ export default function LoginForm({ staleSession = false }: LoginFormProps) {
     if (prefilledEmail) {
       setEmail(prefilledEmail);
     }
+    setIsTelegramSource(source === "telegram");
+    setTelegramStartParam(startParam || "calendar");
     setInviteToken(inviteFromQuery);
     setOauthErrorText(nextText);
   }, [copy.googleConfigError, copy.googleLoginError]);
+
+  const googleAuthHref = useMemo(() => {
+    const query = new URLSearchParams();
+    query.set("mode", "login");
+    if (inviteToken) {
+      query.set("invite", inviteToken);
+    }
+    if (isTelegramSource) {
+      query.set("source", "telegram");
+      const returnToQuery = new URLSearchParams();
+      returnToQuery.set("source", "telegram");
+      if (telegramStartParam) {
+        returnToQuery.set("startapp", telegramStartParam);
+      }
+      query.set("return_to", `/telegram?${returnToQuery.toString()}`);
+    }
+    return `/api/pro/auth/google/start?${query.toString()}`;
+  }, [inviteToken, isTelegramSource, telegramStartParam]);
 
   async function handleLogin() {
     setIsLoading(true);
@@ -190,9 +218,7 @@ export default function LoginForm({ staleSession = false }: LoginFormProps) {
       {!error && !staleSessionMessage && oauthErrorText ? <div className={styles.addressWarning}>{oauthErrorText}</div> : null}
 
       <a
-        href={`/api/pro/auth/google/start?mode=login${
-          inviteToken ? `&invite=${encodeURIComponent(inviteToken)}` : ""
-        }`}
+        href={googleAuthHref}
         className={styles.ghostButton}
       >
         {copy.google}
