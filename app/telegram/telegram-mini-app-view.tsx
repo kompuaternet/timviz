@@ -214,6 +214,7 @@ export default function TelegramMiniAppView({
   signedInRedirectPath
 }: TelegramMiniAppViewProps) {
   const [runtimeLanguage, setRuntimeLanguage] = useState<string | null>(null);
+  const [siteLanguage, setSiteLanguage] = useState<string | null>(null);
   const [status, setStatus] = useState<"idle" | "loading" | "error" | "done">("idle");
   const [errorMessage, setErrorMessage] = useState("");
   const [email, setEmail] = useState("");
@@ -222,7 +223,7 @@ export default function TelegramMiniAppView({
   const [runtimeStartParam, setRuntimeStartParam] = useState<string>("");
   const [runtimeInitData, setRuntimeInitData] = useState<string>("");
 
-  const language = normalizeLanguage(runtimeLanguage || initialLanguage || null);
+  const language = normalizeLanguage(siteLanguage || initialLanguage || runtimeLanguage || null);
   const copy = copyByLanguage[language];
   const isLoading = status === "loading";
   const hasError = status === "error";
@@ -236,6 +237,29 @@ export default function TelegramMiniAppView({
       bot: "https://t.me/Timviz_bot"
     };
   }, [initialStartParam, signedInRedirectPath]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const stored = window.localStorage.getItem("rezervo-pro-language");
+    if (stored) {
+      setSiteLanguage(stored);
+    }
+
+    const onLanguageChange = (event: Event) => {
+      const next = (event as CustomEvent<string>).detail;
+      if (typeof next === "string" && next.trim()) {
+        setSiteLanguage(next.trim());
+      }
+    };
+
+    window.addEventListener("rezervo-language-change", onLanguageChange);
+    return () => {
+      window.removeEventListener("rezervo-language-change", onLanguageChange);
+    };
+  }, []);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
