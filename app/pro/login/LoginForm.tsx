@@ -189,7 +189,7 @@ export default function LoginForm({ staleSession = false }: LoginFormProps) {
     ).Telegram?.WebApp;
 
     if ((isTelegramSource || Boolean(telegramRuntime?.initData)) && telegramRuntime?.openLink) {
-      telegramRuntime.openLink(absolute, { try_instant_view: false, try_browser: "chrome" });
+      telegramRuntime.openLink(absolute, { try_instant_view: false });
       return;
     }
 

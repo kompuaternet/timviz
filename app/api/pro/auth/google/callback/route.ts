@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { getPublicAppUrl } from "../../../../../../lib/app-url";
 import { getSessionCookieName, signSessionValue } from "../../../../../../lib/pro-auth";
 import { exchangeCodeForGoogleProfile, getGoogleOAuthSettings } from "../../../../../../lib/google-oauth";
+import { getTelegramStartAppLinkSync } from "../../../../../../lib/telegram-bot";
 import {
   acceptStaffInvitation,
   getProfessionalProfileByEmail,
@@ -48,6 +49,21 @@ function resolveFinalRedirectTarget(input: {
   if (!isTelegramSourceReturn(input.returnTo, input.appUrl)) {
     return fallbackUrl;
   }
+
+  if (input.googleError) {
+    return fallbackUrl;
+  }
+
+  const startParam = extractTelegramStartParam(input.returnTo, input.appUrl);
+  const telegramLaunchLink = getTelegramStartAppLinkSync(startParam);
+  if (telegramLaunchLink) {
+    try {
+      return new URL(telegramLaunchLink);
+    } catch {
+      return fallbackUrl;
+    }
+  }
+
   return fallbackUrl;
 }
 

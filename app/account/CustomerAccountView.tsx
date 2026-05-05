@@ -573,16 +573,23 @@ export default function CustomerAccountView({
   }
 
   function openGoogleCustomerAuth(returnTo: string) {
-    const relative = `/api/public/auth/google/start?returnTo=${encodeURIComponent(returnTo)}`;
-    const absolute = new URL(relative, window.location.origin).toString();
     const telegramRuntime = (
       window as Window & {
         Telegram?: { WebApp?: TelegramRuntime };
       }
     ).Telegram?.WebApp;
+    const returnToUrl = new URL(returnTo, window.location.origin);
+    if (telegramRuntime?.initData) {
+      returnToUrl.searchParams.set("source", "telegram");
+      returnToUrl.searchParams.set("startapp", "calendar");
+    }
+    const relative = `/api/public/auth/google/start?returnTo=${encodeURIComponent(
+      `${returnToUrl.pathname}${returnToUrl.search}`
+    )}`;
+    const absolute = new URL(relative, window.location.origin).toString();
 
     if (telegramRuntime?.openLink && telegramRuntime?.initData) {
-      telegramRuntime.openLink(absolute, { try_instant_view: false, try_browser: "chrome" });
+      telegramRuntime.openLink(absolute, { try_instant_view: false });
       return;
     }
 

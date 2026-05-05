@@ -962,16 +962,23 @@ export default function BusinessView({
     typeof window !== "undefined" ? `${window.location.pathname}${window.location.search}` : returnPath;
 
   function openGoogleCustomerAuth() {
-    const relative = `/api/public/auth/google/start?returnTo=${encodeURIComponent(returnToUrl)}`;
-    const absolute = new URL(relative, window.location.origin).toString();
     const telegramRuntime = (
       window as Window & {
         Telegram?: { WebApp?: TelegramRuntime };
       }
     ).Telegram?.WebApp;
+    const returnTargetUrl = new URL(returnToUrl, window.location.origin);
+    if (telegramRuntime?.initData) {
+      returnTargetUrl.searchParams.set("source", "telegram");
+      returnTargetUrl.searchParams.set("startapp", "calendar");
+    }
+    const relative = `/api/public/auth/google/start?returnTo=${encodeURIComponent(
+      `${returnTargetUrl.pathname}${returnTargetUrl.search}`
+    )}`;
+    const absolute = new URL(relative, window.location.origin).toString();
 
     if (telegramRuntime?.openLink && telegramRuntime?.initData) {
-      telegramRuntime.openLink(absolute, { try_instant_view: false, try_browser: "chrome" });
+      telegramRuntime.openLink(absolute, { try_instant_view: false });
       return;
     }
 

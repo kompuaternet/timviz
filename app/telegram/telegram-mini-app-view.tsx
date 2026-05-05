@@ -345,7 +345,7 @@ export default function TelegramMiniAppView({
     const absolute = new URL(relative, window.location.origin).toString();
     const runtime = getRuntime();
     if (runtime?.openLink) {
-      runtime.openLink(absolute, { try_instant_view: false, try_browser: "chrome" });
+      runtime.openLink(absolute, { try_instant_view: false });
       return;
     }
     window.location.assign(absolute);
