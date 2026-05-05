@@ -22,6 +22,11 @@ type CountryConfig = {
   timezone: string;
 };
 
+type TelegramRuntime = {
+  openLink?: (url: string, options?: { try_instant_view?: boolean; try_browser?: string }) => void;
+  initData?: string;
+};
+
 const countryConfigs: CountryConfig[] = [
   { country: "Ukraine", currency: "UAH", timezone: "Europe/Kiev" },
   { country: "Poland", currency: "PLN", timezone: "Europe/Warsaw" },
@@ -476,7 +481,20 @@ export default function CreateAccountForm() {
     if (typeof window === "undefined") {
       return;
     }
-    window.location.assign(googleRegisterHref);
+
+    const absolute = new URL(googleRegisterHref, window.location.origin).toString();
+    const telegramRuntime = (
+      window as Window & {
+        Telegram?: { WebApp?: TelegramRuntime };
+      }
+    ).Telegram?.WebApp;
+
+    if ((isTelegramSource || Boolean(telegramRuntime?.initData)) && telegramRuntime?.openLink) {
+      telegramRuntime.openLink(absolute, { try_instant_view: false, try_browser: "chrome" });
+      return;
+    }
+
+    window.location.assign(absolute);
   }
 
   useEffect(() => {

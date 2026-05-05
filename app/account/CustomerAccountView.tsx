@@ -34,6 +34,11 @@ type AddressSuggestion = {
   lon: number;
 };
 
+type TelegramRuntime = {
+  openLink?: (url: string, options?: { try_instant_view?: boolean; try_browser?: string }) => void;
+  initData?: string;
+};
+
 type AccountCopy = {
   profile: string;
   activity: string;
@@ -567,6 +572,23 @@ export default function CustomerAccountView({
     window.location.href = getLocalizedPath(language);
   }
 
+  function openGoogleCustomerAuth(returnTo: string) {
+    const relative = `/api/public/auth/google/start?returnTo=${encodeURIComponent(returnTo)}`;
+    const absolute = new URL(relative, window.location.origin).toString();
+    const telegramRuntime = (
+      window as Window & {
+        Telegram?: { WebApp?: TelegramRuntime };
+      }
+    ).Telegram?.WebApp;
+
+    if (telegramRuntime?.openLink && telegramRuntime?.initData) {
+      telegramRuntime.openLink(absolute, { try_instant_view: false, try_browser: "chrome" });
+      return;
+    }
+
+    window.location.assign(absolute);
+  }
+
   if (!session || !account) {
     const returnTo = getLocalizedPath(language, "/account");
     return (
@@ -579,9 +601,13 @@ export default function CustomerAccountView({
         <section className={`${styles.card} ${styles.signInCard}`}>
           <h1 className={styles.sectionTitle}>{t.signInTitle}</h1>
           <p>{t.signInText}</p>
-          <a className={styles.saveButton} href={`/api/public/auth/google/start?returnTo=${encodeURIComponent(returnTo)}`}>
+          <button
+            type="button"
+            className={styles.saveButton}
+            onClick={() => openGoogleCustomerAuth(returnTo)}
+          >
             {t.signInGoogle}
-          </a>
+          </button>
         </section>
       </main>
     );

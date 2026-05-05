@@ -343,6 +343,11 @@ export default function TelegramMiniAppView({
     const returnTo = `/telegram?source=telegram&startapp=${encodeURIComponent(startParam)}`;
     const relative = `/api/pro/auth/google/start?mode=login&source=telegram&return_to=${encodeURIComponent(returnTo)}`;
     const absolute = new URL(relative, window.location.origin).toString();
+    const runtime = getRuntime();
+    if (runtime?.openLink) {
+      runtime.openLink(absolute, { try_instant_view: false, try_browser: "chrome" });
+      return;
+    }
     window.location.assign(absolute);
   }
 

@@ -69,6 +69,11 @@ type CustomerSessionState = {
   customer: PublicCustomerSession | null;
 };
 
+type TelegramRuntime = {
+  openLink?: (url: string, options?: { try_instant_view?: boolean; try_browser?: string }) => void;
+  initData?: string;
+};
+
 type BookingStep = "services" | "specialists" | "time" | "confirm";
 
 type StepKey = "photos" | "services" | "team" | "details";
@@ -956,6 +961,23 @@ export default function BusinessView({
   const returnToUrl =
     typeof window !== "undefined" ? `${window.location.pathname}${window.location.search}` : returnPath;
 
+  function openGoogleCustomerAuth() {
+    const relative = `/api/public/auth/google/start?returnTo=${encodeURIComponent(returnToUrl)}`;
+    const absolute = new URL(relative, window.location.origin).toString();
+    const telegramRuntime = (
+      window as Window & {
+        Telegram?: { WebApp?: TelegramRuntime };
+      }
+    ).Telegram?.WebApp;
+
+    if (telegramRuntime?.openLink && telegramRuntime?.initData) {
+      telegramRuntime.openLink(absolute, { try_instant_view: false, try_browser: "chrome" });
+      return;
+    }
+
+    window.location.assign(absolute);
+  }
+
   function renderSummary(mode: "page" | "modal" = "modal") {
     const hasSelection = selectedServices.length > 0;
 
@@ -1517,12 +1539,13 @@ export default function BusinessView({
                       <div className="company-auth-card">
                         <strong>{t.signInGoogle}</strong>
                         <p>{t.signInHint}</p>
-                        <a
+                        <button
+                          type="button"
                           className="primary-button company-booking-gradient-button company-google-button"
-                          href={`/api/public/auth/google/start?returnTo=${encodeURIComponent(returnToUrl)}`}
+                          onClick={openGoogleCustomerAuth}
                         >
                           {t.signInGoogle}
-                        </a>
+                        </button>
                       </div>
                     ) : null}
 

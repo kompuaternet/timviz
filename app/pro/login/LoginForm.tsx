@@ -60,6 +60,11 @@ type LoginFormProps = {
   staleSession?: boolean;
 };
 
+type TelegramRuntime = {
+  openLink?: (url: string, options?: { try_instant_view?: boolean; try_browser?: string }) => void;
+  initData?: string;
+};
+
 export default function LoginForm({ staleSession = false }: LoginFormProps) {
   const router = useRouter();
   const { language } = useProLanguage();
@@ -176,7 +181,19 @@ export default function LoginForm({ staleSession = false }: LoginFormProps) {
       return;
     }
 
-    window.location.assign(googleAuthHref);
+    const absolute = new URL(googleAuthHref, window.location.origin).toString();
+    const telegramRuntime = (
+      window as Window & {
+        Telegram?: { WebApp?: TelegramRuntime };
+      }
+    ).Telegram?.WebApp;
+
+    if ((isTelegramSource || Boolean(telegramRuntime?.initData)) && telegramRuntime?.openLink) {
+      telegramRuntime.openLink(absolute, { try_instant_view: false, try_browser: "chrome" });
+      return;
+    }
+
+    window.location.assign(absolute);
   }
 
   async function handleLogin() {
