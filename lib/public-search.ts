@@ -97,7 +97,15 @@ function sanitizePublicImageUrl(value: string | undefined, fallback: string) {
   }
 
   if (candidate.startsWith("data:")) {
-    return fallback;
+    // Business profile photos can be stored as data:image/* base64 payloads.
+    // Keep safe raster formats only, otherwise fall back to catalog placeholder.
+    const isSafeDataImage = /^data:image\/(png|jpe?g|webp|gif|avif);base64,[a-z0-9+/=\s]+$/i.test(
+      candidate
+    );
+    if (!isSafeDataImage || candidate.length > 2_500_000) {
+      return fallback;
+    }
+    return candidate;
   }
 
   if (candidate.startsWith("/")) {
