@@ -2,7 +2,7 @@
 
 import ProfileAvatar from "../ProfileAvatar";
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import FloatingPopover from "./FloatingPopover";
 import SupportWidget from "./SupportWidget";
 import styles from "./pro.module.css";
@@ -53,6 +53,12 @@ const headerCopy = {
     myProfile: "Мой профиль",
     personalSettings: "Личные настройки",
     helpSupport: "Помощь и поддержка",
+    uploadAvatar: "Загрузить аватар",
+    avatarUploading: "Загружаем аватар…",
+    avatarUpdated: "Аватар обновлён.",
+    avatarImageOnly: "Выберите файл изображения (JPG, PNG, WEBP).",
+    avatarTooLarge: "Аватар слишком большой. Максимум 2 МБ.",
+    avatarUploadFailed: "Не удалось обновить аватар. Попробуйте ещё раз.",
     language: "Язык",
     logout: "Выйти",
     onboardingDone: "✔ Готово",
@@ -85,6 +91,12 @@ const headerCopy = {
     myProfile: "Мій профіль",
     personalSettings: "Особисті налаштування",
     helpSupport: "Допомога і підтримка",
+    uploadAvatar: "Завантажити аватар",
+    avatarUploading: "Завантажуємо аватар…",
+    avatarUpdated: "Аватар оновлено.",
+    avatarImageOnly: "Оберіть файл зображення (JPG, PNG, WEBP).",
+    avatarTooLarge: "Аватар завеликий. Максимум 2 МБ.",
+    avatarUploadFailed: "Не вдалося оновити аватар. Спробуйте ще раз.",
     language: "Мова",
     logout: "Вийти",
     onboardingDone: "✔ Готово",
@@ -117,6 +129,12 @@ const headerCopy = {
     myProfile: "My profile",
     personalSettings: "Personal settings",
     helpSupport: "Help and support",
+    uploadAvatar: "Upload avatar",
+    avatarUploading: "Uploading avatar…",
+    avatarUpdated: "Avatar updated.",
+    avatarImageOnly: "Please choose an image file (JPG, PNG, WEBP).",
+    avatarTooLarge: "Avatar is too large. Maximum size is 2 MB.",
+    avatarUploadFailed: "Could not update avatar. Please try again.",
     language: "Language",
     logout: "Log out",
     onboardingDone: "✔ Done",
@@ -134,6 +152,8 @@ const accountLanguages: Array<{ value: ProLanguage; short: string }> = [
   { value: "uk", short: "UA" },
   { value: "en", short: "EN" }
 ];
+
+const MAX_PROFILE_AVATAR_BYTES = 2 * 1024 * 1024;
 
 function ShareIcon() {
   return (
@@ -189,6 +209,22 @@ function getOnboardingStepText(
   return "";
 }
 
+function readFileAsDataUrl(file: File, errorText: string) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") {
+        resolve(reader.result);
+        return;
+      }
+
+      reject(new Error(errorText));
+    };
+    reader.onerror = () => reject(new Error(errorText));
+    reader.readAsDataURL(file);
+  });
+}
+
 export default function ProWorkspaceHeader({
   businessName,
   viewerName,
@@ -208,10 +244,13 @@ export default function ProWorkspaceHeader({
   const shareMenuPanelRef = useRef<HTMLDivElement | null>(null);
   const accountMenuPanelRef = useRef<HTMLDivElement | null>(null);
   const shareLinkInputRef = useRef<HTMLInputElement | null>(null);
+  const avatarInputRef = useRef<HTMLInputElement | null>(null);
   const [activeMenu, setActiveMenu] = useState<"share" | "account" | null>(null);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isSupportOpen, setIsSupportOpen] = useState(false);
   const [isTogglingPublicBooking, setIsTogglingPublicBooking] = useState(false);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [menuAvatarUrl, setMenuAvatarUrl] = useState((viewerAvatarUrl || "").trim());
   const [notificationsCount, setNotificationsCount] = useState(0);
   const [publicBookingState, setPublicBookingState] = useState(publicBookingEnabled);
   const pageTitle = useMemo(() => getPageTitle(pathname, language), [language, pathname]);
@@ -243,6 +282,10 @@ export default function ProWorkspaceHeader({
   useEffect(() => {
     setPublicBookingState(publicBookingEnabled);
   }, [publicBookingEnabled]);
+
+  useEffect(() => {
+    setMenuAvatarUrl((viewerAvatarUrl || "").trim());
+  }, [viewerAvatarUrl]);
 
   useEffect(() => {
     refreshNotifications();
@@ -288,6 +331,71 @@ export default function ProWorkspaceHeader({
       });
     } catch {
       return;
+    }
+  }
+
+  function showToast(message: string, tone: "success" | "warning" | "error" | "info" = "info") {
+    window.dispatchEvent(new CustomEvent("rezervo-calendar-toast", { detail: { message, tone } }));
+  }
+
+  async function handleAvatarUpload(event: ChangeEvent<HTMLInputElement>) {
+    const [file] = Array.from(event.target.files ?? []);
+    event.target.value = "";
+
+    if (!file || isUploadingAvatar) {
+      return;
+    }
+
+    if (!file.type.startsWith("image/")) {
+      showToast(copy.avatarImageOnly, "warning");
+      return;
+    }
+
+    if (file.size > MAX_PROFILE_AVATAR_BYTES) {
+      showToast(copy.avatarTooLarge, "warning");
+      return;
+    }
+
+    setIsUploadingAvatar(true);
+    showToast(copy.avatarUploading, "info");
+
+    try {
+      const avatarDataUrl = await readFileAsDataUrl(file, copy.avatarUploadFailed);
+      const response = await fetch("/api/pro/settings", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          professional: {
+            avatarUrl: avatarDataUrl
+          }
+        })
+      });
+      let payload: unknown = null;
+      try {
+        payload = await response.json();
+      } catch {
+        payload = null;
+      }
+
+      if (!response.ok) {
+        throw new Error(copy.avatarUploadFailed);
+      }
+
+      const persistedAvatarUrl =
+        typeof payload === "object" &&
+        payload &&
+        "workspace" in payload &&
+        typeof (payload as { workspace?: { professional?: { avatarUrl?: unknown } } }).workspace?.professional?.avatarUrl === "string"
+          ? ((payload as { workspace?: { professional?: { avatarUrl?: string } } }).workspace?.professional?.avatarUrl || "").trim()
+          : avatarDataUrl;
+
+      setMenuAvatarUrl(persistedAvatarUrl);
+      showToast(copy.avatarUpdated, "success");
+      router.refresh();
+    } catch (error) {
+      showToast(error instanceof Error && error.message ? error.message : copy.avatarUploadFailed, "error");
+    } finally {
+      setIsUploadingAvatar(false);
     }
   }
 
@@ -438,7 +546,7 @@ export default function ProWorkspaceHeader({
           onClick={() => setActiveMenu((current) => (current === "account" ? null : "account"))}
         >
           <ProfileAvatar
-            avatarUrl={viewerAvatarUrl}
+            avatarUrl={menuAvatarUrl}
             initials={viewerInitials || viewerName.slice(0, 2).toUpperCase() || "RZ"}
             label={viewerName}
             className={styles.calendarHeaderAvatar}
@@ -530,14 +638,34 @@ export default function ProWorkspaceHeader({
           offset={12}
         >
           <div className={styles.calendarAccountMenuHeader}>
-            <ProfileAvatar
-              avatarUrl={viewerAvatarUrl}
-              initials={viewerInitials || viewerName.slice(0, 2).toUpperCase() || "RZ"}
-              label={viewerName}
-              className={styles.calendarAccountMenuAvatar}
-              imageClassName={styles.avatarImage}
-              fallbackClassName={styles.avatarFallback}
-            />
+            <div className={styles.calendarAccountMenuAvatarEditor}>
+              <ProfileAvatar
+                avatarUrl={menuAvatarUrl}
+                initials={viewerInitials || viewerName.slice(0, 2).toUpperCase() || "RZ"}
+                label={viewerName}
+                className={styles.calendarAccountMenuAvatar}
+                imageClassName={styles.avatarImage}
+                fallbackClassName={styles.avatarFallback}
+              />
+              <button
+                type="button"
+                className={styles.calendarAccountMenuAvatarEdit}
+                onClick={() => avatarInputRef.current?.click()}
+                aria-label={copy.uploadAvatar}
+                title={copy.uploadAvatar}
+                disabled={isUploadingAvatar}
+              >
+                ✎
+              </button>
+              <input
+                ref={avatarInputRef}
+                type="file"
+                accept="image/*"
+                className={styles.calendarAccountMenuAvatarInput}
+                onChange={(event) => void handleAvatarUpload(event)}
+                disabled={isUploadingAvatar}
+              />
+            </div>
             <div>
               <strong>{viewerName}</strong>
               <span>{businessName || "Timviz"}</span>
