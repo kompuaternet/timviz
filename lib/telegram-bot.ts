@@ -1056,6 +1056,85 @@ export async function getTelegramConnectionByTelegramUserId(telegramUserId: numb
   return candidates[0] ?? null;
 }
 
+function buildConnectTokenExpiryIso(fallbackIso?: string | null) {
+  if (fallbackIso) {
+    const ts = new Date(fallbackIso).getTime();
+    if (Number.isFinite(ts) && ts > Date.now()) {
+      return new Date(ts).toISOString();
+    }
+  }
+
+  return new Date(Date.now() + connectTokenTtlHours * 60 * 60 * 1000).toISOString();
+}
+
+export async function linkTelegramIdentityToProfessional(input: {
+  professionalId: string;
+  businessId: string;
+  language?: string | null;
+  timezone?: string | null;
+  telegramUserId: number;
+  telegramUsername?: string;
+  telegramFirstName?: string;
+  telegramLastName?: string;
+  telegramLanguageCode?: string | null;
+}) {
+  const professionalId = input.professionalId.trim();
+  const businessId = input.businessId.trim();
+
+  if (!professionalId || !businessId) {
+    throw new Error("Professional or business is missing.");
+  }
+
+  if (!Number.isFinite(input.telegramUserId)) {
+    throw new Error("Telegram user id is invalid.");
+  }
+
+  const existingByProfessional = await getTelegramConnectionByProfessionalId(professionalId);
+  const existingByTelegram = await getTelegramConnectionByTelegramUserId(input.telegramUserId);
+
+  if (existingByTelegram && existingByTelegram.professionalId !== professionalId) {
+    throw new Error("Telegram account is already linked to another profile.");
+  }
+
+  const base = existingByProfessional || existingByTelegram;
+  const now = nowIso();
+  const nextConnection: TelegramConnection = {
+    id: base?.id || makeId("tgc"),
+    professionalId,
+    businessId,
+    connectToken: base?.connectToken || makeConnectToken(),
+    connectTokenExpiresAt: buildConnectTokenExpiryIso(base?.connectTokenExpiresAt),
+    chatId: base?.chatId || "",
+    telegramUserId: input.telegramUserId,
+    telegramUsername: input.telegramUsername?.trim() || base?.telegramUsername || "",
+    telegramFirstName: input.telegramFirstName?.trim() || base?.telegramFirstName || "",
+    telegramLastName: input.telegramLastName?.trim() || base?.telegramLastName || "",
+    language: normalizeTelegramUserLanguage(
+      input.telegramLanguageCode,
+      base?.language || input.language
+    ),
+    timezone: (input.timezone || base?.timezone || "UTC").trim() || "UTC",
+    notificationsNewBooking: base?.notificationsNewBooking ?? true,
+    notificationsCabinetBooking: base?.notificationsCabinetBooking ?? true,
+    notificationsRescheduled: base?.notificationsRescheduled ?? true,
+    notificationsCancelled: base?.notificationsCancelled ?? true,
+    notificationsReminder: base?.notificationsReminder ?? true,
+    notificationsToday: base?.notificationsToday ?? true,
+    forwardingEnabled: base?.forwardingEnabled ?? true,
+    reminderLeadMinutes: normalizeReminderLeadMinutes(base?.reminderLeadMinutes, 120),
+    connectedAt: base?.connectedAt ?? null,
+    lastInteractionAt: now,
+    createdAt: base?.createdAt || now,
+    updatedAt: now
+  };
+
+  const connection = await upsertConnection(nextConnection);
+  return {
+    linked: true,
+    connection
+  } as const;
+}
+
 export async function ensureTelegramConnectToken(input: {
   professionalId: string;
   businessId: string;

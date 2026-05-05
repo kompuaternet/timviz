@@ -17,6 +17,7 @@ export const metadata: Metadata = {
 type TelegramPageProps = {
   searchParams?: Promise<{
     lang?: string;
+    source?: string;
     tgWebAppStartParam?: string;
     startapp?: string;
     start_param?: string;
@@ -50,6 +51,8 @@ function resolveTelegramStartPath(value: string | null | undefined) {
 export default async function TelegramPage({ searchParams }: TelegramPageProps) {
   const params = searchParams ? await searchParams : undefined;
   const initialLanguage = typeof params?.lang === "string" ? params.lang : null;
+  const source = typeof params?.source === "string" ? params.source : "";
+  const fromTelegram = source === "telegram";
   const startParam = [params?.tgWebAppStartParam, params?.startapp, params?.start_param].find(
     (item) => typeof item === "string" && item.trim()
   );
@@ -70,13 +73,39 @@ export default async function TelegramPage({ searchParams }: TelegramPageProps) 
       if (typeof startParam === "string" && startParam.trim()) {
         params.set("startapp", startParam.trim());
       }
-      redirect(`${pathname}?${params.toString()}`);
+      const signedInRedirectPath = `${pathname}?${params.toString()}`;
+      if (!fromTelegram) {
+        redirect(signedInRedirectPath);
+      }
+      return (
+        <TelegramMiniAppView
+          initialLanguage={initialLanguage}
+          signedInRedirectPath={signedInRedirectPath}
+          initialStartParam={typeof startParam === "string" ? startParam : null}
+        />
+      );
     }
 
     if (pendingJoinRequest) {
-      redirect("/pro/pending?source=telegram");
+      const pendingPath = "/pro/pending?source=telegram";
+      if (!fromTelegram) {
+        redirect(pendingPath);
+      }
+      return (
+        <TelegramMiniAppView
+          initialLanguage={initialLanguage}
+          signedInRedirectPath={pendingPath}
+          initialStartParam={typeof startParam === "string" ? startParam : null}
+        />
+      );
     }
   }
 
-  return <TelegramMiniAppView initialLanguage={initialLanguage} />;
+  return (
+    <TelegramMiniAppView
+      initialLanguage={initialLanguage}
+      signedInRedirectPath={null}
+      initialStartParam={typeof startParam === "string" ? startParam : null}
+    />
+  );
 }

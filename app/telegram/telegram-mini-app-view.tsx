@@ -45,10 +45,12 @@ const copyByLanguage = {
       "Google может открыть защищённое окно авторизации. После входа вы вернётесь обратно в Mini App.",
     openBot: "Открыть бот",
     loading: "Проверяем Telegram-сессию…",
+    linkingAccount: "Привязываем Telegram к вашему профилю…",
     reconnectHint: "Если это первый запуск, сначала подключите бота через /start connect_...",
     invalidSessionHint: "Сессия Telegram недействительна. Обновите Mini App и попробуйте снова.",
     genericAuthError: "Не удалось авторизоваться. Попробуйте ещё раз.",
     invalidCredentials: "Неверный email или пароль.",
+    linkedAnotherProfile: "Этот Telegram уже привязан к другому профилю Timviz.",
     googleStateError: "Google-сессия устарела. Запустите вход ещё раз.",
     googleOauthError: "Ошибка Google-входа. Попробуйте ещё раз.",
     connectedRedirecting: "Успешный вход. Перенаправляем в кабинет…",
@@ -72,10 +74,12 @@ const copyByLanguage = {
       "Google може відкрити захищене вікно авторизації. Після входу ви повернетеся в Mini App.",
     openBot: "Відкрити бота",
     loading: "Перевіряємо Telegram-сесію…",
+    linkingAccount: "Прив'язуємо Telegram до вашого профілю…",
     reconnectHint: "Якщо це перший запуск, спочатку підключіть бота через /start connect_...",
     invalidSessionHint: "Сесія Telegram недійсна. Оновіть Mini App і спробуйте ще раз.",
     genericAuthError: "Не вдалося авторизуватися. Спробуйте ще раз.",
     invalidCredentials: "Невірний email або пароль.",
+    linkedAnotherProfile: "Цей Telegram уже привʼязаний до іншого профілю Timviz.",
     googleStateError: "Google-сесія застаріла. Запустіть вхід ще раз.",
     googleOauthError: "Помилка Google-входу. Спробуйте ще раз.",
     connectedRedirecting: "Успішний вхід. Перенаправляємо в кабінет…",
@@ -99,10 +103,12 @@ const copyByLanguage = {
       "Google may open a secure auth window. After sign-in, you will return to the Mini App.",
     openBot: "Open bot",
     loading: "Verifying Telegram session…",
+    linkingAccount: "Linking Telegram to your profile…",
     reconnectHint: "If this is your first launch, connect the bot first via /start connect_...",
     invalidSessionHint: "Telegram session is invalid. Refresh Mini App and try again.",
     genericAuthError: "Could not authenticate. Please try again.",
     invalidCredentials: "Invalid email or password.",
+    linkedAnotherProfile: "This Telegram is already linked to another Timviz profile.",
     googleStateError: "Google session expired. Start sign-in again.",
     googleOauthError: "Google sign-in failed. Please try again.",
     connectedRedirecting: "Signed in. Redirecting to dashboard…",
@@ -170,9 +176,37 @@ function getRuntime() {
 
 type TelegramMiniAppViewProps = {
   initialLanguage?: string | null;
+  initialStartParam?: string | null;
+  signedInRedirectPath?: string | null;
 };
 
-export default function TelegramMiniAppView({ initialLanguage }: TelegramMiniAppViewProps) {
+function resolveStartRedirectPath(startParam: string | null | undefined) {
+  const normalized = String(startParam || "").trim().toLowerCase();
+  if (!normalized) return "/pro/calendar?source=telegram";
+  if (normalized.includes("settings") || normalized.includes("setup")) {
+    return "/pro/settings?source=telegram";
+  }
+  if (normalized.includes("clients")) {
+    return "/pro/clients?source=telegram";
+  }
+  if (normalized.includes("services")) {
+    return "/pro/services?source=telegram";
+  }
+  if (
+    normalized.includes("staff") ||
+    normalized.includes("team") ||
+    normalized.includes("schedule")
+  ) {
+    return "/pro/staff/schedule?source=telegram";
+  }
+  return "/pro/calendar?source=telegram";
+}
+
+export default function TelegramMiniAppView({
+  initialLanguage,
+  initialStartParam,
+  signedInRedirectPath
+}: TelegramMiniAppViewProps) {
   const [runtimeLanguage, setRuntimeLanguage] = useState<string | null>(null);
   const [status, setStatus] = useState<"idle" | "loading" | "error" | "done">("idle");
   const [errorMessage, setErrorMessage] = useState("");
@@ -188,14 +222,14 @@ export default function TelegramMiniAppView({ initialLanguage }: TelegramMiniApp
   const hasError = status === "error";
   const isDone = status === "done";
 
-  const redirectCandidates = useMemo(
-    () => ({
-      dashboard: "/pro/calendar?source=telegram",
+  const redirectCandidates = useMemo(() => {
+    const fallbackDashboard = resolveStartRedirectPath(initialStartParam);
+    return {
+      dashboard: signedInRedirectPath || fallbackDashboard,
       settings: "/pro/settings?source=telegram&section=telegram",
       bot: "https://t.me/Timviz_bot"
-    }),
-    []
-  );
+    };
+  }, [initialStartParam, signedInRedirectPath]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -252,9 +286,15 @@ export default function TelegramMiniAppView({ initialLanguage }: TelegramMiniApp
         return;
       }
 
+      if (runtimeInitData) {
+        setStatus("loading");
+        setErrorMessage(copy.linkingAccount);
+        await bindCurrentTelegramToSession(runtimeInitData);
+      }
+
       setStatus("done");
       setErrorMessage(copy.connectedRedirecting);
-      window.location.replace("/pro/workspace?source=telegram");
+      window.location.replace(redirectCandidates.dashboard || "/pro/workspace?source=telegram");
     } catch (error) {
       setStatus("error");
       setErrorMessage(error instanceof Error ? error.message : copy.genericAuthError);
@@ -278,6 +318,29 @@ export default function TelegramMiniAppView({ initialLanguage }: TelegramMiniApp
     window.location.href = relative;
   }
 
+  async function bindCurrentTelegramToSession(initData: string) {
+    const response = await fetch("/api/pro/telegram/miniapp/link", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      credentials: "include",
+      body: JSON.stringify({ initData })
+    });
+
+    const payload = (await response.json().catch(() => ({}))) as Partial<{
+      errorCode: string;
+      error: string;
+    }>;
+
+    if (!response.ok) {
+      if (payload.errorCode === "already_linked_other_profile") {
+        throw new Error(copy.linkedAnotherProfile);
+      }
+      throw new Error(payload.error || copy.genericAuthError);
+    }
+  }
+
   useEffect(() => {
     injectTelegramScript();
 
@@ -289,7 +352,16 @@ export default function TelegramMiniAppView({ initialLanguage }: TelegramMiniApp
 
       const runtime = getRuntime();
       const initData = runtime?.initData?.trim() || "";
-      const startParam = String(runtime?.initDataUnsafe?.start_param || "").trim();
+      const queryStartParam = (() => {
+        const params = new URLSearchParams(window.location.search);
+        return (
+          params.get("tgWebAppStartParam")?.trim() ||
+          params.get("startapp")?.trim() ||
+          params.get("start_param")?.trim() ||
+          ""
+        );
+      })();
+      const startParam = String(runtime?.initDataUnsafe?.start_param || queryStartParam || "").trim();
       const runtimeLang = runtime?.initDataUnsafe?.user?.language_code || "";
       if (runtimeLang) {
         setRuntimeLanguage(runtimeLang);
@@ -302,6 +374,9 @@ export default function TelegramMiniAppView({ initialLanguage }: TelegramMiniApp
       }
 
       if (!initData) {
+        if (signedInRedirectPath) {
+          window.location.replace(signedInRedirectPath);
+        }
         return;
       }
 
@@ -333,6 +408,24 @@ export default function TelegramMiniAppView({ initialLanguage }: TelegramMiniApp
           return;
         }
 
+        if (payload.errorCode === "not_connected" && signedInRedirectPath) {
+          try {
+            setErrorMessage(copy.linkingAccount);
+            await bindCurrentTelegramToSession(initData);
+            setStatus("done");
+            window.location.replace(signedInRedirectPath);
+            return;
+          } catch (linkError) {
+            if (!cancelled) {
+              setStatus("error");
+              setErrorMessage(
+                linkError instanceof Error ? linkError.message : copy.genericAuthError
+              );
+            }
+            return;
+          }
+        }
+
         let fallbackError = payload.error || copy.reconnectHint;
         if (payload.errorCode === "invalid_init_data") {
           fallbackError = copy.invalidSessionHint;
@@ -357,7 +450,7 @@ export default function TelegramMiniAppView({ initialLanguage }: TelegramMiniApp
       cancelled = true;
       window.clearTimeout(timeout);
     };
-  }, []);
+  }, [copy.genericAuthError, copy.invalidSessionHint, copy.linkingAccount, copy.reconnectHint, signedInRedirectPath]);
 
   return (
     <main className={styles.page}>
