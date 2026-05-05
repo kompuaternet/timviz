@@ -684,6 +684,8 @@ export default function ProSetupFlow({
   const [manualServiceHours, setManualServiceHours] = useState("0");
   const [manualServiceMinutes, setManualServiceMinutes] = useState("30");
   const [manualServicePrice, setManualServicePrice] = useState("");
+  const [isTelegramSource, setIsTelegramSource] = useState(false);
+  const [telegramStartParam, setTelegramStartParam] = useState("setup");
   const t = setupText[language];
   const isInvitationFlow = invitation?.status === "pending";
 
@@ -742,6 +744,16 @@ export default function ProSetupFlow({
     [draft.services, showAllSuggestedServices]
   );
 
+  const withTelegramQuery = useMemo(() => {
+    return (path: string) => {
+      if (!isTelegramSource) {
+        return path;
+      }
+      const separator = path.includes("?") ? "&" : "?";
+      return `${path}${separator}source=telegram&startapp=${encodeURIComponent(telegramStartParam || "setup")}`;
+    };
+  }, [isTelegramSource, telegramStartParam]);
+
   useEffect(() => {
     setManualServiceCategory((current) =>
       current === "Інша" || current === "Other" ? "Другая" : current
@@ -765,6 +777,37 @@ export default function ProSetupFlow({
   useEffect(() => {
     const nextLanguage = getInitialSetupLanguage();
     setLanguage(nextLanguage);
+    const params = new URLSearchParams(window.location.search);
+    const sourceFromQuery = params.get("source")?.trim().toLowerCase() || "";
+    const queryStartParam =
+      params.get("startapp")?.trim() ||
+      params.get("start_param")?.trim() ||
+      params.get("tgWebAppStartParam")?.trim() ||
+      "";
+    const runtimeStartParam = (() => {
+      try {
+        const telegram = (
+          window as Window & {
+            Telegram?: { WebApp?: { initData?: string; initDataUnsafe?: { start_param?: string } } };
+          }
+        ).Telegram;
+        return String(telegram?.WebApp?.initDataUnsafe?.start_param || "").trim();
+      } catch {
+        return "";
+      }
+    })();
+    const hasTelegramRuntime = (() => {
+      try {
+        const telegram = (
+          window as Window & { Telegram?: { WebApp?: { initData?: string } } }
+        ).Telegram;
+        return Boolean(telegram?.WebApp?.initData);
+      } catch {
+        return false;
+      }
+    })();
+    setIsTelegramSource(sourceFromQuery === "telegram" || hasTelegramRuntime);
+    setTelegramStartParam(queryStartParam || runtimeStartParam || "setup");
 
     const handleLanguageChange = (event: Event) => {
       const next = (event as CustomEvent<ProLanguage>).detail;
@@ -894,13 +937,15 @@ export default function ProSetupFlow({
   function goBack() {
     if (isInvitationFlow && invitation) {
       router.push(
-        `/pro/create-account?email=${encodeURIComponent(invitation.email)}&invite=${encodeURIComponent(invitation.token)}`
+        withTelegramQuery(
+          `/pro/create-account?email=${encodeURIComponent(invitation.email)}&invite=${encodeURIComponent(invitation.token)}`
+        )
       );
       return;
     }
 
     if (step === 0) {
-      router.push("/pro/create-account");
+      router.push(withTelegramQuery("/pro/create-account"));
       return;
     }
 

@@ -10,16 +10,29 @@ import SettingsView from "./SettingsView";
 type ProSettingsPageProps = {
   searchParams?: Promise<{
     section?: string;
+    source?: string;
+    startapp?: string;
+    start_param?: string;
+    tgWebAppStartParam?: string;
   }>;
 };
 
 export default async function ProSettingsPage({ searchParams }: ProSettingsPageProps) {
   const params = (await searchParams) ?? {};
+  const source = typeof params.source === "string" ? params.source.trim().toLowerCase() : "";
+  const isTelegramSource = source === "telegram";
+  const startParamRaw = [params.startapp, params.start_param, params.tgWebAppStartParam].find(
+    (value) => typeof value === "string" && value.trim()
+  );
+  const startParam = typeof startParamRaw === "string" ? startParamRaw.trim() : "settings";
+  const loginPath = isTelegramSource
+    ? `/telegram?source=telegram&startapp=${encodeURIComponent(startParam || "settings")}`
+    : "/pro/login";
   const cookieStore = await cookies();
   const professionalId = verifySessionValue(cookieStore.get(getSessionCookieName())?.value) || "";
 
   if (!professionalId) {
-    redirect("/pro/login");
+    redirect(loginPath);
   }
 
   const [workspace, telegramConnection] = await Promise.all([
@@ -28,7 +41,7 @@ export default async function ProSettingsPage({ searchParams }: ProSettingsPageP
   ]);
 
   if (!workspace) {
-    redirect("/pro/login");
+    redirect(loginPath);
   }
 
   const usedCredits = await getAppointmentUsageForProfessional(professionalId);

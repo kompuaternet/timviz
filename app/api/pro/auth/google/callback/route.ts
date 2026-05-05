@@ -51,6 +51,20 @@ function resolveFinalRedirectTarget(input: {
   return fallbackUrl;
 }
 
+function extractTelegramStartParam(returnTo: string, appUrl: string) {
+  try {
+    const parsed = new URL(returnTo, appUrl);
+    const startParam =
+      parsed.searchParams.get("startapp") ||
+      parsed.searchParams.get("start_param") ||
+      parsed.searchParams.get("tgWebAppStartParam") ||
+      "";
+    return startParam.trim() || "setup";
+  } catch {
+    return "setup";
+  }
+}
+
 function clearOAuthCookies(cookieStore: Awaited<ReturnType<typeof cookies>>, isSecure: boolean) {
   cookieStore.set(GOOGLE_OAUTH_STATE_COOKIE, "", {
     httpOnly: true,
@@ -155,6 +169,13 @@ export async function GET(request: Request) {
     }
 
     const createAccountUrl = new URL("/pro/create-account", appUrl);
+    if (isTelegramSourceReturn(returnTo, appUrl)) {
+      createAccountUrl.searchParams.set("source", "telegram");
+      createAccountUrl.searchParams.set(
+        "startapp",
+        extractTelegramStartParam(returnTo, appUrl)
+      );
+    }
     createAccountUrl.searchParams.set("google", "1");
     createAccountUrl.searchParams.set("email", profile.email);
     if (inviteToken) {

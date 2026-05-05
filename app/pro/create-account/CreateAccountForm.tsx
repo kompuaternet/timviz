@@ -405,6 +405,8 @@ export default function CreateAccountForm() {
   const [isCheckingEmail, setIsCheckingEmail] = useState(false);
   const [inviteToken, setInviteToken] = useState("");
   const [step, setStep] = useState<"entry" | "details">("entry");
+  const [isTelegramSource, setIsTelegramSource] = useState(false);
+  const [telegramStartParam, setTelegramStartParam] = useState("setup");
 
   const phoneRule = getPhoneRule(phoneCountry);
   const phoneIsValid = isPhoneValid(phoneCountry, phone);
@@ -428,6 +430,48 @@ export default function CreateAccountForm() {
     });
   }, [prefixSearch]);
 
+  const loginHref = useMemo(() => {
+    const params = new URLSearchParams();
+    if (inviteToken) {
+      params.set("invite", inviteToken);
+    }
+    if (isTelegramSource) {
+      params.set("source", "telegram");
+      params.set("startapp", telegramStartParam || "setup");
+    }
+    const query = params.toString();
+    return query ? `/pro/login?${query}` : "/pro/login";
+  }, [inviteToken, isTelegramSource, telegramStartParam]);
+
+  const forgotPasswordHref = useMemo(() => {
+    if (!existingAccountEmail) {
+      return "/pro/forgot-password";
+    }
+    const params = new URLSearchParams();
+    params.set("email", existingAccountEmail);
+    if (isTelegramSource) {
+      params.set("source", "telegram");
+      params.set("startapp", telegramStartParam || "setup");
+    }
+    return `/pro/forgot-password?${params.toString()}`;
+  }, [existingAccountEmail, isTelegramSource, telegramStartParam]);
+
+  const googleRegisterHref = useMemo(() => {
+    const params = new URLSearchParams();
+    params.set("mode", "register");
+    if (inviteToken) {
+      params.set("invite", inviteToken);
+    }
+    if (isTelegramSource) {
+      params.set("source", "telegram");
+      const returnToQuery = new URLSearchParams();
+      returnToQuery.set("source", "telegram");
+      returnToQuery.set("startapp", telegramStartParam || "setup");
+      params.set("return_to", `/telegram?${returnToQuery.toString()}`);
+    }
+    return `/api/pro/auth/google/start?${params.toString()}`;
+  }, [inviteToken, isTelegramSource, telegramStartParam]);
+
   useEffect(() => {
     const savedLanguage = window.localStorage.getItem("rezervo-pro-language");
     const initialLanguage = languages.includes(savedLanguage as ProLanguage)
@@ -436,6 +480,36 @@ export default function CreateAccountForm() {
     const browserCountry = getBrowserCountry();
     const browserTimezone = getBrowserTimezone();
     const params = new URLSearchParams(window.location.search);
+    const sourceFromQuery = params.get("source")?.trim().toLowerCase() || "";
+    const queryStartParam =
+      params.get("startapp")?.trim() ||
+      params.get("start_param")?.trim() ||
+      params.get("tgWebAppStartParam")?.trim() ||
+      "";
+    const runtimeStartParam = (() => {
+      try {
+        const telegram = (
+          window as Window & {
+            Telegram?: { WebApp?: { initData?: string; initDataUnsafe?: { start_param?: string } } };
+          }
+        ).Telegram;
+        return String(telegram?.WebApp?.initDataUnsafe?.start_param || "").trim();
+      } catch {
+        return "";
+      }
+    })();
+    const isTelegramRuntime = (() => {
+      try {
+        const telegram = (
+          window as Window & {
+            Telegram?: { WebApp?: { initData?: string } };
+          }
+        ).Telegram;
+        return Boolean(telegram?.WebApp?.initData);
+      } catch {
+        return false;
+      }
+    })();
     const inviteFromQuery = params.get("invite")?.trim() || "";
     const emailFromQuery = params.get("email")?.trim() || "";
     const avatarFromQuery = params.get("avatarUrl")?.trim() || "";
@@ -487,6 +561,8 @@ export default function CreateAccountForm() {
     setTermsAccepted(liveDraft?.termsAccepted ?? true);
     setStep(liveDraft?.step === "details" || setupDraft?.email ? "details" : "entry");
     setInviteToken(inviteFromQuery);
+    setIsTelegramSource(sourceFromQuery === "telegram" || isTelegramRuntime);
+    setTelegramStartParam(queryStartParam || runtimeStartParam || "setup");
     window.localStorage.setItem("rezervo-pro-language", initialLanguage);
     document.documentElement.lang = initialLanguage;
     window.dispatchEvent(new CustomEvent("rezervo-language-change", { detail: initialLanguage }));
@@ -647,7 +723,16 @@ export default function CreateAccountForm() {
       })
     );
 
-    router.push(inviteToken ? `/pro/setup?invite=${encodeURIComponent(inviteToken)}` : "/pro/setup");
+    const params = new URLSearchParams();
+    if (inviteToken) {
+      params.set("invite", inviteToken);
+    }
+    if (isTelegramSource) {
+      params.set("source", "telegram");
+      params.set("startapp", telegramStartParam || "setup");
+    }
+    const query = params.toString();
+    router.push(query ? `/pro/setup?${query}` : "/pro/setup");
   }
 
   if (step === "entry") {
@@ -684,15 +769,15 @@ export default function CreateAccountForm() {
             <p>{t.accountExistsText}</p>
             <div className={styles.existingAccountActions}>
               <a
-                href={`/pro/login?email=${encodeURIComponent(existingAccountEmail)}${
-                  inviteToken ? `&invite=${encodeURIComponent(inviteToken)}` : ""
-                }`}
+                href={`${loginHref}${
+                  loginHref.includes("?") ? "&" : "?"
+                }email=${encodeURIComponent(existingAccountEmail)}`}
                 className={styles.primaryButton}
               >
                 {t.loginLink}
               </a>
               <a
-                href={`/pro/forgot-password?email=${encodeURIComponent(existingAccountEmail)}`}
+                href={forgotPasswordHref}
                 className={styles.ghostButton}
               >
                 {t.forgotPassword}
@@ -705,9 +790,7 @@ export default function CreateAccountForm() {
 
         <div className={styles.socialStack}>
           <a
-            href={`/api/pro/auth/google/start?mode=register${
-              inviteToken ? `&invite=${encodeURIComponent(inviteToken)}` : ""
-            }`}
+            href={googleRegisterHref}
             className={styles.socialButton}
           >
             <span className={`${styles.socialIcon} ${styles.google}`}>G</span>
@@ -883,7 +966,7 @@ export default function CreateAccountForm() {
         </button>
         <a
           className={styles.mutedLink}
-          href={inviteToken ? `/pro/login?invite=${encodeURIComponent(inviteToken)}` : "/pro/login"}
+          href={loginHref}
         >
           {t.loginLink}
         </a>

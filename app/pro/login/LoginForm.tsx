@@ -110,10 +110,33 @@ export default function LoginForm({ staleSession = false }: LoginFormProps) {
     const prefilledEmail = params.get("email")?.trim() || "";
     const inviteFromQuery = params.get("invite")?.trim() || "";
     const source = params.get("source")?.trim().toLowerCase() || "";
+    const runtimeStartParam = (() => {
+      try {
+        const telegram = (
+          window as Window & {
+            Telegram?: { WebApp?: { initDataUnsafe?: { start_param?: string }; initData?: string } };
+          }
+        ).Telegram;
+        return String(telegram?.WebApp?.initDataUnsafe?.start_param || "").trim();
+      } catch {
+        return "";
+      }
+    })();
+    const hasTelegramRuntime = (() => {
+      try {
+        const telegram = (
+          window as Window & { Telegram?: { WebApp?: { initData?: string } } }
+        ).Telegram;
+        return Boolean(telegram?.WebApp?.initData);
+      } catch {
+        return false;
+      }
+    })();
     const startParam =
       params.get("startapp")?.trim() ||
       params.get("start_param")?.trim() ||
       params.get("tgWebAppStartParam")?.trim() ||
+      runtimeStartParam ||
       "";
     const nextText =
       googleError === "config"
@@ -124,7 +147,7 @@ export default function LoginForm({ staleSession = false }: LoginFormProps) {
     if (prefilledEmail) {
       setEmail(prefilledEmail);
     }
-    setIsTelegramSource(source === "telegram");
+    setIsTelegramSource(source === "telegram" || hasTelegramRuntime);
     setTelegramStartParam(startParam || "calendar");
     setInviteToken(inviteFromQuery);
     setOauthErrorText(nextText);
@@ -165,6 +188,17 @@ export default function LoginForm({ staleSession = false }: LoginFormProps) {
     if (!response.ok) {
       setError(result.error || copy.loginFailed);
       setIsLoading(false);
+      return;
+    }
+
+    if (isTelegramSource) {
+      const query = new URLSearchParams();
+      query.set("source", "telegram");
+      if (telegramStartParam) {
+        query.set("startapp", telegramStartParam);
+      }
+      router.push(`/telegram?${query.toString()}`);
+      router.refresh();
       return;
     }
 
@@ -242,8 +276,20 @@ export default function LoginForm({ staleSession = false }: LoginFormProps) {
             inviteToken
               ? `/pro/create-account?invite=${encodeURIComponent(inviteToken)}${
                   email.trim() ? `&email=${encodeURIComponent(email.trim())}` : ""
+                }${
+                  isTelegramSource
+                    ? `${email.trim() || inviteToken ? "&" : "?"}source=telegram${
+                        telegramStartParam ? `&startapp=${encodeURIComponent(telegramStartParam)}` : ""
+                      }`
+                    : ""
                 }`
-              : "/pro/create-account"
+              : `/pro/create-account${
+                  isTelegramSource
+                    ? `?source=telegram${
+                        telegramStartParam ? `&startapp=${encodeURIComponent(telegramStartParam)}` : ""
+                      }`
+                    : ""
+                }`
           }
           className={styles.mutedLink}
         >
