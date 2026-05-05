@@ -11427,11 +11427,11 @@
   }
 
   .calendarDayColumnsHeader {
-    grid-template-columns: 52px minmax(0, 1fr);
+    grid-template-columns: 46px minmax(0, 1fr);
   }
 
   .calendarDayHourSpacer {
-    min-width: 52px;
+    min-width: 46px;
   }
 
   .calendarDayMemberHeaderGrid,
@@ -11549,7 +11549,7 @@
 
   .calendarV2HourLabel,
   .hourLabel {
-    left: 6px;
+    left: 4px;
     font-size: 0.72rem;
   }
 
@@ -12268,12 +12268,12 @@
 
   .calendarV2Grid,
   .calendarPageGrid {
-    grid-template-columns: 52px minmax(0, 1fr);
+    grid-template-columns: 46px minmax(0, 1fr);
   }
 
   .calendarV2HourLabel,
   .hourLabel {
-    left: 6px;
+    left: 4px;
     font-size: 0.76rem;
   }
 
