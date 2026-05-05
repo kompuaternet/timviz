@@ -9783,6 +9783,35 @@
     pointer-events: none;
   }
 
+  .primaryButton {
+    min-height: 50px;
+    padding: 0 18px;
+    font-size: 0.95rem;
+  }
+
+  .ghostButton,
+  .calendarSecondaryAction {
+    min-height: 44px;
+    padding: 0 14px;
+    font-size: 0.93rem;
+  }
+
+  .input,
+  .select,
+  .phoneCode,
+  .phoneCodeSelect,
+  .phoneInput,
+  .textarea {
+    min-height: 48px;
+    padding: 11px 14px;
+    border-radius: 15px;
+    font-size: 0.95rem;
+  }
+
+  .textarea {
+    min-height: 96px;
+  }
+
   .workspaceMain,
   .clientsMain,
   .servicesPage,
@@ -11745,7 +11774,7 @@
   .clientsDrawerFooter {
     grid-template-columns: 1fr;
     padding-top: 14px;
-    padding-bottom: calc(116px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px));
   }
 
   .workspaceTopBar,
@@ -11875,11 +11904,11 @@
   }
 
   .calendarVisitServicePicker {
-    min-height: 60px;
+    min-height: 52px;
     justify-content: space-between;
-    padding: 0 16px;
-    border-radius: 18px;
-    font-size: 1.08rem;
+    padding: 0 14px;
+    border-radius: 16px;
+    font-size: 1rem;
   }
 
   .calendarVisitTimeGrid {
@@ -11892,13 +11921,13 @@
   }
 
   .calendarVisitTimeGrid .select {
-    min-height: 60px;
-    padding: 12px 14px;
-    border-radius: 18px;
+    min-height: 52px;
+    padding: 10px 12px;
+    border-radius: 16px;
     background: rgba(248, 248, 252, 0.96);
     border-color: rgba(17, 17, 17, 0.1);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
-    font-size: 1.08rem;
+    font-size: 1rem;
     font-weight: 600;
   }
 
@@ -11911,9 +11940,10 @@
   }
 
   .calendarAddServiceButton {
-    min-height: 42px;
+    min-height: 40px;
     width: 100%;
     margin: 0 0 8px;
+    font-size: 0.95rem;
   }
 
   .calendarTotals {
@@ -11921,12 +11951,20 @@
     padding: 6px 12px 8px;
   }
 
+  .calendarTotals span {
+    font-size: 0.68rem;
+  }
+
+  .calendarTotals strong {
+    font-size: 0.82rem;
+  }
+
   .calendarDrawerFooter {
     position: static;
     bottom: 0;
-    gap: 8px;
-    padding-top: 8px;
-    padding-bottom: calc(116px + env(safe-area-inset-bottom, 0px));
+    gap: 6px;
+    padding-top: 6px;
+    padding-bottom: calc(70px + env(safe-area-inset-bottom, 0px));
   }
 
   .calendarSearchLabel {
@@ -12868,6 +12906,19 @@
     gap: 4px;
   }
 
+  .primaryButton {
+    min-height: 44px;
+    padding: 0 14px;
+    font-size: 0.9rem;
+  }
+
+  .ghostButton,
+  .calendarSecondaryAction {
+    min-height: 42px;
+    padding: 0 12px;
+    font-size: 0.88rem;
+  }
+
   .mobileWorkspaceNavIcon svg {
     width: 18px;
     height: 18px;
@@ -12886,6 +12937,32 @@
   .calendarV2Shell .calendarCenterShell,
   .calendarV2Shell .calendarV2ScrollFrame {
     padding-bottom: calc(104px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .calendarDrawerFooter {
+    gap: 5px;
+    padding-top: 5px;
+    padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .clientsDrawerFooter {
+    padding-top: 10px;
+    padding-bottom: calc(68px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .calendarVisitServicePicker {
+    min-height: 48px;
+    font-size: 0.94rem;
+  }
+
+  .calendarVisitTimeGrid .select {
+    min-height: 48px;
+    font-size: 0.94rem;
+  }
+
+  .calendarVisitTimeGrid span,
+  .calendarVisitTimeGrid label span {
+    font-size: 0.72rem;
   }
 
   .calendarWorkspaceHeader {
