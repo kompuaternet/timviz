@@ -239,7 +239,7 @@ const textByLanguage: Record<TelegramLanguage, TelegramText> = {
     menuSettings: "⚙️ Настройки",
     menuHome: "🏠 Меню",
     menuSupport: "💬 Поддержка",
-    menuApp: "📱 Открыть приложение",
+    menuApp: "🚀 Timviz App",
     menuShare: "🔗 Поделиться",
     shareAppText: "Timviz для записи клиентов онлайн",
     botDescription:
@@ -310,7 +310,7 @@ const textByLanguage: Record<TelegramLanguage, TelegramText> = {
     menuSettings: "⚙️ Налаштування",
     menuHome: "🏠 Меню",
     menuSupport: "💬 Підтримка",
-    menuApp: "📱 Відкрити застосунок",
+    menuApp: "🚀 Timviz App",
     menuShare: "🔗 Поділитися",
     shareAppText: "Timviz для онлайн-запису клієнтів",
     botDescription:
@@ -381,7 +381,7 @@ const textByLanguage: Record<TelegramLanguage, TelegramText> = {
     menuSettings: "⚙️ Settings",
     menuHome: "🏠 Menu",
     menuSupport: "💬 Support",
-    menuApp: "📱 Open app",
+    menuApp: "🚀 Timviz App",
     menuShare: "🔗 Share",
     shareAppText: "Timviz for online bookings and calendar",
     botDescription:
@@ -443,16 +443,19 @@ const textByLanguage: Record<TelegramLanguage, TelegramText> = {
 
 const commandsByLanguage: Record<TelegramLanguage, TelegramBotCommand[]> = {
   ru: [
+    { command: "menu", description: "Главное меню" },
     { command: "today", description: "Записи на сегодня" },
     { command: "settings", description: "Настройки уведомлений" },
     { command: "app", description: "Открыть приложение Timviz" }
   ],
   uk: [
+    { command: "menu", description: "Головне меню" },
     { command: "today", description: "Записи на сьогодні" },
     { command: "settings", description: "Налаштування сповіщень" },
     { command: "app", description: "Відкрити застосунок Timviz" }
   ],
   en: [
+    { command: "menu", description: "Main menu" },
     { command: "today", description: "Today bookings" },
     { command: "settings", description: "Notification settings" },
     { command: "app", description: "Open Timviz app" }
@@ -1432,13 +1435,16 @@ export async function getTelegramStartAppLink(startParam = "calendar") {
 
 async function setTelegramMenuButton() {
   const mode = getTelegramMenuButtonMode();
+  const menuButtonText = (process.env.TELEGRAM_BOOKING_MENU_BUTTON_TEXT || "🚀 Timviz")
+    .trim()
+    .slice(0, 32);
 
   if (mode === "web_app") {
     const miniAppUrl = getTelegramMiniAppUrl("/telegram?startapp=calendar");
     await telegramApiRequest<boolean>("setChatMenuButton", {
       menu_button: {
         type: "web_app",
-        text: "Open app",
+        text: menuButtonText || "🚀 Timviz",
         web_app: {
           url: miniAppUrl
         }
@@ -2254,6 +2260,16 @@ function buildDashboardKeyboard(
         {
           text: text.menuShare,
           url: shareUrl
+        }
+      ],
+      [
+        {
+          text: text.menuHome,
+          callback_data: buildMenuCallbackData("menu")
+        },
+        {
+          text: text.menuToday,
+          callback_data: buildMenuCallbackData("today")
         }
       ],
       [

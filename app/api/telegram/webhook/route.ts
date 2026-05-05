@@ -191,6 +191,12 @@ function buildDashboardKeyboard(preferredLanguage?: string | null, startParam?: 
           callback_data: buildMenuCallbackData("support")
         },
         {
+          text: text.menuHome,
+          callback_data: buildMenuCallbackData("menu")
+        }
+      ],
+      [
+        {
           text: text.openDashboard,
           url: getDashboardUrl("/pro/calendar")
         }
@@ -693,6 +699,19 @@ async function handleMessage(update: TelegramUpdate) {
 
   if (command?.command === "/settings") {
     await handleSettingsCommand(chatId, preferredLanguage);
+    return;
+  }
+
+  if (command?.command === "/menu") {
+    const connection = await getTelegramConnectionByChatId(chatId);
+    const t = getTelegramText(
+      connection?.language || normalizeTelegramUserLanguage(preferredLanguage)
+    );
+    await sendTelegramTextMessage({
+      chatId,
+      text: `${t.mainMenuTitle}\n${t.help}`,
+      replyMarkup: buildDashboardKeyboard(connection?.language || preferredLanguage)
+    });
     return;
   }
 
