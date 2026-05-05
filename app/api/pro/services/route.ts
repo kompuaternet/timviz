@@ -10,6 +10,7 @@ import {
   reorderServicesForProfessional,
   updateServiceForProfessional
 } from "../../../../lib/pro-data";
+import { sendSuperadminTelegramNotification } from "../../../../lib/telegram-bot";
 
 type ServiceInput = {
   name?: string;
@@ -58,6 +59,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const workspaceBefore = await getWorkspaceSnapshot(professionalId);
+    if (!workspaceBefore) {
+      return NextResponse.json({ error: "Workspace not found." }, { status: 404 });
+    }
+    const existingServiceIds = new Set(workspaceBefore.services.map((service) => service.id));
+    const professionalName =
+      `${workspaceBefore.professional.firstName} ${workspaceBefore.professional.lastName}`.trim() ||
+      "";
+    const professionalEmail = workspaceBefore.professional.email;
+    const businessId = workspaceBefore.business.id;
+    const businessName = workspaceBefore.business.name;
+
     const body = await request.json();
     const services: ServiceInput[] = Array.isArray(body.services)
       ? body.services
@@ -82,6 +95,18 @@ export async function POST(request: Request) {
         source: services[0].source
       });
 
+      if (!existingServiceIds.has(created.id)) {
+        await sendSuperadminTelegramNotification({
+          eventType: "service_added",
+          professionalId,
+          professionalName,
+          professionalEmail,
+          businessId,
+          businessName,
+          services: [created]
+        }).catch(() => undefined);
+      }
+
       return NextResponse.json(created);
     }
 
@@ -96,6 +121,19 @@ export async function POST(request: Request) {
         source: service.source
       }))
     });
+
+    const actuallyAdded = created.filter((service) => !existingServiceIds.has(service.id));
+    if (actuallyAdded.length) {
+      await sendSuperadminTelegramNotification({
+        eventType: "service_added",
+        professionalId,
+        professionalName,
+        professionalEmail,
+        businessId,
+        businessName,
+        services: actuallyAdded
+      }).catch(() => undefined);
+    }
 
     return NextResponse.json({ services: created });
   } catch (error) {

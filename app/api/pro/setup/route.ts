@@ -2,7 +2,10 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { getSessionCookieName, signSessionValue } from "../../../../lib/pro-auth";
 import { createProfessionalSetup } from "../../../../lib/pro-data";
-import { sendJoinRequestTelegramNotification } from "../../../../lib/telegram-bot";
+import {
+  sendJoinRequestTelegramNotification,
+  sendSuperadminTelegramNotification
+} from "../../../../lib/telegram-bot";
 
 export async function POST(request: Request) {
   try {
@@ -12,6 +15,28 @@ export async function POST(request: Request) {
       setup: body.setup,
       invitationToken: typeof body.invitationToken === "string" ? body.invitationToken : undefined
     });
+
+    const professionalName = `${String(body?.account?.firstName || "").trim()} ${String(
+      body?.account?.lastName || ""
+    ).trim()}`.trim();
+    const ownerMode = String(body?.setup?.ownerMode || "owner").trim();
+    const businessName =
+      ownerMode === "owner"
+        ? String(body?.setup?.companyName || "").trim()
+        : String(body?.setup?.joinBusinessName || "").trim();
+    const businessId = String(body?.setup?.joinBusinessId || "").trim();
+
+    await sendSuperadminTelegramNotification({
+      eventType: "user_registered",
+      professionalId: result.professionalId,
+      professionalName,
+      professionalEmail: String(body?.account?.email || "").trim(),
+      professionalPhone: String(body?.account?.phone || "").trim(),
+      ownerMode,
+      businessName: businessName || undefined,
+      businessId: businessId || undefined,
+      workspaceReady: result.workspaceReady
+    }).catch(() => undefined);
 
     if (result.joinRequest) {
       await sendJoinRequestTelegramNotification({

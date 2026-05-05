@@ -52,6 +52,11 @@ export type TelegramBookingEventType =
   | "rescheduled"
   | "cancelled";
 
+export type TelegramSuperadminEventType =
+  | "user_registered"
+  | "service_added"
+  | "photos_added";
+
 type TelegramReminderEvent = {
   id: string;
   appointmentId: string;
@@ -619,6 +624,15 @@ function getTelegramMiniAppShortName() {
 
 function getSupportChatId() {
   return (
+    process.env.TELEGRAM_SUPPORT_CHAT_ID ||
+    process.env.SUPPORT_TELEGRAM_CHAT_ID ||
+    ""
+  ).trim();
+}
+
+function getSuperadminChatId() {
+  return (
+    process.env.TELEGRAM_SUPERADMIN_CHAT_ID ||
     process.env.TELEGRAM_SUPPORT_CHAT_ID ||
     process.env.SUPPORT_TELEGRAM_CHAT_ID ||
     ""
@@ -2730,4 +2744,83 @@ export async function forwardTelegramMessageToSupport(input: {
   });
 
   return true;
+}
+
+export async function sendSuperadminTelegramNotification(input: {
+  eventType: TelegramSuperadminEventType;
+  professionalId?: string;
+  professionalName?: string;
+  professionalEmail?: string;
+  professionalPhone?: string;
+  ownerMode?: string;
+  businessId?: string;
+  businessName?: string;
+  workspaceReady?: boolean;
+  services?: Array<{
+    id?: string;
+    name?: string;
+    category?: string;
+    durationMinutes?: number;
+    source?: string;
+  }>;
+  photosAdded?: number;
+}) {
+  const superadminChatId = getSuperadminChatId();
+  if (!superadminChatId) {
+    return { sent: false as const, reason: "no_superadmin_chat" as const };
+  }
+
+  const lines: string[] = [];
+
+  if (input.eventType === "user_registered") {
+    const roleLabel = input.ownerMode === "member" ? "сотрудник" : "владелец";
+    lines.push("🆕 Новая регистрация в Timviz");
+    lines.push(`👤 ${input.professionalName?.trim() || input.professionalEmail?.trim() || "-"}`);
+    lines.push(`✉️ ${input.professionalEmail?.trim() || "-"}`);
+    lines.push(`📞 ${input.professionalPhone?.trim() || "-"}`);
+    lines.push(`🧾 Роль: ${roleLabel}`);
+    lines.push(`✅ Workspace ready: ${input.workspaceReady ? "yes" : "no"}`);
+  } else if (input.eventType === "service_added") {
+    const services = (input.services ?? []).filter(
+      (service) => typeof service.name === "string" && service.name.trim()
+    );
+    lines.push("🧩 Пользователь добавил новую услугу");
+    lines.push(`👤 ${input.professionalName?.trim() || input.professionalEmail?.trim() || "-"}`);
+    lines.push(`🧮 Кол-во: ${services.length}`);
+    services.slice(0, 5).forEach((service) => {
+      const name = service.name?.trim() || "Без названия";
+      const duration =
+        typeof service.durationMinutes === "number" && Number.isFinite(service.durationMinutes)
+          ? `${Math.max(0, Math.floor(service.durationMinutes))} мин`
+          : "-";
+      const category = service.category?.trim() || "Без категории";
+      lines.push(`• ${name} (${duration}, ${category})`);
+    });
+    if (services.length > 5) {
+      lines.push(`… и ещё ${services.length - 5}`);
+    }
+  } else if (input.eventType === "photos_added") {
+    lines.push("🖼️ Пользователь добавил фото бизнеса");
+    lines.push(`👤 ${input.professionalName?.trim() || input.professionalEmail?.trim() || "-"}`);
+    lines.push(`📸 Добавлено фото: ${Math.max(0, Math.floor(input.photosAdded ?? 0))}`);
+  }
+
+  if (input.businessName?.trim()) {
+    lines.push(`🏢 Бизнес: ${input.businessName.trim()}`);
+  }
+  if (input.businessId?.trim()) {
+    lines.push(`🆔 Business ID: ${input.businessId.trim()}`);
+  }
+  if (input.professionalId?.trim()) {
+    lines.push(`🆔 Professional ID: ${input.professionalId.trim()}`);
+  }
+
+  lines.push(getDashboardUrl("/superadmin"));
+
+  await sendTelegramTextMessage({
+    chatId: superadminChatId,
+    text: lines.join("\n")
+  });
+
+  return { sent: true as const };
 }

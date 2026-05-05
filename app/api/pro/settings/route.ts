@@ -7,6 +7,7 @@ import {
   getWorkspaceSnapshot,
   updateWorkspaceSettingsForProfessional
 } from "../../../../lib/pro-data";
+import { sendSuperadminTelegramNotification } from "../../../../lib/telegram-bot";
 
 async function getProfessionalId() {
   const cookieStore = await cookies();
@@ -58,11 +59,41 @@ export async function PATCH(request: Request) {
 
   try {
     const body = await request.json();
+    const workspaceBefore = await getWorkspaceSnapshot(professionalId);
+    const hasPhotosUpdate = Array.isArray(body?.business?.photos);
+    const previousPhotoIds = new Set(
+      hasPhotosUpdate
+        ? (workspaceBefore?.business.photos ?? []).map((photo) => String(photo.id || ""))
+        : []
+    );
+
     await updateWorkspaceSettingsForProfessional(professionalId, body);
     const payload = await getPayload(professionalId);
 
     if (!payload) {
       return NextResponse.json({ error: "Workspace not found." }, { status: 404 });
+    }
+
+    if (hasPhotosUpdate) {
+      const nextPhotos = Array.isArray(payload.workspace.business.photos)
+        ? payload.workspace.business.photos
+        : [];
+      const addedPhotos = nextPhotos.filter((photo) => !previousPhotoIds.has(String(photo.id || "")));
+
+      if (addedPhotos.length > 0) {
+        const professionalName =
+          `${payload.workspace.professional.firstName} ${payload.workspace.professional.lastName}`.trim() ||
+          "";
+        await sendSuperadminTelegramNotification({
+          eventType: "photos_added",
+          professionalId,
+          professionalName,
+          professionalEmail: payload.workspace.professional.email,
+          businessId: payload.workspace.business.id,
+          businessName: payload.workspace.business.name,
+          photosAdded: addedPhotos.length
+        }).catch(() => undefined);
+      }
     }
 
     return NextResponse.json(payload);
