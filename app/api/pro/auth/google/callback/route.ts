@@ -4,6 +4,7 @@ import { getPublicAppUrl } from "../../../../../../lib/app-url";
 import { getSessionCookieName, signSessionValue } from "../../../../../../lib/pro-auth";
 import { exchangeCodeForGoogleProfile, getGoogleOAuthSettings } from "../../../../../../lib/google-oauth";
 import { getTelegramStartAppLinkSync } from "../../../../../../lib/telegram-bot";
+import { encodeTelegramGoogleSignupStartParam } from "../../../../../../lib/telegram-startapp";
 import {
   acceptStaffInvitation,
   getProfessionalProfileByEmail,
@@ -182,6 +183,26 @@ export async function GET(request: Request) {
         returnTo
       });
       return NextResponse.redirect(target);
+    }
+
+    if (isTelegramSourceReturn(returnTo, appUrl)) {
+      const signupStartParam = encodeTelegramGoogleSignupStartParam({
+        email: profile.email,
+        firstName: profile.givenName || "",
+        lastName: profile.familyName || "",
+        locale: profile.locale || "",
+        avatarUrl: profile.avatarUrl || "",
+        inviteToken,
+        mode
+      });
+      const signupDeepLink = signupStartParam ? getTelegramStartAppLinkSync(signupStartParam) : null;
+      if (signupDeepLink) {
+        try {
+          return NextResponse.redirect(new URL(signupDeepLink));
+        } catch {
+          // Fallback to web create-account redirect below.
+        }
+      }
     }
 
     const createAccountUrl = new URL("/pro/create-account", appUrl);

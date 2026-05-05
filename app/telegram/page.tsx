@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getSessionCookieName, verifySessionValue } from "../../lib/pro-auth";
 import { getPendingJoinRequestForProfessional, getWorkspaceSnapshot } from "../../lib/pro-data";
+import { decodeTelegramGoogleSignupStartParam } from "../../lib/telegram-startapp";
 import TelegramMiniAppView from "./telegram-mini-app-view";
 
 export const metadata: Metadata = {
@@ -63,6 +64,9 @@ export default async function TelegramPage({ searchParams }: TelegramPageProps) 
   const startParam = [params?.tgWebAppStartParam, params?.startapp, params?.start_param].find(
     (item) => typeof item === "string" && item.trim()
   );
+  const signupFromGoogle = decodeTelegramGoogleSignupStartParam(
+    typeof startParam === "string" ? startParam : ""
+  );
 
   const cookieStore = await cookies();
   const professionalId = verifySessionValue(cookieStore.get(getSessionCookieName())?.value);
@@ -106,6 +110,33 @@ export default async function TelegramPage({ searchParams }: TelegramPageProps) 
         />
       );
     }
+  }
+
+  if (signupFromGoogle) {
+    const signupParams = new URLSearchParams();
+    signupParams.set("source", "telegram");
+    signupParams.set("startapp", "setup");
+    signupParams.set("google", "1");
+    signupParams.set("email", signupFromGoogle.email);
+    if (signupFromGoogle.firstName) {
+      signupParams.set("firstName", signupFromGoogle.firstName);
+    }
+    if (signupFromGoogle.lastName) {
+      signupParams.set("lastName", signupFromGoogle.lastName);
+    }
+    if (signupFromGoogle.locale) {
+      signupParams.set("locale", signupFromGoogle.locale);
+    }
+    if (signupFromGoogle.avatarUrl) {
+      signupParams.set("avatarUrl", signupFromGoogle.avatarUrl);
+    }
+    if (signupFromGoogle.inviteToken) {
+      signupParams.set("invite", signupFromGoogle.inviteToken);
+    }
+    if (signupFromGoogle.mode === "login") {
+      signupParams.set("google_from", "login");
+    }
+    redirect(`/pro/create-account?${signupParams.toString()}`);
   }
 
   return (

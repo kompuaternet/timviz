@@ -650,6 +650,10 @@ function getWebhookSecret() {
 export function resolveTelegramStartAppParam(input: string | null | undefined) {
   const normalized = (input || "").trim().toLowerCase();
   if (!normalized) return "calendar";
+  if (normalized.startsWith("gsu_")) {
+    const safeSignupFlow = normalized.replace(/[^a-z0-9_]/g, "").slice(0, 480);
+    return safeSignupFlow || "calendar";
+  }
   if (normalized.includes("settings") || normalized.includes("setup")) return "settings";
   if (normalized.includes("notifications") || normalized.includes("inbox")) return "notifications";
   if (normalized.includes("clients") || normalized.includes("customers")) return "clients";
