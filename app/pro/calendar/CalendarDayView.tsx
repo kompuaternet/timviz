@@ -7,6 +7,7 @@ import styles from "../pro.module.css";
 import FloatingPopover from "../FloatingPopover";
 import ProSidebar from "../ProSidebar";
 import SupportWidget from "../SupportWidget";
+import { getPostLogoutRedirectPath } from "../telegram-context";
 import { languageFromProfile, profileLanguageFromCode } from "../i18n";
 import type { OnboardingCtaState, OnboardingStepId } from "../../../lib/pro-onboarding";
 import {
@@ -2298,7 +2299,7 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
 
   async function handleAccountLogout() {
     await fetch("/api/pro/logout", { method: "POST" });
-    router.push("/pro/login");
+    router.push(getPostLogoutRedirectPath("calendar"));
     router.refresh();
   }
 

@@ -6,6 +6,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import FloatingPopover from "./FloatingPopover";
 import SupportWidget from "./SupportWidget";
 import styles from "./pro.module.css";
+import { getPostLogoutRedirectPath } from "./telegram-context";
 import { useProLanguage } from "./useProLanguage";
 import { profileLanguageFromCode, type ProLanguage } from "./i18n";
 import type { OnboardingCtaState, OnboardingStepId } from "../../lib/pro-onboarding";
@@ -334,7 +335,7 @@ export default function ProWorkspaceHeader({
     try {
       await fetch("/api/pro/logout", { method: "POST" });
     } finally {
-      router.push("/pro/login");
+      router.push(getPostLogoutRedirectPath());
       router.refresh();
     }
   }

@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import styles from "../pro.module.css";
+import { getPostLogoutRedirectPath } from "../telegram-context";
 import { useProLanguage } from "../useProLanguage";
 
 export default function LogoutButton() {
@@ -17,7 +18,7 @@ export default function LogoutButton() {
       method: "POST"
     });
 
-    router.push("/pro/login");
+    router.push(getPostLogoutRedirectPath("calendar"));
     router.refresh();
   }
 

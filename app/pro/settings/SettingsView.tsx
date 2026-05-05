@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import ProSidebar from "../ProSidebar";
 import ProWorkspaceHeader from "../ProWorkspaceHeader";
 import styles from "../pro.module.css";
+import { getPostLogoutRedirectPath } from "../telegram-context";
 import { languageFromProfile, languageLabels, type ProLanguage } from "../i18n";
 import { useProLanguage } from "../useProLanguage";
 import { type BusinessPhoto } from "../../../lib/pro-data";
@@ -1659,7 +1660,7 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
       method: "POST"
     });
 
-    router.push("/pro/login");
+    router.push(getPostLogoutRedirectPath("settings"));
     router.refresh();
   }
 

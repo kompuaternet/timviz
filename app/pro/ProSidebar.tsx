@@ -9,6 +9,7 @@ import {
   hasPendingScheduleReminder
 } from "../../lib/schedule-reminder";
 import styles from "./pro.module.css";
+import { getPostLogoutRedirectPath } from "./telegram-context";
 import { useProLanguage } from "./useProLanguage";
 
 type SidebarSection = "workspace" | "calendar" | "services" | "clients" | "staff" | "schedule" | "settings";
@@ -163,7 +164,17 @@ export default function ProSidebar({
         method: "POST"
       });
     } finally {
-      router.push("/pro/login");
+      const fallbackStartParam =
+        active === "settings"
+          ? "settings"
+          : active === "clients"
+            ? "clients"
+            : active === "services"
+              ? "services"
+              : active === "staff" || active === "schedule"
+                ? "staff"
+                : "calendar";
+      router.push(getPostLogoutRedirectPath(fallbackStartParam));
       router.refresh();
     }
   }
