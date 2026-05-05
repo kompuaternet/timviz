@@ -183,8 +183,14 @@ type TelegramMiniAppViewProps = {
 function resolveStartRedirectPath(startParam: string | null | undefined) {
   const normalized = String(startParam || "").trim().toLowerCase();
   if (!normalized) return "/pro/calendar?source=telegram";
+  if (normalized.includes("notifications") || normalized.includes("inbox")) {
+    return "/pro/calendar?source=telegram&panel=notifications";
+  }
   if (normalized.includes("settings") || normalized.includes("setup")) {
     return "/pro/settings?source=telegram";
+  }
+  if (normalized.includes("support") || normalized.includes("help")) {
+    return "/pro/settings?source=telegram&section=telegram";
   }
   if (normalized.includes("clients")) {
     return "/pro/clients?source=telegram";

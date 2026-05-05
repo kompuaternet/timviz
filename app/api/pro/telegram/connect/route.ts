@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { getSessionCookieName, verifySessionValue } from "../../../../../lib/pro-auth";
 import { getWorkspaceSnapshot } from "../../../../../lib/pro-data";
 import {
+  ensureTelegramBotCommandsConfigured,
   ensureTelegramWebhookConfigured,
   ensureTelegramMenuButtonConfigured,
   ensureTelegramConnectToken,
@@ -38,6 +39,7 @@ export async function GET() {
     }
 
     await Promise.all([
+      ensureTelegramBotCommandsConfigured().catch(() => false),
       ensureTelegramWebhookConfigured().catch(() => false),
       ensureTelegramMenuButtonConfigured().catch(() => false)
     ]);
@@ -110,6 +112,7 @@ export async function PATCH(request: Request) {
     }>;
 
     await Promise.all([
+      ensureTelegramBotCommandsConfigured().catch(() => false),
       ensureTelegramWebhookConfigured().catch(() => false),
       ensureTelegramMenuButtonConfigured().catch(() => false)
     ]);

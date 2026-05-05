@@ -110,6 +110,10 @@ type TelegramText = {
   menuHome: string;
   menuSupport: string;
   menuApp: string;
+  menuShare: string;
+  shareAppText: string;
+  botDescription: string;
+  botShortDescription: string;
   todayEmpty: string;
   todayHeader: string;
   settingsTitle: string;
@@ -215,10 +219,10 @@ type TelegramMenuButtonMode = "commands" | "web_app";
 
 function getTelegramMenuButtonMode(): TelegramMenuButtonMode {
   const raw = (process.env.TELEGRAM_BOOKING_MENU_BUTTON_MODE || "").trim().toLowerCase();
-  if (raw === "web_app") {
-    return "web_app";
+  if (raw === "commands") {
+    return "commands";
   }
-  return "commands";
+  return "web_app";
 }
 
 const textByLanguage: Record<TelegramLanguage, TelegramText> = {
@@ -236,6 +240,11 @@ const textByLanguage: Record<TelegramLanguage, TelegramText> = {
     menuHome: "🏠 Меню",
     menuSupport: "💬 Поддержка",
     menuApp: "📱 Открыть приложение",
+    menuShare: "🔗 Поделиться",
+    shareAppText: "Timviz для записи клиентов онлайн",
+    botDescription:
+      "Timviz помогает мастерам и салонам принимать онлайн-записи, вести календарь и получать уведомления в Telegram.",
+    botShortDescription: "Онлайн-запись и календарь Timviz",
     todayEmpty: "📭 На сегодня записей нет.",
     todayHeader: "📅 Записи на сегодня",
     settingsTitle: "⚙️ Настройки уведомлений",
@@ -302,6 +311,11 @@ const textByLanguage: Record<TelegramLanguage, TelegramText> = {
     menuHome: "🏠 Меню",
     menuSupport: "💬 Підтримка",
     menuApp: "📱 Відкрити застосунок",
+    menuShare: "🔗 Поділитися",
+    shareAppText: "Timviz для онлайн-запису клієнтів",
+    botDescription:
+      "Timviz допомагає майстрам і салонам приймати онлайн-записи, вести календар і отримувати сповіщення в Telegram.",
+    botShortDescription: "Онлайн-запис і календар Timviz",
     todayEmpty: "📭 На сьогодні записів немає.",
     todayHeader: "📅 Записи на сьогодні",
     settingsTitle: "⚙️ Налаштування сповіщень",
@@ -368,6 +382,11 @@ const textByLanguage: Record<TelegramLanguage, TelegramText> = {
     menuHome: "🏠 Menu",
     menuSupport: "💬 Support",
     menuApp: "📱 Open app",
+    menuShare: "🔗 Share",
+    shareAppText: "Timviz for online bookings and calendar",
+    botDescription:
+      "Timviz helps professionals and salons accept online bookings, manage calendar, and receive Telegram alerts.",
+    botShortDescription: "Online booking & calendar by Timviz",
     todayEmpty: "📭 No bookings for today.",
     todayHeader: "📅 Today's bookings",
     settingsTitle: "⚙️ Notification settings",
@@ -578,6 +597,23 @@ function getBotToken() {
   ).trim();
 }
 
+function getConfiguredTelegramBotUsername() {
+  return (process.env.TELEGRAM_BOOKING_BOT_USERNAME || process.env.TELEGRAM_BOT_USERNAME || "")
+    .trim()
+    .replace(/^@/, "");
+}
+
+function getTelegramMiniAppShortName() {
+  return (
+    process.env.TELEGRAM_BOOKING_MINIAPP_SHORT_NAME ||
+    process.env.TELEGRAM_MINIAPP_SHORT_NAME ||
+    ""
+  )
+    .trim()
+    .replace(/^\/+/, "")
+    .replace(/\/+$/, "");
+}
+
 function getSupportChatId() {
   return (
     process.env.TELEGRAM_SUPPORT_CHAT_ID ||
@@ -592,6 +628,57 @@ function getWebhookSecret() {
     process.env.TELEGRAM_WEBHOOK_SECRET ||
     ""
   ).trim();
+}
+
+export function resolveTelegramStartAppParam(input: string | null | undefined) {
+  const normalized = (input || "").trim().toLowerCase();
+  if (!normalized) return "calendar";
+  if (normalized.includes("settings") || normalized.includes("setup")) return "settings";
+  if (normalized.includes("notifications") || normalized.includes("inbox")) return "notifications";
+  if (normalized.includes("clients") || normalized.includes("customers")) return "clients";
+  if (normalized.includes("services")) return "services";
+  if (
+    normalized.includes("staff") ||
+    normalized.includes("team") ||
+    normalized.includes("schedule")
+  ) {
+    return "staff";
+  }
+  if (normalized.includes("support") || normalized.includes("help")) return "support";
+
+  const safe = normalized.replace(/[^a-z0-9_-]/g, "").slice(0, 64);
+  return safe || "calendar";
+}
+
+function buildTelegramStartAppUrl(botUsername: string, startParam = "calendar") {
+  const safeStart = resolveTelegramStartAppParam(startParam);
+  const shortName = getTelegramMiniAppShortName();
+  if (shortName) {
+    return `https://t.me/${botUsername}/${encodeURIComponent(shortName)}?startapp=${encodeURIComponent(safeStart)}`;
+  }
+  return `https://t.me/${botUsername}/?startapp=${encodeURIComponent(safeStart)}`;
+}
+
+export function getTelegramStartAppLinkSync(startParam = "calendar") {
+  const botUsername = getConfiguredTelegramBotUsername();
+  if (!botUsername) {
+    return null;
+  }
+  return buildTelegramStartAppUrl(botUsername, startParam);
+}
+
+export function buildTelegramShareUrl(url: string, text?: string) {
+  const target = (url || "").trim();
+  if (!target) {
+    return "";
+  }
+
+  const share = new URL("https://t.me/share/url");
+  share.searchParams.set("url", target);
+  if (text?.trim()) {
+    share.searchParams.set("text", text.trim());
+  }
+  return share.toString();
 }
 
 export function isTelegramBotConfigured() {
@@ -646,6 +733,21 @@ async function setTelegramCommandsForLanguage(
   await telegramApiRequest<boolean>("setMyCommands", payload);
 }
 
+async function setTelegramDescriptionsForLanguage(language: TelegramLanguage | null) {
+  const text = language ? textByLanguage[language] : textByLanguage.en;
+  const localePayload = language ? { language_code: language } : {};
+
+  await telegramApiRequest<boolean>("setMyDescription", {
+    ...localePayload,
+    description: text.botDescription
+  });
+
+  await telegramApiRequest<boolean>("setMyShortDescription", {
+    ...localePayload,
+    short_description: text.botShortDescription
+  });
+}
+
 export async function ensureTelegramBotCommandsConfigured(input: { force?: boolean } = {}) {
   if (!isTelegramBotConfigured()) {
     return false;
@@ -666,6 +768,10 @@ export async function ensureTelegramBotCommandsConfigured(input: { force?: boole
       await setTelegramCommandsForLanguage("ru");
       await setTelegramCommandsForLanguage("uk");
       await setTelegramCommandsForLanguage("en");
+      await setTelegramDescriptionsForLanguage(null);
+      await setTelegramDescriptionsForLanguage("ru");
+      await setTelegramDescriptionsForLanguage("uk");
+      await setTelegramDescriptionsForLanguage("en");
       cachedCommandsSyncedAt = Date.now();
       return true;
     } catch {
@@ -839,9 +945,7 @@ export async function answerTelegramCallbackQuery(callbackQueryId: string, text?
 }
 
 export async function getTelegramBotUsername() {
-  const fromEnv = (process.env.TELEGRAM_BOOKING_BOT_USERNAME || process.env.TELEGRAM_BOT_USERNAME || "")
-    .trim()
-    .replace(/^@/, "");
+  const fromEnv = getConfiguredTelegramBotUsername();
   if (fromEnv) {
     return fromEnv;
   }
@@ -1313,13 +1417,17 @@ export function getTelegramMiniAppUrl(
 }
 
 export async function getTelegramStartAppLink(startParam = "calendar") {
+  const syncLink = getTelegramStartAppLinkSync(startParam);
+  if (syncLink) {
+    return syncLink;
+  }
+
   const botUsername = await getTelegramBotUsername();
   if (!botUsername) {
     return null;
   }
 
-  const safeStart = startParam.trim() || "calendar";
-  return `https://t.me/${botUsername}/?startapp=${encodeURIComponent(safeStart)}`;
+  return buildTelegramStartAppUrl(botUsername, startParam);
 }
 
 async function setTelegramMenuButton() {
@@ -2109,9 +2217,45 @@ export async function resetTelegramReminderEventsForAppointment(input: {
   await writeStore(store);
 }
 
-function buildDashboardKeyboard(text: TelegramText, path = "/pro/calendar") {
+function buildMiniAppUrls(input: {
+  language?: string | null;
+  shareText?: string;
+  startParam?: string;
+}) {
+  const startParam = resolveTelegramStartAppParam(input.startParam);
+  const miniAppUrl = getTelegramMiniAppUrl(
+    `/telegram?startapp=${encodeURIComponent(startParam)}`,
+    input.language || undefined
+  );
+  const appUrl = getTelegramStartAppLinkSync(startParam) || miniAppUrl;
+  const shareUrl = buildTelegramShareUrl(appUrl, input.shareText);
+  return { appUrl, shareUrl };
+}
+
+function buildDashboardKeyboard(
+  text: TelegramText,
+  path = "/pro/calendar",
+  language?: string | null,
+  startParam = "calendar"
+) {
+  const { appUrl, shareUrl } = buildMiniAppUrls({
+    language,
+    shareText: text.shareAppText,
+    startParam
+  });
+
   return {
     inline_keyboard: [
+      [
+        {
+          text: text.menuApp,
+          url: appUrl
+        },
+        {
+          text: text.menuShare,
+          url: shareUrl
+        }
+      ],
       [
         {
           text: text.openDashboard,
@@ -2128,6 +2272,12 @@ function buildBookingKeyboard(
   appointmentDate: string
 ) {
   const text = getTelegramText(language);
+  const { appUrl, shareUrl } = buildMiniAppUrls({
+    language,
+    shareText: text.shareAppText,
+    startParam: "calendar"
+  });
+
   return {
     inline_keyboard: [
       [
@@ -2144,6 +2294,16 @@ function buildBookingKeyboard(
         {
           text: text.openBooking,
           url: getDashboardUrl(`/pro/calendar?date=${encodeURIComponent(appointmentDate)}&panel=notifications`)
+        }
+      ],
+      [
+        {
+          text: text.menuApp,
+          url: appUrl
+        },
+        {
+          text: text.menuShare,
+          url: shareUrl
         }
       ]
     ]
@@ -2240,7 +2400,8 @@ async function sendBookingEventTelegramNotification(input: {
       ? buildBookingKeyboard(connection.language, input.appointmentId, input.appointmentDate)
       : buildDashboardKeyboard(
           text,
-          `/pro/calendar?date=${encodeURIComponent(input.appointmentDate)}`
+          `/pro/calendar?date=${encodeURIComponent(input.appointmentDate)}`,
+          connection.language
         );
 
   await sendTelegramTextMessage({
@@ -2385,7 +2546,8 @@ export async function processTelegramReminders() {
           text: reminderMessage,
           replyMarkup: buildDashboardKeyboard(
             text,
-            `/pro/calendar?date=${encodeURIComponent(appointment.appointmentDate)}`
+            `/pro/calendar?date=${encodeURIComponent(appointment.appointmentDate)}`,
+            connection.language
           )
         });
 
@@ -2512,7 +2674,7 @@ export async function sendJoinRequestTelegramNotification(input: {
     await sendTelegramTextMessage({
       chatId: connection.chatId,
       text: lines.join("\n"),
-      replyMarkup: buildDashboardKeyboard(text, "/pro/staff/members")
+      replyMarkup: buildDashboardKeyboard(text, "/pro/staff/members", connection.language, "staff")
     }).catch(() => undefined);
     sent += 1;
   }

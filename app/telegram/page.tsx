@@ -28,8 +28,15 @@ function resolveTelegramStartPath(value: string | null | undefined) {
   const normalized = (value || "").trim().toLowerCase();
   if (!normalized) return "/pro/calendar";
 
+  if (normalized.includes("notifications") || normalized.includes("inbox")) {
+    return "/pro/calendar?panel=notifications";
+  }
+
   if (normalized.includes("settings") || normalized.includes("setup")) {
     return "/pro/settings";
+  }
+  if (normalized.includes("support") || normalized.includes("help")) {
+    return "/pro/settings?section=telegram";
   }
   if (normalized.includes("clients")) {
     return "/pro/clients";

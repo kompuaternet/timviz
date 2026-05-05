@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import {
+  buildTelegramShareUrl,
   answerTelegramCallbackQuery,
   buildMenuCallbackData,
   buildSettingsMessage,
@@ -11,11 +12,13 @@ import {
   formatTodayBookingsMessage,
   getDashboardUrl,
   getTelegramMiniAppUrl,
+  getTelegramStartAppLinkSync,
   getTelegramConnectionByChatId,
   getTelegramText,
   getTodayBookingsForConnection,
   getTelegramWebhookSecret,
   normalizeTelegramUserLanguage,
+  resolveTelegramStartAppParam,
   parseBotControlCallbackData,
   parseMenuCallbackData,
   parseReminderLeadCallbackData,
@@ -149,15 +152,27 @@ function isForwardedMessage(message: TelegramUpdate["message"]) {
   return Boolean(message.forward_origin || message.forward_from || message.forward_from_chat);
 }
 
-function buildDashboardKeyboard(preferredLanguage?: string | null) {
+function buildDashboardKeyboard(preferredLanguage?: string | null, startParam?: string | null) {
   const normalizedLanguage = normalizeTelegramUserLanguage(preferredLanguage);
   const text = getTelegramText(normalizedLanguage);
+  const resolvedStartParam = resolveTelegramStartAppParam(startParam);
+  const miniAppUrl = getTelegramMiniAppUrl(
+    `/telegram?startapp=${encodeURIComponent(resolvedStartParam)}`,
+    normalizedLanguage
+  );
+  const appUrl = getTelegramStartAppLinkSync(resolvedStartParam) || miniAppUrl;
+  const shareUrl = buildTelegramShareUrl(appUrl, text.shareAppText);
+
   return {
     inline_keyboard: [
       [
         {
           text: text.menuApp,
-          url: getTelegramMiniAppUrl("/telegram?startapp=calendar", normalizedLanguage)
+          url: appUrl
+        },
+        {
+          text: text.menuShare,
+          url: shareUrl
         }
       ],
       [
@@ -190,6 +205,10 @@ async function handleStartCommand(input: {
   user: NonNullable<TelegramUpdate["message"]>["from"];
 }) {
   const startArg = normalizeText(input.args[0]);
+  const requestedStartParam =
+    startArg && !startArg.startsWith("connect_")
+      ? resolveTelegramStartAppParam(startArg.replace(/^app_/, ""))
+      : null;
 
   if (startArg.startsWith("connect_")) {
     const token = startArg.slice("connect_".length);
@@ -214,13 +233,13 @@ async function handleStartCommand(input: {
     }
 
     const fallbackText = getTelegramText(normalizeTelegramUserLanguage(input.user?.language_code));
-    await sendTelegramTextMessage({
-      chatId: input.chatId,
-      text: fallbackText.invalidToken,
-      replyMarkup: buildDashboardKeyboard(input.user?.language_code)
-    });
-    return;
-  }
+      await sendTelegramTextMessage({
+        chatId: input.chatId,
+        text: fallbackText.invalidToken,
+        replyMarkup: buildDashboardKeyboard(input.user?.language_code, requestedStartParam)
+      });
+      return;
+    }
 
   const existingConnection = await getTelegramConnectionByChatId(input.chatId).catch(() => null);
   if (existingConnection) {
@@ -230,6 +249,11 @@ async function handleStartCommand(input: {
         input.user?.language_code || undefined
       ).catch(() => null)) || existingConnection;
     const t = getTelegramText(activeConnection.language);
+    if (requestedStartParam) {
+      await handleAppCommand(input.chatId, activeConnection.language, requestedStartParam);
+      return;
+    }
+
     await sendTelegramTextMessage({
       chatId: input.chatId,
       text: `${t.mainMenuTitle}\n${t.help}`,
@@ -242,7 +266,7 @@ async function handleStartCommand(input: {
   await sendTelegramTextMessage({
     chatId: input.chatId,
     text: `${fallbackText.mainMenuTitle}\n${fallbackText.help}\n\n${fallbackText.connectHint}`,
-    replyMarkup: buildDashboardKeyboard(input.user?.language_code)
+    replyMarkup: buildDashboardKeyboard(input.user?.language_code, requestedStartParam)
   });
 }
 
@@ -292,7 +316,12 @@ async function handleSettingsCommand(chatId: string, preferredLanguage?: string 
   });
 }
 
-async function handleAppCommand(chatId: string, preferredLanguage?: string | null) {
+async function handleAppCommand(
+  chatId: string,
+  preferredLanguage?: string | null,
+  startParam?: string | null
+) {
+  const resolvedStartParam = resolveTelegramStartAppParam(startParam);
   const connection = await getTelegramConnectionByChatId(chatId);
   if (connection) {
     const nextConnection = await touchTelegramConnection(connection, preferredLanguage || undefined);
@@ -301,7 +330,7 @@ async function handleAppCommand(chatId: string, preferredLanguage?: string | nul
     await sendTelegramTextMessage({
       chatId,
       text: `${t.mainMenuTitle}\n${t.mainMenuHint}`,
-      replyMarkup: buildDashboardKeyboard(activeConnection.language)
+      replyMarkup: buildDashboardKeyboard(activeConnection.language, resolvedStartParam)
     });
     return;
   }
@@ -310,7 +339,7 @@ async function handleAppCommand(chatId: string, preferredLanguage?: string | nul
   await sendTelegramTextMessage({
     chatId,
     text: `${t.mainMenuTitle}\n${t.help}\n\n${t.connectHint}`,
-    replyMarkup: buildDashboardKeyboard(preferredLanguage)
+    replyMarkup: buildDashboardKeyboard(preferredLanguage, resolvedStartParam)
   });
 }
 
@@ -678,7 +707,7 @@ async function handleMessage(update: TelegramUpdate) {
   }
 
   if (command?.command === "/app") {
-    await handleAppCommand(chatId, preferredLanguage);
+    await handleAppCommand(chatId, preferredLanguage, command.args[0] || "");
     return;
   }
 
