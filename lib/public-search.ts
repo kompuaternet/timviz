@@ -157,6 +157,104 @@ function normalize(value = "") {
   return value.toLowerCase().trim();
 }
 
+const LOCATION_ALIASES: Array<[RegExp, string]> = [
+  [/\b(киев|київ|kiev|kiyiv|kyiv)\b/gi, "kyiv"],
+  [/\b(львов|львів|lvov|lviv)\b/gi, "lviv"],
+  [/\b(одесса|одеса|odessa|odesa)\b/gi, "odesa"],
+  [/\b(харьков|харків|kharkov|kharkiv)\b/gi, "kharkiv"],
+  [/\b(днепр|дніпро|dnipro|dnepr)\b/gi, "dnipro"]
+];
+
+const CYRILLIC_TO_LATIN: Record<string, string> = {
+  а: "a",
+  б: "b",
+  в: "v",
+  г: "h",
+  ґ: "g",
+  д: "d",
+  е: "e",
+  ё: "e",
+  є: "ye",
+  ж: "zh",
+  з: "z",
+  и: "y",
+  і: "i",
+  ї: "yi",
+  й: "y",
+  к: "k",
+  л: "l",
+  м: "m",
+  н: "n",
+  о: "o",
+  п: "p",
+  р: "r",
+  с: "s",
+  т: "t",
+  у: "u",
+  ф: "f",
+  х: "kh",
+  ц: "ts",
+  ч: "ch",
+  ш: "sh",
+  щ: "shch",
+  ъ: "",
+  ы: "y",
+  ь: "",
+  э: "e",
+  ю: "yu",
+  я: "ya"
+};
+
+function transliterateToLatin(value: string) {
+  return value
+    .toLowerCase()
+    .split("")
+    .map((char) => CYRILLIC_TO_LATIN[char] ?? char)
+    .join("");
+}
+
+function normalizeLocationText(value = "") {
+  let output = value
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[.,/#!$%^&*;:{}=\-_`~()'"\\[\]]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  for (const [pattern, replacement] of LOCATION_ALIASES) {
+    output = output.replace(pattern, replacement);
+  }
+
+  return output;
+}
+
+function matchesLocation(looseHaystack: string, location: string) {
+  if (!location) {
+    return true;
+  }
+
+  const normalizedNeedle = normalizeLocationText(location);
+  if (!normalizedNeedle) {
+    return true;
+  }
+
+  const normalizedHaystack = normalizeLocationText(looseHaystack);
+  if (normalizedHaystack.includes(normalizedNeedle)) {
+    return true;
+  }
+
+  const transliteratedNeedle = normalizeLocationText(transliterateToLatin(location));
+  if (transliteratedNeedle && normalizedHaystack.includes(transliteratedNeedle)) {
+    return true;
+  }
+
+  const transliteratedHaystack = normalizeLocationText(transliterateToLatin(looseHaystack));
+  return transliteratedHaystack.includes(normalizedNeedle) || (
+    Boolean(transliteratedNeedle) && transliteratedHaystack.includes(transliteratedNeedle)
+  );
+}
+
 function localizedTimeLabel(template: LocalizedText, time: string) {
   return {
     ru: template.ru.replace("{time}", time),
@@ -565,6 +663,11 @@ export function filterPublicSearchResults(index: PublicSearchIndex, params: Publ
   const query = normalize(params.query);
   const location = normalize(params.location);
   const kind = params.kind;
+  const hasCoords =
+    typeof params.lat === "number" &&
+    Number.isFinite(params.lat) &&
+    typeof params.lon === "number" &&
+    Number.isFinite(params.lon);
 
   return index.results.filter((result) => {
     if (params.date && params.time && !result.available) {
@@ -579,12 +682,12 @@ export function filterPublicSearchResults(index: PublicSearchIndex, params: Publ
       return false;
     }
 
-    if (location) {
+    if (location && !hasCoords) {
       const locationHaystack = getSearchableText(
         [result.address, result.subtitle, result.title, result.category],
         [result.localizedAddress, result.localizedSubtitle, result.localizedCategory]
       );
-      if (!locationHaystack.includes(location)) {
+      if (!matchesLocation(locationHaystack, location)) {
         return false;
       }
     }

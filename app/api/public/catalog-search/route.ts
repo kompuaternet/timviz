@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { toPublicCatalogCardResults } from "../../../../lib/public-catalog";
+import { resolveLocationPoint } from "../../../../lib/location-geocode";
 import {
   filterPublicSearchResults,
   getPublicSearchIndex,
@@ -32,9 +33,17 @@ export async function GET(request: Request) {
     const time = getParam(searchParams, "time");
     const location = getParam(searchParams, "location");
     const requestedLanguage = getParam(searchParams, "lang");
-    const lat = toNumberOrNull(getParam(searchParams, "lat"));
-    const lon = toNumberOrNull(getParam(searchParams, "lon"));
+    let lat = toNumberOrNull(getParam(searchParams, "lat"));
+    let lon = toNumberOrNull(getParam(searchParams, "lon"));
     const language = isSiteLanguage(requestedLanguage) ? requestedLanguage : "ru";
+
+    if ((lat === null || lon === null) && location) {
+      const resolved = await resolveLocationPoint(location, language);
+      if (resolved) {
+        lat = resolved.lat;
+        lon = resolved.lon;
+      }
+    }
 
     const publicParams: PublicSearchParams = {
       query,
