@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import CatalogView from "../../catalog/CatalogView";
+import { getPublicSearchIndex, type PublicSearchIndex } from "../../../lib/public-search";
 import { buildLanguageAlternates, buildMetadata, seoCopy } from "../../../lib/seo";
 import { isSiteLanguage, siteLanguages, type SiteLanguage } from "../../../lib/site-language";
 
@@ -52,10 +53,17 @@ export default async function LocalizedCatalogPage({
     notFound();
   }
 
+  const searchIndex = await getPublicSearchIndex();
+  const homeSearchIndex: PublicSearchIndex = {
+    suggestions: searchIndex.suggestions.slice(0, 300),
+    results: []
+  };
+
   return (
     <Suspense fallback={<main className="company-page catalog-page" />}>
       <CatalogView
         initialLanguage={lang as SiteLanguage}
+        searchIndex={homeSearchIndex}
       />
     </Suspense>
   );

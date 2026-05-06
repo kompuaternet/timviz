@@ -12,6 +12,12 @@ type PublicLanguage = "ru" | "uk" | "en";
 type PublicSearchProps = {
   index: PublicSearchIndex;
   language?: PublicLanguage;
+  initialQuery?: string;
+  initialKind?: string;
+  initialLocation?: string;
+  initialDate?: string;
+  initialTime?: string;
+  initialCoords?: { lat: number; lon: number } | null;
 };
 
 const searchCopy = {
@@ -273,16 +279,39 @@ const locationSuggestions: Record<PublicLanguage, string[]> = {
   en: ["Kyiv", "Dnipro", "Kryvyi Rih", "Lviv", "Odesa", "Kharkiv"]
 };
 
-export default function PublicSearch({ index, language = "ru" }: PublicSearchProps) {
+export default function PublicSearch({
+  index,
+  language = "ru",
+  initialQuery,
+  initialKind,
+  initialLocation,
+  initialDate,
+  initialTime,
+  initialCoords
+}: PublicSearchProps) {
   const router = useRouter();
   const t = searchCopy[language];
-  const [query, setQuery] = useState("");
-  const [kind, setKind] = useState<SearchKind>("all");
-  const [location, setLocation] = useState(t.currentLocation);
-  const [locationInput, setLocationInput] = useState("");
-  const [coords, setCoords] = useState<{ lat: number; lon: number } | null>(null);
-  const [date, setDate] = useState("");
-  const [time, setTime] = useState("");
+  const initialKindValue: SearchKind =
+    initialKind === "procedure" || initialKind === "business" || initialKind === "professional"
+      ? initialKind
+      : "all";
+  const hasInitialCoords =
+    typeof initialCoords?.lat === "number" &&
+    Number.isFinite(initialCoords.lat) &&
+    typeof initialCoords?.lon === "number" &&
+    Number.isFinite(initialCoords.lon);
+  const initialLocationValue = (initialLocation ?? "").trim();
+  const [query, setQuery] = useState((initialQuery ?? "").trim());
+  const [kind, setKind] = useState<SearchKind>(initialKindValue);
+  const [location, setLocation] = useState(
+    initialLocationValue || (hasInitialCoords ? t.myLocation : t.currentLocation)
+  );
+  const [locationInput, setLocationInput] = useState(initialLocationValue);
+  const [coords, setCoords] = useState<{ lat: number; lon: number } | null>(
+    hasInitialCoords ? { lat: initialCoords!.lat, lon: initialCoords!.lon } : null
+  );
+  const [date, setDate] = useState((initialDate ?? "").trim());
+  const [time, setTime] = useState((initialTime ?? "").trim());
   const [activePanel, setActivePanel] = useState<ActivePanel>(null);
   const [geoStatus, setGeoStatus] = useState("");
   const [visibleMonth, setVisibleMonth] = useState(() => new Date());

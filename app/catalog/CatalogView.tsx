@@ -4,14 +4,17 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import type { PublicCatalogCardResult } from "../../lib/public-catalog";
+import type { PublicSearchIndex } from "../../lib/public-search";
 import { getLocalizedPath, type SiteLanguage } from "../../lib/site-language";
 import BrandLogo from "../BrandLogo";
 import GlobalLanguageSwitcher from "../GlobalLanguageSwitcher";
+import PublicSearch from "../PublicSearch";
 import PublicHeaderAuthMenu from "../PublicHeaderAuthMenu";
 import { useSiteLanguage } from "../useSiteLanguage";
 
 type CatalogViewProps = {
   initialLanguage?: SiteLanguage;
+  searchIndex: PublicSearchIndex;
 };
 
 type CatalogCopy = {
@@ -565,7 +568,8 @@ function CatalogResultsMap({
 }
 
 export default function CatalogView({
-  initialLanguage = "ru"
+  initialLanguage = "ru",
+  searchIndex
 }: CatalogViewProps) {
   const searchParams = useSearchParams();
   const language = useSiteLanguage(initialLanguage, true);
@@ -702,26 +706,6 @@ export default function CatalogView({
   const menuResultsLabel = language === "en" ? "Results" : language === "uk" ? "Результати" : "Результаты";
   const menuMapLabel = language === "en" ? "Map" : language === "uk" ? "Карта" : "Карта";
   const navLabel = language === "en" ? "Catalog navigation" : language === "uk" ? "Навігація каталогу" : "Навигация каталога";
-  const homeCatalogPath = getLocalizedPath(language, "/catalog");
-
-  const kindTabs = [
-    { value: "", label: t.allTab },
-    { value: "business", label: t.venuesTab },
-    { value: "professional", label: t.prosTab }
-  ];
-
-  function buildKindHref(nextKind: string) {
-    const params = new URLSearchParams();
-    if (query) params.set("query", query);
-    if (nextKind) params.set("kind", nextKind);
-    if (date) params.set("date", date);
-    if (time) params.set("time", time);
-    if (location) params.set("location", location);
-    if (typeof lat === "number" && Number.isFinite(lat)) params.set("lat", String(lat));
-    if (typeof lon === "number" && Number.isFinite(lon)) params.set("lon", String(lon));
-    return `${homeCatalogPath}${params.toString() ? `?${params.toString()}` : ""}`;
-  }
-
   function toggleServices(id: string) {
     setExpandedServicesById((current) => ({
       ...current,
@@ -757,52 +741,18 @@ export default function CatalogView({
 
       <section className="catalog-shell">
         <section id="catalog-hero" className="catalog-hero compact">
-          <form className="catalog-search-form" method="get" action={homeCatalogPath}>
-            <input
-              type="text"
-              name="query"
-              defaultValue={query}
-              placeholder={t.searchPlaceholder}
-              aria-label={t.searchPlaceholder}
-            />
-            <input
-              type="text"
-              name="location"
-              defaultValue={location}
-              placeholder={t.mapAreaPlaceholder}
-              aria-label={t.mapAreaPlaceholder}
-            />
-            <input
-              type="text"
-              name="time"
-              defaultValue={time}
-              placeholder={t.anyTime}
-              aria-label={t.anyTime}
-            />
-            {kind ? <input type="hidden" name="kind" value={kind} /> : null}
-            {date ? <input type="hidden" name="date" value={date} /> : null}
-            {typeof lat === "number" && Number.isFinite(lat) ? <input type="hidden" name="lat" value={String(lat)} /> : null}
-            {typeof lon === "number" && Number.isFinite(lon) ? <input type="hidden" name="lon" value={String(lon)} /> : null}
-            <button type="submit" aria-label={t.searchButton}>
-              🔍
-            </button>
-          </form>
+          <PublicSearch
+            index={searchIndex}
+            language={language}
+            initialQuery={query}
+            initialKind={kind}
+            initialLocation={location}
+            initialDate={date}
+            initialTime={time}
+            initialCoords={hasCoords ? { lat: lat as number, lon: lon as number } : null}
+          />
 
           <div className="catalog-top-meta">
-            <div className="catalog-kind-tabs" role="tablist" aria-label={t.kindLabel(kind || "all")}>
-              {kindTabs.map((tab) => {
-                const isActive = (kind || "") === tab.value;
-                return (
-                  <Link
-                    key={tab.value || "all"}
-                    href={buildKindHref(tab.value)}
-                    className={`catalog-kind-tab ${isActive ? "is-active" : ""}`}
-                  >
-                    {tab.label}
-                  </Link>
-                );
-              })}
-            </div>
             <div className="catalog-filters inline">
               <span>{t.resultCount(results.length)}</span>
               <span>{formatDateTime(date, time, language)}</span>
