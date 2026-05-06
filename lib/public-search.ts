@@ -663,11 +663,6 @@ export function filterPublicSearchResults(index: PublicSearchIndex, params: Publ
   const query = normalize(params.query);
   const location = normalize(params.location);
   const kind = params.kind;
-  const hasCoords =
-    typeof params.lat === "number" &&
-    Number.isFinite(params.lat) &&
-    typeof params.lon === "number" &&
-    Number.isFinite(params.lon);
 
   return index.results.filter((result) => {
     if (params.date && params.time && !result.available) {
@@ -682,7 +677,7 @@ export function filterPublicSearchResults(index: PublicSearchIndex, params: Publ
       return false;
     }
 
-    if (location && !hasCoords) {
+    if (location) {
       const locationHaystack = getSearchableText(
         [result.address, result.subtitle, result.title, result.category],
         [result.localizedAddress, result.localizedSubtitle, result.localizedCategory]
