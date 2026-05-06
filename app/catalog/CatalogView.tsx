@@ -49,6 +49,15 @@ type CatalogCopy = {
   showMap: string;
   hideMap: string;
   servicesMore: (count: number) => string;
+  searchPlaceholder: string;
+  mapAreaPlaceholder: string;
+  searchButton: string;
+  venuesTab: string;
+  prosTab: string;
+  allTab: string;
+  expandServices: string;
+  collapseServices: string;
+  moreInProfile: (count: number) => string;
   minutes: string;
   hours: string;
 };
@@ -97,6 +106,15 @@ const catalogCopy: Record<SiteLanguage, CatalogCopy> = {
     showMap: "Показать карту",
     hideMap: "Скрыть карту",
     servicesMore: (count) => `Посмотреть ещё ${count} услуг`,
+    searchPlaceholder: "Все услуги",
+    mapAreaPlaceholder: "Область карты",
+    searchButton: "Поиск",
+    venuesTab: "Заведения",
+    prosTab: "Профессионалы",
+    allTab: "Все",
+    expandServices: "Развернуть",
+    collapseServices: "Свернуть",
+    moreInProfile: (count) => `Ещё ${count} в профиле`,
     minutes: "мин",
     hours: "ч"
   },
@@ -143,6 +161,15 @@ const catalogCopy: Record<SiteLanguage, CatalogCopy> = {
     showMap: "Показати карту",
     hideMap: "Сховати карту",
     servicesMore: (count) => `Переглянути ще ${count} послуг`,
+    searchPlaceholder: "Усі послуги",
+    mapAreaPlaceholder: "Область карти",
+    searchButton: "Пошук",
+    venuesTab: "Заклади",
+    prosTab: "Професіонали",
+    allTab: "Усі",
+    expandServices: "Розгорнути",
+    collapseServices: "Згорнути",
+    moreInProfile: (count) => `Ще ${count} у профілі`,
     minutes: "хв",
     hours: "год"
   },
@@ -189,6 +216,15 @@ const catalogCopy: Record<SiteLanguage, CatalogCopy> = {
     showMap: "Show map",
     hideMap: "Hide map",
     servicesMore: (count) => `View ${count} more services`,
+    searchPlaceholder: "All services",
+    mapAreaPlaceholder: "Map area",
+    searchButton: "Search",
+    venuesTab: "Venues",
+    prosTab: "Professionals",
+    allTab: "All",
+    expandServices: "Expand",
+    collapseServices: "Collapse",
+    moreInProfile: (count) => `${count} more in profile`,
     minutes: "min",
     hours: "h"
   }
@@ -538,6 +574,7 @@ export default function CatalogView({
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
   const [selectedResultId, setSelectedResultId] = useState("");
+  const [expandedServicesById, setExpandedServicesById] = useState<Record<string, boolean>>({});
   const cardRefs = useRef<Record<string, HTMLElement | null>>({});
 
   const query = useMemo(() => searchParams.get("query")?.trim() ?? "", [searchParams]);
@@ -645,6 +682,10 @@ export default function CatalogView({
     setSelectedResultId((current) => (current && results.some((item) => item.id === current) ? current : results[0]!.id));
   }, [results]);
 
+  useEffect(() => {
+    setExpandedServicesById({});
+  }, [results]);
+
   function selectResult(id: string, scrollIntoView = false) {
     setSelectedResultId(id);
     if (scrollIntoView) {
@@ -661,6 +702,32 @@ export default function CatalogView({
   const menuResultsLabel = language === "en" ? "Results" : language === "uk" ? "Результати" : "Результаты";
   const menuMapLabel = language === "en" ? "Map" : language === "uk" ? "Карта" : "Карта";
   const navLabel = language === "en" ? "Catalog navigation" : language === "uk" ? "Навігація каталогу" : "Навигация каталога";
+  const homeCatalogPath = getLocalizedPath(language, "/catalog");
+
+  const kindTabs = [
+    { value: "", label: t.allTab },
+    { value: "business", label: t.venuesTab },
+    { value: "professional", label: t.prosTab }
+  ];
+
+  function buildKindHref(nextKind: string) {
+    const params = new URLSearchParams();
+    if (query) params.set("query", query);
+    if (nextKind) params.set("kind", nextKind);
+    if (date) params.set("date", date);
+    if (time) params.set("time", time);
+    if (location) params.set("location", location);
+    if (typeof lat === "number" && Number.isFinite(lat)) params.set("lat", String(lat));
+    if (typeof lon === "number" && Number.isFinite(lon)) params.set("lon", String(lon));
+    return `${homeCatalogPath}${params.toString() ? `?${params.toString()}` : ""}`;
+  }
+
+  function toggleServices(id: string) {
+    setExpandedServicesById((current) => ({
+      ...current,
+      [id]: !current[id]
+    }));
+  }
 
   return (
     <main className="company-page catalog-page">
@@ -689,18 +756,58 @@ export default function CatalogView({
 	      </header>
 
       <section className="catalog-shell">
-        <section id="catalog-hero" className="catalog-hero">
-          <div>
-            <p className="eyebrow">{t.eyebrow}</p>
-            <h1>{query ? t.searchTitle(query) : t.defaultTitle}</h1>
-            <p className="hero-text">{t.heroText}</p>
-          </div>
+        <section id="catalog-hero" className="catalog-hero compact">
+          <form className="catalog-search-form" method="get" action={homeCatalogPath}>
+            <input
+              type="text"
+              name="query"
+              defaultValue={query}
+              placeholder={t.searchPlaceholder}
+              aria-label={t.searchPlaceholder}
+            />
+            <input
+              type="text"
+              name="location"
+              defaultValue={location}
+              placeholder={t.mapAreaPlaceholder}
+              aria-label={t.mapAreaPlaceholder}
+            />
+            <input
+              type="text"
+              name="time"
+              defaultValue={time}
+              placeholder={t.anyTime}
+              aria-label={t.anyTime}
+            />
+            {kind ? <input type="hidden" name="kind" value={kind} /> : null}
+            {date ? <input type="hidden" name="date" value={date} /> : null}
+            {typeof lat === "number" && Number.isFinite(lat) ? <input type="hidden" name="lat" value={String(lat)} /> : null}
+            {typeof lon === "number" && Number.isFinite(lon) ? <input type="hidden" name="lon" value={String(lon)} /> : null}
+            <button type="submit" aria-label={t.searchButton}>
+              🔍
+            </button>
+          </form>
 
-          <div className="catalog-filters">
-            <span>{t.resultCount(results.length)}</span>
-            <span>{t.kindLabel(kind)}</span>
-            <span>{formatDateTime(date, time, language)}</span>
-            <span>{hasCoords ? t.sortedByDistance : location || t.withoutGeolocation}</span>
+          <div className="catalog-top-meta">
+            <div className="catalog-kind-tabs" role="tablist" aria-label={t.kindLabel(kind || "all")}>
+              {kindTabs.map((tab) => {
+                const isActive = (kind || "") === tab.value;
+                return (
+                  <Link
+                    key={tab.value || "all"}
+                    href={buildKindHref(tab.value)}
+                    className={`catalog-kind-tab ${isActive ? "is-active" : ""}`}
+                  >
+                    {tab.label}
+                  </Link>
+                );
+              })}
+            </div>
+            <div className="catalog-filters inline">
+              <span>{t.resultCount(results.length)}</span>
+              <span>{formatDateTime(date, time, language)}</span>
+              <span>{hasCoords ? t.sortedByDistance : location || t.withoutGeolocation}</span>
+            </div>
           </div>
         </section>
 
@@ -731,65 +838,77 @@ export default function CatalogView({
 	                    <p>{t.emptyText}</p>
 	                    <Link href={getLocalizedPath(language)} className="primary-button">{t.backToSearch}</Link>
 	                  </div>
-	                ) : (
-	                  <div className="catalog-results-grid">
-	                    {results.map((result, index) => (
-	                      <article
+                ) : (
+                  <div className="catalog-results-grid">
+                    {results.map((result, index) => (
+                      <article
 	                        key={result.id}
 	                        ref={(node) => {
 	                          cardRefs.current[result.id] = node;
 	                        }}
-	                        className={`catalog-result-card ${["accent-coral", "accent-forest", "accent-sand"][index % 3]} ${
-	                          selectedResultId === result.id ? "catalog-result-card-active" : ""
-	                        }`}
-	                        onMouseEnter={() => selectResult(result.id)}
-	                      >
-	                        <img className="catalog-card-image" src={result.image} alt={result.title} />
-	                        <div className="catalog-result-head">
-	                          <div>
-	                            <h2>{result.title}</h2>
-	                            <p className="catalog-description">{`${formatDistance(result.distanceKm, language)} · ${result.address}`}</p>
-	                          </div>
-	                          <strong>{`${result.rating} · ${t.reviewCount(result.reviews)}`}</strong>
-	                        </div>
+                        className={`catalog-result-card ${["accent-coral", "accent-forest", "accent-sand"][index % 3]} ${
+                          selectedResultId === result.id ? "catalog-result-card-active" : ""
+                        }`}
+                        onMouseEnter={() => selectResult(result.id)}
+                      >
+                        <div className="catalog-result-main">
+                          <img className="catalog-card-image" src={result.image} alt={result.title} />
+                          <div className="catalog-result-copy">
+                            <div className="catalog-result-head">
+                              <h2>{result.title}</h2>
+                              <strong>{`${result.rating} · ${t.reviewCount(result.reviews)}`}</strong>
+                            </div>
+                            <p className="catalog-description">{`${formatDistance(result.distanceKm, language)} · ${result.address}`}</p>
+                            <div className="chip-row compact">
+                              {shouldShowAvailabilityChip(result, language) ? (
+                                <span className={`chip ${result.available ? "chip-success" : "chip-muted"}`}>
+                                  {result.availabilityLabel || (time ? t.availableAt(time) : t.chooseTime)}
+                                </span>
+                              ) : null}
+                              <span className={`chip ${result.onlineBookingEnabled ? "chip-success" : "chip-muted"}`}>
+                                {result.onlineBookingEnabled ? t.onlineBookingEnabled : t.onlineBookingDisabled}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
 
-	                        <div className="catalog-result-services">
-	                          {result.services.slice(0, 3).map((service) => (
-	                            <div key={service.id} className="catalog-result-service-row">
-	                              <div>
-	                                <strong>{service.name}</strong>
+                        <div className="catalog-result-services compact">
+                          {result.services.slice(0, expandedServicesById[result.id] ? 5 : 3).map((service) => (
+                            <div key={service.id} className="catalog-result-service-row">
+                              <div>
+                                <strong>{service.name}</strong>
 	                                <span>{formatServiceDuration(service.durationMinutes, language)}</span>
 	                              </div>
-	                              <span>{service.price > 0 ? formatPrice(service.price, language) : t.pricePending}</span>
-	                            </div>
-	                          ))}
-	                          {result.extraServicesCount > 0 ? (
-	                            <Link href={getLocalizedPath(language, `/businesses/${result.pathId}`)} className="catalog-result-more">
-	                              {t.servicesMore(result.extraServicesCount)}
-	                            </Link>
-	                          ) : null}
-	                        </div>
+                              <span>{service.price > 0 ? formatPrice(service.price, language) : t.pricePending}</span>
+                            </div>
+                          ))}
+                        </div>
 
-	                        <div className="chip-row">
-	                          {shouldShowAvailabilityChip(result, language) ? (
-	                            <span className={`chip ${result.available ? "chip-success" : "chip-muted"}`}>
-	                              {result.availabilityLabel || (time ? t.availableAt(time) : t.chooseTime)}
-	                            </span>
-	                          ) : null}
-	                          <span className={`chip ${result.onlineBookingEnabled ? "chip-success" : "chip-muted"}`}>
-	                            {result.onlineBookingEnabled ? t.onlineBookingEnabled : t.onlineBookingDisabled}
-	                          </span>
-	                        </div>
-
-	                        <Link
-	                          href={getLocalizedPath(language, `/businesses/${result.pathId}`)}
-	                          className="primary-button"
-	                        >
-	                          {result.onlineBookingEnabled ? t.action : t.viewProfile}
-	                        </Link>
-	                      </article>
-	                    ))}
-	                  </div>
+                        <div className="catalog-result-actions">
+                          {result.services.length > 3 || result.extraServicesCount > 0 ? (
+                            <button
+                              type="button"
+                              className="catalog-expand-button"
+                              onClick={() => toggleServices(result.id)}
+                            >
+                              {expandedServicesById[result.id] ? t.collapseServices : t.expandServices}
+                            </button>
+                          ) : null}
+                          {result.extraServicesCount > 0 ? (
+                            <Link href={getLocalizedPath(language, `/businesses/${result.pathId}`)} className="catalog-result-more">
+                              {t.moreInProfile(result.extraServicesCount)}
+                            </Link>
+                          ) : null}
+                          <Link
+                            href={getLocalizedPath(language, `/businesses/${result.pathId}`)}
+                            className="catalog-open-link"
+                          >
+                            {result.onlineBookingEnabled ? t.action : t.viewProfile}
+                          </Link>
+                        </div>
+                      </article>
+                    ))}
+                  </div>
 	                )}
 	              </>
 	            ) : null}
