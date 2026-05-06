@@ -62,6 +62,8 @@ export type PublicSearchResult = {
   localizedAddress?: LocalizedText;
   localizedAvailabilityLabel?: LocalizedText;
   onlineBookingEnabled: boolean;
+  lat: number | null;
+  lon: number | null;
 };
 
 export type PublicSearchIndex = {
@@ -457,7 +459,9 @@ async function loadPublicSearchIndex(params: PublicSearchParams = {}): Promise<P
         getPrimaryBusinessPhoto(normalizedBusiness),
         fallbackImages[index % fallbackImages.length]
       ),
-      onlineBookingEnabled: normalizedBusiness.allowOnlineBooking === true
+      onlineBookingEnabled: normalizedBusiness.allowOnlineBooking === true,
+      lat: typeof normalizedBusiness.addressLat === "number" ? normalizedBusiness.addressLat : null,
+      lon: typeof normalizedBusiness.addressLon === "number" ? normalizedBusiness.addressLon : null
     };
   });
 

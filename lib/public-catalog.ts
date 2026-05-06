@@ -4,6 +4,8 @@ import type { PublicSearchResult } from "./public-search";
 export type PublicCatalogCardService = {
   id: string;
   name: string;
+  price: number;
+  durationMinutes: number;
 };
 
 export type PublicCatalogCardResult = {
@@ -24,6 +26,8 @@ export type PublicCatalogCardResult = {
   minPrice: number | null;
   services: PublicCatalogCardService[];
   extraServicesCount: number;
+  lat: number | null;
+  lon: number | null;
 };
 
 function localize(
@@ -70,9 +74,13 @@ export function toPublicCatalogCardResults(
       minPrice: prices.length ? Math.min(...prices) : null,
       services: visibleServices.map((service) => ({
         id: service.id,
-        name: localize(service.name, service.localizedName, language)
+        name: localize(service.name, service.localizedName, language),
+        price: service.price || 0,
+        durationMinutes: service.durationMinutes || 60
       })),
-      extraServicesCount: Math.max(0, result.services.length - visibleServices.length)
+      extraServicesCount: Math.max(0, result.services.length - visibleServices.length),
+      lat: result.lat ?? null,
+      lon: result.lon ?? null
     };
   });
 }

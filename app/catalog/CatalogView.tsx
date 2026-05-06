@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import type { PublicCatalogCardResult } from "../../lib/public-catalog";
 import { getLocalizedPath, type SiteLanguage } from "../../lib/site-language";
@@ -44,6 +44,13 @@ type CatalogCopy = {
   loading: string;
   loadingText: string;
   loadError: string;
+  mapTitle: string;
+  mapHint: string;
+  showMap: string;
+  hideMap: string;
+  servicesMore: (count: number) => string;
+  minutes: string;
+  hours: string;
 };
 
 const catalogCopy: Record<SiteLanguage, CatalogCopy> = {
@@ -84,7 +91,14 @@ const catalogCopy: Record<SiteLanguage, CatalogCopy> = {
     availableAt: (time) => `Свободно на ${time}`,
     loading: "Загружаем результаты",
     loadingText: "Собираем свободные окна и актуальные карточки. Обычно это занимает несколько секунд.",
-    loadError: "Не удалось загрузить каталог. Обновите страницу или повторите поиск."
+    loadError: "Не удалось загрузить каталог. Обновите страницу или повторите поиск.",
+    mapTitle: "Карта рядом",
+    mapHint: "Точки компаний на карте",
+    showMap: "Показать карту",
+    hideMap: "Скрыть карту",
+    servicesMore: (count) => `Посмотреть ещё ${count} услуг`,
+    minutes: "мин",
+    hours: "ч"
   },
   uk: {
     locale: "uk-UA",
@@ -123,7 +137,14 @@ const catalogCopy: Record<SiteLanguage, CatalogCopy> = {
     availableAt: (time) => `Є вікно на ${time}`,
     loading: "Завантажуємо результати",
     loadingText: "Збираємо вільні вікна й актуальні картки. Зазвичай це займає кілька секунд.",
-    loadError: "Не вдалося завантажити каталог. Оновіть сторінку або повторіть пошук."
+    loadError: "Не вдалося завантажити каталог. Оновіть сторінку або повторіть пошук.",
+    mapTitle: "Карта поруч",
+    mapHint: "Точки компаній на карті",
+    showMap: "Показати карту",
+    hideMap: "Сховати карту",
+    servicesMore: (count) => `Переглянути ще ${count} послуг`,
+    minutes: "хв",
+    hours: "год"
   },
   en: {
     locale: "en-US",
@@ -162,7 +183,14 @@ const catalogCopy: Record<SiteLanguage, CatalogCopy> = {
     availableAt: (time) => `Available at ${time}`,
     loading: "Loading results",
     loadingText: "Collecting available slots and fresh business cards. This usually takes a few seconds.",
-    loadError: "Could not load the catalog. Refresh the page or try your search again."
+    loadError: "Could not load the catalog. Refresh the page or try your search again.",
+    mapTitle: "Nearby map",
+    mapHint: "Company points on map",
+    showMap: "Show map",
+    hideMap: "Hide map",
+    servicesMore: (count) => `View ${count} more services`,
+    minutes: "min",
+    hours: "h"
   }
 };
 
@@ -223,6 +251,17 @@ function formatDateTime(date: string, time: string, language: SiteLanguage) {
   return parts.join(" · ");
 }
 
+function formatServiceDuration(minutes: number, language: SiteLanguage) {
+  const t = catalogCopy[language];
+  if (!Number.isFinite(minutes) || minutes <= 0) {
+    return `0 ${t.minutes}`;
+  }
+  if (minutes >= 60 && minutes % 60 === 0) {
+    return `${minutes / 60} ${t.hours}`;
+  }
+  return `${minutes} ${t.minutes}`;
+}
+
 function shouldShowAvailabilityChip(result: PublicCatalogCardResult, language: SiteLanguage) {
   const disabledLabel = catalogCopy[language].onlineBookingDisabled;
   const candidate = result.availabilityLabel;
@@ -234,6 +273,231 @@ function shouldShowAvailabilityChip(result: PublicCatalogCardResult, language: S
   return !(candidate === disabledLabel && !result.onlineBookingEnabled);
 }
 
+type CatalogMapPoint = {
+  key: string;
+  lat: number;
+  lon: number;
+  label: string;
+  primaryId: string;
+  active: boolean;
+};
+
+function buildMapPoints(results: PublicCatalogCardResult[], selectedId: string): CatalogMapPoint[] {
+  const pointsByCoords = new Map<string, PublicCatalogCardResult[]>();
+
+  for (const item of results) {
+    if (!Number.isFinite(item.lat) || !Number.isFinite(item.lon)) {
+      continue;
+    }
+
+    const key = `${item.lat!.toFixed(5)}:${item.lon!.toFixed(5)}`;
+    const list = pointsByCoords.get(key) ?? [];
+    list.push(item);
+    pointsByCoords.set(key, list);
+  }
+
+  return [...pointsByCoords.entries()].map(([key, list]) => {
+    const activeItem = list.find((item) => item.id === selectedId) ?? list[0];
+    const label =
+      list.length > 1
+        ? String(list.length)
+        : (activeItem.rating || "5")
+            .replace(",", ".")
+            .split(".")[0] || "5";
+
+    return {
+      key,
+      lat: activeItem.lat as number,
+      lon: activeItem.lon as number,
+      label,
+      primaryId: activeItem.id,
+      active: list.some((item) => item.id === selectedId)
+    };
+  });
+}
+
+function CatalogResultsMap({
+  language,
+  results,
+  selectedId,
+  searchLat,
+  searchLon,
+  onSelect
+}: {
+  language: SiteLanguage;
+  results: PublicCatalogCardResult[];
+  selectedId: string;
+  searchLat: number | null;
+  searchLon: number | null;
+  onSelect: (id: string) => void;
+}) {
+  const mapHostRef = useRef<HTMLDivElement | null>(null);
+  const mapStateRef = useRef<{
+    L: typeof import("leaflet");
+    map: import("leaflet").Map;
+    markersLayer: import("leaflet").LayerGroup;
+    userMarker: import("leaflet").CircleMarker | null;
+    fittedKey: string;
+  } | null>(null);
+
+  const mapPoints = useMemo(() => buildMapPoints(results, selectedId), [results, selectedId]);
+  const datasetKey = useMemo(
+    () => mapPoints.map((point) => `${point.lat}:${point.lon}:${point.primaryId}`).join("|"),
+    [mapPoints]
+  );
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function initMap() {
+      if (!mapHostRef.current || mapStateRef.current) {
+        return;
+      }
+
+      const L = await import("leaflet");
+      if (cancelled || !mapHostRef.current) {
+        return;
+      }
+
+      const map = L.map(mapHostRef.current, {
+        zoomControl: false,
+        scrollWheelZoom: true,
+        attributionControl: true
+      });
+
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+      }).addTo(map);
+
+      L.control.zoom({ position: "bottomright" }).addTo(map);
+
+      mapStateRef.current = {
+        L,
+        map,
+        markersLayer: L.layerGroup().addTo(map),
+        userMarker: null,
+        fittedKey: ""
+      };
+    }
+
+    void initMap();
+
+    return () => {
+      cancelled = true;
+      if (mapStateRef.current) {
+        mapStateRef.current.map.remove();
+        mapStateRef.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    const state = mapStateRef.current;
+    if (!state) {
+      return;
+    }
+
+    const { L, markersLayer } = state;
+    markersLayer.clearLayers();
+
+    for (const point of mapPoints) {
+      const marker = L.marker([point.lat, point.lon], {
+        icon: L.divIcon({
+          className: "catalog-map-marker-wrapper",
+          html: `<span class="catalog-map-marker${point.active ? " is-active" : ""}">${point.label}</span>`,
+          iconSize: [40, 40],
+          iconAnchor: [20, 20]
+        })
+      });
+      marker.on("click", () => onSelect(point.primaryId));
+      marker.addTo(markersLayer);
+    }
+
+    if (state.userMarker) {
+      state.userMarker.remove();
+      state.userMarker = null;
+    }
+
+    if (Number.isFinite(searchLat) && Number.isFinite(searchLon)) {
+      const marker = L.circleMarker([searchLat as number, searchLon as number], {
+        radius: 6,
+        color: "#4f46e5",
+        weight: 2,
+        fillColor: "#7c7cff",
+        fillOpacity: 0.9
+      });
+      marker.addTo(state.map);
+      state.userMarker = marker;
+    }
+  }, [mapPoints, onSelect, searchLat, searchLon]);
+
+  useEffect(() => {
+    const state = mapStateRef.current;
+    if (!state) {
+      return;
+    }
+
+    const selected = results.find((item) => item.id === selectedId);
+    if (selected && Number.isFinite(selected.lat) && Number.isFinite(selected.lon)) {
+      state.map.setView([selected.lat as number, selected.lon as number], Math.max(state.map.getZoom(), 13), {
+        animate: true
+      });
+      return;
+    }
+
+    const fitKey = `${datasetKey}|${searchLat ?? ""}|${searchLon ?? ""}`;
+    if (state.fittedKey === fitKey) {
+      return;
+    }
+    state.fittedKey = fitKey;
+
+    const boundsPoints: Array<[number, number]> = mapPoints.map((point) => [point.lat, point.lon]);
+    if (Number.isFinite(searchLat) && Number.isFinite(searchLon)) {
+      boundsPoints.push([searchLat as number, searchLon as number]);
+    }
+
+    if (boundsPoints.length === 0) {
+      state.map.setView([50.4501, 30.5234], 10, { animate: false });
+      return;
+    }
+
+    if (boundsPoints.length === 1) {
+      state.map.setView(boundsPoints[0], 13, { animate: false });
+      return;
+    }
+
+    state.map.fitBounds(boundsPoints, {
+      padding: [24, 24],
+      animate: false
+    });
+  }, [datasetKey, mapPoints, results, searchLat, searchLon, selectedId]);
+
+  const hasMapPoints = mapPoints.length > 0;
+  const mapLabel =
+    language === "en"
+      ? hasMapPoints
+        ? "Points on map"
+        : "No points with coordinates"
+      : language === "uk"
+        ? hasMapPoints
+          ? "Точки на карті"
+          : "Немає точок з координатами"
+        : hasMapPoints
+          ? "Точки на карте"
+          : "Нет точек с координатами";
+
+  return (
+    <aside className="catalog-map-card">
+      <div className="catalog-map-head">
+        <strong>{catalogCopy[language].mapTitle}</strong>
+        <span>{mapLabel}</span>
+      </div>
+      <div ref={mapHostRef} className="catalog-map-canvas" aria-label={catalogCopy[language].mapHint} />
+    </aside>
+  );
+}
+
 export default function CatalogView({
   initialLanguage = "ru"
 }: CatalogViewProps) {
@@ -243,6 +507,9 @@ export default function CatalogView({
   const [results, setResults] = useState<PublicCatalogCardResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
+  const [showMap, setShowMap] = useState(true);
+  const [selectedResultId, setSelectedResultId] = useState("");
+  const cardRefs = useRef<Record<string, HTMLElement | null>>({});
 
   const query = useMemo(() => searchParams.get("query")?.trim() ?? "", [searchParams]);
   const kind = useMemo(() => searchParams.get("kind")?.trim() ?? "", [searchParams]);
@@ -341,10 +608,29 @@ export default function CatalogView({
     };
   }, [searchQuery]);
 
+  useEffect(() => {
+    if (!results.length) {
+      setSelectedResultId("");
+      return;
+    }
+    setSelectedResultId((current) => (current && results.some((item) => item.id === current) ? current : results[0]!.id));
+  }, [results]);
+
+  function selectResult(id: string, scrollIntoView = false) {
+    setSelectedResultId(id);
+    if (scrollIntoView) {
+      cardRefs.current[id]?.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest"
+      });
+    }
+  }
+
   const catalogLabel = language === "en" ? "Catalog" : "Каталог";
   const menuLabel = language === "en" ? "Menu" : "Меню";
   const menuSearchLabel = language === "en" ? "Search and filters" : language === "uk" ? "Пошук і фільтри" : "Поиск и фильтры";
   const menuResultsLabel = language === "en" ? "Results" : language === "uk" ? "Результати" : "Результаты";
+  const menuMapLabel = language === "en" ? "Map" : language === "uk" ? "Карта" : "Карта";
   const navLabel = language === "en" ? "Catalog navigation" : language === "uk" ? "Навігація каталогу" : "Навигация каталога";
 
   return (
@@ -358,19 +644,20 @@ export default function CatalogView({
           <a href={getLocalizedPath(language, "/catalog")} className="public-login">
             {catalogLabel}
           </a>
-          <details className="public-menu">
-            <summary>
-              <span>{menuLabel}</span>
-              <span className="public-burger" aria-hidden="true" />
-            </summary>
-            <div className="public-menu-panel">
-              <a href="#catalog-hero">{menuSearchLabel}</a>
-              <a href="#catalog-results">{menuResultsLabel}</a>
-            </div>
-          </details>
-          <GlobalLanguageSwitcher mode="inline" />
-        </nav>
-      </header>
+	          <details className="public-menu">
+	            <summary>
+	              <span>{menuLabel}</span>
+	              <span className="public-burger" aria-hidden="true" />
+	            </summary>
+	            <div className="public-menu-panel">
+	              <a href="#catalog-hero">{menuSearchLabel}</a>
+	              <a href="#catalog-results">{menuResultsLabel}</a>
+	              <a href="#catalog-map">{menuMapLabel}</a>
+	            </div>
+	          </details>
+	          <GlobalLanguageSwitcher mode="inline" />
+	        </nav>
+	      </header>
 
       <section className="catalog-shell">
         <section id="catalog-hero" className="catalog-hero">
@@ -388,84 +675,118 @@ export default function CatalogView({
           </div>
         </section>
 
-        <section id="catalog-results" className="catalog-grid">
-          {loading ? (
-            <div className="catalog-empty">
-              <h2>{t.loading}</h2>
-              <p>{t.loadingText}</p>
-            </div>
-          ) : null}
-          {loadFailed ? (
-            <div className="catalog-empty">
-              <h2>{t.emptyTitle}</h2>
-              <p>{t.loadError}</p>
-              <Link href={getLocalizedPath(language, "/catalog")} className="primary-button">{t.backToSearch}</Link>
-            </div>
-          ) : null}
-          {!loading && !loadFailed ? (
-            <>
-          {results.map((result, index) => (
-            <article key={result.id} className={`catalog-card ${["accent-coral", "accent-forest", "accent-sand"][index % 3]}`}>
-              <img className="catalog-card-image" src={result.image} alt={result.title} />
-              <div className="catalog-card-top">
-                <p>{result.category}</p>
-                <span>{t.resultType(result.type)}</span>
-              </div>
+	        <section id="catalog-results" className="catalog-results-layout">
+	          <div className="catalog-results-column">
+	            <div className="catalog-results-toolbar">
+	              <strong>{t.resultCount(results.length)}</strong>
+	              <button
+	                type="button"
+	                className="catalog-map-toggle"
+	                onClick={() => setShowMap((current) => !current)}
+	              >
+	                {showMap ? t.hideMap : t.showMap}
+	              </button>
+	            </div>
 
-              <div>
-                <h2>{result.title}</h2>
-                <p className="catalog-description">
-                  {result.subtitle} · {result.address}
-                </p>
-              </div>
+	            {loading ? (
+	              <div className="catalog-empty">
+	                <h2>{t.loading}</h2>
+	                <p>{t.loadingText}</p>
+	              </div>
+	            ) : null}
+	            {loadFailed ? (
+	              <div className="catalog-empty">
+	                <h2>{t.emptyTitle}</h2>
+	                <p>{t.loadError}</p>
+	                <Link href={getLocalizedPath(language, "/catalog")} className="primary-button">{t.backToSearch}</Link>
+	              </div>
+	            ) : null}
+	            {!loading && !loadFailed ? (
+	              <>
+	                {results.length === 0 ? (
+	                  <div className="catalog-empty">
+	                    <h2>{t.emptyTitle}</h2>
+	                    <p>{t.emptyText}</p>
+	                    <Link href={getLocalizedPath(language)} className="primary-button">{t.backToSearch}</Link>
+	                  </div>
+	                ) : (
+	                  <div className="catalog-results-grid">
+	                    {results.map((result, index) => (
+	                      <article
+	                        key={result.id}
+	                        ref={(node) => {
+	                          cardRefs.current[result.id] = node;
+	                        }}
+	                        className={`catalog-result-card ${["accent-coral", "accent-forest", "accent-sand"][index % 3]} ${
+	                          selectedResultId === result.id ? "catalog-result-card-active" : ""
+	                        }`}
+	                        onMouseEnter={() => selectResult(result.id)}
+	                      >
+	                        <img className="catalog-card-image" src={result.image} alt={result.title} />
+	                        <div className="catalog-result-head">
+	                          <div>
+	                            <h2>{result.title}</h2>
+	                            <p className="catalog-description">{`${formatDistance(result.distanceKm, language)} · ${result.address}`}</p>
+	                          </div>
+	                          <strong>{`${result.rating} · ${t.reviewCount(result.reviews)}`}</strong>
+	                        </div>
 
-              <div className="catalog-meta">
-                <strong>
-                  {typeof result.minPrice === "number" && result.minPrice > 0
-                    ? t.priceFrom(formatPrice(result.minPrice, language))
-                    : t.pricePending}
-                </strong>
-                <span>{`${result.rating} · ${t.reviewCount(result.reviews)} · ${formatDistance(result.distanceKm, language)}`}</span>
-              </div>
+	                        <div className="catalog-result-services">
+	                          {result.services.slice(0, 3).map((service) => (
+	                            <div key={service.id} className="catalog-result-service-row">
+	                              <div>
+	                                <strong>{service.name}</strong>
+	                                <span>{formatServiceDuration(service.durationMinutes, language)}</span>
+	                              </div>
+	                              <span>{service.price > 0 ? formatPrice(service.price, language) : t.pricePending}</span>
+	                            </div>
+	                          ))}
+	                          {result.extraServicesCount > 0 ? (
+	                            <Link href={getLocalizedPath(language, `/businesses/${result.pathId}`)} className="catalog-result-more">
+	                              {t.servicesMore(result.extraServicesCount)}
+	                            </Link>
+	                          ) : null}
+	                        </div>
 
-              <div className="chip-row">
-                {shouldShowAvailabilityChip(result, language) ? (
-                  <span className={`chip ${result.available ? "chip-success" : "chip-muted"}`}>
-                    {result.availabilityLabel || (time ? t.availableAt(time) : t.chooseTime)}
-                  </span>
-                ) : null}
-                <span className={`chip ${result.onlineBookingEnabled ? "chip-success" : "chip-muted"}`}>
-                  {result.onlineBookingEnabled ? t.onlineBookingEnabled : t.onlineBookingDisabled}
-                </span>
-                {result.services.slice(0, 5).map((service) => (
-                  <span key={service.id} className="chip">
-                    {service.name}
-                  </span>
-                ))}
-                {result.extraServicesCount > 0 ? (
-                  <span className="chip">{`+${result.extraServicesCount}`}</span>
-                ) : null}
-              </div>
+	                        <div className="chip-row">
+	                          {shouldShowAvailabilityChip(result, language) ? (
+	                            <span className={`chip ${result.available ? "chip-success" : "chip-muted"}`}>
+	                              {result.availabilityLabel || (time ? t.availableAt(time) : t.chooseTime)}
+	                            </span>
+	                          ) : null}
+	                          <span className={`chip ${result.onlineBookingEnabled ? "chip-success" : "chip-muted"}`}>
+	                            {result.onlineBookingEnabled ? t.onlineBookingEnabled : t.onlineBookingDisabled}
+	                          </span>
+	                        </div>
 
-              <Link
-                href={getLocalizedPath(language, `/businesses/${result.pathId}`)}
-                className="primary-button"
-              >
-                {result.onlineBookingEnabled ? t.action : t.viewProfile}
-              </Link>
-            </article>
-          ))}
-          {results.length === 0 ? (
-            <div className="catalog-empty">
-              <h2>{t.emptyTitle}</h2>
-              <p>{t.emptyText}</p>
-              <Link href={getLocalizedPath(language)} className="primary-button">{t.backToSearch}</Link>
-            </div>
-          ) : null}
-            </>
-          ) : null}
-        </section>
-      </section>
-    </main>
-  );
+	                        <Link
+	                          href={getLocalizedPath(language, `/businesses/${result.pathId}`)}
+	                          className="primary-button"
+	                        >
+	                          {result.onlineBookingEnabled ? t.action : t.viewProfile}
+	                        </Link>
+	                      </article>
+	                    ))}
+	                  </div>
+	                )}
+	              </>
+	            ) : null}
+	          </div>
+
+	          {showMap ? (
+	            <div id="catalog-map" className="catalog-map-column">
+	              <CatalogResultsMap
+	                language={language}
+	                results={results}
+	                selectedId={selectedResultId}
+	                searchLat={lat}
+	                searchLon={lon}
+	                onSelect={(id) => selectResult(id, true)}
+	              />
+	            </div>
+	          ) : null}
+	        </section>
+	      </section>
+	    </main>
+	  );
 }

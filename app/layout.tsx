@@ -4,6 +4,7 @@ import GlobalLanguageSwitcher from "./GlobalLanguageSwitcher";
 import { buildMetadata, seoCopy, siteUrl } from "../lib/seo";
 import { defaultSiteLanguage } from "../lib/site-language";
 import "./globals.css";
+import "leaflet/dist/leaflet.css";
 
 export async function generateMetadata(): Promise<Metadata> {
   const language = defaultSiteLanguage;
