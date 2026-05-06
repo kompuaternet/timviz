@@ -273,6 +273,15 @@ function shouldShowAvailabilityChip(result: PublicCatalogCardResult, language: S
   return !(candidate === disabledLabel && !result.onlineBookingEnabled);
 }
 
+function escapeHtml(value: string) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
 type CatalogMapPoint = {
   key: string;
   lat: number;
@@ -280,6 +289,7 @@ type CatalogMapPoint = {
   label: string;
   primaryId: string;
   active: boolean;
+  item: PublicCatalogCardResult;
 };
 
 function buildMapPoints(results: PublicCatalogCardResult[], selectedId: string): CatalogMapPoint[] {
@@ -297,7 +307,7 @@ function buildMapPoints(results: PublicCatalogCardResult[], selectedId: string):
   }
 
   return [...pointsByCoords.entries()].map(([key, list]) => {
-    const activeItem = list.find((item) => item.id === selectedId) ?? list[0];
+    const activeItem = list.find((item) => item.id === selectedId) ?? list[0]!;
     const label =
       list.length > 1
         ? String(list.length)
@@ -311,7 +321,8 @@ function buildMapPoints(results: PublicCatalogCardResult[], selectedId: string):
       lon: activeItem.lon as number,
       label,
       primaryId: activeItem.id,
-      active: list.some((item) => item.id === selectedId)
+      active: list.some((item) => item.id === selectedId),
+      item: activeItem
     };
   });
 }
@@ -337,6 +348,7 @@ function CatalogResultsMap({
     map: import("leaflet").Map;
     markersLayer: import("leaflet").LayerGroup;
     userMarker: import("leaflet").CircleMarker | null;
+    markersById: Map<string, import("leaflet").Marker>;
     fittedKey: string;
   } | null>(null);
 
@@ -377,6 +389,7 @@ function CatalogResultsMap({
         map,
         markersLayer: L.layerGroup().addTo(map),
         userMarker: null,
+        markersById: new Map(),
         fittedKey: ""
       };
     }
@@ -398,10 +411,33 @@ function CatalogResultsMap({
       return;
     }
 
-    const { L, markersLayer } = state;
+    const { L, markersLayer, markersById } = state;
     markersLayer.clearLayers();
+    markersById.clear();
 
     for (const point of mapPoints) {
+      const popupUrl = getLocalizedPath(language, `/businesses/${point.item.pathId}`);
+      const topService = point.item.services[0];
+      const popupHtml = `
+        <a class="catalog-map-popup-card" href="${popupUrl}">
+          <img src="${escapeHtml(point.item.image)}" alt="${escapeHtml(point.item.title)}" />
+          <div class="catalog-map-popup-body">
+            <div class="catalog-map-popup-row">
+              <strong>${escapeHtml(point.item.title)}</strong>
+              <span>★ ${escapeHtml(point.item.rating)} (${point.item.reviews})</span>
+            </div>
+            <small>${escapeHtml(formatDistance(point.item.distanceKm, language))} · ${escapeHtml(point.item.address)}</small>
+            ${
+              topService
+                ? `<div class="catalog-map-popup-service"><b>${escapeHtml(topService.name)}</b><span>${escapeHtml(
+                    formatServiceDuration(topService.durationMinutes, language)
+                  )}${topService.price > 0 ? ` · ${escapeHtml(formatPrice(topService.price, language))}` : ""}</span></div>`
+                : ""
+            }
+          </div>
+        </a>
+      `;
+
       const marker = L.marker([point.lat, point.lon], {
         icon: L.divIcon({
           className: "catalog-map-marker-wrapper",
@@ -410,8 +446,16 @@ function CatalogResultsMap({
           iconAnchor: [20, 20]
         })
       });
+      marker.bindPopup(popupHtml, {
+        closeButton: true,
+        autoPan: true,
+        minWidth: 280,
+        maxWidth: 340,
+        className: "catalog-map-popup-shell"
+      });
       marker.on("click", () => onSelect(point.primaryId));
       marker.addTo(markersLayer);
+      markersById.set(point.primaryId, marker);
     }
 
     if (state.userMarker) {
@@ -440,6 +484,10 @@ function CatalogResultsMap({
 
     const selected = results.find((item) => item.id === selectedId);
     if (selected && Number.isFinite(selected.lat) && Number.isFinite(selected.lon)) {
+      const selectedMarker = state.markersById.get(selected.id);
+      if (selectedMarker) {
+        selectedMarker.openPopup();
+      }
       state.map.setView([selected.lat as number, selected.lon as number], Math.max(state.map.getZoom(), 13), {
         animate: true
       });
@@ -473,26 +521,8 @@ function CatalogResultsMap({
     });
   }, [datasetKey, mapPoints, results, searchLat, searchLon, selectedId]);
 
-  const hasMapPoints = mapPoints.length > 0;
-  const mapLabel =
-    language === "en"
-      ? hasMapPoints
-        ? "Points on map"
-        : "No points with coordinates"
-      : language === "uk"
-        ? hasMapPoints
-          ? "Точки на карті"
-          : "Немає точок з координатами"
-        : hasMapPoints
-          ? "Точки на карте"
-          : "Нет точек с координатами";
-
   return (
-    <aside className="catalog-map-card">
-      <div className="catalog-map-head">
-        <strong>{catalogCopy[language].mapTitle}</strong>
-        <span>{mapLabel}</span>
-      </div>
+    <aside className="catalog-map-full">
       <div ref={mapHostRef} className="catalog-map-canvas" aria-label={catalogCopy[language].mapHint} />
     </aside>
   );
@@ -507,7 +537,6 @@ export default function CatalogView({
   const [results, setResults] = useState<PublicCatalogCardResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadFailed, setLoadFailed] = useState(false);
-  const [showMap, setShowMap] = useState(true);
   const [selectedResultId, setSelectedResultId] = useState("");
   const cardRefs = useRef<Record<string, HTMLElement | null>>({});
 
@@ -675,18 +704,11 @@ export default function CatalogView({
           </div>
         </section>
 
-	        <section id="catalog-results" className="catalog-results-layout">
-	          <div className="catalog-results-column">
-	            <div className="catalog-results-toolbar">
-	              <strong>{t.resultCount(results.length)}</strong>
-	              <button
-	                type="button"
-	                className="catalog-map-toggle"
-	                onClick={() => setShowMap((current) => !current)}
-	              >
-	                {showMap ? t.hideMap : t.showMap}
-	              </button>
-	            </div>
+        <section id="catalog-results" className="catalog-results-layout">
+          <div className="catalog-results-column">
+            <div className="catalog-results-toolbar">
+              <strong>{t.resultCount(results.length)}</strong>
+            </div>
 
 	            {loading ? (
 	              <div className="catalog-empty">
@@ -771,22 +793,20 @@ export default function CatalogView({
 	                )}
 	              </>
 	            ) : null}
-	          </div>
+          </div>
 
-	          {showMap ? (
-	            <div id="catalog-map" className="catalog-map-column">
-	              <CatalogResultsMap
-	                language={language}
-	                results={results}
-	                selectedId={selectedResultId}
-	                searchLat={lat}
-	                searchLon={lon}
-	                onSelect={(id) => selectResult(id, true)}
-	              />
-	            </div>
-	          ) : null}
-	        </section>
-	      </section>
-	    </main>
+          <div id="catalog-map" className="catalog-map-column">
+            <CatalogResultsMap
+              language={language}
+              results={results}
+              selectedId={selectedResultId}
+              searchLat={lat}
+              searchLon={lon}
+              onSelect={(id) => selectResult(id, true)}
+            />
+          </div>
+        </section>
+      </section>
+    </main>
 	  );
 }
