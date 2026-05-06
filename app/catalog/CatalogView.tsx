@@ -303,7 +303,7 @@ function formatServiceDuration(minutes: number, language: SiteLanguage) {
 
 function shouldShowAvailabilityChip(result: PublicCatalogCardResult, language: SiteLanguage) {
   const disabledLabel = catalogCopy[language].onlineBookingDisabled;
-  const candidate = result.availabilityLabel;
+  const candidate = result.availabilityLabel ?? "";
 
   if (!candidate.trim()) {
     return false;
@@ -613,7 +613,7 @@ export default function CatalogView({
 
   useEffect(() => {
     const params = new URLSearchParams(searchQuery);
-    const storageKey = `timviz.catalog.v2.${params.toString()}`;
+    const storageKey = `timviz.catalog.v3.${params.toString()}`;
     const now = Date.now();
     const ttlMs = 30 * 1000;
     const cachedRaw = window.sessionStorage.getItem(storageKey);
