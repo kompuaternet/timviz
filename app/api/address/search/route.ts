@@ -3,13 +3,14 @@ import { NextResponse } from "next/server";
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const query = searchParams.get("q")?.trim() ?? "";
+  const language = searchParams.get("lang")?.trim() || "uk";
 
   if (query.length < 3) {
     return NextResponse.json({ results: [] });
   }
 
   try {
-    const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=6&q=${encodeURIComponent(query)}`;
+    const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&addressdetails=1&limit=6&accept-language=${encodeURIComponent(language)},uk,ru,en&q=${encodeURIComponent(query)}`;
     const response = await fetch(url, {
       headers: {
         Accept: "application/json",

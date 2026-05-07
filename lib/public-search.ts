@@ -81,6 +81,8 @@ export type PublicSearchParams = {
   lon?: number | null;
 };
 
+const GEO_SEARCH_RADIUS_KM = 120;
+
 const fallbackImages = [
   "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&w=900&q=80",
   "https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=900&q=80",
@@ -663,6 +665,11 @@ export function filterPublicSearchResults(index: PublicSearchIndex, params: Publ
   const query = normalize(params.query);
   const location = normalize(params.location);
   const kind = params.kind;
+  const hasGeoPoint =
+    typeof params.lat === "number" &&
+    Number.isFinite(params.lat) &&
+    typeof params.lon === "number" &&
+    Number.isFinite(params.lon);
 
   return index.results.filter((result) => {
     if (params.date && params.time && !result.available) {
@@ -677,12 +684,18 @@ export function filterPublicSearchResults(index: PublicSearchIndex, params: Publ
       return false;
     }
 
-    if (location) {
+    if (location && !hasGeoPoint) {
       const locationHaystack = getSearchableText(
         [result.address, result.subtitle, result.title, result.category],
         [result.localizedAddress, result.localizedSubtitle, result.localizedCategory]
       );
       if (!matchesLocation(locationHaystack, location)) {
+        return false;
+      }
+    }
+
+    if (hasGeoPoint && typeof result.distanceKm === "number" && Number.isFinite(result.distanceKm)) {
+      if (result.distanceKm > GEO_SEARCH_RADIUS_KM) {
         return false;
       }
     }

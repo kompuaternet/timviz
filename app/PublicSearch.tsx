@@ -20,6 +20,14 @@ type PublicSearchProps = {
   initialCoords?: { lat: number; lon: number } | null;
 };
 
+type AddressSuggestion = {
+  id: string;
+  label: string;
+  details: string;
+  lat: number;
+  lon: number;
+};
+
 const searchCopy = {
   ru: {
     allServices: "Все услуги",
@@ -42,6 +50,8 @@ const searchCopy = {
     useLocationHint: "Если браузер разрешит доступ, отсортируем по расстоянию.",
     cityLabel: "Город или район",
     cityPlaceholder: "Например, Киев или Кривой Рог",
+    searchingAddress: "Ищем адрес...",
+    pickAddress: "Выбрать адрес",
     choose: "Выбрать",
     anyDay: "Любой день",
     today: "Сегодня",
@@ -76,6 +86,8 @@ const searchCopy = {
     useLocationHint: "Якщо браузер дозволить доступ, відсортуємо за відстанню.",
     cityLabel: "Місто або район",
     cityPlaceholder: "Наприклад, Київ або Кривий Ріг",
+    searchingAddress: "Шукаємо адресу...",
+    pickAddress: "Вибрати адресу",
     choose: "Вибрати",
     anyDay: "Будь-який день",
     today: "Сьогодні",
@@ -110,6 +122,8 @@ const searchCopy = {
     useLocationHint: "If the browser allows access, results will be sorted by distance.",
     cityLabel: "City or area",
     cityPlaceholder: "For example, Kyiv or Kryvyi Rih",
+    searchingAddress: "Searching address...",
+    pickAddress: "Pick address",
     choose: "Choose",
     anyDay: "Any day",
     today: "Today",
@@ -144,6 +158,8 @@ const searchCopy = {
   useLocationHint: string;
   cityLabel: string;
   cityPlaceholder: string;
+  searchingAddress: string;
+  pickAddress: string;
   choose: string;
   anyDay: string;
   today: string;
@@ -314,6 +330,8 @@ export default function PublicSearch({
   const [time, setTime] = useState((initialTime ?? "").trim());
   const [activePanel, setActivePanel] = useState<ActivePanel>(null);
   const [geoStatus, setGeoStatus] = useState("");
+  const [isSearchingAddress, setIsSearchingAddress] = useState(false);
+  const [addressSuggestions, setAddressSuggestions] = useState<AddressSuggestion[]>([]);
   const [visibleMonth, setVisibleMonth] = useState(() => new Date());
   const timePresets = useMemo(
     () => [
@@ -334,6 +352,82 @@ export default function PublicSearch({
       return coords ? t.myLocation : t.currentLocation;
     });
   }, [coords, t.currentLocation, t.myLocation]);
+
+  useEffect(() => {
+    const value = locationInput.trim();
+    if (value.length < 3 || activePanel !== "location") {
+      setAddressSuggestions([]);
+      setIsSearchingAddress(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(async () => {
+      setIsSearchingAddress(true);
+      try {
+        const response = await fetch(
+          `/api/address/search?q=${encodeURIComponent(value)}&lang=${encodeURIComponent(language)}`,
+          { signal: controller.signal }
+        );
+        if (!response.ok) {
+          setAddressSuggestions([]);
+          return;
+        }
+
+        const payload = (await response.json()) as {
+          results?: Array<{
+            place_id?: number | string;
+            display_name?: string;
+            lat?: string;
+            lon?: string;
+            address?: Record<string, string>;
+          }>;
+        };
+
+        const nextSuggestions =
+          payload.results
+            ?.map((item) => {
+              const lat = Number(item.lat);
+              const lon = Number(item.lon);
+              if (!Number.isFinite(lat) || !Number.isFinite(lon)) {
+                return null;
+              }
+
+              const address = item.address ?? {};
+              const house = address.house_number ?? "";
+              const street = address.road ?? address.pedestrian ?? address.footway ?? address.neighbourhood ?? "";
+              const city = address.city ?? address.town ?? address.village ?? address.municipality ?? "";
+              const region = address.state ?? address.region ?? address.county ?? "";
+              const country = address.country ?? "";
+              const postcode = address.postcode ?? "";
+              const primary = [house, street].filter(Boolean).join(" ").trim() || item.display_name || value;
+              const details = [city, region, postcode, country].filter(Boolean).join(", ");
+
+              return {
+                id: String(item.place_id ?? `${lat}:${lon}:${primary}`),
+                label: primary,
+                details,
+                lat,
+                lon
+              } satisfies AddressSuggestion;
+            })
+            .filter((item): item is AddressSuggestion => Boolean(item)) ?? [];
+
+        setAddressSuggestions(nextSuggestions.slice(0, 6));
+      } catch (error) {
+        if ((error as { name?: string }).name !== "AbortError") {
+          setAddressSuggestions([]);
+        }
+      } finally {
+        setIsSearchingAddress(false);
+      }
+    }, 220);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+      controller.abort();
+    };
+  }, [activePanel, language, locationInput]);
 
   const counts = useMemo(
     () => ({
@@ -427,6 +521,16 @@ export default function PublicSearch({
     setLocationInput(nextValue);
     setCoords(null);
     setGeoStatus("");
+    setActivePanel(null);
+  }
+
+  function selectAddressSuggestion(item: AddressSuggestion) {
+    const label = item.details ? `${item.label}, ${item.details}` : item.label;
+    setLocation(label);
+    setLocationInput(label);
+    setCoords({ lat: item.lat, lon: item.lon });
+    setGeoStatus(t.geoSorted);
+    setAddressSuggestions([]);
     setActivePanel(null);
   }
 
@@ -524,6 +628,22 @@ export default function PublicSearch({
             </label>
             <button type="submit" disabled={!locationInput.trim()}>{t.choose}</button>
           </form>
+
+          {isSearchingAddress ? <div className="public-location-status">{t.searchingAddress}</div> : null}
+
+          {addressSuggestions.length ? (
+            <div className="public-location-suggestions">
+              {addressSuggestions.map((item) => (
+                <button key={item.id} type="button" onClick={() => selectAddressSuggestion(item)}>
+                  <span>
+                    <strong>{item.label}</strong>
+                    {item.details ? <small>{item.details}</small> : null}
+                  </span>
+                  <em>{t.pickAddress}</em>
+                </button>
+              ))}
+            </div>
+          ) : null}
 
           <div className="public-location-chips">
             {locationSuggestions[language].map((item) => (
