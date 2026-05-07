@@ -790,13 +790,13 @@ export default function CatalogView({
 	                  </div>
                 ) : (
                   <div className="catalog-results-grid">
-                    {results.map((result, index) => (
+                    {results.map((result) => (
                       <article
 	                        key={result.id}
 	                        ref={(node) => {
 	                          cardRefs.current[result.id] = node;
 	                        }}
-                        className={`catalog-result-card ${["accent-coral", "accent-forest", "accent-sand"][index % 3]} ${
+                        className={`catalog-result-card ${
                           selectedResultId === result.id ? "catalog-result-card-active" : ""
                         }`}
                         onMouseEnter={() => selectResult(result.id)}
