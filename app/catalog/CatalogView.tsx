@@ -248,6 +248,16 @@ function getSlavicPlural(value: number, forms: [string, string, string]) {
   return forms[2];
 }
 
+function formatServicesCount(value: number, language: SiteLanguage) {
+  if (language === "uk") {
+    return `${value} ${getSlavicPlural(value, ["послуга", "послуги", "послуг"])}`;
+  }
+  if (language === "ru") {
+    return `${value} ${getSlavicPlural(value, ["услуга", "услуги", "услуг"])}`;
+  }
+  return `${value} service${value === 1 ? "" : "s"}`;
+}
+
 function formatDistance(value: number | null, language: SiteLanguage) {
   const t = catalogCopy[language];
 
@@ -606,6 +616,7 @@ export default function CatalogView({
     return Number.isFinite(value) ? value : null;
   }, [searchParams]);
   const hasCoords = lat !== null && lon !== null;
+  const normalizedQuery = query.trim().toLowerCase();
 
   const searchQuery = useMemo(() => {
     const params = new URLSearchParams();
@@ -842,15 +853,26 @@ export default function CatalogView({
                         </div>
 
                         <div className="catalog-result-services compact">
-                          {result.services.slice(0, expandedServicesById[result.id] ? 5 : 3).map((service) => (
-                            <div key={service.id} className="catalog-result-service-row">
+                          {normalizedQuery ? (
+                            result.services
+                              .filter((service) => service.name.toLowerCase().includes(normalizedQuery))
+                              .slice(0, expandedServicesById[result.id] ? 5 : 3)
+                              .map((service) => (
+                                <div key={service.id} className="catalog-result-service-row">
+                                  <div>
+                                    <strong>{service.name}</strong>
+	                                  <span>{formatServiceDuration(service.durationMinutes, language)}</span>
+	                                </div>
+                                  <span>{service.price > 0 ? formatPrice(service.price, language) : t.pricePending}</span>
+                                </div>
+                              ))
+                          ) : (
+                            <div className="catalog-result-service-row">
                               <div>
-                                <strong>{service.name}</strong>
-	                                <span>{formatServiceDuration(service.durationMinutes, language)}</span>
-	                              </div>
-                              <span>{service.price > 0 ? formatPrice(service.price, language) : t.pricePending}</span>
+                                <strong>{formatServicesCount(result.services.length + result.extraServicesCount, language)}</strong>
+                              </div>
                             </div>
-                          ))}
+                          )}
                         </div>
 
                         <div className="catalog-result-actions">
