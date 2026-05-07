@@ -1,14 +1,14 @@
 :root {
-  --bg: #f4efe7;
-  --surface: rgba(255, 250, 244, 0.82);
-  --surface-strong: #fff9f2;
-  --ink: #1f1b16;
-  --muted: #6c6256;
-  --line: rgba(78, 54, 29, 0.14);
+  --bg: #f6f8ff;
+  --surface: rgba(255, 255, 255, 0.88);
+  --surface-strong: #ffffff;
+  --ink: #171a26;
+  --muted: #5b6478;
+  --line: rgba(44, 58, 94, 0.16);
   --accent: #d86f31;
   --accent-deep: #9f3f11;
   --forest: #20473d;
-  --shadow: 0 30px 80px rgba(53, 31, 12, 0.12);
+  --shadow: 0 30px 80px rgba(32, 40, 68, 0.12);
   --font-display:
     "SF Pro Display",
     "SF Pro Text",
@@ -3553,9 +3553,9 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   background:
-    radial-gradient(circle at top left, rgba(216, 111, 49, 0.18), transparent 28%),
-    radial-gradient(circle at 85% 10%, rgba(32, 71, 61, 0.18), transparent 22%),
-    linear-gradient(180deg, #f8f1e6 0%, #f4efe7 46%, #efe6da 100%);
+    radial-gradient(circle at top left, rgba(124, 58, 237, 0.1), transparent 30%),
+    radial-gradient(circle at 85% 10%, rgba(59, 130, 246, 0.1), transparent 24%),
+    linear-gradient(180deg, #fbfcff 0%, #f6f8ff 52%, #eef2ff 100%);
 }
 
 h1,
