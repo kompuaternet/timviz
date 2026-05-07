@@ -87,7 +87,7 @@ const ukSeoParagraphs = [
 const copy: Record<SiteLanguage, Copy> = {
   ru: {
     home: "Главная",
-    forBusiness: "Для бизнеса",
+    forBusiness: "Бизнесу",
     title: "Онлайн-запись для мастера маникюра",
     subtitle: "Принимайте записи клиентов онлайн, ведите календарь, услуги, длительность и рабочий график в одном кабинете.",
     ctaPrimary: "Начать принимать записи за 2 минуты",
@@ -299,7 +299,7 @@ const copy: Record<SiteLanguage, Copy> = {
   },
   uk: {
     home: "Головна",
-    forBusiness: "Для бізнесу",
+    forBusiness: "Бізнесу",
     title: "Онлайн-запис для майстрів манікюру",
     subtitle: "Приймайте записи клієнтів онлайн, ведіть календар і не втрачайте клієнтів",
     ctaPrimary: "Почати приймати записи за 2 хвилини",
@@ -803,9 +803,8 @@ export default function ManicureLanding({ language }: { language: SiteLanguage }
       <header className="business-header">
         <a className="public-logo" href={getLocalizedPath(language)}><BrandLogo /></a>
         <nav className="business-nav" aria-label={t.forBusiness}>
-          <a href={getLocalizedPath(language)}>{t.home}</a>
           <a href={getLocalizedPath(language, "/for-business")}>{t.forBusiness}</a>
-          <a href="/pro/login">Timviz Pro</a>
+          <a href="/pro/login">Pro</a>
           <GlobalLanguageSwitcher mode="inline" />
         </nav>
       </header>

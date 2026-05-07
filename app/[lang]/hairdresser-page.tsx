@@ -106,7 +106,7 @@ const screenshotsByLanguage: Record<SiteLanguage, { day: string; week: string; m
 const copy: Record<SiteLanguage, HairCopy> = {
   ru: {
     home: "Главная",
-    forBusiness: "Для бизнеса",
+    forBusiness: "Бизнесу",
     title: "Онлайн-запись для парикмахеров",
     subtitle: "Принимайте записи клиентов онлайн, управляйте расписанием и не теряйте клиентов",
     cta: "Начать принимать записи за 2 минуты",
@@ -212,7 +212,7 @@ const copy: Record<SiteLanguage, HairCopy> = {
   },
   uk: {
     home: "Головна",
-    forBusiness: "Для бізнесу",
+    forBusiness: "Бізнесу",
     title: "Онлайн-запис для перукарів",
     subtitle: "Приймайте записи клієнтів онлайн, керуйте графіком і не втрачайте клієнтів",
     cta: "Почати приймати записи за 2 хвилини",
@@ -473,9 +473,8 @@ export default function HairdresserLanding({ language }: { language: SiteLanguag
       <header className="business-header">
         <a className="public-logo" href={getLocalizedPath(language)}><BrandLogo /></a>
         <nav className="business-nav" aria-label={t.forBusiness}>
-          <a href={getLocalizedPath(language)}>{t.home}</a>
           <a href={getLocalizedPath(language, "/for-business")}>{t.forBusiness}</a>
-          <a href="/pro/login">Timviz Pro</a>
+          <a href="/pro/login">Pro</a>
           <GlobalLanguageSwitcher mode="inline" />
         </nav>
       </header>
@@ -577,7 +576,7 @@ export default function HairdresserLanding({ language }: { language: SiteLanguag
 
       <section className="business-feature-section"><div className="business-section-head"><h2>{t.linksTitle}</h2></div><div className="business-footer-links">{t.links.map((link) => <a key={link.href} href={getLocalizedPath(language, link.href)}>{link.label}</a>)}</div></section>
 
-      <footer className="business-footer"><a className="public-logo" href={getLocalizedPath(language)}><BrandLogo /></a><span>{t.footerText}</span><div className="business-footer-links"><a href={getLocalizedPath(language)}>{t.home}</a><a href={getLocalizedPath(language, "/for-business")}>{t.forBusiness}</a><a href={getLocalizedPath(language, "/privacy")}>{t.privacy}</a><a href={getLocalizedPath(language, "/terms")}>{t.terms}</a></div></footer>
+      <footer className="business-footer"><a className="public-logo" href={getLocalizedPath(language)}><BrandLogo /></a><span>{t.footerText}</span><div className="business-footer-links"><a href={getLocalizedPath(language, "/for-business")}>{t.forBusiness}</a><a href={getLocalizedPath(language, "/privacy")}>{t.privacy}</a><a href={getLocalizedPath(language, "/terms")}>{t.terms}</a></div></footer>
     </main>
   );
 }

@@ -89,7 +89,7 @@ const barberPathByLanguage: Record<SiteLanguage, string> = {
 const copy: Record<SiteLanguage, Copy> = {
   uk: {
     home: "Головна",
-    forBusiness: "Для бізнесу",
+    forBusiness: "Бізнесу",
     title: "Онлайн-запис для барберів",
     subtitle: "Приймайте записи клієнтів онлайн, керуйте графіком і не губіть клієнтів",
     ctaPrimary: "Почати приймати записи за 2 хвилини",
@@ -180,7 +180,7 @@ const copy: Record<SiteLanguage, Copy> = {
   },
   ru: {
     home: "Главная",
-    forBusiness: "Для бизнеса",
+    forBusiness: "Бизнесу",
     title: "Онлайн-запись для барберов",
     subtitle: "Управляйте записями клиентов, графиком и услугами без хаоса в мессенджерах",
     ctaPrimary: "Начать принимать записи за 2 минуты",
@@ -471,9 +471,8 @@ export default function BarberLanding({ language }: { language: SiteLanguage }) 
       <header className="business-header">
         <a className="public-logo" href={getLocalizedPath(language)}><BrandLogo /></a>
         <nav className="business-nav" aria-label={t.forBusiness}>
-          <a href={getLocalizedPath(language)}>{t.home}</a>
           <a href={getLocalizedPath(language, "/for-business")}>{t.forBusiness}</a>
-          <a href="/pro/login">Timviz Pro</a>
+          <a href="/pro/login">Pro</a>
           <GlobalLanguageSwitcher mode="inline" />
         </nav>
       </header>

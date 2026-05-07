@@ -27,7 +27,7 @@ type LocalizedSeoPageProps = {
 const pageCopy = {
   ru: {
     home: "Главная",
-    forBusiness: "Для бизнеса",
+    forBusiness: "Бизнесу",
     ctaTitle: "Запустите онлайн-запись с Timviz",
     ctaText: "Создайте профиль, добавьте услуги и принимайте записи без хаоса в мессенджерах.",
     ctaButton: "Создать профиль компании",
@@ -38,7 +38,7 @@ const pageCopy = {
   },
   uk: {
     home: "Головна",
-    forBusiness: "Для бізнесу",
+    forBusiness: "Бізнесу",
     ctaTitle: "Запустіть онлайн-запис із Timviz",
     ctaText: "Створіть профіль, додайте послуги й приймайте записи без хаосу в месенджерах.",
     ctaButton: "Створити профіль компанії",
@@ -117,9 +117,8 @@ export default async function LocalizedNichePage({ params }: LocalizedSeoPagePro
       <header className="business-header">
         <a className="public-logo" href={getLocalizedPath(language)}><BrandLogo /></a>
         <nav className="business-nav" aria-label={t.forBusiness}>
-          <a href={getLocalizedPath(language)}>{t.home}</a>
           <a href={getLocalizedPath(language, "/for-business")}>{t.forBusiness}</a>
-          <a href="/pro/login">Timviz Pro</a>
+          <a href="/pro/login">Pro</a>
           <GlobalLanguageSwitcher mode="inline" />
         </nav>
       </header>

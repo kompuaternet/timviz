@@ -91,7 +91,7 @@ const massagePathByLanguage: Record<SiteLanguage, string> = {
 const copy: Record<SiteLanguage, Copy> = {
   uk: {
     home: "Головна",
-    forBusiness: "Для бізнесу",
+    forBusiness: "Бізнесу",
     title: "Онлайн-запис для масажистів",
     subtitle: "Приймайте записи клієнтів онлайн, керуйте сеансами і графіком без хаосу",
     ctaPrimary: "Почати приймати записи за 2 хвилини",
@@ -183,7 +183,7 @@ const copy: Record<SiteLanguage, Copy> = {
   },
   ru: {
     home: "Главная",
-    forBusiness: "Для бизнеса",
+    forBusiness: "Бизнесу",
     title: "Онлайн-запись для массажистов",
     subtitle: "Принимайте записи клиентов онлайн и управляйте сеансами без хаоса",
     ctaPrimary: "Начать принимать записи за 2 минуты",
@@ -478,9 +478,8 @@ export default function MassageLanding({ language }: { language: SiteLanguage })
       <header className="business-header">
         <a className="public-logo" href={getLocalizedPath(language)}><BrandLogo /></a>
         <nav className="business-nav" aria-label={t.forBusiness}>
-          <a href={getLocalizedPath(language)}>{t.home}</a>
           <a href={getLocalizedPath(language, "/for-business")}>{t.forBusiness}</a>
-          <a href="/pro/login">Timviz Pro</a>
+          <a href="/pro/login">Pro</a>
           <GlobalLanguageSwitcher mode="inline" />
         </nav>
       </header>
