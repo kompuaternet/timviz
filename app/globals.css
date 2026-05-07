@@ -4101,8 +4101,8 @@ a {
 
 .catalog-result-card {
   display: grid;
-  gap: 8px;
-  padding: 10px 12px;
+  gap: 6px;
+  padding: 9px 10px;
   border: 1px solid rgba(15, 23, 42, 0.1);
   border-radius: 14px;
   background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
@@ -4112,8 +4112,8 @@ a {
 
 .catalog-result-card h2 {
   margin: 0;
-  font-size: 1.42rem;
-  line-height: 1.08;
+  font-size: 1.28rem;
+  line-height: 1.06;
 }
 
 .catalog-result-card-active {
@@ -4125,22 +4125,22 @@ a {
 
 .catalog-result-main {
   display: grid;
-  grid-template-columns: 124px minmax(0, 1fr);
-  gap: 10px;
+  grid-template-columns: 110px minmax(0, 1fr);
+  gap: 8px;
   align-items: center;
 }
 
 .catalog-result-card .catalog-card-image {
-  width: 124px;
-  height: 92px;
-  border-radius: 12px;
+  width: 110px;
+  height: 82px;
+  border-radius: 10px;
   object-fit: cover;
   box-shadow: none;
 }
 
 .catalog-result-copy {
   display: grid;
-  gap: 4px;
+  gap: 3px;
 }
 
 .catalog-result-head {
@@ -4153,13 +4153,13 @@ a {
 .catalog-result-head > strong {
   white-space: nowrap;
   color: #272236;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   font-weight: 700;
 }
 
 .catalog-result-services {
   display: grid;
-  gap: 6px;
+  gap: 4px;
 }
 
 .catalog-result-services.compact {
@@ -4170,8 +4170,8 @@ a {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  padding: 4px 0;
+  gap: 8px;
+  padding: 3px 0;
   border-bottom: 1px dashed rgba(15, 23, 42, 0.08);
 }
 
@@ -4185,13 +4185,13 @@ a {
 }
 
 .catalog-result-service-row strong {
-  font-size: 0.94rem;
+  font-size: 0.9rem;
   font-weight: 650;
 }
 
 .catalog-result-service-row span {
   color: #656d82;
-  font-size: 0.84rem;
+  font-size: 0.8rem;
 }
 
 .chip-row.compact {
@@ -4199,38 +4199,38 @@ a {
 }
 
 .chip-row.compact .chip {
-  padding: 5px 10px;
-  font-size: 0.78rem;
+  padding: 4px 9px;
+  font-size: 0.75rem;
 }
 
 .catalog-result-actions {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
+  gap: 6px;
   margin-top: 1px;
 }
 
 .catalog-expand-button {
-  min-height: 28px;
+  min-height: 26px;
   border: 1px solid rgba(15, 23, 42, 0.12);
   border-radius: 999px;
   background: #ffffff;
   color: #292d3f;
-  padding: 0 12px;
+  padding: 0 10px;
   font-weight: 700;
   cursor: pointer;
 }
 
 .catalog-open-link {
-  min-height: 28px;
-  padding: 0 12px;
+  min-height: 26px;
+  padding: 0 11px;
   border-radius: 999px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   text-decoration: none;
-  font-size: 0.9rem;
+  font-size: 0.84rem;
   color: #ffffff;
   background: linear-gradient(135deg, #6d5efb 0%, #4338ca 100%);
   box-shadow: 0 6px 14px rgba(67, 56, 202, 0.26);
@@ -4239,7 +4239,7 @@ a {
 .catalog-result-more {
   display: inline-flex;
   color: #6047ff;
-  font-size: 0.84rem;
+  font-size: 0.8rem;
   font-weight: 700;
 }
 
@@ -5174,7 +5174,33 @@ a {
   }
 
   .catalog-result-card {
-    padding: 10px;
+    padding: 8px 9px;
+    border-radius: 12px;
+  }
+
+  .catalog-result-card h2 {
+    font-size: 1.12rem;
+  }
+
+  .catalog-result-main {
+    grid-template-columns: 92px minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .catalog-result-card .catalog-card-image {
+    width: 92px;
+    height: 72px;
+    border-radius: 9px;
+  }
+
+  .catalog-result-head > strong {
+    font-size: 0.82rem;
+  }
+
+  .catalog-description {
+    margin-top: 6px;
+    line-height: 1.45;
+    font-size: 0.92rem;
   }
 
   .public-section-head,
@@ -5231,7 +5257,63 @@ a {
   }
 
   .catalog-results-toolbar {
-    margin-bottom: 8px;
+    margin-bottom: 4px;
+    padding: 6px 8px 4px;
+  }
+
+  .catalog-results-grid {
+    gap: 6px;
+    padding: 0 6px 6px;
+  }
+
+  .catalog-results-column {
+    border-radius: 14px;
+  }
+
+  .catalog-result-card {
+    padding: 8px;
+    gap: 5px;
+    border-radius: 11px;
+  }
+
+  .catalog-result-card h2 {
+    font-size: 1.02rem;
+    line-height: 1.05;
+  }
+
+  .catalog-result-main {
+    grid-template-columns: 84px minmax(0, 1fr);
+    gap: 7px;
+  }
+
+  .catalog-result-card .catalog-card-image {
+    width: 84px;
+    height: 66px;
+    border-radius: 8px;
+  }
+
+  .catalog-result-service-row strong {
+    font-size: 0.84rem;
+  }
+
+  .catalog-result-service-row span {
+    font-size: 0.76rem;
+  }
+
+  .catalog-result-actions {
+    gap: 5px;
+    flex-wrap: wrap;
+  }
+
+  .catalog-open-link,
+  .catalog-expand-button {
+    min-height: 24px;
+    padding: 0 10px;
+    font-size: 0.78rem;
+  }
+
+  .catalog-result-more {
+    font-size: 0.74rem;
   }
 
   .catalog-search-form {

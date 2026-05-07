@@ -4319,7 +4319,7 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
           </div>
 
           <div className={styles.calendarWorkspaceActions}>
-            {onboardingCta ? (
+            {onboardingCta && !onboardingCta.completed ? (
               <button
                 type="button"
                 className={`${styles.calendarOnboardingCta} ${
