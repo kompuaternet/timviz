@@ -3464,7 +3464,16 @@
   }
 
   .public-login-name {
-    max-width: 120px;
+    display: none;
+  }
+
+  .public-login-entry {
+    min-height: 42px;
+    padding: 0 10px;
+  }
+
+  .public-login-auth {
+    gap: 0;
   }
 
   .public-entry-panel {
