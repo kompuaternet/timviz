@@ -391,6 +391,7 @@ function CatalogResultsMap({
   selectedId,
   searchLat,
   searchLon,
+  normalizedQuery,
   onSelect
 }: {
   language: SiteLanguage;
@@ -398,6 +399,7 @@ function CatalogResultsMap({
   selectedId: string;
   searchLat: number | null;
   searchLon: number | null;
+  normalizedQuery: string;
   onSelect: (id: string) => void;
 }) {
   const mapHostRef = useRef<HTMLDivElement | null>(null);
@@ -475,7 +477,11 @@ function CatalogResultsMap({
 
     for (const point of mapPoints) {
       const popupUrl = getLocalizedPath(language, `/businesses/${resolveBusinessPathId(point.item)}`);
-      const topService = point.item.services[0];
+      const matchedServices = normalizedQuery
+        ? point.item.services.filter((service) => service.name.toLowerCase().includes(normalizedQuery))
+        : [];
+      const topService = normalizedQuery ? matchedServices[0] : null;
+      const servicesCount = point.item.services.length + point.item.extraServicesCount;
       const popupHtml = `
         <a class="catalog-map-popup-card" href="${popupUrl}">
           <img src="${escapeHtml(point.item.image)}" alt="${escapeHtml(point.item.title)}" />
@@ -490,7 +496,7 @@ function CatalogResultsMap({
                 ? `<div class="catalog-map-popup-service"><b>${escapeHtml(topService.name)}</b><span>${escapeHtml(
                     formatServiceDuration(topService.durationMinutes, language)
                   )}${topService.price > 0 ? ` · ${escapeHtml(formatPrice(topService.price, language))}` : ""}</span></div>`
-                : ""
+                : `<div class="catalog-map-popup-service"><b>${escapeHtml(formatServicesCount(servicesCount, language))}</b></div>`
             }
           </div>
         </a>
@@ -532,7 +538,7 @@ function CatalogResultsMap({
       marker.addTo(state.map);
       state.userMarker = marker;
     }
-  }, [mapPoints, onSelect, searchLat, searchLon]);
+  }, [language, mapPoints, normalizedQuery, onSelect, searchLat, searchLon]);
 
   useEffect(() => {
     const state = mapStateRef.current;
@@ -912,6 +918,7 @@ export default function CatalogView({
               selectedId={selectedResultId}
               searchLat={lat}
               searchLon={lon}
+              normalizedQuery={normalizedQuery}
               onSelect={(id) => selectResult(id, true)}
             />
           </div>
