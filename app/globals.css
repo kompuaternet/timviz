@@ -5355,6 +5355,25 @@ a {
 
   .catalog-filters.inline {
     justify-content: flex-start;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 6px;
+    padding-bottom: 1px;
+  }
+
+  .catalog-filters.inline::-webkit-scrollbar {
+    display: none;
+  }
+
+  .catalog-filters.inline span {
+    flex: 0 0 auto;
+    padding: 6px 10px;
+    font-size: 0.78rem;
+    line-height: 1.15;
+    white-space: nowrap;
   }
 
   .catalog-map-column {
