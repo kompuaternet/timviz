@@ -331,6 +331,15 @@ type CatalogMapPoint = {
   item: PublicCatalogCardResult;
 };
 
+function resolveBusinessPathId(item: Pick<PublicCatalogCardResult, "id" | "pathId">) {
+  const rawPathId = typeof item.pathId === "string" ? item.pathId.trim() : "";
+  if (rawPathId.length > 0 && rawPathId.toLowerCase() !== "undefined") {
+    return rawPathId;
+  }
+
+  return item.id;
+}
+
 function buildMapPoints(results: PublicCatalogCardResult[], selectedId: string): CatalogMapPoint[] {
   const pointsByCoords = new Map<string, PublicCatalogCardResult[]>();
 
@@ -455,7 +464,7 @@ function CatalogResultsMap({
     markersById.clear();
 
     for (const point of mapPoints) {
-      const popupUrl = getLocalizedPath(language, `/businesses/${point.item.pathId}`);
+      const popupUrl = getLocalizedPath(language, `/businesses/${resolveBusinessPathId(point.item)}`);
       const topService = point.item.services[0];
       const popupHtml = `
         <a class="catalog-map-popup-card" href="${popupUrl}">
@@ -629,7 +638,12 @@ export default function CatalogView({
           now - cached.createdAt < ttlMs &&
           Array.isArray(cached.results)
         ) {
-          setResults(cached.results);
+          setResults(
+            cached.results.map((item) => ({
+              ...item,
+              pathId: resolveBusinessPathId(item)
+            }))
+          );
           setLoading(false);
           setLoadFailed(false);
           return;
@@ -651,7 +665,12 @@ export default function CatalogView({
         }
 
         const payload = (await response.json()) as { results?: PublicCatalogCardResult[] };
-        const nextResults = Array.isArray(payload.results) ? payload.results : [];
+        const nextResults = Array.isArray(payload.results)
+          ? payload.results.map((item) => ({
+              ...item,
+              pathId: resolveBusinessPathId(item)
+            }))
+          : [];
         setResults(nextResults);
         setLoadFailed(false);
         setLoading(false);
@@ -845,12 +864,12 @@ export default function CatalogView({
                             </button>
                           ) : null}
                           {result.extraServicesCount > 0 ? (
-                            <Link href={getLocalizedPath(language, `/businesses/${result.pathId}`)} className="catalog-result-more">
+                            <Link href={getLocalizedPath(language, `/businesses/${resolveBusinessPathId(result)}`)} className="catalog-result-more">
                               {t.moreInProfile(result.extraServicesCount)}
                             </Link>
                           ) : null}
                           <Link
-                            href={getLocalizedPath(language, `/businesses/${result.pathId}`)}
+                            href={getLocalizedPath(language, `/businesses/${resolveBusinessPathId(result)}`)}
                             className="catalog-open-link"
                           >
                             {result.onlineBookingEnabled ? t.action : t.viewProfile}

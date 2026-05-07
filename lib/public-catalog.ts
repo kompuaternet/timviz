@@ -52,9 +52,15 @@ export function toPublicCatalogCardResults(
       .map((service) => service.price)
       .filter((price): price is number => Number.isFinite(price) && price > 0);
 
+    const pathIdRaw = typeof result.pathId === "string" ? result.pathId.trim() : "";
+    const safePathId =
+      pathIdRaw.length > 0 && pathIdRaw.toLowerCase() !== "undefined"
+        ? pathIdRaw
+        : result.id;
+
     return {
       id: result.id,
-      pathId: result.pathId,
+      pathId: safePathId,
       type: result.type,
       title: result.title,
       subtitle: localize(result.subtitle, result.localizedSubtitle, language),
