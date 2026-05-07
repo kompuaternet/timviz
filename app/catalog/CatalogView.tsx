@@ -743,6 +743,7 @@ export default function CatalogView({
   const menuMapLabel = language === "en" ? "Map" : language === "uk" ? "Карта" : "Карта";
   const navLabel = language === "en" ? "Catalog navigation" : language === "uk" ? "Навігація каталогу" : "Навигация каталога";
   function toggleServices(id: string) {
+    selectResult(id);
     setExpandedServicesById((current) => ({
       ...current,
       [id]: !current[id]
@@ -859,26 +860,36 @@ export default function CatalogView({
                         </div>
 
                         <div className="catalog-result-services compact">
-                          {normalizedQuery ? (
-                            result.services
-                              .filter((service) => service.name.toLowerCase().includes(normalizedQuery))
-                              .slice(0, expandedServicesById[result.id] ? 5 : 3)
-                              .map((service) => (
-                                <div key={service.id} className="catalog-result-service-row">
+                          {normalizedQuery
+                            ? result.services
+                                .filter((service) => service.name.toLowerCase().includes(normalizedQuery))
+                                .slice(0, expandedServicesById[result.id] ? 5 : 3)
+                                .map((service) => (
+                                  <div key={service.id} className="catalog-result-service-row">
+                                    <div>
+                                      <strong>{service.name}</strong>
+	                                    <span>{formatServiceDuration(service.durationMinutes, language)}</span>
+	                                  </div>
+                                    <span>{service.price > 0 ? formatPrice(service.price, language) : t.pricePending}</span>
+                                  </div>
+                                ))
+                            : expandedServicesById[result.id]
+                              ? result.services.slice(0, 5).map((service) => (
+                                  <div key={service.id} className="catalog-result-service-row">
+                                    <div>
+                                      <strong>{service.name}</strong>
+	                                    <span>{formatServiceDuration(service.durationMinutes, language)}</span>
+	                                  </div>
+                                    <span>{service.price > 0 ? formatPrice(service.price, language) : t.pricePending}</span>
+                                  </div>
+                                ))
+                              : (
+                                <div className="catalog-result-service-row">
                                   <div>
-                                    <strong>{service.name}</strong>
-	                                  <span>{formatServiceDuration(service.durationMinutes, language)}</span>
-	                                </div>
-                                  <span>{service.price > 0 ? formatPrice(service.price, language) : t.pricePending}</span>
+                                    <strong>{formatServicesCount(result.services.length + result.extraServicesCount, language)}</strong>
+                                  </div>
                                 </div>
-                              ))
-                          ) : (
-                            <div className="catalog-result-service-row">
-                              <div>
-                                <strong>{formatServicesCount(result.services.length + result.extraServicesCount, language)}</strong>
-                              </div>
-                            </div>
-                          )}
+                                )}
                         </div>
 
                         <div className="catalog-result-actions">
