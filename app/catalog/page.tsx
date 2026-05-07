@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+import { permanentRedirect } from "next/navigation";
 import { getRequestLanguage } from "../../lib/request-language";
 import { getLocalizedPath } from "../../lib/site-language";
 
@@ -24,5 +24,5 @@ export default async function CatalogPage({ searchParams }: CatalogPageProps) {
     }
   }
 
-  redirect(`${getLocalizedPath(language, "/catalog")}${query.toString() ? `?${query.toString()}` : ""}`);
+  permanentRedirect(`${getLocalizedPath(language, "/catalog")}${query.toString() ? `?${query.toString()}` : ""}`);
 }

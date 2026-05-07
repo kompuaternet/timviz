@@ -55,15 +55,17 @@ export function buildMetadata(
   }
 ): Metadata {
   const canonical = buildCanonical(pathname);
+  const localizedMatch = pathname.match(/^\/(ru|uk|en)(\/.*)?$/i);
+  const localizedAlternates = localizedMatch
+    ? buildLanguageAlternates(localizedMatch[2] || "/", localizedMatch[1].toLowerCase() as SiteLanguage)
+    : null;
   const image = options?.image ?? defaultImage;
 
   return {
     title: copy.title,
     description: copy.description,
     keywords: copy.keywords,
-    alternates: {
-      canonical
-    },
+    alternates: localizedAlternates ?? { canonical },
     robots: options?.noIndex
       ? {
           index: false,
