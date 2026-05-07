@@ -480,7 +480,7 @@ export default function ProWorkspaceHeader({
       </div>
 
       <div className={styles.calendarWorkspaceActions}>
-        {onboardingCta ? (
+        {onboardingCta && !onboardingCta.completed ? (
           <button
             type="button"
             className={`${styles.calendarOnboardingCta} ${
