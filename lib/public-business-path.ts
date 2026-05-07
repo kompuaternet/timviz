@@ -50,11 +50,27 @@ export function getPublicBusinessPathId(input: PathBusiness, businesses?: PathBu
 }
 
 export function findBusinessIdByPublicPath(pathId: string, businesses: PathBusiness[]) {
+  const normalizedPathId = String(pathId || "").trim().toLowerCase();
+  if (!normalizedPathId) {
+    return null;
+  }
+
   const pathMap = buildPublicBusinessPathMap(businesses);
 
   for (const [businessId, slug] of pathMap.entries()) {
-    if (slug === pathId) {
+    if (slug === normalizedPathId) {
       return businessId;
+    }
+  }
+
+  // Fallback for stale numeric suffixes in old links:
+  // "barber-drive-test-9" can still resolve to "barber-drive-test".
+  const baseCandidate = normalizedPathId.replace(/-\d+$/, "");
+  if (baseCandidate && baseCandidate !== normalizedPathId) {
+    for (const business of businesses) {
+      if (slugifyBusinessName(business.name) === baseCandidate) {
+        return business.id;
+      }
     }
   }
 
