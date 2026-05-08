@@ -1303,16 +1303,16 @@
   flex-wrap: wrap;
   gap: 10px 14px;
   margin-top: 18px;
-  color: #70675f;
+  color: #5f6880;
 }
 
 .company-hero-meta span,
 .company-hero-meta a {
   display: inline-flex;
   padding: 10px 14px;
-  border: 1px solid rgba(204, 190, 174, 0.72);
+  border: 1px solid rgba(130, 146, 194, 0.28);
   border-radius: 999px;
-  background: rgba(255, 252, 248, 0.84);
+  background: rgba(250, 252, 255, 0.9);
 }
 
 .company-gallery-grid {
@@ -1330,7 +1330,7 @@
   width: 100%;
   object-fit: cover;
   border-radius: 22px;
-  border: 1px solid rgba(218, 207, 193, 0.72);
+  border: 1px solid rgba(130, 146, 194, 0.22);
   box-shadow: 0 28px 64px rgba(79, 54, 124, 0.08);
 }
 
@@ -1350,9 +1350,9 @@
 .company-booking-summary-card,
 .company-panel,
 .company-auth-card {
-  border: 1px solid rgba(214, 201, 188, 0.76);
+  border: 1px solid rgba(130, 146, 194, 0.24);
   border-radius: 24px;
-  background: rgba(255, 252, 248, 0.94);
+  background: rgba(255, 255, 255, 0.95);
   box-shadow: 0 30px 76px rgba(69, 51, 117, 0.08);
 }
 
@@ -1370,10 +1370,10 @@
 .company-section-tabs button,
 .company-category-tabs button {
   padding: 12px 18px;
-  border: 1px solid rgba(210, 198, 185, 0.84);
+  border: 1px solid rgba(130, 146, 194, 0.28);
   border-radius: 999px;
-  background: rgba(255, 251, 247, 0.9);
-  color: #423932;
+  background: rgba(250, 252, 255, 0.94);
+  color: #27314d;
   font: inherit;
   font-weight: 700;
   cursor: pointer;
@@ -1441,7 +1441,7 @@
   gap: 16px;
   width: 100%;
   padding: 18px 20px;
-  border: 1px solid rgba(214, 201, 188, 0.86);
+  border: 1px solid rgba(130, 146, 194, 0.24);
   border-radius: 20px;
   background: #fff;
 }
@@ -1468,7 +1468,7 @@
 .company-flow-card small {
   display: block;
   margin-top: 4px;
-  color: #766d65;
+  color: #6a7389;
 }
 
 .company-book-button {
@@ -1493,7 +1493,7 @@
   justify-items: start;
   gap: 10px;
   padding: 22px;
-  border: 1px solid rgba(214, 201, 188, 0.72);
+  border: 1px solid rgba(130, 146, 194, 0.24);
   border-radius: 22px;
   background: #fff;
 }
@@ -1531,7 +1531,7 @@
 }
 
 .company-team-card span {
-  color: #776e67;
+  color: #697186;
 }
 
 .company-team-card button {
@@ -1552,7 +1552,7 @@
 
 .company-info-card {
   padding: 20px;
-  border: 1px solid rgba(214, 201, 188, 0.72);
+  border: 1px solid rgba(130, 146, 194, 0.24);
   border-radius: 20px;
   background: #fff;
 }
@@ -1564,7 +1564,7 @@
 
 .company-info-card p {
   margin: 0;
-  color: #675e56;
+  color: #616b82;
   line-height: 1.7;
 }
 
@@ -1588,7 +1588,7 @@
 }
 
 .company-hours-list span {
-  color: #776d67;
+  color: #6b748a;
   text-transform: capitalize;
 }
 
@@ -1614,7 +1614,7 @@
 }
 
 .company-booking-summary-empty span {
-  color: #776d67;
+  color: #6a7389;
   line-height: 1.5;
 }
 
@@ -1639,7 +1639,7 @@
 
 .company-booking-summary-brand span,
 .company-booking-summary-meta span {
-  color: #776d67;
+  color: #6b748a;
 }
 
 .company-booking-summary-list {
@@ -1663,7 +1663,7 @@
 
 .company-booking-summary-line span {
   margin-top: 4px;
-  color: #7b726b;
+  color: #6d778f;
 }
 
 .company-booking-summary-specialist {
@@ -1674,7 +1674,7 @@
 
 .company-booking-summary-total {
   padding-top: 18px;
-  border-top: 1px solid rgba(214, 201, 188, 0.72);
+  border-top: 1px solid rgba(130, 146, 194, 0.24);
 }
 
 .company-booking-summary-total strong {
