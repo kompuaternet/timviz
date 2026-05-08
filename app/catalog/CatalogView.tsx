@@ -258,6 +258,10 @@ function formatServicesCount(value: number, language: SiteLanguage) {
   return `${value} service${value === 1 ? "" : "s"}`;
 }
 
+function normalizeServiceName(value: unknown) {
+  return String(value ?? "").trim().toLowerCase();
+}
+
 function formatDistance(value: number | null, language: SiteLanguage) {
   const t = catalogCopy[language];
 
@@ -478,7 +482,9 @@ function CatalogResultsMap({
     for (const point of mapPoints) {
       const popupUrl = getLocalizedPath(language, `/businesses/${resolveBusinessPathId(point.item)}`);
       const matchedServices = normalizedQuery
-        ? point.item.services.filter((service) => service.name.toLowerCase().includes(normalizedQuery))
+        ? point.item.services.filter((service) =>
+            normalizeServiceName(service.name).includes(normalizedQuery)
+          )
         : [];
       const topService = normalizedQuery ? matchedServices[0] : null;
       const servicesCount = point.item.services.length + point.item.extraServicesCount;
@@ -862,7 +868,9 @@ export default function CatalogView({
                         <div className="catalog-result-services compact">
                           {normalizedQuery
                             ? result.services
-                                .filter((service) => service.name.toLowerCase().includes(normalizedQuery))
+                                .filter((service) =>
+                                  normalizeServiceName(service.name).includes(normalizedQuery)
+                                )
                                 .slice(0, expandedServicesById[result.id] ? 5 : 3)
                                 .map((service) => (
                                   <div key={service.id} className="catalog-result-service-row">
