@@ -61,6 +61,7 @@ type CatalogCopy = {
   expandServices: string;
   collapseServices: string;
   moreInProfile: (count: number) => string;
+  goToProfile: string;
   minutes: string;
   hours: string;
 };
@@ -118,6 +119,7 @@ const catalogCopy: Record<SiteLanguage, CatalogCopy> = {
     expandServices: "Развернуть",
     collapseServices: "Свернуть",
     moreInProfile: (count) => `Ещё ${count} в профиле`,
+    goToProfile: "Перейти",
     minutes: "мин",
     hours: "ч"
   },
@@ -173,6 +175,7 @@ const catalogCopy: Record<SiteLanguage, CatalogCopy> = {
     expandServices: "Розгорнути",
     collapseServices: "Згорнути",
     moreInProfile: (count) => `Ще ${count} у профілі`,
+    goToProfile: "Перейти",
     minutes: "хв",
     hours: "год"
   },
@@ -228,6 +231,7 @@ const catalogCopy: Record<SiteLanguage, CatalogCopy> = {
     expandServices: "Expand",
     collapseServices: "Collapse",
     moreInProfile: (count) => `${count} more in profile`,
+    goToProfile: "Open",
     minutes: "min",
     hours: "h"
   }
@@ -865,14 +869,33 @@ export default function CatalogView({
                           </div>
                         </div>
 
+                        {(() => {
+                          const isExpanded = Boolean(expandedServicesById[result.id]);
+                          const totalServices = result.services.length + result.extraServicesCount;
+                          const matchedServices = normalizedQuery
+                            ? result.services.filter((service) =>
+                                normalizeServiceName(service.name).includes(normalizedQuery)
+                              )
+                            : result.services;
+                          const previewLimit = 3;
+                          const hiddenCount = normalizedQuery
+                            ? Math.max(0, matchedServices.length - previewLimit)
+                            : Math.max(0, totalServices - previewLimit);
+                          const servicesToRender = isExpanded
+                            ? matchedServices
+                            : matchedServices.slice(0, previewLimit);
+
+                          return (
+                            <>
                         <div className="catalog-result-services compact">
-                          {normalizedQuery
-                            ? result.services
-                                .filter((service) =>
-                                  normalizeServiceName(service.name).includes(normalizedQuery)
-                                )
-                                .slice(0, expandedServicesById[result.id] ? 5 : 3)
-                                .map((service) => (
+                          {!isExpanded && !normalizedQuery ? (
+                            <div className="catalog-result-service-row">
+                              <div>
+                                <strong>{formatServicesCount(totalServices, language)}</strong>
+                              </div>
+                            </div>
+                          ) : (
+                            servicesToRender.map((service) => (
                                   <div key={service.id} className="catalog-result-service-row">
                                     <div>
                                       <strong>{service.name}</strong>
@@ -881,39 +904,24 @@ export default function CatalogView({
                                     <span>{service.price > 0 ? formatPrice(service.price, language) : t.pricePending}</span>
                                   </div>
                                 ))
-                            : expandedServicesById[result.id]
-                              ? result.services.slice(0, 5).map((service) => (
-                                  <div key={service.id} className="catalog-result-service-row">
-                                    <div>
-                                      <strong>{service.name}</strong>
-	                                    <span>{formatServiceDuration(service.durationMinutes, language)}</span>
-	                                  </div>
-                                    <span>{service.price > 0 ? formatPrice(service.price, language) : t.pricePending}</span>
-                                  </div>
-                                ))
-                              : (
-                                <div className="catalog-result-service-row">
-                                  <div>
-                                    <strong>{formatServicesCount(result.services.length + result.extraServicesCount, language)}</strong>
-                                  </div>
-                                </div>
-                                )}
+                          )}
                         </div>
 
                         <div className="catalog-result-actions">
-                          {result.services.length > 3 || result.extraServicesCount > 0 ? (
+                          <Link
+                            href={getLocalizedPath(language, `/businesses/${resolveBusinessPathId(result)}`)}
+                            className="catalog-expand-button"
+                          >
+                            {t.goToProfile}
+                          </Link>
+                          {hiddenCount > 0 ? (
                             <button
                               type="button"
-                              className="catalog-expand-button"
+                              className="catalog-result-more catalog-result-more-button"
                               onClick={() => toggleServices(result.id)}
                             >
-                              {expandedServicesById[result.id] ? t.collapseServices : t.expandServices}
+                              {isExpanded ? t.collapseServices : t.moreInProfile(hiddenCount)}
                             </button>
-                          ) : null}
-                          {result.extraServicesCount > 0 ? (
-                            <Link href={getLocalizedPath(language, `/businesses/${resolveBusinessPathId(result)}`)} className="catalog-result-more">
-                              {t.moreInProfile(result.extraServicesCount)}
-                            </Link>
                           ) : null}
                           <Link
                             href={getLocalizedPath(language, `/businesses/${resolveBusinessPathId(result)}`)}
@@ -922,6 +930,9 @@ export default function CatalogView({
                             {result.onlineBookingEnabled ? t.action : t.viewProfile}
                           </Link>
                         </div>
+                            </>
+                          );
+                        })()}
                       </article>
                     ))}
                   </div>

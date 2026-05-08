@@ -4285,6 +4285,13 @@ a {
   font-weight: 700;
 }
 
+.catalog-result-more-button {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+}
+
 .catalog-map-column {
   position: sticky;
   top: 80px;
