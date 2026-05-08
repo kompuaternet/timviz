@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import type { PublicCatalogCardResult } from "../../lib/public-catalog";
 import type { PublicSearchIndex } from "../../lib/public-search";
 import { getLocalizedPath, type SiteLanguage } from "../../lib/site-language";
@@ -656,6 +656,7 @@ export default function CatalogView({
   initialLanguage = "ru",
   searchIndex
 }: CatalogViewProps) {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const language = useSiteLanguage(initialLanguage, true);
   const t = catalogCopy[language];
@@ -785,6 +786,36 @@ export default function CatalogView({
   useEffect(() => {
     setExpandedServicesById({});
   }, [results]);
+
+  useEffect(() => {
+    if (hasCoords) {
+      return;
+    }
+    if (typeof window === "undefined" || !navigator.geolocation) {
+      return;
+    }
+
+    const autoGeoKey = "timviz.catalog.autogeo.v1";
+    if (window.sessionStorage.getItem(autoGeoKey) === "done") {
+      return;
+    }
+
+    window.sessionStorage.setItem(autoGeoKey, "done");
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const params = new URLSearchParams(searchParams.toString());
+        params.set("lat", String(position.coords.latitude));
+        params.set("lon", String(position.coords.longitude));
+        const nextUrl = `${getLocalizedPath(language, "/catalog")}?${params.toString()}`;
+        router.replace(nextUrl, { scroll: false });
+      },
+      () => {
+        // Permission denied or unavailable: keep current behavior.
+      },
+      { enableHighAccuracy: false, timeout: 7000, maximumAge: 120000 }
+    );
+  }, [hasCoords, language, router, searchParams]);
 
   function selectResult(id: string, scrollIntoView = false) {
     setSelectedResultId(id);
