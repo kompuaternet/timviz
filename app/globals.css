@@ -616,7 +616,7 @@
 }
 
 .public-suggestion-list button:hover {
-  background: #f5f2ef;
+  background: #f2f5fb;
 }
 
 .public-suggestion-list img,
@@ -855,7 +855,7 @@
   padding: 18px 20px;
   border: 1px solid rgba(17, 17, 17, 0.1);
   border-radius: 16px;
-  background: #faf8f5;
+  background: #f6f8fd;
   text-align: left;
   cursor: pointer;
 }
@@ -895,7 +895,7 @@
 }
 
 .public-month-head button:hover {
-  background: #f4f1ee;
+  background: #f2f5fb;
 }
 
 .public-month-head strong {
@@ -931,7 +931,7 @@
 }
 
 .public-month-grid button:hover {
-  background: #f5f2ef;
+  background: #f2f5fb;
 }
 
 .public-month-grid button.muted {
@@ -1713,7 +1713,7 @@
 .company-map-card {
   margin-top: 18px;
   overflow: hidden;
-  border: 1px solid rgba(214, 201, 188, 0.72);
+  border: 1px solid rgba(201, 211, 226, 0.8);
   border-radius: 22px;
   background: #fff;
   box-shadow: 0 24px 58px rgba(63, 46, 116, 0.08);
@@ -1901,7 +1901,7 @@
 .company-month-picker {
   width: min(100%, 420px);
   padding: 18px;
-  border: 1px solid rgba(214, 201, 188, 0.78);
+  border: 1px solid rgba(201, 211, 226, 0.82);
   border-radius: 22px;
   background: #fff;
   box-shadow: 0 24px 58px rgba(63, 46, 116, 0.12);
@@ -1917,13 +1917,13 @@
 }
 
 .company-month-picker .public-month-grid button.company-month-full {
-  background: rgba(255, 243, 233, 0.98);
-  color: #c1601e;
+  background: rgba(255, 236, 236, 0.98);
+  color: #c13b3b;
 }
 
 .company-month-picker .public-month-grid button.company-month-closed {
-  background: rgba(247, 244, 240, 0.95);
-  color: #b8b1aa;
+  background: rgba(239, 243, 250, 0.95);
+  color: #8794aa;
 }
 
 .company-slot-list {
@@ -1933,7 +1933,7 @@
 
 .company-slot-item {
   padding: 18px 20px;
-  border: 1px solid rgba(214, 201, 188, 0.84);
+  border: 1px solid rgba(201, 211, 226, 0.88);
   border-radius: 16px;
   background: #fff;
   color: #171411;
@@ -2677,7 +2677,7 @@
   min-height: 58px;
   padding: 0 20px;
   border-bottom: 1px solid rgba(17, 17, 17, 0.08);
-  background: linear-gradient(90deg, #f7f4ef, #faf8ff);
+  background: linear-gradient(90deg, #f3f7ff, #f7f9ff);
 }
 
 .business-screen-grid article span {
