@@ -928,9 +928,12 @@ export default function CatalogView({
                               )
                             : result.services;
                           const previewLimit = 3;
+                          const isCompactSummaryMode = !normalizedQuery;
                           const hiddenCount = normalizedQuery
                             ? Math.max(0, matchedServices.length - previewLimit)
-                            : Math.max(0, totalServices - previewLimit);
+                            : isExpanded
+                              ? 0
+                              : Math.max(0, totalServices);
                           const servicesToRender = isExpanded
                             ? matchedServices
                             : matchedServices.slice(0, previewLimit);
@@ -938,7 +941,7 @@ export default function CatalogView({
                           return (
                             <>
                         <div className="catalog-result-services compact">
-                          {!isExpanded && !normalizedQuery ? (
+                          {!isExpanded && isCompactSummaryMode ? (
                             <div className="catalog-result-service-row">
                               <div>
                                 <strong>{formatServicesCount(totalServices, language)}</strong>
