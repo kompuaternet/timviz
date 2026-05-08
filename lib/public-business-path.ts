@@ -50,23 +50,42 @@ export function getPublicBusinessPathId(input: PathBusiness, businesses?: PathBu
 }
 
 export function findBusinessIdByPublicPath(pathId: string, businesses: PathBusiness[]) {
-  const normalizedPathId = String(pathId || "").trim().toLowerCase();
-  if (!normalizedPathId) {
+  const rawPathId = String(pathId || "").trim();
+  if (!rawPathId) {
     return null;
+  }
+
+  const tokenCandidates = new Set<string>();
+  tokenCandidates.add(rawPathId.toLowerCase());
+
+  try {
+    tokenCandidates.add(decodeURIComponent(rawPathId).trim().toLowerCase());
+  } catch {
+    // Ignore malformed URI input and continue with raw token.
   }
 
   const pathMap = buildPublicBusinessPathMap(businesses);
 
-  for (const [businessId, slug] of pathMap.entries()) {
-    if (slug === normalizedPathId) {
-      return businessId;
+  for (const candidate of tokenCandidates) {
+    if (!candidate) {
+      continue;
+    }
+
+    for (const [businessId, slug] of pathMap.entries()) {
+      if (slug === candidate) {
+        return businessId;
+      }
     }
   }
 
   // Fallback for stale numeric suffixes in old links:
   // "barber-drive-test-9" can still resolve to "barber-drive-test".
-  const baseCandidate = normalizedPathId.replace(/-\d+$/, "");
-  if (baseCandidate && baseCandidate !== normalizedPathId) {
+  for (const candidate of tokenCandidates) {
+    const baseCandidate = candidate.replace(/-\d+$/, "");
+    if (!baseCandidate || baseCandidate === candidate) {
+      continue;
+    }
+
     for (const business of businesses) {
       if (slugifyBusinessName(business.name) === baseCandidate) {
         return business.id;
