@@ -87,7 +87,7 @@ const catalogCopy: Record<SiteLanguage, CatalogCopy> = {
     onlineBookingEnabled: "Онлайн-запись доступна",
     onlineBookingDisabled: "Онлайн-запись выключена",
     distanceUnknown: "Расстояние после геолокации",
-    distanceUnderOne: "Меньше 1 км",
+    distanceUnderOne: "Меньше 1 км от вас",
     kindLabel: (kind) =>
       kind === "business"
         ? "Заведения"
@@ -143,7 +143,7 @@ const catalogCopy: Record<SiteLanguage, CatalogCopy> = {
     onlineBookingEnabled: "Онлайн-запис доступний",
     onlineBookingDisabled: "Онлайн-запис вимкнено",
     distanceUnknown: "Відстань після геолокації",
-    distanceUnderOne: "Менше 1 км",
+    distanceUnderOne: "Менше 1 км від вас",
     kindLabel: (kind) =>
       kind === "business"
         ? "Заклади"
@@ -199,7 +199,7 @@ const catalogCopy: Record<SiteLanguage, CatalogCopy> = {
     onlineBookingEnabled: "Online booking available",
     onlineBookingDisabled: "Online booking is off",
     distanceUnknown: "Distance after geolocation",
-    distanceUnderOne: "Less than 1 km",
+    distanceUnderOne: "Less than 1 km away",
     kindLabel: (kind) =>
       kind === "business"
         ? "Venues"
@@ -274,6 +274,56 @@ function formatDistance(value: number | null, language: SiteLanguage) {
   }
 
   return value < 1 ? t.distanceUnderOne : t.distanceFromYou(value);
+}
+
+function compactAddress(value: string, language: SiteLanguage) {
+  const normalized = String(value || "").trim();
+  if (!normalized) {
+    return "";
+  }
+
+  const parts = normalized
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+  if (parts.length <= 2) {
+    return normalized;
+  }
+
+  const cityWords =
+    language === "uk"
+      ? ["місто", "м.", "київ", "дніпро", "львів", "одеса", "харків", "запоріжжя"]
+      : language === "ru"
+        ? ["город", "г.", "киев", "днепр", "львов", "одесса", "харьков", "запорожье"]
+        : ["city", "kyiv", "dnipro", "lviv", "odesa", "kharkiv", "zaporizhzhia"];
+  const streetWords =
+    language === "uk"
+      ? ["вулиця", "вул.", "проспект", "пр.", "площа", "провулок", "наб."]
+      : language === "ru"
+        ? ["улица", "ул.", "проспект", "пр.", "площадь", "переулок", "наб."]
+        : ["street", "st.", "avenue", "ave", "road", "rd.", "boulevard", "blvd"];
+
+  const hasDigit = (text: string) => /\d/.test(text);
+  const containsAny = (text: string, words: string[]) =>
+    words.some((word) => text.toLowerCase().includes(word));
+
+  const streetCandidate =
+    parts.find((item) => containsAny(item, streetWords) && hasDigit(item)) ??
+    parts.find((item) => containsAny(item, streetWords)) ??
+    parts.find((item) => hasDigit(item) && item.length <= 48) ??
+    parts[0];
+
+  const cityCandidate =
+    [...parts].reverse().find((item) => containsAny(item, cityWords)) ??
+    [...parts].reverse().find((item) => !hasDigit(item) && item.length <= 36) ??
+    parts[parts.length - 1];
+
+  const compact = cityCandidate && cityCandidate !== streetCandidate
+    ? `${streetCandidate}, ${cityCandidate}`
+    : streetCandidate;
+
+  return compact.replace(/\s{2,}/g, " ").trim();
 }
 
 function formatPrice(value: number, language: SiteLanguage) {
@@ -500,7 +550,7 @@ function CatalogResultsMap({
               <strong>${escapeHtml(point.item.title)}</strong>
               <span>★ ${escapeHtml(point.item.rating)} (${point.item.reviews})</span>
             </div>
-            <small>${escapeHtml(formatDistance(point.item.distanceKm, language))} · ${escapeHtml(point.item.address)}</small>
+            <small>${escapeHtml(formatDistance(point.item.distanceKm, language))} · ${escapeHtml(compactAddress(point.item.address, language))}</small>
             ${
               topService
                 ? `<div class="catalog-map-popup-service"><b>${escapeHtml(topService.name)}</b><span>${escapeHtml(
@@ -855,7 +905,7 @@ export default function CatalogView({
                               <h2>{result.title}</h2>
                               <strong>{`${result.rating} · ${t.reviewCount(result.reviews)}`}</strong>
                             </div>
-                            <p className="catalog-description">{`${formatDistance(result.distanceKm, language)} · ${result.address}`}</p>
+                            <p className="catalog-description">{`${formatDistance(result.distanceKm, language)} · ${compactAddress(result.address, language)}`}</p>
                             <div className="chip-row compact">
                               {shouldShowAvailabilityChip(result, language) ? (
                                 <span className={`chip ${result.available ? "chip-success" : "chip-muted"}`}>
