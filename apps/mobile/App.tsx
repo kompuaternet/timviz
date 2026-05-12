@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import * as Localization from "expo-localization";
 import { StatusBar } from "expo-status-bar";
 import type { ComponentProps } from "react";
@@ -8,6 +9,7 @@ import {
   Alert,
   Image,
   KeyboardAvoidingView,
+  Modal,
   Platform,
   Pressable,
   RefreshControl,
@@ -153,10 +155,15 @@ const copy = {
     proTitle: "Timviz для майстра",
     proSubtitle: "Календар, послуги, клієнти й сповіщення в одному застосунку.",
     dashboard: "Робочий кабінет",
+    home: "Головна",
     today: "Сьогодні",
     week: "Тиждень",
     month: "Місяць",
     newVisit: "Новий візит",
+    compact: "Стиснутий",
+    dayView: "День",
+    ready: "Готово",
+    reminders: "Сповіщення",
     addVisit: "Додати запис",
     customer: "Клієнт",
     service: "Послуга",
@@ -204,10 +211,15 @@ const copy = {
     proTitle: "Timviz для мастера",
     proSubtitle: "Календарь, услуги, клиенты и уведомления в одном приложении.",
     dashboard: "Рабочий кабинет",
+    home: "Главная",
     today: "Сегодня",
     week: "Неделя",
     month: "Месяц",
     newVisit: "Новый визит",
+    compact: "Сжатый",
+    dayView: "День",
+    ready: "Готово",
+    reminders: "Уведомления",
     addVisit: "Добавить запись",
     customer: "Клиент",
     service: "Услуга",
@@ -255,10 +267,15 @@ const copy = {
     proTitle: "Timviz for pros",
     proSubtitle: "Calendar, services, clients and alerts in one app.",
     dashboard: "Workspace",
+    home: "Home",
     today: "Today",
     week: "Week",
     month: "Month",
     newVisit: "New visit",
+    compact: "Compact",
+    dayView: "Day",
+    ready: "Done",
+    reminders: "Alerts",
     addVisit: "Add booking",
     customer: "Client",
     service: "Service",
@@ -335,6 +352,23 @@ function addMinutes(time: string, minutes: number) {
   return `${String(nextHours).padStart(2, "0")}:${String(nextMinutes).padStart(2, "0")}`;
 }
 
+function timeToMinutes(time: string) {
+  const [hours, mins] = time.split(":").map((item) => Number(item));
+  if (!Number.isFinite(hours) || !Number.isFinite(mins)) return 9 * 60;
+  return hours * 60 + mins;
+}
+
+function formatDayLabel(date: string, language: AppLanguage) {
+  const parsed = new Date(`${date}T12:00:00`);
+  return new Intl.DateTimeFormat(language === "en" ? "en-US" : language === "uk" ? "uk-UA" : "ru-RU", {
+    weekday: "short",
+    day: "numeric",
+    month: "short",
+  })
+    .format(parsed)
+    .replace(".", "");
+}
+
 export default function App() {
   const [language, setLanguage] = useState<AppLanguage>(() => detectLanguage());
   const [mode, setMode] = useState<AuthMode>("login");
@@ -347,6 +381,7 @@ export default function App() {
   const [loadingSession, setLoadingSession] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [visitComposerOpen, setVisitComposerOpen] = useState(false);
   const detectedCountry = useMemo(() => getDetectedCountry(), []);
   const detectedTimezone = useMemo(() => getDetectedTimezone(), []);
   const t = copy[language];
@@ -638,85 +673,80 @@ export default function App() {
   if (session) {
     return (
       <SafeAreaView style={styles.appScreen}>
-        <View style={styles.appHeader}>
-          <BrandLogo compact />
-          <View style={styles.headerActions}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{session.displayName.slice(0, 1).toUpperCase()}</Text>
+        <WorkspaceHeader
+          t={t}
+          session={session}
+          workspace={workspace}
+          activeTab={activeTab}
+          onTelegramPress={() => setActiveTab("telegram")}
+          onSettingsPress={() => setActiveTab("settings")}
+        />
+
+        {activeTab === "calendar" ? (
+          <CalendarTab
+            t={t}
+            language={language}
+            workspace={workspace}
+            calendar={calendar}
+            selectedDate={selectedDate}
+            setSelectedDate={setSelectedDate}
+            visitDraft={visitDraft}
+            setVisitDraft={setVisitDraft}
+            onCreateVisit={createVisit}
+            busy={busy}
+            refreshing={refreshing}
+            onRefresh={() => refreshAll()}
+            composerOpen={visitComposerOpen}
+            setComposerOpen={setVisitComposerOpen}
+          />
+        ) : (
+          <ScrollView
+            style={styles.workspaceScroll}
+            contentContainerStyle={styles.workspaceContent}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => refreshAll()} tintColor="#7C3AED" />}
+            showsVerticalScrollIndicator={false}
+          >
+            <View style={styles.workspaceHero}>
+              <Text style={styles.workspaceEyebrow}>{t.dashboard}</Text>
+              <Text style={styles.workspaceTitle}>{t[activeTab]}</Text>
+              <Text style={styles.workspaceSubtitle}>{workspace?.business.name || session.displayName}</Text>
             </View>
-          </View>
-        </View>
 
-        <ScrollView
-          style={styles.workspaceScroll}
-          contentContainerStyle={styles.workspaceContent}
-          refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => refreshAll()} tintColor="#7C3AED" />}
-          showsVerticalScrollIndicator={false}
-        >
-          <View style={styles.workspaceHero}>
-            <Text style={styles.workspaceEyebrow}>{t.dashboard}</Text>
-            <Text style={styles.workspaceTitle}>{workspace?.business.name || session.displayName}</Text>
-            <Text style={styles.workspaceSubtitle}>{session.email}</Text>
-          </View>
-
-          <View style={styles.tabRow}>
-            {(["calendar", "services", "clients", "telegram", "settings"] as AppTab[]).map((item) => (
-              <Pressable
-                key={item}
-                onPress={() => setActiveTab(item)}
-                style={[styles.tabButton, activeTab === item && styles.tabButtonActive]}
-              >
-                <Text style={[styles.tabText, activeTab === item && styles.tabTextActive]}>{t[item]}</Text>
-              </Pressable>
-            ))}
-          </View>
-
-          {activeTab === "calendar" ? (
-            <CalendarTab
-              t={t}
-              workspace={workspace}
-              calendar={calendar}
-              selectedDate={selectedDate}
-              setSelectedDate={setSelectedDate}
-              visitDraft={visitDraft}
-              setVisitDraft={setVisitDraft}
-              onCreateVisit={createVisit}
-              busy={busy}
-            />
-          ) : null}
-          {activeTab === "services" ? (
-            <ServicesTab
-              t={t}
-              workspace={workspace}
-              draft={serviceDraft}
-              setDraft={setServiceDraft}
-              onCreate={createService}
-              onDelete={removeService}
-              busy={busy}
-            />
-          ) : null}
-          {activeTab === "clients" ? (
-            <ClientsTab
-              t={t}
-              clients={clients}
-              draft={clientDraft}
-              setDraft={setClientDraft}
-              onCreate={createClient}
-              busy={busy}
-            />
-          ) : null}
-          {activeTab === "telegram" ? <TelegramTab t={t} workspace={workspace} /> : null}
-          {activeTab === "settings" ? (
-            <SettingsTab
-              t={t}
-              language={language}
-              setLanguage={setLanguage}
-              workspace={workspace}
-              onSignOut={signOut}
-              busy={busy}
-            />
-          ) : null}
-        </ScrollView>
+            {activeTab === "services" ? (
+              <ServicesTab
+                t={t}
+                workspace={workspace}
+                draft={serviceDraft}
+                setDraft={setServiceDraft}
+                onCreate={createService}
+                onDelete={removeService}
+                busy={busy}
+              />
+            ) : null}
+            {activeTab === "clients" ? (
+              <ClientsTab
+                t={t}
+                clients={clients}
+                draft={clientDraft}
+                setDraft={setClientDraft}
+                onCreate={createClient}
+                busy={busy}
+              />
+            ) : null}
+            {activeTab === "telegram" ? <TelegramTab t={t} workspace={workspace} /> : null}
+            {activeTab === "settings" ? (
+              <SettingsTab
+                t={t}
+                language={language}
+                setLanguage={setLanguage}
+                workspace={workspace}
+                onSignOut={signOut}
+                busy={busy}
+              />
+            ) : null}
+          </ScrollView>
+        )}
+        <BottomNavigation activeTab={activeTab} setActiveTab={setActiveTab} t={t} />
         <StatusBar style="dark" />
       </SafeAreaView>
     );
@@ -792,6 +822,7 @@ export default function App() {
 
 function CalendarTab({
   t,
+  language,
   workspace,
   calendar,
   selectedDate,
@@ -800,8 +831,13 @@ function CalendarTab({
   setVisitDraft,
   onCreateVisit,
   busy,
+  refreshing,
+  onRefresh,
+  composerOpen,
+  setComposerOpen,
 }: {
   t: Record<string, string>;
+  language: AppLanguage;
   workspace: WorkspaceSnapshot | null;
   calendar: CalendarSnapshot | null;
   selectedDate: string;
@@ -810,6 +846,10 @@ function CalendarTab({
   setVisitDraft: (draft: { customerName: string; customerPhone: string; startTime: string; serviceId: string }) => void;
   onCreateVisit: () => void;
   busy: boolean;
+  refreshing: boolean;
+  onRefresh: () => void;
+  composerOpen: boolean;
+  setComposerOpen: (open: boolean) => void;
 }) {
   const currency = workspace?.professional.currency;
   const services = workspace?.services || [];
@@ -817,79 +857,255 @@ function CalendarTab({
   const endTime = addMinutes(visitDraft.startTime, currentService?.durationMinutes || 60);
 
   return (
-    <View style={styles.sectionStack}>
-      <View style={styles.dateRow}>
+    <View style={styles.calendarScreen}>
+      <View style={styles.calendarToolbar}>
         <Pressable style={styles.dateButton} onPress={() => setSelectedDate(shiftDate(selectedDate, -1))}>
-          <Text style={styles.dateButtonText}>‹</Text>
+          <Ionicons name="chevron-back" size={18} color="#0F172A" />
         </Pressable>
         <View style={styles.datePill}>
-          <Text style={styles.dateText}>{selectedDate}</Text>
+          <Text style={styles.dateText}>{formatDayLabel(selectedDate, language)}</Text>
+          <Text style={styles.dateSubText}>09:00 - 18:00</Text>
         </View>
         <Pressable style={styles.dateButton} onPress={() => setSelectedDate(shiftDate(selectedDate, 1))}>
-          <Text style={styles.dateButtonText}>›</Text>
+          <Ionicons name="chevron-forward" size={18} color="#0F172A" />
+        </Pressable>
+        <View style={styles.toolbarSpacer} />
+        <Pressable style={styles.modeButton}>
+          <Text style={styles.modeButtonText}>{t.compact}</Text>
+        </Pressable>
+        <Pressable style={styles.modeButton}>
+          <Text style={styles.modeButtonText}>{t.dayView}</Text>
+          <Ionicons name="chevron-down" size={14} color="#475569" />
         </Pressable>
       </View>
 
-      <View style={styles.statsGrid}>
-        <StatTile label={t.today} value={`${calendar?.stats.day.visitsCount || 0}`} caption={formatMoney(calendar?.stats.day.revenue || 0, currency)} />
-        <StatTile label={t.week} value={`${calendar?.stats.week.visitsCount || 0}`} caption={formatMoney(calendar?.stats.week.revenue || 0, currency)} />
-        <StatTile label={t.month} value={`${calendar?.stats.month.visitsCount || 0}`} caption={formatMoney(calendar?.stats.month.revenue || 0, currency)} />
+      <View style={styles.masterStrip}>
+        <View style={styles.masterAvatar}>
+          <Text style={styles.masterAvatarText}>{workspace?.professional.firstName?.slice(0, 1).toUpperCase() || "T"}</Text>
+        </View>
+        <Text style={styles.masterName}>
+          {`${workspace?.professional.firstName || ""} ${workspace?.professional.lastName || ""}`.trim() || "Timviz"}
+        </Text>
       </View>
 
-      <Panel title={t.newVisit}>
-        <Field label={t.customer} value={visitDraft.customerName} onChangeText={(value) => setVisitDraft({ ...visitDraft, customerName: value })} />
-        <Field label={t.phone} value={visitDraft.customerPhone} onChangeText={(value) => setVisitDraft({ ...visitDraft, customerPhone: value })} keyboardType="phone-pad" />
-        <View style={styles.twoColumns}>
-          <Field label={t.start} value={visitDraft.startTime} onChangeText={(value) => setVisitDraft({ ...visitDraft, startTime: value })} />
-          <Field label={t.end} value={endTime} editable={false} />
-        </View>
-        <View style={styles.servicePicker}>
-          {services.slice(0, 8).map((service) => (
-            <Pressable
-              key={service.id}
-              onPress={() => setVisitDraft({ ...visitDraft, serviceId: service.id })}
-              style={[styles.choiceChip, visitDraft.serviceId === service.id && styles.choiceChipActive]}
-            >
-              <Text style={[styles.choiceText, visitDraft.serviceId === service.id && styles.choiceTextActive]}>{service.name}</Text>
-            </Pressable>
-          ))}
-        </View>
-        <PrimaryButton label={t.addVisit} onPress={onCreateVisit} disabled={busy || !services.length} />
-      </Panel>
+      <ScrollView
+        style={styles.calendarScroll}
+        contentContainerStyle={styles.calendarContent}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#7C3AED" />}
+        showsVerticalScrollIndicator={false}
+      >
+        <CalendarTimeline appointments={calendar?.appointments || []} currency={currency} />
+      </ScrollView>
 
-      <Panel title={t.calendar}>
-        {calendar?.appointments.length ? (
-          calendar.appointments.map((appointment) => (
-            <View key={appointment.id} style={styles.listItem}>
-              <View>
-                <Text style={styles.listTitle}>
-                  {appointment.startTime} - {appointment.endTime}
-                </Text>
-                <Text style={styles.listText}>{appointment.customerName || appointment.serviceName}</Text>
-                <Text style={styles.listCaption}>{appointment.serviceName}</Text>
-              </View>
-              <Text style={styles.moneyText}>{formatMoney(appointment.priceAmount, currency)}</Text>
-            </View>
-          ))
-        ) : (
-          <Text style={styles.emptyText}>{t.noAppointments}</Text>
-        )}
-      </Panel>
+      <Pressable style={styles.fabButton} onPress={() => setComposerOpen(true)}>
+        <Ionicons name="add" size={34} color="#FFFFFF" />
+      </Pressable>
 
-      <Panel title={t.recent}>
-        {calendar?.recentActivity.length ? (
-          calendar.recentActivity.map((item) => (
-            <View key={item.id} style={styles.listItemCompact}>
-              <Text style={styles.listTitle}>{item.customerName}</Text>
-              <Text style={styles.listCaption}>
-                {item.appointmentDate} · {item.startTime} · {item.serviceName}
-              </Text>
+      <Modal transparent visible={composerOpen} animationType="slide" onRequestClose={() => setComposerOpen(false)}>
+        <View style={styles.modalBackdrop}>
+          <View style={styles.visitSheet}>
+            <View style={styles.sheetHeader}>
+              <Text style={styles.sheetTitle}>{t.newVisit}</Text>
+              <Pressable style={styles.sheetClose} onPress={() => setComposerOpen(false)}>
+                <Ionicons name="close" size={22} color="#0F172A" />
+              </Pressable>
             </View>
-          ))
-        ) : (
-          <Text style={styles.emptyText}>{t.empty}</Text>
-        )}
-      </Panel>
+            <Field label={t.customer} value={visitDraft.customerName} onChangeText={(value) => setVisitDraft({ ...visitDraft, customerName: value })} />
+            <Field label={t.phone} value={visitDraft.customerPhone} onChangeText={(value) => setVisitDraft({ ...visitDraft, customerPhone: value })} keyboardType="phone-pad" />
+            <View style={styles.twoColumns}>
+              <Field label={t.start} value={visitDraft.startTime} onChangeText={(value) => setVisitDraft({ ...visitDraft, startTime: value })} />
+              <Field label={t.end} value={endTime} editable={false} />
+            </View>
+            <View style={styles.servicePicker}>
+              {services.slice(0, 8).map((service) => (
+                <Pressable
+                  key={service.id}
+                  onPress={() => setVisitDraft({ ...visitDraft, serviceId: service.id })}
+                  style={[styles.choiceChip, visitDraft.serviceId === service.id && styles.choiceChipActive]}
+                >
+                  <Text style={[styles.choiceText, visitDraft.serviceId === service.id && styles.choiceTextActive]}>{service.name}</Text>
+                </Pressable>
+              ))}
+            </View>
+            <PrimaryButton
+              label={t.addVisit}
+              onPress={() => {
+                onCreateVisit();
+                setComposerOpen(false);
+              }}
+              disabled={busy || !services.length}
+            />
+          </View>
+        </View>
+      </Modal>
+    </View>
+  );
+}
+
+function CalendarTimeline({ appointments, currency }: { appointments: AppointmentRecord[]; currency?: string }) {
+  const startHour = 5;
+  const endHour = 22;
+  const hourHeight = 88;
+  const timelineHeight = (endHour - startHour + 1) * hourHeight;
+  const now = new Date();
+  const nowMinutes = now.getHours() * 60 + now.getMinutes();
+  const nowTop = ((nowMinutes - startHour * 60) / 60) * hourHeight;
+
+  return (
+    <View style={[styles.timeline, { height: timelineHeight }]}>
+      {Array.from({ length: endHour - startHour + 1 }).map((_, index) => {
+        const hour = startHour + index;
+        return (
+          <View key={hour} style={[styles.hourRow, { top: index * hourHeight }]}>
+            <Text style={styles.hourText}>{String(hour).padStart(2, "0")}:00</Text>
+            <View style={styles.hourGrid}>
+              <View style={styles.majorLine} />
+              <View style={[styles.minorLine, { top: hourHeight / 4 }]} />
+              <View style={[styles.minorLine, { top: hourHeight / 2 }]} />
+              <View style={[styles.minorLine, { top: (hourHeight / 4) * 3 }]} />
+            </View>
+          </View>
+        );
+      })}
+
+      <View style={[styles.closedBlock, { top: 0, height: 4 * hourHeight }]} />
+      <View style={[styles.closedBlock, { top: 13 * hourHeight, height: 5 * hourHeight }]} />
+
+      {nowTop >= 0 && nowTop <= timelineHeight ? (
+        <View style={[styles.currentTimeLine, { top: nowTop }]}>
+          <View style={styles.currentTimeDot} />
+        </View>
+      ) : null}
+
+      {appointments.map((appointment, index) => {
+        const start = timeToMinutes(appointment.startTime);
+        const end = Math.max(timeToMinutes(appointment.endTime), start + 30);
+        const top = ((start - startHour * 60) / 60) * hourHeight;
+        const height = Math.max(68, ((end - start) / 60) * hourHeight);
+        const isOffset = index % 2 === 1;
+        const color = appointment.kind === "blocked" ? "#94A3B8" : index % 3 === 0 ? "#FF9A82" : index % 3 === 1 ? "#FFD166" : "#9ED96B";
+
+        return (
+          <View
+            key={appointment.id}
+            style={[
+              styles.appointmentBlock,
+              {
+                top,
+                height,
+                left: isOffset ? 188 : 54,
+                right: isOffset ? 8 : 150,
+                backgroundColor: color,
+              },
+            ]}
+          >
+            <Text style={styles.appointmentTime}>
+              {appointment.startTime} - {appointment.endTime}
+            </Text>
+            <Text style={styles.appointmentClient} numberOfLines={2}>
+              {appointment.customerName || "Клиент"}
+            </Text>
+            <Text style={styles.appointmentService} numberOfLines={1}>
+              {appointment.serviceName}
+            </Text>
+            <Text style={styles.appointmentPrice}>{formatMoney(appointment.priceAmount, currency)}</Text>
+            <View style={styles.appointmentHandle} />
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
+function WorkspaceHeader({
+  t,
+  session,
+  workspace,
+  activeTab,
+  onTelegramPress,
+  onSettingsPress,
+}: {
+  t: Record<string, string>;
+  session: MobileSession;
+  workspace: WorkspaceSnapshot | null;
+  activeTab: AppTab;
+  onTelegramPress: () => void;
+  onSettingsPress: () => void;
+}) {
+  const title = activeTab === "calendar" ? "денний календар" : t[activeTab];
+
+  return (
+    <View style={styles.nativeHeader}>
+      <Text style={styles.nativeHeaderTitle} numberOfLines={1}>
+        {title}
+      </Text>
+      <View style={styles.nativeHeaderActions}>
+        <AppIconButton icon="rocket" active />
+        <AppIconButton icon="cloud-upload-outline" />
+        <AppIconButton icon="chatbubble-ellipses-outline" tone="cyan" onPress={onTelegramPress} />
+        <AppIconButton icon="notifications-outline" />
+        <Pressable style={styles.profilePill} onPress={onSettingsPress}>
+          <View style={styles.smallAvatar}>
+            <Text style={styles.smallAvatarText}>{session.displayName.slice(0, 1).toUpperCase()}</Text>
+          </View>
+          <Ionicons name="chevron-down" size={12} color="#64748B" />
+        </Pressable>
+      </View>
+      <Text style={styles.headerBusinessName} numberOfLines={1}>
+        {workspace?.business.name || session.displayName}
+      </Text>
+    </View>
+  );
+}
+
+function AppIconButton({
+  icon,
+  active,
+  tone,
+  onPress,
+}: {
+  icon: ComponentProps<typeof Ionicons>["name"];
+  active?: boolean;
+  tone?: "cyan";
+  onPress?: () => void;
+}) {
+  return (
+    <Pressable onPress={onPress} style={[styles.headerIconButton, active && styles.headerIconButtonActive, tone === "cyan" && styles.headerIconButtonCyan]}>
+      <Ionicons name={icon} size={20} color={active ? "#FFFFFF" : tone === "cyan" ? "#0891B2" : "#432C75"} />
+    </Pressable>
+  );
+}
+
+function BottomNavigation({
+  activeTab,
+  setActiveTab,
+  t,
+}: {
+  activeTab: AppTab;
+  setActiveTab: (tab: AppTab) => void;
+  t: Record<string, string>;
+}) {
+  const items: Array<{ tab: AppTab; icon: ComponentProps<typeof Ionicons>["name"]; label: string }> = [
+    { tab: "calendar", icon: "home-outline", label: t.home },
+    { tab: "services", icon: "pricetag-outline", label: t.services },
+    { tab: "clients", icon: "id-card-outline", label: t.clients },
+    { tab: "telegram", icon: "people-outline", label: t.telegram },
+    { tab: "settings", icon: "settings-outline", label: t.settings },
+  ];
+
+  return (
+    <View style={styles.bottomNav}>
+      {items.map((item) => {
+        const active = activeTab === item.tab;
+        return (
+          <Pressable key={item.tab} onPress={() => setActiveTab(item.tab)} style={[styles.bottomNavItem, active && styles.bottomNavItemActive]}>
+            <Ionicons name={item.icon} size={19} color={active ? "#FFFFFF" : "#64748B"} />
+            <Text style={[styles.bottomNavText, active && styles.bottomNavTextActive]} numberOfLines={1}>
+              {item.label}
+            </Text>
+          </Pressable>
+        );
+      })}
     </View>
   );
 }
@@ -1324,7 +1540,347 @@ const styles = StyleSheet.create({
   },
   appScreen: {
     flex: 1,
+    backgroundColor: "#F6F8FC",
+  },
+  nativeHeader: {
+    minHeight: 58,
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderBottomWidth: 1,
+    borderBottomColor: "#E2E8F0",
+    backgroundColor: "#FFFFFF",
+  },
+  nativeHeaderTitle: {
+    flex: 1,
+    color: "#111827",
+    fontSize: 15,
+    fontWeight: "900",
+  },
+  nativeHeaderActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  headerBusinessName: {
+    position: "absolute",
+    left: 16,
+    bottom: -20,
+    color: "#64748B",
+    fontSize: 10,
+    fontWeight: "800",
+    textTransform: "uppercase",
+  },
+  headerIconButton: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#DDD6FE",
+    backgroundColor: "#FFFFFF",
+  },
+  headerIconButtonActive: {
+    borderColor: "#7C3AED",
+    backgroundColor: "#7047EE",
+    shadowColor: "#7C3AED",
+    shadowOpacity: 0.28,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 8 },
+  },
+  headerIconButtonCyan: {
+    borderColor: "#BAE6FD",
+    backgroundColor: "#ECFEFF",
+  },
+  profilePill: {
+    height: 36,
+    minWidth: 56,
+    paddingHorizontal: 4,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 3,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "#CBD5E1",
+    backgroundColor: "#FFFFFF",
+  },
+  smallAvatar: {
+    width: 27,
+    height: 27,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#9A7A72",
+  },
+  smallAvatarText: {
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: "900",
+  },
+  calendarScreen: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
+  },
+  calendarToolbar: {
+    minHeight: 62,
+    paddingHorizontal: 6,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E2E8F0",
     backgroundColor: "#F8FAFC",
+  },
+  toolbarSpacer: {
+    flex: 1,
+  },
+  modeButton: {
+    minWidth: 70,
+    height: 42,
+    paddingHorizontal: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#CBD5E1",
+    backgroundColor: "#FFFFFF",
+  },
+  modeButtonText: {
+    color: "#334155",
+    fontSize: 14,
+    fontWeight: "900",
+  },
+  masterStrip: {
+    height: 84,
+    alignItems: "center",
+    justifyContent: "center",
+    borderBottomWidth: 1,
+    borderBottomColor: "#E2E8F0",
+    backgroundColor: "#FFFFFF",
+  },
+  masterAvatar: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#9A7A72",
+  },
+  masterAvatarText: {
+    color: "#FFFFFF",
+    fontSize: 19,
+    fontWeight: "900",
+  },
+  masterName: {
+    marginTop: 7,
+    color: "#1F2937",
+    fontSize: 13,
+    fontWeight: "900",
+  },
+  calendarScroll: {
+    flex: 1,
+  },
+  calendarContent: {
+    paddingBottom: 96,
+  },
+  timeline: {
+    position: "relative",
+    backgroundColor: "#FFFFFF",
+  },
+  hourRow: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    height: 88,
+    flexDirection: "row",
+  },
+  hourText: {
+    width: 43,
+    paddingTop: 2,
+    paddingRight: 5,
+    textAlign: "right",
+    color: "#475569",
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  hourGrid: {
+    flex: 1,
+    position: "relative",
+    borderLeftWidth: 1,
+    borderLeftColor: "#E2E8F0",
+  },
+  majorLine: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    top: 0,
+    height: 1,
+    backgroundColor: "#DDE4EE",
+  },
+  minorLine: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    height: 1,
+    backgroundColor: "#EEF2F7",
+  },
+  closedBlock: {
+    position: "absolute",
+    left: 44,
+    right: 0,
+    backgroundColor: "#F8FAFC",
+    opacity: 0.88,
+  },
+  currentTimeLine: {
+    position: "absolute",
+    left: 43,
+    right: 0,
+    height: 2,
+    backgroundColor: "#F43F5E",
+  },
+  currentTimeDot: {
+    position: "absolute",
+    left: -5,
+    top: -5,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: "#F43F5E",
+    backgroundColor: "#FFFFFF",
+  },
+  appointmentBlock: {
+    position: "absolute",
+    borderRadius: 8,
+    padding: 10,
+    shadowColor: "#0F172A",
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 6 },
+  },
+  appointmentTime: {
+    color: "#0F172A",
+    fontSize: 12,
+    fontWeight: "800",
+  },
+  appointmentClient: {
+    marginTop: 3,
+    color: "#0F172A",
+    fontSize: 15,
+    lineHeight: 18,
+    fontWeight: "900",
+  },
+  appointmentService: {
+    marginTop: 2,
+    color: "#0F172A",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  appointmentPrice: {
+    display: "none",
+  },
+  appointmentHandle: {
+    position: "absolute",
+    bottom: 14,
+    alignSelf: "center",
+    width: 44,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: "rgba(15, 23, 42, 0.28)",
+  },
+  fabButton: {
+    position: "absolute",
+    right: 24,
+    bottom: 88,
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#7047EE",
+    shadowColor: "#7C3AED",
+    shadowOpacity: 0.3,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 10 },
+  },
+  modalBackdrop: {
+    flex: 1,
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(15, 23, 42, 0.32)",
+  },
+  visitSheet: {
+    gap: 12,
+    padding: 18,
+    paddingBottom: 28,
+    borderTopLeftRadius: 8,
+    borderTopRightRadius: 8,
+    backgroundColor: "#FFFFFF",
+  },
+  sheetHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  sheetTitle: {
+    color: "#0F172A",
+    fontSize: 22,
+    fontWeight: "900",
+  },
+  sheetClose: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#F1F5F9",
+  },
+  bottomNav: {
+    position: "absolute",
+    left: 4,
+    right: 4,
+    bottom: 0,
+    minHeight: 58,
+    paddingHorizontal: 3,
+    paddingTop: 5,
+    paddingBottom: 5,
+    flexDirection: "row",
+    alignItems: "stretch",
+    gap: 2,
+    borderTopLeftRadius: 8,
+    borderTopRightRadius: 8,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    backgroundColor: "rgba(255, 255, 255, 0.96)",
+    shadowColor: "#0F172A",
+    shadowOpacity: 0.09,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: -6 },
+  },
+  bottomNavItem: {
+    flex: 1,
+    minWidth: 0,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 2,
+    borderRadius: 8,
+  },
+  bottomNavItemActive: {
+    backgroundColor: "#241642",
+  },
+  bottomNavText: {
+    color: "#64748B",
+    fontSize: 9,
+    fontWeight: "900",
+  },
+  bottomNavTextActive: {
+    color: "#FFFFFF",
   },
   appHeader: {
     height: 62,
@@ -1422,8 +1978,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   dateButton: {
-    width: 48,
-    height: 48,
+    width: 36,
+    height: 36,
     borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
@@ -1437,8 +1993,8 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   datePill: {
-    flex: 1,
-    height: 48,
+    minWidth: 126,
+    height: 43,
     borderRadius: 8,
     alignItems: "center",
     justifyContent: "center",
@@ -1448,8 +2004,14 @@ const styles = StyleSheet.create({
   },
   dateText: {
     color: "#0F172A",
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "900",
+  },
+  dateSubText: {
+    marginTop: 1,
+    color: "#64748B",
+    fontSize: 11,
+    fontWeight: "700",
   },
   statsGrid: {
     flexDirection: "row",
