@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Linking,
   Pressable,
   SafeAreaView,
   StyleSheet,
@@ -10,30 +11,39 @@ import {
   TextInput,
   View,
 } from "react-native";
-import type { Session } from "@supabase/supabase-js";
-import { supabase } from "./src/lib/supabase";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+type MobileSession = {
+  token: string;
+  professionalId: string;
+  email: string;
+  displayName: string;
+};
+
+const STORAGE_KEY = "timviz_mobile_session_v1";
+const API_BASE_URL = (process.env.EXPO_PUBLIC_API_BASE_URL || "https://timviz.com").replace(/\/+$/, "");
 
 export default function App() {
-  const [session, setSession] = useState<Session | null>(null);
+  const [session, setSession] = useState<MobileSession | null>(null);
   const [loadingSession, setLoadingSession] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    let mounted = true;
-    supabase.auth.getSession().then(({ data }) => {
-      if (!mounted) return;
-      setSession(data.session ?? null);
+    AsyncStorage.getItem(STORAGE_KEY).then((raw) => {
+      if (!raw) {
+        setLoadingSession(false);
+        return;
+      }
+      try {
+        const parsed = JSON.parse(raw) as MobileSession;
+        setSession(parsed);
+      } catch {
+        setSession(null);
+      }
       setLoadingSession(false);
     });
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, next) => {
-      setSession(next);
-    });
-    return () => {
-      mounted = false;
-      listener.subscription.unsubscribe();
-    };
   }, []);
 
   async function signIn() {
@@ -42,35 +52,37 @@ export default function App() {
       return;
     }
     setBusy(true);
-    const { error } = await supabase.auth.signInWithPassword({
-      email: email.trim().toLowerCase(),
-      password,
+    const response = await fetch(`${API_BASE_URL}/api/mobile/pro/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        email: email.trim().toLowerCase(),
+        password,
+      }),
     });
+    const result = await response.json();
     setBusy(false);
-    if (error) Alert.alert("Помилка входу", error.message);
-  }
 
-  async function signUp() {
-    if (!email.trim() || !password.trim()) {
-      Alert.alert("Потрібні дані", "Введіть email і пароль.");
+    if (!response.ok) {
+      Alert.alert("Помилка входу", result?.error || "Invalid login credentials");
       return;
     }
-    setBusy(true);
-    const { error } = await supabase.auth.signUp({
-      email: email.trim().toLowerCase(),
-      password,
-    });
-    setBusy(false);
-    if (error) {
-      Alert.alert("Помилка реєстрації", error.message);
-      return;
-    }
-    Alert.alert("Готово", "Перевірте пошту для підтвердження, якщо це потрібно.");
+
+    const nextSession: MobileSession = {
+      token: String(result.token || ""),
+      professionalId: String(result.professionalId || ""),
+      email: String(result.profile?.email || email.trim().toLowerCase()),
+      displayName: String(result.profile?.displayName || result.profile?.email || email.trim().toLowerCase()),
+    };
+
+    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(nextSession));
+    setSession(nextSession);
   }
 
   async function signOut() {
     setBusy(true);
-    await supabase.auth.signOut();
+    await AsyncStorage.removeItem(STORAGE_KEY);
+    setSession(null);
     setBusy(false);
   }
 
@@ -83,7 +95,7 @@ export default function App() {
     );
   }
 
-  if (session?.user) {
+  if (session) {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.brandRow}>
@@ -91,7 +103,8 @@ export default function App() {
           <Text style={styles.brandViz}>viz</Text>
         </View>
         <Text style={styles.title}>Ви увійшли</Text>
-        <Text style={styles.subtitle}>{session.user.email}</Text>
+        <Text style={styles.subtitle}>{session.displayName}</Text>
+        <Text style={styles.caption}>{session.email}</Text>
         <Pressable onPress={signOut} style={styles.button} disabled={busy}>
           <Text style={styles.buttonText}>{busy ? "Вихід..." : "Вийти"}</Text>
         </Pressable>
@@ -130,8 +143,12 @@ export default function App() {
         <Pressable onPress={signIn} style={styles.button} disabled={busy}>
           <Text style={styles.buttonText}>{busy ? "Вхід..." : "Увійти"}</Text>
         </Pressable>
-        <Pressable onPress={signUp} style={styles.secondaryButton} disabled={busy}>
-          <Text style={styles.secondaryButtonText}>Зареєструватися</Text>
+        <Pressable
+          onPress={() => Linking.openURL(`${API_BASE_URL}/pro/create-account`)}
+          style={styles.secondaryButton}
+          disabled={busy}
+        >
+          <Text style={styles.secondaryButtonText}>Зареєструватися на сайті</Text>
         </Pressable>
       </View>
       <StatusBar style="dark" />
@@ -176,6 +193,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     lineHeight: 22,
     color: "#334155",
+  },
+  caption: {
+    marginTop: 4,
+    marginBottom: 14,
+    color: "#64748B",
+    fontSize: 14,
   },
   form: {
     width: "100%",
