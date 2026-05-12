@@ -18,6 +18,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  useWindowDimensions,
   View,
 } from "react-native";
 
@@ -337,6 +338,15 @@ function getTodayIso() {
   return new Date().toISOString().slice(0, 10);
 }
 
+function getRoundedTime(step = 10) {
+  const now = new Date();
+  const total = now.getHours() * 60 + now.getMinutes();
+  const rounded = Math.ceil(total / step) * step;
+  const hours = Math.floor(rounded / 60) % 24;
+  const minutes = rounded % 60;
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+}
+
 function shiftDate(date: string, days: number) {
   const next = new Date(`${date}T12:00:00`);
   next.setDate(next.getDate() + days);
@@ -568,7 +578,7 @@ export default function App() {
     const service = workspace?.services.find((item) => item.id === visitDraft.serviceId) || workspace?.services[0];
     if (!service || !visitDraft.customerName.trim()) {
       Alert.alert(t.requiredTitle, t.requiredText);
-      return;
+      return false;
     }
 
     setBusy(true);
@@ -588,8 +598,10 @@ export default function App() {
       });
       setVisitDraft({ customerName: "", customerPhone: "", startTime: visitDraft.startTime, serviceId: service.id });
       await refreshAll();
+      return true;
     } catch (error) {
       Alert.alert(t.addVisit, error instanceof Error ? error.message : t.addVisit);
+      return false;
     } finally {
       setBusy(false);
     }
@@ -844,7 +856,7 @@ function CalendarTab({
   setSelectedDate: (date: string) => void;
   visitDraft: { customerName: string; customerPhone: string; startTime: string; serviceId: string };
   setVisitDraft: (draft: { customerName: string; customerPhone: string; startTime: string; serviceId: string }) => void;
-  onCreateVisit: () => void;
+  onCreateVisit: () => Promise<boolean>;
   busy: boolean;
   refreshing: boolean;
   onRefresh: () => void;
@@ -897,7 +909,13 @@ function CalendarTab({
         <CalendarTimeline appointments={calendar?.appointments || []} currency={currency} />
       </ScrollView>
 
-      <Pressable style={styles.fabButton} onPress={() => setComposerOpen(true)}>
+      <Pressable
+        style={styles.fabButton}
+        onPress={() => {
+          setVisitDraft({ ...visitDraft, startTime: getRoundedTime(10) });
+          setComposerOpen(true);
+        }}
+      >
         <Ionicons name="add" size={34} color="#FFFFFF" />
       </Pressable>
 
@@ -929,9 +947,9 @@ function CalendarTab({
             </View>
             <PrimaryButton
               label={t.addVisit}
-              onPress={() => {
-                onCreateVisit();
-                setComposerOpen(false);
+              onPress={async () => {
+                const saved = await onCreateVisit();
+                if (saved) setComposerOpen(false);
               }}
               disabled={busy || !services.length}
             />
@@ -943,10 +961,15 @@ function CalendarTab({
 }
 
 function CalendarTimeline({ appointments, currency }: { appointments: AppointmentRecord[]; currency?: string }) {
+  const { width } = useWindowDimensions();
   const startHour = 5;
   const endHour = 22;
-  const hourHeight = 88;
+  const hourHeight = 92;
   const timelineHeight = (endHour - startHour + 1) * hourHeight;
+  const timeColumnWidth = 43;
+  const gridWidth = Math.max(280, width - timeColumnWidth);
+  const laneGap = 8;
+  const laneWidth = Math.max(132, (gridWidth - laneGap * 3) / 2);
   const now = new Date();
   const nowMinutes = now.getHours() * 60 + now.getMinutes();
   const nowTop = ((nowMinutes - startHour * 60) / 60) * hourHeight;
@@ -956,13 +979,13 @@ function CalendarTimeline({ appointments, currency }: { appointments: Appointmen
       {Array.from({ length: endHour - startHour + 1 }).map((_, index) => {
         const hour = startHour + index;
         return (
-          <View key={hour} style={[styles.hourRow, { top: index * hourHeight }]}>
+          <View key={hour} style={[styles.hourRow, { top: index * hourHeight, height: hourHeight }]}>
             <Text style={styles.hourText}>{String(hour).padStart(2, "0")}:00</Text>
             <View style={styles.hourGrid}>
               <View style={styles.majorLine} />
-              <View style={[styles.minorLine, { top: hourHeight / 4 }]} />
-              <View style={[styles.minorLine, { top: hourHeight / 2 }]} />
-              <View style={[styles.minorLine, { top: (hourHeight / 4) * 3 }]} />
+              {[1, 2, 3, 4, 5].map((part) => (
+                <View key={part} style={[styles.minorLine, { top: (hourHeight / 6) * part }]} />
+              ))}
             </View>
           </View>
         );
@@ -993,8 +1016,8 @@ function CalendarTimeline({ appointments, currency }: { appointments: Appointmen
               {
                 top,
                 height,
-                left: isOffset ? 188 : 54,
-                right: isOffset ? 8 : 150,
+                left: timeColumnWidth + laneGap + (isOffset ? laneWidth + laneGap : 0),
+                width: laneWidth,
                 backgroundColor: color,
               },
             ]}
@@ -1036,9 +1059,14 @@ function WorkspaceHeader({
 
   return (
     <View style={styles.nativeHeader}>
-      <Text style={styles.nativeHeaderTitle} numberOfLines={1}>
-        {title}
-      </Text>
+      <View style={styles.headerTitleStack}>
+        <Text style={styles.nativeHeaderTitle} numberOfLines={1}>
+          {title}
+        </Text>
+        <Text style={styles.headerBusinessInline} numberOfLines={1}>
+          {workspace?.business.name || session.displayName}
+        </Text>
+      </View>
       <View style={styles.nativeHeaderActions}>
         <AppIconButton icon="rocket" active />
         <AppIconButton icon="cloud-upload-outline" />
@@ -1051,9 +1079,6 @@ function WorkspaceHeader({
           <Ionicons name="chevron-down" size={12} color="#64748B" />
         </Pressable>
       </View>
-      <Text style={styles.headerBusinessName} numberOfLines={1}>
-        {workspace?.business.name || session.displayName}
-      </Text>
     </View>
   );
 }
@@ -1543,10 +1568,10 @@ const styles = StyleSheet.create({
     backgroundColor: "#F6F8FC",
   },
   nativeHeader: {
-    minHeight: 58,
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 8,
+    minHeight: 56,
+    paddingHorizontal: 12,
+    paddingTop: 7,
+    paddingBottom: 7,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -1554,30 +1579,32 @@ const styles = StyleSheet.create({
     borderBottomColor: "#E2E8F0",
     backgroundColor: "#FFFFFF",
   },
-  nativeHeaderTitle: {
+  headerTitleStack: {
     flex: 1,
+    minWidth: 0,
+    paddingRight: 8,
+  },
+  nativeHeaderTitle: {
     color: "#111827",
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "900",
   },
-  nativeHeaderActions: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-  },
-  headerBusinessName: {
-    position: "absolute",
-    left: 16,
-    bottom: -20,
+  headerBusinessInline: {
+    marginTop: 2,
     color: "#64748B",
     fontSize: 10,
     fontWeight: "800",
     textTransform: "uppercase",
   },
+  nativeHeaderActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+  },
   headerIconButton: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
@@ -1597,8 +1624,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#ECFEFF",
   },
   profilePill: {
-    height: 36,
-    minWidth: 56,
+    height: 34,
+    minWidth: 52,
     paddingHorizontal: 4,
     flexDirection: "row",
     alignItems: "center",
@@ -1610,8 +1637,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
   },
   smallAvatar: {
-    width: 27,
-    height: 27,
+    width: 25,
+    height: 25,
     borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
@@ -1627,11 +1654,11 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
   },
   calendarToolbar: {
-    minHeight: 62,
+    minHeight: 54,
     paddingHorizontal: 6,
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: 6,
     borderBottomWidth: 1,
     borderBottomColor: "#E2E8F0",
     backgroundColor: "#F8FAFC",
@@ -1640,9 +1667,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   modeButton: {
-    minWidth: 70,
-    height: 42,
-    paddingHorizontal: 10,
+    minWidth: 62,
+    height: 38,
+    paddingHorizontal: 8,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -1654,11 +1681,11 @@ const styles = StyleSheet.create({
   },
   modeButtonText: {
     color: "#334155",
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: "900",
   },
   masterStrip: {
-    height: 84,
+    height: 70,
     alignItems: "center",
     justifyContent: "center",
     borderBottomWidth: 1,
@@ -1666,20 +1693,20 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
   },
   masterAvatar: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#9A7A72",
   },
   masterAvatarText: {
     color: "#FFFFFF",
-    fontSize: 19,
+    fontSize: 17,
     fontWeight: "900",
   },
   masterName: {
-    marginTop: 7,
+    marginTop: 5,
     color: "#1F2937",
     fontSize: 13,
     fontWeight: "900",
@@ -1698,7 +1725,6 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: 0,
     right: 0,
-    height: 88,
     flexDirection: "row",
   },
   hourText: {
@@ -1843,13 +1869,13 @@ const styles = StyleSheet.create({
   },
   bottomNav: {
     position: "absolute",
-    left: 4,
-    right: 4,
-    bottom: 0,
-    minHeight: 58,
+    left: 5,
+    right: 5,
+    bottom: 2,
+    minHeight: 56,
     paddingHorizontal: 3,
-    paddingTop: 5,
-    paddingBottom: 5,
+    paddingTop: 4,
+    paddingBottom: Platform.OS === "ios" ? 7 : 4,
     flexDirection: "row",
     alignItems: "stretch",
     gap: 2,
@@ -1876,7 +1902,7 @@ const styles = StyleSheet.create({
   },
   bottomNavText: {
     color: "#64748B",
-    fontSize: 9,
+    fontSize: 8.5,
     fontWeight: "900",
   },
   bottomNavTextActive: {
