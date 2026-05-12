@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { signSessionValue } from "../../../../../../lib/pro-auth";
-import { authenticateProfessional, getProfessionalProfileById } from "../../../../../../lib/pro-data";
+import { signSessionValue } from "../../../../../lib/pro-auth";
+import { authenticateProfessional, getProfessionalProfileById } from "../../../../../lib/pro-data";
 
 export async function POST(request: Request) {
   try {
@@ -35,4 +35,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: message }, { status: 400 });
   }
 }
-

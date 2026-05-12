@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { verifySessionValue } from "../../../../../../../lib/pro-auth";
-import { getWorkspaceSnapshot } from "../../../../../../../lib/pro-data";
-import { getTelegramConnectionByProfessionalId } from "../../../../../../../lib/telegram-bot";
+import { verifySessionValue } from "../../../../../../lib/pro-auth";
+import { getWorkspaceSnapshot } from "../../../../../../lib/pro-data";
+import { getTelegramConnectionByProfessionalId } from "../../../../../../lib/telegram-bot";
 
 type RouteProps = {
   params: Promise<{
@@ -54,4 +54,3 @@ export async function GET(request: Request, { params }: RouteProps) {
     return NextResponse.json({ error: message }, { status: 400 });
   }
 }
-
