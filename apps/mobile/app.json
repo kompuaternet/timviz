@@ -30,6 +30,9 @@
     },
     "extra": {
       "appEnv": "production"
-    }
+    },
+    "plugins": [
+      "expo-localization"
+    ]
   }
 }
