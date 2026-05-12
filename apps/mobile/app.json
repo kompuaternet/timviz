@@ -5,6 +5,7 @@
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/timviz-icon.png",
+    "scheme": "timviz-master",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
@@ -14,7 +15,13 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.timviz.master"
+      "bundleIdentifier": "com.timviz.master",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSCameraUsageDescription": "Timviz использует камеру, чтобы мастер мог добавить фото компании, услуг или работ.",
+        "NSPhotoLibraryUsageDescription": "Timviz использует доступ к фото, чтобы мастер мог выбрать изображения для профиля компании, услуг или портфолио.",
+        "NSPhotoLibraryAddUsageDescription": "Timviz может сохранять изображения, связанные с профилем и услугами, если вы выберете это действие."
+      }
     },
     "android": {
       "package": "com.timviz.master",
