@@ -444,7 +444,7 @@ function getWeekDates(date: string) {
 
 function getCalendarModeDates(mode: CalendarViewMode, date: string) {
   if (mode === "threeDays") return [date, shiftDate(date, 1), shiftDate(date, 2)];
-  if (mode === "week") return getWeekDates(date);
+  if (mode === "week") return Array.from({ length: 7 }, (_, index) => shiftDate(date, index));
   if (mode === "month") {
     return getMonthGridDates(date);
   }
@@ -500,7 +500,7 @@ function formatCalendarTitle(mode: CalendarViewMode, date: string, language: App
   if (mode === "month") {
     return new Intl.DateTimeFormat(locale, { month: "long" }).format(new Date(`${date}T12:00:00`));
   }
-  const range = mode === "week" ? getWeekDates(date) : [date, shiftDate(date, 2)];
+  const range = mode === "week" ? getCalendarModeDates("week", date) : [date, shiftDate(date, 2)];
   const start = new Intl.DateTimeFormat(locale, { day: "numeric", month: "short" }).format(new Date(`${range[0]}T12:00:00`));
   const endDate = range[range.length - 1];
   const end = new Intl.DateTimeFormat(locale, { day: "numeric", month: "short" }).format(new Date(`${endDate}T12:00:00`));
@@ -564,6 +564,19 @@ function normalizeScheduleDay(day: WorkDayScheduleRecord | undefined, date: stri
 function getWorkTimeLabel(schedule: WorkDayScheduleRecord, t: Record<string, string>) {
   if (!schedule.enabled) return t.closedBySchedule;
   return `${schedule.startTime}-${schedule.endTime}`;
+}
+
+function getWorkTimeParts(schedule: WorkDayScheduleRecord) {
+  return {
+    start: schedule.startTime,
+    end: schedule.endTime,
+  };
+}
+
+function getClosedShortLabel(language: AppLanguage) {
+  if (language === "en") return "Off";
+  if (language === "uk") return "Вих";
+  return "Вых";
 }
 
 export default function App() {
@@ -1076,7 +1089,7 @@ function CalendarTab({
   const services = workspace?.services || [];
   const currentService = services.find((item) => item.id === visitDraft.serviceId) || services[0];
   const endTime = addMinutes(visitDraft.startTime, currentService?.durationMinutes || 60);
-  const [isCompact, setIsCompact] = useState(false);
+  const [isCompact, setIsCompact] = useState(true);
   const [viewMode, setViewMode] = useState<CalendarViewMode>("day");
   const [viewMenuOpen, setViewMenuOpen] = useState(false);
   const visibleDates = useMemo(() => getCalendarModeDates(viewMode, selectedDate), [selectedDate, viewMode]);
@@ -1091,6 +1104,9 @@ function CalendarTab({
     for (const appointment of calendar?.appointments || []) {
       const key = appointment.appointmentDate || selectedDate;
       const list = map.get(key) || [];
+      if (list.some((item) => item.id === appointment.id)) {
+        continue;
+      }
       list.push(appointment);
       map.set(key, list);
     }
@@ -1318,6 +1334,7 @@ function CalendarOverview({
         {dates.map((date) => {
           const appointments = getAppointmentsForDate(date);
           const schedule = getScheduleForDate(workspace, date);
+          const workParts = getWorkTimeParts(schedule);
           const selected = date === selectedDate;
           const muted = !isSameMonth(date, selectedDate);
           const closed = !schedule.enabled;
@@ -1337,12 +1354,21 @@ function CalendarOverview({
                   </View>
                 ) : null}
               </View>
-              <Text style={[styles.monthWorkText, closed && styles.summaryClosedText, muted && styles.mutedText]}>
-                {getWorkTimeLabel(schedule, t)}
-              </Text>
-              {appointments.length ? (
-                <Text style={styles.summaryCount}>{appointments.length} {t.visits}</Text>
-              ) : null}
+              {closed ? (
+                <View style={styles.closedBadge}>
+                  <Ionicons name="moon-outline" size={12} color="#64748B" />
+                  <Text style={styles.closedBadgeText}>{getClosedShortLabel(language)}</Text>
+                </View>
+              ) : (
+                <View style={styles.compactWorkTime}>
+                  <Text style={[styles.monthWorkText, muted && styles.mutedText]} numberOfLines={1}>{workParts.start}-</Text>
+                  <Text style={[styles.monthWorkText, muted && styles.mutedText]} numberOfLines={1}>{workParts.end}</Text>
+                </View>
+              )}
+              <View style={styles.visitMiniLine}>
+                <Ionicons name="people-outline" size={12} color={appointments.length ? "#6D4AFF" : "#94A3B8"} />
+                <Text style={[styles.visitMiniText, appointments.length ? styles.visitMiniTextActive : null]}>{appointments.length}</Text>
+              </View>
             </Pressable>
           );
         })}
@@ -1362,6 +1388,7 @@ function CalendarOverview({
       {dates.map((date) => {
         const appointments = getAppointmentsForDate(date);
         const schedule = getScheduleForDate(workspace, date);
+        const workParts = getWorkTimeParts(schedule);
         const selected = date === selectedDate;
         const closed = !schedule.enabled;
         return (
@@ -1381,8 +1408,21 @@ function CalendarOverview({
                 <View style={styles.summaryDot} />
               ) : null}
             </View>
-            <Text style={[styles.summaryHours, closed && styles.summaryClosedText]}>{getWorkTimeLabel(schedule, t)}</Text>
-            <Text style={styles.summaryCount}>{appointments.length} {t.visits}</Text>
+            {closed ? (
+              <View style={styles.summaryClosedBadge}>
+                <Ionicons name="moon-outline" size={15} color="#64748B" />
+                <Text style={styles.summaryClosedBadgeText}>{getClosedShortLabel(language)}</Text>
+              </View>
+            ) : (
+              <View style={styles.summaryHoursRow}>
+                <Text style={styles.summaryHoursPart}>{workParts.start}-</Text>
+                <Text style={styles.summaryHoursPart}>{workParts.end}</Text>
+              </View>
+            )}
+            <View style={styles.summaryVisitsLine}>
+              <Ionicons name="people-outline" size={15} color={appointments.length ? "#6D4AFF" : "#94A3B8"} />
+              <Text style={[styles.summaryCountCompact, appointments.length ? styles.summaryCountCompactActive : null]}>{appointments.length}</Text>
+            </View>
             <View style={styles.summaryAppointments}>
               {appointments.slice(0, 3).map((appointment) => (
                 <View key={appointment.id} style={styles.summaryAppointment}>
@@ -1442,21 +1482,23 @@ function CalendarTimeline({
   const breaks = schedule.enabled ? schedule.breaks || [] : [];
   const closedRanges = schedule.enabled
     ? [
-        { start: 0, end: workStart, label: "00:00 - " + schedule.startTime },
+        { start: 0, end: workStart, label: "00:00 - " + schedule.startTime, kind: "off" },
         ...breaks.map((item) => ({
           start: timeToMinutes(item.startTime),
           end: timeToMinutes(item.endTime),
           label: `${item.startTime} - ${item.endTime}`,
+          kind: "break",
         })),
-        { start: workEnd, end: 24 * 60, label: `${schedule.endTime} - 24:00` },
+        { start: workEnd, end: 24 * 60, label: `${schedule.endTime} - 24:00`, kind: "off" },
       ].filter((item) => item.end > item.start)
-    : [{ start: 0, end: 24 * 60, label: t.closedBySchedule }];
+    : [{ start: 0, end: 24 * 60, label: t.closedBySchedule, kind: "closed" }];
   const blockedAppointments = appointments
     .filter((appointment) => appointment.kind === "blocked")
     .map((appointment) => ({
       start: timeToMinutes(appointment.startTime),
       end: Math.max(timeToMinutes(appointment.endTime), timeToMinutes(appointment.startTime) + 10),
       label: appointment.serviceName || t.closedBySchedule,
+      kind: "break",
     }));
   const regularAppointments = appointments.filter((appointment) => appointment.kind !== "blocked");
 
@@ -1491,7 +1533,7 @@ function CalendarTimeline({
         const rowEnd = (hour + 1) * 60;
         const top = getScaledMinuteTop(rowStart);
         const height = getRangeHeight(rowStart, rowEnd);
-        const showLabel = height >= 18 || hour === 0 || hour === Math.floor(workStart / 60) || hour === Math.ceil(workEnd / 60);
+        const showLabel = height >= 18 || hour === Math.floor(workStart / 60);
         return (
           <View key={hour} style={[styles.hourRow, { top, height }]}>
             <Text style={[styles.hourText, !showLabel && styles.hourTextHidden]}>{showLabel ? `${String(hour).padStart(2, "0")}:00` : ""}</Text>
@@ -1536,9 +1578,15 @@ function CalendarTimeline({
             },
           ]}
         >
-          {getRangeHeight(range.start, range.end) >= 24 ? <Text style={styles.closedBlockText}>{range.label}</Text> : null}
+          {range.kind !== "off" && getRangeHeight(range.start, range.end) >= 24 ? <Text style={styles.closedBlockText}>{range.label}</Text> : null}
         </View>
       ))}
+
+      {compact && schedule.enabled ? (
+        <View pointerEvents="none" style={[styles.boundaryTimeLabel, { top: Math.max(0, getScaledMinuteTop(workEnd) - 9) }]}>
+          <Text style={styles.boundaryTimeText}>{schedule.endTime}</Text>
+        </View>
+      ) : null}
 
       {nowTop >= 0 && nowTop <= timelineHeight ? (
         <View style={[styles.currentTimeLine, { top: nowTop }]}>
@@ -2363,6 +2411,18 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "900",
   },
+  summaryHoursRow: {
+    marginTop: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    flexWrap: "nowrap",
+  },
+  summaryHoursPart: {
+    color: "#0F172A",
+    fontSize: 17,
+    lineHeight: 21,
+    fontWeight: "900",
+  },
   summaryClosedText: {
     color: "#64748B",
     fontSize: 16,
@@ -2386,6 +2446,37 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 11,
     fontWeight: "900",
+  },
+  summaryClosedBadge: {
+    marginTop: 8,
+    height: 30,
+    paddingHorizontal: 9,
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    borderRadius: 8,
+    backgroundColor: "#EEF2F7",
+  },
+  summaryClosedBadgeText: {
+    color: "#475569",
+    fontSize: 13,
+    fontWeight: "900",
+  },
+  summaryVisitsLine: {
+    marginTop: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+  },
+  summaryCountCompact: {
+    color: "#94A3B8",
+    fontSize: 18,
+    lineHeight: 22,
+    fontWeight: "900",
+  },
+  summaryCountCompactActive: {
+    color: "#6D4AFF",
   },
   summaryAppointments: {
     marginTop: 12,
@@ -2475,10 +2566,45 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
   monthWorkText: {
-    marginTop: 8,
     color: "#64748B",
     fontSize: 10,
+    lineHeight: 12,
     fontWeight: "800",
+  },
+  compactWorkTime: {
+    marginTop: 7,
+    minHeight: 24,
+  },
+  closedBadge: {
+    marginTop: 7,
+    height: 24,
+    paddingHorizontal: 4,
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 2,
+    borderRadius: 7,
+    backgroundColor: "#EEF2F7",
+  },
+  closedBadgeText: {
+    color: "#475569",
+    fontSize: 10,
+    fontWeight: "900",
+  },
+  visitMiniLine: {
+    marginTop: 5,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+  },
+  visitMiniText: {
+    color: "#94A3B8",
+    fontSize: 12,
+    lineHeight: 14,
+    fontWeight: "900",
+  },
+  visitMiniTextActive: {
+    color: "#6D4AFF",
   },
   mutedText: {
     color: "#94A3B8",
@@ -2539,6 +2665,21 @@ const styles = StyleSheet.create({
     color: "#64748B",
     fontSize: 11,
     fontWeight: "900",
+  },
+  boundaryTimeLabel: {
+    position: "absolute",
+    left: 0,
+    width: 43,
+    height: 18,
+    alignItems: "flex-end",
+    justifyContent: "center",
+    paddingRight: 5,
+    zIndex: 2,
+  },
+  boundaryTimeText: {
+    color: "#475569",
+    fontSize: 12,
+    fontWeight: "700",
   },
   timeSlotHitbox: {
     position: "absolute",
