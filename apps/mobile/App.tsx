@@ -25,6 +25,7 @@ import {
 type AppLanguage = "uk" | "ru" | "en";
 type AuthMode = "login" | "register";
 type AppTab = "calendar" | "services" | "clients" | "telegram" | "settings";
+type CalendarViewMode = "day" | "threeDays" | "week" | "month";
 
 type MobileSession = {
   token: string;
@@ -163,6 +164,10 @@ const copy = {
     newVisit: "Новий візит",
     compact: "Стиснутий",
     dayView: "День",
+    detailed: "Детально",
+    threeDays: "3 дні",
+    weekView: "Тиждень",
+    monthView: "Місяць",
     ready: "Готово",
     reminders: "Сповіщення",
     addVisit: "Додати запис",
@@ -219,6 +224,10 @@ const copy = {
     newVisit: "Новый визит",
     compact: "Сжатый",
     dayView: "День",
+    detailed: "Подробно",
+    threeDays: "3 дня",
+    weekView: "Неделя",
+    monthView: "Месяц",
     ready: "Готово",
     reminders: "Уведомления",
     addVisit: "Добавить запись",
@@ -275,6 +284,10 @@ const copy = {
     newVisit: "New visit",
     compact: "Compact",
     dayView: "Day",
+    detailed: "Detailed",
+    threeDays: "3 days",
+    weekView: "Week",
+    monthView: "Month",
     ready: "Done",
     reminders: "Alerts",
     addVisit: "Add booking",
@@ -377,6 +390,47 @@ function formatDayLabel(date: string, language: AppLanguage) {
   })
     .format(parsed)
     .replace(".", "");
+}
+
+function getWeekDates(date: string) {
+  const parsed = new Date(`${date}T12:00:00`);
+  const day = parsed.getDay() || 7;
+  parsed.setDate(parsed.getDate() - day + 1);
+  return Array.from({ length: 7 }, (_, index) => {
+    const next = new Date(parsed);
+    next.setDate(parsed.getDate() + index);
+    return next.toISOString().slice(0, 10);
+  });
+}
+
+function getCalendarModeDates(mode: CalendarViewMode, date: string) {
+  if (mode === "threeDays") return [date, shiftDate(date, 1), shiftDate(date, 2)];
+  if (mode === "week") return getWeekDates(date);
+  if (mode === "month") {
+    const parsed = new Date(`${date}T12:00:00`);
+    const year = parsed.getFullYear();
+    const month = parsed.getMonth();
+    const lastDay = new Date(year, month + 1, 0).getDate();
+    return Array.from({ length: lastDay }, (_, index) => new Date(year, month, index + 1, 12).toISOString().slice(0, 10));
+  }
+  return [date];
+}
+
+function formatShortDate(date: string, language: AppLanguage) {
+  const parsed = new Date(`${date}T12:00:00`);
+  return new Intl.DateTimeFormat(language === "en" ? "en-US" : language === "uk" ? "uk-UA" : "ru-RU", {
+    weekday: "short",
+    day: "numeric",
+  })
+    .format(parsed)
+    .replace(".", "");
+}
+
+function formatTimeFromMinutes(totalMinutes: number) {
+  const clamped = Math.max(0, Math.min(23 * 60 + 59, totalMinutes));
+  const hours = Math.floor(clamped / 60);
+  const minutes = clamped % 60;
+  return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
 }
 
 export default function App() {
@@ -867,6 +921,22 @@ function CalendarTab({
   const services = workspace?.services || [];
   const currentService = services.find((item) => item.id === visitDraft.serviceId) || services[0];
   const endTime = addMinutes(visitDraft.startTime, currentService?.durationMinutes || 60);
+  const [isCompact, setIsCompact] = useState(false);
+  const [viewMode, setViewMode] = useState<CalendarViewMode>("day");
+  const [viewMenuOpen, setViewMenuOpen] = useState(false);
+  const visibleDates = useMemo(() => getCalendarModeDates(viewMode, selectedDate), [selectedDate, viewMode]);
+  const viewOptions: Array<{ value: CalendarViewMode; label: string }> = [
+    { value: "day", label: t.dayView },
+    { value: "threeDays", label: t.threeDays },
+    { value: "week", label: t.weekView },
+    { value: "month", label: t.monthView },
+  ];
+  const activeViewLabel = viewOptions.find((item) => item.value === viewMode)?.label || t.dayView;
+
+  function openComposerAt(time: string) {
+    setVisitDraft({ ...visitDraft, startTime: time });
+    setComposerOpen(true);
+  }
 
   return (
     <View style={styles.calendarScreen}>
@@ -882,14 +952,35 @@ function CalendarTab({
           <Ionicons name="chevron-forward" size={18} color="#0F172A" />
         </Pressable>
         <View style={styles.toolbarSpacer} />
-        <Pressable style={styles.modeButton}>
-          <Text style={styles.modeButtonText}>{t.compact}</Text>
+        <Pressable
+          style={[styles.modeButton, isCompact && styles.modeButtonActive]}
+          onPress={() => setIsCompact((current) => !current)}
+        >
+          <Text style={[styles.modeButtonText, isCompact && styles.modeButtonTextActive]}>{isCompact ? t.detailed : t.compact}</Text>
         </Pressable>
-        <Pressable style={styles.modeButton}>
-          <Text style={styles.modeButtonText}>{t.dayView}</Text>
+        <Pressable style={styles.modeButton} onPress={() => setViewMenuOpen(true)}>
+          <Text style={styles.modeButtonText}>{activeViewLabel}</Text>
           <Ionicons name="chevron-down" size={14} color="#475569" />
         </Pressable>
       </View>
+
+      {viewMode !== "day" ? (
+        <ScrollView
+          horizontal
+          style={styles.dateStrip}
+          contentContainerStyle={styles.dateStripContent}
+          showsHorizontalScrollIndicator={false}
+        >
+          {visibleDates.map((date) => {
+            const isActive = date === selectedDate;
+            return (
+              <Pressable key={date} style={[styles.dateChip, isActive && styles.dateChipActive]} onPress={() => setSelectedDate(date)}>
+                <Text style={[styles.dateChipText, isActive && styles.dateChipTextActive]}>{formatShortDate(date, language)}</Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      ) : null}
 
       <View style={styles.masterStrip}>
         <View style={styles.masterAvatar}>
@@ -905,8 +996,15 @@ function CalendarTab({
         contentContainerStyle={styles.calendarContent}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#7C3AED" />}
         showsVerticalScrollIndicator={false}
+        alwaysBounceVertical
+        keyboardShouldPersistTaps="handled"
       >
-        <CalendarTimeline appointments={calendar?.appointments || []} currency={currency} />
+        <CalendarTimeline
+          appointments={calendar?.appointments || []}
+          currency={currency}
+          compact={isCompact}
+          onTimePress={openComposerAt}
+        />
       </ScrollView>
 
       <Pressable
@@ -956,15 +1054,48 @@ function CalendarTab({
           </View>
         </View>
       </Modal>
+
+      <Modal transparent visible={viewMenuOpen} animationType="fade" onRequestClose={() => setViewMenuOpen(false)}>
+        <Pressable style={styles.menuBackdrop} onPress={() => setViewMenuOpen(false)}>
+          <View style={styles.viewMenu}>
+            {viewOptions.map((option) => {
+              const active = option.value === viewMode;
+              return (
+                <Pressable
+                  key={option.value}
+                  style={[styles.viewMenuItem, active && styles.viewMenuItemActive]}
+                  onPress={() => {
+                    setViewMode(option.value);
+                    setViewMenuOpen(false);
+                  }}
+                >
+                  <Text style={[styles.viewMenuText, active && styles.viewMenuTextActive]}>{option.label}</Text>
+                  {active ? <Ionicons name="checkmark" size={18} color="#7C3AED" /> : null}
+                </Pressable>
+              );
+            })}
+          </View>
+        </Pressable>
+      </Modal>
     </View>
   );
 }
 
-function CalendarTimeline({ appointments, currency }: { appointments: AppointmentRecord[]; currency?: string }) {
+function CalendarTimeline({
+  appointments,
+  currency,
+  compact,
+  onTimePress,
+}: {
+  appointments: AppointmentRecord[];
+  currency?: string;
+  compact: boolean;
+  onTimePress: (time: string) => void;
+}) {
   const { width } = useWindowDimensions();
-  const startHour = 5;
+  const startHour = 8;
   const endHour = 22;
-  const hourHeight = 92;
+  const hourHeight = compact ? 62 : 92;
   const timelineHeight = (endHour - startHour + 1) * hourHeight;
   const timeColumnWidth = 43;
   const gridWidth = Math.max(280, width - timeColumnWidth);
@@ -991,8 +1122,26 @@ function CalendarTimeline({ appointments, currency }: { appointments: Appointmen
         );
       })}
 
-      <View style={[styles.closedBlock, { top: 0, height: 4 * hourHeight }]} />
-      <View style={[styles.closedBlock, { top: 13 * hourHeight, height: 5 * hourHeight }]} />
+      {Array.from({ length: (endHour - startHour + 1) * 6 }).map((_, index) => {
+        const minutes = startHour * 60 + index * 10;
+        return (
+          <Pressable
+            key={minutes}
+            style={[
+              styles.timeSlotHitbox,
+              {
+                top: (index * hourHeight) / 6,
+                left: timeColumnWidth,
+                height: hourHeight / 6,
+              },
+            ]}
+            onPress={() => onTimePress(formatTimeFromMinutes(minutes))}
+          />
+        );
+      })}
+
+      <View style={[styles.closedBlock, { top: 0, height: (9 - startHour) * hourHeight }]} />
+      <View style={[styles.closedBlock, { top: (18 - startHour) * hourHeight, height: (endHour - 17) * hourHeight }]} />
 
       {nowTop >= 0 && nowTop <= timelineHeight ? (
         <View style={[styles.currentTimeLine, { top: nowTop }]}>
@@ -1679,10 +1828,51 @@ const styles = StyleSheet.create({
     borderColor: "#CBD5E1",
     backgroundColor: "#FFFFFF",
   },
+  modeButtonActive: {
+    borderColor: "#7C3AED",
+    backgroundColor: "#F3E8FF",
+  },
   modeButtonText: {
     color: "#334155",
     fontSize: 13,
     fontWeight: "900",
+  },
+  modeButtonTextActive: {
+    color: "#4C1D95",
+  },
+  dateStrip: {
+    maxHeight: 50,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E2E8F0",
+    backgroundColor: "#FFFFFF",
+  },
+  dateStripContent: {
+    paddingHorizontal: 8,
+    paddingVertical: 8,
+    gap: 7,
+  },
+  dateChip: {
+    height: 32,
+    minWidth: 62,
+    paddingHorizontal: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    backgroundColor: "#FFFFFF",
+  },
+  dateChipActive: {
+    borderColor: "#7C3AED",
+    backgroundColor: "#F3E8FF",
+  },
+  dateChipText: {
+    color: "#475569",
+    fontSize: 12,
+    fontWeight: "900",
+  },
+  dateChipTextActive: {
+    color: "#4C1D95",
   },
   masterStrip: {
     height: 70,
@@ -1763,6 +1953,13 @@ const styles = StyleSheet.create({
     right: 0,
     backgroundColor: "#F8FAFC",
     opacity: 0.88,
+    pointerEvents: "none",
+  },
+  timeSlotHitbox: {
+    position: "absolute",
+    right: 0,
+    zIndex: 1,
+    backgroundColor: "transparent",
   },
   currentTimeLine: {
     position: "absolute",
@@ -1770,6 +1967,7 @@ const styles = StyleSheet.create({
     right: 0,
     height: 2,
     backgroundColor: "#F43F5E",
+    zIndex: 2,
   },
   currentTimeDot: {
     position: "absolute",
@@ -1784,6 +1982,7 @@ const styles = StyleSheet.create({
   },
   appointmentBlock: {
     position: "absolute",
+    zIndex: 3,
     borderRadius: 8,
     padding: 10,
     shadowColor: "#0F172A",
@@ -1840,6 +2039,45 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "flex-end",
     backgroundColor: "rgba(15, 23, 42, 0.32)",
+  },
+  menuBackdrop: {
+    flex: 1,
+    alignItems: "flex-end",
+    justifyContent: "flex-start",
+    paddingTop: 108,
+    paddingRight: 12,
+    backgroundColor: "rgba(15, 23, 42, 0.18)",
+  },
+  viewMenu: {
+    width: 190,
+    padding: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    backgroundColor: "#FFFFFF",
+    shadowColor: "#0F172A",
+    shadowOpacity: 0.16,
+    shadowRadius: 22,
+    shadowOffset: { width: 0, height: 12 },
+  },
+  viewMenuItem: {
+    minHeight: 42,
+    paddingHorizontal: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderRadius: 8,
+  },
+  viewMenuItemActive: {
+    backgroundColor: "#F3E8FF",
+  },
+  viewMenuText: {
+    color: "#0F172A",
+    fontSize: 14,
+    fontWeight: "900",
+  },
+  viewMenuTextActive: {
+    color: "#5B21B6",
   },
   visitSheet: {
     gap: 12,
