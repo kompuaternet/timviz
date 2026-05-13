@@ -60,6 +60,83 @@ export function getPremiumBillingFromPriceId(priceId: string | null | undefined)
   return null;
 }
 
+function isFutureDate(value: string | null | undefined) {
+  if (!value) return false;
+  const time = new Date(value).getTime();
+  return Number.isFinite(time) && time > Date.now();
+}
+
+function maxIsoDate(left: string | null | undefined, right: string | null | undefined) {
+  if (!left) return right ?? null;
+  if (!right) return left;
+
+  const leftTime = new Date(left).getTime();
+  const rightTime = new Date(right).getTime();
+
+  if (!Number.isFinite(leftTime)) return right;
+  if (!Number.isFinite(rightTime)) return left;
+
+  return leftTime >= rightTime ? left : right;
+}
+
+export function getPremiumUntilAfterCheckout(input: {
+  existingPremiumUntil?: string | null;
+  billing?: PremiumBilling | null;
+}) {
+  if (isFutureDate(input.existingPremiumUntil) && input.billing) {
+    const date = new Date(input.existingPremiumUntil as string);
+    if (input.billing === "yearly") {
+      date.setFullYear(date.getFullYear() + 1);
+    } else {
+      date.setMonth(date.getMonth() + 1);
+    }
+    return date.toISOString();
+  }
+
+  const trialUntil = new Date();
+  trialUntil.setDate(trialUntil.getDate() + 14);
+  return trialUntil.toISOString();
+}
+
+export async function getProfessionalPremiumSnapshot(input: {
+  professionalId?: string | null;
+  email?: string | null;
+}) {
+  if (!isSupabaseConfigured()) {
+    return null;
+  }
+
+  const supabase = getSupabaseAdmin();
+  if (!supabase) {
+    return null;
+  }
+
+  const columns = "id, premium_until, paddle_price_id, premium_status";
+
+  if (input.professionalId) {
+    const { data, error } = await supabase
+      .from("professionals")
+      .select(columns)
+      .eq("id", input.professionalId)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (data) return data as { id: string; premium_until: string | null; paddle_price_id: string | null; premium_status: string | null };
+  }
+
+  const email = input.email?.trim().toLowerCase();
+  if (email) {
+    const { data, error } = await supabase
+      .from("professionals")
+      .select(columns)
+      .eq("email", email)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (data) return data as { id: string; premium_until: string | null; paddle_price_id: string | null; premium_status: string | null };
+  }
+
+  return null;
+}
+
 export async function updateProfessionalPremiumFromPaddle(input: {
   professionalId?: string | null;
   email?: string | null;
@@ -102,6 +179,11 @@ export async function updateProfessionalPremiumFromPaddle(input: {
 
   if (input.paddlePriceId) {
     patch.paddle_price_id = input.paddlePriceId;
+  }
+
+  if (input.premiumUntil) {
+    const existing = await getProfessionalPremiumSnapshot(input);
+    patch.premium_until = maxIsoDate(existing?.premium_until, input.premiumUntil);
   }
 
   if (input.professionalId) {

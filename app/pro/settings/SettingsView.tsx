@@ -540,8 +540,14 @@ const planCopy = {
     past_due: "Нужна оплата",
     canceled: "Отменён",
     nextDate: "Доступ до",
+    trialUntil: "Пробный период до",
+    renewsOn: "Далее",
+    yearlyRenewal: "Premium Yearly · $29/year",
+    monthlyRenewal: "Premium Monthly · $3/month",
     freeHint: "Бесплатный тариф: до 100 записей в месяц. Premium открывает безлимитные записи, Telegram-уведомления, статистику и приоритет в каталоге.",
     premiumHint: "Premium активен для программного обеспечения Timviz. Подписку можно отменить в любое время.",
+    trialHintMonthly: "После пробного периода подписка продолжится как Premium Monthly за $3/month. Отменить можно в любое время.",
+    trialHintYearly: "После пробного периода подписка продолжится как Premium Yearly за $29/year. Отменить можно в любое время.",
     upgrade: "Перейти на Premium",
     manage: "Управлять подпиской",
     unknownDate: "Дата появится после первого платежа."
@@ -559,8 +565,14 @@ const planCopy = {
     past_due: "Потрібна оплата",
     canceled: "Скасований",
     nextDate: "Доступ до",
+    trialUntil: "Пробний період до",
+    renewsOn: "Далі",
+    yearlyRenewal: "Premium Yearly · $29/year",
+    monthlyRenewal: "Premium Monthly · $3/month",
     freeHint: "Безкоштовний тариф: до 100 записів на місяць. Premium відкриває необмежені записи, Telegram-сповіщення, статистику та пріоритет у каталозі.",
     premiumHint: "Premium активний для програмного забезпечення Timviz. Підписку можна скасувати будь-коли.",
+    trialHintMonthly: "Після пробного періоду підписка продовжиться як Premium Monthly за $3/month. Скасувати можна будь-коли.",
+    trialHintYearly: "Після пробного періоду підписка продовжиться як Premium Yearly за $29/year. Скасувати можна будь-коли.",
     upgrade: "Перейти на Premium",
     manage: "Керувати підпискою",
     unknownDate: "Дата зʼявиться після першого платежу."
@@ -578,8 +590,14 @@ const planCopy = {
     past_due: "Payment needed",
     canceled: "Canceled",
     nextDate: "Access until",
+    trialUntil: "Trial until",
+    renewsOn: "Then",
+    yearlyRenewal: "Premium Yearly · $29/year",
+    monthlyRenewal: "Premium Monthly · $3/month",
     freeHint: "Free plan: up to 100 appointments per month. Premium unlocks unlimited appointments, Telegram notifications, statistics, and priority in the catalog.",
     premiumHint: "Premium is active for Timviz software. You can cancel the subscription anytime.",
+    trialHintMonthly: "After the trial, your subscription continues as Premium Monthly for $3/month. You can cancel anytime.",
+    trialHintYearly: "After the trial, your subscription continues as Premium Yearly for $29/year. You can cancel anytime.",
     upgrade: "Upgrade to Premium",
     manage: "Manage subscription",
     unknownDate: "The date will appear after the first payment."
@@ -697,6 +715,54 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
   const planText = planCopy[language];
   const serviceModes = serviceModeGroups.map((mode) => mode[language]);
   const [data, setData] = useState(initialData);
+  const premiumBilling =
+    data.professional.paddlePriceId === process.env.NEXT_PUBLIC_PADDLE_PRICE_YEARLY
+      ? "yearly"
+      : data.professional.paddlePriceId === process.env.NEXT_PUBLIC_PADDLE_PRICE_MONTHLY
+        ? "monthly"
+        : null;
+  const premiumUntilTime = data.professional.premiumUntil ? new Date(data.professional.premiumUntil).getTime() : 0;
+  const isShortTrialWindow =
+    Number.isFinite(premiumUntilTime) && premiumUntilTime > Date.now() && premiumUntilTime - Date.now() <= 45 * 24 * 60 * 60 * 1000;
+  const isPremiumTrial =
+    data.professional.plan === "premium" && data.professional.premiumStatus === "trialing" && isShortTrialWindow;
+  const premiumPlanLabel =
+    data.professional.plan === "premium"
+      ? premiumBilling === "yearly"
+        ? planText.premiumYearly
+        : premiumBilling === "monthly"
+          ? planText.premiumMonthly
+          : planText.premium
+      : planText.free;
+  const premiumDateText = data.professional.premiumUntil
+    ? new Intl.DateTimeFormat(language === "uk" ? "uk-UA" : language === "en" ? "en-US" : "ru-RU", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric"
+      }).format(new Date(data.professional.premiumUntil))
+    : planText.unknownDate;
+  const premiumNextLabel = isPremiumTrial ? planText.renewsOn : planText.nextDate;
+  const premiumNextValue =
+    isPremiumTrial && premiumBilling === "yearly"
+      ? planText.yearlyRenewal
+      : isPremiumTrial && premiumBilling === "monthly"
+        ? planText.monthlyRenewal
+        : premiumDateText;
+  const premiumStatusValue = isPremiumTrial ? premiumDateText : data.professional.plan === "premium" ? planText.premium : planText.free;
+  const premiumStatusLabel =
+    data.professional.plan === "premium" && data.professional.premiumStatus === "trialing" && !isPremiumTrial
+      ? planText.active
+      : data.professional.premiumStatus
+        ? planText[data.professional.premiumStatus]
+        : planText.inactive;
+  const premiumHint =
+    data.professional.plan !== "premium"
+      ? planText.freeHint
+      : isPremiumTrial && premiumBilling === "yearly"
+        ? planText.trialHintYearly
+        : isPremiumTrial && premiumBilling === "monthly"
+          ? planText.trialHintMonthly
+          : planText.premiumHint;
   const selectedServiceMode = localizeServiceMode(data.business.serviceMode, language);
   const [password, setPassword] = useState("");
   const [status, setStatus] = useState("");
@@ -1922,35 +1988,25 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
                         <h2>{planText.title}</h2>
                       </div>
                       <strong className={styles.settingsPlanBadge}>
-                        {data.professional.plan === "premium"
-                          ? data.professional.paddlePriceId === process.env.NEXT_PUBLIC_PADDLE_PRICE_YEARLY
-                            ? planText.premiumYearly
-                            : data.professional.paddlePriceId === process.env.NEXT_PUBLIC_PADDLE_PRICE_MONTHLY
-                              ? planText.premiumMonthly
-                              : planText.premium
-                          : planText.free}
+                        {premiumPlanLabel}
                       </strong>
                     </div>
                     <div className={styles.settingsPlanGrid}>
                       <div>
-                        <span>{data.professional.premiumStatus ? planText[data.professional.premiumStatus] : planText.inactive}</span>
-                        <strong>{data.professional.plan === "premium" ? planText.premium : planText.free}</strong>
+                        <span>
+                          {isPremiumTrial
+                            ? planText.trialUntil
+                            : premiumStatusLabel}
+                        </span>
+                        <strong>{premiumStatusValue}</strong>
                       </div>
                       <div>
-                        <span>{planText.nextDate}</span>
-                        <strong>
-                          {data.professional.premiumUntil
-                            ? new Intl.DateTimeFormat(language === "uk" ? "uk-UA" : language === "en" ? "en-US" : "ru-RU", {
-                                day: "2-digit",
-                                month: "short",
-                                year: "numeric"
-                              }).format(new Date(data.professional.premiumUntil))
-                            : planText.unknownDate}
-                        </strong>
+                        <span>{premiumNextLabel}</span>
+                        <strong>{premiumNextValue}</strong>
                       </div>
                     </div>
                     <p className={styles.settingsCardHint}>
-                      {data.professional.plan === "premium" ? planText.premiumHint : planText.freeHint}
+                      {premiumHint}
                     </p>
                     <a className={styles.primaryButton} href="/pricing">
                       {data.professional.plan === "premium" ? planText.manage : planText.upgrade}
