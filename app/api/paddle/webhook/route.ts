@@ -25,6 +25,16 @@ function getNestedString(source: Record<string, unknown>, keys: string[]) {
   return "";
 }
 
+function getNestedRecord(source: Record<string, unknown>, keys: string[]) {
+  for (const key of keys) {
+    const value = source[key];
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+      return value as Record<string, unknown>;
+    }
+  }
+  return {};
+}
+
 function getFirstItemPriceId(data: Record<string, unknown>) {
   const items = Array.isArray(data.items) ? data.items : [];
   const item = asRecord(items[0]);
@@ -74,8 +84,16 @@ export async function POST(request: Request) {
 
   const eventType = getEventType(payload);
   const data = asRecord(payload.data);
-  const customData = asRecord(data.custom_data || data.customData);
+  const subscription = asRecord(data.subscription);
+  const customData = {
+    ...getNestedRecord(subscription, ["custom_data", "customData"]),
+    ...getNestedRecord(data, ["custom_data", "customData"])
+  };
   const customer = asRecord(data.customer);
+  const customerEmail =
+    getNestedString(customData, ["email"]) ||
+    getNestedString(customer, ["email"]) ||
+    getNestedString(data, ["customer_email", "email"]);
   const priceId = getFirstItemPriceId(data) || getNestedString(data, ["price_id"]);
   const status = getPremiumStatus(eventType, data);
   const supportedEvents = new Set([
@@ -92,7 +110,7 @@ export async function POST(request: Request) {
     status,
     billing: getPremiumBillingFromPriceId(priceId),
     professionalId: getNestedString(customData, ["user_id", "professional_id"]),
-    email: getNestedString(customData, ["email"]) || getNestedString(customer, ["email"])
+    email: customerEmail
   });
 
   if (!supportedEvents.has(eventType)) {
@@ -102,7 +120,7 @@ export async function POST(request: Request) {
   try {
     const updateResult = await updateProfessionalPremiumFromPaddle({
       professionalId: getNestedString(customData, ["user_id", "professional_id"]),
-      email: getNestedString(customData, ["email"]) || getNestedString(customer, ["email"]),
+      email: customerEmail,
       status,
       premiumUntil: getPeriodEnd(data) || null,
       paddleCustomerId:
@@ -110,6 +128,8 @@ export async function POST(request: Request) {
       paddleSubscriptionId: getNestedString(data, ["subscription_id", "id"]) || null,
       paddlePriceId: priceId || null
     });
+
+    console.info("[paddle] webhook update result", updateResult);
 
     return NextResponse.json({ ok: true, updateResult });
   } catch (error) {

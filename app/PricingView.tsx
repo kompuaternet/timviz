@@ -14,7 +14,7 @@ type PaddleWindow = Window & {
     Environment?: {
       set(environment: string): void;
     };
-    Initialize(options: { token: string }): void;
+    Initialize(options: { token: string; eventCallback?: (event: unknown) => void }): void;
     Checkout: {
       open(options: {
         items: Array<{ priceId: string; quantity: number }>;
@@ -121,7 +121,7 @@ export default function PricingView({ language, copy, user, paddle }: PricingVie
     window.location.assign(`/pro/login?return_to=${encodeURIComponent(returnTo)}`);
   }
 
-  function initializePaddle() {
+  function initializePaddle(billing: PaddleCheckoutBilling) {
     const paddleClient = (window as PaddleWindow).Paddle;
 
     if (!paddleClient || !paddle.token) {
@@ -132,7 +132,28 @@ export default function PricingView({ language, copy, user, paddle }: PricingVie
       paddleClient.Environment?.set(paddle.environment);
     }
 
-    paddleClient.Initialize({ token: paddle.token });
+    paddleClient.Initialize({
+      token: paddle.token,
+      eventCallback: (event) => {
+        const payload = event && typeof event === "object" ? (event as Record<string, unknown>) : {};
+        const name = String(payload.name || payload.event || "");
+        if (!name.includes("checkout.completed")) {
+          return;
+        }
+
+        fetch("/api/paddle/checkout-completed", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            event: payload,
+            billing,
+            priceId: checkoutPriceIds[billing],
+            userId: user?.id,
+            email: user?.email
+          })
+        }).catch(() => {});
+      }
+    });
     return true;
   }
 
@@ -155,7 +176,7 @@ export default function PricingView({ language, copy, user, paddle }: PricingVie
     setMessage(copy.startingCheckout);
 
     const tryOpen = () => {
-      if (!initializePaddle()) {
+      if (!initializePaddle(billing)) {
         window.setTimeout(tryOpen, 160);
         return;
       }
@@ -165,6 +186,8 @@ export default function PricingView({ language, copy, user, paddle }: PricingVie
         customer: user.email ? { email: user.email } : undefined,
         customData: {
           user_id: user.id,
+          professional_id: user.id,
+          email: user.email,
           plan: "premium",
           billing
         },

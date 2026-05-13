@@ -83,27 +83,53 @@ export async function updateProfessionalPremiumFromPaddle(input: {
     return { updated: false, reason: "supabase_unavailable" as const };
   }
 
-  const patch = {
+  const patch: Record<string, string | null> = {
     plan: input.status === "inactive" ? "free" : "premium",
-    premium_status: input.status,
-    premium_until: input.premiumUntil ?? null,
-    paddle_customer_id: input.paddleCustomerId ?? null,
-    paddle_subscription_id: input.paddleSubscriptionId ?? null,
-    paddle_price_id: input.paddlePriceId ?? null
+    premium_status: input.status
   };
 
+  if (input.premiumUntil !== undefined) {
+    patch.premium_until = input.premiumUntil;
+  }
+
+  if (input.paddleCustomerId) {
+    patch.paddle_customer_id = input.paddleCustomerId;
+  }
+
+  if (input.paddleSubscriptionId) {
+    patch.paddle_subscription_id = input.paddleSubscriptionId;
+  }
+
+  if (input.paddlePriceId) {
+    patch.paddle_price_id = input.paddlePriceId;
+  }
+
   if (input.professionalId) {
-    const { error } = await supabase.from("professionals").update(patch).eq("id", input.professionalId);
+    const { data, error } = await supabase
+      .from("professionals")
+      .update(patch)
+      .eq("id", input.professionalId)
+      .select("id")
+      .maybeSingle();
     if (error) throw new Error(error.message);
-    return { updated: true, by: "id" as const };
+    if (data?.id) {
+      return { updated: true, by: "id" as const, professionalId: data.id };
+    }
   }
 
   const email = input.email?.trim().toLowerCase();
   if (email) {
-    const { error } = await supabase.from("professionals").update(patch).eq("email", email);
+    const { data, error } = await supabase
+      .from("professionals")
+      .update(patch)
+      .eq("email", email)
+      .select("id")
+      .maybeSingle();
     if (error) throw new Error(error.message);
-    return { updated: true, by: "email" as const };
+    if (data?.id) {
+      return { updated: true, by: "email" as const, professionalId: data.id };
+    }
   }
 
-  return { updated: false, reason: "no_user_reference" as const };
+  return { updated: false, reason: input.professionalId || email ? "professional_not_found" as const : "no_user_reference" as const };
 }
