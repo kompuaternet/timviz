@@ -574,9 +574,7 @@ function getWorkTimeParts(schedule: WorkDayScheduleRecord) {
 }
 
 function getClosedShortLabel(language: AppLanguage) {
-  if (language === "en") return "Off";
-  if (language === "uk") return "Вих";
-  return "Вых";
+  return "of";
 }
 
 export default function App() {
@@ -1204,6 +1202,7 @@ function CalendarTab({
             keyboardShouldPersistTaps="handled"
           >
             <CalendarTimeline
+              date={selectedDate}
               appointments={calendar?.appointments || []}
               currency={currency}
               compact={isCompact}
@@ -1361,7 +1360,7 @@ function CalendarOverview({
                 </View>
               ) : (
                 <View style={styles.compactWorkTime}>
-                  <Text style={[styles.monthWorkText, muted && styles.mutedText]} numberOfLines={1}>{workParts.start}-</Text>
+                  <Text style={[styles.monthWorkText, muted && styles.mutedText]} numberOfLines={1}>{workParts.start}</Text>
                   <Text style={[styles.monthWorkText, muted && styles.mutedText]} numberOfLines={1}>{workParts.end}</Text>
                 </View>
               )}
@@ -1415,7 +1414,7 @@ function CalendarOverview({
               </View>
             ) : (
               <View style={styles.summaryHoursRow}>
-                <Text style={styles.summaryHoursPart}>{workParts.start}-</Text>
+                <Text style={styles.summaryHoursPart}>{workParts.start}</Text>
                 <Text style={styles.summaryHoursPart}>{workParts.end}</Text>
               </View>
             )}
@@ -1450,6 +1449,7 @@ function CalendarOverview({
 }
 
 function CalendarTimeline({
+  date,
   appointments,
   currency,
   compact,
@@ -1457,6 +1457,7 @@ function CalendarTimeline({
   t,
   onTimePress,
 }: {
+  date: string;
   appointments: AppointmentRecord[];
   currency?: string;
   compact: boolean;
@@ -1479,6 +1480,7 @@ function CalendarTimeline({
   const now = new Date();
   const nowMinutes = now.getHours() * 60 + now.getMinutes();
   const nowTop = getScaledMinuteTop(nowMinutes);
+  const showCurrentTime = date === getTodayIso();
   const breaks = schedule.enabled ? schedule.breaks || [] : [];
   const closedRanges = schedule.enabled
     ? [
@@ -1588,7 +1590,7 @@ function CalendarTimeline({
         </View>
       ) : null}
 
-      {nowTop >= 0 && nowTop <= timelineHeight ? (
+      {showCurrentTime && nowTop >= 0 && nowTop <= timelineHeight ? (
         <View style={[styles.currentTimeLine, { top: nowTop }]}>
           <View style={styles.currentTimeDot} />
         </View>
@@ -2353,7 +2355,7 @@ const styles = StyleSheet.create({
     minHeight: 0,
   },
   calendarContent: {
-    paddingBottom: 150,
+    paddingBottom: 82,
   },
   overviewScroll: {
     flex: 1,
@@ -2413,14 +2415,14 @@ const styles = StyleSheet.create({
   },
   summaryHoursRow: {
     marginTop: 8,
-    flexDirection: "row",
+    flexDirection: "column",
     alignItems: "center",
-    flexWrap: "nowrap",
+    alignSelf: "flex-start",
   },
   summaryHoursPart: {
     color: "#0F172A",
-    fontSize: 17,
-    lineHeight: 21,
+    fontSize: 16,
+    lineHeight: 18,
     fontWeight: "900",
   },
   summaryClosedText: {
@@ -2460,8 +2462,9 @@ const styles = StyleSheet.create({
   },
   summaryClosedBadgeText: {
     color: "#475569",
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: "900",
+    textTransform: "uppercase",
   },
   summaryVisitsLine: {
     marginTop: 8,
@@ -2568,12 +2571,12 @@ const styles = StyleSheet.create({
   monthWorkText: {
     color: "#64748B",
     fontSize: 10,
-    lineHeight: 12,
+    lineHeight: 11,
     fontWeight: "800",
   },
   compactWorkTime: {
-    marginTop: 7,
-    minHeight: 24,
+    marginTop: 5,
+    minHeight: 22,
   },
   closedBadge: {
     marginTop: 7,
@@ -2588,8 +2591,9 @@ const styles = StyleSheet.create({
   },
   closedBadgeText: {
     color: "#475569",
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: "900",
+    textTransform: "uppercase",
   },
   visitMiniLine: {
     marginTop: 5,
