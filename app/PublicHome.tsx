@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { PublicHomeStats } from "../lib/public-home-stats";
+import { areMobileAppsAvailable, mobileApps } from "../lib/mobile-apps";
 import type { PublicSearchIndex } from "../lib/public-search";
 import { getNicheSlug } from "../lib/niche-pages";
 import { getLocalizedPath, isSiteLanguage, type SiteLanguage } from "../lib/site-language";
@@ -136,6 +137,11 @@ const copy = {
     appTitle: "Скачайте приложение Timviz",
     appText: "Записывайтесь к любимым мастерам, находите новые места, переносите визиты и получайте напоминания в одном удобном приложении.",
     appButton: "Скачать приложение",
+    appSoon: "iOS и Android приложения скоро появятся 💜",
+    appStore: "App Store",
+    googlePlay: "Google Play",
+    comingSoon: "Скоро",
+    mobileAppsFooter: "Мобильные приложения скоро появятся",
     appCardTitle: "Trendy Studio",
     appCardMeta: "5.0 ★★★★★ · Лондон",
     appCardButton: "Записаться",
@@ -192,6 +198,11 @@ const copy = {
     appTitle: "Завантажте застосунок Timviz",
     appText: "Записуйтеся до улюблених майстрів, знаходьте нові місця, переносьте візити й отримуйте нагадування в одному зручному застосунку.",
     appButton: "Завантажити застосунок",
+    appSoon: "Застосунки для iOS та Android скоро з’являться 💜",
+    appStore: "App Store",
+    googlePlay: "Google Play",
+    comingSoon: "Скоро",
+    mobileAppsFooter: "Мобільні застосунки скоро з’являться",
     appCardTitle: "Trendy Studio",
     appCardMeta: "5.0 ★★★★★ · Лондон",
     appCardButton: "Записатися",
@@ -248,6 +259,11 @@ const copy = {
     appTitle: "Download the Timviz app",
     appText: "Book favorite professionals, discover new places, move visits and get reminders in one simple app.",
     appButton: "Download app",
+    appSoon: "iOS and Android apps are coming soon 💜",
+    appStore: "App Store",
+    googlePlay: "Google Play",
+    comingSoon: "Coming soon",
+    mobileAppsFooter: "Mobile apps coming soon",
     appCardTitle: "Trendy Studio",
     appCardMeta: "5.0 ★★★★★ · London",
     appCardButton: "Book now",
@@ -332,6 +348,7 @@ export default function PublicHome({ searchIndex, stats, initialLanguage = "ru" 
   }, [initialLanguage]);
 
   const reviews = t.reviewsList as string[][];
+  const mobileAppsAvailable = areMobileAppsAvailable();
 
   return (
     <main className="public-home">
@@ -349,7 +366,7 @@ export default function PublicHome({ searchIndex, stats, initialLanguage = "ru" 
               <strong>{String(t.clients)}</strong>
               <a href={getLocalizedPath(language, "/catalog")}>{String(t.browse)}</a>
               <a href={getLocalizedPath(language, "/account")}>{String(t.clientAuth)}</a>
-              <a href="#app">{String(t.app)}</a>
+              <a href="#app">{mobileAppsAvailable ? String(t.app) : String(t.mobileAppsFooter)}</a>
               <a href="#reviews">{String(t.reviews)}</a>
               <hr />
               <strong>{String(t.business)}</strong>
@@ -399,7 +416,29 @@ export default function PublicHome({ searchIndex, stats, initialLanguage = "ru" 
           <span className="public-kicker">{String(t.appKicker)}</span>
           <h2>{String(t.appTitle)}</h2>
           <p>{String(t.appText)}</p>
-          <button type="button" className="public-download-button">{String(t.appButton)} ⌘</button>
+          {mobileAppsAvailable ? (
+            <div className="public-app-badges" aria-label={String(t.appButton)}>
+              {mobileApps.ios.enabled && mobileApps.ios.url ? (
+                <a className="public-store-badge" href={mobileApps.ios.url} rel="noopener noreferrer" target="_blank">
+                  <span>{String(t.appStore)}</span>
+                </a>
+              ) : null}
+              {mobileApps.android.enabled && mobileApps.android.url ? (
+                <a className="public-store-badge" href={mobileApps.android.url} rel="noopener noreferrer" target="_blank">
+                  <span>{String(t.googlePlay)}</span>
+                </a>
+              ) : null}
+            </div>
+          ) : (
+            <div className="public-mobile-soon" aria-label={String(t.appSoon)}>
+              <span>{String(t.appSoon)}</span>
+              <div className="public-app-badges public-app-badges-disabled" aria-hidden="true">
+                <span className="public-store-badge public-store-badge-disabled">{String(t.appStore)}</span>
+                <span className="public-store-badge public-store-badge-disabled">{String(t.googlePlay)}</span>
+              </div>
+              <strong>{String(t.comingSoon)}</strong>
+            </div>
+          )}
         </div>
         <div className="public-phone-stack" aria-hidden="true">
           <div className="public-phone-card">
@@ -511,12 +550,12 @@ export default function PublicHome({ searchIndex, stats, initialLanguage = "ru" 
       <footer className="public-footer">
         <div>
           <a className="public-logo" href={getLocalizedPath(language)}><BrandLogo /></a>
-          <button type="button" className="public-download-button">{String(t.appButton)}</button>
+          <span className="public-footer-mobile-note">{mobileAppsAvailable ? String(t.appButton) : String(t.mobileAppsFooter)}</span>
         </div>
         <div>
           <h3>{String(t.about)}</h3>
           <a href="#reviews">{String(t.reviews)}</a>
-          <a href="#app">{String(t.app)}</a>
+          <a href="#app">{mobileAppsAvailable ? String(t.app) : String(t.mobileAppsFooter)}</a>
           <a href={getLocalizedPath(language, "/catalog")}>{String(t.catalog)}</a>
         </div>
         <div>
