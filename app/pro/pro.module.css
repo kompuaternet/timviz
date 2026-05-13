@@ -10356,6 +10356,45 @@
   color: #fff;
 }
 
+.settingsPlanCard {
+  background:
+    linear-gradient(135deg, rgba(248, 250, 255, 0.96), rgba(255, 255, 255, 0.9)),
+    radial-gradient(circle at top right, rgba(91, 127, 255, 0.16), transparent 34%);
+}
+
+.settingsPlanBadge {
+  border: 1px solid rgba(91, 127, 255, 0.18);
+  background: rgba(91, 127, 255, 0.1) !important;
+  color: #3927a8;
+}
+
+.settingsPlanGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 12px 0;
+}
+
+.settingsPlanGrid div {
+  padding: 14px;
+  border: 1px solid #e2e7f3;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.74);
+}
+
+.settingsPlanGrid span {
+  display: block;
+  margin-bottom: 6px;
+  color: #7a8197;
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.settingsPlanGrid strong {
+  color: #17141f;
+  font-size: 1.05rem;
+}
+
 .settingsCardHeader {
   display: flex;
   align-items: flex-start;

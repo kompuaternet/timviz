@@ -14,8 +14,17 @@ type ProLoginPageProps = {
     google_error?: string;
     invite?: string;
     email?: string;
+    return_to?: string;
   }>;
 };
+
+function normalizeReturnTo(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed || !trimmed.startsWith("/") || trimmed.startsWith("//")) {
+    return "";
+  }
+  return trimmed;
+}
 
 export default async function ProLoginPage({ searchParams }: ProLoginPageProps) {
   const params = searchParams ? await searchParams : undefined;
@@ -28,6 +37,7 @@ export default async function ProLoginPage({ searchParams }: ProLoginPageProps) 
   const googleError = typeof params?.google_error === "string" ? params.google_error.trim() : "";
   const invite = typeof params?.invite === "string" ? params.invite.trim() : "";
   const email = typeof params?.email === "string" ? params.email.trim() : "";
+  const returnTo = typeof params?.return_to === "string" ? normalizeReturnTo(params.return_to) : "";
 
   if (isTelegramSource) {
     const query = new URLSearchParams();
@@ -59,7 +69,7 @@ export default async function ProLoginPage({ searchParams }: ProLoginPageProps) 
     ]);
 
     if (workspace) {
-      redirect("/pro/calendar");
+      redirect(returnTo || "/pro/calendar");
     }
 
     if (pendingJoinRequest) {
@@ -70,7 +80,7 @@ export default async function ProLoginPage({ searchParams }: ProLoginPageProps) 
   return (
     <main className={styles.splitShell}>
       <section className={styles.formSide}>
-        <LoginForm staleSession={Boolean(professionalId)} />
+        <LoginForm staleSession={Boolean(professionalId)} returnTo={returnTo} />
       </section>
       <aside className={styles.visualSide}>
         <div className={styles.visualPhoto} />

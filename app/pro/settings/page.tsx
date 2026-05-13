@@ -62,7 +62,11 @@ export default async function ProSettingsPage({ searchParams }: ProSettingsPageP
           timezone: workspace.professional.timezone,
           language: workspace.professional.language,
           currency: workspace.professional.currency || "USD",
-          ownerMode: workspace.professional.ownerMode
+          ownerMode: workspace.professional.ownerMode,
+          plan: workspace.professional.plan,
+          premiumStatus: workspace.professional.premiumStatus,
+          premiumUntil: workspace.professional.premiumUntil,
+          paddlePriceId: workspace.professional.paddlePriceId
         },
         business: workspace.business,
         membership: workspace.membership,

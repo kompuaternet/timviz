@@ -93,6 +93,9 @@ export default function GlobalLanguageSwitcher({ mode = "fixed" }: GlobalLanguag
     pathname === "/for-business" ||
     pathname === "/privacy" ||
     pathname === "/terms" ||
+    pathname === "/pricing" ||
+    pathname === "/refund-policy" ||
+    pathname === "/contact" ||
     pathname === "/ru" ||
     pathname === "/uk" ||
     pathname === "/en" ||
@@ -108,6 +111,15 @@ export default function GlobalLanguageSwitcher({ mode = "fixed" }: GlobalLanguag
     pathname === "/ru/terms" ||
     pathname === "/uk/terms" ||
     pathname === "/en/terms" ||
+    pathname === "/ru/pricing" ||
+    pathname === "/uk/pricing" ||
+    pathname === "/en/pricing" ||
+    pathname === "/ru/refund-policy" ||
+    pathname === "/uk/refund-policy" ||
+    pathname === "/en/refund-policy" ||
+    pathname === "/ru/contact" ||
+    pathname === "/uk/contact" ||
+    pathname === "/en/contact" ||
     pathname?.startsWith("/ru/dlya-") ||
     pathname?.startsWith("/uk/dlya-") ||
     pathname?.startsWith("/en/for-") ||

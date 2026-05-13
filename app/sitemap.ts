@@ -29,6 +29,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "weekly",
       priority: 0.9
     },
+    {
+      url: `${siteUrl}${getLocalizedPath(language, "/pricing")}`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.85
+    },
     ...nicheParams.filter((item) => item.lang === language).map((item) => ({
       url: `${siteUrl}${getLocalizedPath(language, `/${item.niche}`)}`,
       lastModified: now,
@@ -52,6 +58,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       lastModified: now,
       changeFrequency: "monthly",
       priority: 0.4
+    },
+    {
+      url: `${siteUrl}${getLocalizedPath(language, "/refund-policy")}`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.35
+    },
+    {
+      url: `${siteUrl}${getLocalizedPath(language, "/contact")}`,
+      lastModified: now,
+      changeFrequency: "monthly",
+      priority: 0.35
     }
   ]);
 

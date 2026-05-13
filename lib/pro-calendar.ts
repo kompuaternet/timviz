@@ -13,6 +13,11 @@ import type {
   ServiceRecord,
   WorkspaceSnapshot
 } from "./pro-data";
+import {
+  FREE_APPOINTMENTS_PER_MONTH,
+  getFreePlanLimitMessage,
+  isPremiumAccessActive
+} from "./premium";
 import { getSupabaseAdmin, isSupabaseConfigured } from "./supabase";
 
 export type CalendarAppointmentKind = "appointment" | "blocked";
@@ -785,6 +790,80 @@ async function prepareCalendarAppointmentWithWorkspace(input: {
   return appointment;
 }
 
+function getAppointmentMonthRange(appointmentDate: string) {
+  const date = new Date(`${appointmentDate}T00:00:00.000Z`);
+  const start = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1));
+  const end = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 1));
+
+  return {
+    start: start.toISOString().slice(0, 10),
+    end: end.toISOString().slice(0, 10)
+  };
+}
+
+async function getMonthlyAppointmentCount(professionalId: string, appointmentDate: string) {
+  const range = getAppointmentMonthRange(appointmentDate);
+
+  if (isSupabaseConfigured()) {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      throw new Error("Supabase is not available.");
+    }
+
+    const { count, error } = await supabase
+      .from("calendar_appointments")
+      .select("id", { count: "exact", head: true })
+      .eq("professional_id", professionalId)
+      .eq("kind", "appointment")
+      .gte("appointment_date", range.start)
+      .lt("appointment_date", range.end);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return count ?? 0;
+  }
+
+  const store = await readStore();
+  return store.appointments.filter(
+    (appointment) =>
+      appointment.professionalId === professionalId &&
+      appointment.kind === "appointment" &&
+      appointment.appointmentDate >= range.start &&
+      appointment.appointmentDate < range.end
+  ).length;
+}
+
+async function assertCanCreateMonthlyAppointments(
+  workspace: WorkspaceSnapshot,
+  appointments: CalendarAppointment[]
+) {
+  if (isPremiumAccessActive({
+    plan: workspace.professional.plan,
+    premiumStatus: workspace.professional.premiumStatus,
+    premiumUntil: workspace.professional.premiumUntil
+  })) {
+    return;
+  }
+
+  const appointmentCreatesByMonth = new Map<string, number>();
+  for (const appointment of appointments) {
+    if (appointment.kind !== "appointment") continue;
+    const range = getAppointmentMonthRange(appointment.appointmentDate);
+    const key = `${range.start}:${range.end}`;
+    appointmentCreatesByMonth.set(key, (appointmentCreatesByMonth.get(key) ?? 0) + 1);
+  }
+
+  for (const [key, creatingCount] of appointmentCreatesByMonth) {
+    const [start] = key.split(":");
+    const currentCount = await getMonthlyAppointmentCount(workspace.professional.id, start);
+    if (currentCount + creatingCount > FREE_APPOINTMENTS_PER_MONTH) {
+      throw new Error(getFreePlanLimitMessage(workspace.professional.language));
+    }
+  }
+}
+
 async function createCalendarAppointmentWithWorkspace(input: {
   workspace: WorkspaceSnapshot;
   servicesCache?: ServiceRecord[];
@@ -801,6 +880,7 @@ async function createCalendarAppointmentWithWorkspace(input: {
   allowMissingService?: boolean;
 }) {
   const appointment = await prepareCalendarAppointmentWithWorkspace(input);
+  await assertCanCreateMonthlyAppointments(input.workspace, [appointment]);
 
   if (isSupabaseConfigured()) {
     const supabase = getSupabaseAdmin();
@@ -887,6 +967,8 @@ export async function createCalendarAppointmentsBatch(input: {
       })
     );
   }
+
+  await assertCanCreateMonthlyAppointments(workspace, created);
 
   if (isSupabaseConfigured()) {
     const supabase = getSupabaseAdmin();

@@ -58,6 +58,7 @@ const loginText = {
 
 type LoginFormProps = {
   staleSession?: boolean;
+  returnTo?: string;
 };
 
 type TelegramRuntime = {
@@ -65,7 +66,7 @@ type TelegramRuntime = {
   initData?: string;
 };
 
-export default function LoginForm({ staleSession = false }: LoginFormProps) {
+export default function LoginForm({ staleSession = false, returnTo = "" }: LoginFormProps) {
   const router = useRouter();
   const { language } = useProLanguage();
   const copy = loginText[language];
@@ -78,6 +79,7 @@ export default function LoginForm({ staleSession = false }: LoginFormProps) {
   const [staleSessionMessage, setStaleSessionMessage] = useState("");
   const [isTelegramSource, setIsTelegramSource] = useState(false);
   const [telegramStartParam, setTelegramStartParam] = useState("calendar");
+  const [returnToPath, setReturnToPath] = useState(returnTo);
 
   useEffect(() => {
     let isCancelled = false;
@@ -114,6 +116,7 @@ export default function LoginForm({ staleSession = false }: LoginFormProps) {
     const googleError = params.get("google_error");
     const prefilledEmail = params.get("email")?.trim() || "";
     const inviteFromQuery = params.get("invite")?.trim() || "";
+    const returnToFromQuery = params.get("return_to")?.trim() || "";
     const source = params.get("source")?.trim().toLowerCase() || "";
     const runtimeStartParam = (() => {
       try {
@@ -155,6 +158,9 @@ export default function LoginForm({ staleSession = false }: LoginFormProps) {
     setIsTelegramSource(source === "telegram" || hasTelegramRuntime);
     setTelegramStartParam(startParam || "calendar");
     setInviteToken(inviteFromQuery);
+    if (returnToFromQuery.startsWith("/") && !returnToFromQuery.startsWith("//")) {
+      setReturnToPath(returnToFromQuery);
+    }
     setOauthErrorText(nextText);
   }, [copy.googleConfigError, copy.googleLoginError]);
 
@@ -172,9 +178,11 @@ export default function LoginForm({ staleSession = false }: LoginFormProps) {
         returnToQuery.set("startapp", telegramStartParam);
       }
       query.set("return_to", `/telegram?${returnToQuery.toString()}`);
+    } else if (returnToPath) {
+      query.set("return_to", returnToPath);
     }
     return `/api/pro/auth/google/start?${query.toString()}`;
-  }, [inviteToken, isTelegramSource, telegramStartParam]);
+  }, [inviteToken, isTelegramSource, returnToPath, telegramStartParam]);
 
   function handleGoogleSignIn() {
     if (typeof window === "undefined") {
@@ -227,7 +235,7 @@ export default function LoginForm({ staleSession = false }: LoginFormProps) {
       return;
     }
 
-    router.push("/pro/workspace");
+    router.push(returnToPath || "/pro/workspace");
     router.refresh();
   }
 

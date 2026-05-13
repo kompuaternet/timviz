@@ -14,8 +14,10 @@ type LegalCopy = {
   }>;
 };
 
+export type LegalPageType = "privacy" | "terms" | "refund-policy" | "contact";
+
 export const legalCopy: Record<
-  "privacy" | "terms",
+  LegalPageType,
   Record<SiteLanguage, LegalCopy>
 > = {
   privacy: {
@@ -47,6 +49,13 @@ export const legalCopy: Record<
           paragraphs: [
             "Пользователи могут добавлять фотографии, услуги, описания и другие материалы для своих компаний. Эти данные могут отображаться публично в карточках бизнеса и результатах поиска.",
             "Администраторы платформы могут модерировать такой контент, если он нарушает правила сервиса или мешает безопасной работе платформы."
+          ]
+        },
+        {
+          title: "Подписки и платежи",
+          paragraphs: [
+            "Email может использоваться для аккаунта, подписки, поддержки, сервисных уведомлений и важных сообщений о работе Timviz.",
+            "Платежные данные для подписки Timviz обрабатывает Paddle. Timviz не хранит полные номера банковских карт."
           ]
         },
         {
@@ -95,6 +104,13 @@ export const legalCopy: Record<
           ]
         },
         {
+          title: "Підписки та платежі",
+          paragraphs: [
+            "Email може використовуватися для акаунта, підписки, підтримки, сервісних сповіщень і важливих повідомлень про роботу Timviz.",
+            "Платіжні дані для підписки Timviz обробляє Paddle. Timviz не зберігає повні номери банківських карток."
+          ]
+        },
+        {
           title: "Зберігання і захист",
           paragraphs: [
             "Ми намагаємося зберігати дані лише стільки, скільки потрібно для роботи сервісу, виконання зобов'язань і забезпечення безпеки.",
@@ -137,6 +153,13 @@ export const legalCopy: Record<
           paragraphs: [
             "Users can upload business photos, services, descriptions and related content. This information may be shown publicly in business cards and search results.",
             "Platform administrators may moderate this content if it violates service rules or affects platform safety."
+          ]
+        },
+        {
+          title: "Subscriptions and payments",
+          paragraphs: [
+            "Email may be used for account, subscription, support, service notifications and important Timviz product messages.",
+            "Payment data for Timviz subscriptions is processed by Paddle. Timviz does not store full card numbers."
           ]
         },
         {
@@ -187,10 +210,25 @@ export const legalCopy: Record<
           ]
         },
         {
+          title: "Подписки Timviz",
+          paragraphs: [
+            "Timviz — это программное обеспечение для онлайн-записи и управления сервисным бизнесом. Timviz продаёт подписки на доступ к SaaS-функциям платформы.",
+            "Premium-подписка продлевается автоматически после пробного периода, если пользователь не отменит её заранее. Отменить подписку можно в любое время."
+          ]
+        },
+        {
           title: "Записи и взаимодействие с клиентами",
           paragraphs: [
             "Timviz помогает организовать процесс записи, но качество и фактическое оказание услуги определяются самой компанией или специалистом.",
             "Компания обязуется поддерживать актуальность графика, стоимости, услуг и доступных временных окон."
+          ]
+        },
+        {
+          title: "Paddle и сторонние услуги",
+          paragraphs: [
+            "Paddle используется только для обработки платежей за подписку на программное обеспечение Timviz.",
+            "Timviz не продаёт сторонние услуги и не обрабатывает через Paddle оплату записей, салонов, мастеров, медицинских услуг, ремонта, обучения, коучинга или любых услуг конечным клиентам.",
+            "Пользователи сами отвечают за свои записи, услуги, цены, выполнение работ и отношения с клиентами. Legal/business name: [LEGAL_BUSINESS_NAME]. Support: support@timviz.com."
           ]
         },
         {
@@ -233,10 +271,25 @@ export const legalCopy: Record<
           ]
         },
         {
+          title: "Підписки Timviz",
+          paragraphs: [
+            "Timviz — це програмне забезпечення для онлайн-запису та керування сервісним бізнесом. Timviz продає підписки на доступ до SaaS-функцій платформи.",
+            "Premium-підписка продовжується автоматично після пробного періоду, якщо користувач не скасує її заздалегідь. Скасувати підписку можна будь-коли."
+          ]
+        },
+        {
           title: "Записи та взаємодія з клієнтами",
           paragraphs: [
             "Timviz допомагає організувати процес запису, але якість і фактичне надання послуги визначаються самою компанією або спеціалістом.",
             "Компанія зобов'язується підтримувати актуальність графіка, вартості, послуг і доступних часових вікон."
+          ]
+        },
+        {
+          title: "Paddle і сторонні послуги",
+          paragraphs: [
+            "Paddle використовується лише для обробки платежів за підписку на програмне забезпечення Timviz.",
+            "Timviz не продає сторонні послуги і не обробляє через Paddle оплату записів, салонів, майстрів, медичних послуг, ремонту, навчання, коучингу або будь-яких послуг кінцевим клієнтам.",
+            "Користувачі самі відповідають за свої записи, послуги, ціни, виконання робіт і відносини з клієнтами. Legal/business name: [LEGAL_BUSINESS_NAME]. Support: support@timviz.com."
           ]
         },
         {
@@ -279,10 +332,25 @@ export const legalCopy: Record<
           ]
         },
         {
+          title: "Timviz subscriptions",
+          paragraphs: [
+            "Timviz is appointment scheduling software for managing service businesses. Timviz sells software subscriptions that provide access to SaaS platform features.",
+            "A Premium subscription renews automatically after the free trial unless it is cancelled before renewal. Users can cancel anytime."
+          ]
+        },
+        {
           title: "Bookings and client interactions",
           paragraphs: [
             "Timviz helps organize the booking workflow, but the actual quality and delivery of the service are determined by the business or professional.",
             "Businesses are responsible for keeping schedules, pricing, services and available time slots up to date."
+          ]
+        },
+        {
+          title: "Paddle and third-party services",
+          paragraphs: [
+            "Paddle is used only to process payments for Timviz software subscriptions.",
+            "Timviz does not sell third-party services and does not process payments through Paddle for appointments, salons, masters, medical services, repairs, tutoring, coaching or other end-customer services.",
+            "Users are responsible for their own appointments, services, pricing, delivery and client relationships. Legal/business name: [LEGAL_BUSINESS_NAME]. Support: support@timviz.com."
           ]
         },
         {
@@ -294,10 +362,179 @@ export const legalCopy: Record<
         }
       ]
     }
+  },
+  "refund-policy": {
+    ru: {
+      title: "Политика возвратов Timviz",
+      description: "Условия возврата платежей за подписку на программное обеспечение Timviz.",
+      eyebrow: "Timviz Refund Policy",
+      heading: "Политика возвратов",
+      intro:
+        "Timviz продаёт доступ к SaaS-программному обеспечению для онлайн-записи и управления сервисным бизнесом. Возвраты рассматриваются индивидуально.",
+      sections: [
+        {
+          title: "Подписка на программное обеспечение",
+          paragraphs: [
+            "Оплата Timviz относится только к доступу к программному обеспечению Timviz и Premium-функциям платформы.",
+            "Paddle используется только для обработки платежей за подписку Timviz и не используется для оплаты услуг мастеров, салонов или клиентов."
+          ]
+        },
+        {
+          title: "Отмена подписки",
+          paragraphs: [
+            "Пользователь может отменить подписку в любое время. После отмены доступ обычно сохраняется до конца уже оплаченного периода.",
+            "Если вы считаете, что списание произошло по ошибке, напишите нам на support@timviz.com."
+          ]
+        },
+        {
+          title: "Когда возможен возврат",
+          paragraphs: [
+            "Запросы на возврат рассматриваются индивидуально. Возврат может быть одобрен, если запрос отправлен в течение 14 дней после первого платежа и аккаунт активно не использовался после оплаты.",
+            "Возвраты не предоставляются за уже завершённые периоды, а также при злоупотреблении, мошенничестве или нарушении правил сервиса."
+          ]
+        }
+      ]
+    },
+    uk: {
+      title: "Політика повернень Timviz",
+      description: "Умови повернення платежів за підписку на програмне забезпечення Timviz.",
+      eyebrow: "Timviz Refund Policy",
+      heading: "Політика повернень",
+      intro:
+        "Timviz продає доступ до SaaS-програмного забезпечення для онлайн-запису та керування сервісним бізнесом. Повернення розглядаються індивідуально.",
+      sections: [
+        {
+          title: "Підписка на програмне забезпечення",
+          paragraphs: [
+            "Оплата Timviz стосується лише доступу до програмного забезпечення Timviz і Premium-функцій платформи.",
+            "Paddle використовується лише для обробки платежів за підписку Timviz і не використовується для оплати послуг майстрів, салонів або клієнтів."
+          ]
+        },
+        {
+          title: "Скасування підписки",
+          paragraphs: [
+            "Користувач може скасувати підписку будь-коли. Після скасування доступ зазвичай зберігається до кінця вже оплаченого періоду.",
+            "Якщо ви вважаєте, що списання відбулося помилково, напишіть нам на support@timviz.com."
+          ]
+        },
+        {
+          title: "Коли можливе повернення",
+          paragraphs: [
+            "Запити на повернення розглядаються індивідуально. Повернення може бути схвалене, якщо запит надіслано протягом 14 днів після першого платежу і акаунт активно не використовувався після оплати.",
+            "Повернення не надаються за вже завершені періоди, а також у разі зловживання, шахрайства або порушення правил сервісу."
+          ]
+        }
+      ]
+    },
+    en: {
+      title: "Timviz Refund Policy",
+      description: "Refund terms for Timviz software subscription payments.",
+      eyebrow: "Timviz Refund Policy",
+      heading: "Refund Policy",
+      intro:
+        "Timviz sells access to SaaS software for appointment scheduling and service business management. Refund requests are reviewed individually.",
+      sections: [
+        {
+          title: "Software subscription",
+          paragraphs: [
+            "Timviz payments relate only to access to Timviz software and Premium platform features.",
+            "Paddle is used only to process Timviz subscription payments and is not used to pay for master, salon or client services."
+          ]
+        },
+        {
+          title: "Cancelling a subscription",
+          paragraphs: [
+            "Users can cancel anytime. After cancellation, access usually remains available until the end of the already paid period.",
+            "If you believe you were charged by mistake, contact support@timviz.com."
+          ]
+        },
+        {
+          title: "When refunds may be approved",
+          paragraphs: [
+            "Refund requests are reviewed individually. A refund may be approved if requested within 14 days of the first payment and the account was not actively used after payment.",
+            "No refunds are provided for periods that have already ended or in cases of abuse, fraud or violation of service rules."
+          ]
+        }
+      ]
+    }
+  },
+  contact: {
+    ru: {
+      title: "Контакты Timviz",
+      description: "Как связаться с поддержкой Timviz по вопросам аккаунта, подписки и продукта.",
+      eyebrow: "Timviz Contact",
+      heading: "Контакты",
+      intro:
+        "Свяжитесь с нами по вопросам Timviz appointment scheduling software, аккаунта, подписки или поддержки.",
+      sections: [
+        {
+          title: "Поддержка",
+          paragraphs: [
+            "Email: support@timviz.com",
+            "Обычно мы отвечаем в течение 1–2 рабочих дней."
+          ]
+        },
+        {
+          title: "Продукт",
+          paragraphs: [
+            "Product: Timviz appointment scheduling software.",
+            "Business/legal name: [LEGAL_BUSINESS_NAME]."
+          ]
+        }
+      ]
+    },
+    uk: {
+      title: "Контакти Timviz",
+      description: "Як зв'язатися з підтримкою Timviz щодо акаунта, підписки та продукту.",
+      eyebrow: "Timviz Contact",
+      heading: "Контакти",
+      intro:
+        "Зв'яжіться з нами щодо Timviz appointment scheduling software, акаунта, підписки або підтримки.",
+      sections: [
+        {
+          title: "Підтримка",
+          paragraphs: [
+            "Email: support@timviz.com",
+            "Зазвичай ми відповідаємо протягом 1–2 робочих днів."
+          ]
+        },
+        {
+          title: "Продукт",
+          paragraphs: [
+            "Product: Timviz appointment scheduling software.",
+            "Business/legal name: [LEGAL_BUSINESS_NAME]."
+          ]
+        }
+      ]
+    },
+    en: {
+      title: "Contact Timviz",
+      description: "Contact Timviz support for account, subscription and product questions.",
+      eyebrow: "Timviz Contact",
+      heading: "Contact",
+      intro:
+        "Contact us about Timviz appointment scheduling software, your account, subscription or support request.",
+      sections: [
+        {
+          title: "Support",
+          paragraphs: [
+            "Email: support@timviz.com",
+            "Typical response time: 1–2 business days."
+          ]
+        },
+        {
+          title: "Product",
+          paragraphs: [
+            "Product: Timviz appointment scheduling software.",
+            "Business/legal name: [LEGAL_BUSINESS_NAME]."
+          ]
+        }
+      ]
+    }
   }
 };
 
-export function buildLegalMetadata(type: "privacy" | "terms", language: SiteLanguage): Metadata {
+export function buildLegalMetadata(type: LegalPageType, language: SiteLanguage): Metadata {
   const copy = legalCopy[type][language];
   const pathname = `/${language}/${type}`;
   const metadata = buildMetadata(pathname, copy, language);

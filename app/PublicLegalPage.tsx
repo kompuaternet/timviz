@@ -4,7 +4,7 @@ import PublicHeaderAuthMenu from "./PublicHeaderAuthMenu";
 import { getLocalizedPath, type SiteLanguage } from "../lib/site-language";
 import type { legalCopy } from "../lib/legal";
 
-type LegalCopy = (typeof legalCopy)["privacy"]["ru"];
+type LegalCopy = (typeof legalCopy)[keyof typeof legalCopy]["ru"];
 
 const chromeCopy = {
   ru: {
@@ -24,7 +24,10 @@ const chromeCopy = {
     catalog: "Каталог",
     legal: "Юридическая информация",
     privacy: "Политика конфиденциальности",
-    terms: "Условия использования"
+    terms: "Условия использования",
+    pricing: "Тарифы",
+    refund: "Политика возвратов",
+    contact: "Контакты"
   },
   uk: {
     navAria: "Головне меню",
@@ -43,7 +46,10 @@ const chromeCopy = {
     catalog: "Каталог",
     legal: "Юридична інформація",
     privacy: "Політика конфіденційності",
-    terms: "Умови використання"
+    terms: "Умови використання",
+    pricing: "Тарифи",
+    refund: "Політика повернень",
+    contact: "Контакти"
   },
   en: {
     navAria: "Main menu",
@@ -62,7 +68,10 @@ const chromeCopy = {
     catalog: "Catalog",
     legal: "Legal",
     privacy: "Privacy policy",
-    terms: "Terms of use"
+    terms: "Terms of use",
+    pricing: "Pricing",
+    refund: "Refund policy",
+    contact: "Contact"
   }
 } satisfies Record<SiteLanguage, Record<string, string>>;
 
@@ -92,6 +101,8 @@ export default function PublicLegalPage({ copy, language }: PublicLegalPageProps
               <a href={getLocalizedPath(language, "/account")}>{t.clientAuth}</a>
               <a href={getLocalizedPath(language, "/privacy")}>{t.privacy}</a>
               <a href={getLocalizedPath(language, "/terms")}>{t.terms}</a>
+              <a href={getLocalizedPath(language, "/pricing")}>{t.pricing}</a>
+              <a href={getLocalizedPath(language, "/contact")}>{t.contact}</a>
               <hr />
               <strong>{t.business}</strong>
               <a href={getLocalizedPath(language, "/for-business")}>{t.create}</a>
@@ -133,6 +144,7 @@ export default function PublicLegalPage({ copy, language }: PublicLegalPageProps
           <h3>{t.about}</h3>
           <a href={getLocalizedPath(language, "/catalog")}>{t.catalog}</a>
           <a href={getLocalizedPath(language, "/for-business")}>{t.features}</a>
+          <a href={getLocalizedPath(language, "/pricing")}>{t.pricing}</a>
         </div>
         <div>
           <h3>{t.business}</h3>
@@ -143,6 +155,8 @@ export default function PublicLegalPage({ copy, language }: PublicLegalPageProps
           <h3>{t.legal}</h3>
           <a href={getLocalizedPath(language, "/privacy")}>{t.privacy}</a>
           <a href={getLocalizedPath(language, "/terms")}>{t.terms}</a>
+          <a href={getLocalizedPath(language, "/refund-policy")}>{t.refund}</a>
+          <a href={getLocalizedPath(language, "/contact")}>{t.contact}</a>
         </div>
       </footer>
     </main>

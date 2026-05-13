@@ -29,6 +29,10 @@ type SettingsData = {
     language: string;
     currency: string;
     ownerMode: "owner" | "member";
+    plan?: "free" | "premium";
+    premiumStatus?: "inactive" | "trialing" | "active" | "past_due" | "canceled";
+    premiumUntil?: string;
+    paddlePriceId?: string;
   };
   business: {
     id: string;
@@ -521,6 +525,66 @@ const settingsExtras = {
   }
 } as const;
 
+const planCopy = {
+  ru: {
+    eyebrow: "Тариф",
+    title: "Текущий тариф",
+    free: "Free",
+    premiumMonthly: "Premium Monthly",
+    premiumYearly: "Premium Yearly",
+    premium: "Premium",
+    inactive: "Неактивен",
+    trialing: "Пробный период",
+    active: "Активен",
+    past_due: "Нужна оплата",
+    canceled: "Отменён",
+    nextDate: "Доступ до",
+    freeHint: "Бесплатный тариф: до 100 записей в месяц. Premium открывает безлимитные записи, Telegram-уведомления, статистику и приоритет в каталоге.",
+    premiumHint: "Premium активен для программного обеспечения Timviz. Подписку можно отменить в любое время.",
+    upgrade: "Перейти на Premium",
+    manage: "Управлять подпиской",
+    unknownDate: "Дата появится после первого платежа."
+  },
+  uk: {
+    eyebrow: "Тариф",
+    title: "Поточний тариф",
+    free: "Free",
+    premiumMonthly: "Premium Monthly",
+    premiumYearly: "Premium Yearly",
+    premium: "Premium",
+    inactive: "Неактивний",
+    trialing: "Пробний період",
+    active: "Активний",
+    past_due: "Потрібна оплата",
+    canceled: "Скасований",
+    nextDate: "Доступ до",
+    freeHint: "Безкоштовний тариф: до 100 записів на місяць. Premium відкриває необмежені записи, Telegram-сповіщення, статистику та пріоритет у каталозі.",
+    premiumHint: "Premium активний для програмного забезпечення Timviz. Підписку можна скасувати будь-коли.",
+    upgrade: "Перейти на Premium",
+    manage: "Керувати підпискою",
+    unknownDate: "Дата зʼявиться після першого платежу."
+  },
+  en: {
+    eyebrow: "Plan",
+    title: "Current plan",
+    free: "Free",
+    premiumMonthly: "Premium Monthly",
+    premiumYearly: "Premium Yearly",
+    premium: "Premium",
+    inactive: "Inactive",
+    trialing: "Trialing",
+    active: "Active",
+    past_due: "Payment needed",
+    canceled: "Canceled",
+    nextDate: "Access until",
+    freeHint: "Free plan: up to 100 appointments per month. Premium unlocks unlimited appointments, Telegram notifications, statistics, and priority in the catalog.",
+    premiumHint: "Premium is active for Timviz software. You can cancel the subscription anytime.",
+    upgrade: "Upgrade to Premium",
+    manage: "Manage subscription",
+    unknownDate: "The date will appear after the first payment."
+  }
+} as const;
+
 function localizeServiceMode(value: string, language: ProLanguage) {
   const match = serviceModeGroups.find((mode) =>
     Object.values(mode).some((label) => label.toLowerCase() === value.toLowerCase())
@@ -629,6 +693,7 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
   const initialLanguage = languageFromProfile(initialData.professional.language);
   const { t, language } = useProLanguage(initialLanguage);
   const copy = settingsExtras[language];
+  const planText = planCopy[language];
   const serviceModes = serviceModeGroups.map((mode) => mode[language]);
   const [data, setData] = useState(initialData);
   const selectedServiceMode = localizeServiceMode(data.business.serviceMode, language);
@@ -1848,6 +1913,48 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
             <div className={`${styles.settingsGrid} ${useSingleColumnGrid ? styles.settingsGridSingle : ""}`}>
               {activeSection === "general" ? (
                 <>
+                  <section className={`${styles.settingsCard} ${styles.settingsPlanCard}`}>
+                    <div className={styles.settingsCardHeader}>
+                      <div>
+                        <span>{planText.eyebrow}</span>
+                        <h2>{planText.title}</h2>
+                      </div>
+                      <strong className={styles.settingsPlanBadge}>
+                        {data.professional.plan === "premium"
+                          ? data.professional.paddlePriceId === process.env.NEXT_PUBLIC_PADDLE_PRICE_YEARLY
+                            ? planText.premiumYearly
+                            : data.professional.paddlePriceId === process.env.NEXT_PUBLIC_PADDLE_PRICE_MONTHLY
+                              ? planText.premiumMonthly
+                              : planText.premium
+                          : planText.free}
+                      </strong>
+                    </div>
+                    <div className={styles.settingsPlanGrid}>
+                      <div>
+                        <span>{data.professional.premiumStatus ? planText[data.professional.premiumStatus] : planText.inactive}</span>
+                        <strong>{data.professional.plan === "premium" ? planText.premium : planText.free}</strong>
+                      </div>
+                      <div>
+                        <span>{planText.nextDate}</span>
+                        <strong>
+                          {data.professional.premiumUntil
+                            ? new Intl.DateTimeFormat(language === "uk" ? "uk-UA" : language === "en" ? "en-US" : "ru-RU", {
+                                day: "2-digit",
+                                month: "short",
+                                year: "numeric"
+                              }).format(new Date(data.professional.premiumUntil))
+                            : planText.unknownDate}
+                        </strong>
+                      </div>
+                    </div>
+                    <p className={styles.settingsCardHint}>
+                      {data.professional.plan === "premium" ? planText.premiumHint : planText.freeHint}
+                    </p>
+                    <a className={styles.primaryButton} href="/pricing">
+                      {data.professional.plan === "premium" ? planText.manage : planText.upgrade}
+                    </a>
+                  </section>
+
                   <section className={styles.settingsCard}>
                     <div className={styles.settingsCardHeader}>
                       <div>

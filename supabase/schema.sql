@@ -42,6 +42,12 @@ create table if not exists public.professionals (
   currency text not null default 'USD',
   booking_credits_total integer not null default 500,
   wallet_balance integer not null default 0,
+  plan text not null default 'free',
+  premium_status text not null default 'inactive',
+  premium_until timestamptz,
+  paddle_customer_id text,
+  paddle_subscription_id text,
+  paddle_price_id text,
   owner_mode text not null,
   account_status text not null default 'active',
   created_at timestamptz not null default timezone('utc', now())
@@ -237,6 +243,12 @@ create table if not exists public.telegram_reminder_events (
 alter table public.professionals add column if not exists currency text not null default 'USD';
 alter table public.professionals add column if not exists booking_credits_total integer not null default 500;
 alter table public.professionals add column if not exists wallet_balance integer not null default 0;
+alter table public.professionals add column if not exists plan text not null default 'free';
+alter table public.professionals add column if not exists premium_status text not null default 'inactive';
+alter table public.professionals add column if not exists premium_until timestamptz;
+alter table public.professionals add column if not exists paddle_customer_id text;
+alter table public.professionals add column if not exists paddle_subscription_id text;
+alter table public.professionals add column if not exists paddle_price_id text;
 
 alter table public.businesses add column if not exists photos jsonb not null default '[]'::jsonb;
 alter table public.businesses add column if not exists allow_online_booking boolean not null default false;
@@ -280,6 +292,8 @@ alter table public.telegram_connections add column if not exists updated_at time
 
 create index if not exists bookings_salon_date_idx on public.bookings (salon_slug, appointment_date, appointment_time);
 create index if not exists bookings_customer_email_idx on public.bookings (customer_email, created_at desc);
+create index if not exists professionals_paddle_customer_idx on public.professionals (paddle_customer_id);
+create index if not exists professionals_paddle_subscription_idx on public.professionals (paddle_subscription_id);
 create index if not exists business_memberships_professional_idx on public.business_memberships (professional_id);
 create index if not exists business_join_requests_business_status_viewed_idx on public.business_join_requests (business_id, status, viewed_at, created_at desc);
 create index if not exists business_services_business_idx on public.business_services (business_id, sort_order, created_at);

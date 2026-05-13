@@ -5,6 +5,7 @@ import { isMailerConfigured, sendMail } from "./mailer";
 import { getSupabaseAdmin, isSupabaseConfigured } from "./supabase";
 import { hashPassword, verifyPassword } from "./pro-auth";
 import { getPublicBusinessPathId } from "./public-business-path";
+import { normalizePlan, normalizePremiumStatus, type PremiumStatus, type TimvizPlan } from "./premium";
 import { convertBaseUahPriceToCountryPrice, inferCurrencyFromCountryName, type PricingContext } from "./service-pricing";
 import { getTemplateBasePriceUah } from "./service-templates";
 import {
@@ -101,6 +102,12 @@ export type ProfessionalRecord = {
   currency?: string;
   bookingCreditsTotal?: number;
   walletBalance?: number;
+  plan?: TimvizPlan;
+  premiumStatus?: PremiumStatus;
+  premiumUntil?: string;
+  paddleCustomerId?: string;
+  paddleSubscriptionId?: string;
+  paddlePriceId?: string;
   ownerMode: "owner" | "member";
   accountStatus?: ProfessionalAccountStatus;
   createdAt: string;
@@ -400,7 +407,25 @@ function normalizeProfessionalRecord(professional: ProfessionalRecord): Professi
     walletBalance:
       typeof professional.walletBalance === "number"
         ? Math.max(0, professional.walletBalance)
-        : 0
+        : 0,
+    plan: normalizePlan(professional.plan),
+    premiumStatus: normalizePremiumStatus(professional.premiumStatus),
+    premiumUntil:
+      typeof professional.premiumUntil === "string" && professional.premiumUntil.trim()
+        ? professional.premiumUntil.trim()
+        : undefined,
+    paddleCustomerId:
+      typeof professional.paddleCustomerId === "string" && professional.paddleCustomerId.trim()
+        ? professional.paddleCustomerId.trim()
+        : undefined,
+    paddleSubscriptionId:
+      typeof professional.paddleSubscriptionId === "string" && professional.paddleSubscriptionId.trim()
+        ? professional.paddleSubscriptionId.trim()
+        : undefined,
+    paddlePriceId:
+      typeof professional.paddlePriceId === "string" && professional.paddlePriceId.trim()
+        ? professional.paddlePriceId.trim()
+        : undefined
   };
 }
 
@@ -538,6 +563,12 @@ function mapSupabaseProfessionalRow(row: {
   currency?: string | null;
   booking_credits_total?: number | null;
   wallet_balance?: number | null;
+  plan?: string | null;
+  premium_status?: string | null;
+  premium_until?: string | null;
+  paddle_customer_id?: string | null;
+  paddle_subscription_id?: string | null;
+  paddle_price_id?: string | null;
   owner_mode: string;
   account_status?: string | null;
   created_at: string;
@@ -557,6 +588,12 @@ function mapSupabaseProfessionalRow(row: {
     bookingCreditsTotal:
       typeof row.booking_credits_total === "number" ? row.booking_credits_total : undefined,
     walletBalance: typeof row.wallet_balance === "number" ? row.wallet_balance : undefined,
+    plan: normalizePlan(row.plan),
+    premiumStatus: normalizePremiumStatus(row.premium_status),
+    premiumUntil: row.premium_until ?? undefined,
+    paddleCustomerId: row.paddle_customer_id ?? undefined,
+    paddleSubscriptionId: row.paddle_subscription_id ?? undefined,
+    paddlePriceId: row.paddle_price_id ?? undefined,
     ownerMode: row.owner_mode === "member" ? "member" : "owner",
     accountStatus: normalizeProfessionalAccountStatus(row.account_status),
     createdAt: row.created_at
@@ -905,7 +942,9 @@ async function ensureDemoBusinessesInLocalStore() {
 
     if (
       professional.currency !== nextProfessional.currency ||
-      professional.bookingCreditsTotal !== nextProfessional.bookingCreditsTotal
+      professional.bookingCreditsTotal !== nextProfessional.bookingCreditsTotal ||
+      professional.plan !== nextProfessional.plan ||
+      professional.premiumStatus !== nextProfessional.premiumStatus
     ) {
       changed = true;
     }
@@ -1105,6 +1144,13 @@ export async function createProfessionalSetup(input: {
       currency: input.account.currency || inferCurrencyFromCountry(input.account.country),
       booking_credits_total:
         existingProfessional?.bookingCreditsTotal ?? DEFAULT_BOOKING_CREDITS,
+      wallet_balance: existingProfessional?.walletBalance ?? 0,
+      plan: existingProfessional?.plan ?? "free",
+      premium_status: existingProfessional?.premiumStatus ?? "inactive",
+      premium_until: existingProfessional?.premiumUntil ?? null,
+      paddle_customer_id: existingProfessional?.paddleCustomerId ?? null,
+      paddle_subscription_id: existingProfessional?.paddleSubscriptionId ?? null,
+      paddle_price_id: existingProfessional?.paddlePriceId ?? null,
       owner_mode: input.setup.ownerMode,
       account_status: "active",
       created_at: existingProfessional?.createdAt ?? createdAt
@@ -1407,6 +1453,13 @@ export async function createProfessionalSetup(input: {
     language: input.account.language,
     currency: input.account.currency || inferCurrencyFromCountry(input.account.country),
     bookingCreditsTotal: existingProfessional?.bookingCreditsTotal ?? DEFAULT_BOOKING_CREDITS,
+    walletBalance: existingProfessional?.walletBalance ?? 0,
+    plan: existingProfessional?.plan ?? "free",
+    premiumStatus: existingProfessional?.premiumStatus ?? "inactive",
+    premiumUntil: existingProfessional?.premiumUntil,
+    paddleCustomerId: existingProfessional?.paddleCustomerId,
+    paddleSubscriptionId: existingProfessional?.paddleSubscriptionId,
+    paddlePriceId: existingProfessional?.paddlePriceId,
     ownerMode: input.setup.ownerMode,
     accountStatus: "active",
     createdAt: existingProfessional?.createdAt ?? createdAt
@@ -1813,6 +1866,12 @@ export async function createManualStaffMember(input: {
         currency: workspace.professional.currency || inferCurrencyFromCountry(workspace.professional.country),
         booking_credits_total: DEFAULT_BOOKING_CREDITS,
         wallet_balance: 0,
+        plan: "free",
+        premium_status: "inactive",
+        premium_until: null,
+        paddle_customer_id: null,
+        paddle_subscription_id: null,
+        paddle_price_id: null,
         owner_mode: "member",
         account_status: accountStatus,
         created_at: createdAt
