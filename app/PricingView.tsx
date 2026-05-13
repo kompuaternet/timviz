@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import BrandLogo from "./BrandLogo";
 import GlobalLanguageSwitcher from "./GlobalLanguageSwitcher";
 import PublicHeaderAuthMenu from "./PublicHeaderAuthMenu";
@@ -85,6 +85,7 @@ const footerCopy = {
 export default function PricingView({ language, copy, user, paddle }: PricingViewProps) {
   const [message, setMessage] = useState("");
   const [loadingBilling, setLoadingBilling] = useState<PaddleCheckoutBilling | null>(null);
+  const checkoutRedirectRef = useRef(false);
   const footer = footerCopy[language];
 
   useEffect(() => {
@@ -141,6 +142,13 @@ export default function PricingView({ language, copy, user, paddle }: PricingVie
           return;
         }
 
+        if (checkoutRedirectRef.current) {
+          return;
+        }
+
+        checkoutRedirectRef.current = true;
+        setMessage(copy.startingCheckout);
+
         fetch("/api/paddle/checkout-completed", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -151,7 +159,11 @@ export default function PricingView({ language, copy, user, paddle }: PricingVie
             userId: user?.id,
             email: user?.email
           })
-        }).catch(() => {});
+        })
+          .catch(() => undefined)
+          .finally(() => {
+            window.location.assign("/pro/calendar?premium=1");
+          });
       }
     });
     return true;

@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import ProSidebar from "../ProSidebar";
 import ProWorkspaceHeader from "../ProWorkspaceHeader";
+import { isProPremiumActive } from "../premium-status";
 import styles from "../pro.module.css";
 import {
   getServiceLocalizationKey,
@@ -448,6 +449,7 @@ export default function ServicesView({ initialWorkspace, catalog, onboardingCta 
           viewerName={`${initialWorkspace.professional.firstName} ${initialWorkspace.professional.lastName}`.trim() || initialWorkspace.professional.email}
           viewerAvatarUrl={initialWorkspace.professional.avatarUrl}
           viewerInitials={`${initialWorkspace.professional.firstName?.[0] ?? ""}${initialWorkspace.professional.lastName?.[0] ?? ""}`.toUpperCase() || "RZ"}
+          isPremium={isProPremiumActive(initialWorkspace.professional)}
           publicBookingUrl={initialWorkspace.business.publicBookingUrl}
           publicBookingEnabled={initialWorkspace.business.allowOnlineBooking === true}
           canTogglePublicBooking={initialWorkspace.membership.scope === "owner"}

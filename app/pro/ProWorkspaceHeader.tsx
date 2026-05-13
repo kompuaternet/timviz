@@ -16,6 +16,7 @@ type ProWorkspaceHeaderProps = {
   viewerName: string;
   viewerAvatarUrl?: string;
   viewerInitials?: string;
+  isPremium?: boolean;
   publicBookingUrl?: string;
   publicBookingEnabled?: boolean;
   canTogglePublicBooking?: boolean;
@@ -230,6 +231,7 @@ export default function ProWorkspaceHeader({
   viewerName,
   viewerAvatarUrl,
   viewerInitials,
+  isPremium = false,
   publicBookingUrl = "",
   publicBookingEnabled = false,
   canTogglePublicBooking = false,
@@ -480,6 +482,12 @@ export default function ProWorkspaceHeader({
       </div>
 
       <div className={styles.calendarWorkspaceActions}>
+        {isPremium ? (
+          <span className={styles.calendarPremiumBadge} aria-label="Timviz Premium">
+            PRO
+          </span>
+        ) : null}
+
         {onboardingCta && !onboardingCta.completed ? (
           <button
             type="button"

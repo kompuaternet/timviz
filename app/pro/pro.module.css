@@ -6227,6 +6227,55 @@
   display: none;
 }
 
+.calendarPremiumBadge {
+  min-height: 36px;
+  padding: 0 13px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.68);
+  background:
+    radial-gradient(circle at 22% 12%, rgba(255, 255, 255, 0.78), transparent 24%),
+    linear-gradient(135deg, #5b7fff 0%, #7c3aed 58%, #15152f 100%);
+  color: #ffffff;
+  font-size: 0.73rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow:
+    0 14px 30px rgba(91, 127, 255, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.38);
+  text-transform: uppercase;
+  position: relative;
+  overflow: hidden;
+  flex: 0 0 auto;
+}
+
+.calendarPremiumBadge::after {
+  content: "";
+  width: 34px;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: -46px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.42), transparent);
+  transform: skewX(-18deg);
+  animation: premiumBadgeSheen 3.4s ease-in-out infinite;
+}
+
+@keyframes premiumBadgeSheen {
+  0%,
+  54% {
+    left: -46px;
+  }
+
+  78%,
+  100% {
+    left: calc(100% + 18px);
+  }
+}
+
 .calendarTopBarV2 {
   display: flex;
   align-items: center;
@@ -11164,6 +11213,13 @@
     padding: 0 12px;
     font-size: 0.78rem;
     flex: 0 0 auto;
+  }
+
+  .calendarPremiumBadge {
+    min-height: 32px;
+    padding: 0 10px;
+    font-size: 0.66rem;
+    letter-spacing: 0.1em;
   }
 
   .calendarProfileButton {

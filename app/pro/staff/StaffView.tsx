@@ -26,6 +26,7 @@ type StaffViewProps = {
     viewerName: string;
     viewerAvatarUrl?: string;
     viewerInitials: string;
+    isPremium?: boolean;
     publicBookingUrl?: string;
     publicBookingEnabled?: boolean;
   };
@@ -581,6 +582,7 @@ export default function StaffView({ professionalId, snapshot, initialAddOpen = f
           viewerName={header.viewerName}
           viewerAvatarUrl={header.viewerAvatarUrl}
           viewerInitials={header.viewerInitials}
+          isPremium={header.isPremium === true}
           publicBookingUrl={header.publicBookingUrl}
           publicBookingEnabled={header.publicBookingEnabled === true}
           canTogglePublicBooking

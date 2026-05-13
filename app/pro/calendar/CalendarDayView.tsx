@@ -8,6 +8,7 @@ import FloatingPopover from "../FloatingPopover";
 import ProSidebar from "../ProSidebar";
 import SupportWidget from "../SupportWidget";
 import { getPostLogoutRedirectPath } from "../telegram-context";
+import { isProPremiumActive } from "../premium-status";
 import { languageFromProfile, profileLanguageFromCode } from "../i18n";
 import type { OnboardingCtaState, OnboardingStepId } from "../../../lib/pro-onboarding";
 import {
@@ -99,6 +100,9 @@ type CalendarSnapshot = {
     language?: string;
     country?: string;
     currency?: string;
+    plan?: string;
+    premiumStatus?: string;
+    premiumUntil?: string;
   };
   teamMembers: Array<{
     id: string;
@@ -2342,6 +2346,7 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
   const pendingJoinRequests = snapshot?.pendingJoinRequests ?? [];
   const archivedOnlineBookings = snapshot?.archivedOnlineBookings ?? [];
   const totalPendingNotifications = pendingOnlineBookings.length + pendingJoinRequests.length;
+  const viewerHasPremium = isProPremiumActive(snapshot?.viewer ?? {});
   const canSwitchProfessional = snapshot?.viewer.scope === "owner" && teamMembers.length > 1;
   const filteredTeamMembers = useMemo(() => {
     const query = teamQuery.trim().toLowerCase();
@@ -4319,6 +4324,12 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
           </div>
 
           <div className={styles.calendarWorkspaceActions}>
+            {viewerHasPremium ? (
+              <span className={styles.calendarPremiumBadge} aria-label="Timviz Premium">
+                PRO
+              </span>
+            ) : null}
+
             {onboardingCta && !onboardingCta.completed ? (
               <button
                 type="button"

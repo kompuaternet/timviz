@@ -5,6 +5,7 @@ import { getWorkspaceSnapshot } from "../../../../lib/pro-data";
 import { getOnboardingCtaState } from "../../../../lib/pro-onboarding";
 import { getBusinessStaffSnapshot } from "../../../../lib/pro-staff";
 import { getTelegramConnectionByProfessionalId } from "../../../../lib/telegram-bot";
+import { isProPremiumActive } from "../../premium-status";
 import StaffView from "../StaffView";
 
 type ProStaffMembersPageProps = {
@@ -46,6 +47,7 @@ export default async function ProStaffMembersPage({ searchParams }: ProStaffMemb
         viewerName: `${workspace.professional.firstName} ${workspace.professional.lastName}`.trim() || workspace.professional.email,
         viewerAvatarUrl: workspace.professional.avatarUrl,
         viewerInitials: `${workspace.professional.firstName?.[0] ?? ""}${workspace.professional.lastName?.[0] ?? ""}`.toUpperCase() || "RZ",
+        isPremium: isProPremiumActive(workspace.professional),
         publicBookingUrl: workspace.business.publicBookingUrl,
         publicBookingEnabled: workspace.business.allowOnlineBooking === true
       }}

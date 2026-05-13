@@ -60,6 +60,9 @@ export type CalendarViewer = {
   language?: string;
   country?: string;
   currency?: string;
+  plan?: string;
+  premiumStatus?: string;
+  premiumUntil?: string;
 };
 
 export type CalendarTeamMember = {
@@ -688,7 +691,10 @@ export async function getCalendarDaySnapshot(input: {
       scope: access.viewerWorkspace.membership.scope === "owner" ? "owner" : "member",
       language: access.viewerWorkspace.professional.language,
       country: access.viewerWorkspace.professional.country,
-      currency: access.viewerWorkspace.professional.currency
+      currency: access.viewerWorkspace.professional.currency,
+      plan: access.viewerWorkspace.professional.plan,
+      premiumStatus: access.viewerWorkspace.professional.premiumStatus,
+      premiumUntil: access.viewerWorkspace.professional.premiumUntil
     },
     teamMembers: access.teamMembers,
     viewedProfessionalId: access.targetWorkspace.professional.id,

@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import ProSidebar from "../ProSidebar";
 import ProWorkspaceHeader from "../ProWorkspaceHeader";
+import { isProPremiumActive } from "../premium-status";
 import styles from "../pro.module.css";
 import { getPostLogoutRedirectPath } from "../telegram-context";
 import { languageFromProfile, languageLabels, type ProLanguage } from "../i18n";
@@ -1803,6 +1804,7 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
           viewerName={`${data.professional.firstName} ${data.professional.lastName}`.trim() || data.professional.email}
           viewerAvatarUrl={data.professional.avatarUrl}
           viewerInitials={`${data.professional.firstName?.[0] ?? ""}${data.professional.lastName?.[0] ?? ""}`.toUpperCase() || "RZ"}
+          isPremium={isProPremiumActive(data.professional)}
           publicBookingUrl={data.business.publicBookingUrl}
           publicBookingEnabled={data.business.allowOnlineBooking === true}
           canTogglePublicBooking={data.membership.scope === "owner"}

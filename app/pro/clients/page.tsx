@@ -6,6 +6,7 @@ import { getClientsList } from "../../../lib/pro-clients";
 import { getOnboardingCtaState } from "../../../lib/pro-onboarding";
 import { getTelegramConnectionByProfessionalId } from "../../../lib/telegram-bot";
 import ClientsView from "./ClientsView";
+import { isProPremiumActive } from "../premium-status";
 
 export default async function ProClientsPage() {
   const cookieStore = await cookies();
@@ -38,6 +39,7 @@ export default async function ProClientsPage() {
         viewerName: `${workspace.professional.firstName} ${workspace.professional.lastName}`.trim() || workspace.professional.email,
         viewerAvatarUrl: workspace.professional.avatarUrl,
         viewerInitials: `${workspace.professional.firstName?.[0] ?? ""}${workspace.professional.lastName?.[0] ?? ""}`.toUpperCase() || "RZ",
+        isPremium: isProPremiumActive(workspace.professional),
         publicBookingUrl: workspace.business.publicBookingUrl,
         publicBookingEnabled: workspace.business.allowOnlineBooking === true
       }}
