@@ -1360,8 +1360,12 @@ function CalendarOverview({
                 </View>
               ) : (
                 <View style={styles.compactWorkTime}>
-                  <Text style={[styles.monthWorkText, muted && styles.mutedText]} numberOfLines={1}>{workParts.start}</Text>
-                  <Text style={[styles.monthWorkText, muted && styles.mutedText]} numberOfLines={1}>{workParts.end}</Text>
+                  <Text style={[styles.monthWorkText, muted && styles.mutedText]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72}>
+                    {workParts.start}
+                  </Text>
+                  <Text style={[styles.monthWorkText, muted && styles.mutedText]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72}>
+                    {workParts.end}
+                  </Text>
                 </View>
               )}
               <View style={styles.visitMiniLine}>
@@ -2355,7 +2359,7 @@ const styles = StyleSheet.create({
     minHeight: 0,
   },
   calendarContent: {
-    paddingBottom: 82,
+    paddingBottom: 10,
   },
   overviewScroll: {
     flex: 1,
@@ -2570,13 +2574,14 @@ const styles = StyleSheet.create({
   },
   monthWorkText: {
     color: "#64748B",
-    fontSize: 10,
-    lineHeight: 11,
-    fontWeight: "800",
+    fontSize: 8,
+    lineHeight: 10,
+    fontWeight: "900",
   },
   compactWorkTime: {
     marginTop: 5,
-    minHeight: 22,
+    minHeight: 20,
+    width: "100%",
   },
   closedBadge: {
     marginTop: 7,
