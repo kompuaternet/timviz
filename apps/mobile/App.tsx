@@ -192,6 +192,10 @@ const copy = {
     week: "Тиждень",
     month: "Місяць",
     newVisit: "Новий візит",
+    editVisit: "Редагувати запис",
+    bookTime: "Забронювати час",
+    addBlockedTime: "Додати неробочий час",
+    reservedTime: "Заброньований час",
     compact: "Стиснутий",
     dayView: "День",
     detailed: "Детально",
@@ -209,6 +213,7 @@ const copy = {
     start: "Початок",
     end: "Кінець",
     save: "Зберегти",
+    cancel: "Скасувати",
     noAppointments: "На цей день записів поки немає.",
     recent: "Останні записи",
     addService: "Додати послугу",
@@ -255,6 +260,10 @@ const copy = {
     week: "Неделя",
     month: "Месяц",
     newVisit: "Новый визит",
+    editVisit: "Редактировать запись",
+    bookTime: "Забронировать время",
+    addBlockedTime: "Добавить нерабочее время",
+    reservedTime: "Забронированное время",
     compact: "Сжатый",
     dayView: "День",
     detailed: "Подробно",
@@ -272,6 +281,7 @@ const copy = {
     start: "Начало",
     end: "Конец",
     save: "Сохранить",
+    cancel: "Отмена",
     noAppointments: "На этот день записей пока нет.",
     recent: "Последние записи",
     addService: "Добавить услугу",
@@ -318,6 +328,10 @@ const copy = {
     week: "Week",
     month: "Month",
     newVisit: "New visit",
+    editVisit: "Edit appointment",
+    bookTime: "Book time",
+    addBlockedTime: "Add unavailable time",
+    reservedTime: "Reserved time",
     compact: "Compact",
     dayView: "Day",
     detailed: "Detailed",
@@ -335,6 +349,7 @@ const copy = {
     start: "Start",
     end: "End",
     save: "Save",
+    cancel: "Cancel",
     noAppointments: "No bookings for this day yet.",
     recent: "Recent bookings",
     addService: "Add service",
@@ -610,6 +625,8 @@ export default function App() {
     serviceId: "",
     appointmentDate: selectedDate,
   });
+  const [editingAppointment, setEditingAppointment] = useState<AppointmentRecord | null>(null);
+  const [timeAction, setTimeAction] = useState<{ date: string; time: string } | null>(null);
   const [serviceDraft, setServiceDraft] = useState({ name: "", durationMinutes: "60", price: "0" });
   const [clientDraft, setClientDraft] = useState({ firstName: "", lastName: "", phone: "", email: "" });
 
@@ -824,6 +841,109 @@ export default function App() {
     }
   }
 
+  async function saveEditedVisit() {
+    if (!editingAppointment) return false;
+    const service = workspace?.services.find((item) => item.id === visitDraft.serviceId) || workspace?.services[0];
+    const nextServiceName = service?.name || editingAppointment.serviceName;
+    const duration = service?.durationMinutes || Math.max(10, timeToMinutes(editingAppointment.endTime) - timeToMinutes(editingAppointment.startTime));
+    if (!visitDraft.customerName.trim()) {
+      Alert.alert(t.requiredTitle, t.requiredText);
+      return false;
+    }
+
+    setBusy(true);
+    try {
+      await apiFetch("/api/mobile/pro/calendar", {
+        method: "PATCH",
+        body: JSON.stringify({
+          mode: "meta",
+          appointmentId: editingAppointment.id,
+          customerName: visitDraft.customerName.trim(),
+          customerPhone: visitDraft.customerPhone.trim(),
+          startTime: visitDraft.startTime,
+          endTime: addMinutes(visitDraft.startTime, duration),
+          serviceName: nextServiceName,
+          priceAmount: Number(service?.price ?? editingAppointment.priceAmount ?? 0),
+          attendance: editingAppointment.attendance,
+          previousCustomerName: editingAppointment.customerName,
+          previousCustomerPhone: editingAppointment.customerPhone,
+          previousAppointmentTime: editingAppointment.startTime,
+        }),
+      });
+      await refreshAll(session, visitDraft.appointmentDate || selectedDate);
+      setEditingAppointment(null);
+      return true;
+    } catch (error) {
+      Alert.alert(t.editVisit, error instanceof Error ? error.message : t.editVisit);
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function deleteAppointment(appointment: AppointmentRecord) {
+    Alert.alert(t.delete, appointment.serviceName || t.newVisit, [
+      { text: t.cancel || "Cancel", style: "cancel" },
+      {
+        text: t.delete,
+        style: "destructive",
+        onPress: async () => {
+          setBusy(true);
+          try {
+            await apiFetch(`/api/mobile/pro/calendar?appointmentId=${encodeURIComponent(appointment.id)}`, { method: "DELETE" });
+            await refreshAll(session, appointment.appointmentDate || selectedDate);
+          } catch (error) {
+            Alert.alert(t.delete, error instanceof Error ? error.message : t.delete);
+          } finally {
+            setBusy(false);
+          }
+        },
+      },
+    ]);
+  }
+
+  async function updateAppointmentTime(appointment: AppointmentRecord, startTime: string, endTime: string) {
+    setBusy(true);
+    try {
+      await apiFetch("/api/mobile/pro/calendar", {
+        method: "PATCH",
+        body: JSON.stringify({
+          appointmentId: appointment.id,
+          startTime,
+          endTime,
+          previousAppointmentTime: appointment.startTime,
+          previousAppointmentDate: appointment.appointmentDate,
+        }),
+      });
+      await refreshAll(session, appointment.appointmentDate || selectedDate);
+    } catch (error) {
+      Alert.alert(t.editVisit, error instanceof Error ? error.message : t.editVisit);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function createBlockedTime(date: string, time: string, label: string) {
+    setBusy(true);
+    try {
+      await apiFetch("/api/mobile/pro/calendar", {
+        method: "POST",
+        body: JSON.stringify({
+          kind: "blocked",
+          appointmentDate: date,
+          startTime: time,
+          endTime: addMinutes(time, 60),
+          serviceName: label,
+        }),
+      });
+      await refreshAll(session, date);
+    } catch (error) {
+      Alert.alert(label, error instanceof Error ? error.message : label);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function createService() {
     if (!serviceDraft.name.trim()) {
       Alert.alert(t.requiredTitle, t.requiredText);
@@ -922,6 +1042,15 @@ export default function App() {
             visitDraft={visitDraft}
             setVisitDraft={setVisitDraft}
             onCreateVisit={createVisit}
+            onUpdateVisit={saveEditedVisit}
+            editingAppointment={editingAppointment}
+            setEditingAppointment={setEditingAppointment}
+            timeAction={timeAction}
+            setTimeAction={setTimeAction}
+            onDeleteAppointment={deleteAppointment}
+            onMoveAppointment={(appointment) => updateAppointmentTime(appointment, addMinutes(appointment.startTime, 10), addMinutes(appointment.endTime, 10))}
+            onResizeAppointment={(appointment) => updateAppointmentTime(appointment, appointment.startTime, addMinutes(appointment.endTime, 10))}
+            onCreateBlockedTime={createBlockedTime}
             busy={busy}
             refreshing={refreshing}
             onRefresh={() => refreshAll()}
@@ -1060,6 +1189,15 @@ function CalendarTab({
   visitDraft,
   setVisitDraft,
   onCreateVisit,
+  onUpdateVisit,
+  editingAppointment,
+  setEditingAppointment,
+  timeAction,
+  setTimeAction,
+  onDeleteAppointment,
+  onMoveAppointment,
+  onResizeAppointment,
+  onCreateBlockedTime,
   busy,
   refreshing,
   onRefresh,
@@ -1076,6 +1214,15 @@ function CalendarTab({
   visitDraft: VisitDraft;
   setVisitDraft: (draft: VisitDraft) => void;
   onCreateVisit: () => Promise<boolean>;
+  onUpdateVisit: () => Promise<boolean>;
+  editingAppointment: AppointmentRecord | null;
+  setEditingAppointment: (appointment: AppointmentRecord | null) => void;
+  timeAction: { date: string; time: string } | null;
+  setTimeAction: (action: { date: string; time: string } | null) => void;
+  onDeleteAppointment: (appointment: AppointmentRecord) => void;
+  onMoveAppointment: (appointment: AppointmentRecord) => void;
+  onResizeAppointment: (appointment: AppointmentRecord) => void;
+  onCreateBlockedTime: (date: string, time: string, label: string) => Promise<void>;
   busy: boolean;
   refreshing: boolean;
   onRefresh: () => void;
@@ -1137,8 +1284,23 @@ function CalendarTab({
   }
 
   function openComposerAt(time: string, date = selectedDate) {
+    setEditingAppointment(null);
     setSelectedDate(date);
     setVisitDraft({ ...visitDraft, appointmentDate: date, startTime: time });
+    setComposerOpen(true);
+  }
+
+  function openAppointmentEditor(appointment: AppointmentRecord) {
+    const matchedService = services.find((service) => service.name === appointment.serviceName) || services[0];
+    setEditingAppointment(appointment);
+    setSelectedDate(appointment.appointmentDate || selectedDate);
+    setVisitDraft({
+      customerName: appointment.customerName,
+      customerPhone: appointment.customerPhone,
+      startTime: appointment.startTime,
+      serviceId: matchedService?.id || "",
+      appointmentDate: appointment.appointmentDate || selectedDate,
+    });
     setComposerOpen(true);
   }
 
@@ -1208,7 +1370,11 @@ function CalendarTab({
               compact={isCompact}
               schedule={selectedSchedule}
               t={t}
-              onTimePress={openComposerAt}
+              onTimePress={(time) => setTimeAction({ date: selectedDate, time })}
+              onAppointmentPress={openAppointmentEditor}
+              onAppointmentDelete={onDeleteAppointment}
+              onAppointmentMove={onMoveAppointment}
+              onAppointmentResize={onResizeAppointment}
             />
           </ScrollView>
         </>
@@ -1231,6 +1397,7 @@ function CalendarTab({
       <Pressable
         style={styles.fabButton}
         onPress={() => {
+          setEditingAppointment(null);
           setVisitDraft({ ...visitDraft, appointmentDate: selectedDate, startTime: getRoundedTime(10) });
           setComposerOpen(true);
         }}
@@ -1242,8 +1409,14 @@ function CalendarTab({
         <View style={styles.modalBackdrop}>
           <View style={styles.visitSheet}>
             <View style={styles.sheetHeader}>
-              <Text style={styles.sheetTitle}>{t.newVisit}</Text>
-              <Pressable style={styles.sheetClose} onPress={() => setComposerOpen(false)}>
+              <Text style={styles.sheetTitle}>{editingAppointment ? t.editVisit : t.newVisit}</Text>
+              <Pressable
+                style={styles.sheetClose}
+                onPress={() => {
+                  setComposerOpen(false);
+                  setEditingAppointment(null);
+                }}
+              >
                 <Ionicons name="close" size={22} color="#0F172A" />
               </Pressable>
             </View>
@@ -1265,9 +1438,9 @@ function CalendarTab({
               ))}
             </View>
             <PrimaryButton
-              label={t.addVisit}
+              label={editingAppointment ? t.save : t.addVisit}
               onPress={async () => {
-                const saved = await onCreateVisit();
+                const saved = editingAppointment ? await onUpdateVisit() : await onCreateVisit();
                 if (saved) setComposerOpen(false);
               }}
               disabled={busy || !services.length}
@@ -1295,6 +1468,50 @@ function CalendarTab({
                 </Pressable>
               );
             })}
+          </View>
+        </Pressable>
+      </Modal>
+
+      <Modal transparent visible={Boolean(timeAction)} animationType="fade" onRequestClose={() => setTimeAction(null)}>
+        <Pressable style={styles.menuBackdrop} onPress={() => setTimeAction(null)}>
+          <View style={styles.timeActionMenu}>
+            <Text style={styles.timeActionTitle}>{timeAction?.time}</Text>
+            <Pressable
+              style={styles.timeActionItem}
+              onPress={() => {
+                if (!timeAction) return;
+                const action = timeAction;
+                setTimeAction(null);
+                openComposerAt(action.time, action.date);
+              }}
+            >
+              <Ionicons name="calendar-outline" size={20} color="#0F172A" />
+              <Text style={styles.timeActionText}>{t.newVisit}</Text>
+            </Pressable>
+            <Pressable
+              style={styles.timeActionItem}
+              onPress={() => {
+                if (!timeAction) return;
+                const action = timeAction;
+                setTimeAction(null);
+                void onCreateBlockedTime(action.date, action.time, t.reservedTime);
+              }}
+            >
+              <Ionicons name="time-outline" size={20} color="#0F172A" />
+              <Text style={styles.timeActionText}>{t.bookTime}</Text>
+            </Pressable>
+            <Pressable
+              style={styles.timeActionItem}
+              onPress={() => {
+                if (!timeAction) return;
+                const action = timeAction;
+                setTimeAction(null);
+                void onCreateBlockedTime(action.date, action.time, t.addBlockedTime);
+              }}
+            >
+              <Ionicons name="ban-outline" size={20} color="#0F172A" />
+              <Text style={styles.timeActionText}>{t.addBlockedTime}</Text>
+            </Pressable>
           </View>
         </Pressable>
       </Modal>
@@ -1460,6 +1677,10 @@ function CalendarTimeline({
   schedule,
   t,
   onTimePress,
+  onAppointmentPress,
+  onAppointmentDelete,
+  onAppointmentMove,
+  onAppointmentResize,
 }: {
   date: string;
   appointments: AppointmentRecord[];
@@ -1468,6 +1689,10 @@ function CalendarTimeline({
   schedule: WorkDayScheduleRecord;
   t: Record<string, string>;
   onTimePress: (time: string) => void;
+  onAppointmentPress: (appointment: AppointmentRecord) => void;
+  onAppointmentDelete: (appointment: AppointmentRecord) => void;
+  onAppointmentMove: (appointment: AppointmentRecord) => void;
+  onAppointmentResize: (appointment: AppointmentRecord) => void;
 }) {
   const { width } = useWindowDimensions();
   const startHour = 0;
@@ -1480,7 +1705,6 @@ function CalendarTimeline({
   const timeColumnWidth = 43;
   const gridWidth = Math.max(280, width - timeColumnWidth);
   const laneGap = 8;
-  const laneWidth = Math.max(132, (gridWidth - laneGap * 3) / 2);
   const now = new Date();
   const nowMinutes = now.getHours() * 60 + now.getMinutes();
   const nowTop = getScaledMinuteTop(nowMinutes);
@@ -1507,6 +1731,20 @@ function CalendarTimeline({
       kind: "break",
     }));
   const regularAppointments = appointments.filter((appointment) => appointment.kind !== "blocked");
+  const appointmentLayouts = regularAppointments.map((appointment) => {
+    const start = timeToMinutes(appointment.startTime);
+    const end = Math.max(timeToMinutes(appointment.endTime), start + 30);
+    const overlapping = regularAppointments
+      .filter((item) => {
+        const itemStart = timeToMinutes(item.startTime);
+        const itemEnd = Math.max(timeToMinutes(item.endTime), itemStart + 30);
+        return start < itemEnd && end > itemStart;
+      })
+      .sort((left, right) => timeToMinutes(left.startTime) - timeToMinutes(right.startTime) || left.id.localeCompare(right.id));
+    const laneCount = Math.max(1, overlapping.length);
+    const laneIndex = Math.max(0, overlapping.findIndex((item) => item.id === appointment.id));
+    return { appointment, start, end, laneCount, laneIndex };
+  });
 
   function getScaledMinuteTop(minutes: number) {
     const safe = Math.max(0, Math.min(24 * 60, minutes));
@@ -1600,28 +1838,48 @@ function CalendarTimeline({
         </View>
       ) : null}
 
-      {regularAppointments.map((appointment, index) => {
-        const start = timeToMinutes(appointment.startTime);
-        const end = Math.max(timeToMinutes(appointment.endTime), start + 30);
+      {appointmentLayouts.map(({ appointment, start, end, laneCount, laneIndex }, index) => {
         const top = getScaledMinuteTop(start);
         const height = Math.max(68, getRangeHeight(start, end));
-        const isOffset = index % 2 === 1;
         const color = index % 3 === 0 ? "#FF9A82" : index % 3 === 1 ? "#FFD166" : "#9ED96B";
+        const availableWidth = gridWidth - laneGap * 2;
+        const blockGap = laneCount > 1 ? 8 : 0;
+        const blockWidth = laneCount > 1 ? (availableWidth - blockGap * (laneCount - 1)) / laneCount : availableWidth;
+        const blockLeft = timeColumnWidth + laneGap + laneIndex * (blockWidth + blockGap);
 
         return (
-          <View
+          <Pressable
             key={appointment.id}
             style={[
               styles.appointmentBlock,
               {
                 top,
                 height,
-                left: timeColumnWidth + laneGap + (isOffset ? laneWidth + laneGap : 0),
-                width: laneWidth,
+                left: blockLeft,
+                width: blockWidth,
                 backgroundColor: color,
               },
             ]}
+            onPress={() => onAppointmentPress(appointment)}
           >
+            <Pressable
+              style={styles.appointmentDeleteButton}
+              onPress={(event) => {
+                event.stopPropagation();
+                onAppointmentDelete(appointment);
+              }}
+            >
+              <Ionicons name="close" size={16} color="#F43F5E" />
+            </Pressable>
+            <Pressable
+              style={styles.appointmentMoveButton}
+              onPress={(event) => {
+                event.stopPropagation();
+                onAppointmentMove(appointment);
+              }}
+            >
+              <Ionicons name="move" size={15} color="#475569" />
+            </Pressable>
             <Text style={styles.appointmentTime}>
               {appointment.startTime} - {appointment.endTime}
             </Text>
@@ -1632,8 +1890,14 @@ function CalendarTimeline({
               {appointment.serviceName}
             </Text>
             <Text style={styles.appointmentPrice}>{formatMoney(appointment.priceAmount, currency)}</Text>
-            <View style={styles.appointmentHandle} />
-          </View>
+            <Pressable
+              style={styles.appointmentHandle}
+              onPress={(event) => {
+                event.stopPropagation();
+                onAppointmentResize(appointment);
+              }}
+            />
+          </Pressable>
         );
       })}
     </View>
@@ -2725,6 +2989,30 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 6 },
   },
+  appointmentDeleteButton: {
+    position: "absolute",
+    top: 8,
+    right: 8,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.82)",
+    zIndex: 4,
+  },
+  appointmentMoveButton: {
+    position: "absolute",
+    right: 8,
+    bottom: 8,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.82)",
+    zIndex: 4,
+  },
   appointmentTime: {
     color: "#0F172A",
     fontSize: 12,
@@ -2754,6 +3042,7 @@ const styles = StyleSheet.create({
     height: 4,
     borderRadius: 2,
     backgroundColor: "rgba(15, 23, 42, 0.28)",
+    zIndex: 5,
   },
   fabButton: {
     position: "absolute",
@@ -2794,6 +3083,40 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.16,
     shadowRadius: 22,
     shadowOffset: { width: 0, height: 12 },
+  },
+  timeActionMenu: {
+    width: 284,
+    marginTop: 118,
+    marginRight: 16,
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    backgroundColor: "#FFFFFF",
+    shadowColor: "#0F172A",
+    shadowOpacity: 0.14,
+    shadowRadius: 22,
+    shadowOffset: { width: 0, height: 14 },
+  },
+  timeActionTitle: {
+    paddingHorizontal: 8,
+    paddingBottom: 8,
+    color: "#64748B",
+    fontSize: 13,
+    fontWeight: "900",
+  },
+  timeActionItem: {
+    minHeight: 48,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+  },
+  timeActionText: {
+    color: "#0F172A",
+    fontSize: 15,
+    fontWeight: "800",
   },
   viewMenuItem: {
     minHeight: 42,
