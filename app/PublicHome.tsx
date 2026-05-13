@@ -535,8 +535,12 @@ export default function PublicHome({ searchIndex, stats, initialLanguage = "ru" 
         </div>
         <div>
           <h3>{String(t.legal)}</h3>
+          <a href={getLocalizedPath(language, "/pricing")}>{language === "uk" ? "Тарифи" : language === "en" ? "Pricing" : "Тарифы"}</a>
           <a href={getLocalizedPath(language, "/privacy")}>{String(t.privacy)}</a>
           <a href={getLocalizedPath(language, "/terms")}>{String(t.terms)}</a>
+          <a href={getLocalizedPath(language, "/refund-policy")}>{language === "uk" ? "Політика повернень" : language === "en" ? "Refund policy" : "Политика возвратов"}</a>
+          <a href={getLocalizedPath(language, "/contact")}>{language === "uk" ? "Контакти" : language === "en" ? "Contact" : "Контакты"}</a>
+          <a href="mailto:adm@timviz.com">adm@timviz.com</a>
         </div>
       </footer>
     </main>

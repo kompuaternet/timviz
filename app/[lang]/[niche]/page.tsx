@@ -169,8 +169,12 @@ export default async function LocalizedNichePage({ params }: LocalizedSeoPagePro
         <span>{t.footerText}</span>
         <div className="business-footer-links">
           <a href={getLocalizedPath(language, "/for-business")}>{t.forBusiness}</a>
+          <a href={getLocalizedPath(language, "/pricing")}>{language === "uk" ? "Тарифи" : language === "en" ? "Pricing" : "Тарифы"}</a>
           <a href={getLocalizedPath(language, "/privacy")}>{t.privacy}</a>
           <a href={getLocalizedPath(language, "/terms")}>{t.terms}</a>
+          <a href={getLocalizedPath(language, "/refund-policy")}>{language === "uk" ? "Політика повернень" : language === "en" ? "Refund policy" : "Политика возвратов"}</a>
+          <a href={getLocalizedPath(language, "/contact")}>{language === "uk" ? "Контакти" : language === "en" ? "Contact" : "Контакты"}</a>
+          <a href="mailto:adm@timviz.com">adm@timviz.com</a>
         </div>
       </footer>
     </main>

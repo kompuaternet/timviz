@@ -228,7 +228,7 @@ export const legalCopy: Record<
           paragraphs: [
             "Paddle используется только для обработки платежей за подписку на программное обеспечение Timviz.",
             "Timviz не продаёт сторонние услуги и не обрабатывает через Paddle оплату записей, салонов, мастеров, медицинских услуг, ремонта, обучения, коучинга или любых услуг конечным клиентам.",
-            "Пользователи сами отвечают за свои записи, услуги, цены, выполнение работ и отношения с клиентами. Legal/business name: [LEGAL_BUSINESS_NAME]. Support: support@timviz.com."
+            "Пользователи сами отвечают за свои записи, услуги, цены, выполнение работ и отношения с клиентами. Legal/business name: [LEGAL_BUSINESS_NAME]. Support: adm@timviz.com."
           ]
         },
         {
@@ -289,7 +289,7 @@ export const legalCopy: Record<
           paragraphs: [
             "Paddle використовується лише для обробки платежів за підписку на програмне забезпечення Timviz.",
             "Timviz не продає сторонні послуги і не обробляє через Paddle оплату записів, салонів, майстрів, медичних послуг, ремонту, навчання, коучингу або будь-яких послуг кінцевим клієнтам.",
-            "Користувачі самі відповідають за свої записи, послуги, ціни, виконання робіт і відносини з клієнтами. Legal/business name: [LEGAL_BUSINESS_NAME]. Support: support@timviz.com."
+            "Користувачі самі відповідають за свої записи, послуги, ціни, виконання робіт і відносини з клієнтами. Legal/business name: [LEGAL_BUSINESS_NAME]. Support: adm@timviz.com."
           ]
         },
         {
@@ -350,7 +350,7 @@ export const legalCopy: Record<
           paragraphs: [
             "Paddle is used only to process payments for Timviz software subscriptions.",
             "Timviz does not sell third-party services and does not process payments through Paddle for appointments, salons, masters, medical services, repairs, tutoring, coaching or other end-customer services.",
-            "Users are responsible for their own appointments, services, pricing, delivery and client relationships. Legal/business name: [LEGAL_BUSINESS_NAME]. Support: support@timviz.com."
+            "Users are responsible for their own appointments, services, pricing, delivery and client relationships. Legal/business name: [LEGAL_BUSINESS_NAME]. Support: adm@timviz.com."
           ]
         },
         {
@@ -383,7 +383,7 @@ export const legalCopy: Record<
           title: "Отмена подписки",
           paragraphs: [
             "Пользователь может отменить подписку в любое время. После отмены доступ обычно сохраняется до конца уже оплаченного периода.",
-            "Если вы считаете, что списание произошло по ошибке, напишите нам на support@timviz.com."
+            "Если вы считаете, что списание произошло по ошибке, напишите нам на adm@timviz.com."
           ]
         },
         {
@@ -414,7 +414,7 @@ export const legalCopy: Record<
           title: "Скасування підписки",
           paragraphs: [
             "Користувач може скасувати підписку будь-коли. Після скасування доступ зазвичай зберігається до кінця вже оплаченого періоду.",
-            "Якщо ви вважаєте, що списання відбулося помилково, напишіть нам на support@timviz.com."
+            "Якщо ви вважаєте, що списання відбулося помилково, напишіть нам на adm@timviz.com."
           ]
         },
         {
@@ -445,7 +445,7 @@ export const legalCopy: Record<
           title: "Cancelling a subscription",
           paragraphs: [
             "Users can cancel anytime. After cancellation, access usually remains available until the end of the already paid period.",
-            "If you believe you were charged by mistake, contact support@timviz.com."
+            "If you believe you were charged by mistake, contact adm@timviz.com."
           ]
         },
         {
@@ -470,7 +470,7 @@ export const legalCopy: Record<
         {
           title: "Поддержка",
           paragraphs: [
-            "Email: support@timviz.com",
+            "Email: adm@timviz.com",
             "Обычно мы отвечаем в течение 1–2 рабочих дней."
           ]
         },
@@ -494,7 +494,7 @@ export const legalCopy: Record<
         {
           title: "Підтримка",
           paragraphs: [
-            "Email: support@timviz.com",
+            "Email: adm@timviz.com",
             "Зазвичай ми відповідаємо протягом 1–2 робочих днів."
           ]
         },
@@ -518,7 +518,7 @@ export const legalCopy: Record<
         {
           title: "Support",
           paragraphs: [
-            "Email: support@timviz.com",
+            "Email: adm@timviz.com",
             "Typical response time: 1–2 business days."
           ]
         },

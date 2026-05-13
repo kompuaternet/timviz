@@ -576,7 +576,7 @@ export default function HairdresserLanding({ language }: { language: SiteLanguag
 
       <section className="business-feature-section"><div className="business-section-head"><h2>{t.linksTitle}</h2></div><div className="business-footer-links">{t.links.map((link) => <a key={link.href} href={getLocalizedPath(language, link.href)}>{link.label}</a>)}</div></section>
 
-      <footer className="business-footer"><a className="public-logo" href={getLocalizedPath(language)}><BrandLogo /></a><span>{t.footerText}</span><div className="business-footer-links"><a href={getLocalizedPath(language, "/for-business")}>{t.forBusiness}</a><a href={getLocalizedPath(language, "/privacy")}>{t.privacy}</a><a href={getLocalizedPath(language, "/terms")}>{t.terms}</a></div></footer>
+      <footer className="business-footer"><a className="public-logo" href={getLocalizedPath(language)}><BrandLogo /></a><span>{t.footerText}</span><div className="business-footer-links"><a href={getLocalizedPath(language, "/for-business")}>{t.forBusiness}</a><a href={getLocalizedPath(language, "/pricing")}>{language === "uk" ? "Тарифи" : language === "en" ? "Pricing" : "Тарифы"}</a><a href={getLocalizedPath(language, "/privacy")}>{t.privacy}</a><a href={getLocalizedPath(language, "/terms")}>{t.terms}</a><a href={getLocalizedPath(language, "/refund-policy")}>{language === "uk" ? "Політика повернень" : language === "en" ? "Refund policy" : "Политика возвратов"}</a><a href={getLocalizedPath(language, "/contact")}>{language === "uk" ? "Контакти" : language === "en" ? "Contact" : "Контакты"}</a><a href="mailto:adm@timviz.com">adm@timviz.com</a></div></footer>
     </main>
   );
 }

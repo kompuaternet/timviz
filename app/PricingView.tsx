@@ -43,9 +43,49 @@ type PricingViewProps = {
 
 const planOrder: PricingPlanKey[] = ["free", "monthly", "yearly"];
 
+const footerCopy = {
+  ru: {
+    about: "Timviz",
+    catalog: "Каталог",
+    business: "Бизнесу",
+    pricing: "Тарифы",
+    legal: "Юридическая информация",
+    privacy: "Политика конфиденциальности",
+    terms: "Условия использования",
+    refund: "Политика возвратов",
+    contact: "Контакты",
+    support: "Поддержка"
+  },
+  uk: {
+    about: "Timviz",
+    catalog: "Каталог",
+    business: "Бізнесу",
+    pricing: "Тарифи",
+    legal: "Юридична інформація",
+    privacy: "Політика конфіденційності",
+    terms: "Умови використання",
+    refund: "Політика повернень",
+    contact: "Контакти",
+    support: "Підтримка"
+  },
+  en: {
+    about: "Timviz",
+    catalog: "Catalog",
+    business: "For business",
+    pricing: "Pricing",
+    legal: "Legal",
+    privacy: "Privacy policy",
+    terms: "Terms of use",
+    refund: "Refund policy",
+    contact: "Contact",
+    support: "Support"
+  }
+} satisfies Record<SiteLanguage, Record<string, string>>;
+
 export default function PricingView({ language, copy, user, paddle }: PricingViewProps) {
   const [message, setMessage] = useState("");
   const [loadingBilling, setLoadingBilling] = useState<PaddleCheckoutBilling | null>(null);
+  const footer = footerCopy[language];
 
   useEffect(() => {
     if (!paddle.token) {
@@ -226,6 +266,29 @@ export default function PricingView({ language, copy, user, paddle }: PricingVie
           ))}
         </div>
       </section>
+
+      <footer className="public-footer pricing-footer">
+        <div>
+          <a className="public-logo" href={getLocalizedPath(language)}>
+            <BrandLogo />
+          </a>
+          <p>{copy.securePaddle}</p>
+        </div>
+        <div>
+          <h3>{footer.about}</h3>
+          <a href={getLocalizedPath(language, "/catalog")}>{footer.catalog}</a>
+          <a href={getLocalizedPath(language, "/for-business")}>{footer.business}</a>
+          <a href={getLocalizedPath(language, "/pricing")}>{footer.pricing}</a>
+        </div>
+        <div>
+          <h3>{footer.legal}</h3>
+          <a href={getLocalizedPath(language, "/privacy")}>{footer.privacy}</a>
+          <a href={getLocalizedPath(language, "/terms")}>{footer.terms}</a>
+          <a href={getLocalizedPath(language, "/refund-policy")}>{footer.refund}</a>
+          <a href={getLocalizedPath(language, "/contact")}>{footer.contact}</a>
+          <a href="mailto:adm@timviz.com">{footer.support}: adm@timviz.com</a>
+        </div>
+      </footer>
     </main>
   );
 }

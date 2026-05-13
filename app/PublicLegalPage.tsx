@@ -27,7 +27,8 @@ const chromeCopy = {
     terms: "Условия использования",
     pricing: "Тарифы",
     refund: "Политика возвратов",
-    contact: "Контакты"
+    contact: "Контакты",
+    support: "Поддержка"
   },
   uk: {
     navAria: "Головне меню",
@@ -49,7 +50,8 @@ const chromeCopy = {
     terms: "Умови використання",
     pricing: "Тарифи",
     refund: "Політика повернень",
-    contact: "Контакти"
+    contact: "Контакти",
+    support: "Підтримка"
   },
   en: {
     navAria: "Main menu",
@@ -71,7 +73,8 @@ const chromeCopy = {
     terms: "Terms of use",
     pricing: "Pricing",
     refund: "Refund policy",
-    contact: "Contact"
+    contact: "Contact",
+    support: "Support"
   }
 } satisfies Record<SiteLanguage, Record<string, string>>;
 
@@ -102,6 +105,7 @@ export default function PublicLegalPage({ copy, language }: PublicLegalPageProps
               <a href={getLocalizedPath(language, "/privacy")}>{t.privacy}</a>
               <a href={getLocalizedPath(language, "/terms")}>{t.terms}</a>
               <a href={getLocalizedPath(language, "/pricing")}>{t.pricing}</a>
+              <a href={getLocalizedPath(language, "/refund-policy")}>{t.refund}</a>
               <a href={getLocalizedPath(language, "/contact")}>{t.contact}</a>
               <hr />
               <strong>{t.business}</strong>
@@ -157,6 +161,7 @@ export default function PublicLegalPage({ copy, language }: PublicLegalPageProps
           <a href={getLocalizedPath(language, "/terms")}>{t.terms}</a>
           <a href={getLocalizedPath(language, "/refund-policy")}>{t.refund}</a>
           <a href={getLocalizedPath(language, "/contact")}>{t.contact}</a>
+          <a href="mailto:adm@timviz.com">{t.support}: adm@timviz.com</a>
         </div>
       </footer>
     </main>
