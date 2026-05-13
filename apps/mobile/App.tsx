@@ -43,6 +43,14 @@ type RegisterForm = {
   companyName: string;
 };
 
+type VisitDraft = {
+  customerName: string;
+  customerPhone: string;
+  startTime: string;
+  serviceId: string;
+  appointmentDate: string;
+};
+
 type ServiceRecord = {
   id: string;
   name: string;
@@ -168,6 +176,9 @@ const copy = {
     threeDays: "3 дні",
     weekView: "Тиждень",
     monthView: "Місяць",
+    selected: "Вибрано",
+    visits: "візитів",
+    closedBySchedule: "Вихідний",
     ready: "Готово",
     reminders: "Сповіщення",
     addVisit: "Додати запис",
@@ -228,6 +239,9 @@ const copy = {
     threeDays: "3 дня",
     weekView: "Неделя",
     monthView: "Месяц",
+    selected: "Выбрано",
+    visits: "визитов",
+    closedBySchedule: "Выходной",
     ready: "Готово",
     reminders: "Уведомления",
     addVisit: "Добавить запись",
@@ -288,6 +302,9 @@ const copy = {
     threeDays: "3 days",
     weekView: "Week",
     monthView: "Month",
+    selected: "Selected",
+    visits: "visits",
+    closedBySchedule: "Closed",
     ready: "Done",
     reminders: "Alerts",
     addVisit: "Add booking",
@@ -407,13 +424,35 @@ function getCalendarModeDates(mode: CalendarViewMode, date: string) {
   if (mode === "threeDays") return [date, shiftDate(date, 1), shiftDate(date, 2)];
   if (mode === "week") return getWeekDates(date);
   if (mode === "month") {
-    const parsed = new Date(`${date}T12:00:00`);
-    const year = parsed.getFullYear();
-    const month = parsed.getMonth();
-    const lastDay = new Date(year, month + 1, 0).getDate();
-    return Array.from({ length: lastDay }, (_, index) => new Date(year, month, index + 1, 12).toISOString().slice(0, 10));
+    return getMonthGridDates(date);
   }
   return [date];
+}
+
+function getMonthGridDates(date: string) {
+  const parsed = new Date(`${date}T12:00:00`);
+  const year = parsed.getFullYear();
+  const month = parsed.getMonth();
+  const first = new Date(year, month, 1, 12);
+  const firstDay = first.getDay() || 7;
+  first.setDate(first.getDate() - firstDay + 1);
+  const daysInGrid = 42;
+  return Array.from({ length: daysInGrid }, (_, index) => {
+    const next = new Date(first);
+    next.setDate(first.getDate() + index);
+    return next.toISOString().slice(0, 10);
+  });
+}
+
+function shiftCalendarDate(mode: CalendarViewMode, date: string, direction: -1 | 1) {
+  if (mode === "threeDays") return shiftDate(date, direction * 3);
+  if (mode === "week") return shiftDate(date, direction * 7);
+  if (mode === "month") {
+    const parsed = new Date(`${date}T12:00:00`);
+    parsed.setMonth(parsed.getMonth() + direction);
+    return parsed.toISOString().slice(0, 10);
+  }
+  return shiftDate(date, direction);
 }
 
 function formatShortDate(date: string, language: AppLanguage) {
@@ -431,6 +470,28 @@ function formatTimeFromMinutes(totalMinutes: number) {
   const hours = Math.floor(clamped / 60);
   const minutes = clamped % 60;
   return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
+}
+
+function formatCalendarTitle(mode: CalendarViewMode, date: string, language: AppLanguage) {
+  if (mode === "day") return formatDayLabel(date, language);
+  const locale = language === "en" ? "en-US" : language === "uk" ? "uk-UA" : "ru-RU";
+  if (mode === "month") {
+    return new Intl.DateTimeFormat(locale, { month: "long" }).format(new Date(`${date}T12:00:00`));
+  }
+  const range = mode === "week" ? getWeekDates(date) : [date, shiftDate(date, 2)];
+  const start = new Intl.DateTimeFormat(locale, { day: "numeric", month: "short" }).format(new Date(`${range[0]}T12:00:00`));
+  const endDate = range[range.length - 1];
+  const end = new Intl.DateTimeFormat(locale, { day: "numeric", month: "short" }).format(new Date(`${endDate}T12:00:00`));
+  return `${start} - ${end}`.replace(/\./g, "");
+}
+
+function isWeekend(date: string) {
+  const day = new Date(`${date}T12:00:00`).getDay();
+  return day === 0 || day === 6;
+}
+
+function isSameMonth(left: string, right: string) {
+  return left.slice(0, 7) === right.slice(0, 7);
 }
 
 export default function App() {
@@ -464,6 +525,7 @@ export default function App() {
     customerPhone: "",
     startTime: "09:00",
     serviceId: "",
+    appointmentDate: selectedDate,
   });
   const [serviceDraft, setServiceDraft] = useState({ name: "", durationMinutes: "60", price: "0" });
   const [clientDraft, setClientDraft] = useState({ firstName: "", lastName: "", phone: "", email: "" });
@@ -640,7 +702,7 @@ export default function App() {
       await apiFetch("/api/mobile/pro/calendar", {
         method: "POST",
         body: JSON.stringify({
-          appointmentDate: selectedDate,
+          appointmentDate: visitDraft.appointmentDate || selectedDate,
           startTime: visitDraft.startTime,
           endTime: addMinutes(visitDraft.startTime, service.durationMinutes || 60),
           customerName: visitDraft.customerName.trim(),
@@ -650,8 +712,8 @@ export default function App() {
           attendance: "confirmed",
         }),
       });
-      setVisitDraft({ customerName: "", customerPhone: "", startTime: visitDraft.startTime, serviceId: service.id });
-      await refreshAll();
+      setVisitDraft({ customerName: "", customerPhone: "", startTime: visitDraft.startTime, serviceId: service.id, appointmentDate: visitDraft.appointmentDate || selectedDate });
+      await refreshAll(session, visitDraft.appointmentDate || selectedDate);
       return true;
     } catch (error) {
       Alert.alert(t.addVisit, error instanceof Error ? error.message : t.addVisit);
@@ -908,8 +970,8 @@ function CalendarTab({
   calendar: CalendarSnapshot | null;
   selectedDate: string;
   setSelectedDate: (date: string) => void;
-  visitDraft: { customerName: string; customerPhone: string; startTime: string; serviceId: string };
-  setVisitDraft: (draft: { customerName: string; customerPhone: string; startTime: string; serviceId: string }) => void;
+  visitDraft: VisitDraft;
+  setVisitDraft: (draft: VisitDraft) => void;
   onCreateVisit: () => Promise<boolean>;
   busy: boolean;
   refreshing: boolean;
@@ -925,6 +987,16 @@ function CalendarTab({
   const [viewMode, setViewMode] = useState<CalendarViewMode>("day");
   const [viewMenuOpen, setViewMenuOpen] = useState(false);
   const visibleDates = useMemo(() => getCalendarModeDates(viewMode, selectedDate), [selectedDate, viewMode]);
+  const appointmentsByDate = useMemo(() => {
+    const map = new Map<string, AppointmentRecord[]>();
+    for (const appointment of calendar?.appointments || []) {
+      const key = appointment.appointmentDate || selectedDate;
+      const list = map.get(key) || [];
+      list.push(appointment);
+      map.set(key, list);
+    }
+    return map;
+  }, [calendar?.appointments, selectedDate]);
   const viewOptions: Array<{ value: CalendarViewMode; label: string }> = [
     { value: "day", label: t.dayView },
     { value: "threeDays", label: t.threeDays },
@@ -932,23 +1004,34 @@ function CalendarTab({
     { value: "month", label: t.monthView },
   ];
   const activeViewLabel = viewOptions.find((item) => item.value === viewMode)?.label || t.dayView;
+  const titleText = formatCalendarTitle(viewMode, selectedDate, language);
 
-  function openComposerAt(time: string) {
-    setVisitDraft({ ...visitDraft, startTime: time });
+  function getAppointmentsForDate(date: string) {
+    return appointmentsByDate.get(date) || [];
+  }
+
+  function openComposerAt(time: string, date = selectedDate) {
+    setSelectedDate(date);
+    setVisitDraft({ ...visitDraft, appointmentDate: date, startTime: time });
     setComposerOpen(true);
+  }
+
+  function chooseDate(date: string, nextMode: CalendarViewMode = viewMode) {
+    setSelectedDate(date);
+    if (nextMode !== viewMode) setViewMode(nextMode);
   }
 
   return (
     <View style={styles.calendarScreen}>
       <View style={styles.calendarToolbar}>
-        <Pressable style={styles.dateButton} onPress={() => setSelectedDate(shiftDate(selectedDate, -1))}>
+        <Pressable style={styles.dateButton} onPress={() => setSelectedDate(shiftCalendarDate(viewMode, selectedDate, -1))}>
           <Ionicons name="chevron-back" size={18} color="#0F172A" />
         </Pressable>
         <View style={styles.datePill}>
-          <Text style={styles.dateText}>{formatDayLabel(selectedDate, language)}</Text>
-          <Text style={styles.dateSubText}>09:00 - 18:00</Text>
+          <Text style={styles.dateText}>{titleText}</Text>
+          <Text style={styles.dateSubText}>{viewMode === "day" ? "09:00 - 18:00" : t.selected}</Text>
         </View>
-        <Pressable style={styles.dateButton} onPress={() => setSelectedDate(shiftDate(selectedDate, 1))}>
+        <Pressable style={styles.dateButton} onPress={() => setSelectedDate(shiftCalendarDate(viewMode, selectedDate, 1))}>
           <Ionicons name="chevron-forward" size={18} color="#0F172A" />
         </Pressable>
         <View style={styles.toolbarSpacer} />
@@ -964,53 +1047,53 @@ function CalendarTab({
         </Pressable>
       </View>
 
-      {viewMode !== "day" ? (
-        <ScrollView
-          horizontal
-          style={styles.dateStrip}
-          contentContainerStyle={styles.dateStripContent}
-          showsHorizontalScrollIndicator={false}
-        >
-          {visibleDates.map((date) => {
-            const isActive = date === selectedDate;
-            return (
-              <Pressable key={date} style={[styles.dateChip, isActive && styles.dateChipActive]} onPress={() => setSelectedDate(date)}>
-                <Text style={[styles.dateChipText, isActive && styles.dateChipTextActive]}>{formatShortDate(date, language)}</Text>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
-      ) : null}
+      {viewMode === "day" ? (
+        <>
+          <View style={styles.masterStrip}>
+            <View style={styles.masterAvatar}>
+              <Text style={styles.masterAvatarText}>{workspace?.professional.firstName?.slice(0, 1).toUpperCase() || "T"}</Text>
+            </View>
+            <Text style={styles.masterName}>
+              {`${workspace?.professional.firstName || ""} ${workspace?.professional.lastName || ""}`.trim() || "Timviz"}
+            </Text>
+          </View>
 
-      <View style={styles.masterStrip}>
-        <View style={styles.masterAvatar}>
-          <Text style={styles.masterAvatarText}>{workspace?.professional.firstName?.slice(0, 1).toUpperCase() || "T"}</Text>
-        </View>
-        <Text style={styles.masterName}>
-          {`${workspace?.professional.firstName || ""} ${workspace?.professional.lastName || ""}`.trim() || "Timviz"}
-        </Text>
-      </View>
-
-      <ScrollView
-        style={styles.calendarScroll}
-        contentContainerStyle={styles.calendarContent}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#7C3AED" />}
-        showsVerticalScrollIndicator={false}
-        alwaysBounceVertical
-        keyboardShouldPersistTaps="handled"
-      >
-        <CalendarTimeline
-          appointments={calendar?.appointments || []}
+          <ScrollView
+            style={styles.calendarScroll}
+            contentContainerStyle={styles.calendarContent}
+            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#7C3AED" />}
+            showsVerticalScrollIndicator
+            alwaysBounceVertical
+            nestedScrollEnabled
+            keyboardShouldPersistTaps="handled"
+          >
+            <CalendarTimeline
+              appointments={calendar?.appointments || []}
+              currency={currency}
+              compact={isCompact}
+              onTimePress={openComposerAt}
+            />
+          </ScrollView>
+        </>
+      ) : (
+        <CalendarOverview
+          t={t}
+          language={language}
+          mode={viewMode}
+          selectedDate={selectedDate}
+          dates={visibleDates}
           currency={currency}
-          compact={isCompact}
-          onTimePress={openComposerAt}
+          getAppointmentsForDate={getAppointmentsForDate}
+          onSelectDate={(date) => chooseDate(date, viewMode)}
+          onOpenDay={(date) => chooseDate(date, "day")}
+          onCreateAt={(date) => openComposerAt("09:00", date)}
         />
-      </ScrollView>
+      )}
 
       <Pressable
         style={styles.fabButton}
         onPress={() => {
-          setVisitDraft({ ...visitDraft, startTime: getRoundedTime(10) });
+          setVisitDraft({ ...visitDraft, appointmentDate: selectedDate, startTime: getRoundedTime(10) });
           setComposerOpen(true);
         }}
       >
@@ -1081,6 +1164,109 @@ function CalendarTab({
   );
 }
 
+function CalendarOverview({
+  t,
+  language,
+  mode,
+  selectedDate,
+  dates,
+  currency,
+  getAppointmentsForDate,
+  onSelectDate,
+  onOpenDay,
+  onCreateAt,
+}: {
+  t: Record<string, string>;
+  language: AppLanguage;
+  mode: CalendarViewMode;
+  selectedDate: string;
+  dates: string[];
+  currency?: string;
+  getAppointmentsForDate: (date: string) => AppointmentRecord[];
+  onSelectDate: (date: string) => void;
+  onOpenDay: (date: string) => void;
+  onCreateAt: (date: string) => void;
+}) {
+  if (mode === "month") {
+    return (
+      <ScrollView style={styles.overviewScroll} contentContainerStyle={styles.monthGrid} showsVerticalScrollIndicator={false}>
+        {dates.map((date) => {
+          const appointments = getAppointmentsForDate(date);
+          const selected = date === selectedDate;
+          const muted = !isSameMonth(date, selectedDate);
+          const weekend = isWeekend(date);
+          return (
+            <Pressable
+              key={date}
+              style={[styles.monthCell, weekend && styles.summaryCardClosed, selected && styles.monthCellActive, muted && styles.monthCellMuted]}
+              onPress={() => onOpenDay(date)}
+            >
+              <Text style={[styles.monthDayNumber, selected && styles.summaryDateActive, muted && styles.mutedText]}>
+                {Number(date.slice(-2))}
+              </Text>
+              <Text style={[styles.monthWorkText, muted && styles.mutedText]}>{weekend ? t.closedBySchedule : "09:00-18:00"}</Text>
+              {appointments.length ? (
+                <Text style={styles.summaryCount}>{appointments.length} {t.visits}</Text>
+              ) : null}
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+    );
+  }
+
+  const cardWidth = mode === "threeDays" ? 168 : 142;
+
+  return (
+    <ScrollView
+      style={styles.overviewScroll}
+      horizontal
+      contentContainerStyle={styles.summaryStrip}
+      showsHorizontalScrollIndicator={false}
+    >
+      {dates.map((date) => {
+        const appointments = getAppointmentsForDate(date);
+        const selected = date === selectedDate;
+        const weekend = isWeekend(date);
+        return (
+          <Pressable
+            key={date}
+            style={[styles.summaryCard, { width: cardWidth }, weekend && styles.summaryCardClosed, selected && styles.summaryCardActive]}
+            onPress={() => onSelectDate(date)}
+            onLongPress={() => onCreateAt(date)}
+          >
+            <View style={styles.summaryHeader}>
+              <Text style={[styles.summaryDate, selected && styles.summaryDateActive]}>{formatShortDate(date, language)}</Text>
+              {selected ? <View style={styles.summaryDot} /> : null}
+            </View>
+            <Text style={[styles.summaryHours, weekend && styles.summaryClosedText]}>{weekend ? t.closedBySchedule : "09:00-18:00"}</Text>
+            <Text style={styles.summaryCount}>{appointments.length} {t.visits}</Text>
+            <View style={styles.summaryAppointments}>
+              {appointments.slice(0, 3).map((appointment) => (
+                <View key={appointment.id} style={styles.summaryAppointment}>
+                  <Text style={styles.summaryAppointmentTime}>{appointment.startTime}</Text>
+                  <Text style={styles.summaryAppointmentText} numberOfLines={1}>
+                    {appointment.customerName || appointment.serviceName || t.newVisit}
+                  </Text>
+                </View>
+              ))}
+              {!appointments.length && !weekend ? (
+                <Pressable style={styles.summaryAddButton} onPress={() => onCreateAt(date)}>
+                  <Ionicons name="add" size={18} color="#5B21B6" />
+                  <Text style={styles.summaryAddText}>{t.addVisit}</Text>
+                </Pressable>
+              ) : null}
+            </View>
+            <Pressable style={styles.openDayButton} onPress={() => onOpenDay(date)}>
+              <Text style={styles.openDayButtonText}>{t.dayView}</Text>
+            </Pressable>
+          </Pressable>
+        );
+      })}
+    </ScrollView>
+  );
+}
+
 function CalendarTimeline({
   appointments,
   currency,
@@ -1093,9 +1279,9 @@ function CalendarTimeline({
   onTimePress: (time: string) => void;
 }) {
   const { width } = useWindowDimensions();
-  const startHour = 8;
-  const endHour = 22;
-  const hourHeight = compact ? 62 : 92;
+  const startHour = 0;
+  const endHour = 23;
+  const hourHeight = compact ? 58 : 88;
   const timelineHeight = (endHour - startHour + 1) * hourHeight;
   const timeColumnWidth = 43;
   const gridWidth = Math.max(280, width - timeColumnWidth);
@@ -1140,8 +1326,8 @@ function CalendarTimeline({
         );
       })}
 
-      <View style={[styles.closedBlock, { top: 0, height: (9 - startHour) * hourHeight }]} />
-      <View style={[styles.closedBlock, { top: (18 - startHour) * hourHeight, height: (endHour - 17) * hourHeight }]} />
+      <View pointerEvents="none" style={[styles.closedBlock, { top: 0, height: (9 - startHour) * hourHeight }]} />
+      <View pointerEvents="none" style={[styles.closedBlock, { top: (18 - startHour) * hourHeight, height: (endHour - 17) * hourHeight }]} />
 
       {nowTop >= 0 && nowTop <= timelineHeight ? (
         <View style={[styles.currentTimeLine, { top: nowTop }]}>
@@ -1903,9 +2089,165 @@ const styles = StyleSheet.create({
   },
   calendarScroll: {
     flex: 1,
+    minHeight: 0,
   },
   calendarContent: {
-    paddingBottom: 96,
+    paddingBottom: 150,
+  },
+  overviewScroll: {
+    flex: 1,
+    backgroundColor: "#F6F8FC",
+  },
+  summaryStrip: {
+    paddingHorizontal: 12,
+    paddingVertical: 14,
+    gap: 10,
+    alignItems: "flex-start",
+  },
+  summaryCard: {
+    minHeight: 214,
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#BBF7D0",
+    backgroundColor: "#FFFFFF",
+    shadowColor: "#0F172A",
+    shadowOpacity: 0.05,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 8 },
+  },
+  summaryCardActive: {
+    borderColor: "#7C3AED",
+    backgroundColor: "#FAF7FF",
+  },
+  summaryCardClosed: {
+    borderColor: "#E2E8F0",
+    backgroundColor: "#F8FAFC",
+  },
+  summaryHeader: {
+    minHeight: 28,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  summaryDate: {
+    color: "#64748B",
+    fontSize: 13,
+    fontWeight: "900",
+  },
+  summaryDateActive: {
+    color: "#6D4AFF",
+  },
+  summaryDot: {
+    width: 9,
+    height: 9,
+    borderRadius: 5,
+    backgroundColor: "#7047EE",
+  },
+  summaryHours: {
+    marginTop: 8,
+    color: "#0F172A",
+    fontSize: 18,
+    fontWeight: "900",
+  },
+  summaryClosedText: {
+    color: "#64748B",
+    fontSize: 16,
+  },
+  summaryCount: {
+    marginTop: 8,
+    color: "#5B21B6",
+    fontSize: 13,
+    fontWeight: "900",
+  },
+  summaryAppointments: {
+    marginTop: 12,
+    gap: 7,
+  },
+  summaryAppointment: {
+    paddingVertical: 7,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    backgroundColor: "#FFE4DB",
+  },
+  summaryAppointmentTime: {
+    color: "#0F172A",
+    fontSize: 12,
+    fontWeight: "900",
+  },
+  summaryAppointmentText: {
+    marginTop: 2,
+    color: "#0F172A",
+    fontSize: 12,
+    fontWeight: "800",
+  },
+  summaryAddButton: {
+    height: 38,
+    paddingHorizontal: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    borderRadius: 8,
+    backgroundColor: "#F3E8FF",
+  },
+  summaryAddText: {
+    color: "#5B21B6",
+    fontSize: 12,
+    fontWeight: "900",
+  },
+  openDayButton: {
+    marginTop: "auto",
+    height: 34,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    backgroundColor: "#FFFFFF",
+  },
+  openDayButtonText: {
+    color: "#0F172A",
+    fontSize: 12,
+    fontWeight: "900",
+  },
+  monthGrid: {
+    padding: 10,
+    paddingBottom: 130,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+  },
+  monthCell: {
+    width: "12.85%",
+    minHeight: 74,
+    padding: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#BBF7D0",
+    backgroundColor: "#FFFFFF",
+  },
+  monthCellActive: {
+    borderColor: "#F43F5E",
+    borderWidth: 2,
+    backgroundColor: "#FFF7F8",
+  },
+  monthCellMuted: {
+    opacity: 0.45,
+  },
+  monthDayNumber: {
+    color: "#0F172A",
+    fontSize: 15,
+    fontWeight: "900",
+  },
+  monthWorkText: {
+    marginTop: 8,
+    color: "#64748B",
+    fontSize: 10,
+    fontWeight: "800",
+  },
+  mutedText: {
+    color: "#94A3B8",
   },
   timeline: {
     position: "relative",
@@ -1953,7 +2295,6 @@ const styles = StyleSheet.create({
     right: 0,
     backgroundColor: "#F8FAFC",
     opacity: 0.88,
-    pointerEvents: "none",
   },
   timeSlotHitbox: {
     position: "absolute",
