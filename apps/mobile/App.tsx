@@ -3,7 +3,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import * as Localization from "expo-localization";
 import { StatusBar } from "expo-status-bar";
 import type { ComponentProps } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -73,6 +73,23 @@ type AppointmentRecord = {
   priceAmount: number;
 };
 
+type WorkBreakRecord = {
+  startTime: string;
+  endTime: string;
+};
+
+type WorkDayScheduleRecord = {
+  enabled: boolean;
+  startTime: string;
+  endTime: string;
+  breakStart?: string;
+  breakEnd?: string;
+  breaks?: WorkBreakRecord[];
+  dayType?: "workday" | "day-off" | "holiday";
+};
+
+type WorkScheduleRecord = Record<string, WorkDayScheduleRecord>;
+
 type ClientRecord = {
   id: string;
   fullName: string;
@@ -103,6 +120,11 @@ type WorkspaceSnapshot = {
     publicBookingUrl?: string;
     allowOnlineBooking?: boolean;
     workScheduleMode?: string;
+  };
+  memberSchedule?: {
+    workScheduleMode?: string;
+    workSchedule?: WorkScheduleRecord;
+    customSchedule?: Record<string, WorkDayScheduleRecord>;
   };
   services: ServiceRecord[];
   telegram?: {
@@ -494,6 +516,56 @@ function isSameMonth(left: string, right: string) {
   return left.slice(0, 7) === right.slice(0, 7);
 }
 
+const dayScheduleKeys = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+
+function getFallbackSchedule(date: string): WorkDayScheduleRecord {
+  const weekend = isWeekend(date);
+  return {
+    enabled: !weekend,
+    startTime: "09:00",
+    endTime: "18:00",
+    breaks: [],
+    dayType: weekend ? "day-off" : "workday",
+  };
+}
+
+function getScheduleForDate(workspace: WorkspaceSnapshot | null, date: string): WorkDayScheduleRecord {
+  const custom = workspace?.memberSchedule?.customSchedule?.[date];
+  if (custom) return normalizeScheduleDay(custom, date);
+  const dayIndex = new Date(`${date}T12:00:00`).getDay();
+  const schedule = workspace?.memberSchedule?.workSchedule?.[dayScheduleKeys[dayIndex]];
+  return normalizeScheduleDay(schedule, date);
+}
+
+function normalizeScheduleDay(day: WorkDayScheduleRecord | undefined, date: string): WorkDayScheduleRecord {
+  const fallback = getFallbackSchedule(date);
+  if (!day) return fallback;
+  const enabled = day.enabled === true && day.dayType !== "day-off" && day.dayType !== "holiday";
+  const startTime = typeof day.startTime === "string" && day.startTime ? day.startTime : fallback.startTime;
+  const endTime = typeof day.endTime === "string" && day.endTime ? day.endTime : fallback.endTime;
+  const breaks = Array.isArray(day.breaks)
+    ? day.breaks
+        .filter((item) => item?.startTime && item?.endTime && item.startTime < item.endTime)
+        .map((item) => ({ startTime: item.startTime, endTime: item.endTime }))
+    : day.breakStart && day.breakEnd && day.breakStart < day.breakEnd
+      ? [{ startTime: day.breakStart, endTime: day.breakEnd }]
+      : [];
+
+  return {
+    ...day,
+    enabled,
+    startTime,
+    endTime,
+    breaks,
+    dayType: enabled ? "workday" : day.dayType || "day-off",
+  };
+}
+
+function getWorkTimeLabel(schedule: WorkDayScheduleRecord, t: Record<string, string>) {
+  if (!schedule.enabled) return t.closedBySchedule;
+  return `${schedule.startTime}-${schedule.endTime}`;
+}
+
 export default function App() {
   const [language, setLanguage] = useState<AppLanguage>(() => detectLanguage());
   const [mode, setMode] = useState<AuthMode>("login");
@@ -566,6 +638,24 @@ export default function App() {
     }
     return result;
   }
+
+  const loadCalendarDays = useCallback(async (dates: string[]) => {
+    if (!session) return {};
+    const uniqueDates = Array.from(new Set(dates)).filter(Boolean);
+    const headers = { Authorization: `Bearer ${session.token}` };
+    const entries = await Promise.all(
+      uniqueDates.map(async (date) => {
+        const response = await fetch(`${API_BASE_URL}/api/mobile/pro/calendar?date=${encodeURIComponent(date)}`, { headers });
+        const result = await response.json().catch(() => ({}));
+        if (!response.ok || result?.error) {
+          return [date, null] as const;
+        }
+        return [date, result as CalendarSnapshot] as const;
+      })
+    );
+
+    return Object.fromEntries(entries.filter((entry): entry is readonly [string, CalendarSnapshot] => Boolean(entry[1])));
+  }, [session]);
 
   async function refreshAll(currentSession = session, date = selectedDate) {
     if (!currentSession) return;
@@ -826,6 +916,7 @@ export default function App() {
             onRefresh={() => refreshAll()}
             composerOpen={visitComposerOpen}
             setComposerOpen={setVisitComposerOpen}
+            loadCalendarDays={loadCalendarDays}
           />
         ) : (
           <ScrollView
@@ -963,6 +1054,7 @@ function CalendarTab({
   onRefresh,
   composerOpen,
   setComposerOpen,
+  loadCalendarDays,
 }: {
   t: Record<string, string>;
   language: AppLanguage;
@@ -978,6 +1070,7 @@ function CalendarTab({
   onRefresh: () => void;
   composerOpen: boolean;
   setComposerOpen: (open: boolean) => void;
+  loadCalendarDays: (dates: string[]) => Promise<Record<string, CalendarSnapshot>>;
 }) {
   const currency = workspace?.professional.currency;
   const services = workspace?.services || [];
@@ -987,8 +1080,14 @@ function CalendarTab({
   const [viewMode, setViewMode] = useState<CalendarViewMode>("day");
   const [viewMenuOpen, setViewMenuOpen] = useState(false);
   const visibleDates = useMemo(() => getCalendarModeDates(viewMode, selectedDate), [selectedDate, viewMode]);
+  const visibleDatesKey = visibleDates.join("|");
+  const [rangeSnapshots, setRangeSnapshots] = useState<Record<string, CalendarSnapshot>>({});
+  const selectedSchedule = getScheduleForDate(workspace, selectedDate);
   const appointmentsByDate = useMemo(() => {
     const map = new Map<string, AppointmentRecord[]>();
+    for (const [date, snapshot] of Object.entries(rangeSnapshots)) {
+      map.set(date, snapshot.appointments || []);
+    }
     for (const appointment of calendar?.appointments || []) {
       const key = appointment.appointmentDate || selectedDate;
       const list = map.get(key) || [];
@@ -996,7 +1095,7 @@ function CalendarTab({
       map.set(key, list);
     }
     return map;
-  }, [calendar?.appointments, selectedDate]);
+  }, [calendar?.appointments, rangeSnapshots, selectedDate]);
   const viewOptions: Array<{ value: CalendarViewMode; label: string }> = [
     { value: "day", label: t.dayView },
     { value: "threeDays", label: t.threeDays },
@@ -1005,6 +1104,19 @@ function CalendarTab({
   ];
   const activeViewLabel = viewOptions.find((item) => item.value === viewMode)?.label || t.dayView;
   const titleText = formatCalendarTitle(viewMode, selectedDate, language);
+
+  useEffect(() => {
+    if (viewMode === "day") return;
+    let cancelled = false;
+    loadCalendarDays(visibleDates)
+      .then((snapshots) => {
+        if (!cancelled) setRangeSnapshots((current) => ({ ...current, ...snapshots }));
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [loadCalendarDays, viewMode, visibleDatesKey]);
 
   function getAppointmentsForDate(date: string) {
     return appointmentsByDate.get(date) || [];
@@ -1028,8 +1140,12 @@ function CalendarTab({
           <Ionicons name="chevron-back" size={18} color="#0F172A" />
         </Pressable>
         <View style={styles.datePill}>
-          <Text style={styles.dateText}>{titleText}</Text>
-          <Text style={styles.dateSubText}>{viewMode === "day" ? "09:00 - 18:00" : t.selected}</Text>
+          <Text style={styles.dateText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.74}>
+            {titleText}
+          </Text>
+          <Text style={styles.dateSubText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.74}>
+            {viewMode === "day" ? getWorkTimeLabel(selectedSchedule, t) : t.selected}
+          </Text>
         </View>
         <Pressable style={styles.dateButton} onPress={() => setSelectedDate(shiftCalendarDate(viewMode, selectedDate, 1))}>
           <Ionicons name="chevron-forward" size={18} color="#0F172A" />
@@ -1039,10 +1155,14 @@ function CalendarTab({
           style={[styles.modeButton, isCompact && styles.modeButtonActive]}
           onPress={() => setIsCompact((current) => !current)}
         >
-          <Text style={[styles.modeButtonText, isCompact && styles.modeButtonTextActive]}>{isCompact ? t.detailed : t.compact}</Text>
+          <Text style={[styles.modeButtonText, isCompact && styles.modeButtonTextActive]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.66}>
+            {isCompact ? t.detailed : t.compact}
+          </Text>
         </Pressable>
         <Pressable style={styles.modeButton} onPress={() => setViewMenuOpen(true)}>
-          <Text style={styles.modeButtonText}>{activeViewLabel}</Text>
+          <Text style={styles.modeButtonText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.66}>
+            {activeViewLabel}
+          </Text>
           <Ionicons name="chevron-down" size={14} color="#475569" />
         </Pressable>
       </View>
@@ -1071,6 +1191,8 @@ function CalendarTab({
               appointments={calendar?.appointments || []}
               currency={currency}
               compact={isCompact}
+              schedule={selectedSchedule}
+              t={t}
               onTimePress={openComposerAt}
             />
           </ScrollView>
@@ -1083,6 +1205,7 @@ function CalendarTab({
           selectedDate={selectedDate}
           dates={visibleDates}
           currency={currency}
+          workspace={workspace}
           getAppointmentsForDate={getAppointmentsForDate}
           onSelectDate={(date) => chooseDate(date, viewMode)}
           onOpenDay={(date) => chooseDate(date, "day")}
@@ -1171,6 +1294,7 @@ function CalendarOverview({
   selectedDate,
   dates,
   currency,
+  workspace,
   getAppointmentsForDate,
   onSelectDate,
   onOpenDay,
@@ -1182,6 +1306,7 @@ function CalendarOverview({
   selectedDate: string;
   dates: string[];
   currency?: string;
+  workspace: WorkspaceSnapshot | null;
   getAppointmentsForDate: (date: string) => AppointmentRecord[];
   onSelectDate: (date: string) => void;
   onOpenDay: (date: string) => void;
@@ -1192,19 +1317,29 @@ function CalendarOverview({
       <ScrollView style={styles.overviewScroll} contentContainerStyle={styles.monthGrid} showsVerticalScrollIndicator={false}>
         {dates.map((date) => {
           const appointments = getAppointmentsForDate(date);
+          const schedule = getScheduleForDate(workspace, date);
           const selected = date === selectedDate;
           const muted = !isSameMonth(date, selectedDate);
-          const weekend = isWeekend(date);
+          const closed = !schedule.enabled;
           return (
             <Pressable
               key={date}
-              style={[styles.monthCell, weekend && styles.summaryCardClosed, selected && styles.monthCellActive, muted && styles.monthCellMuted]}
+              style={[styles.monthCell, closed && styles.summaryCardClosed, selected && styles.monthCellActive, muted && styles.monthCellMuted]}
               onPress={() => onOpenDay(date)}
             >
-              <Text style={[styles.monthDayNumber, selected && styles.summaryDateActive, muted && styles.mutedText]}>
-                {Number(date.slice(-2))}
+              <View style={styles.monthCellTop}>
+                <Text style={[styles.monthDayNumber, selected && styles.summaryDateActive, closed && styles.summaryClosedText, muted && styles.mutedText]}>
+                  {Number(date.slice(-2))}
+                </Text>
+                {appointments.length ? (
+                  <View style={styles.dayCountBadge}>
+                    <Text style={styles.dayCountBadgeText}>{appointments.length}</Text>
+                  </View>
+                ) : null}
+              </View>
+              <Text style={[styles.monthWorkText, closed && styles.summaryClosedText, muted && styles.mutedText]}>
+                {getWorkTimeLabel(schedule, t)}
               </Text>
-              <Text style={[styles.monthWorkText, muted && styles.mutedText]}>{weekend ? t.closedBySchedule : "09:00-18:00"}</Text>
               {appointments.length ? (
                 <Text style={styles.summaryCount}>{appointments.length} {t.visits}</Text>
               ) : null}
@@ -1226,20 +1361,27 @@ function CalendarOverview({
     >
       {dates.map((date) => {
         const appointments = getAppointmentsForDate(date);
+        const schedule = getScheduleForDate(workspace, date);
         const selected = date === selectedDate;
-        const weekend = isWeekend(date);
+        const closed = !schedule.enabled;
         return (
           <Pressable
             key={date}
-            style={[styles.summaryCard, { width: cardWidth }, weekend && styles.summaryCardClosed, selected && styles.summaryCardActive]}
+            style={[styles.summaryCard, { width: cardWidth }, closed && styles.summaryCardClosed, selected && styles.summaryCardActive]}
             onPress={() => onSelectDate(date)}
             onLongPress={() => onCreateAt(date)}
           >
             <View style={styles.summaryHeader}>
               <Text style={[styles.summaryDate, selected && styles.summaryDateActive]}>{formatShortDate(date, language)}</Text>
-              {selected ? <View style={styles.summaryDot} /> : null}
+              {appointments.length ? (
+                <View style={styles.dayCountBadge}>
+                  <Text style={styles.dayCountBadgeText}>{appointments.length}</Text>
+                </View>
+              ) : selected ? (
+                <View style={styles.summaryDot} />
+              ) : null}
             </View>
-            <Text style={[styles.summaryHours, weekend && styles.summaryClosedText]}>{weekend ? t.closedBySchedule : "09:00-18:00"}</Text>
+            <Text style={[styles.summaryHours, closed && styles.summaryClosedText]}>{getWorkTimeLabel(schedule, t)}</Text>
             <Text style={styles.summaryCount}>{appointments.length} {t.visits}</Text>
             <View style={styles.summaryAppointments}>
               {appointments.slice(0, 3).map((appointment) => (
@@ -1250,7 +1392,7 @@ function CalendarOverview({
                   </Text>
                 </View>
               ))}
-              {!appointments.length && !weekend ? (
+              {!appointments.length && !closed ? (
                 <Pressable style={styles.summaryAddButton} onPress={() => onCreateAt(date)}>
                   <Ionicons name="add" size={18} color="#5B21B6" />
                   <Text style={styles.summaryAddText}>{t.addVisit}</Text>
@@ -1271,38 +1413,93 @@ function CalendarTimeline({
   appointments,
   currency,
   compact,
+  schedule,
+  t,
   onTimePress,
 }: {
   appointments: AppointmentRecord[];
   currency?: string;
   compact: boolean;
+  schedule: WorkDayScheduleRecord;
+  t: Record<string, string>;
   onTimePress: (time: string) => void;
 }) {
   const { width } = useWindowDimensions();
   const startHour = 0;
   const endHour = 23;
-  const hourHeight = compact ? 58 : 88;
-  const timelineHeight = (endHour - startHour + 1) * hourHeight;
+  const workStart = schedule.enabled ? timeToMinutes(schedule.startTime) : 9 * 60;
+  const workEnd = schedule.enabled ? timeToMinutes(schedule.endTime) : 18 * 60;
+  const workHourHeight = compact ? 72 : 88;
+  const offHourHeight = compact ? workHourHeight / 10 : workHourHeight;
+  const timelineHeight = getScaledMinuteTop(24 * 60);
   const timeColumnWidth = 43;
   const gridWidth = Math.max(280, width - timeColumnWidth);
   const laneGap = 8;
   const laneWidth = Math.max(132, (gridWidth - laneGap * 3) / 2);
   const now = new Date();
   const nowMinutes = now.getHours() * 60 + now.getMinutes();
-  const nowTop = ((nowMinutes - startHour * 60) / 60) * hourHeight;
+  const nowTop = getScaledMinuteTop(nowMinutes);
+  const breaks = schedule.enabled ? schedule.breaks || [] : [];
+  const closedRanges = schedule.enabled
+    ? [
+        { start: 0, end: workStart, label: "00:00 - " + schedule.startTime },
+        ...breaks.map((item) => ({
+          start: timeToMinutes(item.startTime),
+          end: timeToMinutes(item.endTime),
+          label: `${item.startTime} - ${item.endTime}`,
+        })),
+        { start: workEnd, end: 24 * 60, label: `${schedule.endTime} - 24:00` },
+      ].filter((item) => item.end > item.start)
+    : [{ start: 0, end: 24 * 60, label: t.closedBySchedule }];
+  const blockedAppointments = appointments
+    .filter((appointment) => appointment.kind === "blocked")
+    .map((appointment) => ({
+      start: timeToMinutes(appointment.startTime),
+      end: Math.max(timeToMinutes(appointment.endTime), timeToMinutes(appointment.startTime) + 10),
+      label: appointment.serviceName || t.closedBySchedule,
+    }));
+  const regularAppointments = appointments.filter((appointment) => appointment.kind !== "blocked");
+
+  function getScaledMinuteTop(minutes: number) {
+    const safe = Math.max(0, Math.min(24 * 60, minutes));
+    if (!compact) return (safe / 60) * workHourHeight;
+    if (!schedule.enabled) return (safe / 60) * offHourHeight;
+    if (safe <= workStart) return (safe / 60) * offHourHeight;
+    const beforeWork = (workStart / 60) * offHourHeight;
+    if (safe <= workEnd) return beforeWork + ((safe - workStart) / 60) * workHourHeight;
+    return beforeWork + ((workEnd - workStart) / 60) * workHourHeight + ((safe - workEnd) / 60) * offHourHeight;
+  }
+
+  function getRangeHeight(start: number, end: number) {
+    return Math.max(1, getScaledMinuteTop(end) - getScaledMinuteTop(start));
+  }
+
+  function isWorkingSlot(minutes: number) {
+    if (!schedule.enabled || minutes < workStart || minutes >= workEnd) return false;
+    return !breaks.some((item) => {
+      const start = timeToMinutes(item.startTime);
+      const end = timeToMinutes(item.endTime);
+      return minutes >= start && minutes < end;
+    });
+  }
 
   return (
     <View style={[styles.timeline, { height: timelineHeight }]}>
       {Array.from({ length: endHour - startHour + 1 }).map((_, index) => {
         const hour = startHour + index;
+        const rowStart = hour * 60;
+        const rowEnd = (hour + 1) * 60;
+        const top = getScaledMinuteTop(rowStart);
+        const height = getRangeHeight(rowStart, rowEnd);
+        const showLabel = height >= 18 || hour === 0 || hour === Math.floor(workStart / 60) || hour === Math.ceil(workEnd / 60);
         return (
-          <View key={hour} style={[styles.hourRow, { top: index * hourHeight, height: hourHeight }]}>
-            <Text style={styles.hourText}>{String(hour).padStart(2, "0")}:00</Text>
+          <View key={hour} style={[styles.hourRow, { top, height }]}>
+            <Text style={[styles.hourText, !showLabel && styles.hourTextHidden]}>{showLabel ? `${String(hour).padStart(2, "0")}:00` : ""}</Text>
             <View style={styles.hourGrid}>
               <View style={styles.majorLine} />
-              {[1, 2, 3, 4, 5].map((part) => (
-                <View key={part} style={[styles.minorLine, { top: (hourHeight / 6) * part }]} />
-              ))}
+              {height >= 34
+                ? [1, 2, 3, 4, 5].map((part) => <View key={part} style={[styles.minorLine, { top: (height / 6) * part }]} />)
+                : null}
             </View>
           </View>
         );
@@ -1310,15 +1507,16 @@ function CalendarTimeline({
 
       {Array.from({ length: (endHour - startHour + 1) * 6 }).map((_, index) => {
         const minutes = startHour * 60 + index * 10;
+        if (!isWorkingSlot(minutes)) return null;
         return (
           <Pressable
             key={minutes}
             style={[
               styles.timeSlotHitbox,
               {
-                top: (index * hourHeight) / 6,
+                top: getScaledMinuteTop(minutes),
                 left: timeColumnWidth,
-                height: hourHeight / 6,
+                height: getRangeHeight(minutes, minutes + 10),
               },
             ]}
             onPress={() => onTimePress(formatTimeFromMinutes(minutes))}
@@ -1326,8 +1524,21 @@ function CalendarTimeline({
         );
       })}
 
-      <View pointerEvents="none" style={[styles.closedBlock, { top: 0, height: (9 - startHour) * hourHeight }]} />
-      <View pointerEvents="none" style={[styles.closedBlock, { top: (18 - startHour) * hourHeight, height: (endHour - 17) * hourHeight }]} />
+      {[...closedRanges, ...blockedAppointments].map((range, index) => (
+        <View
+          key={`${range.start}-${range.end}-${index}`}
+          pointerEvents="none"
+          style={[
+            styles.closedBlock,
+            {
+              top: getScaledMinuteTop(range.start),
+              height: getRangeHeight(range.start, range.end),
+            },
+          ]}
+        >
+          {getRangeHeight(range.start, range.end) >= 24 ? <Text style={styles.closedBlockText}>{range.label}</Text> : null}
+        </View>
+      ))}
 
       {nowTop >= 0 && nowTop <= timelineHeight ? (
         <View style={[styles.currentTimeLine, { top: nowTop }]}>
@@ -1335,13 +1546,13 @@ function CalendarTimeline({
         </View>
       ) : null}
 
-      {appointments.map((appointment, index) => {
+      {regularAppointments.map((appointment, index) => {
         const start = timeToMinutes(appointment.startTime);
         const end = Math.max(timeToMinutes(appointment.endTime), start + 30);
-        const top = ((start - startHour * 60) / 60) * hourHeight;
-        const height = Math.max(68, ((end - start) / 60) * hourHeight);
+        const top = getScaledMinuteTop(start);
+        const height = Math.max(68, getRangeHeight(start, end));
         const isOffset = index % 2 === 1;
-        const color = appointment.kind === "blocked" ? "#94A3B8" : index % 3 === 0 ? "#FF9A82" : index % 3 === 1 ? "#FFD166" : "#9ED96B";
+        const color = index % 3 === 0 ? "#FF9A82" : index % 3 === 1 ? "#FFD166" : "#9ED96B";
 
         return (
           <View
@@ -2002,9 +2213,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   modeButton: {
-    minWidth: 62,
+    minWidth: 54,
+    maxWidth: 92,
+    flexShrink: 1,
     height: 38,
-    paddingHorizontal: 8,
+    paddingHorizontal: 7,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -2020,7 +2233,7 @@ const styles = StyleSheet.create({
   },
   modeButtonText: {
     color: "#334155",
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: "900",
   },
   modeButtonTextActive: {
@@ -2160,6 +2373,20 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "900",
   },
+  dayCountBadge: {
+    minWidth: 22,
+    height: 22,
+    paddingHorizontal: 6,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 11,
+    backgroundColor: "#6D4AFF",
+  },
+  dayCountBadgeText: {
+    color: "#FFFFFF",
+    fontSize: 11,
+    fontWeight: "900",
+  },
   summaryAppointments: {
     marginTop: 12,
     gap: 7,
@@ -2227,6 +2454,13 @@ const styles = StyleSheet.create({
     borderColor: "#BBF7D0",
     backgroundColor: "#FFFFFF",
   },
+  monthCellTop: {
+    minHeight: 21,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 4,
+  },
   monthCellActive: {
     borderColor: "#F43F5E",
     borderWidth: 2,
@@ -2268,6 +2502,9 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "700",
   },
+  hourTextHidden: {
+    opacity: 0,
+  },
   hourGrid: {
     flex: 1,
     position: "relative",
@@ -2293,8 +2530,15 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: 44,
     right: 0,
+    justifyContent: "center",
+    paddingLeft: 12,
     backgroundColor: "#F8FAFC",
     opacity: 0.88,
+  },
+  closedBlockText: {
+    color: "#64748B",
+    fontSize: 11,
+    fontWeight: "900",
   },
   timeSlotHitbox: {
     position: "absolute",
