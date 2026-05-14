@@ -2709,6 +2709,12 @@ function CalendarTab({
   }, [calendar?.memberCalendars, calendar?.teamMembers, staff, t, workspace]);
   const selectedMembers = calendarMembers.filter((member) => selectedMemberIds.includes(member.id));
   const primaryMember = selectedMembers[0] || calendarMembers[0] || null;
+  const visibleCalendarMembers = selectedMembers.length ? selectedMembers : calendarMembers.slice(0, 1);
+  const dayMemberColumnWidth = Math.floor(
+    visibleCalendarMembers.length > 1
+      ? Math.max(164, (screenWidth - 54) / visibleCalendarMembers.length)
+      : Math.max(280, screenWidth - 54)
+  );
   const selectedSchedule = getMemberScheduleForDate(primaryMember, workspace, selectedDate);
   const appointmentsByDate = useMemo(() => {
     const map = new Map<string, AppointmentRecord[]>();
@@ -3027,10 +3033,9 @@ function CalendarTab({
                     ) : null}
                   </Pressable>
                 </View>
-                {(selectedMembers.length ? selectedMembers : calendarMembers.slice(0, 1)).map((member, _, list) => {
-                  const columnWidth = list.length > 1 ? Math.max(164, (screenWidth - 54) / list.length) : Math.max(280, screenWidth - 54);
+                {visibleCalendarMembers.map((member) => {
                   return (
-                    <View key={member.id} style={[styles.teamDayHeader, { width: columnWidth }]}>
+                    <View key={member.id} style={[styles.teamDayHeader, { width: dayMemberColumnWidth }]}>
                       <MemberAvatar member={member} size={34} />
                       <Text style={styles.masterName} numberOfLines={1}>{member.name}</Text>
                     </View>
@@ -3048,12 +3053,11 @@ function CalendarTab({
               >
                 <View style={styles.teamCalendarBodyRow}>
                   <CalendarTimeAxis date={selectedDate} compact={isCompact} schedule={selectedSchedule} />
-                  {(selectedMembers.length ? selectedMembers : calendarMembers.slice(0, 1)).map((member, _, list) => {
-                    const columnWidth = list.length > 1 ? Math.max(164, (screenWidth - 54) / list.length) : Math.max(280, screenWidth - 54);
+                  {visibleCalendarMembers.map((member) => {
                     const memberAppointments = getAppointmentsForMember(selectedDate, member.id);
                     const memberSchedule = getScheduleForMember(selectedDate, member);
                     return (
-                      <View key={member.id} style={[styles.teamDayColumn, { width: columnWidth }]}>
+                      <View key={member.id} style={[styles.teamDayColumn, { width: dayMemberColumnWidth }]}>
                         <CalendarTimeline
                           date={selectedDate}
                           appointments={memberAppointments}
@@ -3061,7 +3065,7 @@ function CalendarTab({
                           compact={isCompact}
                           schedule={memberSchedule}
                           t={t}
-                          columnWidth={columnWidth}
+                          columnWidth={dayMemberColumnWidth}
                           showTimeColumn={false}
                           onTimePress={(time) => setTimeAction({ date: selectedDate, time, targetProfessionalId: member.id })}
                           onAppointmentPress={openAppointmentEditor}
@@ -3746,7 +3750,7 @@ function CalendarTimeline({
   const timeColumnWidth = showTimeColumn ? 43 : 0;
   const effectiveWidth = columnWidth || width;
   const gridWidth = Math.max(140, effectiveWidth - timeColumnWidth);
-  const laneGap = 8;
+  const laneGap = 0;
   const appointmentMinHeight = 68;
   const appointmentMinVisibleMinutes = Math.ceil((appointmentMinHeight / workHourHeight) * 60);
   const now = new Date();
@@ -3950,13 +3954,15 @@ function CalendarTimeline({
         const actualHeight = getRangeHeight(start, end);
         const maxHeightBeforeNext = typeof nextTouchingStart === "number" ? getRangeHeight(start, nextTouchingStart) : Infinity;
         const height = Math.max(actualHeight, Math.min(appointmentMinHeight, maxHeightBeforeNext));
-        const isTightCard = height < 64;
-        const isTinyCard = height < 44;
         const color = index % 3 === 0 ? "#FF9A82" : index % 3 === 1 ? "#FFD166" : "#9ED96B";
         const availableWidth = gridWidth - laneGap * 2;
-        const blockGap = laneCount > 1 ? 4 : 0;
+        const blockGap = laneCount > 1 ? 2 : 0;
         const blockWidth = laneCount > 1 ? (availableWidth - blockGap * (laneCount - 1)) / laneCount : availableWidth;
         const blockLeft = timeColumnWidth + laneGap + laneIndex * (blockWidth + blockGap);
+        const isNarrowCard = blockWidth < 92;
+        const isTightCard = height < 64 || isNarrowCard;
+        const isTinyCard = height < 44 || blockWidth < 68;
+        const timeLabel = isTinyCard ? appointment.startTime : `${appointment.startTime} - ${appointment.endTime}`;
 
         return (
           <Pressable
@@ -3992,10 +3998,10 @@ function CalendarTimeline({
             >
               <Ionicons name="move" size={isTightCard ? 10 : 12} color="#475569" />
             </Pressable>
-            <Text style={[styles.appointmentTime, isTightCard && styles.appointmentTimeTight]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.78}>
-              {appointment.startTime} - {appointment.endTime}
+            <Text style={[styles.appointmentTime, isTightCard && styles.appointmentTimeTight]} numberOfLines={1} ellipsizeMode="tail" adjustsFontSizeToFit minimumFontScale={0.82}>
+              {timeLabel}
             </Text>
-            <Text style={[styles.appointmentClient, isTightCard && styles.appointmentClientTight]} numberOfLines={isTinyCard ? 1 : 2}>
+            <Text style={[styles.appointmentClient, isTightCard && styles.appointmentClientTight]} numberOfLines={isTightCard ? 1 : 2} ellipsizeMode="tail">
               {appointment.customerName || "Клиент"}
             </Text>
             {!isTightCard ? (
@@ -7388,6 +7394,7 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
   teamDayColumn: {
+    overflow: "hidden",
     borderRightWidth: 1,
     borderRightColor: "#E2E8F0",
     backgroundColor: "#FFFFFF",
@@ -7908,10 +7915,10 @@ const styles = StyleSheet.create({
   appointmentBlock: {
     position: "absolute",
     zIndex: 3,
-    borderRadius: 8,
-    paddingVertical: 7,
-    paddingLeft: 7,
-    paddingRight: 24,
+    borderRadius: 7,
+    paddingVertical: 6,
+    paddingLeft: 6,
+    paddingRight: 23,
     overflow: "hidden",
     shadowColor: "#0F172A",
     shadowOpacity: 0.04,
@@ -7920,8 +7927,8 @@ const styles = StyleSheet.create({
   },
   appointmentBlockTight: {
     paddingVertical: 5,
-    paddingLeft: 6,
-    paddingRight: 22,
+    paddingLeft: 5,
+    paddingRight: 21,
   },
   appointmentDeleteButton: {
     position: "absolute",
