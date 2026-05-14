@@ -43,12 +43,33 @@ type RegisterForm = {
   companyName: string;
 };
 
+type VisitServiceDraft = {
+  id: string;
+  serviceId: string;
+  serviceName: string;
+  startTime: string;
+  endTime: string;
+  priceAmount: number;
+  durationMinutes: number;
+};
+
 type VisitDraft = {
   customerName: string;
   customerPhone: string;
   startTime: string;
   serviceId: string;
   appointmentDate: string;
+  selectedClientId?: string;
+  items: VisitServiceDraft[];
+};
+
+type BlockedTimeDraft = {
+  date: string;
+  startTime: string;
+  endTime: string;
+  label: string;
+  title: string;
+  appointment?: AppointmentRecord;
 };
 
 type ServiceRecord = {
@@ -196,6 +217,23 @@ const copy = {
     bookTime: "Забронювати час",
     addBlockedTime: "Додати неробочий час",
     reservedTime: "Заброньований час",
+    unavailableTime: "Неробочий час",
+    chooseClient: "Обрати клієнта",
+    withoutClient: "Без клієнта",
+    quickBookingWithoutClient: "Швидкий запис без клієнта",
+    chooseClientLater: "Можна обрати клієнта пізніше",
+    chooseService: "Обрати послугу",
+    addAnotherService: "Додати ще послугу +",
+    total: "Разом",
+    payable: "До сплати",
+    saveVisit: "Зберегти запис",
+    visitTab: "Візит",
+    search: "Пошук",
+    searchService: "Назва послуги",
+    clientNameOrPhone: "Ім'я або телефон",
+    addNewClient: "Додати нового клієнта",
+    clientName: "Ім'я клієнта",
+    withoutService: "Послугу не обрано",
     compact: "Стиснутий",
     dayView: "День",
     detailed: "Детально",
@@ -264,6 +302,23 @@ const copy = {
     bookTime: "Забронировать время",
     addBlockedTime: "Добавить нерабочее время",
     reservedTime: "Забронированное время",
+    unavailableTime: "Нерабочее время",
+    chooseClient: "Выбрать клиента",
+    withoutClient: "Без клиента",
+    quickBookingWithoutClient: "Быстрая запись без клиента",
+    chooseClientLater: "Можно выбрать клиента позже",
+    chooseService: "Выбрать услугу",
+    addAnotherService: "Добавить еще услугу +",
+    total: "Итого",
+    payable: "К оплате",
+    saveVisit: "Сохранить запись",
+    visitTab: "Визит",
+    search: "Поиск",
+    searchService: "Название услуги",
+    clientNameOrPhone: "Имя или телефон",
+    addNewClient: "Добавить нового клиента",
+    clientName: "Имя клиента",
+    withoutService: "Услуга не выбрана",
     compact: "Сжатый",
     dayView: "День",
     detailed: "Подробно",
@@ -332,6 +387,23 @@ const copy = {
     bookTime: "Book time",
     addBlockedTime: "Add unavailable time",
     reservedTime: "Reserved time",
+    unavailableTime: "Unavailable time",
+    chooseClient: "Choose client",
+    withoutClient: "No client",
+    quickBookingWithoutClient: "Quick booking without client",
+    chooseClientLater: "You can choose a client later",
+    chooseService: "Choose service",
+    addAnotherService: "Add another service +",
+    total: "Total",
+    payable: "To pay",
+    saveVisit: "Save booking",
+    visitTab: "Visit",
+    search: "Search",
+    searchService: "Service name",
+    clientNameOrPhone: "Name or phone",
+    addNewClient: "Add new client",
+    clientName: "Client name",
+    withoutService: "No service selected",
     compact: "Compact",
     dayView: "Day",
     detailed: "Detailed",
@@ -429,10 +501,48 @@ function addMinutes(time: string, minutes: number) {
   return `${String(nextHours).padStart(2, "0")}:${String(nextMinutes).padStart(2, "0")}`;
 }
 
+function createLocalId(prefix = "draft") {
+  return `${prefix}-${Date.now()}-${Math.round(Math.random() * 100000)}`;
+}
+
+function createVisitServiceDraft(startTime: string, service?: ServiceRecord): VisitServiceDraft {
+  const duration = Math.max(5, service?.durationMinutes || 15);
+  return {
+    id: createLocalId("service"),
+    serviceId: service?.id || "",
+    serviceName: service?.name || "",
+    startTime,
+    endTime: addMinutes(startTime, duration),
+    priceAmount: Number(service?.price || 0),
+    durationMinutes: duration,
+  };
+}
+
+function createDefaultVisitDraft(date: string, startTime: string): VisitDraft {
+  return {
+    customerName: "",
+    customerPhone: "",
+    startTime,
+    serviceId: "",
+    appointmentDate: date,
+    selectedClientId: undefined,
+    items: [createVisitServiceDraft(startTime)],
+  };
+}
+
 function timeToMinutes(time: string) {
   const [hours, mins] = time.split(":").map((item) => Number(item));
   if (!Number.isFinite(hours) || !Number.isFinite(mins)) return 9 * 60;
   return hours * 60 + mins;
+}
+
+function isValidTime(time: string) {
+  const match = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(time);
+  return Boolean(match);
+}
+
+function safeText(value: unknown) {
+  return typeof value === "string" ? value : "";
 }
 
 function formatDayLabel(date: string, language: AppLanguage) {
@@ -618,13 +728,7 @@ export default function App() {
     phone: detectedCountry.phonePrefix,
     companyName: "",
   });
-  const [visitDraft, setVisitDraft] = useState({
-    customerName: "",
-    customerPhone: "",
-    startTime: "09:00",
-    serviceId: "",
-    appointmentDate: selectedDate,
-  });
+  const [visitDraft, setVisitDraft] = useState<VisitDraft>(() => createDefaultVisitDraft(selectedDate, "09:00"));
   const [editingAppointment, setEditingAppointment] = useState<AppointmentRecord | null>(null);
   const [timeAction, setTimeAction] = useState<{ date: string; time: string } | null>(null);
   const [serviceDraft, setServiceDraft] = useState({ name: "", durationMinutes: "60", price: "0" });
@@ -710,7 +814,12 @@ export default function App() {
       setClients(Array.isArray(clientsResult.clients) ? clientsResult.clients : []);
       setVisitDraft((current) => ({
         ...current,
+        customerName: safeText(current.customerName),
+        customerPhone: safeText(current.customerPhone),
+        startTime: safeText(current.startTime) || "09:00",
+        appointmentDate: safeText(current.appointmentDate) || date,
         serviceId: current.serviceId || workspaceResult.services?.[0]?.id || "",
+        items: Array.isArray(current.items) && current.items.length ? current.items : [createVisitServiceDraft(safeText(current.startTime) || "09:00")],
       }));
     } catch (error) {
       Alert.alert("Timviz", error instanceof Error ? error.message : "Failed to load workspace.");
@@ -808,30 +917,48 @@ export default function App() {
     setBusy(false);
   }
 
+  function getNormalizedVisitItems() {
+    return (Array.isArray(visitDraft.items) ? visitDraft.items : []).map((item) => ({
+      ...item,
+      serviceId: safeText(item.serviceId),
+      serviceName: safeText(item.serviceName).trim(),
+      startTime: safeText(item.startTime).trim(),
+      endTime: safeText(item.endTime).trim(),
+      priceAmount: Number(item.priceAmount || 0),
+      durationMinutes: Number(item.durationMinutes || 15),
+    }));
+  }
+
   async function createVisit() {
-    const service = workspace?.services.find((item) => item.id === visitDraft.serviceId) || workspace?.services[0];
-    if (!service || !visitDraft.customerName.trim()) {
+    const items = getNormalizedVisitItems();
+    if (!items.length || items.some((item) => !item.serviceName || !isValidTime(item.startTime) || !isValidTime(item.endTime) || timeToMinutes(item.endTime) <= timeToMinutes(item.startTime))) {
       Alert.alert(t.requiredTitle, t.requiredText);
       return false;
     }
 
+    const appointmentDate = visitDraft.appointmentDate || selectedDate;
+    const customerName = safeText(visitDraft.customerName).trim();
+    const customerPhone = safeText(visitDraft.customerPhone).trim();
     setBusy(true);
     try {
       await apiFetch("/api/mobile/pro/calendar", {
         method: "POST",
         body: JSON.stringify({
-          appointmentDate: visitDraft.appointmentDate || selectedDate,
-          startTime: visitDraft.startTime,
-          endTime: addMinutes(visitDraft.startTime, service.durationMinutes || 60),
-          customerName: visitDraft.customerName.trim(),
-          customerPhone: visitDraft.customerPhone.trim(),
-          serviceName: service.name,
-          priceAmount: Number(service.price || 0),
-          attendance: "confirmed",
+          items: items.map((item) => ({
+            appointmentDate,
+            startTime: item.startTime,
+            endTime: item.endTime,
+            customerName,
+            customerPhone,
+            serviceName: item.serviceName,
+            priceAmount: item.priceAmount,
+            attendance: "confirmed",
+            notes: "",
+          })),
         }),
       });
-      setVisitDraft({ customerName: "", customerPhone: "", startTime: visitDraft.startTime, serviceId: service.id, appointmentDate: visitDraft.appointmentDate || selectedDate });
-      await refreshAll(session, visitDraft.appointmentDate || selectedDate);
+      setVisitDraft(createDefaultVisitDraft(appointmentDate, items[0]?.startTime || "09:00"));
+      await refreshAll(session, appointmentDate);
       return true;
     } catch (error) {
       Alert.alert(t.addVisit, error instanceof Error ? error.message : t.addVisit);
@@ -843,14 +970,17 @@ export default function App() {
 
   async function saveEditedVisit() {
     if (!editingAppointment) return false;
-    const service = workspace?.services.find((item) => item.id === visitDraft.serviceId) || workspace?.services[0];
-    const nextServiceName = service?.name || editingAppointment.serviceName;
-    const duration = service?.durationMinutes || Math.max(10, timeToMinutes(editingAppointment.endTime) - timeToMinutes(editingAppointment.startTime));
-    if (!visitDraft.customerName.trim()) {
+    const items = getNormalizedVisitItems();
+    if (!items.length || items.some((item) => !item.serviceName || !isValidTime(item.startTime) || !isValidTime(item.endTime) || timeToMinutes(item.endTime) <= timeToMinutes(item.startTime))) {
       Alert.alert(t.requiredTitle, t.requiredText);
       return false;
     }
 
+    const primaryItem = items[0];
+    const extraItems = items.slice(1);
+    const appointmentDate = visitDraft.appointmentDate || editingAppointment.appointmentDate || selectedDate;
+    const customerName = safeText(visitDraft.customerName).trim();
+    const customerPhone = safeText(visitDraft.customerPhone).trim();
     setBusy(true);
     try {
       await apiFetch("/api/mobile/pro/calendar", {
@@ -858,24 +988,72 @@ export default function App() {
         body: JSON.stringify({
           mode: "meta",
           appointmentId: editingAppointment.id,
-          customerName: visitDraft.customerName.trim(),
-          customerPhone: visitDraft.customerPhone.trim(),
-          startTime: visitDraft.startTime,
-          endTime: addMinutes(visitDraft.startTime, duration),
-          serviceName: nextServiceName,
-          priceAmount: Number(service?.price ?? editingAppointment.priceAmount ?? 0),
+          customerName,
+          customerPhone,
+          startTime: primaryItem.startTime,
+          endTime: primaryItem.endTime,
+          serviceName: primaryItem.serviceName,
+          priceAmount: primaryItem.priceAmount,
           attendance: editingAppointment.attendance,
           previousCustomerName: editingAppointment.customerName,
           previousCustomerPhone: editingAppointment.customerPhone,
           previousAppointmentTime: editingAppointment.startTime,
         }),
       });
-      await refreshAll(session, visitDraft.appointmentDate || selectedDate);
+      if (extraItems.length) {
+        await apiFetch("/api/mobile/pro/calendar", {
+          method: "POST",
+          body: JSON.stringify({
+            items: extraItems.map((item) => ({
+              appointmentDate,
+              startTime: item.startTime,
+              endTime: item.endTime,
+              customerName,
+              customerPhone,
+              serviceName: item.serviceName,
+              priceAmount: item.priceAmount,
+              attendance: editingAppointment.attendance,
+              notes: "",
+            })),
+          }),
+        });
+      }
+      await refreshAll(session, appointmentDate);
       setEditingAppointment(null);
       return true;
     } catch (error) {
       Alert.alert(t.editVisit, error instanceof Error ? error.message : t.editVisit);
       return false;
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function createClientFromVisit(input: { fullName: string; phone: string; email: string }) {
+    const parts = input.fullName.trim().split(/\s+/).filter(Boolean);
+    if (!parts.length && !input.phone.trim()) {
+      Alert.alert(t.requiredTitle, t.requiredText);
+      return null;
+    }
+
+    setBusy(true);
+    try {
+      const result = await apiFetch("/api/mobile/pro/clients", {
+        method: "POST",
+        body: JSON.stringify({
+          firstName: parts[0] || "",
+          lastName: parts.slice(1).join(" "),
+          phone: input.phone.trim(),
+          email: input.email.trim(),
+          notificationsTelegram: true,
+          marketingTelegram: false,
+        }),
+      });
+      await refreshAll();
+      return result?.client as ClientRecord;
+    } catch (error) {
+      Alert.alert(t.addClient, error instanceof Error ? error.message : t.addClient);
+      return null;
     } finally {
       setBusy(false);
     }
@@ -916,14 +1094,16 @@ export default function App() {
         }),
       });
       await refreshAll(session, appointment.appointmentDate || selectedDate);
+      return true;
     } catch (error) {
       Alert.alert(t.editVisit, error instanceof Error ? error.message : t.editVisit);
+      return false;
     } finally {
       setBusy(false);
     }
   }
 
-  async function createBlockedTime(date: string, time: string, label: string) {
+  async function createBlockedTime(date: string, startTime: string, endTime: string, label: string) {
     setBusy(true);
     try {
       await apiFetch("/api/mobile/pro/calendar", {
@@ -931,8 +1111,8 @@ export default function App() {
         body: JSON.stringify({
           kind: "blocked",
           appointmentDate: date,
-          startTime: time,
-          endTime: addMinutes(time, 60),
+          startTime,
+          endTime,
           serviceName: label,
         }),
       });
@@ -1037,12 +1217,14 @@ export default function App() {
             language={language}
             workspace={workspace}
             calendar={calendar}
+            clients={clients}
             selectedDate={selectedDate}
             setSelectedDate={setSelectedDate}
             visitDraft={visitDraft}
             setVisitDraft={setVisitDraft}
             onCreateVisit={createVisit}
             onUpdateVisit={saveEditedVisit}
+            onCreateClientFromVisit={createClientFromVisit}
             editingAppointment={editingAppointment}
             setEditingAppointment={setEditingAppointment}
             timeAction={timeAction}
@@ -1050,6 +1232,7 @@ export default function App() {
             onDeleteAppointment={deleteAppointment}
             onMoveAppointment={(appointment) => updateAppointmentTime(appointment, addMinutes(appointment.startTime, 10), addMinutes(appointment.endTime, 10))}
             onResizeAppointment={(appointment) => updateAppointmentTime(appointment, appointment.startTime, addMinutes(appointment.endTime, 10))}
+            onUpdateBlockedTime={updateAppointmentTime}
             onCreateBlockedTime={createBlockedTime}
             busy={busy}
             refreshing={refreshing}
@@ -1184,12 +1367,14 @@ function CalendarTab({
   language,
   workspace,
   calendar,
+  clients,
   selectedDate,
   setSelectedDate,
   visitDraft,
   setVisitDraft,
   onCreateVisit,
   onUpdateVisit,
+  onCreateClientFromVisit,
   editingAppointment,
   setEditingAppointment,
   timeAction,
@@ -1197,6 +1382,7 @@ function CalendarTab({
   onDeleteAppointment,
   onMoveAppointment,
   onResizeAppointment,
+  onUpdateBlockedTime,
   onCreateBlockedTime,
   busy,
   refreshing,
@@ -1209,12 +1395,14 @@ function CalendarTab({
   language: AppLanguage;
   workspace: WorkspaceSnapshot | null;
   calendar: CalendarSnapshot | null;
+  clients: ClientRecord[];
   selectedDate: string;
   setSelectedDate: (date: string) => void;
   visitDraft: VisitDraft;
   setVisitDraft: (draft: VisitDraft) => void;
   onCreateVisit: () => Promise<boolean>;
   onUpdateVisit: () => Promise<boolean>;
+  onCreateClientFromVisit: (input: { fullName: string; phone: string; email: string }) => Promise<ClientRecord | null>;
   editingAppointment: AppointmentRecord | null;
   setEditingAppointment: (appointment: AppointmentRecord | null) => void;
   timeAction: { date: string; time: string } | null;
@@ -1222,7 +1410,8 @@ function CalendarTab({
   onDeleteAppointment: (appointment: AppointmentRecord) => void;
   onMoveAppointment: (appointment: AppointmentRecord) => void;
   onResizeAppointment: (appointment: AppointmentRecord) => void;
-  onCreateBlockedTime: (date: string, time: string, label: string) => Promise<void>;
+  onUpdateBlockedTime: (appointment: AppointmentRecord, startTime: string, endTime: string) => Promise<boolean>;
+  onCreateBlockedTime: (date: string, startTime: string, endTime: string, label: string) => Promise<void>;
   busy: boolean;
   refreshing: boolean;
   onRefresh: () => void;
@@ -1232,11 +1421,15 @@ function CalendarTab({
 }) {
   const currency = workspace?.professional.currency;
   const services = workspace?.services || [];
-  const currentService = services.find((item) => item.id === visitDraft.serviceId) || services[0];
-  const endTime = addMinutes(visitDraft.startTime, currentService?.durationMinutes || 60);
   const [isCompact, setIsCompact] = useState(true);
   const [viewMode, setViewMode] = useState<CalendarViewMode>("day");
   const [viewMenuOpen, setViewMenuOpen] = useState(false);
+  const [blockedTimeDraft, setBlockedTimeDraft] = useState<BlockedTimeDraft | null>(null);
+  const [visitPickerMode, setVisitPickerMode] = useState<"client" | "service" | "newClient" | null>(null);
+  const [editingServiceIndex, setEditingServiceIndex] = useState(0);
+  const [serviceQuery, setServiceQuery] = useState("");
+  const [clientQuery, setClientQuery] = useState("");
+  const [newClientDraft, setNewClientDraft] = useState({ fullName: "", phone: "", email: "" });
   const visibleDates = useMemo(() => getCalendarModeDates(viewMode, selectedDate), [selectedDate, viewMode]);
   const visibleDatesKey = visibleDates.join("|");
   const [rangeSnapshots, setRangeSnapshots] = useState<Record<string, CalendarSnapshot>>({});
@@ -1265,6 +1458,15 @@ function CalendarTab({
   ];
   const activeViewLabel = viewOptions.find((item) => item.value === viewMode)?.label || t.dayView;
   const titleText = formatCalendarTitle(viewMode, selectedDate, language);
+  const selectedClient = visitDraft.selectedClientId ? clients.find((client) => client.id === visitDraft.selectedClientId) || null : null;
+  const draftVisitItems = Array.isArray(visitDraft.items) && visitDraft.items.length ? visitDraft.items : [createVisitServiceDraft(visitDraft.startTime || "09:00")];
+  const visitTotal = draftVisitItems.reduce((sum, item) => sum + Number(item.priceAmount || 0), 0);
+  const filteredServices = services.filter((service) => service.name.toLowerCase().includes(serviceQuery.trim().toLowerCase()));
+  const filteredClients = clients.filter((client) => {
+    const query = clientQuery.trim().toLowerCase();
+    if (!query) return true;
+    return `${client.fullName || ""} ${client.phone || ""} ${client.email || ""}`.toLowerCase().includes(query);
+  });
 
   useEffect(() => {
     if (viewMode === "day") return;
@@ -1283,15 +1485,80 @@ function CalendarTab({
     return appointmentsByDate.get(date) || [];
   }
 
+  function setDraftClient(client: ClientRecord | null) {
+    setVisitDraft({
+      ...visitDraft,
+      selectedClientId: client?.id,
+      customerName: client?.fullName || "",
+      customerPhone: client?.phone || "",
+    });
+    setClientQuery("");
+    setVisitPickerMode(null);
+  }
+
+  function updateVisitItem(index: number, patch: Partial<VisitServiceDraft>) {
+    const draftItems = Array.isArray(visitDraft.items) && visitDraft.items.length ? visitDraft.items : [createVisitServiceDraft(visitDraft.startTime || "09:00")];
+    setVisitDraft({
+      ...visitDraft,
+      items: draftItems.map((item, itemIndex) => {
+        if (itemIndex !== index) return item;
+        const next = { ...item, ...patch };
+        if (patch.startTime && !patch.endTime && timeToMinutes(safeText(next.endTime)) <= timeToMinutes(patch.startTime)) {
+          next.endTime = addMinutes(patch.startTime, next.durationMinutes || 15);
+        }
+        return next;
+      }),
+    });
+  }
+
+  function selectVisitService(service: ServiceRecord) {
+    const duration = Math.max(5, service.durationMinutes || 60);
+    const draftItems = Array.isArray(visitDraft.items) ? visitDraft.items : [];
+    const currentItem = draftItems[editingServiceIndex] || createVisitServiceDraft(visitDraft.startTime || "09:00");
+    updateVisitItem(editingServiceIndex, {
+      serviceId: service.id,
+      serviceName: service.name,
+      priceAmount: Number(service.price || 0),
+      durationMinutes: duration,
+      endTime: addMinutes(currentItem.startTime, duration),
+    });
+    setServiceQuery("");
+    setVisitPickerMode(null);
+  }
+
+  function addAnotherService() {
+    const draftItems = Array.isArray(visitDraft.items) && visitDraft.items.length ? visitDraft.items : [createVisitServiceDraft(visitDraft.startTime || "09:00")];
+    const lastItem = draftItems[draftItems.length - 1];
+    const nextStart = lastItem?.endTime || visitDraft.startTime || "09:00";
+    setVisitDraft({
+      ...visitDraft,
+      items: [...draftItems, createVisitServiceDraft(nextStart)],
+    });
+  }
+
+  function removeVisitService(index: number) {
+    const draftItems = Array.isArray(visitDraft.items) ? visitDraft.items : [];
+    if (draftItems.length <= 1) return;
+    setVisitDraft({
+      ...visitDraft,
+      items: draftItems.filter((_, itemIndex) => itemIndex !== index),
+    });
+  }
+
   function openComposerAt(time: string, date = selectedDate) {
     setEditingAppointment(null);
     setSelectedDate(date);
-    setVisitDraft({ ...visitDraft, appointmentDate: date, startTime: time });
+    setVisitDraft(createDefaultVisitDraft(date, time));
     setComposerOpen(true);
   }
 
   function openAppointmentEditor(appointment: AppointmentRecord) {
     const matchedService = services.find((service) => service.name === appointment.serviceName) || services[0];
+    const matchedClient = clients.find((client) => {
+      const samePhone = appointment.customerPhone && client.phone === appointment.customerPhone;
+      const sameName = appointment.customerName && client.fullName === appointment.customerName;
+      return samePhone || sameName;
+    });
     setEditingAppointment(appointment);
     setSelectedDate(appointment.appointmentDate || selectedDate);
     setVisitDraft({
@@ -1300,8 +1567,55 @@ function CalendarTab({
       startTime: appointment.startTime,
       serviceId: matchedService?.id || "",
       appointmentDate: appointment.appointmentDate || selectedDate,
+      selectedClientId: matchedClient?.id,
+      items: [
+        {
+          id: appointment.id,
+          serviceId: matchedService?.id || "",
+          serviceName: appointment.serviceName,
+          startTime: appointment.startTime,
+          endTime: appointment.endTime,
+          priceAmount: Number(appointment.priceAmount || matchedService?.price || 0),
+          durationMinutes: Math.max(5, timeToMinutes(appointment.endTime) - timeToMinutes(appointment.startTime)),
+        },
+      ],
     });
     setComposerOpen(true);
+  }
+
+  function openBlockedTimeComposer(action: { date: string; time: string }, label: string, title: string) {
+    setBlockedTimeDraft({
+      date: action.date,
+      startTime: action.time,
+      endTime: addMinutes(action.time, 60),
+      label,
+      title,
+    });
+  }
+
+  function openBlockedAppointmentEditor(appointment: AppointmentRecord) {
+    setBlockedTimeDraft({
+      date: appointment.appointmentDate || selectedDate,
+      startTime: appointment.startTime,
+      endTime: appointment.endTime,
+      label: appointment.serviceName || t.unavailableTime,
+      title: appointment.serviceName || t.unavailableTime,
+      appointment,
+    });
+  }
+
+  async function saveBlockedTimeDraft() {
+    if (!blockedTimeDraft) return;
+    const startTime = blockedTimeDraft.startTime.trim();
+    const endTime = blockedTimeDraft.endTime.trim();
+    if (!isValidTime(startTime) || !isValidTime(endTime) || timeToMinutes(endTime) <= timeToMinutes(startTime)) {
+      Alert.alert(t.requiredTitle, t.requiredText);
+      return;
+    }
+    const saved = blockedTimeDraft.appointment
+      ? await onUpdateBlockedTime(blockedTimeDraft.appointment, startTime, endTime)
+      : (await onCreateBlockedTime(blockedTimeDraft.date, startTime, endTime, blockedTimeDraft.label), true);
+    if (saved) setBlockedTimeDraft(null);
   }
 
   function chooseDate(date: string, nextMode: CalendarViewMode = viewMode) {
@@ -1372,6 +1686,7 @@ function CalendarTab({
               t={t}
               onTimePress={(time) => setTimeAction({ date: selectedDate, time })}
               onAppointmentPress={openAppointmentEditor}
+              onBlockedAppointmentPress={openBlockedAppointmentEditor}
               onAppointmentDelete={onDeleteAppointment}
               onAppointmentMove={onMoveAppointment}
               onAppointmentResize={onResizeAppointment}
@@ -1398,7 +1713,7 @@ function CalendarTab({
         style={styles.fabButton}
         onPress={() => {
           setEditingAppointment(null);
-          setVisitDraft({ ...visitDraft, appointmentDate: selectedDate, startTime: getRoundedTime(10) });
+          setVisitDraft(createDefaultVisitDraft(selectedDate, getRoundedTime(10)));
           setComposerOpen(true);
         }}
       >
@@ -1407,44 +1722,183 @@ function CalendarTab({
 
       <Modal transparent visible={composerOpen} animationType="slide" onRequestClose={() => setComposerOpen(false)}>
         <View style={styles.modalBackdrop}>
-          <View style={styles.visitSheet}>
+          <View style={[styles.visitSheet, styles.visitEditorSheet]}>
             <View style={styles.sheetHeader}>
-              <Text style={styles.sheetTitle}>{editingAppointment ? t.editVisit : t.newVisit}</Text>
+              <Text style={styles.sheetTitle}>
+                {visitPickerMode === "client" ? t.chooseClient : visitPickerMode === "service" ? t.chooseService : visitPickerMode === "newClient" ? t.addClient : editingAppointment ? t.editVisit : t.newVisit}
+              </Text>
               <Pressable
                 style={styles.sheetClose}
                 onPress={() => {
+                  if (visitPickerMode) {
+                    setVisitPickerMode(null);
+                    return;
+                  }
                   setComposerOpen(false);
                   setEditingAppointment(null);
                 }}
               >
-                <Ionicons name="close" size={22} color="#0F172A" />
+                <Ionicons name={visitPickerMode ? "chevron-back" : "close"} size={22} color="#0F172A" />
               </Pressable>
             </View>
-            <Field label={t.customer} value={visitDraft.customerName} onChangeText={(value) => setVisitDraft({ ...visitDraft, customerName: value })} />
-            <Field label={t.phone} value={visitDraft.customerPhone} onChangeText={(value) => setVisitDraft({ ...visitDraft, customerPhone: value })} keyboardType="phone-pad" />
-            <View style={styles.twoColumns}>
-              <Field label={t.start} value={visitDraft.startTime} onChangeText={(value) => setVisitDraft({ ...visitDraft, startTime: value })} />
-              <Field label={t.end} value={endTime} editable={false} />
-            </View>
-            <View style={styles.servicePicker}>
-              {services.slice(0, 8).map((service) => (
-                <Pressable
-                  key={service.id}
-                  onPress={() => setVisitDraft({ ...visitDraft, serviceId: service.id })}
-                  style={[styles.choiceChip, visitDraft.serviceId === service.id && styles.choiceChipActive]}
-                >
-                  <Text style={[styles.choiceText, visitDraft.serviceId === service.id && styles.choiceTextActive]}>{service.name}</Text>
+            {visitPickerMode === "client" ? (
+              <>
+                <Field label={t.search} value={clientQuery} onChangeText={setClientQuery} placeholder={t.clientNameOrPhone} />
+                <Pressable style={styles.clientOptionCard} onPress={() => setDraftClient(null)}>
+                  <View style={styles.clientAvatar}>
+                    <Ionicons name="person-outline" size={18} color="#6D4AFF" />
+                  </View>
+                  <View style={styles.clientOptionText}>
+                    <Text style={styles.clientOptionTitle}>{t.quickBookingWithoutClient}</Text>
+                    <Text style={styles.clientOptionCaption}>{t.chooseClientLater}</Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
                 </Pressable>
-              ))}
-            </View>
-            <PrimaryButton
-              label={editingAppointment ? t.save : t.addVisit}
-              onPress={async () => {
-                const saved = editingAppointment ? await onUpdateVisit() : await onCreateVisit();
-                if (saved) setComposerOpen(false);
-              }}
-              disabled={busy || !services.length}
-            />
+                <Pressable
+                  style={styles.clientOptionCard}
+                  onPress={() => {
+                    setNewClientDraft({ fullName: clientQuery, phone: "", email: "" });
+                    setVisitPickerMode("newClient");
+                  }}
+                >
+                  <View style={styles.clientAvatar}>
+                    <Ionicons name="add" size={20} color="#6D4AFF" />
+                  </View>
+                  <View style={styles.clientOptionText}>
+                    <Text style={styles.clientOptionTitle}>{t.addNewClient}</Text>
+                    <Text style={styles.clientOptionCaption}>{t.clientNameOrPhone}</Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
+                </Pressable>
+                <ScrollView style={styles.pickerList} showsVerticalScrollIndicator={false}>
+                  {filteredClients.map((client) => (
+                    <Pressable key={client.id} style={styles.clientOptionCard} onPress={() => setDraftClient(client)}>
+                      <View style={styles.clientAvatar}>
+                        <Text style={styles.clientAvatarText}>{(client.fullName || client.phone || "C").slice(0, 1).toUpperCase()}</Text>
+                      </View>
+                      <View style={styles.clientOptionText}>
+                        <Text style={styles.clientOptionTitle}>{client.fullName || client.phone}</Text>
+                        <Text style={styles.clientOptionCaption}>{client.phone || client.email || t.clients}</Text>
+                      </View>
+                    </Pressable>
+                  ))}
+                </ScrollView>
+              </>
+            ) : visitPickerMode === "newClient" ? (
+              <>
+                <Field label={t.clientName} value={newClientDraft.fullName} onChangeText={(value) => setNewClientDraft({ ...newClientDraft, fullName: value })} />
+                <Field label={t.phone} value={newClientDraft.phone} onChangeText={(value) => setNewClientDraft({ ...newClientDraft, phone: value })} keyboardType="phone-pad" />
+                <Field label={t.email} value={newClientDraft.email} onChangeText={(value) => setNewClientDraft({ ...newClientDraft, email: value })} keyboardType="email-address" autoCapitalize="none" />
+                <PrimaryButton
+                  label={t.addClient}
+                  onPress={async () => {
+                    const client = await onCreateClientFromVisit(newClientDraft);
+                    if (client) setDraftClient(client);
+                  }}
+                  disabled={busy}
+                />
+              </>
+            ) : visitPickerMode === "service" ? (
+              <>
+                <Field label={t.search} value={serviceQuery} onChangeText={setServiceQuery} placeholder={t.searchService} />
+                <ScrollView style={styles.pickerList} showsVerticalScrollIndicator={false}>
+                  {filteredServices.map((service) => (
+                    <Pressable key={service.id} style={styles.serviceOptionCard} onPress={() => selectVisitService(service)}>
+                      <View style={[styles.serviceTone, { backgroundColor: service.color || "#6D4AFF" }]} />
+                      <View style={styles.clientOptionText}>
+                        <Text style={styles.clientOptionTitle}>{service.name}</Text>
+                        <Text style={styles.clientOptionCaption}>{service.durationMinutes || 60} {t.duration}</Text>
+                      </View>
+                      <Text style={styles.serviceOptionPrice}>{formatMoney(service.price, currency)}</Text>
+                    </Pressable>
+                  ))}
+                </ScrollView>
+              </>
+            ) : (
+              <>
+                <ScrollView style={styles.visitEditorScroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+                  <Pressable style={styles.visitClientCard} onPress={() => setVisitPickerMode("client")}>
+                    <View style={styles.clientAvatarLarge}>
+                      <Text style={styles.clientAvatarLargeText}>{selectedClient ? (selectedClient.fullName || "C").slice(0, 1).toUpperCase() : "○"}</Text>
+                    </View>
+                    <View style={styles.clientOptionText}>
+                      <Text style={styles.visitCardEyebrow}>{t.customer}</Text>
+                      <Text style={styles.visitClientTitle}>{selectedClient ? selectedClient.fullName : visitDraft.customerName || t.quickBookingWithoutClient}</Text>
+                      <Text style={styles.clientOptionCaption}>{visitDraft.customerPhone || t.chooseClientLater}</Text>
+                    </View>
+                    <Ionicons name="add" size={18} color="#6D4AFF" />
+                  </Pressable>
+
+                  <View style={styles.visitSectionHeader}>
+                    <Text style={styles.visitSectionTitle}>{t.visitTab || t.newVisit}</Text>
+                    <Text style={styles.visitSectionDate}>{formatDayLabel(visitDraft.appointmentDate || selectedDate, language)}</Text>
+                  </View>
+
+                  {draftVisitItems.map((item, index) => (
+                    <View key={item.id} style={styles.visitServiceCard}>
+                      <View style={styles.visitServiceCardHeader}>
+                        <Pressable
+                          style={styles.visitServicePickerButton}
+                          onPress={() => {
+                            setEditingServiceIndex(index);
+                            setVisitPickerMode("service");
+                          }}
+                        >
+                          <Text style={[styles.visitServicePickerText, !item.serviceName && styles.mutedText]} numberOfLines={1}>
+                            {item.serviceName || t.chooseService} →
+                          </Text>
+                        </Pressable>
+                        {draftVisitItems.length > 1 ? (
+                          <Pressable style={styles.smallIconButton} onPress={() => removeVisitService(index)}>
+                            <Ionicons name="trash-outline" size={18} color="#DC2626" />
+                          </Pressable>
+                        ) : null}
+                      </View>
+                      <View style={styles.twoColumns}>
+                        <Field label={t.start} value={item.startTime} onChangeText={(value) => updateVisitItem(index, { startTime: value })} keyboardType="numbers-and-punctuation" placeholder="09:00" />
+                        <Field label={t.end} value={item.endTime} onChangeText={(value) => updateVisitItem(index, { endTime: value })} keyboardType="numbers-and-punctuation" placeholder="10:00" />
+                      </View>
+                      <View style={styles.visitServiceMeta}>
+                        <Text style={styles.clientOptionCaption}>{item.serviceName || t.withoutService}</Text>
+                        <Text style={styles.visitServicePrice}>{formatMoney(item.priceAmount, currency)}</Text>
+                      </View>
+                    </View>
+                  ))}
+                  <Pressable style={styles.addAnotherServiceButton} onPress={addAnotherService}>
+                    <Text style={styles.addAnotherServiceText}>{t.addAnotherService}</Text>
+                  </Pressable>
+                </ScrollView>
+                <View style={styles.visitTotals}>
+                  <Text style={styles.clientOptionCaption}>{t.total}</Text>
+                  <Text style={styles.visitTotalValue}>{formatMoney(visitTotal, currency)}</Text>
+                  <Text style={styles.clientOptionCaption}>{t.payable}</Text>
+                  <Text style={styles.visitTotalValue}>{formatMoney(visitTotal, currency)}</Text>
+                </View>
+                <PrimaryButton
+                  label={editingAppointment ? t.save : t.saveVisit}
+                  onPress={async () => {
+                    const saved = editingAppointment ? await onUpdateVisit() : await onCreateVisit();
+                    if (saved) {
+                      setComposerOpen(false);
+                      setEditingAppointment(null);
+                    }
+                  }}
+                  disabled={busy || !services.length}
+                />
+                {editingAppointment ? (
+                  <Pressable
+                    style={[styles.secondaryButton, styles.dangerButton, busy && styles.disabled]}
+                    disabled={busy}
+                    onPress={() => {
+                      setComposerOpen(false);
+                      onDeleteAppointment(editingAppointment);
+                    }}
+                  >
+                    <Text style={styles.dangerButtonText}>{t.delete}</Text>
+                  </Pressable>
+                ) : null}
+              </>
+            )}
           </View>
         </View>
       </Modal>
@@ -1494,7 +1948,7 @@ function CalendarTab({
                 if (!timeAction) return;
                 const action = timeAction;
                 setTimeAction(null);
-                void onCreateBlockedTime(action.date, action.time, t.reservedTime);
+                openBlockedTimeComposer(action, t.reservedTime, t.reservedTime);
               }}
             >
               <Ionicons name="time-outline" size={20} color="#0F172A" />
@@ -1506,7 +1960,7 @@ function CalendarTab({
                 if (!timeAction) return;
                 const action = timeAction;
                 setTimeAction(null);
-                void onCreateBlockedTime(action.date, action.time, t.addBlockedTime);
+                openBlockedTimeComposer(action, t.unavailableTime, t.unavailableTime);
               }}
             >
               <Ionicons name="ban-outline" size={20} color="#0F172A" />
@@ -1514,6 +1968,55 @@ function CalendarTab({
             </Pressable>
           </View>
         </Pressable>
+      </Modal>
+
+      <Modal transparent visible={Boolean(blockedTimeDraft)} animationType="slide" onRequestClose={() => setBlockedTimeDraft(null)}>
+        <View style={styles.modalBackdrop}>
+          <View style={styles.visitSheet}>
+            <View style={styles.sheetHeader}>
+              <Text style={styles.sheetTitle}>{blockedTimeDraft?.title || t.unavailableTime}</Text>
+              <Pressable style={styles.sheetClose} onPress={() => setBlockedTimeDraft(null)}>
+                <Ionicons name="close" size={22} color="#0F172A" />
+              </Pressable>
+            </View>
+            <View style={styles.blockedTimeSummary}>
+              <Ionicons name="time-outline" size={18} color="#6D4AFF" />
+              <Text style={styles.blockedTimeSummaryText}>
+                {blockedTimeDraft ? formatDayLabel(blockedTimeDraft.date, language) : ""}
+              </Text>
+            </View>
+            <View style={styles.twoColumns}>
+              <Field
+                label={t.start}
+                value={blockedTimeDraft?.startTime || ""}
+                onChangeText={(value) => setBlockedTimeDraft((current) => (current ? { ...current, startTime: value } : current))}
+                keyboardType="numbers-and-punctuation"
+                placeholder="09:00"
+              />
+              <Field
+                label={t.end}
+                value={blockedTimeDraft?.endTime || ""}
+                onChangeText={(value) => setBlockedTimeDraft((current) => (current ? { ...current, endTime: value } : current))}
+                keyboardType="numbers-and-punctuation"
+                placeholder="10:00"
+              />
+            </View>
+            <PrimaryButton label={t.save} onPress={saveBlockedTimeDraft} disabled={busy} />
+            {blockedTimeDraft?.appointment ? (
+              <Pressable
+                style={[styles.secondaryButton, styles.dangerButton, busy && styles.disabled]}
+                disabled={busy}
+                onPress={() => {
+                  const appointment = blockedTimeDraft.appointment;
+                  setBlockedTimeDraft(null);
+                  if (appointment) onDeleteAppointment(appointment);
+                }}
+              >
+                <Text style={styles.dangerButtonText}>{t.delete}</Text>
+              </Pressable>
+            ) : null}
+          </View>
+        </View>
       </Modal>
     </View>
   );
@@ -1678,6 +2181,7 @@ function CalendarTimeline({
   t,
   onTimePress,
   onAppointmentPress,
+  onBlockedAppointmentPress,
   onAppointmentDelete,
   onAppointmentMove,
   onAppointmentResize,
@@ -1690,6 +2194,7 @@ function CalendarTimeline({
   t: Record<string, string>;
   onTimePress: (time: string) => void;
   onAppointmentPress: (appointment: AppointmentRecord) => void;
+  onBlockedAppointmentPress: (appointment: AppointmentRecord) => void;
   onAppointmentDelete: (appointment: AppointmentRecord) => void;
   onAppointmentMove: (appointment: AppointmentRecord) => void;
   onAppointmentResize: (appointment: AppointmentRecord) => void;
@@ -1705,6 +2210,8 @@ function CalendarTimeline({
   const timeColumnWidth = 43;
   const gridWidth = Math.max(280, width - timeColumnWidth);
   const laneGap = 8;
+  const appointmentMinHeight = 68;
+  const appointmentMinVisibleMinutes = Math.ceil((appointmentMinHeight / workHourHeight) * 60);
   const now = new Date();
   const nowMinutes = now.getHours() * 60 + now.getMinutes();
   const nowTop = getScaledMinuteTop(nowMinutes);
@@ -1725,10 +2232,10 @@ function CalendarTimeline({
   const blockedAppointments = appointments
     .filter((appointment) => appointment.kind === "blocked")
     .map((appointment) => ({
+      appointment,
       start: timeToMinutes(appointment.startTime),
       end: Math.max(timeToMinutes(appointment.endTime), timeToMinutes(appointment.startTime) + 10),
       label: appointment.serviceName || t.closedBySchedule,
-      kind: "break",
     }));
   const regularAppointments = appointments.filter((appointment) => appointment.kind !== "blocked");
   const appointmentLayouts = regularAppointments.map((appointment) => {
@@ -1810,7 +2317,7 @@ function CalendarTimeline({
         );
       })}
 
-      {[...closedRanges, ...blockedAppointments].map((range, index) => (
+      {closedRanges.map((range, index) => (
         <View
           key={`${range.start}-${range.end}-${index}`}
           pointerEvents="none"
@@ -1824,6 +2331,28 @@ function CalendarTimeline({
         >
           {range.kind !== "off" && getRangeHeight(range.start, range.end) >= 24 ? <Text style={styles.closedBlockText}>{range.label}</Text> : null}
         </View>
+      ))}
+
+      {blockedAppointments.map((range) => (
+        <Pressable
+          key={range.appointment.id}
+          style={[
+            styles.closedBlock,
+            styles.editableClosedBlock,
+            {
+              top: getScaledMinuteTop(range.start),
+              height: getRangeHeight(range.start, range.end),
+            },
+          ]}
+          onPress={() => onBlockedAppointmentPress(range.appointment)}
+        >
+          {getRangeHeight(range.start, range.end) >= 24 ? (
+            <>
+              <Text style={styles.closedBlockText}>{range.label}</Text>
+              <Text style={styles.closedBlockTimeText}>{range.appointment.startTime} - {range.appointment.endTime}</Text>
+            </>
+          ) : null}
+        </Pressable>
       ))}
 
       {compact && schedule.enabled ? (
@@ -1840,7 +2369,14 @@ function CalendarTimeline({
 
       {appointmentLayouts.map(({ appointment, start, end, laneCount, laneIndex }, index) => {
         const top = getScaledMinuteTop(start);
-        const height = Math.max(68, getRangeHeight(start, end));
+        const nextTouchingStart = regularAppointments
+          .filter((item) => item.id !== appointment.id)
+          .map((item) => timeToMinutes(item.startTime))
+          .filter((itemStart) => itemStart >= end)
+          .sort((left, right) => left - right)[0];
+        const actualHeight = getRangeHeight(start, end);
+        const maxHeightBeforeNext = typeof nextTouchingStart === "number" ? getRangeHeight(start, nextTouchingStart) : Infinity;
+        const height = Math.max(actualHeight, Math.min(appointmentMinHeight, maxHeightBeforeNext));
         const color = index % 3 === 0 ? "#FF9A82" : index % 3 === 1 ? "#FFD166" : "#9ED96B";
         const availableWidth = gridWidth - laneGap * 2;
         const blockGap = laneCount > 1 ? 8 : 0;
@@ -2424,6 +2960,15 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "800",
   },
+  dangerButton: {
+    borderColor: "#DC2626",
+    backgroundColor: "#DC2626",
+  },
+  dangerButtonText: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: "900",
+  },
   disabled: {
     opacity: 0.62,
   },
@@ -2934,10 +3479,23 @@ const styles = StyleSheet.create({
     backgroundColor: "#F8FAFC",
     opacity: 0.88,
   },
+  editableClosedBlock: {
+    zIndex: 2,
+    borderLeftWidth: 3,
+    borderLeftColor: "#6D4AFF",
+    backgroundColor: "#F1F5F9",
+    opacity: 0.96,
+  },
   closedBlockText: {
     color: "#64748B",
     fontSize: 11,
     fontWeight: "900",
+  },
+  closedBlockTimeText: {
+    marginTop: 2,
+    color: "#94A3B8",
+    fontSize: 10,
+    fontWeight: "800",
   },
   boundaryTimeLabel: {
     position: "absolute",
@@ -3145,6 +3703,9 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 8,
     backgroundColor: "#FFFFFF",
   },
+  visitEditorSheet: {
+    maxHeight: "92%",
+  },
   sheetHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -3162,6 +3723,222 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#F1F5F9",
+  },
+  blockedTimeSummary: {
+    minHeight: 46,
+    paddingHorizontal: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 9,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#E9D5FF",
+    backgroundColor: "#FAF7FF",
+  },
+  blockedTimeSummaryText: {
+    color: "#334155",
+    fontSize: 14,
+    fontWeight: "800",
+  },
+  visitEditorScroll: {
+    maxHeight: 460,
+  },
+  visitClientCard: {
+    minHeight: 92,
+    padding: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#E9D5FF",
+    backgroundColor: "#FBFAFF",
+  },
+  clientAvatarLarge: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#F3E8FF",
+  },
+  clientAvatarLargeText: {
+    color: "#6D4AFF",
+    fontSize: 19,
+    fontWeight: "900",
+  },
+  visitCardEyebrow: {
+    color: "#64748B",
+    fontSize: 11,
+    fontWeight: "800",
+  },
+  visitClientTitle: {
+    marginTop: 2,
+    color: "#0F172A",
+    fontSize: 16,
+    fontWeight: "900",
+  },
+  visitSectionHeader: {
+    marginTop: 12,
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E2E8F0",
+  },
+  visitSectionTitle: {
+    color: "#0F172A",
+    fontSize: 13,
+    fontWeight: "900",
+    textTransform: "uppercase",
+  },
+  visitSectionDate: {
+    marginTop: 6,
+    color: "#334155",
+    fontSize: 15,
+    fontWeight: "800",
+  },
+  visitServiceCard: {
+    marginTop: 12,
+    padding: 10,
+    gap: 10,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#D8E2F1",
+    backgroundColor: "#FFFFFF",
+  },
+  visitServiceCardHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  visitServicePickerButton: {
+    flex: 1,
+    minHeight: 48,
+    justifyContent: "center",
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#CBD5E1",
+    backgroundColor: "#FFFFFF",
+  },
+  visitServicePickerText: {
+    color: "#0F172A",
+    fontSize: 15,
+    fontWeight: "900",
+  },
+  smallIconButton: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#FEF2F2",
+  },
+  visitServiceMeta: {
+    minHeight: 28,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  visitServicePrice: {
+    color: "#0F172A",
+    fontSize: 13,
+    fontWeight: "900",
+  },
+  addAnotherServiceButton: {
+    marginTop: 12,
+    minHeight: 46,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#CBD5E1",
+    backgroundColor: "#FFFFFF",
+  },
+  addAnotherServiceText: {
+    color: "#0F172A",
+    fontSize: 14,
+    fontWeight: "900",
+    textTransform: "uppercase",
+  },
+  visitTotals: {
+    minHeight: 40,
+    paddingTop: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    gap: 6,
+    borderTopWidth: 1,
+    borderTopColor: "#E2E8F0",
+  },
+  visitTotalValue: {
+    color: "#0F172A",
+    fontSize: 13,
+    fontWeight: "900",
+  },
+  pickerList: {
+    maxHeight: 470,
+  },
+  clientOptionCard: {
+    minHeight: 62,
+    marginBottom: 8,
+    padding: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    backgroundColor: "#FFFFFF",
+  },
+  clientAvatar: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#F3E8FF",
+  },
+  clientAvatarText: {
+    color: "#6D4AFF",
+    fontSize: 15,
+    fontWeight: "900",
+  },
+  clientOptionText: {
+    flex: 1,
+    minWidth: 0,
+  },
+  clientOptionTitle: {
+    color: "#0F172A",
+    fontSize: 14,
+    fontWeight: "900",
+  },
+  clientOptionCaption: {
+    marginTop: 2,
+    color: "#64748B",
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  serviceOptionCard: {
+    minHeight: 64,
+    marginBottom: 8,
+    padding: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    backgroundColor: "#FFFFFF",
+  },
+  serviceTone: {
+    width: 12,
+    height: 38,
+    borderRadius: 6,
+  },
+  serviceOptionPrice: {
+    color: "#0F172A",
+    fontSize: 13,
+    fontWeight: "900",
   },
   bottomNav: {
     position: "absolute",

@@ -4,6 +4,7 @@ import { getMobileProfessionalId } from "../_auth";
 import {
   createBlockedCalendarTime,
   createCalendarAppointment,
+  createCalendarAppointmentsBatch,
   deleteCalendarAppointment,
   getCalendarDaySnapshot,
   updateCalendarAppointmentMeta,
@@ -67,6 +68,48 @@ export async function POST(request: Request) {
       });
 
       return NextResponse.json(blocked);
+    }
+
+    if (Array.isArray(body.items) && body.items.length > 0) {
+      const appointments = await createCalendarAppointmentsBatch({
+        professionalId,
+        targetProfessionalId: body.targetProfessionalId,
+        items: body.items.map((item: Record<string, unknown>) => ({
+          appointmentDate: typeof item.appointmentDate === "string" ? item.appointmentDate : body.appointmentDate,
+          startTime: typeof item.startTime === "string" ? item.startTime : "",
+          endTime: typeof item.endTime === "string" ? item.endTime : undefined,
+          customerName: typeof item.customerName === "string" ? item.customerName : "",
+          customerPhone: typeof item.customerPhone === "string" ? item.customerPhone : "",
+          serviceName: typeof item.serviceName === "string" ? item.serviceName : "",
+          notes: typeof item.notes === "string" ? item.notes : "",
+          priceAmount: typeof item.priceAmount === "number" ? item.priceAmount : undefined,
+          attendance:
+            item.attendance === "pending" ||
+            item.attendance === "confirmed" ||
+            item.attendance === "arrived" ||
+            item.attendance === "no_show"
+              ? item.attendance
+              : undefined
+        }))
+      });
+
+      await Promise.allSettled(
+        appointments
+          .filter((item) => item.kind === "appointment")
+          .map((item) =>
+            sendCabinetBookingTelegramNotification({
+              professionalId: item.professionalId,
+              businessId: item.businessId,
+              appointmentId: item.id,
+              appointmentDate: item.appointmentDate,
+              appointmentTime: item.startTime,
+              customerName: item.customerName,
+              serviceName: item.serviceName
+            })
+          )
+      );
+
+      return NextResponse.json({ appointments });
     }
 
     const appointment = await createCalendarAppointment({
