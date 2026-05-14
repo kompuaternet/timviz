@@ -1716,6 +1716,7 @@ export default function App() {
   const [serviceCatalog, setServiceCatalog] = useState<ServiceCatalogCategory[]>([]);
   const [staffSnapshot, setStaffSnapshot] = useState<StaffSnapshot | null>(null);
   const [activeTab, setActiveTab] = useState<AppTab>("calendar");
+  const [settingsSection, setSettingsSection] = useState<MobileSettingsSection>("general");
   const [selectedDate, setSelectedDate] = useState(getTodayIso());
   const [loadingSession, setLoadingSession] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -1739,6 +1740,11 @@ export default function App() {
   const [timeAction, setTimeAction] = useState<{ date: string; time: string } | null>(null);
   const [serviceDraft, setServiceDraft] = useState<ServiceDraftState>({ name: "", category: DEFAULT_SERVICE_CATEGORY, durationMinutes: "60", price: "0", color: SERVICE_COLORS[0] });
   const [clientDraft, setClientDraft] = useState({ firstName: "", lastName: "", phone: "", email: "" });
+
+  function openSettingsSection(section: MobileSettingsSection = "general") {
+    setSettingsSection(section);
+    setActiveTab("settings");
+  }
 
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEY).then((raw) => {
@@ -2313,8 +2319,7 @@ export default function App() {
             setActiveTab("calendar");
             setSelectedDate(item.appointmentDate);
           }}
-          onTelegramPress={() => setActiveTab("settings")}
-          onSettingsPress={() => setActiveTab("settings")}
+          onOpenSettingsSection={openSettingsSection}
           onSignOut={signOut}
         />
 
@@ -2407,6 +2412,8 @@ export default function App() {
                 apiFetch={apiFetch}
                 onRefreshWorkspace={() => refreshAll(session, selectedDate)}
                 setActiveTab={setActiveTab}
+                activeSection={settingsSection}
+                setActiveSection={setSettingsSection}
                 onSignOut={signOut}
                 busy={busy}
               />
@@ -3650,8 +3657,7 @@ function WorkspaceHeader({
   apiFetch,
   onRefreshWorkspace,
   onOpenNotification,
-  onTelegramPress,
-  onSettingsPress,
+  onOpenSettingsSection,
   onSignOut,
 }: {
   t: Record<string, string>;
@@ -3664,8 +3670,7 @@ function WorkspaceHeader({
   apiFetch: (path: string, options?: RequestInit) => Promise<any>;
   onRefreshWorkspace: () => void;
   onOpenNotification: (item: MobileNotificationRecord) => void;
-  onTelegramPress: () => void;
-  onSettingsPress: () => void;
+  onOpenSettingsSection: (section?: MobileSettingsSection) => void;
   onSignOut: () => void;
 }) {
   const title = activeTab === "calendar" ? "денний календар" : t[activeTab];
@@ -3781,10 +3786,11 @@ function WorkspaceHeader({
                     style={styles.setupStep}
                     onPress={() => {
                       if (item.id === "services") setActiveTab("services");
-                      if (item.id === "booking" || item.id === "address") setPanel("share");
-                      if (item.id === "telegram") onTelegramPress();
-                      if (item.id === "schedule") setActiveTab("settings");
-                      if (item.id !== "booking" && item.id !== "address") close();
+                      if (item.id === "booking") onOpenSettingsSection("online");
+                      if (item.id === "address") onOpenSettingsSection("address");
+                      if (item.id === "telegram") onOpenSettingsSection("telegram");
+                      if (item.id === "schedule") onOpenSettingsSection("schedule");
+                      close();
                     }}
                   >
                     <View style={[styles.setupStepIcon, item.done && styles.setupStepIconDone]}>
@@ -3897,10 +3903,10 @@ function WorkspaceHeader({
                     <Text style={styles.clientOptionCaption}>{workspace?.business.name || session.email}</Text>
                   </View>
                 </View>
-                <Pressable style={styles.accountMenuItem} onPress={() => { close(); onSettingsPress(); }}>
+                <Pressable style={styles.accountMenuItem} onPress={() => { close(); onOpenSettingsSection("general"); }}>
                   <Text style={styles.accountMenuItemText}>{t.myProfile}</Text>
                 </Pressable>
-                <Pressable style={styles.accountMenuItem} onPress={() => { close(); onSettingsPress(); }}>
+                <Pressable style={styles.accountMenuItem} onPress={() => { close(); onOpenSettingsSection("general"); }}>
                   <Text style={styles.accountMenuItemText}>{t.personalSettings}</Text>
                 </Pressable>
                 <Pressable style={styles.accountMenuItem} onPress={() => setPanel("support")}>
@@ -5213,6 +5219,8 @@ function SettingsTab({
   apiFetch,
   onRefreshWorkspace,
   setActiveTab,
+  activeSection,
+  setActiveSection,
   onSignOut,
   busy,
 }: {
@@ -5224,10 +5232,11 @@ function SettingsTab({
   apiFetch: (path: string, options?: RequestInit) => Promise<any>;
   onRefreshWorkspace: () => void;
   setActiveTab: (tab: AppTab) => void;
+  activeSection: MobileSettingsSection;
+  setActiveSection: (section: MobileSettingsSection) => void;
   onSignOut: () => void;
   busy: boolean;
 }) {
-  const [activeSection, setActiveSection] = useState<MobileSettingsSection>("general");
   const [draft, setDraft] = useState<SettingsDraftState>(() => makeSettingsDraft(workspace, language));
   const [newPassword, setNewPassword] = useState("");
   const [saving, setSaving] = useState(false);
@@ -5513,25 +5522,8 @@ function SettingsTab({
     await Share.share({ message: telegramPanel.deepLink, url: telegramPanel.deepLink }).catch(() => undefined);
   }
 
-  const setupItems = [
-    { id: "services", section: "services" as const, title: t.setupServices, done: Boolean(workspace?.services?.length), icon: "pricetag-outline" as const },
-    { id: "schedule", section: "schedule" as const, title: t.setupSchedule, done: Boolean(workspace?.memberSchedule?.workSchedule || workspace?.memberSchedule?.customSchedule), icon: "time-outline" as const },
-    { id: "booking", section: "online" as const, title: t.setupBooking, done: draft.allowOnlineBooking, icon: "cloud-upload-outline" as const },
-    { id: "photo", section: "services" as const, title: t.businessPhotos, done: photos.length > 0, icon: "image-outline" as const },
-    { id: "address", section: "address" as const, title: t.setupAddress, done: Boolean(draft.address), icon: "location-outline" as const },
-    { id: "telegram", section: "telegram" as const, title: t.setupTelegram, done: Boolean(workspace?.telegram?.connected || telegramPanel?.connected), icon: "chatbubble-ellipses-outline" as const },
-  ];
-  const completedSetup = setupItems.filter((item) => item.done).length;
-  const setupPercent = Math.round((completedSetup / setupItems.length) * 100);
-
   return (
     <View style={styles.sectionStack}>
-      <View style={styles.settingsHero}>
-        <Text style={styles.settingsEyebrow}>{t.dashboard}</Text>
-        <Text style={styles.settingsHeroTitle}>{t.settings}</Text>
-        <Text style={styles.settingsHeroText}>{workspace?.business.name || t.companyName}</Text>
-      </View>
-
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.settingsSectionRail}>
         {SETTINGS_SECTIONS.map((section) => (
           <Pressable
@@ -5546,25 +5538,6 @@ function SettingsTab({
 
       {statusText ? <Text style={styles.settingsStatusText}>{statusText}</Text> : null}
       {!isOwner ? <Text style={styles.settingsMutedNotice}>{t.ownerOnlyHint}</Text> : null}
-
-      <Panel title={t.launchChecklist}>
-        <View style={styles.setupProgressRow}>
-          <View>
-            <Text style={styles.setupProgressTitle}>{t.profileReady}</Text>
-            <Text style={styles.clientOptionCaption}>{completedSetup} {t.completedSteps}</Text>
-          </View>
-          <Text style={styles.setupProgressValue}>{setupPercent}%</Text>
-        </View>
-        {setupItems.map((item) => (
-          <Pressable key={item.id} style={styles.setupStep} onPress={() => setActiveSection(item.section)}>
-            <View style={[styles.setupStepIcon, item.done && styles.setupStepIconDone]}>
-              <Ionicons name={item.done ? "checkmark" : item.icon} size={18} color={item.done ? "#FFFFFF" : "#6D4AFF"} />
-            </View>
-            <Text style={styles.setupStepText}>{item.title}</Text>
-            <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
-          </Pressable>
-        ))}
-      </Panel>
 
       {activeSection === "general" ? (
         <>
