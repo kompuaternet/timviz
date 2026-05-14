@@ -4,18 +4,15 @@ import Link from "next/link";
 
 import styles from "./pro.module.css";
 
-type PlanBadgeVariant = "header" | "menu";
-
 type PlanBadgeProps = {
-  variant?: PlanBadgeVariant;
+  variant?: "menu";
   className?: string;
   href?: string;
   label?: string;
 };
 
-export function PlanBadge({ variant = "header", className = "", href, label = "PRO" }: PlanBadgeProps) {
-  const variantClass = variant === "menu" ? styles.planBadgeMenu : styles.planBadgeHeader;
-  const mergedClassName = `${styles.planBadge} ${variantClass} ${className}`.trim();
+export function PlanBadge({ className = "", href, label = "PRO" }: PlanBadgeProps) {
+  const mergedClassName = `${styles.planBadge} ${styles.planBadgeMenu} ${className}`.trim();
   const ariaLabel = "Тариф PRO активен";
 
   if (href) {

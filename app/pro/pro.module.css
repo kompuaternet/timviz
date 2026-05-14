@@ -6244,22 +6244,15 @@
   flex: 0 0 auto;
 }
 
-.planBadgeHeader {
-  height: 24px;
-  padding: 0 8px;
-  font-size: 0.67rem;
-}
-
 .planBadgeMenu {
-  height: 20px;
-  padding: 0 6px;
-  font-size: 0.6rem;
-  background: rgba(109, 74, 255, 0.07);
-  border-color: rgba(109, 74, 255, 0.16);
-}
-
-.headerPlanBadge {
-  margin-right: 2px;
+  height: auto;
+  padding: 0;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #2f3440;
+  background: transparent;
+  border: 0;
 }
 
 .calendarTopBarV2 {
@@ -6534,9 +6527,10 @@
 .profileMenuCompanyRow {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 7px;
   min-width: 0;
-  margin-top: 4px;
+  margin-top: 3px;
+  line-height: 1.2;
 }
 
 .profileMenuCompanyName {
@@ -6546,6 +6540,7 @@
   white-space: nowrap;
   color: #7b8398;
   font-size: 0.86rem;
+  line-height: 1.2;
 }
 
 .calendarToolbarChevron {
@@ -11213,12 +11208,6 @@
     padding: 0 12px;
     font-size: 0.78rem;
     flex: 0 0 auto;
-  }
-
-  .planBadgeHeader {
-    height: 22px;
-    padding: 0 7px;
-    font-size: 0.62rem;
   }
 
   .calendarProfileButton {

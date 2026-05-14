@@ -541,8 +541,6 @@ export default function ProWorkspaceHeader({
           {notificationsCount ? <span className={styles.calendarNotificationBadge}>{notificationsCount}</span> : null}
         </button>
 
-        {isPremium ? <PlanBadge variant="header" className={styles.headerPlanBadge} /> : null}
-
         <button
           ref={accountMenuButtonRef}
           type="button"

@@ -4416,8 +4416,6 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
               {totalPendingNotifications ? <span className={styles.calendarNotificationBadge}>{totalPendingNotifications}</span> : null}
             </button>
 
-            {viewerHasPremium ? <PlanBadge variant="header" className={styles.headerPlanBadge} /> : null}
-
             <button
               ref={accountMenuButtonRef}
               type="button"
