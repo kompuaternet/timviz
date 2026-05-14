@@ -4,7 +4,7 @@ import * as ImagePicker from "expo-image-picker";
 import * as Localization from "expo-localization";
 import { StatusBar } from "expo-status-bar";
 import type { ComponentProps } from "react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -2649,9 +2649,6 @@ function CalendarTab({
   const [clientQuery, setClientQuery] = useState("");
   const [clientCreateOpen, setClientCreateOpen] = useState(false);
   const [newClientDraft, setNewClientDraft] = useState({ firstName: "", lastName: "", phone: "" });
-  const memberHeaderScrollRef = useRef<ScrollView | null>(null);
-  const memberBodyScrollRef = useRef<ScrollView | null>(null);
-  const lastMemberScrollXRef = useRef(0);
   const visibleDates = useMemo(() => getCalendarModeDates(viewMode, selectedDate), [selectedDate, viewMode]);
   const visibleDatesKey = visibleDates.join("|");
   const [rangeSnapshots, setRangeSnapshots] = useState<Record<string, CalendarSnapshot>>({});
@@ -2814,13 +2811,6 @@ function CalendarTab({
 
   function selectAllMembers() {
     setSelectedMemberIds(calendarMembers.map((member) => member.id));
-  }
-
-  function syncMemberHorizontalScroll(x: number, source: "header" | "body") {
-    if (Math.abs(x - lastMemberScrollXRef.current) < 0.5) return;
-    lastMemberScrollXRef.current = x;
-    const target = source === "header" ? memberBodyScrollRef.current : memberHeaderScrollRef.current;
-    target?.scrollTo({ x, animated: false });
   }
 
   function setDraftClient(client: ClientRecord | null) {
@@ -3026,34 +3016,6 @@ function CalendarTab({
       {viewMode === "day" ? (
         <>
           <View style={styles.teamCalendarBoard}>
-            <View style={styles.teamCalendarHeaderRow}>
-              <View style={styles.teamPickerRail}>
-                <Pressable style={styles.teamPickerButton} onPress={() => setMemberPickerOpen(true)}>
-                  <Ionicons name="people-outline" size={19} color="#0F172A" />
-                  {calendarMembers.length > 1 ? (
-                    <View style={styles.teamPickerBadge}>
-                      <Text style={styles.teamPickerBadgeText}>{selectedMembers.length || 1}</Text>
-                    </View>
-                  ) : null}
-                </Pressable>
-              </View>
-              <ScrollView
-                ref={memberHeaderScrollRef}
-                horizontal
-                style={styles.teamMembersHorizontal}
-                contentContainerStyle={styles.teamMembersHorizontalContent}
-                showsHorizontalScrollIndicator={false}
-                scrollEventThrottle={16}
-                onScroll={(event) => syncMemberHorizontalScroll(event.nativeEvent.contentOffset.x, "header")}
-              >
-                {visibleCalendarMembers.map((member) => (
-                  <View key={member.id} style={[styles.teamDayHeader, { width: dayMemberColumnWidth }]}>
-                    <MemberAvatar member={member} size={34} />
-                    <Text style={styles.masterName} numberOfLines={1}>{member.name}</Text>
-                  </View>
-                ))}
-              </ScrollView>
-            </View>
             <ScrollView
               style={styles.calendarScroll}
               contentContainerStyle={styles.calendarContent}
@@ -3064,41 +3026,62 @@ function CalendarTab({
               keyboardShouldPersistTaps="handled"
             >
               <View style={styles.teamCalendarBodyRow}>
-                <CalendarTimeAxis date={selectedDate} compact={isCompact} schedule={selectedSchedule} />
+                <View style={styles.teamLeftAxisColumn}>
+                  <View style={styles.teamPickerRail}>
+                    <Pressable style={styles.teamPickerButton} onPress={() => setMemberPickerOpen(true)}>
+                      <Ionicons name="people-outline" size={19} color="#0F172A" />
+                      {calendarMembers.length > 1 ? (
+                        <View style={styles.teamPickerBadge}>
+                          <Text style={styles.teamPickerBadgeText}>{selectedMembers.length || 1}</Text>
+                        </View>
+                      ) : null}
+                    </Pressable>
+                  </View>
+                  <CalendarTimeAxis date={selectedDate} compact={isCompact} schedule={selectedSchedule} />
+                </View>
                 <ScrollView
-                  ref={memberBodyScrollRef}
                   horizontal
                   style={styles.teamMembersHorizontal}
                   contentContainerStyle={styles.teamMembersHorizontalContent}
                   showsHorizontalScrollIndicator={false}
                   nestedScrollEnabled
-                  scrollEventThrottle={16}
-                  onScroll={(event) => syncMemberHorizontalScroll(event.nativeEvent.contentOffset.x, "body")}
                 >
-                  {visibleCalendarMembers.map((member) => {
-                    const memberAppointments = getAppointmentsForMember(selectedDate, member.id);
-                    const memberSchedule = getScheduleForMember(selectedDate, member);
-                    return (
-                      <View key={member.id} style={[styles.teamDayColumn, { width: dayMemberColumnWidth }]}>
-                        <CalendarTimeline
-                          date={selectedDate}
-                          appointments={memberAppointments}
-                          currency={currency}
-                          compact={isCompact}
-                          schedule={memberSchedule}
-                          t={t}
-                          columnWidth={dayMemberColumnWidth}
-                          showTimeColumn={false}
-                          onTimePress={(time) => setTimeAction({ date: selectedDate, time, targetProfessionalId: member.id })}
-                          onAppointmentPress={openAppointmentEditor}
-                          onBlockedAppointmentPress={openBlockedAppointmentEditor}
-                          onAppointmentDelete={onDeleteAppointment}
-                          onAppointmentMove={onMoveAppointment}
-                          onAppointmentResize={onResizeAppointment}
-                        />
-                      </View>
-                    );
-                  })}
+                  <View>
+                    <View style={styles.teamMembersHeaderRow}>
+                      {visibleCalendarMembers.map((member) => (
+                        <View key={member.id} style={[styles.teamDayHeader, { width: dayMemberColumnWidth }]}>
+                          <MemberAvatar member={member} size={34} />
+                          <Text style={styles.masterName} numberOfLines={1}>{member.name}</Text>
+                        </View>
+                      ))}
+                    </View>
+                    <View style={styles.teamMembersBodyRow}>
+                      {visibleCalendarMembers.map((member) => {
+                        const memberAppointments = getAppointmentsForMember(selectedDate, member.id);
+                        const memberSchedule = getScheduleForMember(selectedDate, member);
+                        return (
+                          <View key={member.id} style={[styles.teamDayColumn, { width: dayMemberColumnWidth }]}>
+                            <CalendarTimeline
+                              date={selectedDate}
+                              appointments={memberAppointments}
+                              currency={currency}
+                              compact={isCompact}
+                              schedule={memberSchedule}
+                              t={t}
+                              columnWidth={dayMemberColumnWidth}
+                              showTimeColumn={false}
+                              onTimePress={(time) => setTimeAction({ date: selectedDate, time, targetProfessionalId: member.id })}
+                              onAppointmentPress={openAppointmentEditor}
+                              onBlockedAppointmentPress={openBlockedAppointmentEditor}
+                              onAppointmentDelete={onDeleteAppointment}
+                              onAppointmentMove={onMoveAppointment}
+                              onAppointmentResize={onResizeAppointment}
+                            />
+                          </View>
+                        );
+                      })}
+                    </View>
+                  </View>
                 </ScrollView>
               </View>
             </ScrollView>
@@ -7339,21 +7322,31 @@ const styles = StyleSheet.create({
   teamMembersHorizontalContent: {
     alignItems: "stretch",
   },
-  teamCalendarHeaderRow: {
+  teamMembersHeaderRow: {
     flexDirection: "row",
     height: 70,
     borderBottomWidth: 1,
     borderBottomColor: "#E2E8F0",
     backgroundColor: "#FFFFFF",
   },
+  teamMembersBodyRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+  },
   teamCalendarBodyRow: {
     flexDirection: "row",
     alignItems: "flex-start",
   },
+  teamLeftAxisColumn: {
+    width: 54,
+  },
   teamPickerRail: {
     width: 54,
+    height: 70,
     borderRightWidth: 1,
+    borderBottomWidth: 1,
     borderRightColor: "#E2E8F0",
+    borderBottomColor: "#E2E8F0",
     backgroundColor: "#FFFFFF",
   },
   teamPickerRailBody: {
