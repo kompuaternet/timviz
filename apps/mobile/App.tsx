@@ -2795,10 +2795,10 @@ function CalendarTab({
         </Pressable>
         <View style={styles.toolbarSpacer} />
         <Pressable
-          style={[styles.modeButton, isCompact && styles.modeButtonActive]}
+          style={styles.modeButton}
           onPress={() => setIsCompact((current) => !current)}
         >
-          <Text style={[styles.modeButtonText, isCompact && styles.modeButtonTextActive]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.66}>
+          <Text style={styles.modeButtonText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.66}>
             {isCompact ? t.detailed : t.compact}
           </Text>
         </Pressable>
@@ -3370,7 +3370,6 @@ function CalendarTimeline({
   const workEnd = schedule.enabled ? timeToMinutes(schedule.endTime) : 18 * 60;
   const workHourHeight = compact ? 72 : 88;
   const offHourHeight = compact ? workHourHeight / 10 : workHourHeight;
-  const timelineHeight = getScaledMinuteTop(24 * 60);
   const timeColumnWidth = 43;
   const gridWidth = Math.max(280, width - timeColumnWidth);
   const laneGap = 8;
@@ -3378,16 +3377,43 @@ function CalendarTimeline({
   const appointmentMinVisibleMinutes = Math.ceil((appointmentMinHeight / workHourHeight) * 60);
   const now = new Date();
   const nowMinutes = now.getHours() * 60 + now.getMinutes();
-  const nowTop = getScaledMinuteTop(nowMinutes);
   const showCurrentTime = date === getTodayIso();
   const breaks = schedule.enabled ? schedule.breaks || [] : [];
+  const compactBreaks = breaks
+    .map((item) => ({
+      start: Math.max(workStart, Math.min(workEnd, timeToMinutes(item.startTime))),
+      end: Math.max(workStart, Math.min(workEnd, timeToMinutes(item.endTime))),
+      label: `${item.startTime} - ${item.endTime}`,
+    }))
+    .filter((item) => item.end > item.start)
+    .sort((left, right) => left.start - right.start);
+  const compactSegments = (() => {
+    if (!compact || !schedule.enabled) return [];
+    const segments: Array<{ start: number; end: number; height: number }> = [];
+    const pushSegment = (start: number, end: number, height: number) => {
+      if (end > start) segments.push({ start, end, height });
+    };
+    let cursor = 0;
+    pushSegment(cursor, workStart, offHourHeight);
+    cursor = workStart;
+    for (const item of compactBreaks) {
+      pushSegment(cursor, item.start, workHourHeight);
+      pushSegment(item.start, item.end, offHourHeight);
+      cursor = Math.max(cursor, item.end);
+    }
+    pushSegment(cursor, workEnd, workHourHeight);
+    pushSegment(workEnd, 24 * 60, offHourHeight);
+    return segments;
+  })();
+  const timelineHeight = getScaledMinuteTop(24 * 60);
+  const nowTop = getScaledMinuteTop(nowMinutes);
   const closedRanges = schedule.enabled
     ? [
         { start: 0, end: workStart, label: "00:00 - " + schedule.startTime, kind: "off" },
-        ...breaks.map((item) => ({
-          start: timeToMinutes(item.startTime),
-          end: timeToMinutes(item.endTime),
-          label: `${item.startTime} - ${item.endTime}`,
+        ...compactBreaks.map((item) => ({
+          start: item.start,
+          end: item.end,
+          label: item.label,
           kind: "break",
         })),
         { start: workEnd, end: 24 * 60, label: `${schedule.endTime} - 24:00`, kind: "off" },
@@ -3421,10 +3447,18 @@ function CalendarTimeline({
     const safe = Math.max(0, Math.min(24 * 60, minutes));
     if (!compact) return (safe / 60) * workHourHeight;
     if (!schedule.enabled) return (safe / 60) * offHourHeight;
-    if (safe <= workStart) return (safe / 60) * offHourHeight;
-    const beforeWork = (workStart / 60) * offHourHeight;
-    if (safe <= workEnd) return beforeWork + ((safe - workStart) / 60) * workHourHeight;
-    return beforeWork + ((workEnd - workStart) / 60) * workHourHeight + ((safe - workEnd) / 60) * offHourHeight;
+    let top = 0;
+    for (const segment of compactSegments) {
+      if (safe >= segment.end) {
+        top += ((segment.end - segment.start) / 60) * segment.height;
+      } else if (safe > segment.start) {
+        top += ((safe - segment.start) / 60) * segment.height;
+        break;
+      } else {
+        break;
+      }
+    }
+    return top;
   }
 
   function getRangeHeight(start: number, end: number) {
@@ -3496,6 +3530,14 @@ function CalendarTimeline({
           {range.kind !== "off" && getRangeHeight(range.start, range.end) >= 24 ? <Text style={styles.closedBlockText}>{range.label}</Text> : null}
         </View>
       ))}
+
+      {compact && schedule.enabled
+        ? compactBreaks.map((range) => (
+            <View key={`break-label-${range.start}-${range.end}`} pointerEvents="none" style={[styles.compactClosedRangeLabel, { top: Math.max(0, getScaledMinuteTop(range.start) - 3) }]}>
+              <Text style={styles.compactClosedRangeText}>{range.label}</Text>
+            </View>
+          ))
+        : null}
 
       {blockedAppointments.map((range) => (
         <Pressable
@@ -3569,7 +3611,7 @@ function CalendarTimeline({
                 onAppointmentDelete(appointment);
               }}
             >
-              <Ionicons name="close" size={16} color="#F43F5E" />
+              <Ionicons name="close" size={13} color="#F43F5E" />
             </Pressable>
             <Pressable
               style={styles.appointmentMoveButton}
@@ -3578,7 +3620,7 @@ function CalendarTimeline({
                 onAppointmentMove(appointment);
               }}
             >
-              <Ionicons name="move" size={15} color="#475569" />
+              <Ionicons name="move" size={12} color="#475569" />
             </Pressable>
             <Text style={styles.appointmentTime}>
               {appointment.startTime} - {appointment.endTime}
@@ -3590,13 +3632,6 @@ function CalendarTimeline({
               {appointment.serviceName}
             </Text>
             <Text style={styles.appointmentPrice}>{formatMoney(appointment.priceAmount, currency)}</Text>
-            <Pressable
-              style={styles.appointmentHandle}
-              onPress={(event) => {
-                event.stopPropagation();
-                onAppointmentResize(appointment);
-              }}
-            />
           </Pressable>
         );
       })}
@@ -7212,7 +7247,9 @@ const styles = StyleSheet.create({
     position: "absolute",
     zIndex: 3,
     borderRadius: 8,
-    padding: 10,
+    paddingVertical: 8,
+    paddingLeft: 9,
+    paddingRight: 28,
     shadowColor: "#0F172A",
     shadowOpacity: 0.08,
     shadowRadius: 10,
@@ -7220,26 +7257,26 @@ const styles = StyleSheet.create({
   },
   appointmentDeleteButton: {
     position: "absolute",
-    top: 8,
-    right: 8,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    top: 6,
+    right: 6,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.82)",
+    backgroundColor: "rgba(255, 255, 255, 0.78)",
     zIndex: 4,
   },
   appointmentMoveButton: {
     position: "absolute",
-    right: 8,
-    bottom: 8,
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    right: 6,
+    bottom: 6,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(255, 255, 255, 0.82)",
+    backgroundColor: "rgba(255, 255, 255, 0.78)",
     zIndex: 4,
   },
   appointmentTime: {
@@ -7272,6 +7309,19 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     backgroundColor: "rgba(15, 23, 42, 0.28)",
     zIndex: 5,
+  },
+  compactClosedRangeLabel: {
+    position: "absolute",
+    left: 55,
+    right: 10,
+    minHeight: 18,
+    justifyContent: "center",
+    zIndex: 2,
+  },
+  compactClosedRangeText: {
+    color: "#64748B",
+    fontSize: 11,
+    fontWeight: "900",
   },
   fabButton: {
     position: "absolute",
