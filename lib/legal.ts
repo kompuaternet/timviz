@@ -227,7 +227,7 @@ export const legalCopy: Record<
           title: "Paddle и сторонние услуги",
           paragraphs: [
             "Paddle используется только для обработки платежей за подписку на программное обеспечение Timviz.",
-            "Timviz не продаёт сторонние услуги и не обрабатывает через Paddle оплату записей, салонов, мастеров, медицинских услуг, ремонта, обучения, коучинга или любых услуг конечным клиентам.",
+            "Timviz предоставляет программные инструменты для онлайн-записи и управления бизнесом. Timviz не продаёт сторонние услуги, не является маркетплейсом и не обрабатывает платежи между клиентами и поставщиками услуг.",
             "Пользователи сами отвечают за свои записи, услуги, цены, выполнение работ и отношения с клиентами. Legal/business name: [LEGAL_BUSINESS_NAME]. Support: adm@timviz.com."
           ]
         },
@@ -288,7 +288,7 @@ export const legalCopy: Record<
           title: "Paddle і сторонні послуги",
           paragraphs: [
             "Paddle використовується лише для обробки платежів за підписку на програмне забезпечення Timviz.",
-            "Timviz не продає сторонні послуги і не обробляє через Paddle оплату записів, салонів, майстрів, медичних послуг, ремонту, навчання, коучингу або будь-яких послуг кінцевим клієнтам.",
+            "Timviz надає програмні інструменти для онлайн-запису та керування бізнесом. Timviz не продає сторонні послуги, не є маркетплейсом і не обробляє платежі між клієнтами та постачальниками послуг.",
             "Користувачі самі відповідають за свої записи, послуги, ціни, виконання робіт і відносини з клієнтами. Legal/business name: [LEGAL_BUSINESS_NAME]. Support: adm@timviz.com."
           ]
         },
@@ -349,7 +349,7 @@ export const legalCopy: Record<
           title: "Paddle and third-party services",
           paragraphs: [
             "Paddle is used only to process payments for Timviz software subscriptions.",
-            "Timviz does not sell third-party services and does not process payments through Paddle for appointments, salons, masters, medical services, repairs, tutoring, coaching or other end-customer services.",
+            "Timviz provides software tools for appointment scheduling and business management. Timviz does not sell third-party services, act as a marketplace, or process payments between clients and service providers.",
             "Users are responsible for their own appointments, services, pricing, delivery and client relationships. Legal/business name: [LEGAL_BUSINESS_NAME]. Support: adm@timviz.com."
           ]
         },
@@ -389,7 +389,8 @@ export const legalCopy: Record<
         {
           title: "Когда возможен возврат",
           paragraphs: [
-            "Запросы на возврат рассматриваются индивидуально. Возврат может быть одобрен, если запрос отправлен в течение 14 дней после первого платежа и аккаунт активно не использовался после оплаты.",
+            "Запросы на возврат рассматриваются индивидуально. Возврат может быть одобрен в течение 14 дней после первого платежа, если пользователь не использовал платные функции существенно.",
+            "Пользователь может отменить автоматическое продление Premium-подписки в любое время.",
             "Возвраты не предоставляются за уже завершённые периоды, а также при злоупотреблении, мошенничестве или нарушении правил сервиса."
           ]
         }
@@ -420,7 +421,8 @@ export const legalCopy: Record<
         {
           title: "Коли можливе повернення",
           paragraphs: [
-            "Запити на повернення розглядаються індивідуально. Повернення може бути схвалене, якщо запит надіслано протягом 14 днів після першого платежу і акаунт активно не використовувався після оплати.",
+            "Запити на повернення розглядаються індивідуально. Повернення може бути схвалене протягом 14 днів після першого платежу, якщо користувач не використовував платні функції суттєво.",
+            "Користувач може скасувати автоматичне продовження Premium-підписки будь-коли.",
             "Повернення не надаються за вже завершені періоди, а також у разі зловживання, шахрайства або порушення правил сервісу."
           ]
         }
@@ -451,7 +453,8 @@ export const legalCopy: Record<
         {
           title: "When refunds may be approved",
           paragraphs: [
-            "Refund requests are reviewed individually. A refund may be approved if requested within 14 days of the first payment and the account was not actively used after payment.",
+            "Refund requests are reviewed individually. A refund may be approved within 14 days of the first payment if the user has not substantially used paid features.",
+            "Users can cancel Premium subscription renewal at any time.",
             "No refunds are provided for periods that have already ended or in cases of abuse, fraud or violation of service rules."
           ]
         }

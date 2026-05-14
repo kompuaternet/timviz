@@ -14,14 +14,14 @@ const chromeCopy = {
     create: "Создать профиль компании",
     menu: "Меню",
     clients: "Для клиентов",
-    browse: "Посмотреть бизнесы",
+    browse: "Поиск профилей",
     clientAuth: "Вход или регистрация",
     business: "Для бизнеса",
     dashboard: "Войти в кабинет",
     businessLogin: "Вход для бизнеса",
     features: "Возможности для бизнеса",
     about: "О Timviz",
-    catalog: "Каталог",
+    catalog: "Поиск профилей",
     legal: "Юридическая информация",
     privacy: "Политика конфиденциальности",
     terms: "Условия использования",
@@ -37,14 +37,14 @@ const chromeCopy = {
     create: "Створити профіль компанії",
     menu: "Меню",
     clients: "Для клієнтів",
-    browse: "Переглянути бізнеси",
+    browse: "Пошук профілів",
     clientAuth: "Вхід або реєстрація",
     business: "Для бізнесу",
     dashboard: "Увійти в кабінет",
     businessLogin: "Вхід для бізнесу",
     features: "Можливості для бізнесу",
     about: "Про Timviz",
-    catalog: "Каталог",
+    catalog: "Пошук профілів",
     legal: "Юридична інформація",
     privacy: "Політика конфіденційності",
     terms: "Умови використання",
@@ -60,14 +60,14 @@ const chromeCopy = {
     create: "Create company profile",
     menu: "Menu",
     clients: "For clients",
-    browse: "Browse businesses",
+    browse: "Search profiles",
     clientAuth: "Log in or register",
     business: "For business",
     dashboard: "Open dashboard",
     businessLogin: "Business sign in",
     features: "Business features",
     about: "About Timviz",
-    catalog: "Catalog",
+    catalog: "Profile search",
     legal: "Legal",
     privacy: "Privacy policy",
     terms: "Terms of use",
@@ -124,6 +124,7 @@ export default function PublicLegalPage({ copy, language }: PublicLegalPageProps
           <span>{copy.eyebrow}</span>
           <h1>{copy.heading}</h1>
           <p>{copy.intro}</p>
+          <p className="legal-updated">Updated: May 14, 2026 · Support: adm@timviz.com · Timviz SaaS appointment scheduling software.</p>
         </div>
       </section>
 

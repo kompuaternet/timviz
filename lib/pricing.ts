@@ -13,6 +13,7 @@ type PricingFeatureKey =
   | "services"
   | "clients"
   | "publicProfile"
+  | "allFree"
   | "unlimitedAppointments"
   | "telegram"
   | "reminders"
@@ -32,6 +33,7 @@ export type PricingCopy = {
   trialBadge: string;
   cancelAnytime: string;
   securePaddle: string;
+  softwareNotice: string;
   loginRequired: string;
   missingConfig: string;
   startingCheckout: string;
@@ -61,9 +63,9 @@ const paddleAnswer = {
 
 export const pricingCopy: Record<SiteLanguage, PricingCopy> = {
   ru: {
-    seoTitle: "Тарифы Timviz — Free и Premium для онлайн-записи",
+    seoTitle: "Тарифы Timviz — онлайн-запись для мастеров",
     seoDescription:
-      "Выберите тариф Timviz для онлайн-записи, календаря, клиентов, Telegram-уведомлений и статистики. Premium от $3 в месяц с 14 днями бесплатно.",
+      "Бесплатный тариф и Premium-подписка Timviz для мастеров и сервисного бизнеса. Календарь, онлайн-запись, клиенты, аналитика и уведомления.",
     eyebrow: "Timviz Pricing",
     title: "Тарифы для роста вашего сервиса",
     subtitle:
@@ -71,13 +73,15 @@ export const pricingCopy: Record<SiteLanguage, PricingCopy> = {
     trialBadge: "14 дней бесплатно",
     cancelAnytime: "Отменить можно в любое время",
     securePaddle: "Безопасные платежи через Paddle",
+    softwareNotice:
+      "Timviz продаёт подписку на программное обеспечение для управления записью. Мы не являемся маркетплейсом и не обрабатываем платежи между клиентами и мастерами.",
     loginRequired: "Сначала войдите или создайте аккаунт, чтобы запустить пробный период.",
     missingConfig: "Paddle пока не настроен. Добавьте Price ID и Client Token в переменные окружения.",
     startingCheckout: "Открываем Paddle Checkout...",
     buttons: {
       free: "Начать бесплатно",
-      monthly: "Start monthly trial",
-      yearly: "Start yearly trial"
+      monthly: "Начать пробный период",
+      yearly: "Начать годовой Premium"
     },
     plans: {
       free: {
@@ -103,7 +107,7 @@ export const pricingCopy: Record<SiteLanguage, PricingCopy> = {
         billing: "в месяц",
         badge: "14 дней бесплатно",
         features: [
-          "unlimitedAppointments",
+          "allFree",
           "onlineBooking",
           "telegram",
           "reminders",
@@ -123,7 +127,7 @@ export const pricingCopy: Record<SiteLanguage, PricingCopy> = {
         badge: "Best value",
         savings: "2 months free",
         features: [
-          "unlimitedAppointments",
+          "allFree",
           "onlineBooking",
           "telegram",
           "reminders",
@@ -139,20 +143,21 @@ export const pricingCopy: Record<SiteLanguage, PricingCopy> = {
     features: {
       basicAccess: "Базовый доступ",
       oneMaster: "1 мастер / 1 сотрудник",
-      appointmentsLimit: "До 100 записей в месяц",
+      appointmentsLimit: "До 500 записей",
       onlineBooking: "Онлайн-запись",
       calendar: "Календарь",
       services: "Услуги",
       clients: "Клиентская база",
       publicProfile: "Базовый публичный профиль",
+      allFree: "Всё из Free",
       unlimitedAppointments: "Безлимитные записи",
       telegram: "Telegram-уведомления",
       reminders: "Напоминания клиентам",
       extendedCalendar: "Расширенный календарь",
       clientManagement: "Управление клиентами",
       analytics: "Статистика / аналитика",
-      priorityCatalog: "Приоритет в каталоге",
-      unlimitedServices: "Несколько услуг без ограничений",
+      priorityCatalog: "Дополнительные бизнес-инструменты",
+      unlimitedServices: "Услуги и расписание без ограничений",
       cancelAnytime: "Отмена подписки в любое время"
     },
     faqTitle: "FAQ",
@@ -167,7 +172,7 @@ export const pricingCopy: Record<SiteLanguage, PricingCopy> = {
       },
       {
         question: "Что входит в Premium?",
-        answer: "Безлимитные записи, Telegram-уведомления, напоминания клиентам, расширенный календарь, статистика, приоритет в каталоге и услуги без ограничений."
+        answer: "Всё из Free, расширенная аналитика, уведомления, Telegram-интеграции и дополнительные бизнес-инструменты."
       },
       {
         question: "Paddle используется для оплаты услуг салонов или мастеров?",
@@ -175,14 +180,14 @@ export const pricingCopy: Record<SiteLanguage, PricingCopy> = {
       },
       {
         question: "Можно ли пользоваться Timviz бесплатно?",
-        answer: "Да. Free подходит для старта и включает до 100 записей в месяц, онлайн-запись, календарь, услуги и клиентскую базу."
+        answer: "Да. Free подходит для старта и включает до 500 записей, базовый календарь, услуги, расписание, ссылку онлайн-записи и публичный профиль."
       }
     ]
   },
   uk: {
-    seoTitle: "Тарифи Timviz — Free і Premium для онлайн-запису",
+    seoTitle: "Тарифи Timviz — онлайн-запис для майстрів",
     seoDescription:
-      "Оберіть тариф Timviz для онлайн-запису, календаря, клієнтів, Telegram-сповіщень і статистики. Premium від $3 на місяць із 14 днями безкоштовно.",
+      "Безкоштовний тариф і Premium-підписка Timviz для майстрів і сервісного бізнесу. Календар, онлайн-запис, клієнти, аналітика та сповіщення.",
     eyebrow: "Timviz Pricing",
     title: "Тарифи для розвитку вашого сервісу",
     subtitle:
@@ -190,13 +195,15 @@ export const pricingCopy: Record<SiteLanguage, PricingCopy> = {
     trialBadge: "14 днів безкоштовно",
     cancelAnytime: "Скасувати можна будь-коли",
     securePaddle: "Безпечні платежі через Paddle",
+    softwareNotice:
+      "Timviz продає підписку на програмне забезпечення для керування записом. Ми не є маркетплейсом і не обробляємо платежі між клієнтами та майстрами.",
     loginRequired: "Спочатку увійдіть або створіть акаунт, щоб запустити пробний період.",
     missingConfig: "Paddle поки не налаштовано. Додайте Price ID і Client Token у змінні середовища.",
     startingCheckout: "Відкриваємо Paddle Checkout...",
     buttons: {
       free: "Почати безкоштовно",
-      monthly: "Start monthly trial",
-      yearly: "Start yearly trial"
+      monthly: "Почати пробний період",
+      yearly: "Почати річний Premium"
     },
     plans: {
       free: {
@@ -222,7 +229,7 @@ export const pricingCopy: Record<SiteLanguage, PricingCopy> = {
         billing: "на місяць",
         badge: "14 днів безкоштовно",
         features: [
-          "unlimitedAppointments",
+          "allFree",
           "onlineBooking",
           "telegram",
           "reminders",
@@ -242,7 +249,7 @@ export const pricingCopy: Record<SiteLanguage, PricingCopy> = {
         badge: "Best value",
         savings: "2 months free",
         features: [
-          "unlimitedAppointments",
+          "allFree",
           "onlineBooking",
           "telegram",
           "reminders",
@@ -258,20 +265,21 @@ export const pricingCopy: Record<SiteLanguage, PricingCopy> = {
     features: {
       basicAccess: "Базовий доступ",
       oneMaster: "1 майстер / 1 співробітник",
-      appointmentsLimit: "До 100 записів на місяць",
+      appointmentsLimit: "До 500 записів",
       onlineBooking: "Онлайн-запис",
       calendar: "Календар",
       services: "Послуги",
       clients: "Клієнтська база",
       publicProfile: "Базовий публічний профіль",
+      allFree: "Усе з Free",
       unlimitedAppointments: "Необмежені записи",
       telegram: "Telegram-сповіщення",
       reminders: "Нагадування клієнтам",
       extendedCalendar: "Розширений календар",
       clientManagement: "Керування клієнтами",
       analytics: "Статистика / аналітика",
-      priorityCatalog: "Пріоритет у каталозі",
-      unlimitedServices: "Кілька послуг без обмежень",
+      priorityCatalog: "Додаткові бізнес-інструменти",
+      unlimitedServices: "Послуги та розклад без обмежень",
       cancelAnytime: "Скасування підписки будь-коли"
     },
     faqTitle: "FAQ",
@@ -286,7 +294,7 @@ export const pricingCopy: Record<SiteLanguage, PricingCopy> = {
       },
       {
         question: "Що входить у Premium?",
-        answer: "Необмежені записи, Telegram-сповіщення, нагадування клієнтам, розширений календар, статистика, пріоритет у каталозі та послуги без обмежень."
+        answer: "Усе з Free, розширена аналітика, сповіщення, Telegram-інтеграції та додаткові бізнес-інструменти."
       },
       {
         question: "Paddle використовується для оплати послуг салонів або майстрів?",
@@ -294,7 +302,7 @@ export const pricingCopy: Record<SiteLanguage, PricingCopy> = {
       },
       {
         question: "Чи можна користуватися Timviz безкоштовно?",
-        answer: "Так. Free підходить для старту і включає до 100 записів на місяць, онлайн-запис, календар, послуги та клієнтську базу."
+        answer: "Так. Free підходить для старту і включає до 500 записів, базовий календар, послуги, розклад, посилання для онлайн-запису та публічний профіль."
       }
     ]
   },
@@ -309,6 +317,8 @@ export const pricingCopy: Record<SiteLanguage, PricingCopy> = {
     trialBadge: "14 days free",
     cancelAnytime: "Cancel anytime",
     securePaddle: "Secure payments powered by Paddle",
+    softwareNotice:
+      "Timviz sells a software subscription for appointment management. We are not a marketplace and do not process payments between clients and service providers.",
     loginRequired: "Please sign in or create an account first to start your free trial.",
     missingConfig: "Paddle is not configured yet. Add Price IDs and Client Token to environment variables.",
     startingCheckout: "Opening Paddle Checkout...",
@@ -341,7 +351,7 @@ export const pricingCopy: Record<SiteLanguage, PricingCopy> = {
         billing: "per month",
         badge: "14 days free",
         features: [
-          "unlimitedAppointments",
+          "allFree",
           "onlineBooking",
           "telegram",
           "reminders",
@@ -361,7 +371,7 @@ export const pricingCopy: Record<SiteLanguage, PricingCopy> = {
         badge: "Best value",
         savings: "2 months free",
         features: [
-          "unlimitedAppointments",
+          "allFree",
           "onlineBooking",
           "telegram",
           "reminders",
@@ -377,20 +387,21 @@ export const pricingCopy: Record<SiteLanguage, PricingCopy> = {
     features: {
       basicAccess: "Basic access",
       oneMaster: "1 master / 1 staff member",
-      appointmentsLimit: "Up to 100 appointments per month",
+      appointmentsLimit: "Up to 500 appointments",
       onlineBooking: "Online booking",
       calendar: "Calendar",
       services: "Services",
       clients: "Client database",
       publicProfile: "Basic public profile",
+      allFree: "Everything in Free",
       unlimitedAppointments: "Unlimited appointments",
       telegram: "Telegram notifications",
       reminders: "Client reminders",
       extendedCalendar: "Extended calendar",
       clientManagement: "Client management",
       analytics: "Statistics / analytics",
-      priorityCatalog: "Priority catalog profile",
-      unlimitedServices: "Multiple services without limits",
+      priorityCatalog: "Additional business tools",
+      unlimitedServices: "Services and scheduling without limits",
       cancelAnytime: "Cancel subscription anytime"
     },
     faqTitle: "FAQ",
@@ -405,7 +416,7 @@ export const pricingCopy: Record<SiteLanguage, PricingCopy> = {
       },
       {
         question: "What is included in Premium?",
-        answer: "Unlimited appointments, Telegram notifications, client reminders, extended calendar, analytics, priority catalog profile and services without limits."
+        answer: "Everything in Free, advanced analytics, notifications, Telegram integrations and additional business tools."
       },
       {
         question: "Is Paddle used to pay for salon or master services?",
@@ -413,7 +424,7 @@ export const pricingCopy: Record<SiteLanguage, PricingCopy> = {
       },
       {
         question: "Can I use Timviz for free?",
-        answer: "Yes. Free is designed for getting started and includes up to 100 appointments per month, online booking, calendar, services and client database."
+        answer: "Yes. Free is designed for getting started and includes up to 500 appointments, basic calendar, services, working hours, online booking link and public profile."
       }
     ]
   }

@@ -69,11 +69,11 @@ type CatalogCopy = {
 const catalogCopy: Record<SiteLanguage, CatalogCopy> = {
   ru: {
     locale: "ru-RU",
-    eyebrow: "Каталог Timviz",
-    defaultTitle: "Салоны, мастера и услуги рядом",
+    eyebrow: "Открытые профили Timviz",
+    defaultTitle: "Поиск доступных профилей",
     searchTitle: (query) => `Поиск: ${query}`,
     heroText:
-      "Ищем по названию услуги, заведения или профессионала. Если выбрано время, показываем только тех, у кого есть свободное окно.",
+      "Некоторые мастера делают свой профиль видимым в поиске Timviz, чтобы клиентам было проще найти страницу для записи.",
     anyTime: "Любое время",
     withoutGeolocation: "Без геолокации",
     sortedByDistance: "Сортировка по расстоянию",
@@ -104,7 +104,7 @@ const catalogCopy: Record<SiteLanguage, CatalogCopy> = {
     availableAt: (time) => `Свободно на ${time}`,
     loading: "Загружаем результаты",
     loadingText: "Собираем свободные окна и актуальные карточки. Обычно это занимает несколько секунд.",
-    loadError: "Не удалось загрузить каталог. Обновите страницу или повторите поиск.",
+    loadError: "Не удалось загрузить профили. Обновите страницу или повторите поиск.",
     mapTitle: "Карта рядом",
     mapHint: "Точки компаний на карте",
     showMap: "Показать карту",
@@ -125,11 +125,11 @@ const catalogCopy: Record<SiteLanguage, CatalogCopy> = {
   },
   uk: {
     locale: "uk-UA",
-    eyebrow: "Каталог Timviz",
-    defaultTitle: "Салони, майстри й послуги поруч",
+    eyebrow: "Відкриті профілі Timviz",
+    defaultTitle: "Пошук доступних профілів",
     searchTitle: (query) => `Пошук: ${query}`,
     heroText:
-      "Шукаємо за назвою послуги, закладу або професіонала. Якщо вибрано час, показуємо лише тих, у кого є вільне вікно.",
+      "Деякі майстри роблять свій профіль видимим у пошуку Timviz, щоб клієнтам було простіше знайти сторінку для запису.",
     anyTime: "Будь-який час",
     withoutGeolocation: "Без геолокації",
     sortedByDistance: "Сортування за відстанню",
@@ -160,7 +160,7 @@ const catalogCopy: Record<SiteLanguage, CatalogCopy> = {
     availableAt: (time) => `Є вікно на ${time}`,
     loading: "Завантажуємо результати",
     loadingText: "Збираємо вільні вікна й актуальні картки. Зазвичай це займає кілька секунд.",
-    loadError: "Не вдалося завантажити каталог. Оновіть сторінку або повторіть пошук.",
+    loadError: "Не вдалося завантажити профілі. Оновіть сторінку або повторіть пошук.",
     mapTitle: "Карта поруч",
     mapHint: "Точки компаній на карті",
     showMap: "Показати карту",
@@ -181,11 +181,11 @@ const catalogCopy: Record<SiteLanguage, CatalogCopy> = {
   },
   en: {
     locale: "en-US",
-    eyebrow: "Timviz catalog",
-    defaultTitle: "Salons, professionals and services nearby",
+    eyebrow: "Open Timviz profiles",
+    defaultTitle: "Search available profiles",
     searchTitle: (query) => `Search: ${query}`,
     heroText:
-      "Search by service, venue or professional name. When time is selected, only places with an available slot stay in the results.",
+      "Some professionals make their Timviz profile visible in search so clients can more easily find the booking page.",
     anyTime: "Any time",
     withoutGeolocation: "No geolocation",
     sortedByDistance: "Sorted by distance",
@@ -216,7 +216,7 @@ const catalogCopy: Record<SiteLanguage, CatalogCopy> = {
     availableAt: (time) => `Available at ${time}`,
     loading: "Loading results",
     loadingText: "Collecting available slots and fresh business cards. This usually takes a few seconds.",
-    loadError: "Could not load the catalog. Refresh the page or try your search again.",
+    loadError: "Could not load profiles. Refresh the page or try your search again.",
     mapTitle: "Nearby map",
     mapHint: "Company points on map",
     showMap: "Show map",
@@ -827,12 +827,12 @@ export default function CatalogView({
     }
   }
 
-  const catalogLabel = language === "en" ? "Catalog" : "Каталог";
+  const catalogLabel = language === "en" ? "Profiles" : language === "uk" ? "Профілі" : "Профили";
   const menuLabel = language === "en" ? "Menu" : "Меню";
   const menuSearchLabel = language === "en" ? "Search and filters" : language === "uk" ? "Пошук і фільтри" : "Поиск и фильтры";
   const menuResultsLabel = language === "en" ? "Results" : language === "uk" ? "Результати" : "Результаты";
   const menuMapLabel = language === "en" ? "Map" : language === "uk" ? "Карта" : "Карта";
-  const navLabel = language === "en" ? "Catalog navigation" : language === "uk" ? "Навігація каталогу" : "Навигация каталога";
+  const navLabel = language === "en" ? "Profile search navigation" : language === "uk" ? "Навігація пошуку профілів" : "Навигация поиска профилей";
   function toggleServices(id: string) {
     selectResult(id);
     setExpandedServicesById((current) => ({

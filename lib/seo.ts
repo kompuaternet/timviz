@@ -116,14 +116,14 @@ export function buildMetadata(
 export const seoCopy = {
   home: {
     ru: {
-      title: "Timviz — онлайн-запись на услуги, поиск салонов и мастеров рядом",
+      title: "Timviz — онлайн-запись и календарь для мастеров",
       description:
-        "Timviz помогает быстро найти салон, барбершоп, массаж, ногти, брови и другие услуги рядом. Удобная запись онлайн, свободные окна, адрес, фото и отзывы в одном месте.",
+        "Timviz помогает мастерам вести расписание, клиентов и онлайн-записи в одном сервисе. Бесплатный старт, публичный профиль и удобная запись клиентов.",
       keywords: [
         "онлайн запись на услуги",
         "запись онлайн салон красоты",
-        "записаться к мастеру онлайн",
-        "поиск салонов рядом",
+        "онлайн запись для мастеров",
+        "календарь для мастера",
         "запись на стрижку онлайн",
         "запись на маникюр онлайн",
         "барбершоп онлайн запись",
@@ -131,14 +131,14 @@ export const seoCopy = {
       ]
     },
     uk: {
-      title: "Timviz — онлайн-запис на послуги, пошук салонів і майстрів поруч",
+      title: "Timviz — онлайн-запис і календар для майстрів",
       description:
-        "Timviz допомагає швидко знайти салон, барбершоп, масаж, нігті, брови та інші послуги поруч. Зручний онлайн-запис, вільні вікна, адреса, фото й відгуки в одному місці.",
+        "Timviz допомагає майстрам вести розклад, клієнтів і онлайн-записи в одному сервісі. Безкоштовний старт, публічний профіль і зручний запис клієнтів.",
       keywords: [
         "онлайн запис на послуги",
         "запис онлайн салон краси",
-        "записатися до майстра онлайн",
-        "пошук салонів поруч",
+        "онлайн запис для майстрів",
+        "календар для майстра",
         "запис на стрижку онлайн",
         "запис на манікюр онлайн",
         "барбершоп онлайн запис",
@@ -146,17 +146,17 @@ export const seoCopy = {
       ]
     },
     en: {
-      title: "Timviz — online booking for beauty and wellness services nearby",
+      title: "Timviz — appointment scheduling software for service professionals",
       description:
-        "Find salons, barbershops, massage studios, nail services and beauty professionals nearby. Book online, compare available times, view photos, addresses and reviews in one place.",
+        "Timviz helps service professionals manage schedules, clients and online bookings in one SaaS product with a public profile and client booking link.",
       keywords: [
         "online booking beauty services",
         "book salon appointment online",
-        "find beauty services nearby",
+        "appointment scheduling software",
         "barbershop online booking",
         "book massage online",
         "book manicure online",
-        "appointment booking platform",
+        "booking calendar for professionals",
         "Timviz"
       ]
     }
@@ -204,42 +204,42 @@ export const seoCopy = {
   },
   catalog: {
     ru: {
-      title: "Каталог Timviz — салоны, мастера и запись на услуги онлайн",
+      title: "Публичные профили Timviz — поиск доступных страниц записи",
       description:
-        "Ищите салоны, мастеров и свободные окна по времени, адресу и услуге. Timviz показывает удобную онлайн-запись, цены, адреса, отзывы и фото.",
+        "Поиск открытых профилей Timviz. Некоторые мастера делают страницу онлайн-записи видимой, чтобы клиентам было проще открыть профиль и отправить запрос.",
       keywords: [
-        "каталог салонов красоты",
-        "запись на услуги онлайн",
-        "найти мастера рядом",
+        "публичный профиль мастера",
+        "поиск профилей Timviz",
+        "страница онлайн-записи",
         "свободные окна салон",
         "онлайн запись маникюр",
         "онлайн запись массаж"
       ]
     },
     uk: {
-      title: "Каталог Timviz — салони, майстри та онлайн-запис на послуги",
+      title: "Публічні профілі Timviz — пошук доступних сторінок запису",
       description:
-        "Шукайте салони, майстрів і вільні вікна за часом, адресою та послугою. Timviz показує зручний онлайн-запис, ціни, адреси, відгуки й фото.",
+        "Пошук відкритих профілів Timviz. Деякі майстри роблять сторінку онлайн-запису видимою, щоб клієнтам було простіше відкрити профіль і надіслати запит.",
       keywords: [
-        "каталог салонів краси",
-        "запис на послуги онлайн",
-        "знайти майстра поруч",
+        "публічний профіль майстра",
+        "пошук профілів Timviz",
+        "сторінка онлайн-запису",
         "вільні вікна салон",
         "онлайн запис манікюр",
         "онлайн запис масаж"
       ]
     },
     en: {
-      title: "Timviz catalog — salons, professionals and online service booking",
+      title: "Timviz public profiles — search available booking pages",
       description:
-        "Search salons and professionals by service, time and location. Compare prices, photos, reviews and available time slots before you book.",
+        "Search open Timviz profiles. Some professionals make their booking page visible so clients can find the profile and send a booking request.",
       keywords: [
-        "salon directory",
-        "book services online",
-        "find professionals nearby",
+        "public professional profile",
+        "Timviz profile search",
+        "online booking page",
         "available appointment slots",
         "beauty service booking",
-        "service marketplace"
+        "appointment scheduling software"
       ]
     }
   },

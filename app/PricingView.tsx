@@ -46,7 +46,7 @@ const planOrder: PricingPlanKey[] = ["free", "monthly", "yearly"];
 const footerCopy = {
   ru: {
     about: "Timviz",
-    catalog: "Каталог",
+    catalog: "Поиск профилей",
     business: "Бизнесу",
     pricing: "Тарифы",
     legal: "Юридическая информация",
@@ -58,7 +58,7 @@ const footerCopy = {
   },
   uk: {
     about: "Timviz",
-    catalog: "Каталог",
+    catalog: "Пошук профілів",
     business: "Бізнесу",
     pricing: "Тарифи",
     legal: "Юридична інформація",
@@ -70,7 +70,7 @@ const footerCopy = {
   },
   en: {
     about: "Timviz",
-    catalog: "Catalog",
+    catalog: "Profile search",
     business: "For business",
     pricing: "Pricing",
     legal: "Legal",
@@ -287,6 +287,8 @@ export default function PricingView({ language, copy, user, paddle }: PricingVie
           );
         })}
       </section>
+
+      <p className="pricing-software-notice">{copy.softwareNotice}</p>
 
       {message ? <p className="pricing-message">{message}</p> : null}
 

@@ -544,7 +544,7 @@ const planCopy = {
     renewsOn: "Далее",
     yearlyRenewal: "Premium Yearly · $29/year",
     monthlyRenewal: "Premium Monthly · $3/month",
-    freeHint: "Бесплатный тариф: до 100 записей в месяц. Premium открывает безлимитные записи, Telegram-уведомления, статистику и приоритет в каталоге.",
+    freeHint: "Бесплатный тариф: до 500 записей. Premium открывает аналитику, Telegram-уведомления, напоминания и дополнительные бизнес-инструменты.",
     premiumHint: "Premium активен для программного обеспечения Timviz. Подписку можно отменить в любое время.",
     trialHintMonthly: "После пробного периода подписка продолжится как Premium Monthly за $3/month. Отменить можно в любое время.",
     trialHintYearly: "После пробного периода подписка продолжится как Premium Yearly за $29/year. Отменить можно в любое время.",
