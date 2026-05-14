@@ -3377,6 +3377,7 @@ function CalendarTimeline({
   const workEnd = schedule.enabled ? timeToMinutes(schedule.endTime) : 18 * 60;
   const workHourHeight = compact ? 72 : 88;
   const offHourHeight = compact ? workHourHeight / 10 : workHourHeight;
+  const breakHourHeight = compact ? workHourHeight / 2.5 : workHourHeight;
   const timeColumnWidth = 43;
   const gridWidth = Math.max(280, width - timeColumnWidth);
   const laneGap = 8;
@@ -3405,7 +3406,7 @@ function CalendarTimeline({
     cursor = workStart;
     for (const item of compactBreaks) {
       pushSegment(cursor, item.start, workHourHeight);
-      pushSegment(item.start, item.end, offHourHeight);
+      pushSegment(item.start, item.end, breakHourHeight);
       cursor = Math.max(cursor, item.end);
     }
     pushSegment(cursor, workEnd, workHourHeight);
@@ -3437,11 +3438,11 @@ function CalendarTimeline({
   const regularAppointments = appointments.filter((appointment) => appointment.kind !== "blocked");
   const appointmentLayouts = regularAppointments.map((appointment) => {
     const start = timeToMinutes(appointment.startTime);
-    const end = Math.max(timeToMinutes(appointment.endTime), start + 30);
+    const end = Math.max(timeToMinutes(appointment.endTime), start + 5);
     const overlapping = regularAppointments
       .filter((item) => {
         const itemStart = timeToMinutes(item.startTime);
-        const itemEnd = Math.max(timeToMinutes(item.endTime), itemStart + 30);
+        const itemEnd = Math.max(timeToMinutes(item.endTime), itemStart + 5);
         return start < itemEnd && end > itemStart;
       })
       .sort((left, right) => timeToMinutes(left.startTime) - timeToMinutes(right.startTime) || left.id.localeCompare(right.id));
@@ -7224,9 +7225,9 @@ const styles = StyleSheet.create({
     paddingLeft: 9,
     paddingRight: 28,
     shadowColor: "#0F172A",
-    shadowOpacity: 0.08,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.04,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 3 },
   },
   appointmentDeleteButton: {
     position: "absolute",
