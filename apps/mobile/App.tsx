@@ -196,6 +196,8 @@ type WorkspaceSnapshot = {
   };
 };
 
+type BusinessPhotoRecord = NonNullable<WorkspaceSnapshot["business"]["photos"]>[number];
+
 type StaffMemberRecord = {
   professional: {
     id: string;
@@ -351,7 +353,48 @@ type SettingsDraftState = {
   allowOnlineBooking: boolean;
   address: string;
   addressDetails: string;
+  addressLat: number | null;
+  addressLon: number | null;
 };
+
+type AddressSuggestionRecord = {
+  label: string;
+  details: string;
+  street: string;
+  house: string;
+  city: string;
+  region: string;
+  country: string;
+  postcode: string;
+  lat: number;
+  lon: number;
+};
+
+type TelegramPanelState = {
+  deepLink: string;
+  tokenExpiresAt: string;
+  connected: boolean;
+  chatId: string | null;
+  settings: {
+    notificationsNewBooking: boolean;
+    notificationsCabinetBooking: boolean;
+    notificationsRescheduled: boolean;
+    notificationsCancelled: boolean;
+    notificationsReminder: boolean;
+    notificationsToday: boolean;
+    forwardingEnabled: boolean;
+    reminderLeadMinutes: number;
+  };
+};
+
+type TelegramBooleanSettingKey =
+  | "notificationsNewBooking"
+  | "notificationsCabinetBooking"
+  | "notificationsRescheduled"
+  | "notificationsCancelled"
+  | "notificationsReminder"
+  | "notificationsToday"
+  | "forwardingEnabled";
 
 const STORAGE_KEY = "timviz_mobile_session_v2";
 const API_BASE_URL = (process.env.EXPO_PUBLIC_API_BASE_URL || "https://timviz.com").replace(/\/+$/, "");
@@ -373,6 +416,7 @@ const TIMEZONE_LABELS: Record<string, string> = {
   UTC: "UTC+0 · UTC",
 };
 const CURRENCY_OPTIONS = ["UAH", "EUR", "USD", "PLN", "GBP", "KZT", "GEL", "AED", "CAD"];
+const TELEGRAM_REMINDER_LEAD_OPTIONS = [15, 30, 60, 120, 180, 1440];
 const SERVICE_MODE_OPTIONS = [
   "Клиенты приходят в мое физическое заведение",
   "Я работаю с выездом к клиенту",
@@ -610,6 +654,49 @@ const copy = {
     addressDetails: "Деталі адреси",
     mapCoordinates: "Координати зберігаються з сайту; у застосунку редагується текстова адреса.",
     ownerOnlyHint: "Налаштування бізнесу може змінювати тільки власник акаунта.",
+    launchChecklist: "Чекліст запуску",
+    profileReady: "Профіль готовий",
+    completedSteps: "виконано",
+    photoUrl: "Посилання на фото",
+    photoCaption: "Підпис до фото",
+    addPhotoUrl: "Додати фото за посиланням",
+    addPhoto: "Додати фото",
+    makePrimary: "Зробити головним",
+    primaryPhoto: "Головне фото",
+    addressSearch: "Знайти адресу на карті",
+    addressPlaceholder: "Почніть вводити реальну адресу",
+    searchingAddress: "Шукаємо адресу...",
+    selectAddress: "Вибрати адресу",
+    selectedAddress: "Вибрана адреса",
+    streetHouse: "Будинок, вулиця",
+    city: "Місто",
+    region: "Регіон",
+    postcode: "Індекс",
+    openMap: "Відкрити карту",
+    telegramConnectButton: "Підключити бота",
+    telegramOpenBot: "Відкрити бота",
+    telegramCopyLink: "Копіювати посилання",
+    telegramRefreshLink: "Оновити посилання",
+    telegramTokenExpires: "Посилання активне до",
+    telegramSectionNotifications: "Сповіщення",
+    telegramSectionReminders: "Нагадування",
+    telegramSectionSupport: "Підтримка",
+    telegramNotificationsHint: "Виберіть, які події бот має надсилати в Telegram.",
+    telegramOnlineBookings: "Нові онлайн-записи",
+    telegramCabinetBookings: "Нові записи з кабінету",
+    telegramRescheduled: "Зміна часу запису",
+    telegramCancelled: "Скасування запису",
+    telegramRemindersHint: "Нагадування допомагають не пропустити майбутні візити.",
+    telegramReminders: "Нагадування перед записом",
+    telegramToday: "Зведення на сьогодні",
+    telegramReminderLead: "Коли нагадувати",
+    telegramSupportHint: "Питання клієнтів і підтримки можуть приходити прямо в Telegram.",
+    telegramForwarding: "Пересилати підтримку в Telegram",
+    telegramSaved: "Telegram оновлено",
+    telegramSaveFailed: "Не вдалося оновити Telegram.",
+    minutesBefore: "хв до запису",
+    hoursBefore: "год до запису",
+    dayBefore: "за день",
     empty: "Поки порожньо",
   },
   ru: {
@@ -836,6 +923,49 @@ const copy = {
     addressDetails: "Детали адреса",
     mapCoordinates: "Координаты сохраняются с сайта; в приложении редактируется текстовый адрес.",
     ownerOnlyHint: "Настройки бизнеса может менять только владелец аккаунта.",
+    launchChecklist: "Чеклист запуска",
+    profileReady: "Профиль готов",
+    completedSteps: "выполнено",
+    photoUrl: "Ссылка на фото",
+    photoCaption: "Подпись к фото",
+    addPhotoUrl: "Добавить фото по ссылке",
+    addPhoto: "Добавить фото",
+    makePrimary: "Сделать главным",
+    primaryPhoto: "Главное фото",
+    addressSearch: "Найти адрес на карте",
+    addressPlaceholder: "Начните вводить реальный адрес",
+    searchingAddress: "Ищем адрес...",
+    selectAddress: "Выбрать адрес",
+    selectedAddress: "Выбранный адрес",
+    streetHouse: "Дом, улица",
+    city: "Город",
+    region: "Регион",
+    postcode: "Индекс",
+    openMap: "Открыть карту",
+    telegramConnectButton: "Подключить бота",
+    telegramOpenBot: "Открыть бота",
+    telegramCopyLink: "Копировать ссылку",
+    telegramRefreshLink: "Обновить ссылку",
+    telegramTokenExpires: "Ссылка активна до",
+    telegramSectionNotifications: "Уведомления",
+    telegramSectionReminders: "Напоминания",
+    telegramSectionSupport: "Поддержка",
+    telegramNotificationsHint: "Выберите, какие события бот должен отправлять в Telegram.",
+    telegramOnlineBookings: "Новые онлайн-записи",
+    telegramCabinetBookings: "Новые записи из кабинета",
+    telegramRescheduled: "Изменение времени записи",
+    telegramCancelled: "Отмена записи",
+    telegramRemindersHint: "Напоминания помогают не пропустить будущие визиты.",
+    telegramReminders: "Напоминание перед записью",
+    telegramToday: "Сводка на сегодня",
+    telegramReminderLead: "Когда напоминать",
+    telegramSupportHint: "Вопросы клиентов и поддержки могут приходить прямо в Telegram.",
+    telegramForwarding: "Пересылать поддержку в Telegram",
+    telegramSaved: "Telegram обновлен",
+    telegramSaveFailed: "Не удалось обновить Telegram.",
+    minutesBefore: "мин до записи",
+    hoursBefore: "ч до записи",
+    dayBefore: "за день",
     empty: "Пока пусто",
   },
   en: {
@@ -1062,6 +1192,49 @@ const copy = {
     addressDetails: "Address details",
     mapCoordinates: "Coordinates are saved from the website; the app edits the text address.",
     ownerOnlyHint: "Only the account owner can change business settings.",
+    launchChecklist: "Launch checklist",
+    profileReady: "Profile ready",
+    completedSteps: "completed",
+    photoUrl: "Photo link",
+    photoCaption: "Photo caption",
+    addPhotoUrl: "Add photo by link",
+    addPhoto: "Add photo",
+    makePrimary: "Make primary",
+    primaryPhoto: "Primary photo",
+    addressSearch: "Find address on map",
+    addressPlaceholder: "Start typing a real address",
+    searchingAddress: "Searching address...",
+    selectAddress: "Choose address",
+    selectedAddress: "Selected address",
+    streetHouse: "House, street",
+    city: "City",
+    region: "Region",
+    postcode: "Postcode",
+    openMap: "Open map",
+    telegramConnectButton: "Connect bot",
+    telegramOpenBot: "Open bot",
+    telegramCopyLink: "Copy link",
+    telegramRefreshLink: "Refresh link",
+    telegramTokenExpires: "Link active until",
+    telegramSectionNotifications: "Notifications",
+    telegramSectionReminders: "Reminders",
+    telegramSectionSupport: "Support",
+    telegramNotificationsHint: "Choose which events the bot should send to Telegram.",
+    telegramOnlineBookings: "New online bookings",
+    telegramCabinetBookings: "New workspace bookings",
+    telegramRescheduled: "Booking time changed",
+    telegramCancelled: "Booking cancelled",
+    telegramRemindersHint: "Reminders help you avoid missing upcoming visits.",
+    telegramReminders: "Reminder before booking",
+    telegramToday: "Today summary",
+    telegramReminderLead: "Reminder time",
+    telegramSupportHint: "Client and support questions can arrive directly in Telegram.",
+    telegramForwarding: "Forward support to Telegram",
+    telegramSaved: "Telegram updated",
+    telegramSaveFailed: "Could not update Telegram.",
+    minutesBefore: "min before",
+    hoursBefore: "h before",
+    dayBefore: "one day before",
     empty: "Empty for now",
   },
 } satisfies Record<AppLanguage, Record<string, string>>;
@@ -1084,6 +1257,42 @@ function getDetectedCountry() {
 
 function getDetectedTimezone() {
   return Localization.getCalendars()[0]?.timeZone || "Europe/Kyiv";
+}
+
+function inferCurrency(country: string) {
+  const normalized = country.toLowerCase();
+  if (normalized.includes("ukraine") || normalized.includes("укра")) return "UAH";
+  if (normalized.includes("poland") || normalized.includes("поль")) return "PLN";
+  if (normalized.includes("united kingdom") || normalized.includes("великобритан")) return "GBP";
+  if (normalized.includes("united states") || normalized.includes("сша")) return "USD";
+  if (normalized.includes("germany") || normalized.includes("france") || normalized.includes("spain") || normalized.includes("italy")) return "EUR";
+  return "UAH";
+}
+
+function formatReminderLead(minutes: number, t: Record<string, string>) {
+  if (minutes >= 1440) return t.dayBefore;
+  if (minutes >= 60 && minutes % 60 === 0) return `${minutes / 60} ${t.hoursBefore}`;
+  return `${minutes} ${t.minutesBefore}`;
+}
+
+function normalizeTelegramPanel(payload: any, fallback?: TelegramPanelState | null): TelegramPanelState {
+  const settings = payload?.settings || {};
+  return {
+    deepLink: typeof payload?.deepLink === "string" ? payload.deepLink : fallback?.deepLink || "",
+    tokenExpiresAt: typeof payload?.tokenExpiresAt === "string" ? payload.tokenExpiresAt : fallback?.tokenExpiresAt || "",
+    connected: payload?.connected === true,
+    chatId: typeof payload?.chatId === "string" ? payload.chatId : null,
+    settings: {
+      notificationsNewBooking: typeof settings.notificationsNewBooking === "boolean" ? settings.notificationsNewBooking : fallback?.settings.notificationsNewBooking ?? true,
+      notificationsCabinetBooking: typeof settings.notificationsCabinetBooking === "boolean" ? settings.notificationsCabinetBooking : fallback?.settings.notificationsCabinetBooking ?? true,
+      notificationsRescheduled: typeof settings.notificationsRescheduled === "boolean" ? settings.notificationsRescheduled : fallback?.settings.notificationsRescheduled ?? true,
+      notificationsCancelled: typeof settings.notificationsCancelled === "boolean" ? settings.notificationsCancelled : fallback?.settings.notificationsCancelled ?? true,
+      notificationsReminder: typeof settings.notificationsReminder === "boolean" ? settings.notificationsReminder : fallback?.settings.notificationsReminder ?? true,
+      notificationsToday: typeof settings.notificationsToday === "boolean" ? settings.notificationsToday : fallback?.settings.notificationsToday ?? true,
+      forwardingEnabled: typeof settings.forwardingEnabled === "boolean" ? settings.forwardingEnabled : fallback?.settings.forwardingEnabled ?? true,
+      reminderLeadMinutes: typeof settings.reminderLeadMinutes === "number" ? settings.reminderLeadMinutes : fallback?.settings.reminderLeadMinutes ?? 120,
+    },
+  };
 }
 
 function normalizeApiSession(result: any, fallbackEmail: string): MobileSession {
@@ -4946,6 +5155,8 @@ function makeSettingsDraft(workspace: WorkspaceSnapshot | null, language: AppLan
     allowOnlineBooking: workspace?.business.allowOnlineBooking === true,
     address: workspace?.business.address || "",
     addressDetails: workspace?.business.addressDetails || "",
+    addressLat: typeof workspace?.business.addressLat === "number" ? workspace.business.addressLat : null,
+    addressLon: typeof workspace?.business.addressLon === "number" ? workspace.business.addressLon : null,
   };
 }
 
@@ -4987,6 +5198,15 @@ function SettingsTab({
   const [saving, setSaving] = useState(false);
   const [statusText, setStatusText] = useState("");
   const [pendingJoinRequests, setPendingJoinRequests] = useState<NonNullable<MobileNotificationsPayload["pendingJoinRequests"]>>([]);
+  const [photoDraft, setPhotoDraft] = useState({ url: "", caption: "" });
+  const [addressSearchValue, setAddressSearchValue] = useState("");
+  const [addressSuggestions, setAddressSuggestions] = useState<AddressSuggestionRecord[]>([]);
+  const [isSearchingAddress, setIsSearchingAddress] = useState(false);
+  const [telegramPanel, setTelegramPanel] = useState<TelegramPanelState | null>(null);
+  const [telegramSection, setTelegramSection] = useState<"notifications" | "reminders" | "support">("notifications");
+  const [isTelegramLoading, setIsTelegramLoading] = useState(false);
+  const [isTelegramSaving, setIsTelegramSaving] = useState(false);
+  const [telegramError, setTelegramError] = useState("");
   const isOwner = workspace?.membership?.scope !== "member";
   const publicBookingUrl = workspace?.business.publicBookingUrl || "";
   const photos = workspace?.business.photos?.filter((photo) => photo.status !== "blocked") || [];
@@ -4994,6 +5214,7 @@ function SettingsTab({
   useEffect(() => {
     setDraft(makeSettingsDraft(workspace, language));
     setNewPassword("");
+    setAddressSearchValue(workspace?.business.address || "");
   }, [workspace, language]);
 
   useEffect(() => {
@@ -5001,6 +5222,67 @@ function SettingsTab({
       .then((payload) => setPendingJoinRequests(payload?.pendingJoinRequests || []))
       .catch(() => setPendingJoinRequests([]));
   }, [workspace?.business.id]);
+
+  useEffect(() => {
+    if (activeSection !== "telegram" || telegramPanel || isTelegramLoading) return;
+    void loadTelegramPanel(true);
+  }, [activeSection, telegramPanel, isTelegramLoading]);
+
+  useEffect(() => {
+    const query = addressSearchValue.trim();
+    if (activeSection !== "address" || query.length < 3) {
+      setAddressSuggestions([]);
+      setIsSearchingAddress(false);
+      return;
+    }
+
+    let cancelled = false;
+    const timeoutId = setTimeout(async () => {
+      setIsSearchingAddress(true);
+      try {
+        const response = await fetch(`${API_BASE_URL}/api/address/search?q=${encodeURIComponent(query)}`, {
+          headers: { Accept: "application/json" },
+        });
+        const payload = await response.json().catch(() => ({}));
+        const results = Array.isArray(payload?.results) ? payload.results : [];
+        if (cancelled) return;
+        setAddressSuggestions(
+          results.map((item: any) => {
+            const address = item.address || {};
+            const house = String(address.house_number || "");
+            const street = String(address.road || address.pedestrian || address.footway || address.neighbourhood || "");
+            const city = String(address.city || address.town || address.village || address.municipality || "");
+            const region = String(address.state || address.region || address.county || "");
+            const country = String(address.country || "");
+            const postcode = String(address.postcode || "");
+            const displayName = String(item.display_name || "");
+            const primaryLine = [street, house].filter(Boolean).join(", ") || displayName.split(",")[0]?.trim() || displayName;
+            return {
+              label: displayName,
+              details: [primaryLine, city, region, postcode, country].filter(Boolean).join("\n"),
+              street,
+              house,
+              city,
+              region,
+              country,
+              postcode,
+              lat: Number(item.lat),
+              lon: Number(item.lon),
+            };
+          })
+        );
+      } catch {
+        if (!cancelled) setAddressSuggestions([]);
+      } finally {
+        if (!cancelled) setIsSearchingAddress(false);
+      }
+    }, 350);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(timeoutId);
+    };
+  }, [activeSection, addressSearchValue]);
 
   function updateDraft<K extends keyof SettingsDraftState>(key: K, value: SettingsDraftState[K]) {
     setDraft((current) => ({ ...current, [key]: value }));
@@ -5037,6 +5319,8 @@ function SettingsTab({
                 allowOnlineBooking: draft.allowOnlineBooking,
                 address: draft.address,
                 addressDetails: draft.addressDetails,
+                addressLat: draft.addressLat,
+                addressLon: draft.addressLon,
               }
             : undefined,
           newPassword: newPassword.trim() || undefined,
@@ -5079,6 +5363,132 @@ function SettingsTab({
     }
   }
 
+  async function saveBusinessPhotos(nextPhotos: BusinessPhotoRecord[]) {
+    if (!workspace || !isOwner) return;
+    setSaving(true);
+    setStatusText("");
+    try {
+      await apiFetch("/api/mobile/pro/settings", {
+        method: "PATCH",
+        body: JSON.stringify({ business: { photos: nextPhotos } }),
+      });
+      setStatusText(t.settingsSaved);
+      onRefreshWorkspace();
+    } catch (error) {
+      Alert.alert(t.businessPhotos, error instanceof Error ? error.message : t.settingsSaveError);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function addBusinessPhoto() {
+    const url = photoDraft.url.trim();
+    if (!url) {
+      Alert.alert(t.businessPhotos, t.requiredText);
+      return;
+    }
+    const nextPhoto: BusinessPhotoRecord = {
+      id: createLocalId("photo"),
+      url,
+      caption: photoDraft.caption.trim(),
+      isPrimary: photos.length === 0,
+      createdAt: new Date().toISOString(),
+      status: "active",
+    };
+    setPhotoDraft({ url: "", caption: "" });
+    void saveBusinessPhotos([...photos, nextPhoto]);
+  }
+
+  function makePrimaryPhoto(photoId: string) {
+    void saveBusinessPhotos(photos.map((photo) => ({ ...photo, isPrimary: photo.id === photoId })));
+  }
+
+  function removeBusinessPhoto(photoId: string) {
+    const remaining = photos.filter((photo) => photo.id !== photoId);
+    const hasPrimary = remaining.some((photo) => photo.isPrimary);
+    void saveBusinessPhotos(remaining.map((photo, index) => ({ ...photo, isPrimary: hasPrimary ? photo.isPrimary : index === 0 })));
+  }
+
+  function applyAddressSuggestion(suggestion: AddressSuggestionRecord) {
+    updateDraft("address", suggestion.label);
+    updateDraft("addressDetails", suggestion.details);
+    updateDraft("addressLat", Number.isFinite(suggestion.lat) ? suggestion.lat : null);
+    updateDraft("addressLon", Number.isFinite(suggestion.lon) ? suggestion.lon : null);
+    if (suggestion.country) {
+      updateDraft("country", suggestion.country);
+      updateDraft("currency", inferCurrency(suggestion.country));
+    }
+    setAddressSearchValue(suggestion.label);
+    setAddressSuggestions([]);
+  }
+
+  async function openMap() {
+    if (typeof draft.addressLat === "number" && typeof draft.addressLon === "number") {
+      await Linking.openURL(`https://www.openstreetmap.org/?mlat=${draft.addressLat}&mlon=${draft.addressLon}#map=16/${draft.addressLat}/${draft.addressLon}`).catch(() => undefined);
+      return;
+    }
+    if (draft.address.trim()) {
+      await Linking.openURL(`https://www.openstreetmap.org/search?query=${encodeURIComponent(draft.address.trim())}`).catch(() => undefined);
+    }
+  }
+
+  async function loadTelegramPanel(silent = false) {
+    if (!silent) setIsTelegramLoading(true);
+    setTelegramError("");
+    try {
+      const payload = await apiFetch("/api/mobile/pro/telegram/connect");
+      setTelegramPanel(normalizeTelegramPanel(payload, telegramPanel));
+    } catch (error) {
+      setTelegramError(error instanceof Error ? error.message : t.telegramSaveFailed);
+    } finally {
+      setIsTelegramLoading(false);
+    }
+  }
+
+  async function updateTelegramSettings(patch: Partial<TelegramPanelState["settings"]>) {
+    setIsTelegramSaving(true);
+    setTelegramError("");
+    try {
+      const payload = await apiFetch("/api/mobile/pro/telegram/connect", {
+        method: "PATCH",
+        body: JSON.stringify(patch),
+      });
+      setTelegramPanel(normalizeTelegramPanel(payload, telegramPanel));
+      setStatusText(t.telegramSaved);
+      onRefreshWorkspace();
+    } catch (error) {
+      setTelegramError(error instanceof Error ? error.message : t.telegramSaveFailed);
+    } finally {
+      setIsTelegramSaving(false);
+    }
+  }
+
+  function toggleTelegramSetting(key: TelegramBooleanSettingKey) {
+    if (!telegramPanel || isTelegramSaving) return;
+    void updateTelegramSettings({ [key]: !telegramPanel.settings[key] });
+  }
+
+  async function openTelegramBot() {
+    if (!telegramPanel?.deepLink) return;
+    await Linking.openURL(telegramPanel.deepLink).catch(() => undefined);
+  }
+
+  async function shareTelegramLink() {
+    if (!telegramPanel?.deepLink) return;
+    await Share.share({ message: telegramPanel.deepLink, url: telegramPanel.deepLink }).catch(() => undefined);
+  }
+
+  const setupItems = [
+    { id: "services", section: "services" as const, title: t.setupServices, done: Boolean(workspace?.services?.length), icon: "pricetag-outline" as const },
+    { id: "schedule", section: "schedule" as const, title: t.setupSchedule, done: Boolean(workspace?.memberSchedule?.workSchedule || workspace?.memberSchedule?.customSchedule), icon: "time-outline" as const },
+    { id: "booking", section: "online" as const, title: t.setupBooking, done: draft.allowOnlineBooking, icon: "cloud-upload-outline" as const },
+    { id: "photo", section: "services" as const, title: t.businessPhotos, done: photos.length > 0, icon: "image-outline" as const },
+    { id: "address", section: "address" as const, title: t.setupAddress, done: Boolean(draft.address), icon: "location-outline" as const },
+    { id: "telegram", section: "telegram" as const, title: t.setupTelegram, done: Boolean(workspace?.telegram?.connected || telegramPanel?.connected), icon: "chatbubble-ellipses-outline" as const },
+  ];
+  const completedSetup = setupItems.filter((item) => item.done).length;
+  const setupPercent = Math.round((completedSetup / setupItems.length) * 100);
+
   return (
     <View style={styles.sectionStack}>
       <View style={styles.settingsHero}>
@@ -5101,6 +5511,25 @@ function SettingsTab({
 
       {statusText ? <Text style={styles.settingsStatusText}>{statusText}</Text> : null}
       {!isOwner ? <Text style={styles.settingsMutedNotice}>{t.ownerOnlyHint}</Text> : null}
+
+      <Panel title={t.launchChecklist}>
+        <View style={styles.setupProgressRow}>
+          <View>
+            <Text style={styles.setupProgressTitle}>{t.profileReady}</Text>
+            <Text style={styles.clientOptionCaption}>{completedSetup} {t.completedSteps}</Text>
+          </View>
+          <Text style={styles.setupProgressValue}>{setupPercent}%</Text>
+        </View>
+        {setupItems.map((item) => (
+          <Pressable key={item.id} style={styles.setupStep} onPress={() => setActiveSection(item.section)}>
+            <View style={[styles.setupStepIcon, item.done && styles.setupStepIconDone]}>
+              <Ionicons name={item.done ? "checkmark" : item.icon} size={18} color={item.done ? "#FFFFFF" : "#6D4AFF"} />
+            </View>
+            <Text style={styles.setupStepText}>{item.title}</Text>
+            <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
+          </Pressable>
+        ))}
+      </Panel>
 
       {activeSection === "general" ? (
         <>
@@ -5143,20 +5572,6 @@ function SettingsTab({
                 </Pressable>
               ))}
             </View>
-            <Text style={styles.label}>{t.serviceMode}</Text>
-            <View style={styles.settingsStackedChoices}>
-              {SERVICE_MODE_OPTIONS.map((item) => (
-                <Pressable
-                  key={item}
-                  disabled={!isOwner}
-                  style={[styles.settingsLongChoice, draft.serviceMode === item && styles.settingsChoiceActive]}
-                  onPress={() => updateDraft("serviceMode", item)}
-                >
-                  <Text style={[styles.settingsChoiceText, draft.serviceMode === item && styles.settingsChoiceTextActive]}>{item}</Text>
-                </Pressable>
-              ))}
-            </View>
-            <Field label={t.categoriesText} hint={t.categoriesHint} value={draft.categoriesText} editable={isOwner} onChangeText={(value) => updateDraft("categoriesText", value)} />
           </Panel>
 
           <Panel title={t.localization}>
@@ -5164,6 +5579,26 @@ function SettingsTab({
             <SettingsOptionRail label={t.country} value={draft.country} options={COUNTRY_OPTIONS} onSelect={(value) => updateDraft("country", value)} />
             <SettingsOptionRail label={t.timezone} value={draft.timezone} options={TIMEZONE_OPTIONS} onSelect={(value) => updateDraft("timezone", value)} renderLabel={(value) => TIMEZONE_LABELS[value] || value} />
             <SettingsOptionRail label={t.currency} value={draft.currency} options={CURRENCY_OPTIONS} onSelect={(value) => updateDraft("currency", value)} />
+          </Panel>
+
+          <Panel title={t.joinRequests}>
+            {pendingJoinRequests.length === 0 ? <Text style={styles.emptyText}>{t.noJoinRequests}</Text> : null}
+            {pendingJoinRequests.map((request) => (
+              <View key={request.id} style={styles.joinRequestCard}>
+                <View>
+                  <Text style={styles.settingsMiniTitle}>{request.professionalName}</Text>
+                  <Text style={styles.clientOptionCaption}>{request.role}</Text>
+                </View>
+                <View style={styles.joinRequestActions}>
+                  <Pressable style={styles.joinApproveButton} onPress={() => resolveJoinRequest(request.id, "approve")} disabled={saving}>
+                    <Ionicons name="checkmark" size={18} color="#FFFFFF" />
+                  </Pressable>
+                  <Pressable style={styles.joinRejectButton} onPress={() => resolveJoinRequest(request.id, "reject")} disabled={saving}>
+                    <Ionicons name="close" size={18} color="#DC2626" />
+                  </Pressable>
+                </View>
+              </View>
+            ))}
           </Panel>
         </>
       ) : null}
@@ -5188,30 +5623,72 @@ function SettingsTab({
       ) : null}
 
       {activeSection === "services" ? (
-        <Panel title={t.settingsServices}>
-          <View style={styles.settingsSummaryGrid}>
-            <View style={styles.settingsSummaryTile}>
-              <Text style={styles.statValue}>{workspace?.services.length || 0}</Text>
-              <Text style={styles.statLabel}>{t.yourServices}</Text>
+        <>
+          <Panel title={t.businessFormat}>
+            <Text style={styles.label}>{t.serviceMode}</Text>
+            <View style={styles.settingsStackedChoices}>
+              {SERVICE_MODE_OPTIONS.map((item) => (
+                <Pressable
+                  key={item}
+                  disabled={!isOwner}
+                  style={[styles.settingsLongChoice, draft.serviceMode === item && styles.settingsChoiceActive]}
+                  onPress={() => updateDraft("serviceMode", item)}
+                >
+                  <Text style={[styles.settingsChoiceText, draft.serviceMode === item && styles.settingsChoiceTextActive]}>{item}</Text>
+                </Pressable>
+              ))}
             </View>
-            <View style={styles.settingsSummaryTile}>
-              <Text style={styles.statValue}>{workspace?.business.categories?.length || 0}</Text>
-              <Text style={styles.statLabel}>{t.categoriesText}</Text>
-            </View>
-          </View>
-          <Text style={styles.emptyText}>{t.myServicesHint}</Text>
-          {(workspace?.services || []).slice(0, 4).map((service) => (
-            <View key={service.id} style={styles.settingsMiniRow}>
-              <View style={[styles.serviceDot, { backgroundColor: service.color || "#8ED1F2" }]} />
-              <View style={styles.settingsMiniInfo}>
-                <Text style={styles.settingsMiniTitle}>{service.name}</Text>
-                <Text style={styles.clientOptionCaption}>{service.durationMinutes || 0} хв</Text>
+            <Field label={t.categoriesText} hint={t.categoriesHint} value={draft.categoriesText} editable={isOwner} onChangeText={(value) => updateDraft("categoriesText", value)} />
+          </Panel>
+
+          <Panel title={t.settingsServices}>
+            <View style={styles.settingsSummaryGrid}>
+              <View style={styles.settingsSummaryTile}>
+                <Text style={styles.statValue}>{workspace?.services.length || 0}</Text>
+                <Text style={styles.statLabel}>{t.yourServices}</Text>
               </View>
-              <Text style={styles.settingsMiniPrice}>{formatMoney(service.price, workspace?.professional.currency || "UAH")}</Text>
+              <View style={styles.settingsSummaryTile}>
+                <Text style={styles.statValue}>{workspace?.business.categories?.length || 0}</Text>
+                <Text style={styles.statLabel}>{t.categoriesText}</Text>
+              </View>
             </View>
-          ))}
-          <SecondaryButton label={t.manageServices} onPress={() => setActiveTab("services")} />
-        </Panel>
+            <Text style={styles.emptyText}>{t.myServicesHint}</Text>
+            {(workspace?.services || []).slice(0, 4).map((service) => (
+              <View key={service.id} style={styles.settingsMiniRow}>
+                <View style={[styles.serviceDot, { backgroundColor: service.color || "#8ED1F2" }]} />
+                <View style={styles.settingsMiniInfo}>
+                  <Text style={styles.settingsMiniTitle}>{service.name}</Text>
+                  <Text style={styles.clientOptionCaption}>{service.durationMinutes || 0} хв</Text>
+                </View>
+                <Text style={styles.settingsMiniPrice}>{formatMoney(service.price, workspace?.professional.currency || "UAH")}</Text>
+              </View>
+            ))}
+            <SecondaryButton label={t.manageServices} onPress={() => setActiveTab("services")} />
+          </Panel>
+
+          <Panel title={t.businessPhotos}>
+            <Text style={styles.emptyText}>{t.photosHint}</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.settingsPhotoRail}>
+              {photos.length ? photos.map((photo) => (
+                <View key={photo.id} style={styles.settingsPhotoCard}>
+                  <Image source={{ uri: photo.url }} style={styles.settingsPhoto} />
+                  <View style={styles.settingsPhotoActions}>
+                    <Text style={styles.settingsPhotoBadge}>{photo.isPrimary ? t.primaryPhoto : photo.caption || t.businessPhotos}</Text>
+                    {!photo.isPrimary ? <SecondaryButton label={t.makePrimary} onPress={() => makePrimaryPhoto(photo.id)} disabled={!isOwner || saving} /> : null}
+                    <SecondaryButton label={t.delete} onPress={() => removeBusinessPhoto(photo.id)} disabled={!isOwner || saving} />
+                  </View>
+                </View>
+              )) : (
+                <View style={styles.settingsPhotoPlaceholder}>
+                  <Ionicons name="image-outline" size={24} color="#94A3B8" />
+                </View>
+              )}
+            </ScrollView>
+            <Field label={t.photoUrl} value={photoDraft.url} editable={isOwner} onChangeText={(value) => setPhotoDraft((current) => ({ ...current, url: value }))} placeholder="https://..." autoCapitalize="none" />
+            <Field label={t.photoCaption} value={photoDraft.caption} editable={isOwner} onChangeText={(value) => setPhotoDraft((current) => ({ ...current, caption: value }))} />
+            <SecondaryButton label={t.addPhoto} onPress={addBusinessPhoto} disabled={!isOwner || saving} />
+          </Panel>
+        </>
       ) : null}
 
       {activeSection === "schedule" ? (
@@ -5232,40 +5709,84 @@ function SettingsTab({
       ) : null}
 
       {activeSection === "telegram" ? (
-        <>
-          <Panel title={t.settingsTelegram}>
-            <View style={styles.telegramStatus}>
-              <View style={[styles.telegramDot, workspace?.telegram?.connected ? styles.telegramDotConnected : styles.telegramDotDisconnected]} />
-              <View>
-                <Text style={styles.settingsCardTitle}>{workspace?.telegram?.connected ? t.connected : t.notConnected}</Text>
-                <Text style={styles.clientOptionCaption}>{workspace?.telegram?.chatId || t.telegramHint}</Text>
-              </View>
+        <Panel title={t.settingsTelegram}>
+          <View style={styles.telegramStatus}>
+            <View style={[styles.telegramDot, telegramPanel?.connected || workspace?.telegram?.connected ? styles.telegramDotConnected : styles.telegramDotDisconnected]} />
+            <View style={styles.settingsMiniInfo}>
+              <Text style={styles.settingsCardTitle}>{telegramPanel?.connected || workspace?.telegram?.connected ? t.connected : t.notConnected}</Text>
+              <Text style={styles.clientOptionCaption}>{telegramPanel?.chatId || workspace?.telegram?.chatId || t.telegramHint}</Text>
             </View>
-          </Panel>
-          <Panel title={t.joinRequests}>
-            {pendingJoinRequests.length === 0 ? <Text style={styles.emptyText}>{t.noJoinRequests}</Text> : null}
-            {pendingJoinRequests.map((request) => (
-              <View key={request.id} style={styles.joinRequestCard}>
-                <View>
-                  <Text style={styles.settingsMiniTitle}>{request.professionalName}</Text>
-                  <Text style={styles.clientOptionCaption}>{request.role}</Text>
-                </View>
-                <View style={styles.joinRequestActions}>
-                  <Pressable style={styles.joinApproveButton} onPress={() => resolveJoinRequest(request.id, "approve")} disabled={saving}>
-                    <Ionicons name="checkmark" size={18} color="#FFFFFF" />
-                  </Pressable>
-                  <Pressable style={styles.joinRejectButton} onPress={() => resolveJoinRequest(request.id, "reject")} disabled={saving}>
-                    <Ionicons name="close" size={18} color="#DC2626" />
-                  </Pressable>
-                </View>
+          </View>
+          {telegramError ? <Text style={styles.settingsMutedNotice}>{telegramError}</Text> : null}
+          {isTelegramLoading ? <ActivityIndicator color="#6D4AFF" /> : null}
+          {telegramPanel ? (
+            <>
+              <InfoLine label={t.telegramTokenExpires} value={telegramPanel.tokenExpiresAt || t.empty} />
+              <View style={styles.settingsActionRow}>
+                <SecondaryButton label={telegramPanel.connected ? t.telegramOpenBot : t.telegramConnectButton} onPress={openTelegramBot} disabled={!telegramPanel.deepLink} />
+                <SecondaryButton label={t.telegramCopyLink} onPress={shareTelegramLink} disabled={!telegramPanel.deepLink} />
+                <SecondaryButton label={t.telegramRefreshLink} onPress={() => void loadTelegramPanel()} disabled={isTelegramLoading || isTelegramSaving} />
               </View>
-            ))}
-          </Panel>
-        </>
+              <View style={styles.servicesModeRow}>
+                {[
+                  { id: "notifications" as const, label: t.telegramSectionNotifications },
+                  { id: "reminders" as const, label: t.telegramSectionReminders },
+                  { id: "support" as const, label: t.telegramSectionSupport },
+                ].map((item) => (
+                  <Pressable key={item.id} style={[styles.servicesModeButton, telegramSection === item.id && styles.servicesModeButtonActive]} onPress={() => setTelegramSection(item.id)}>
+                    <Text style={[styles.servicesModeText, telegramSection === item.id && styles.servicesModeTextActive]}>{item.label}</Text>
+                  </Pressable>
+                ))}
+              </View>
+              {telegramSection === "notifications" ? (
+                <View>
+                  <Text style={styles.emptyText}>{t.telegramNotificationsHint}</Text>
+                  <SettingsToggleRow label={t.telegramOnlineBookings} value={telegramPanel.settings.notificationsNewBooking} onPress={() => toggleTelegramSetting("notificationsNewBooking")} disabled={isTelegramSaving} />
+                  <SettingsToggleRow label={t.telegramCabinetBookings} value={telegramPanel.settings.notificationsCabinetBooking} onPress={() => toggleTelegramSetting("notificationsCabinetBooking")} disabled={isTelegramSaving} />
+                  <SettingsToggleRow label={t.telegramRescheduled} value={telegramPanel.settings.notificationsRescheduled} onPress={() => toggleTelegramSetting("notificationsRescheduled")} disabled={isTelegramSaving} />
+                  <SettingsToggleRow label={t.telegramCancelled} value={telegramPanel.settings.notificationsCancelled} onPress={() => toggleTelegramSetting("notificationsCancelled")} disabled={isTelegramSaving} />
+                </View>
+              ) : null}
+              {telegramSection === "reminders" ? (
+                <View>
+                  <Text style={styles.emptyText}>{t.telegramRemindersHint}</Text>
+                  <SettingsToggleRow label={t.telegramReminders} value={telegramPanel.settings.notificationsReminder} onPress={() => toggleTelegramSetting("notificationsReminder")} disabled={isTelegramSaving} />
+                  <SettingsToggleRow label={t.telegramToday} value={telegramPanel.settings.notificationsToday} onPress={() => toggleTelegramSetting("notificationsToday")} disabled={isTelegramSaving} />
+                  <SettingsOptionRail
+                    label={t.telegramReminderLead}
+                    value={String(telegramPanel.settings.reminderLeadMinutes)}
+                    options={TELEGRAM_REMINDER_LEAD_OPTIONS.map(String)}
+                    onSelect={(value) => void updateTelegramSettings({ reminderLeadMinutes: Number(value) || 120 })}
+                    renderLabel={(value) => formatReminderLead(Number(value), t)}
+                  />
+                </View>
+              ) : null}
+              {telegramSection === "support" ? (
+                <View>
+                  <Text style={styles.emptyText}>{t.telegramSupportHint}</Text>
+                  <SettingsToggleRow label={t.telegramForwarding} value={telegramPanel.settings.forwardingEnabled} onPress={() => toggleTelegramSetting("forwardingEnabled")} disabled={isTelegramSaving} />
+                </View>
+              ) : null}
+            </>
+          ) : (
+            <SecondaryButton label={t.telegramRefreshLink} onPress={() => void loadTelegramPanel()} disabled={isTelegramLoading} />
+          )}
+        </Panel>
       ) : null}
 
       {activeSection === "address" ? (
         <Panel title={t.settingsAddress}>
+          <Field label={t.addressSearch} value={addressSearchValue} editable={isOwner} onChangeText={setAddressSearchValue} placeholder={t.addressPlaceholder} />
+          {isSearchingAddress ? <Text style={styles.emptyText}>{t.searchingAddress}</Text> : null}
+          {addressSuggestions.map((suggestion) => (
+            <Pressable key={`${suggestion.label}-${suggestion.lat}-${suggestion.lon}`} style={styles.addressSuggestionCard} onPress={() => applyAddressSuggestion(suggestion)}>
+              <View style={styles.settingsMiniInfo}>
+                <Text style={styles.settingsMiniTitle}>{[suggestion.street, suggestion.house].filter(Boolean).join(", ") || suggestion.label}</Text>
+                <Text style={styles.clientOptionCaption}>{[suggestion.city, suggestion.region, suggestion.postcode, suggestion.country].filter(Boolean).join(", ")}</Text>
+              </View>
+              <Text style={styles.addressSuggestionAction}>{t.selectAddress}</Text>
+            </Pressable>
+          ))}
           <Field label={t.streetAddress} value={draft.address} editable={isOwner} onChangeText={(value) => updateDraft("address", value)} />
           <View style={styles.field}>
             <Text style={styles.label}>{t.addressDetails}</Text>
@@ -5279,19 +5800,19 @@ function SettingsTab({
               style={[styles.input, styles.settingsMultilineInput, !isOwner && styles.inputDisabled]}
             />
           </View>
-          <Text style={styles.emptyText}>{t.mapCoordinates}</Text>
-          <View style={styles.settingsPhotosBox}>
-            <Text style={styles.settingsCardTitle}>{t.businessPhotos}</Text>
-            <Text style={styles.emptyText}>{t.photosHint}</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.settingsPhotoRail}>
-              {photos.length ? photos.map((photo) => (
-                <Image key={photo.id} source={{ uri: photo.url }} style={styles.settingsPhoto} />
-              )) : (
-                <View style={styles.settingsPhotoPlaceholder}>
-                  <Ionicons name="image-outline" size={24} color="#94A3B8" />
-                </View>
-              )}
-            </ScrollView>
+          <View style={styles.settingsSummaryGrid}>
+            <View style={styles.settingsSummaryTile}>
+              <Text style={styles.statLabel}>{t.streetHouse}</Text>
+              <Text style={styles.settingsMiniTitle}>{draft.addressDetails.split("\n")[0] || draft.address || t.empty}</Text>
+            </View>
+            <View style={styles.settingsSummaryTile}>
+              <Text style={styles.statLabel}>{t.country}</Text>
+              <Text style={styles.settingsMiniTitle}>{draft.country || t.empty}</Text>
+            </View>
+          </View>
+          <InfoLine label={t.selectedAddress} value={typeof draft.addressLat === "number" && typeof draft.addressLon === "number" ? `${draft.addressLat.toFixed(5)}, ${draft.addressLon.toFixed(5)}` : t.empty} />
+          <View style={styles.settingsActionRow}>
+            <SecondaryButton label={t.openMap} onPress={openMap} disabled={!draft.address && typeof draft.addressLat !== "number"} />
           </View>
         </Panel>
       ) : null}
@@ -5301,6 +5822,17 @@ function SettingsTab({
         <SecondaryButton label={t.signOut} onPress={onSignOut} disabled={busy || saving} />
       </Panel>
     </View>
+  );
+}
+
+function SettingsToggleRow({ label, value, onPress, disabled }: { label: string; value: boolean; onPress: () => void; disabled?: boolean }) {
+  return (
+    <Pressable style={[styles.settingsToggleRow, disabled && styles.disabled]} onPress={onPress} disabled={disabled}>
+      <Text style={styles.settingsToggleText}>{label}</Text>
+      <View style={[styles.mobileSwitch, value && styles.mobileSwitchActive]}>
+        <View style={[styles.mobileSwitchThumb, value && styles.mobileSwitchThumbActive]} />
+      </View>
+    </Pressable>
   );
 }
 
@@ -8127,6 +8659,43 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: "#FEE2E2",
   },
+  settingsToggleRow: {
+    minHeight: 58,
+    marginTop: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#E6ECF5",
+    backgroundColor: "#F8FAFF",
+  },
+  settingsToggleText: {
+    flex: 1,
+    color: "#0F172A",
+    fontSize: 14,
+    fontWeight: "900",
+  },
+  addressSuggestionCard: {
+    minHeight: 66,
+    padding: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "#D9D2FF",
+    backgroundColor: "#F8FAFF",
+  },
+  addressSuggestionAction: {
+    color: "#5B4BDB",
+    fontSize: 12,
+    fontWeight: "900",
+  },
   settingsMultilineInput: {
     minHeight: 104,
     height: 104,
@@ -8145,11 +8714,34 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingRight: 8,
   },
+  settingsPhotoCard: {
+    width: 160,
+    gap: 8,
+    padding: 10,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "#E6ECF5",
+    backgroundColor: "#FFFFFF",
+  },
   settingsPhoto: {
-    width: 92,
-    height: 92,
+    width: "100%",
+    height: 110,
     borderRadius: 14,
     backgroundColor: "#E2E8F0",
+  },
+  settingsPhotoActions: {
+    gap: 8,
+  },
+  settingsPhotoBadge: {
+    alignSelf: "flex-start",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 12,
+    overflow: "hidden",
+    color: "#5B4BDB",
+    fontSize: 12,
+    fontWeight: "900",
+    backgroundColor: "#EEF2FF",
   },
   settingsPhotoPlaceholder: {
     width: 92,
