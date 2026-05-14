@@ -2621,6 +2621,7 @@ function WorkspaceHeader({
     { id: "telegram", title: t.setupTelegram, done: Boolean(workspace?.telegram?.connected), icon: "chatbubble-ellipses-outline" as const },
   ];
   const setupDone = setupItems.filter((item) => item.done).length;
+  const setupMissingCount = setupItems.length - setupDone;
   const pendingCount = (notifications.pendingOnlineBookings?.length || 0) + (notifications.pendingJoinRequests?.length || 0);
 
   async function openPanel(nextPanel: typeof panel) {
@@ -2756,25 +2757,34 @@ function WorkspaceHeader({
             ) : null}
 
             {panel === "support" ? (
-              <View style={styles.headerPanelBody}>
-                <View style={styles.supportGuideCard}>
-                  <Text style={styles.supportGuideTitle}>{t.supportGuideTitle}</Text>
-                  <Text style={styles.panelHint}>{t.supportGuideText}</Text>
-                  {supportTicketId ? <Text style={styles.supportTicket}>{supportTicketId}</Text> : null}
+              <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.headerPanelKeyboard}>
+                <ScrollView
+                  style={styles.headerPanelScrollBody}
+                  contentContainerStyle={styles.supportPanelContent}
+                  keyboardShouldPersistTaps="handled"
+                  showsVerticalScrollIndicator={false}
+                >
+                  <View style={styles.supportGuideCard}>
+                    <Text style={styles.supportGuideTitle}>{t.supportGuideTitle}</Text>
+                    <Text style={styles.panelHint}>{t.supportGuideText}</Text>
+                    {supportTicketId ? <Text style={styles.supportTicket}>{supportTicketId}</Text> : null}
+                  </View>
+                  <Text style={styles.supportBubble}>{t.supportGreeting}</Text>
+                  <TextInput
+                    value={supportMessage}
+                    onChangeText={setSupportMessage}
+                    placeholder={t.supportPlaceholder}
+                    multiline
+                    style={styles.supportInput}
+                  />
+                  {supportStatus ? <Text style={styles.supportStatusText}>{supportStatus}</Text> : null}
+                </ScrollView>
+                <View style={styles.supportPanelFooter}>
+                  <Pressable style={[styles.headerPrimaryButton, styles.headerPrimaryButtonFull, busy && styles.disabled]} onPress={sendSupportMessage} disabled={busy}>
+                    <Text style={styles.headerPrimaryButtonText}>{t.supportSend}</Text>
+                  </Pressable>
                 </View>
-                <Text style={styles.supportBubble}>{t.supportGreeting}</Text>
-                <TextInput
-                  value={supportMessage}
-                  onChangeText={setSupportMessage}
-                  placeholder={t.supportPlaceholder}
-                  multiline
-                  style={styles.supportInput}
-                />
-                <Pressable style={[styles.headerPrimaryButton, busy && styles.disabled]} onPress={sendSupportMessage} disabled={busy}>
-                  <Text style={styles.headerPrimaryButtonText}>{t.supportSend}</Text>
-                </Pressable>
-                {supportStatus ? <Text style={styles.supportStatusText}>{supportStatus}</Text> : null}
-              </View>
+              </KeyboardAvoidingView>
             ) : null}
 
             {panel === "notifications" ? (
@@ -2861,7 +2871,7 @@ function WorkspaceHeader({
         </Text>
       </View>
       <View style={styles.nativeHeaderActions}>
-        <AppIconButton icon="rocket" active={panel === "setup"} onPress={() => void openPanel("setup")} />
+        <AppIconButton icon="rocket" active={panel === "setup"} badge={setupMissingCount} badgeTone="red" onPress={() => void openPanel("setup")} />
         <AppIconButton icon="cloud-upload-outline" active={panel === "share"} onPress={() => void openPanel("share")} />
         <AppIconButton icon="chatbubble-ellipses-outline" tone="cyan" active={panel === "support"} onPress={() => void openPanel("support")} />
         <AppIconButton icon="notifications-outline" active={panel === "notifications"} badge={pendingCount} onPress={() => void openPanel("notifications")} />
@@ -2882,19 +2892,21 @@ function AppIconButton({
   active,
   tone,
   badge,
+  badgeTone,
   onPress,
 }: {
   icon: ComponentProps<typeof Ionicons>["name"];
   active?: boolean;
   tone?: "cyan";
   badge?: number;
+  badgeTone?: "red";
   onPress?: () => void;
 }) {
   return (
     <Pressable onPress={onPress} style={[styles.headerIconButton, active && styles.headerIconButtonActive, tone === "cyan" && styles.headerIconButtonCyan]}>
       <Ionicons name={icon} size={20} color={active ? "#FFFFFF" : tone === "cyan" ? "#0891B2" : "#432C75"} />
       {badge ? (
-        <View style={styles.headerIconBadge}>
+        <View style={[styles.headerIconBadge, badgeTone === "red" && styles.headerIconBadgeRed]}>
           <Text style={styles.headerIconBadgeText}>{badge > 9 ? "9+" : badge}</Text>
         </View>
       ) : null}
@@ -3459,6 +3471,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#6D4AFF",
+    borderWidth: 1,
+    borderColor: "#FFFFFF",
+  },
+  headerIconBadgeRed: {
+    backgroundColor: "#EF4444",
   },
   headerIconBadgeText: {
     color: "#FFFFFF",
@@ -3673,10 +3690,31 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     backgroundColor: "#15100D",
   },
+  headerPrimaryButtonFull: {
+    flex: 0,
+  },
   headerPrimaryButtonText: {
     color: "#FFFFFF",
     fontSize: 14,
     fontWeight: "900",
+  },
+  headerPanelKeyboard: {
+    flexShrink: 1,
+  },
+  headerPanelScrollBody: {
+    flexShrink: 1,
+  },
+  supportPanelContent: {
+    padding: 16,
+    paddingBottom: 12,
+  },
+  supportPanelFooter: {
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    paddingBottom: 16,
+    borderTopWidth: 1,
+    borderTopColor: "#F1F5F9",
+    backgroundColor: "#FFFFFF",
   },
   supportGuideCard: {
     padding: 14,
