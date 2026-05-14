@@ -4,12 +4,12 @@
     "slug": "timviz-master",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/timviz-icon.png",
+    "icon": "./assets/icon.png",
     "scheme": "timviz-master",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/timviz-icon.png",
+      "image": "./assets/splash-icon.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
@@ -26,7 +26,7 @@
     "android": {
       "package": "com.timviz.master",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/timviz-icon.png",
+        "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
       "edgeToEdgeEnabled": true,
