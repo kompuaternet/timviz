@@ -4010,8 +4010,8 @@ function CalendarTimeline({
             <Text style={[styles.appointmentClient, isCompactCard && styles.appointmentClientTight]} numberOfLines={isCompactCard ? 1 : 2} ellipsizeMode="tail">
               {appointment.customerName || "Клиент"}
             </Text>
-            {!isCompactCard ? (
-              <Text style={styles.appointmentService} numberOfLines={1}>
+            {!isTinyCard ? (
+              <Text style={[styles.appointmentService, isCompactCard && styles.appointmentServiceTight]} numberOfLines={1} ellipsizeMode="tail">
                 {appointment.serviceName}
               </Text>
             ) : null}
@@ -8013,6 +8013,10 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 14,
     fontWeight: "700",
+  },
+  appointmentServiceTight: {
+    fontSize: 11,
+    lineHeight: 13,
   },
   appointmentPrice: {
     display: "none",
