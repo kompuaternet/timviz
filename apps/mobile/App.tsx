@@ -3785,7 +3785,7 @@ function BottomNavigation({
         const active = activeTab === item.tab;
         return (
           <Pressable key={item.tab} onPress={() => setActiveTab(item.tab)} style={[styles.bottomNavItem, active && styles.bottomNavItemActive]}>
-            <Ionicons name={item.icon} size={19} color={active ? "#FFFFFF" : "#64748B"} />
+            <Ionicons name={item.icon} size={19} color={active ? "#6D4AFF" : "#64748B"} />
             <Text style={[styles.bottomNavText, active && styles.bottomNavTextActive]} numberOfLines={1}>
               {item.label}
             </Text>
@@ -4149,11 +4149,11 @@ function StaffWorkspaceTab({
     <View style={styles.sectionStack}>
       <View style={styles.staffLocalNav}>
         <Pressable style={[styles.staffLocalNavItem, section === "members" && styles.staffLocalNavItemActive]} onPress={() => setSection("members")}>
-          <Ionicons name="people-outline" size={18} color={section === "members" ? "#FFFFFF" : "#64748B"} />
+          <Ionicons name="people-outline" size={18} color={section === "members" ? "#6D4AFF" : "#64748B"} />
           <Text style={[styles.staffLocalNavText, section === "members" && styles.staffLocalNavTextActive]}>{t.teamMembers}</Text>
         </Pressable>
         <Pressable style={[styles.staffLocalNavItem, section === "schedule" && styles.staffLocalNavItemActive]} onPress={() => setSection("schedule")}>
-          <Ionicons name="calendar-outline" size={18} color={section === "schedule" ? "#FFFFFF" : "#64748B"} />
+          <Ionicons name="calendar-outline" size={18} color={section === "schedule" ? "#6D4AFF" : "#64748B"} />
           <Text style={[styles.staffLocalNavText, section === "schedule" && styles.staffLocalNavTextActive]}>{t.staffSchedule}</Text>
         </Pressable>
       </View>
@@ -5469,11 +5469,11 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#F8FAFC",
+    backgroundColor: "#F6F8FC",
   },
   authScreen: {
     flex: 1,
-    backgroundColor: "#F8FAFC",
+    backgroundColor: "#F6F8FC",
   },
   keyboard: {
     flex: 1,
@@ -5525,7 +5525,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 6,
     padding: 4,
-    borderRadius: 8,
+    borderRadius: 14,
     backgroundColor: "#EEF2F7",
   },
   languageButton: {
@@ -5533,14 +5533,16 @@ const styles = StyleSheet.create({
     height: 34,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 7,
+    borderRadius: 11,
   },
   languageButtonActive: {
     backgroundColor: "#FFFFFF",
-    shadowColor: "#0F172A",
-    shadowOpacity: 0.08,
+    borderWidth: 1,
+    borderColor: "#D9D2FF",
+    shadowColor: "#6D4AFF",
+    shadowOpacity: 0.1,
     shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 5 },
   },
   languageText: {
     color: "#64748B",
@@ -5548,36 +5550,38 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   languageTextActive: {
-    color: "#0F172A",
+    color: "#5B4BDB",
   },
   authCard: {
     width: "100%",
-    borderRadius: 8,
-    padding: 16,
+    borderRadius: 20,
+    padding: 18,
     backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: "#E6ECF5",
     shadowColor: "#0F172A",
-    shadowOpacity: 0.08,
-    shadowRadius: 24,
-    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.06,
+    shadowRadius: 26,
+    shadowOffset: { width: 0, height: 14 },
   },
   segment: {
     flexDirection: "row",
     padding: 4,
     marginBottom: 16,
-    borderRadius: 8,
-    backgroundColor: "#F1F5F9",
+    borderRadius: 16,
+    backgroundColor: "#EEF2F7",
   },
   segmentButton: {
     flex: 1,
     height: 44,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 7,
+    borderRadius: 12,
   },
   segmentButtonActive: {
-    backgroundColor: "#0F172A",
+    borderWidth: 1,
+    borderColor: "#D9D2FF",
+    backgroundColor: "#FFFFFF",
   },
   segmentText: {
     color: "#475569",
@@ -5585,7 +5589,7 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   segmentTextActive: {
-    color: "#FFFFFF",
+    color: "#5B4BDB",
   },
   form: {
     gap: 12,
@@ -5596,7 +5600,7 @@ const styles = StyleSheet.create({
   },
   field: {
     flex: 1,
-    gap: 6,
+    gap: 7,
   },
   fieldHeader: {
     minHeight: 18,
@@ -5616,9 +5620,9 @@ const styles = StyleSheet.create({
   },
   input: {
     height: 52,
-    borderRadius: 8,
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#CBD5E1",
+    borderColor: "#D8E2F1",
     backgroundColor: "#FFFFFF",
     paddingHorizontal: 14,
     color: "#0F172A",
@@ -5631,11 +5635,15 @@ const styles = StyleSheet.create({
   primaryButton: {
     minHeight: 56,
     marginTop: 4,
-    borderRadius: 8,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#0F172A",
+    backgroundColor: "#6D4AFF",
     paddingHorizontal: 18,
+    shadowColor: "#6D4AFF",
+    shadowOpacity: 0.22,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 8 },
   },
   primaryButtonText: {
     color: "#FFFFFF",
@@ -5646,9 +5654,9 @@ const styles = StyleSheet.create({
     minHeight: 50,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 8,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: "#CBD5E1",
+    borderColor: "#D8E2F1",
     backgroundColor: "#FFFFFF",
     paddingHorizontal: 18,
   },
@@ -5930,9 +5938,10 @@ const styles = StyleSheet.create({
     minHeight: 48,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 14,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: "#CBD5E1",
+    borderColor: "#D8E2F1",
+    backgroundColor: "#FFFFFF",
   },
   headerGhostButtonText: {
     color: "#0F172A",
@@ -5944,8 +5953,12 @@ const styles = StyleSheet.create({
     minHeight: 48,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 14,
-    backgroundColor: "#15100D",
+    borderRadius: 16,
+    backgroundColor: "#6D4AFF",
+    shadowColor: "#6D4AFF",
+    shadowOpacity: 0.18,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 7 },
   },
   headerPrimaryButtonFull: {
     flex: 0,
@@ -5975,11 +5988,13 @@ const styles = StyleSheet.create({
   },
   supportGuideCard: {
     padding: 14,
-    borderRadius: 16,
-    backgroundColor: "#F4F1ED",
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "#E6ECF5",
+    backgroundColor: "#F8FAFF",
   },
   supportGuideTitle: {
-    color: "#171717",
+    color: "#111827",
     fontSize: 16,
     fontWeight: "900",
   },
@@ -5993,7 +6008,7 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 12,
     fontWeight: "900",
-    backgroundColor: "#15100D",
+    backgroundColor: "#5B4BDB",
   },
   supportBubble: {
     marginTop: 14,
@@ -7157,44 +7172,45 @@ const styles = StyleSheet.create({
   },
   bottomNav: {
     position: "absolute",
-    left: 5,
-    right: 5,
-    bottom: 2,
-    minHeight: 56,
-    paddingHorizontal: 3,
-    paddingTop: 4,
-    paddingBottom: Platform.OS === "ios" ? 7 : 4,
+    left: 12,
+    right: 12,
+    bottom: 8,
+    minHeight: 64,
+    paddingHorizontal: 5,
+    paddingTop: 6,
+    paddingBottom: Platform.OS === "ios" ? 10 : 6,
     flexDirection: "row",
     alignItems: "stretch",
-    gap: 2,
-    borderTopLeftRadius: 8,
-    borderTopRightRadius: 8,
+    gap: 4,
+    borderRadius: 22,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
-    backgroundColor: "rgba(255, 255, 255, 0.96)",
+    borderColor: "#E6ECF5",
+    backgroundColor: "rgba(255, 255, 255, 0.98)",
     shadowColor: "#0F172A",
-    shadowOpacity: 0.09,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: -6 },
+    shadowOpacity: 0.08,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: -8 },
   },
   bottomNavItem: {
     flex: 1,
     minWidth: 0,
     alignItems: "center",
     justifyContent: "center",
-    gap: 2,
-    borderRadius: 8,
+    gap: 3,
+    borderRadius: 17,
   },
   bottomNavItemActive: {
-    backgroundColor: "#241642",
+    borderWidth: 1,
+    borderColor: "#D9D2FF",
+    backgroundColor: "#F1EDFF",
   },
   bottomNavText: {
     color: "#64748B",
-    fontSize: 8.5,
+    fontSize: 9,
     fontWeight: "900",
   },
   bottomNavTextActive: {
-    color: "#FFFFFF",
+    color: "#5B4BDB",
   },
   appHeader: {
     height: 62,
@@ -7229,11 +7245,12 @@ const styles = StyleSheet.create({
   },
   workspaceContent: {
     paddingHorizontal: 16,
-    paddingTop: 18,
-    paddingBottom: 34,
+    paddingTop: 16,
+    paddingBottom: 108,
   },
   workspaceHero: {
-    marginBottom: 14,
+    marginBottom: 16,
+    paddingHorizontal: 2,
   },
   workspaceEyebrow: {
     color: "#64748B",
@@ -7245,8 +7262,8 @@ const styles = StyleSheet.create({
   workspaceTitle: {
     marginTop: 6,
     color: "#0F172A",
-    fontSize: 30,
-    lineHeight: 36,
+    fontSize: 28,
+    lineHeight: 33,
     fontWeight: "900",
   },
   workspaceSubtitle: {
@@ -7266,14 +7283,14 @@ const styles = StyleSheet.create({
     height: 40,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 8,
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#CBD5E1",
+    borderColor: "#D8E2F1",
     backgroundColor: "#FFFFFF",
   },
   tabButtonActive: {
-    borderColor: "#0F172A",
-    backgroundColor: "#0F172A",
+    borderColor: "#C7D2FE",
+    backgroundColor: "#EEF2FF",
   },
   tabText: {
     color: "#475569",
@@ -7281,19 +7298,19 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   tabTextActive: {
-    color: "#FFFFFF",
+    color: "#4F46E5",
   },
   sectionStack: {
-    gap: 12,
+    gap: 14,
   },
   servicesModeRow: {
     flexDirection: "row",
     gap: 8,
     padding: 4,
-    borderRadius: 12,
+    borderRadius: 18,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
-    backgroundColor: "#FFFFFF",
+    borderColor: "#E6ECF5",
+    backgroundColor: "#EEF2F7",
   },
   servicesModeButton: {
     flex: 1,
@@ -7301,11 +7318,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 8,
-    borderRadius: 9,
-    backgroundColor: "#F8FAFC",
+    borderRadius: 14,
+    backgroundColor: "transparent",
   },
   servicesModeButtonActive: {
-    backgroundColor: "#0F172A",
+    borderWidth: 1,
+    borderColor: "#D9D2FF",
+    backgroundColor: "#FFFFFF",
   },
   servicesModeText: {
     color: "#475569",
@@ -7314,7 +7333,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   servicesModeTextActive: {
-    color: "#FFFFFF",
+    color: "#5B4BDB",
   },
   dateRow: {
     flexDirection: "row",
@@ -7388,19 +7407,19 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   panel: {
-    borderRadius: 8,
+    borderRadius: 18,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: "#E6ECF5",
     backgroundColor: "#FFFFFF",
-    padding: 14,
+    padding: 16,
     shadowColor: "#0F172A",
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.04,
     shadowRadius: 18,
-    shadowOffset: { width: 0, height: 10 },
+    shadowOffset: { width: 0, height: 9 },
   },
   panelTitle: {
     color: "#0F172A",
-    fontSize: 18,
+    fontSize: 17,
     fontWeight: "900",
   },
   panelBody: {
@@ -7416,16 +7435,16 @@ const styles = StyleSheet.create({
   choiceChip: {
     paddingHorizontal: 12,
     height: 36,
-    borderRadius: 8,
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: "#E2E8F0",
-    backgroundColor: "#F8FAFC",
+    borderColor: "#DDE6F3",
+    backgroundColor: "#FFFFFF",
   },
   choiceChipActive: {
-    borderColor: "#7C3AED",
-    backgroundColor: "#F3E8FF",
+    borderColor: "#A5B4FC",
+    backgroundColor: "#EEF2FF",
   },
   choiceText: {
     color: "#475569",
@@ -7433,7 +7452,7 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   choiceTextActive: {
-    color: "#5B21B6",
+    color: "#4F46E5",
   },
   listItem: {
     flexDirection: "row",
@@ -7445,9 +7464,9 @@ const styles = StyleSheet.create({
     borderBottomColor: "#E2E8F0",
   },
   serviceManageCard: {
-    borderRadius: 14,
+    borderRadius: 18,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: "#E6ECF5",
     backgroundColor: "#FFFFFF",
   },
   serviceManageSummary: {
@@ -7472,10 +7491,10 @@ const styles = StyleSheet.create({
   iconGhostButton: {
     width: 32,
     height: 32,
-    borderRadius: 8,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#F1F5F9",
+    backgroundColor: "#EEF2FF",
   },
   colorSwatchRow: {
     flexDirection: "row",
@@ -7490,7 +7509,7 @@ const styles = StyleSheet.create({
     borderColor: "#FFFFFF",
   },
   colorSwatchActive: {
-    borderColor: "#111827",
+    borderColor: "#6D4AFF",
   },
   categoryAddRow: {
     flexDirection: "row",
@@ -7512,10 +7531,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    borderRadius: 14,
+    borderRadius: 18,
     borderWidth: 1,
-    borderColor: "#D8E2EF",
-    backgroundColor: "#F8FAFC",
+    borderColor: "#D8E2F1",
+    backgroundColor: "#F8FAFF",
   },
   catalogServiceCardActive: {
     borderColor: "#BBF7D0",
@@ -7619,10 +7638,10 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     gap: 8,
     padding: 4,
-    borderRadius: 12,
+    borderRadius: 18,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
-    backgroundColor: "#FFFFFF",
+    borderColor: "#E6ECF5",
+    backgroundColor: "#EEF2F7",
   },
   staffLocalNavItem: {
     flex: 1,
@@ -7631,11 +7650,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 7,
-    borderRadius: 9,
-    backgroundColor: "#F8FAFC",
+    borderRadius: 14,
+    backgroundColor: "transparent",
   },
   staffLocalNavItemActive: {
-    backgroundColor: "#241642",
+    borderWidth: 1,
+    borderColor: "#D9D2FF",
+    backgroundColor: "#FFFFFF",
   },
   staffLocalNavText: {
     color: "#64748B",
@@ -7644,7 +7665,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   staffLocalNavTextActive: {
-    color: "#FFFFFF",
+    color: "#5B4BDB",
   },
   staffSummaryRow: {
     flexDirection: "row",
@@ -7654,8 +7675,10 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: 74,
     padding: 12,
-    borderRadius: 14,
-    backgroundColor: "#F8FAFC",
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "#E6ECF5",
+    backgroundColor: "#F8FAFF",
   },
   staffMemberRail: {
     gap: 10,
@@ -7667,9 +7690,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    borderRadius: 16,
+    borderRadius: 18,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: "#E6ECF5",
     backgroundColor: "#FFFFFF",
   },
   staffMemberChipActive: {
@@ -7719,10 +7742,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     gap: 12,
-    borderRadius: 12,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
-    backgroundColor: "#F8FAFC",
+    borderColor: "#E6ECF5",
+    backgroundColor: "#F8FAFF",
   },
   staffWeekHeader: {
     paddingBottom: 8,
@@ -7740,9 +7763,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 10,
-    borderRadius: 8,
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#CBD5E1",
+    borderColor: "#D8E2F1",
     backgroundColor: "#FFFFFF",
   },
   staffWeekPickerText: {
@@ -7754,10 +7777,10 @@ const styles = StyleSheet.create({
   staffCalendarBox: {
     gap: 12,
     padding: 12,
-    borderRadius: 16,
+    borderRadius: 18,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
-    backgroundColor: "#F8FAFC",
+    borderColor: "#E6ECF5",
+    backgroundColor: "#F8FAFF",
   },
   staffCalendarGrid: {
     flexDirection: "row",
@@ -7769,7 +7792,7 @@ const styles = StyleSheet.create({
     height: 38,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 10,
+    borderRadius: 13,
     backgroundColor: "#EEF2FF",
   },
   staffCalendarDayMuted: {
@@ -7792,20 +7815,20 @@ const styles = StyleSheet.create({
   staffMonthPlanner: {
     gap: 12,
     padding: 12,
-    borderRadius: 16,
+    borderRadius: 18,
     borderWidth: 1,
-    borderColor: "#D8E2EF",
-    backgroundColor: "#F8FAFC",
+    borderColor: "#E6ECF5",
+    backgroundColor: "#F8FAFF",
   },
   staffSelectedDaysStack: {
     gap: 10,
   },
   staffSelectedDayCard: {
     gap: 8,
-    padding: 10,
-    borderRadius: 14,
+    padding: 12,
+    borderRadius: 18,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: "#E6ECF5",
     backgroundColor: "#FFFFFF",
   },
   staffDayCard: {
@@ -7854,8 +7877,8 @@ const styles = StyleSheet.create({
     height: 44,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 10,
-    backgroundColor: "#F1F5F9",
+    borderRadius: 14,
+    backgroundColor: "#EEF2FF",
   },
   staffTimeField: {
     flex: 1,
@@ -7870,20 +7893,20 @@ const styles = StyleSheet.create({
   staffTimeInput: {
     height: 44,
     paddingHorizontal: 10,
-    borderRadius: 12,
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#CBD5E1",
+    borderColor: "#D8E2F1",
     color: "#0F172A",
     fontSize: 15,
     fontWeight: "800",
     backgroundColor: "#FFFFFF",
   },
   settingsHero: {
-    padding: 16,
-    borderRadius: 8,
+    padding: 18,
+    borderRadius: 22,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
-    backgroundColor: "#FFFFFF",
+    borderColor: "#E6ECF5",
+    backgroundColor: "#F8FAFF",
   },
   settingsEyebrow: {
     color: "#64748B",
@@ -7895,8 +7918,8 @@ const styles = StyleSheet.create({
   settingsHeroTitle: {
     marginTop: 5,
     color: "#0F172A",
-    fontSize: 30,
-    lineHeight: 35,
+    fontSize: 28,
+    lineHeight: 33,
     fontWeight: "900",
   },
   settingsHeroText: {
@@ -7914,14 +7937,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 13,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 8,
+    borderRadius: 14,
     borderWidth: 1,
     borderColor: "#D8E2EF",
     backgroundColor: "#FFFFFF",
   },
   settingsSectionChipActive: {
-    borderColor: "#6D4AFF",
-    backgroundColor: "#F5F3FF",
+    borderColor: "#C7D2FE",
+    backgroundColor: "#EEF2FF",
   },
   settingsSectionText: {
     color: "#475569",
@@ -7929,12 +7952,12 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
   settingsSectionTextActive: {
-    color: "#4C1D95",
+    color: "#4F46E5",
   },
   settingsStatusText: {
     paddingHorizontal: 12,
     paddingVertical: 9,
-    borderRadius: 8,
+    borderRadius: 14,
     overflow: "hidden",
     color: "#166534",
     fontSize: 13,
@@ -7944,7 +7967,7 @@ const styles = StyleSheet.create({
   settingsMutedNotice: {
     paddingHorizontal: 12,
     paddingVertical: 9,
-    borderRadius: 8,
+    borderRadius: 14,
     overflow: "hidden",
     color: "#92400E",
     fontSize: 13,
@@ -7956,10 +7979,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 12,
     padding: 10,
-    borderRadius: 14,
+    borderRadius: 18,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
-    backgroundColor: "#F8FAFC",
+    borderColor: "#E6ECF5",
+    backgroundColor: "#FFFFFF",
   },
   settingsAvatar: {
     width: 58,
@@ -7993,14 +8016,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 10,
-    borderRadius: 8,
+    borderRadius: 14,
     borderWidth: 1,
     borderColor: "#D8E2EF",
     backgroundColor: "#FFFFFF",
   },
   settingsChoiceActive: {
-    borderColor: "#6D4AFF",
-    backgroundColor: "#F5F3FF",
+    borderColor: "#C7D2FE",
+    backgroundColor: "#EEF2FF",
   },
   settingsChoiceText: {
     color: "#475569",
@@ -8010,7 +8033,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   settingsChoiceTextActive: {
-    color: "#4C1D95",
+    color: "#4F46E5",
   },
   settingsStackedChoices: {
     gap: 8,
@@ -8019,7 +8042,7 @@ const styles = StyleSheet.create({
     minHeight: 46,
     justifyContent: "center",
     paddingHorizontal: 12,
-    borderRadius: 8,
+    borderRadius: 14,
     borderWidth: 1,
     borderColor: "#D8E2EF",
     backgroundColor: "#FFFFFF",
@@ -8044,10 +8067,10 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: 78,
     padding: 12,
-    borderRadius: 8,
+    borderRadius: 18,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
-    backgroundColor: "#F8FAFC",
+    borderColor: "#E6ECF5",
+    backgroundColor: "#F8FAFF",
   },
   settingsMiniRow: {
     minHeight: 58,
@@ -8079,9 +8102,9 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     gap: 12,
-    borderRadius: 14,
+    borderRadius: 18,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
+    borderColor: "#E6ECF5",
     backgroundColor: "#FFFFFF",
   },
   joinRequestActions: {
