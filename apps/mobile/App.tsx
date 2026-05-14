@@ -5853,7 +5853,18 @@ function SettingsTab({
 
       {activeSection === "address" ? (
         <Panel title={t.settingsAddress}>
-          <Field label={t.addressSearch} value={addressSearchValue} editable={isOwner} onChangeText={setAddressSearchValue} placeholder={t.addressPlaceholder} />
+          <View style={styles.field}>
+            <View style={styles.fieldHeader}>
+              <Text style={styles.label}>{t.addressSearch}</Text>
+            </View>
+            <SearchInput
+              value={addressSearchValue}
+              onChangeText={setAddressSearchValue}
+              placeholder={t.addressPlaceholder}
+              editable={isOwner}
+              selectTextOnFocus
+            />
+          </View>
           {isSearchingAddress ? <Text style={styles.emptyText}>{t.searchingAddress}</Text> : null}
           {addressSuggestions.map((suggestion) => (
             <Pressable key={`${suggestion.label}-${suggestion.lat}-${suggestion.lon}`} style={styles.addressSuggestionCard} onPress={() => applyAddressSuggestion(suggestion)}>
@@ -5985,13 +5996,17 @@ function SearchInput({
   value,
   onChangeText,
   placeholder,
+  editable = true,
+  selectTextOnFocus,
 }: {
   value: string;
   onChangeText: (value: string) => void;
   placeholder: string;
+  editable?: boolean;
+  selectTextOnFocus?: boolean;
 }) {
   return (
-    <View style={styles.searchInputShell}>
+    <View style={[styles.searchInputShell, !editable && styles.inputDisabled]}>
       <Ionicons name="search" size={18} color="#64748B" />
       <TextInput
         value={value}
@@ -5999,9 +6014,11 @@ function SearchInput({
         placeholder={placeholder}
         placeholderTextColor="#94A3B8"
         autoCorrect={false}
+        editable={editable}
+        selectTextOnFocus={selectTextOnFocus}
         style={styles.searchInput}
       />
-      {value.trim() ? (
+      {editable && value.trim() ? (
         <Pressable style={styles.searchClearButton} onPress={() => onChangeText("")}>
           <Ionicons name="close" size={16} color="#64748B" />
         </Pressable>
