@@ -2094,9 +2094,9 @@ function CalendarTab({
                       <Text style={styles.inlineClientFormTitle}>{t.newClientFormTitle}</Text>
                       <Text style={styles.inlineClientFormHint}>{t.newClientFormHint}</Text>
                     </View>
-                    <Field label={t.firstName} value={newClientDraft.firstName} onChangeText={(value) => setNewClientDraft({ ...newClientDraft, firstName: value })} />
-                    <Field label={t.lastName} value={newClientDraft.lastName} onChangeText={(value) => setNewClientDraft({ ...newClientDraft, lastName: value })} />
-                    <Field label={t.phone} value={newClientDraft.phone} onChangeText={(value) => setNewClientDraft({ ...newClientDraft, phone: value })} keyboardType="phone-pad" />
+                    <InlineClientInput label={t.firstName} value={newClientDraft.firstName} onChangeText={(value) => setNewClientDraft({ ...newClientDraft, firstName: value })} />
+                    <InlineClientInput label={t.lastName} value={newClientDraft.lastName} onChangeText={(value) => setNewClientDraft({ ...newClientDraft, lastName: value })} />
+                    <InlineClientInput label={t.phone} value={newClientDraft.phone} onChangeText={(value) => setNewClientDraft({ ...newClientDraft, phone: value })} keyboardType="phone-pad" />
                     <PrimaryButton label={t.addAndSelectClient} onPress={() => void createInlineClient()} disabled={busy} />
                   </View>
                 ) : null}
@@ -3559,6 +3559,25 @@ function SearchInput({
           <Ionicons name="close" size={16} color="#64748B" />
         </Pressable>
       ) : null}
+    </View>
+  );
+}
+
+function InlineClientInput({
+  label,
+  ...props
+}: {
+  label: string;
+} & ComponentProps<typeof TextInput>) {
+  return (
+    <View style={styles.inlineClientField}>
+      <Text style={styles.inlineClientLabel}>{label}</Text>
+      <TextInput
+        {...props}
+        autoCorrect={false}
+        placeholderTextColor="#94A3B8"
+        style={styles.inlineClientInput}
+      />
     </View>
   );
 }
@@ -5216,6 +5235,25 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 18,
     shadowOffset: { width: 0, height: 10 },
+  },
+  inlineClientField: {
+    gap: 6,
+  },
+  inlineClientLabel: {
+    color: "#0F172A",
+    fontSize: 13,
+    fontWeight: "900",
+  },
+  inlineClientInput: {
+    height: 50,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#C7D2FE",
+    color: "#0F172A",
+    fontSize: 16,
+    fontWeight: "700",
+    backgroundColor: "#FFFFFF",
   },
   inlineClientFormTitle: {
     color: "#0F172A",
