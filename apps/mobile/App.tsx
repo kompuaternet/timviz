@@ -3505,7 +3505,7 @@ function CalendarTimeline({
         const height = getRangeHeight(rowStart, rowEnd);
         const showLabel = height >= 18 || hour === Math.floor(workStart / 60);
         return (
-          <View key={hour} style={[styles.hourRow, { top, height }]}>
+          <View pointerEvents="none" key={hour} style={[styles.hourRow, { top, height }]}>
             <Text style={[styles.hourText, !showLabel && styles.hourTextHidden]}>{showLabel ? `${String(hour).padStart(2, "0")}:00` : ""}</Text>
             <View style={styles.hourGrid}>
               <View style={styles.majorLine} />
@@ -7153,6 +7153,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     flexDirection: "row",
+    zIndex: 1,
   },
   hourText: {
     width: 43,
@@ -7195,6 +7196,7 @@ const styles = StyleSheet.create({
     paddingLeft: 12,
     backgroundColor: "#F8FAFC",
     opacity: 0.88,
+    zIndex: 0,
   },
   editableClosedBlock: {
     zIndex: 2,
