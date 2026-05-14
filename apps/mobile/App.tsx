@@ -287,6 +287,9 @@ const copy = {
     addAndSelectClient: "Додати й обрати",
     createClientFromSearch: "Створити клієнта",
     noClientFound: "Клієнта не знайдено. Можна створити нового.",
+    newClientFormTitle: "Новий клієнт",
+    newClientFormHint: "Додайте дані, і клієнт одразу буде обраний для візиту.",
+    formOpened: "Форма відкрита нижче",
     clientName: "Ім'я клієнта",
     withoutService: "Послугу не обрано",
     setupAssistant: "Помічник налаштування",
@@ -420,6 +423,9 @@ const copy = {
     addAndSelectClient: "Добавить и выбрать",
     createClientFromSearch: "Создать клиента",
     noClientFound: "Клиент не найден. Можно создать нового.",
+    newClientFormTitle: "Новый клиент",
+    newClientFormHint: "Добавьте данные, и клиент сразу будет выбран для визита.",
+    formOpened: "Форма открыта ниже",
     clientName: "Имя клиента",
     withoutService: "Услуга не выбрана",
     setupAssistant: "Помощник настройки",
@@ -553,6 +559,9 @@ const copy = {
     addAndSelectClient: "Add and select",
     createClientFromSearch: "Create client",
     noClientFound: "No client found. You can create a new one.",
+    newClientFormTitle: "New client",
+    newClientFormHint: "Add the details and the client will be selected for this visit.",
+    formOpened: "Form is open below",
     clientName: "Client name",
     withoutService: "No service selected",
     setupAssistant: "Setup assistant",
@@ -2040,7 +2049,7 @@ function CalendarTab({
             </View>
             {visitPickerMode === "client" ? (
               <>
-                <Field label={t.search} value={clientQuery} onChangeText={setClientQuery} placeholder={t.clientNameOrPhone} />
+                <SearchInput value={clientQuery} onChangeText={setClientQuery} placeholder={t.clientNameOrPhone} />
                 <Pressable style={styles.clientOptionCard} onPress={() => setDraftClient(null)}>
                   <View style={styles.clientAvatar}>
                     <Ionicons name="person-outline" size={18} color="#6D4AFF" />
@@ -2065,8 +2074,8 @@ function CalendarTab({
                     <Ionicons name={clientCreateOpen ? "chevron-up" : "add"} size={20} color="#6D4AFF" />
                   </View>
                   <View style={styles.clientOptionText}>
-                    <Text style={styles.clientOptionTitle}>{clientCreateOpen ? t.cancel : t.addNewClient}</Text>
-                    <Text style={styles.clientOptionCaption}>{t.clientNameOrPhone}</Text>
+                    <Text style={styles.clientOptionTitle}>{t.addNewClient}</Text>
+                    <Text style={styles.clientOptionCaption}>{clientCreateOpen ? t.formOpened : t.clientNameOrPhone}</Text>
                   </View>
                   <Ionicons name={clientCreateOpen ? "chevron-up" : "chevron-forward"} size={18} color="#94A3B8" />
                 </Pressable>
@@ -2081,10 +2090,12 @@ function CalendarTab({
                 ) : null}
                 {clientCreateOpen ? (
                   <View style={styles.inlineClientForm}>
-                    <View style={styles.twoColumns}>
-                      <Field label={t.firstName} value={newClientDraft.firstName} onChangeText={(value) => setNewClientDraft({ ...newClientDraft, firstName: value })} />
-                      <Field label={t.lastName} value={newClientDraft.lastName} onChangeText={(value) => setNewClientDraft({ ...newClientDraft, lastName: value })} />
+                    <View>
+                      <Text style={styles.inlineClientFormTitle}>{t.newClientFormTitle}</Text>
+                      <Text style={styles.inlineClientFormHint}>{t.newClientFormHint}</Text>
                     </View>
+                    <Field label={t.firstName} value={newClientDraft.firstName} onChangeText={(value) => setNewClientDraft({ ...newClientDraft, firstName: value })} />
+                    <Field label={t.lastName} value={newClientDraft.lastName} onChangeText={(value) => setNewClientDraft({ ...newClientDraft, lastName: value })} />
                     <Field label={t.phone} value={newClientDraft.phone} onChangeText={(value) => setNewClientDraft({ ...newClientDraft, phone: value })} keyboardType="phone-pad" />
                     <PrimaryButton label={t.addAndSelectClient} onPress={() => void createInlineClient()} disabled={busy} />
                   </View>
@@ -2106,7 +2117,7 @@ function CalendarTab({
               </>
             ) : visitPickerMode === "service" ? (
               <>
-                <Field label={t.search} value={serviceQuery} onChangeText={setServiceQuery} placeholder={t.searchService} />
+                <SearchInput value={serviceQuery} onChangeText={setServiceQuery} placeholder={t.searchService} />
                 <ScrollView style={styles.pickerList} showsVerticalScrollIndicator={false}>
                   {filteredServices.map((service) => (
                     <Pressable key={service.id} style={styles.serviceOptionCard} onPress={() => selectVisitService(service)}>
@@ -3523,6 +3534,35 @@ function Field({
   );
 }
 
+function SearchInput({
+  value,
+  onChangeText,
+  placeholder,
+}: {
+  value: string;
+  onChangeText: (value: string) => void;
+  placeholder: string;
+}) {
+  return (
+    <View style={styles.searchInputShell}>
+      <Ionicons name="search" size={18} color="#64748B" />
+      <TextInput
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor="#94A3B8"
+        autoCorrect={false}
+        style={styles.searchInput}
+      />
+      {value.trim() ? (
+        <Pressable style={styles.searchClearButton} onPress={() => onChangeText("")}>
+          <Ionicons name="close" size={16} color="#64748B" />
+        </Pressable>
+      ) : null}
+    </View>
+  );
+}
+
 function PrimaryButton({ label, onPress, disabled }: { label: string; onPress: () => void; disabled?: boolean }) {
   return (
     <Pressable onPress={onPress} style={[styles.primaryButton, disabled && styles.disabled]} disabled={disabled}>
@@ -4926,9 +4966,13 @@ const styles = StyleSheet.create({
     gap: 12,
     padding: 18,
     paddingBottom: 28,
-    borderTopLeftRadius: 8,
-    borderTopRightRadius: 8,
+    borderTopLeftRadius: 26,
+    borderTopRightRadius: 26,
     backgroundColor: "#FFFFFF",
+    shadowColor: "#0F172A",
+    shadowOpacity: 0.12,
+    shadowRadius: 28,
+    shadowOffset: { width: 0, height: -10 },
   },
   visitEditorSheet: {
     maxHeight: "92%",
@@ -4937,6 +4981,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    paddingBottom: 2,
   },
   sheetTitle: {
     color: "#0F172A",
@@ -4944,9 +4989,9 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
   sheetClose: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#F1F5F9",
@@ -5105,6 +5150,32 @@ const styles = StyleSheet.create({
   pickerList: {
     maxHeight: 470,
   },
+  searchInputShell: {
+    minHeight: 54,
+    paddingHorizontal: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#D8E2F1",
+    backgroundColor: "#F8FAFC",
+  },
+  searchInput: {
+    flex: 1,
+    minHeight: 50,
+    color: "#0F172A",
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  searchClearButton: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#E2E8F0",
+  },
   clientOptionCard: {
     minHeight: 62,
     marginBottom: 8,
@@ -5135,12 +5206,28 @@ const styles = StyleSheet.create({
   },
   inlineClientForm: {
     marginBottom: 10,
-    padding: 12,
-    gap: 10,
-    borderRadius: 16,
+    padding: 14,
+    gap: 12,
+    borderRadius: 18,
     borderWidth: 1,
     borderColor: "#DDD6FE",
     backgroundColor: "#FAF7FF",
+    shadowColor: "#7C3AED",
+    shadowOpacity: 0.08,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 10 },
+  },
+  inlineClientFormTitle: {
+    color: "#0F172A",
+    fontSize: 17,
+    fontWeight: "900",
+  },
+  inlineClientFormHint: {
+    marginTop: 3,
+    color: "#64748B",
+    fontSize: 12,
+    lineHeight: 17,
+    fontWeight: "700",
   },
   clientAvatar: {
     width: 38,
