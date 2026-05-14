@@ -4,7 +4,7 @@ import * as ImagePicker from "expo-image-picker";
 import * as Localization from "expo-localization";
 import { StatusBar } from "expo-status-bar";
 import type { ComponentProps } from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -2649,6 +2649,9 @@ function CalendarTab({
   const [clientQuery, setClientQuery] = useState("");
   const [clientCreateOpen, setClientCreateOpen] = useState(false);
   const [newClientDraft, setNewClientDraft] = useState({ firstName: "", lastName: "", phone: "" });
+  const memberHeaderScrollRef = useRef<ScrollView | null>(null);
+  const memberBodyScrollRef = useRef<ScrollView | null>(null);
+  const lastMemberScrollXRef = useRef(0);
   const visibleDates = useMemo(() => getCalendarModeDates(viewMode, selectedDate), [selectedDate, viewMode]);
   const visibleDatesKey = visibleDates.join("|");
   const [rangeSnapshots, setRangeSnapshots] = useState<Record<string, CalendarSnapshot>>({});
@@ -2811,6 +2814,13 @@ function CalendarTab({
 
   function selectAllMembers() {
     setSelectedMemberIds(calendarMembers.map((member) => member.id));
+  }
+
+  function syncMemberHorizontalScroll(x: number, source: "header" | "body") {
+    if (Math.abs(x - lastMemberScrollXRef.current) < 0.5) return;
+    lastMemberScrollXRef.current = x;
+    const target = source === "header" ? memberBodyScrollRef.current : memberHeaderScrollRef.current;
+    target?.scrollTo({ x, animated: false });
   }
 
   function setDraftClient(client: ClientRecord | null) {
@@ -3027,7 +3037,15 @@ function CalendarTab({
                   ) : null}
                 </Pressable>
               </View>
-              <ScrollView horizontal style={styles.teamMembersHorizontal} contentContainerStyle={styles.teamMembersHorizontalContent} showsHorizontalScrollIndicator={false}>
+              <ScrollView
+                ref={memberHeaderScrollRef}
+                horizontal
+                style={styles.teamMembersHorizontal}
+                contentContainerStyle={styles.teamMembersHorizontalContent}
+                showsHorizontalScrollIndicator={false}
+                scrollEventThrottle={16}
+                onScroll={(event) => syncMemberHorizontalScroll(event.nativeEvent.contentOffset.x, "header")}
+              >
                 {visibleCalendarMembers.map((member) => (
                   <View key={member.id} style={[styles.teamDayHeader, { width: dayMemberColumnWidth }]}>
                     <MemberAvatar member={member} size={34} />
@@ -3048,11 +3066,14 @@ function CalendarTab({
               <View style={styles.teamCalendarBodyRow}>
                 <CalendarTimeAxis date={selectedDate} compact={isCompact} schedule={selectedSchedule} />
                 <ScrollView
+                  ref={memberBodyScrollRef}
                   horizontal
                   style={styles.teamMembersHorizontal}
                   contentContainerStyle={styles.teamMembersHorizontalContent}
                   showsHorizontalScrollIndicator={false}
                   nestedScrollEnabled
+                  scrollEventThrottle={16}
+                  onScroll={(event) => syncMemberHorizontalScroll(event.nativeEvent.contentOffset.x, "body")}
                 >
                   {visibleCalendarMembers.map((member) => {
                     const memberAppointments = getAppointmentsForMember(selectedDate, member.id);
