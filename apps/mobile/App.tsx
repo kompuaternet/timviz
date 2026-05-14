@@ -29,6 +29,7 @@ type AppLanguage = "uk" | "ru" | "en";
 type AuthMode = "login" | "register";
 type AppTab = "calendar" | "services" | "clients" | "staff" | "settings";
 type CalendarViewMode = "day" | "threeDays" | "week" | "month";
+type LocalizedText = Partial<Record<AppLanguage, string>>;
 
 type MobileSession = {
   token: string;
@@ -80,8 +81,10 @@ type BlockedTimeDraft = {
 type ServiceRecord = {
   id: string;
   name: string;
+  localizedName?: LocalizedText;
   price: number;
   category?: string;
+  localizedCategory?: LocalizedText;
   durationMinutes?: number;
   color?: string;
   source?: "catalog" | "custom";
@@ -89,6 +92,7 @@ type ServiceRecord = {
 
 type ServiceTemplateRecord = {
   name: string;
+  localizedName?: LocalizedText;
   durationMinutes?: number;
   price?: number;
 };
@@ -96,6 +100,7 @@ type ServiceTemplateRecord = {
 type ServiceCatalogCategory = {
   key: string;
   title: string;
+  localizedTitle?: LocalizedText;
   topSuggestions?: ServiceTemplateRecord[];
   popularServices?: ServiceTemplateRecord[];
 };
@@ -1375,8 +1380,72 @@ const COUNTRY_LABELS: Record<AppLanguage, Record<string, string>> = {
   en: {},
 };
 
+const SERVICE_CATEGORY_LABELS: Record<AppLanguage, Record<string, string>> = {
+  uk: {
+    "Парикмахерская": "Перукарня",
+    "Ногти": "Нігті",
+    "Брови и ресницы": "Брови та вії",
+    "Салон красоты": "Салон краси",
+    "Медспа": "Медспа",
+    "Парикмахер": "Перукар",
+    "Массажный салон": "Масажний салон",
+    "Спа-салон и сауна": "Спа-салон і сауна",
+    "Салон депиляции": "Салон депіляції",
+    "Тату и пирсинг": "Тату та пірсинг",
+    "Студия загара": "Студія засмаги",
+    "Физиотерапия": "Фізіотерапія",
+    "Другая": "Інша",
+  },
+  ru: {},
+  en: {
+    "Парикмахерская": "Hair salon",
+    "Ногти": "Nails",
+    "Брови и ресницы": "Brows and lashes",
+    "Салон красоты": "Beauty salon",
+    "Медспа": "Medspa",
+    "Парикмахер": "Hairdresser",
+    "Массажный салон": "Massage studio",
+    "Спа-салон и сауна": "Spa and sauna",
+    "Салон депиляции": "Hair removal salon",
+    "Тату и пирсинг": "Tattoo and piercing",
+    "Студия загара": "Tanning studio",
+    "Физиотерапия": "Physiotherapy",
+    "Другая": "Other",
+  },
+};
+
 function localizeCountry(country: string, language: AppLanguage) {
   return COUNTRY_LABELS[language][country] || country;
+}
+
+function localizeText(defaultValue: string | undefined, localized: LocalizedText | undefined, language: AppLanguage) {
+  const current = localized?.[language]?.trim();
+  if (current) return current;
+  return localized?.ru?.trim() || localized?.uk?.trim() || localized?.en?.trim() || safeText(defaultValue).trim();
+}
+
+function getServiceDisplayName(service: Pick<ServiceRecord | ServiceTemplateRecord, "name" | "localizedName"> | undefined, language: AppLanguage) {
+  return localizeText(service?.name, service?.localizedName, language);
+}
+
+function getServiceCategoryDisplayName(category: string | undefined, localizedCategory: LocalizedText | undefined, language: AppLanguage, t: Record<string, string>) {
+  const localized = localizeText(category, localizedCategory, language);
+  return localizeCatalogCategory(localized || category, language, t);
+}
+
+function getServiceSearchText(service: Pick<ServiceRecord | ServiceTemplateRecord, "name" | "localizedName"> | undefined) {
+  return [service?.name, service?.localizedName?.ru, service?.localizedName?.uk, service?.localizedName?.en]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+}
+
+function serviceNameMatches(service: Pick<ServiceRecord | ServiceTemplateRecord, "name" | "localizedName"> | undefined, value: string) {
+  const normalized = value.trim().toLowerCase();
+  if (!normalized) return false;
+  return [service?.name, service?.localizedName?.ru, service?.localizedName?.uk, service?.localizedName?.en]
+    .filter(Boolean)
+    .some((candidate) => String(candidate).trim().toLowerCase() === normalized);
 }
 
 function localizeServiceCategory(category: string | undefined, t: Record<string, string>) {
@@ -1385,6 +1454,11 @@ function localizeServiceCategory(category: string | undefined, t: Record<string,
     return t.defaultServiceCategory;
   }
   return value;
+}
+
+function localizeCatalogCategory(category: string | undefined, language: AppLanguage, t: Record<string, string>) {
+  const value = localizeServiceCategory(category, t);
+  return SERVICE_CATEGORY_LABELS[language][value] || value;
 }
 
 function formatDuration(minutes: number | undefined, t: Record<string, string>) {
@@ -1501,12 +1575,12 @@ function createLocalId(prefix = "draft") {
   return `${prefix}-${Date.now()}-${Math.round(Math.random() * 100000)}`;
 }
 
-function createVisitServiceDraft(startTime: string, service?: ServiceRecord): VisitServiceDraft {
+function createVisitServiceDraft(startTime: string, service?: ServiceRecord, language: AppLanguage = "ru"): VisitServiceDraft {
   const duration = Math.max(5, service?.durationMinutes || 15);
   return {
     id: createLocalId("service"),
     serviceId: service?.id || "",
-    serviceName: service?.name || "",
+    serviceName: getServiceDisplayName(service, language) || "",
     startTime,
     endTime: addMinutes(startTime, duration),
     priceAmount: Number(service?.price || 0),
@@ -2219,7 +2293,7 @@ export default function App() {
     return (Array.isArray(visitDraft.items) ? visitDraft.items : []).map((item) => ({
       ...item,
       serviceId: safeText(item.serviceId),
-      serviceName: safeText(item.serviceName).trim(),
+      serviceName: getServiceDisplayName(workspace?.services.find((service) => service.id === item.serviceId), language) || safeText(item.serviceName).trim(),
       startTime: safeText(item.startTime).trim(),
       endTime: safeText(item.endTime).trim(),
       priceAmount: Number(item.priceAmount || 0),
@@ -2493,6 +2567,11 @@ export default function App() {
     const optimisticService: ServiceRecord = {
       id: createLocalId("service"),
       name: serviceDraft.name.trim(),
+      localizedName: {
+        ru: serviceDraft.name.trim(),
+        uk: serviceDraft.name.trim(),
+        en: serviceDraft.name.trim(),
+      },
       category: serviceDraft.category.trim() || DEFAULT_SERVICE_CATEGORY,
       durationMinutes: Number(serviceDraft.durationMinutes || 60),
       price: Number(serviceDraft.price || 0),
@@ -2529,6 +2608,11 @@ export default function App() {
     const updatedService: ServiceRecord = {
       id: serviceId,
       name: draft.name.trim(),
+      localizedName: {
+        ru: draft.name.trim(),
+        uk: draft.name.trim(),
+        en: draft.name.trim(),
+      },
       category: draft.category.trim() || DEFAULT_SERVICE_CATEGORY,
       durationMinutes: Number(draft.durationMinutes || 60),
       price: Number(draft.price || 0),
@@ -2558,6 +2642,7 @@ export default function App() {
     const optimisticService: ServiceRecord = {
       id: createLocalId("service"),
       name: service.name,
+      localizedName: service.localizedName,
       category: service.category || DEFAULT_SERVICE_CATEGORY,
       durationMinutes: Number(service.durationMinutes || 60),
       price: Number(service.price || 0),
@@ -2734,6 +2819,7 @@ export default function App() {
             {activeTab === "services" ? (
               <ServicesTab
                 t={t}
+                language={language}
                 workspace={workspace}
                 catalog={serviceCatalog}
                 draft={serviceDraft}
@@ -3033,7 +3119,7 @@ function CalendarTab({
   const selectedClient = visitDraft.selectedClientId ? clients.find((client) => client.id === visitDraft.selectedClientId) || null : null;
   const draftVisitItems = Array.isArray(visitDraft.items) && visitDraft.items.length ? visitDraft.items : [createVisitServiceDraft(visitDraft.startTime || "09:00")];
   const visitTotal = draftVisitItems.reduce((sum, item) => sum + Number(item.priceAmount || 0), 0);
-  const filteredServices = services.filter((service) => service.name.toLowerCase().includes(serviceQuery.trim().toLowerCase()));
+  const filteredServices = services.filter((service) => getServiceSearchText(service).includes(serviceQuery.trim().toLowerCase()));
   const filteredClients = clients.filter((client) => {
     const query = clientQuery.trim().toLowerCase();
     if (!query) return true;
@@ -3087,6 +3173,11 @@ function CalendarTab({
 
   function getScheduleForMember(date: string, member: CalendarMemberView | null) {
     return getMemberScheduleForDate(member, workspace, date);
+  }
+
+  function getLocalizedAppointmentServiceName(appointment: Pick<AppointmentRecord, "serviceName">) {
+    const matchedService = services.find((service) => serviceNameMatches(service, appointment.serviceName));
+    return getServiceDisplayName(matchedService, language) || appointment.serviceName;
   }
 
   function toggleMember(memberId: string) {
@@ -3159,7 +3250,7 @@ function CalendarTab({
     const currentItem = draftItems[editingServiceIndex] || createVisitServiceDraft(visitDraft.startTime || "09:00");
     updateVisitItem(editingServiceIndex, {
       serviceId: service.id,
-      serviceName: service.name,
+      serviceName: getServiceDisplayName(service, language),
       priceAmount: Number(service.price || 0),
       durationMinutes: duration,
       endTime: addMinutes(currentItem.startTime, duration),
@@ -3195,7 +3286,7 @@ function CalendarTab({
   }
 
   function openAppointmentEditor(appointment: AppointmentRecord) {
-    const matchedService = services.find((service) => service.name === appointment.serviceName) || services[0];
+    const matchedService = services.find((service) => serviceNameMatches(service, appointment.serviceName)) || services[0];
     const matchedClient = clients.find((client) => {
       const samePhone = appointment.customerPhone && client.phone === appointment.customerPhone;
       const sameName = appointment.customerName && client.fullName === appointment.customerName;
@@ -3215,7 +3306,7 @@ function CalendarTab({
         {
           id: appointment.id,
           serviceId: matchedService?.id || "",
-          serviceName: appointment.serviceName,
+          serviceName: getServiceDisplayName(matchedService, language) || appointment.serviceName,
           startTime: appointment.startTime,
           endTime: appointment.endTime,
           priceAmount: Number(appointment.priceAmount || matchedService?.price || 0),
@@ -3357,6 +3448,7 @@ function CalendarTab({
                               compact={isCompact}
                               schedule={memberSchedule}
                               t={t}
+                              formatAppointmentServiceName={getLocalizedAppointmentServiceName}
                               columnWidth={dayMemberColumnWidth}
                               showTimeColumn={false}
                               onTimePress={(time) => setTimeAction({ date: selectedDate, time, targetProfessionalId: member.id })}
@@ -3503,8 +3595,8 @@ function CalendarTab({
                     <Pressable key={service.id} style={styles.serviceOptionCard} onPress={() => selectVisitService(service)}>
                       <View style={[styles.serviceTone, { backgroundColor: service.color || "#6D4AFF" }]} />
                       <View style={styles.clientOptionText}>
-                        <Text style={styles.clientOptionTitle}>{service.name}</Text>
-                        <Text style={styles.clientOptionCaption}>{service.durationMinutes || 60} {t.duration}</Text>
+                        <Text style={styles.clientOptionTitle}>{getServiceDisplayName(service, language)}</Text>
+                        <Text style={styles.clientOptionCaption}>{formatDuration(service.durationMinutes || 60, t)}</Text>
                       </View>
                       <Text style={styles.serviceOptionPrice}>{formatMoney(service.price, currency)}</Text>
                     </Pressable>
@@ -3542,7 +3634,7 @@ function CalendarTab({
                           }}
                         >
                           <Text style={[styles.visitServicePickerText, !item.serviceName && styles.mutedText]} numberOfLines={1}>
-                            {item.serviceName || t.chooseService} →
+                            {(getServiceDisplayName(services.find((service) => service.id === item.serviceId), language) || item.serviceName || t.chooseService)} →
                           </Text>
                         </Pressable>
                         {draftVisitItems.length > 1 ? (
@@ -3556,7 +3648,7 @@ function CalendarTab({
                         <Field label={t.end} value={item.endTime} onChangeText={(value) => updateVisitItem(index, { endTime: value })} keyboardType="numbers-and-punctuation" placeholder="10:00" />
                       </View>
                       <View style={styles.visitServiceMeta}>
-                        <Text style={styles.clientOptionCaption}>{item.serviceName || t.withoutService}</Text>
+                        <Text style={styles.clientOptionCaption}>{getServiceDisplayName(services.find((service) => service.id === item.serviceId), language) || item.serviceName || t.withoutService}</Text>
                         <Text style={styles.visitServicePrice}>{formatMoney(item.priceAmount, currency)}</Text>
                       </View>
                     </View>
@@ -4015,6 +4107,7 @@ function CalendarTimeline({
   onAppointmentDelete,
   onAppointmentMove,
   onAppointmentResize,
+  formatAppointmentServiceName,
   columnWidth,
   showTimeColumn = true,
 }: {
@@ -4030,6 +4123,7 @@ function CalendarTimeline({
   onAppointmentDelete: (appointment: AppointmentRecord) => void;
   onAppointmentMove: (appointment: AppointmentRecord) => void;
   onAppointmentResize: (appointment: AppointmentRecord) => void;
+  formatAppointmentServiceName?: (appointment: AppointmentRecord) => string;
   columnWidth?: number;
   showTimeColumn?: boolean;
 }) {
@@ -4301,7 +4395,7 @@ function CalendarTimeline({
             </Text>
             {!isTinyCard ? (
               <Text style={[styles.appointmentService, isCompactCard && styles.appointmentServiceTight]} numberOfLines={1} ellipsizeMode="tail">
-                {appointment.serviceName}
+                {formatAppointmentServiceName ? formatAppointmentServiceName(appointment) : appointment.serviceName}
               </Text>
             ) : null}
             <Text style={styles.appointmentPrice}>{formatMoney(appointment.priceAmount, currency)}</Text>
@@ -4543,6 +4637,7 @@ function WorkspaceHeader({
                     item={item}
                     t={t}
                     language={language}
+                    services={workspace?.services || []}
                     onPress={() => {
                       close();
                       onOpenNotification(item);
@@ -4554,7 +4649,7 @@ function WorkspaceHeader({
                   <Text style={styles.notificationBadgeText}>{notifications.archivedOnlineBookings?.length || 0}</Text>
                 </View>
                 {(notifications.archivedOnlineBookings || []).map((item) => (
-                  <NotificationCard key={item.id} item={item} t={t} language={language} />
+                  <NotificationCard key={item.id} item={item} t={t} language={language} services={workspace?.services || []} />
                 ))}
               </ScrollView>
             ) : null}
@@ -4656,21 +4751,24 @@ function NotificationCard({
   item,
   t,
   language,
+  services,
   onPress,
 }: {
   item: MobileNotificationRecord;
   t: Record<string, string>;
   language: AppLanguage;
+  services: ServiceRecord[];
   onPress?: () => void;
 }) {
   const statusText = item.status === "cancelled" ? t.statusCancelled : item.status === "confirmed" ? t.statusConfirmed : t.statusPending;
+  const serviceName = getServiceDisplayName(services.find((service) => serviceNameMatches(service, item.serviceName)), language) || item.serviceName;
   return (
     <Pressable style={styles.notificationCard} onPress={onPress} disabled={!onPress}>
       <View style={styles.notificationCardHeader}>
         <Text style={styles.notificationCardTitle}>{item.customerName || t.customer}</Text>
         <Text style={styles.clientOptionCaption}>{formatShortDate(item.appointmentDate, language)}</Text>
       </View>
-      <Text style={styles.notificationService}>{item.serviceName}</Text>
+      <Text style={styles.notificationService}>{serviceName}</Text>
       <Text style={styles.clientOptionCaption}>
         {item.appointmentDate} · {item.startTime}{item.professionalName ? ` · ${item.professionalName}` : ""}
       </Text>
@@ -4717,6 +4815,7 @@ function BottomNavigation({
 
 function ServicesTab({
   t,
+  language,
   workspace,
   catalog,
   draft,
@@ -4728,6 +4827,7 @@ function ServicesTab({
   busy,
 }: {
   t: Record<string, string>;
+  language: AppLanguage;
   workspace: WorkspaceSnapshot | null;
   catalog: ServiceCatalogCategory[];
   draft: ServiceDraftState;
@@ -4766,7 +4866,7 @@ function ServicesTab({
     return catalog
       .filter((group) => query || group.title === currentCatalogCategory)
       .flatMap((group) => [...(group.topSuggestions || []), ...(group.popularServices || [])].map((service) => ({ ...service, category: group.title })))
-      .filter((service) => !query || service.name.toLowerCase().includes(query));
+      .filter((service) => !query || getServiceSearchText(service).includes(query));
   }, [catalog, catalogQuery, currentCatalogCategory]);
 
   function startEdit(service: ServiceRecord) {
@@ -4796,7 +4896,7 @@ function ServicesTab({
   }
 
   function serviceExists(serviceName: string) {
-    return services.some((service) => service.name.trim().toLowerCase() === serviceName.trim().toLowerCase());
+    return services.some((service) => serviceNameMatches(service, serviceName));
   }
 
   async function saveCustomService() {
@@ -4834,7 +4934,7 @@ function ServicesTab({
                   {isEditing ? (
                     <View style={styles.serviceEditStack}>
                       <Field label={t.serviceName} value={editDraft.name} onChangeText={(value) => setEditDraft({ ...editDraft, name: value })} />
-                      <CategoryChips t={t} categories={categories} selected={editDraft.category} onSelect={(category) => setEditDraft({ ...editDraft, category })} />
+                      <CategoryChips t={t} language={language} categories={categories} selected={editDraft.category} onSelect={(category) => setEditDraft({ ...editDraft, category })} />
                       <View style={styles.twoColumns}>
                         <Field label={t.duration} value={editDraft.durationMinutes} onChangeText={(value) => setEditDraft({ ...editDraft, durationMinutes: value })} keyboardType="number-pad" />
                         <Field label={t.price} value={editDraft.price} onChangeText={(value) => setEditDraft({ ...editDraft, price: value })} keyboardType="number-pad" />
@@ -4850,8 +4950,8 @@ function ServicesTab({
                       <View style={styles.serviceColorRow}>
                         <View style={[styles.serviceDot, { backgroundColor: service.color || "#7C3AED" }]} />
                         <View style={styles.serviceTextBlock}>
-                          <Text style={styles.listTitle}>{service.name}</Text>
-                          <Text style={styles.listCaption}>{localizeServiceCategory(service.category, t)} · {formatDuration(service.durationMinutes || 60, t)}</Text>
+                          <Text style={styles.listTitle}>{getServiceDisplayName(service, language)}</Text>
+                          <Text style={styles.listCaption}>{getServiceCategoryDisplayName(service.category, service.localizedCategory, language, t)} · {formatDuration(service.durationMinutes || 60, t)}</Text>
                         </View>
                       </View>
                       <View style={styles.rowRight}>
@@ -4878,7 +4978,7 @@ function ServicesTab({
         <Panel title={t.ownService}>
           <Field label={t.serviceName} value={draft.name} onChangeText={(value) => setDraft({ ...draft, name: value })} />
           <Text style={styles.label}>{t.selectedCategory}</Text>
-          <CategoryChips t={t} categories={categories} selected={draft.category} onSelect={(category) => setDraft({ ...draft, category })} />
+          <CategoryChips t={t} language={language} categories={categories} selected={draft.category} onSelect={(category) => setDraft({ ...draft, category })} />
           <View style={styles.categoryAddRow}>
             <Field label={t.newCategory} value={customCategory} onChangeText={setCustomCategory} />
             <Pressable style={styles.categoryAddButton} onPress={addCustomCategory}>
@@ -4898,15 +4998,15 @@ function ServicesTab({
         <Panel title={t.generalCatalog}>
           <Text style={styles.emptyText}>{t.catalogHint}</Text>
           <Field label={t.search} value={catalogQuery} onChangeText={setCatalogQuery} placeholder={t.searchService} />
-          <CategoryChips t={t} categories={catalog.map((item) => item.title)} selected={currentCatalogCategory} onSelect={setActiveCatalogCategory} />
+          <CategoryChips t={t} language={language} categories={catalog.map((item) => item.title)} selected={currentCatalogCategory} onSelect={setActiveCatalogCategory} />
           {catalogServices.length ? (
             catalogServices.map((service) => {
               const exists = serviceExists(service.name);
               return (
                 <Pressable key={`${service.category}-${service.name}`} style={[styles.catalogServiceCard, exists && styles.catalogServiceCardActive]} onPress={() => !exists && onAddCatalog(service)} disabled={busy || exists}>
                   <View style={styles.serviceTextBlock}>
-                    <Text style={styles.listTitle}>{service.name}</Text>
-                    <Text style={styles.listCaption}>{localizeServiceCategory(service.category, t)} · {formatDuration(service.durationMinutes || 60, t)} · {formatMoney(Number(service.price || 0), currency)}</Text>
+                    <Text style={styles.listTitle}>{getServiceDisplayName(service, language)}</Text>
+                    <Text style={styles.listCaption}>{localizeCatalogCategory(localizeText(service.category, catalog.find((group) => group.title === service.category)?.localizedTitle, language), language, t)} · {formatDuration(service.durationMinutes || 60, t)} · {formatMoney(Number(service.price || 0), currency)}</Text>
                   </View>
                   <View style={[styles.catalogAddBadge, exists && styles.catalogAddBadgeDone]}>
                     <Ionicons name={exists ? "checkmark" : "add"} size={20} color={exists ? "#166534" : "#FFFFFF"} />
@@ -4926,11 +5026,13 @@ function ServicesTab({
 
 function CategoryChips({
   t,
+  language,
   categories,
   selected,
   onSelect,
 }: {
   t: Record<string, string>;
+  language: AppLanguage;
   categories: string[];
   selected: string;
   onSelect: (category: string) => void;
@@ -4942,7 +5044,7 @@ function CategoryChips({
         const active = category === selected;
         return (
           <Pressable key={category} style={[styles.choiceChip, active && styles.choiceChipActive]} onPress={() => onSelect(category)}>
-            <Text style={[styles.choiceText, active && styles.choiceTextActive]}>{localizeServiceCategory(category, t)}</Text>
+            <Text style={[styles.choiceText, active && styles.choiceTextActive]}>{localizeCatalogCategory(category, language, t)}</Text>
           </Pressable>
         );
       })}
@@ -6395,7 +6497,7 @@ function SettingsTab({
               <View key={service.id} style={styles.settingsMiniRow}>
                 <View style={[styles.serviceDot, { backgroundColor: service.color || "#8ED1F2" }]} />
                 <View style={styles.settingsMiniInfo}>
-                  <Text style={styles.settingsMiniTitle}>{service.name}</Text>
+                  <Text style={styles.settingsMiniTitle}>{getServiceDisplayName(service, language)}</Text>
                   <Text style={styles.clientOptionCaption}>{formatDuration(service.durationMinutes || 0, t)}</Text>
                 </View>
                 <Text style={styles.settingsMiniPrice}>{formatMoney(service.price, workspace?.professional.currency || "UAH")}</Text>

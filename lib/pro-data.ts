@@ -7,7 +7,7 @@ import { hashPassword, verifyPassword } from "./pro-auth";
 import { getPublicBusinessPathId } from "./public-business-path";
 import { normalizePlan, normalizePremiumStatus, type PremiumStatus, type TimvizPlan } from "./premium";
 import { convertBaseUahPriceToCountryPrice, inferCurrencyFromCountryName, type PricingContext } from "./service-pricing";
-import { getTemplateBasePriceUah } from "./service-templates";
+import { getServiceLocalizedText, getTemplateBasePriceUah, localizeCategoryName, type LocalizedServiceText } from "./service-templates";
 import {
   createEmptyCustomSchedule,
   createDefaultWorkSchedule,
@@ -166,8 +166,10 @@ export type ServiceRecord = {
   id: string;
   businessId: string;
   name: string;
+  localizedName?: Partial<LocalizedServiceText>;
   price: number;
   category?: string;
+  localizedCategory?: Partial<LocalizedServiceText>;
   durationMinutes?: number;
   color?: string;
   sortOrder?: number;
@@ -382,11 +384,18 @@ function normalizeServiceModerationStatus(value: unknown): "pending" | "approved
 
 function normalizeServiceRecord(service: ServiceRecord, context: PricingContext = {}): ServiceRecord {
   const source = normalizeServiceSource(service.source);
+  const category = service.category || "Без категории";
 
   return {
     ...service,
+    localizedName: getServiceLocalizedText(service.name, service.localizedName),
     price: typeof service.price === "number" ? service.price : inferServicePrice(service.name, context),
-    category: service.category || "Без категории",
+    category,
+    localizedCategory: {
+      ru: localizeCategoryName(category, "ru"),
+      uk: localizeCategoryName(category, "uk"),
+      en: localizeCategoryName(category, "en")
+    },
     durationMinutes:
       typeof service.durationMinutes === "number"
         ? service.durationMinutes

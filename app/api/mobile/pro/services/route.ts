@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServiceTemplateCatalog } from "../../../../../lib/global-service-catalog";
+import { localizeCategoryName, type CategoryTemplate } from "../../../../../lib/service-templates";
 import { getMobileProfessionalId } from "../_auth";
 import {
   addServicesForProfessional,
@@ -20,6 +21,17 @@ type ServiceInput = {
   source?: "catalog" | "custom";
 };
 
+function withLocalizedCatalogTitles(catalog: CategoryTemplate[]) {
+  return catalog.map((category) => ({
+    ...category,
+    localizedTitle: {
+      ru: localizeCategoryName(category.title, "ru"),
+      uk: localizeCategoryName(category.title, "uk"),
+      en: localizeCategoryName(category.title, "en")
+    }
+  }));
+}
+
 export async function GET(request: Request) {
   try {
     const professionalId = getMobileProfessionalId(request);
@@ -34,7 +46,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       services: workspace.services,
-      catalog: await getServiceTemplateCatalog()
+      catalog: withLocalizedCatalogTitles(await getServiceTemplateCatalog())
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to load services.";
