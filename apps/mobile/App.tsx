@@ -284,6 +284,9 @@ const copy = {
     searchService: "Назва послуги",
     clientNameOrPhone: "Ім'я або телефон",
     addNewClient: "Додати нового клієнта",
+    addAndSelectClient: "Додати й обрати",
+    createClientFromSearch: "Створити клієнта",
+    noClientFound: "Клієнта не знайдено. Можна створити нового.",
     clientName: "Ім'я клієнта",
     withoutService: "Послугу не обрано",
     setupAssistant: "Помічник налаштування",
@@ -414,6 +417,9 @@ const copy = {
     searchService: "Название услуги",
     clientNameOrPhone: "Имя или телефон",
     addNewClient: "Добавить нового клиента",
+    addAndSelectClient: "Добавить и выбрать",
+    createClientFromSearch: "Создать клиента",
+    noClientFound: "Клиент не найден. Можно создать нового.",
     clientName: "Имя клиента",
     withoutService: "Услуга не выбрана",
     setupAssistant: "Помощник настройки",
@@ -544,6 +550,9 @@ const copy = {
     searchService: "Service name",
     clientNameOrPhone: "Name or phone",
     addNewClient: "Add new client",
+    addAndSelectClient: "Add and select",
+    createClientFromSearch: "Create client",
+    noClientFound: "No client found. You can create a new one.",
     clientName: "Client name",
     withoutService: "No service selected",
     setupAssistant: "Setup assistant",
@@ -1685,11 +1694,12 @@ function CalendarTab({
   const [viewMode, setViewMode] = useState<CalendarViewMode>("day");
   const [viewMenuOpen, setViewMenuOpen] = useState(false);
   const [blockedTimeDraft, setBlockedTimeDraft] = useState<BlockedTimeDraft | null>(null);
-  const [visitPickerMode, setVisitPickerMode] = useState<"client" | "service" | "newClient" | null>(null);
+  const [visitPickerMode, setVisitPickerMode] = useState<"client" | "service" | null>(null);
   const [editingServiceIndex, setEditingServiceIndex] = useState(0);
   const [serviceQuery, setServiceQuery] = useState("");
   const [clientQuery, setClientQuery] = useState("");
-  const [newClientDraft, setNewClientDraft] = useState({ fullName: "", phone: "", email: "" });
+  const [clientCreateOpen, setClientCreateOpen] = useState(false);
+  const [newClientDraft, setNewClientDraft] = useState({ firstName: "", lastName: "", phone: "" });
   const visibleDates = useMemo(() => getCalendarModeDates(viewMode, selectedDate), [selectedDate, viewMode]);
   const visibleDatesKey = visibleDates.join("|");
   const [rangeSnapshots, setRangeSnapshots] = useState<Record<string, CalendarSnapshot>>({});
@@ -1727,6 +1737,8 @@ function CalendarTab({
     if (!query) return true;
     return `${client.fullName || ""} ${client.phone || ""} ${client.email || ""}`.toLowerCase().includes(query);
   });
+  const hasClientSearch = clientQuery.trim().length > 0;
+  const showCreateFromSearch = hasClientSearch && filteredClients.length === 0 && !clientCreateOpen;
 
   useEffect(() => {
     if (viewMode === "day") return;
@@ -1753,7 +1765,32 @@ function CalendarTab({
       customerPhone: client?.phone || "",
     });
     setClientQuery("");
+    setClientCreateOpen(false);
     setVisitPickerMode(null);
+  }
+
+  function getClientDraftFromQuery(query: string) {
+    const value = query.trim();
+    if (!value) return { firstName: "", lastName: "", phone: "" };
+    const looksLikePhone = /^[+\d\s().-]+$/.test(value) && /\d/.test(value);
+    if (looksLikePhone) return { firstName: "", lastName: "", phone: value };
+    const parts = value.split(/\s+/).filter(Boolean);
+    return { firstName: parts[0] || "", lastName: parts.slice(1).join(" "), phone: "" };
+  }
+
+  function openInlineClientForm(seed = clientQuery) {
+    setNewClientDraft(getClientDraftFromQuery(seed));
+    setClientCreateOpen(true);
+  }
+
+  async function createInlineClient() {
+    const fullName = [newClientDraft.firstName, newClientDraft.lastName].map((item) => item.trim()).filter(Boolean).join(" ");
+    const client = await onCreateClientFromVisit({
+      fullName,
+      phone: newClientDraft.phone.trim(),
+      email: "",
+    });
+    if (client) setDraftClient(client);
   }
 
   function updateVisitItem(index: number, patch: Partial<VisitServiceDraft>) {
@@ -1985,7 +2022,7 @@ function CalendarTab({
           <View style={[styles.visitSheet, styles.visitEditorSheet]}>
             <View style={styles.sheetHeader}>
               <Text style={styles.sheetTitle}>
-                {visitPickerMode === "client" ? t.chooseClient : visitPickerMode === "service" ? t.chooseService : visitPickerMode === "newClient" ? t.addClient : editingAppointment ? t.editVisit : t.newVisit}
+                {visitPickerMode === "client" ? t.chooseClient : visitPickerMode === "service" ? t.chooseService : editingAppointment ? t.editVisit : t.newVisit}
               </Text>
               <Pressable
                 style={styles.sheetClose}
@@ -2015,21 +2052,43 @@ function CalendarTab({
                   <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
                 </Pressable>
                 <Pressable
-                  style={styles.clientOptionCard}
+                  style={[styles.clientOptionCard, clientCreateOpen && styles.clientOptionCardActive]}
                   onPress={() => {
-                    setNewClientDraft({ fullName: clientQuery, phone: "", email: "" });
-                    setVisitPickerMode("newClient");
+                    if (clientCreateOpen) {
+                      setClientCreateOpen(false);
+                      return;
+                    }
+                    openInlineClientForm();
                   }}
                 >
                   <View style={styles.clientAvatar}>
-                    <Ionicons name="add" size={20} color="#6D4AFF" />
+                    <Ionicons name={clientCreateOpen ? "chevron-up" : "add"} size={20} color="#6D4AFF" />
                   </View>
                   <View style={styles.clientOptionText}>
-                    <Text style={styles.clientOptionTitle}>{t.addNewClient}</Text>
+                    <Text style={styles.clientOptionTitle}>{clientCreateOpen ? t.cancel : t.addNewClient}</Text>
                     <Text style={styles.clientOptionCaption}>{t.clientNameOrPhone}</Text>
                   </View>
-                  <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
+                  <Ionicons name={clientCreateOpen ? "chevron-up" : "chevron-forward"} size={18} color="#94A3B8" />
                 </Pressable>
+                {showCreateFromSearch ? (
+                  <Pressable style={styles.clientCreateSuggestion} onPress={() => openInlineClientForm(clientQuery)}>
+                    <Ionicons name="search" size={17} color="#6D4AFF" />
+                    <View style={styles.clientOptionText}>
+                      <Text style={styles.clientOptionTitle}>{t.createClientFromSearch}: {clientQuery.trim()}</Text>
+                      <Text style={styles.clientOptionCaption}>{t.noClientFound}</Text>
+                    </View>
+                  </Pressable>
+                ) : null}
+                {clientCreateOpen ? (
+                  <View style={styles.inlineClientForm}>
+                    <View style={styles.twoColumns}>
+                      <Field label={t.firstName} value={newClientDraft.firstName} onChangeText={(value) => setNewClientDraft({ ...newClientDraft, firstName: value })} />
+                      <Field label={t.lastName} value={newClientDraft.lastName} onChangeText={(value) => setNewClientDraft({ ...newClientDraft, lastName: value })} />
+                    </View>
+                    <Field label={t.phone} value={newClientDraft.phone} onChangeText={(value) => setNewClientDraft({ ...newClientDraft, phone: value })} keyboardType="phone-pad" />
+                    <PrimaryButton label={t.addAndSelectClient} onPress={() => void createInlineClient()} disabled={busy} />
+                  </View>
+                ) : null}
                 <ScrollView style={styles.pickerList} showsVerticalScrollIndicator={false}>
                   {filteredClients.map((client) => (
                     <Pressable key={client.id} style={styles.clientOptionCard} onPress={() => setDraftClient(client)}>
@@ -2042,21 +2101,8 @@ function CalendarTab({
                       </View>
                     </Pressable>
                   ))}
+                  {!filteredClients.length && hasClientSearch ? <Text style={styles.emptyText}>{t.noClientFound}</Text> : null}
                 </ScrollView>
-              </>
-            ) : visitPickerMode === "newClient" ? (
-              <>
-                <Field label={t.clientName} value={newClientDraft.fullName} onChangeText={(value) => setNewClientDraft({ ...newClientDraft, fullName: value })} />
-                <Field label={t.phone} value={newClientDraft.phone} onChangeText={(value) => setNewClientDraft({ ...newClientDraft, phone: value })} keyboardType="phone-pad" />
-                <Field label={t.email} value={newClientDraft.email} onChangeText={(value) => setNewClientDraft({ ...newClientDraft, email: value })} keyboardType="email-address" autoCapitalize="none" />
-                <PrimaryButton
-                  label={t.addClient}
-                  onPress={async () => {
-                    const client = await onCreateClientFromVisit(newClientDraft);
-                    if (client) setDraftClient(client);
-                  }}
-                  disabled={busy}
-                />
               </>
             ) : visitPickerMode === "service" ? (
               <>
@@ -5070,6 +5116,31 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#E2E8F0",
     backgroundColor: "#FFFFFF",
+  },
+  clientOptionCardActive: {
+    borderColor: "#C4B5FD",
+    backgroundColor: "#FBFAFF",
+  },
+  clientCreateSuggestion: {
+    minHeight: 64,
+    marginBottom: 8,
+    padding: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#DDD6FE",
+    backgroundColor: "#F5F3FF",
+  },
+  inlineClientForm: {
+    marginBottom: 10,
+    padding: 12,
+    gap: 10,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#DDD6FE",
+    backgroundColor: "#FAF7FF",
   },
   clientAvatar: {
     width: 38,
