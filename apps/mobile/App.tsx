@@ -3596,6 +3596,8 @@ function CalendarTimeline({
         const actualHeight = getRangeHeight(start, end);
         const maxHeightBeforeNext = typeof nextTouchingStart === "number" ? getRangeHeight(start, nextTouchingStart) : Infinity;
         const height = Math.max(actualHeight, Math.min(appointmentMinHeight, maxHeightBeforeNext));
+        const isTightCard = height < 64;
+        const isTinyCard = height < 44;
         const color = index % 3 === 0 ? "#FF9A82" : index % 3 === 1 ? "#FFD166" : "#9ED96B";
         const availableWidth = gridWidth - laneGap * 2;
         const blockGap = laneCount > 1 ? 8 : 0;
@@ -3607,6 +3609,7 @@ function CalendarTimeline({
             key={appointment.id}
             style={[
               styles.appointmentBlock,
+              isTightCard && styles.appointmentBlockTight,
               {
                 top,
                 height,
@@ -3638,12 +3641,14 @@ function CalendarTimeline({
             <Text style={styles.appointmentTime}>
               {appointment.startTime} - {appointment.endTime}
             </Text>
-            <Text style={styles.appointmentClient} numberOfLines={2}>
+            <Text style={[styles.appointmentClient, isTightCard && styles.appointmentClientTight]} numberOfLines={isTinyCard ? 1 : 2}>
               {appointment.customerName || "Клиент"}
             </Text>
-            <Text style={styles.appointmentService} numberOfLines={1}>
-              {appointment.serviceName}
-            </Text>
+            {!isTightCard ? (
+              <Text style={styles.appointmentService} numberOfLines={1}>
+                {appointment.serviceName}
+              </Text>
+            ) : null}
             <Text style={styles.appointmentPrice}>{formatMoney(appointment.priceAmount, currency)}</Text>
           </Pressable>
         );
@@ -7301,10 +7306,15 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingLeft: 9,
     paddingRight: 28,
+    overflow: "hidden",
     shadowColor: "#0F172A",
     shadowOpacity: 0.04,
     shadowRadius: 5,
     shadowOffset: { width: 0, height: 3 },
+  },
+  appointmentBlockTight: {
+    paddingVertical: 6,
+    paddingRight: 26,
   },
   appointmentDeleteButton: {
     position: "absolute",
@@ -7341,6 +7351,11 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 18,
     fontWeight: "900",
+  },
+  appointmentClientTight: {
+    marginTop: 2,
+    fontSize: 14,
+    lineHeight: 16,
   },
   appointmentService: {
     marginTop: 2,
