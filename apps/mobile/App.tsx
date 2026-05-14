@@ -62,6 +62,7 @@ type VisitDraft = {
   startTime: string;
   serviceId: string;
   appointmentDate: string;
+  targetProfessionalId?: string;
   selectedClientId?: string;
   items: VisitServiceDraft[];
 };
@@ -70,6 +71,7 @@ type BlockedTimeDraft = {
   date: string;
   startTime: string;
   endTime: string;
+  targetProfessionalId?: string;
   label: string;
   title: string;
   appointment?: AppointmentRecord;
@@ -100,6 +102,8 @@ type ServiceCatalogCategory = {
 
 type AppointmentRecord = {
   id: string;
+  professionalId?: string;
+  professionalName?: string;
   appointmentDate: string;
   startTime: string;
   endTime: string;
@@ -294,6 +298,9 @@ type ServiceDraftState = {
 
 type CalendarSnapshot = {
   appointments: AppointmentRecord[];
+  teamMembers?: CalendarTeamMemberRecord[];
+  viewedProfessionalId?: string;
+  memberCalendars?: CalendarMemberDaySnapshotRecord[];
   stats: {
     day: { visitsCount: number; revenue: number };
     week: { visitsCount: number; revenue: number };
@@ -306,6 +313,38 @@ type CalendarSnapshot = {
     customerName: string;
     serviceName: string;
   }>;
+};
+
+type CalendarTeamMemberRecord = {
+  id: string;
+  firstName: string;
+  lastName: string;
+  avatarUrl?: string | null;
+  role: string;
+  scope: "owner" | "member";
+  isViewer?: boolean;
+};
+
+type CalendarMemberDaySnapshotRecord = {
+  professionalId: string;
+  firstName: string;
+  lastName: string;
+  avatarUrl?: string | null;
+  role: string;
+  scope: "owner" | "member";
+  isViewer?: boolean;
+  memberSchedule?: WorkspaceSnapshot["memberSchedule"];
+  appointments: AppointmentRecord[];
+};
+
+type CalendarMemberView = {
+  id: string;
+  name: string;
+  avatarUrl?: string | null;
+  role: string;
+  scope: "owner" | "member";
+  isViewer?: boolean;
+  memberSchedule?: WorkspaceSnapshot["memberSchedule"];
 };
 
 type MobileNotificationRecord = {
@@ -501,6 +540,9 @@ const copy = {
     staffScheduleHint: "Керуйте робочими днями співробітників так само, як у кабінеті на сайті.",
     teamMembers: "Учасники команди",
     teamMembersHint: "Додавайте співробітників, редагуйте контакти, роль і доступ до кабінету.",
+    allTeam: "Вся команда",
+    showWholeTeam: "Показати всю команду",
+    selectedMasters: "Вибрані майстри",
     addMember: "Додати співробітника",
     editMember: "Редагувати співробітника",
     saveMember: "Зберегти співробітника",
@@ -775,6 +817,9 @@ const copy = {
     staffScheduleHint: "Управляйте рабочими днями сотрудников так же, как в кабинете на сайте.",
     teamMembers: "Участники команды",
     teamMembersHint: "Добавляйте сотрудников, редактируйте контакты, роль и доступ к кабинету.",
+    allTeam: "Вся команда",
+    showWholeTeam: "Показать всю команду",
+    selectedMasters: "Выбранные мастера",
     addMember: "Добавить сотрудника",
     editMember: "Редактировать сотрудника",
     saveMember: "Сохранить сотрудника",
@@ -1049,6 +1094,9 @@ const copy = {
     staffScheduleHint: "Manage team working days like in the web workspace.",
     teamMembers: "Team members",
     teamMembersHint: "Add employees, edit contacts, role, and workspace access.",
+    allTeam: "Whole team",
+    showWholeTeam: "Show the full team",
+    selectedMasters: "Selected masters",
     addMember: "Add employee",
     editMember: "Edit employee",
     saveMember: "Save employee",
@@ -1377,6 +1425,7 @@ function createDefaultVisitDraft(date: string, startTime: string): VisitDraft {
     startTime,
     serviceId: "",
     appointmentDate: date,
+    targetProfessionalId: undefined,
     selectedClientId: undefined,
     items: [createVisitServiceDraft(startTime)],
   };
@@ -1519,6 +1568,14 @@ function getScheduleForDate(workspace: WorkspaceSnapshot | null, date: string): 
   const dayIndex = new Date(`${date}T12:00:00`).getDay();
   const schedule = workspace?.memberSchedule?.workSchedule?.[dayScheduleKeys[dayIndex]];
   return normalizeScheduleDay(schedule, date);
+}
+
+function getMemberScheduleForDate(member: CalendarMemberView | null, workspace: WorkspaceSnapshot | null, date: string): WorkDayScheduleRecord {
+  if (!member?.memberSchedule) return getScheduleForDate(workspace, date);
+  const custom = member.memberSchedule.customSchedule?.[date];
+  if (custom) return normalizeScheduleDay(custom, date);
+  const dayIndex = new Date(`${date}T12:00:00`).getDay();
+  return normalizeScheduleDay(member.memberSchedule.workSchedule?.[dayScheduleKeys[dayIndex]], date);
 }
 
 function normalizeScheduleDay(day: WorkDayScheduleRecord | undefined, date: string): WorkDayScheduleRecord {
@@ -1753,7 +1810,7 @@ export default function App() {
   });
   const [visitDraft, setVisitDraft] = useState<VisitDraft>(() => createDefaultVisitDraft(selectedDate, "09:00"));
   const [editingAppointment, setEditingAppointment] = useState<AppointmentRecord | null>(null);
-  const [timeAction, setTimeAction] = useState<{ date: string; time: string } | null>(null);
+  const [timeAction, setTimeAction] = useState<{ date: string; time: string; targetProfessionalId?: string } | null>(null);
   const [serviceDraft, setServiceDraft] = useState<ServiceDraftState>({ name: "", category: DEFAULT_SERVICE_CATEGORY, durationMinutes: "60", price: "0", color: SERVICE_COLORS[0] });
   const [clientDraft, setClientDraft] = useState({ firstName: "", lastName: "", phone: "", email: "" });
 
@@ -1980,6 +2037,7 @@ export default function App() {
       await apiFetch("/api/mobile/pro/calendar", {
         method: "POST",
         body: JSON.stringify({
+          targetProfessionalId: visitDraft.targetProfessionalId,
           items: items.map((item) => ({
             appointmentDate,
             startTime: item.startTime,
@@ -2023,6 +2081,7 @@ export default function App() {
         method: "PATCH",
         body: JSON.stringify({
           mode: "meta",
+          targetProfessionalId: editingAppointment.professionalId || visitDraft.targetProfessionalId,
           appointmentId: editingAppointment.id,
           customerName,
           customerPhone,
@@ -2040,6 +2099,7 @@ export default function App() {
         await apiFetch("/api/mobile/pro/calendar", {
           method: "POST",
           body: JSON.stringify({
+            targetProfessionalId: editingAppointment.professionalId || visitDraft.targetProfessionalId,
             items: extraItems.map((item) => ({
               appointmentDate,
               startTime: item.startTime,
@@ -2104,7 +2164,8 @@ export default function App() {
         onPress: async () => {
           setBusy(true);
           try {
-            await apiFetch(`/api/mobile/pro/calendar?appointmentId=${encodeURIComponent(appointment.id)}`, { method: "DELETE" });
+            const target = appointment.professionalId ? `&targetProfessionalId=${encodeURIComponent(appointment.professionalId)}` : "";
+            await apiFetch(`/api/mobile/pro/calendar?appointmentId=${encodeURIComponent(appointment.id)}${target}`, { method: "DELETE" });
             await refreshAll(session, appointment.appointmentDate || selectedDate);
           } catch (error) {
             Alert.alert(t.delete, error instanceof Error ? error.message : t.delete);
@@ -2122,6 +2183,7 @@ export default function App() {
       await apiFetch("/api/mobile/pro/calendar", {
         method: "PATCH",
         body: JSON.stringify({
+          targetProfessionalId: appointment.professionalId,
           appointmentId: appointment.id,
           startTime,
           endTime,
@@ -2139,13 +2201,14 @@ export default function App() {
     }
   }
 
-  async function createBlockedTime(date: string, startTime: string, endTime: string, label: string) {
+  async function createBlockedTime(date: string, startTime: string, endTime: string, label: string, targetProfessionalId?: string) {
     setBusy(true);
     try {
       await apiFetch("/api/mobile/pro/calendar", {
         method: "POST",
         body: JSON.stringify({
           kind: "blocked",
+          targetProfessionalId,
           appointmentDate: date,
           startTime,
           endTime,
@@ -2344,6 +2407,7 @@ export default function App() {
             t={t}
             language={language}
             workspace={workspace}
+            staff={staffSnapshot}
             calendar={calendar}
             clients={clients}
             selectedDate={selectedDate}
@@ -2514,6 +2578,7 @@ function CalendarTab({
   t,
   language,
   workspace,
+  staff,
   calendar,
   clients,
   selectedDate,
@@ -2542,6 +2607,7 @@ function CalendarTab({
   t: Record<string, string>;
   language: AppLanguage;
   workspace: WorkspaceSnapshot | null;
+  staff: StaffSnapshot | null;
   calendar: CalendarSnapshot | null;
   clients: ClientRecord[];
   selectedDate: string;
@@ -2553,13 +2619,13 @@ function CalendarTab({
   onCreateClientFromVisit: (input: { fullName: string; phone: string; email: string }) => Promise<ClientRecord | null>;
   editingAppointment: AppointmentRecord | null;
   setEditingAppointment: (appointment: AppointmentRecord | null) => void;
-  timeAction: { date: string; time: string } | null;
-  setTimeAction: (action: { date: string; time: string } | null) => void;
+  timeAction: { date: string; time: string; targetProfessionalId?: string } | null;
+  setTimeAction: (action: { date: string; time: string; targetProfessionalId?: string } | null) => void;
   onDeleteAppointment: (appointment: AppointmentRecord) => void;
   onMoveAppointment: (appointment: AppointmentRecord) => void;
   onResizeAppointment: (appointment: AppointmentRecord) => void;
   onUpdateBlockedTime: (appointment: AppointmentRecord, startTime: string, endTime: string) => Promise<boolean>;
-  onCreateBlockedTime: (date: string, startTime: string, endTime: string, label: string) => Promise<void>;
+  onCreateBlockedTime: (date: string, startTime: string, endTime: string, label: string, targetProfessionalId?: string) => Promise<void>;
   busy: boolean;
   refreshing: boolean;
   onRefresh: () => void;
@@ -2569,9 +2635,13 @@ function CalendarTab({
 }) {
   const currency = workspace?.professional.currency;
   const services = workspace?.services || [];
+  const { width: screenWidth } = useWindowDimensions();
   const [isCompact, setIsCompact] = useState(true);
   const [viewMode, setViewMode] = useState<CalendarViewMode>("day");
   const [viewMenuOpen, setViewMenuOpen] = useState(false);
+  const [memberPickerOpen, setMemberPickerOpen] = useState(false);
+  const [memberQuery, setMemberQuery] = useState("");
+  const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
   const [blockedTimeDraft, setBlockedTimeDraft] = useState<BlockedTimeDraft | null>(null);
   const [visitPickerMode, setVisitPickerMode] = useState<"client" | "service" | null>(null);
   const [editingServiceIndex, setEditingServiceIndex] = useState(0);
@@ -2582,7 +2652,64 @@ function CalendarTab({
   const visibleDates = useMemo(() => getCalendarModeDates(viewMode, selectedDate), [selectedDate, viewMode]);
   const visibleDatesKey = visibleDates.join("|");
   const [rangeSnapshots, setRangeSnapshots] = useState<Record<string, CalendarSnapshot>>({});
-  const selectedSchedule = getScheduleForDate(workspace, selectedDate);
+  const calendarMembers = useMemo<CalendarMemberView[]>(() => {
+    const map = new Map<string, CalendarMemberView>();
+    const addMember = (member: CalendarMemberView) => {
+      if (!member.id) return;
+      map.set(member.id, { ...map.get(member.id), ...member, name: member.name.trim() || t.employee });
+    };
+    for (const member of makeStaffMembers(staff, workspace, t)) {
+      addMember({
+        id: member.professional.id,
+        name: makeStaffMemberName(member, t.employee),
+        avatarUrl: member.professional.avatarUrl,
+        role: member.membership.role || t.employee,
+        scope: member.membership.scope,
+        isViewer: member.professional.id === workspace?.professional.id,
+        memberSchedule: {
+          workScheduleMode: member.membership.workScheduleMode,
+          workSchedule: member.membership.workSchedule,
+          customSchedule: member.membership.customSchedule,
+        },
+      });
+    }
+    for (const member of calendar?.teamMembers || []) {
+      addMember({
+        id: member.id,
+        name: `${member.firstName || ""} ${member.lastName || ""}`.trim() || member.role || t.employee,
+        avatarUrl: member.avatarUrl,
+        role: member.role || t.employee,
+        scope: member.scope,
+        isViewer: member.isViewer,
+      });
+    }
+    for (const member of calendar?.memberCalendars || []) {
+      addMember({
+        id: member.professionalId,
+        name: `${member.firstName || ""} ${member.lastName || ""}`.trim() || member.role || t.employee,
+        avatarUrl: member.avatarUrl,
+        role: member.role || t.employee,
+        scope: member.scope,
+        isViewer: member.isViewer,
+        memberSchedule: member.memberSchedule,
+      });
+    }
+    if (workspace?.professional.id && !map.has(workspace.professional.id)) {
+      addMember({
+        id: workspace.professional.id,
+        name: `${workspace.professional.firstName || ""} ${workspace.professional.lastName || ""}`.trim() || "Timviz",
+        avatarUrl: workspace.professional.avatarUrl,
+        role: workspace.membership?.role || t.owner,
+        scope: workspace.membership?.scope === "member" ? "member" : "owner",
+        isViewer: true,
+        memberSchedule: workspace.memberSchedule,
+      });
+    }
+    return Array.from(map.values());
+  }, [calendar?.memberCalendars, calendar?.teamMembers, staff, t, workspace]);
+  const selectedMembers = calendarMembers.filter((member) => selectedMemberIds.includes(member.id));
+  const primaryMember = selectedMembers[0] || calendarMembers[0] || null;
+  const selectedSchedule = getMemberScheduleForDate(primaryMember, workspace, selectedDate);
   const appointmentsByDate = useMemo(() => {
     const map = new Map<string, AppointmentRecord[]>();
     for (const [date, snapshot] of Object.entries(rangeSnapshots)) {
@@ -2618,6 +2745,22 @@ function CalendarTab({
   });
   const hasClientSearch = clientQuery.trim().length > 0;
   const showCreateFromSearch = hasClientSearch && filteredClients.length === 0 && !clientCreateOpen;
+  const filteredMembers = calendarMembers.filter((member) => {
+    const query = memberQuery.trim().toLowerCase();
+    if (!query) return true;
+    return `${member.name} ${member.role}`.toLowerCase().includes(query);
+  });
+
+  useEffect(() => {
+    if (!calendarMembers.length) return;
+    const validIds = new Set(calendarMembers.map((member) => member.id));
+    setSelectedMemberIds((current) => {
+      const kept = current.filter((id) => validIds.has(id));
+      if (kept.length) return kept;
+      const preferred = calendar?.viewedProfessionalId || workspace?.professional.id || calendarMembers[0].id;
+      return preferred && validIds.has(preferred) ? [preferred] : [calendarMembers[0].id];
+    });
+  }, [calendar?.viewedProfessionalId, calendarMembers, workspace?.professional.id]);
 
   useEffect(() => {
     if (viewMode === "day") return;
@@ -2634,6 +2777,34 @@ function CalendarTab({
 
   function getAppointmentsForDate(date: string) {
     return appointmentsByDate.get(date) || [];
+  }
+
+  function getSnapshotForDate(date: string) {
+    return date === selectedDate ? calendar : rangeSnapshots[date] || null;
+  }
+
+  function getAppointmentsForMember(date: string, memberId: string) {
+    const snapshot = getSnapshotForDate(date);
+    const memberCalendar = snapshot?.memberCalendars?.find((member) => member.professionalId === memberId);
+    if (memberCalendar) return memberCalendar.appointments || [];
+    return getAppointmentsForDate(date).filter((appointment) => (appointment.professionalId || workspace?.professional.id || memberId) === memberId);
+  }
+
+  function getScheduleForMember(date: string, member: CalendarMemberView | null) {
+    return getMemberScheduleForDate(member, workspace, date);
+  }
+
+  function toggleMember(memberId: string) {
+    setSelectedMemberIds((current) => {
+      if (current.includes(memberId)) {
+        return current.length > 1 ? current.filter((id) => id !== memberId) : current;
+      }
+      return [...current, memberId];
+    });
+  }
+
+  function selectAllMembers() {
+    setSelectedMemberIds(calendarMembers.map((member) => member.id));
   }
 
   function setDraftClient(client: ClientRecord | null) {
@@ -2721,10 +2892,10 @@ function CalendarTab({
     });
   }
 
-  function openComposerAt(time: string, date = selectedDate) {
+  function openComposerAt(time: string, date = selectedDate, targetProfessionalId = primaryMember?.id) {
     setEditingAppointment(null);
     setSelectedDate(date);
-    setVisitDraft(createDefaultVisitDraft(date, time));
+    setVisitDraft({ ...createDefaultVisitDraft(date, time), targetProfessionalId });
     setComposerOpen(true);
   }
 
@@ -2743,6 +2914,7 @@ function CalendarTab({
       startTime: appointment.startTime,
       serviceId: matchedService?.id || "",
       appointmentDate: appointment.appointmentDate || selectedDate,
+      targetProfessionalId: appointment.professionalId || primaryMember?.id,
       selectedClientId: matchedClient?.id,
       items: [
         {
@@ -2759,11 +2931,12 @@ function CalendarTab({
     setComposerOpen(true);
   }
 
-  function openBlockedTimeComposer(action: { date: string; time: string }, label: string, title: string) {
+  function openBlockedTimeComposer(action: { date: string; time: string; targetProfessionalId?: string }, label: string, title: string) {
     setBlockedTimeDraft({
       date: action.date,
       startTime: action.time,
       endTime: addMinutes(action.time, 60),
+      targetProfessionalId: action.targetProfessionalId,
       label,
       title,
     });
@@ -2774,6 +2947,7 @@ function CalendarTab({
       date: appointment.appointmentDate || selectedDate,
       startTime: appointment.startTime,
       endTime: appointment.endTime,
+      targetProfessionalId: appointment.professionalId,
       label: appointment.serviceName || t.unavailableTime,
       title: appointment.serviceName || t.unavailableTime,
       appointment,
@@ -2790,7 +2964,7 @@ function CalendarTab({
     }
     const saved = blockedTimeDraft.appointment
       ? await onUpdateBlockedTime(blockedTimeDraft.appointment, startTime, endTime)
-      : (await onCreateBlockedTime(blockedTimeDraft.date, startTime, endTime, blockedTimeDraft.label), true);
+      : (await onCreateBlockedTime(blockedTimeDraft.date, startTime, endTime, blockedTimeDraft.label, blockedTimeDraft.targetProfessionalId), true);
     if (saved) setBlockedTimeDraft(null);
   }
 
@@ -2835,38 +3009,73 @@ function CalendarTab({
 
       {viewMode === "day" ? (
         <>
-          <View style={styles.masterStrip}>
-            <View style={styles.masterAvatar}>
-              <Text style={styles.masterAvatarText}>{workspace?.professional.firstName?.slice(0, 1).toUpperCase() || "T"}</Text>
-            </View>
-            <Text style={styles.masterName}>
-              {`${workspace?.professional.firstName || ""} ${workspace?.professional.lastName || ""}`.trim() || "Timviz"}
-            </Text>
-          </View>
-
           <ScrollView
-            style={styles.calendarScroll}
-            contentContainerStyle={styles.calendarContent}
-            refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#7C3AED" />}
-            showsVerticalScrollIndicator
-            alwaysBounceVertical
-            nestedScrollEnabled
-            keyboardShouldPersistTaps="handled"
+            horizontal
+            style={styles.teamCalendarHorizontal}
+            contentContainerStyle={styles.teamCalendarHorizontalContent}
+            showsHorizontalScrollIndicator={false}
           >
-            <CalendarTimeline
-              date={selectedDate}
-              appointments={calendar?.appointments || []}
-              currency={currency}
-              compact={isCompact}
-              schedule={selectedSchedule}
-              t={t}
-              onTimePress={(time) => setTimeAction({ date: selectedDate, time })}
-              onAppointmentPress={openAppointmentEditor}
-              onBlockedAppointmentPress={openBlockedAppointmentEditor}
-              onAppointmentDelete={onDeleteAppointment}
-              onAppointmentMove={onMoveAppointment}
-              onAppointmentResize={onResizeAppointment}
-            />
+            <View style={styles.teamCalendarBoard}>
+              <View style={styles.teamCalendarHeaderRow}>
+                <View style={styles.teamPickerRail}>
+                  <Pressable style={styles.teamPickerButton} onPress={() => setMemberPickerOpen(true)}>
+                    <Ionicons name="people-outline" size={19} color="#0F172A" />
+                    {calendarMembers.length > 1 ? (
+                      <View style={styles.teamPickerBadge}>
+                        <Text style={styles.teamPickerBadgeText}>{selectedMembers.length || 1}</Text>
+                      </View>
+                    ) : null}
+                  </Pressable>
+                </View>
+                {(selectedMembers.length ? selectedMembers : calendarMembers.slice(0, 1)).map((member, _, list) => {
+                  const columnWidth = list.length > 1 ? Math.max(158, (screenWidth - 58) / 2) : Math.max(280, screenWidth - 54);
+                  return (
+                    <View key={member.id} style={[styles.teamDayHeader, { width: columnWidth }]}>
+                      <MemberAvatar member={member} size={34} />
+                      <Text style={styles.masterName} numberOfLines={1}>{member.name}</Text>
+                    </View>
+                  );
+                })}
+              </View>
+              <ScrollView
+                style={styles.calendarScroll}
+                contentContainerStyle={styles.calendarContent}
+                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#7C3AED" />}
+                showsVerticalScrollIndicator
+                alwaysBounceVertical
+                nestedScrollEnabled
+                keyboardShouldPersistTaps="handled"
+              >
+                <View style={styles.teamCalendarBodyRow}>
+                  <View style={styles.teamPickerRailBody} />
+                  {(selectedMembers.length ? selectedMembers : calendarMembers.slice(0, 1)).map((member, index, list) => {
+                    const columnWidth = list.length > 1 ? Math.max(158, (screenWidth - 58) / 2) : Math.max(280, screenWidth - 54);
+                    const memberAppointments = getAppointmentsForMember(selectedDate, member.id);
+                    const memberSchedule = getScheduleForMember(selectedDate, member);
+                    return (
+                      <View key={member.id} style={[styles.teamDayColumn, { width: columnWidth }]}>
+                        <CalendarTimeline
+                          date={selectedDate}
+                          appointments={memberAppointments}
+                          currency={currency}
+                          compact={isCompact}
+                          schedule={memberSchedule}
+                          t={t}
+                          columnWidth={columnWidth}
+                          showTimeColumn={index === 0}
+                          onTimePress={(time) => setTimeAction({ date: selectedDate, time, targetProfessionalId: member.id })}
+                          onAppointmentPress={openAppointmentEditor}
+                          onBlockedAppointmentPress={openBlockedAppointmentEditor}
+                          onAppointmentDelete={onDeleteAppointment}
+                          onAppointmentMove={onMoveAppointment}
+                          onAppointmentResize={onResizeAppointment}
+                        />
+                      </View>
+                    );
+                  })}
+                </View>
+              </ScrollView>
+            </View>
           </ScrollView>
         </>
       ) : (
@@ -2878,10 +3087,13 @@ function CalendarTab({
           dates={visibleDates}
           currency={currency}
           workspace={workspace}
+          members={selectedMembers.length ? selectedMembers : calendarMembers.slice(0, 1)}
           getAppointmentsForDate={getAppointmentsForDate}
+          getAppointmentsForMember={getAppointmentsForMember}
+          getScheduleForMember={getScheduleForMember}
           onSelectDate={(date) => chooseDate(date, viewMode)}
           onOpenDay={(date) => chooseDate(date, "day")}
-          onCreateAt={(date) => openComposerAt("09:00", date)}
+          onCreateAt={(date, memberId) => openComposerAt("09:00", date, memberId)}
         />
       )}
 
@@ -2889,7 +3101,7 @@ function CalendarTab({
         style={styles.fabButton}
         onPress={() => {
           setEditingAppointment(null);
-          setVisitDraft(createDefaultVisitDraft(selectedDate, getRoundedTime(10)));
+          setVisitDraft({ ...createDefaultVisitDraft(selectedDate, getRoundedTime(10)), targetProfessionalId: primaryMember?.id });
           setComposerOpen(true);
         }}
       >
@@ -3090,6 +3302,44 @@ function CalendarTab({
         </View>
       </Modal>
 
+      <Modal transparent visible={memberPickerOpen} animationType="fade" onRequestClose={() => setMemberPickerOpen(false)}>
+        <Pressable style={styles.menuBackdrop} onPress={() => setMemberPickerOpen(false)}>
+          <Pressable style={styles.teamPickerMenu} onPress={(event) => event.stopPropagation()}>
+            <SearchInput value={memberQuery} onChangeText={setMemberQuery} placeholder={t.search} />
+            <Text style={styles.teamPickerSectionTitle}>{t.teamMembers}</Text>
+            {calendarMembers.length > 1 ? (
+              <Pressable style={[styles.teamPickerOption, selectedMemberIds.length === calendarMembers.length && styles.teamPickerOptionActive]} onPress={selectAllMembers}>
+                <View style={[styles.teamCheckBox, selectedMemberIds.length === calendarMembers.length && styles.teamCheckBoxActive]}>
+                  {selectedMemberIds.length === calendarMembers.length ? <Ionicons name="checkmark" size={15} color="#FFFFFF" /> : null}
+                </View>
+                <View style={styles.clientOptionText}>
+                  <Text style={styles.clientOptionTitle}>{t.allTeam}</Text>
+                  <Text style={styles.clientOptionCaption}>{t.showWholeTeam}</Text>
+                </View>
+              </Pressable>
+            ) : null}
+            <Text style={styles.teamPickerSectionTitle}>{t.selectedMasters}</Text>
+            <ScrollView style={styles.teamPickerList} showsVerticalScrollIndicator={false}>
+              {filteredMembers.map((member) => {
+                const active = selectedMemberIds.includes(member.id);
+                return (
+                  <Pressable key={member.id} style={[styles.teamPickerOption, active && styles.teamPickerOptionActive]} onPress={() => toggleMember(member.id)}>
+                    <View style={[styles.teamCheckBox, active && styles.teamCheckBoxActive]}>
+                      {active ? <Ionicons name="checkmark" size={15} color="#FFFFFF" /> : null}
+                    </View>
+                    <MemberAvatar member={member} size={34} />
+                    <View style={styles.clientOptionText}>
+                      <Text style={[styles.clientOptionTitle, active && styles.teamPickerOptionTitleActive]}>{member.name}</Text>
+                      <Text style={styles.clientOptionCaption}>{member.scope === "owner" ? t.owner : member.role || t.employee}</Text>
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
       <Modal transparent visible={viewMenuOpen} animationType="fade" onRequestClose={() => setViewMenuOpen(false)}>
         <Pressable style={styles.menuBackdrop} onPress={() => setViewMenuOpen(false)}>
           <View style={styles.viewMenu}>
@@ -3123,7 +3373,7 @@ function CalendarTab({
                 if (!timeAction) return;
                 const action = timeAction;
                 setTimeAction(null);
-                openComposerAt(action.time, action.date);
+                openComposerAt(action.time, action.date, action.targetProfessionalId);
               }}
             >
               <Ionicons name="calendar-outline" size={20} color="#0F172A" />
@@ -3209,6 +3459,24 @@ function CalendarTab({
   );
 }
 
+function MemberAvatar({ member, size = 34 }: { member: CalendarMemberView; size?: number }) {
+  const initials = member.name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part.slice(0, 1).toUpperCase())
+    .join("") || "T";
+  return (
+    <View style={[styles.masterAvatar, { width: size, height: size, borderRadius: size / 2 }]}>
+      {member.avatarUrl ? (
+        <Image source={{ uri: member.avatarUrl }} style={[styles.memberAvatarImage, { width: size, height: size, borderRadius: size / 2 }]} />
+      ) : (
+        <Text style={[styles.masterAvatarText, { fontSize: Math.max(12, size / 2.2) }]}>{initials}</Text>
+      )}
+    </View>
+  );
+}
+
 function CalendarOverview({
   t,
   language,
@@ -3217,7 +3485,10 @@ function CalendarOverview({
   dates,
   currency,
   workspace,
+  members,
   getAppointmentsForDate,
+  getAppointmentsForMember,
+  getScheduleForMember,
   onSelectDate,
   onOpenDay,
   onCreateAt,
@@ -3229,16 +3500,19 @@ function CalendarOverview({
   dates: string[];
   currency?: string;
   workspace: WorkspaceSnapshot | null;
+  members: CalendarMemberView[];
   getAppointmentsForDate: (date: string) => AppointmentRecord[];
+  getAppointmentsForMember: (date: string, memberId: string) => AppointmentRecord[];
+  getScheduleForMember: (date: string, member: CalendarMemberView | null) => WorkDayScheduleRecord;
   onSelectDate: (date: string) => void;
   onOpenDay: (date: string) => void;
-  onCreateAt: (date: string) => void;
+  onCreateAt: (date: string, memberId?: string) => void;
 }) {
   if (mode === "month") {
     return (
       <ScrollView style={styles.overviewScroll} contentContainerStyle={styles.monthGrid} showsVerticalScrollIndicator={false}>
         {dates.map((date) => {
-          const appointments = getAppointmentsForDate(date);
+          const appointments = members.length ? members.flatMap((member) => getAppointmentsForMember(date, member.id)) : getAppointmentsForDate(date);
           const schedule = getScheduleForDate(workspace, date);
           const workParts = getWorkTimeParts(schedule);
           const selected = date === selectedDate;
@@ -3286,75 +3560,62 @@ function CalendarOverview({
     );
   }
 
-  const cardWidth = mode === "threeDays" ? 168 : 142;
+  const dayColumnWidth = mode === "threeDays" ? 102 : 92;
+  const memberRowHeight = 122;
 
   return (
     <ScrollView
       style={styles.overviewScroll}
       horizontal
-      contentContainerStyle={styles.summaryStrip}
+      contentContainerStyle={styles.teamOverviewContent}
       showsHorizontalScrollIndicator={false}
     >
-      {dates.map((date) => {
-        const appointments = getAppointmentsForDate(date);
-        const schedule = getScheduleForDate(workspace, date);
-        const workParts = getWorkTimeParts(schedule);
-        const selected = date === selectedDate;
-        const closed = !schedule.enabled;
-        return (
-          <Pressable
-            key={date}
-            style={[styles.summaryCard, { width: cardWidth }, closed && styles.summaryCardClosed, selected && styles.summaryCardActive]}
-            onPress={() => onSelectDate(date)}
-            onLongPress={() => onCreateAt(date)}
-          >
-            <View style={styles.summaryHeader}>
-              <Text style={[styles.summaryDate, selected && styles.summaryDateActive]}>{formatShortDate(date, language)}</Text>
-              {appointments.length ? (
-                <View style={styles.dayCountBadge}>
-                  <Text style={styles.dayCountBadgeText}>{appointments.length}</Text>
-                </View>
-              ) : selected ? (
-                <View style={styles.summaryDot} />
-              ) : null}
-            </View>
-            {closed ? (
-              <View style={styles.summaryClosedBadge}>
-                <Ionicons name="moon-outline" size={15} color="#64748B" />
-                <Text style={styles.summaryClosedBadgeText}>{getClosedShortLabel(language)}</Text>
-              </View>
-            ) : (
-              <View style={styles.summaryHoursRow}>
-                <Text style={styles.summaryHoursPart}>{workParts.start}</Text>
-                <Text style={styles.summaryHoursPart}>{workParts.end}</Text>
-              </View>
-            )}
-            <View style={styles.summaryVisitsLine}>
-              <Ionicons name="people-outline" size={15} color={appointments.length ? "#6D4AFF" : "#94A3B8"} />
-              <Text style={[styles.summaryCountCompact, appointments.length ? styles.summaryCountCompactActive : null]}>{appointments.length}</Text>
-            </View>
-            <View style={styles.summaryAppointments}>
-              {appointments.slice(0, 3).map((appointment) => (
-                <View key={appointment.id} style={styles.summaryAppointment}>
-                  <Text style={styles.summaryAppointmentTime}>{appointment.startTime}</Text>
-                  <Text style={styles.summaryAppointmentText} numberOfLines={1}>
-                    {appointment.customerName || appointment.serviceName || t.newVisit}
-                  </Text>
-                </View>
-              ))}
-              {!appointments.length && !closed ? (
-                <Pressable style={styles.summaryAddButton} onPress={() => onCreateAt(date)}>
-                  <Ionicons name="add" size={18} color="#5B21B6" />
-                  <Text style={styles.summaryAddText}>{t.addVisit}</Text>
-                </Pressable>
-              ) : null}
-            </View>
-            <Pressable style={styles.openDayButton} onPress={() => onOpenDay(date)}>
-              <Text style={styles.openDayButtonText}>{t.dayView}</Text>
+      <View style={styles.teamOverviewGrid}>
+        <View style={styles.teamOverviewHeaderRow}>
+          <View style={styles.teamOverviewMemberHeader} />
+          {dates.map((date) => {
+            const selected = date === selectedDate;
+            return (
+              <Pressable
+                key={date}
+                style={[styles.teamOverviewDateHeader, { width: dayColumnWidth }, selected && styles.teamOverviewDateHeaderActive]}
+                onPress={() => onSelectDate(date)}
+              >
+                <Text style={[styles.teamOverviewDateNumber, selected && styles.summaryDateActive]}>{Number(date.slice(8, 10))}</Text>
+                <Text style={styles.teamOverviewDateWeekday}>{formatShortDate(date, language).split(" ").slice(-1)[0]}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+        {(members.length ? members : []).map((member) => (
+          <View key={member.id} style={[styles.teamOverviewRow, { minHeight: memberRowHeight }]}>
+            <Pressable style={styles.teamOverviewMemberCell} onPress={() => onOpenDay(selectedDate)}>
+              <MemberAvatar member={member} size={38} />
+              <Text style={styles.teamOverviewMemberName} numberOfLines={2}>{member.name}</Text>
             </Pressable>
-          </Pressable>
-        );
-      })}
+            {dates.map((date) => {
+              const appointments = getAppointmentsForMember(date, member.id);
+              const schedule = getScheduleForMember(date, member);
+              const selected = date === selectedDate;
+              return (
+                <Pressable
+                  key={`${member.id}-${date}`}
+                  style={[styles.teamOverviewDayCell, { width: dayColumnWidth, minHeight: memberRowHeight }, !schedule.enabled && styles.summaryCardClosed, selected && styles.teamOverviewDayCellActive]}
+                  onPress={() => onOpenDay(date)}
+                  onLongPress={() => onCreateAt(date, member.id)}
+                >
+                  {appointments.slice(0, 3).map((appointment, index) => (
+                    <View key={appointment.id} style={[styles.teamOverviewAppointmentBar, { backgroundColor: index % 3 === 0 ? "#8DD8C7" : index % 3 === 1 ? "#FF9A82" : "#9ED96B" }]}>
+                      <Text style={styles.teamOverviewAppointmentText}>{appointment.startTime}</Text>
+                    </View>
+                  ))}
+                  {appointments.length > 3 ? <Text style={styles.teamOverviewMoreText}>+{appointments.length - 3}</Text> : null}
+                </Pressable>
+              );
+            })}
+          </View>
+        ))}
+      </View>
     </ScrollView>
   );
 }
@@ -3372,6 +3633,8 @@ function CalendarTimeline({
   onAppointmentDelete,
   onAppointmentMove,
   onAppointmentResize,
+  columnWidth,
+  showTimeColumn = true,
 }: {
   date: string;
   appointments: AppointmentRecord[];
@@ -3385,6 +3648,8 @@ function CalendarTimeline({
   onAppointmentDelete: (appointment: AppointmentRecord) => void;
   onAppointmentMove: (appointment: AppointmentRecord) => void;
   onAppointmentResize: (appointment: AppointmentRecord) => void;
+  columnWidth?: number;
+  showTimeColumn?: boolean;
 }) {
   const { width } = useWindowDimensions();
   const startHour = 0;
@@ -3394,8 +3659,9 @@ function CalendarTimeline({
   const workHourHeight = compact ? 72 : 88;
   const offHourHeight = compact ? workHourHeight / 10 : workHourHeight;
   const breakHourHeight = compact ? workHourHeight / 2.5 : workHourHeight;
-  const timeColumnWidth = 43;
-  const gridWidth = Math.max(280, width - timeColumnWidth);
+  const timeColumnWidth = showTimeColumn ? 43 : 0;
+  const effectiveWidth = columnWidth || width;
+  const gridWidth = Math.max(140, effectiveWidth - timeColumnWidth);
   const laneGap = 8;
   const appointmentMinHeight = 68;
   const appointmentMinVisibleMinutes = Math.ceil((appointmentMinHeight / workHourHeight) * 60);
@@ -3499,7 +3765,7 @@ function CalendarTimeline({
   }
 
   return (
-    <View style={[styles.timeline, { height: timelineHeight }]}>
+    <View style={[styles.timeline, { height: timelineHeight, width: effectiveWidth }]}>
       {Array.from({ length: endHour - startHour + 1 }).map((_, index) => {
         const hour = startHour + index;
         const rowStart = hour * 60;
@@ -3509,7 +3775,9 @@ function CalendarTimeline({
         const showLabel = height >= 18 || hour === Math.floor(workStart / 60);
         return (
           <View pointerEvents="none" key={hour} style={[styles.hourRow, { top, height }]}>
-            <Text style={[styles.hourText, !showLabel && styles.hourTextHidden]}>{showLabel ? `${String(hour).padStart(2, "0")}:00` : ""}</Text>
+            {showTimeColumn ? (
+              <Text style={[styles.hourText, !showLabel && styles.hourTextHidden]}>{showLabel ? `${String(hour).padStart(2, "0")}:00` : ""}</Text>
+            ) : null}
             <View style={styles.hourGrid}>
               {(height >= 34 ? [0, 1, 2, 3, 4, 5, 6] : [0, 6]).map((part) => (
                 <View
@@ -3553,6 +3821,7 @@ function CalendarTimeline({
             {
               top: getScaledMinuteTop(range.start),
               height: getRangeHeight(range.start, range.end),
+              left: timeColumnWidth + 1,
             },
           ]}
         />
@@ -3567,6 +3836,7 @@ function CalendarTimeline({
             {
               top: getScaledMinuteTop(range.start),
               height: getRangeHeight(range.start, range.end),
+              left: timeColumnWidth + 1,
             },
           ]}
           onPress={() => onBlockedAppointmentPress(range.appointment)}
@@ -3581,7 +3851,7 @@ function CalendarTimeline({
       ))}
 
       {showCurrentTime && nowTop >= 0 && nowTop <= timelineHeight ? (
-        <View style={[styles.currentTimeLine, { top: nowTop }]}>
+        <View style={[styles.currentTimeLine, { top: nowTop, left: timeColumnWidth }]}>
           <View style={styles.currentTimeDot} />
         </View>
       ) : null}
@@ -6924,6 +7194,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#9A7A72",
+    overflow: "hidden",
+  },
+  memberAvatarImage: {
+    resizeMode: "cover",
   },
   masterAvatarText: {
     color: "#FFFFFF",
@@ -6943,6 +7217,137 @@ const styles = StyleSheet.create({
   calendarContent: {
     paddingBottom: 10,
   },
+  teamCalendarHorizontal: {
+    flex: 1,
+  },
+  teamCalendarHorizontalContent: {
+    alignItems: "stretch",
+  },
+  teamCalendarBoard: {
+    flex: 1,
+  },
+  teamCalendarHeaderRow: {
+    flexDirection: "row",
+    height: 70,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E2E8F0",
+    backgroundColor: "#FFFFFF",
+  },
+  teamCalendarBodyRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+  },
+  teamPickerRail: {
+    width: 54,
+    borderRightWidth: 1,
+    borderRightColor: "#E2E8F0",
+    backgroundColor: "#FFFFFF",
+  },
+  teamPickerRailBody: {
+    width: 54,
+    alignSelf: "stretch",
+    borderRightWidth: 1,
+    borderRightColor: "#E2E8F0",
+    backgroundColor: "#FFFFFF",
+  },
+  teamPickerButton: {
+    width: 44,
+    height: 44,
+    marginTop: 12,
+    marginLeft: 5,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: "#D8E2F1",
+    backgroundColor: "#FFFFFF",
+  },
+  teamPickerBadge: {
+    position: "absolute",
+    top: -4,
+    right: -4,
+    minWidth: 20,
+    height: 20,
+    paddingHorizontal: 5,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 10,
+    backgroundColor: "#6D4AFF",
+  },
+  teamPickerBadgeText: {
+    color: "#FFFFFF",
+    fontSize: 10,
+    fontWeight: "900",
+  },
+  teamDayColumn: {
+    borderRightWidth: 1,
+    borderRightColor: "#E2E8F0",
+    backgroundColor: "#FFFFFF",
+  },
+  teamDayHeader: {
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 8,
+    borderRightWidth: 1,
+    borderRightColor: "#E2E8F0",
+    backgroundColor: "#FFFFFF",
+  },
+  teamPickerMenu: {
+    width: "82%",
+    maxHeight: "72%",
+    marginLeft: 48,
+    marginTop: 132,
+    padding: 12,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "#D8E2F1",
+    backgroundColor: "#FFFFFF",
+    shadowColor: "#0F172A",
+    shadowOpacity: 0.16,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 14 },
+  },
+  teamPickerSectionTitle: {
+    marginTop: 12,
+    marginBottom: 7,
+    color: "#7B8498",
+    fontSize: 12,
+    fontWeight: "900",
+    textTransform: "uppercase",
+  },
+  teamPickerList: {
+    maxHeight: 360,
+  },
+  teamPickerOption: {
+    minHeight: 66,
+    marginBottom: 7,
+    paddingHorizontal: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    borderRadius: 14,
+    backgroundColor: "#FFFFFF",
+  },
+  teamPickerOptionActive: {
+    backgroundColor: "#EEF2FF",
+  },
+  teamPickerOptionTitleActive: {
+    color: "#5B21F3",
+  },
+  teamCheckBox: {
+    width: 22,
+    height: 22,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 7,
+    borderWidth: 1,
+    borderColor: "#CBD5E1",
+    backgroundColor: "#FFFFFF",
+  },
+  teamCheckBoxActive: {
+    borderColor: "#6D4AFF",
+    backgroundColor: "#6D4AFF",
+  },
   overviewScroll: {
     flex: 1,
     backgroundColor: "#F6F8FC",
@@ -6952,6 +7357,99 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     gap: 10,
     alignItems: "flex-start",
+  },
+  teamOverviewContent: {
+    paddingHorizontal: 12,
+    paddingVertical: 14,
+  },
+  teamOverviewGrid: {
+    overflow: "hidden",
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#D8E2F1",
+    backgroundColor: "#FFFFFF",
+  },
+  teamOverviewHeaderRow: {
+    flexDirection: "row",
+    minHeight: 58,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E2E8F0",
+  },
+  teamOverviewMemberHeader: {
+    width: 78,
+    borderRightWidth: 1,
+    borderRightColor: "#E2E8F0",
+    backgroundColor: "#F8FAFC",
+  },
+  teamOverviewDateHeader: {
+    alignItems: "center",
+    justifyContent: "center",
+    borderRightWidth: 1,
+    borderRightColor: "#E2E8F0",
+    backgroundColor: "#FFFFFF",
+  },
+  teamOverviewDateHeaderActive: {
+    backgroundColor: "#F3E8FF",
+  },
+  teamOverviewDateNumber: {
+    color: "#0F172A",
+    fontSize: 18,
+    fontWeight: "900",
+  },
+  teamOverviewDateWeekday: {
+    color: "#64748B",
+    fontSize: 11,
+    fontWeight: "800",
+  },
+  teamOverviewRow: {
+    flexDirection: "row",
+    borderBottomWidth: 1,
+    borderBottomColor: "#E2E8F0",
+  },
+  teamOverviewMemberCell: {
+    width: 78,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 6,
+    borderRightWidth: 1,
+    borderRightColor: "#E2E8F0",
+    backgroundColor: "#FFFFFF",
+  },
+  teamOverviewMemberName: {
+    marginTop: 6,
+    textAlign: "center",
+    color: "#0F172A",
+    fontSize: 11,
+    lineHeight: 12,
+    fontWeight: "900",
+  },
+  teamOverviewDayCell: {
+    padding: 6,
+    borderRightWidth: 1,
+    borderRightColor: "#E2E8F0",
+    backgroundColor: "#FFFFFF",
+  },
+  teamOverviewDayCellActive: {
+    borderWidth: 2,
+    borderColor: "#B9A8FF",
+    backgroundColor: "#FBFAFF",
+  },
+  teamOverviewAppointmentBar: {
+    height: 18,
+    marginBottom: 5,
+    paddingHorizontal: 5,
+    justifyContent: "center",
+    borderRadius: 5,
+  },
+  teamOverviewAppointmentText: {
+    color: "#0F172A",
+    fontSize: 10,
+    fontWeight: "900",
+  },
+  teamOverviewMoreText: {
+    color: "#6D4AFF",
+    fontSize: 11,
+    fontWeight: "900",
   },
   summaryCard: {
     minHeight: 214,
