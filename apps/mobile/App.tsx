@@ -9,12 +9,14 @@ import {
   Alert,
   Image,
   KeyboardAvoidingView,
+  Linking,
   Modal,
   Platform,
   Pressable,
   RefreshControl,
   SafeAreaView,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
   TextInput,
@@ -170,6 +172,32 @@ type CalendarSnapshot = {
   }>;
 };
 
+type MobileNotificationRecord = {
+  id: string;
+  appointmentId?: string;
+  appointmentDate: string;
+  startTime: string;
+  endTime?: string;
+  customerName: string;
+  customerPhone?: string;
+  serviceName: string;
+  professionalId?: string;
+  professionalName?: string;
+  createdAt: string;
+  status: "pending" | "confirmed" | "cancelled";
+};
+
+type MobileNotificationsPayload = {
+  pendingOnlineBookings?: MobileNotificationRecord[];
+  archivedOnlineBookings?: MobileNotificationRecord[];
+  pendingJoinRequests?: Array<{
+    id: string;
+    createdAt: string;
+    role: string;
+    professionalName: string;
+  }>;
+};
+
 const STORAGE_KEY = "timviz_mobile_session_v2";
 const API_BASE_URL = (process.env.EXPO_PUBLIC_API_BASE_URL || "https://timviz.com").replace(/\/+$/, "");
 const WORDMARK = require("./assets/timviz-wordmark.png");
@@ -234,6 +262,38 @@ const copy = {
     addNewClient: "Додати нового клієнта",
     clientName: "Ім'я клієнта",
     withoutService: "Послугу не обрано",
+    setupAssistant: "Помічник налаштування",
+    setupAssistantText: "Пройдіть кроки, щоб профіль був готовий до онлайн-запису.",
+    setupProgress: "Готовність",
+    setupServices: "Додайте послуги",
+    setupSchedule: "Налаштуйте графік",
+    setupBooking: "Увімкніть онлайн-запис",
+    setupAddress: "Додайте адресу",
+    setupTelegram: "Підключіть Telegram",
+    bookingPage: "Картка компанії",
+    bookingPageText: "Посилання для клієнтів і перемикач онлайн-запису.",
+    onlineBookingOn: "Онлайн-запис увімкнено",
+    onlineBookingOff: "Онлайн-запис вимкнено",
+    openPage: "Відкрити сторінку",
+    sharePage: "Поділитися",
+    supportTitle: "Підтримка Timviz",
+    supportGuideTitle: "Написати в підтримку",
+    supportGuideText: "Опишіть, що ви робите, на якій сторінці виникло питання і що має вийти.",
+    supportGreeting: "Вітаю! Напишіть питання щодо сайту, записів, налаштувань або оплати. Ми допоможемо розібратися.",
+    supportPlaceholder: "Напишіть питання одним повідомленням...",
+    supportSend: "Надіслати",
+    supportSent: "Повідомлення надіслано.",
+    supportFailed: "Не вдалося надіслати повідомлення.",
+    notificationPendingBookings: "Непідтверджені онлайн-записи",
+    notificationsArchive: "Архів",
+    notificationEmpty: "Поки немає нових подій.",
+    statusPending: "Очікує підтвердження",
+    statusConfirmed: "Підтверджена",
+    statusCancelled: "Скасована",
+    myProfile: "Мій профіль",
+    personalSettings: "Особисті налаштування",
+    helpSupport: "Допомога і підтримка",
+    language: "Мова",
     compact: "Стиснутий",
     dayView: "День",
     detailed: "Детально",
@@ -319,6 +379,38 @@ const copy = {
     addNewClient: "Добавить нового клиента",
     clientName: "Имя клиента",
     withoutService: "Услуга не выбрана",
+    setupAssistant: "Помощник настройки",
+    setupAssistantText: "Пройдите шаги, чтобы профиль был готов к онлайн-записи.",
+    setupProgress: "Готовность",
+    setupServices: "Добавьте услуги",
+    setupSchedule: "Настройте график",
+    setupBooking: "Включите онлайн-запись",
+    setupAddress: "Добавьте адрес",
+    setupTelegram: "Подключите Telegram",
+    bookingPage: "Карточка компании",
+    bookingPageText: "Ссылка для клиентов и переключатель онлайн-записи.",
+    onlineBookingOn: "Онлайн-запись включена",
+    onlineBookingOff: "Онлайн-запись выключена",
+    openPage: "Открыть страницу",
+    sharePage: "Поделиться",
+    supportTitle: "Поддержка Timviz",
+    supportGuideTitle: "Написать в поддержку",
+    supportGuideText: "Опишите, что вы делаете, на какой странице возник вопрос и что должно выйти.",
+    supportGreeting: "Привет! Напишите вопрос по сайту, записям, настройкам или оплате. Мы поможем разобраться.",
+    supportPlaceholder: "Напишите вопрос одним сообщением...",
+    supportSend: "Отправить",
+    supportSent: "Сообщение отправлено.",
+    supportFailed: "Не удалось отправить сообщение.",
+    notificationPendingBookings: "Неподтвержденные онлайн-записи",
+    notificationsArchive: "Архив",
+    notificationEmpty: "Пока нет новых событий.",
+    statusPending: "Ожидает подтверждения",
+    statusConfirmed: "Подтверждена",
+    statusCancelled: "Отменена",
+    myProfile: "Мой профиль",
+    personalSettings: "Личные настройки",
+    helpSupport: "Помощь и поддержка",
+    language: "Язык",
     compact: "Сжатый",
     dayView: "День",
     detailed: "Подробно",
@@ -404,6 +496,38 @@ const copy = {
     addNewClient: "Add new client",
     clientName: "Client name",
     withoutService: "No service selected",
+    setupAssistant: "Setup assistant",
+    setupAssistantText: "Finish the steps so your profile is ready for online booking.",
+    setupProgress: "Readiness",
+    setupServices: "Add services",
+    setupSchedule: "Set schedule",
+    setupBooking: "Enable online booking",
+    setupAddress: "Add address",
+    setupTelegram: "Connect Telegram",
+    bookingPage: "Company page",
+    bookingPageText: "Client link and online booking switch.",
+    onlineBookingOn: "Online booking is on",
+    onlineBookingOff: "Online booking is off",
+    openPage: "Open page",
+    sharePage: "Share",
+    supportTitle: "Timviz support",
+    supportGuideTitle: "Write to support",
+    supportGuideText: "Describe what you are doing, where the issue appeared, and what should happen.",
+    supportGreeting: "Hi! Ask us about the site, bookings, settings, or payments. We will help.",
+    supportPlaceholder: "Write your question in one message...",
+    supportSend: "Send",
+    supportSent: "Message sent.",
+    supportFailed: "Could not send the message.",
+    notificationPendingBookings: "Pending online bookings",
+    notificationsArchive: "Archive",
+    notificationEmpty: "There are no new updates yet.",
+    statusPending: "Pending",
+    statusConfirmed: "Confirmed",
+    statusCancelled: "Cancelled",
+    myProfile: "My profile",
+    personalSettings: "Personal settings",
+    helpSupport: "Help and support",
+    language: "Language",
     compact: "Compact",
     dayView: "Day",
     detailed: "Detailed",
@@ -1204,11 +1328,21 @@ export default function App() {
       <SafeAreaView style={styles.appScreen}>
         <WorkspaceHeader
           t={t}
+          language={language}
+          setLanguage={setLanguage}
           session={session}
           workspace={workspace}
           activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          apiFetch={apiFetch}
+          onRefreshWorkspace={() => refreshAll()}
+          onOpenNotification={(item) => {
+            setActiveTab("calendar");
+            setSelectedDate(item.appointmentDate);
+          }}
           onTelegramPress={() => setActiveTab("telegram")}
           onSettingsPress={() => setActiveTab("settings")}
+          onSignOut={signOut}
         />
 
         {activeTab === "calendar" ? (
@@ -2442,20 +2576,279 @@ function CalendarTimeline({
 
 function WorkspaceHeader({
   t,
+  language,
+  setLanguage,
   session,
   workspace,
   activeTab,
+  setActiveTab,
+  apiFetch,
+  onRefreshWorkspace,
+  onOpenNotification,
   onTelegramPress,
   onSettingsPress,
+  onSignOut,
 }: {
   t: Record<string, string>;
+  language: AppLanguage;
+  setLanguage: (language: AppLanguage) => void;
   session: MobileSession;
   workspace: WorkspaceSnapshot | null;
   activeTab: AppTab;
+  setActiveTab: (tab: AppTab) => void;
+  apiFetch: (path: string, options?: RequestInit) => Promise<any>;
+  onRefreshWorkspace: () => void;
+  onOpenNotification: (item: MobileNotificationRecord) => void;
   onTelegramPress: () => void;
   onSettingsPress: () => void;
+  onSignOut: () => void;
 }) {
   const title = activeTab === "calendar" ? "денний календар" : t[activeTab];
+  const [panel, setPanel] = useState<"setup" | "share" | "support" | "notifications" | "account" | null>(null);
+  const [supportMessage, setSupportMessage] = useState("");
+  const [supportTicketId, setSupportTicketId] = useState("");
+  const [supportStatus, setSupportStatus] = useState("");
+  const [notifications, setNotifications] = useState<MobileNotificationsPayload>({});
+  const [loadingNotifications, setLoadingNotifications] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const publicBookingUrl = workspace?.business.publicBookingUrl || "";
+  const onlineBookingEnabled = workspace?.business.allowOnlineBooking === true;
+  const setupItems = [
+    { id: "services", title: t.setupServices, done: Boolean(workspace?.services?.length), icon: "pricetag-outline" as const },
+    { id: "schedule", title: t.setupSchedule, done: Boolean(workspace?.memberSchedule?.workSchedule || workspace?.memberSchedule?.customSchedule), icon: "time-outline" as const },
+    { id: "booking", title: t.setupBooking, done: onlineBookingEnabled, icon: "cloud-upload-outline" as const },
+    { id: "address", title: t.setupAddress, done: Boolean(workspace?.business.address), icon: "location-outline" as const },
+    { id: "telegram", title: t.setupTelegram, done: Boolean(workspace?.telegram?.connected), icon: "chatbubble-ellipses-outline" as const },
+  ];
+  const setupDone = setupItems.filter((item) => item.done).length;
+  const pendingCount = (notifications.pendingOnlineBookings?.length || 0) + (notifications.pendingJoinRequests?.length || 0);
+
+  async function openPanel(nextPanel: typeof panel) {
+    setPanel(nextPanel);
+    if (nextPanel === "notifications") {
+      setLoadingNotifications(true);
+      try {
+        const payload = await apiFetch("/api/mobile/pro/calendar?mode=notifications");
+        setNotifications(payload || {});
+      } catch {
+        setNotifications({});
+      } finally {
+        setLoadingNotifications(false);
+      }
+    }
+  }
+
+  async function togglePublicBooking() {
+    setBusy(true);
+    try {
+      await apiFetch("/api/mobile/pro/settings", {
+        method: "PATCH",
+        body: JSON.stringify({ business: { allowOnlineBooking: !onlineBookingEnabled } }),
+      });
+      onRefreshWorkspace();
+    } catch (error) {
+      Alert.alert(t.bookingPage, error instanceof Error ? error.message : t.supportFailed);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function shareBookingPage() {
+    if (!publicBookingUrl) return;
+    await Share.share({ message: publicBookingUrl, url: publicBookingUrl }).catch(() => undefined);
+  }
+
+  async function openBookingPage() {
+    if (!publicBookingUrl) return;
+    await Linking.openURL(publicBookingUrl).catch(() => undefined);
+  }
+
+  async function sendSupportMessage() {
+    const message = supportMessage.trim();
+    if (!message) return;
+    setBusy(true);
+    setSupportStatus("");
+    try {
+      const payload = await apiFetch("/api/mobile/pro/support", {
+        method: "POST",
+        body: JSON.stringify({ message, ticketId: supportTicketId, language, page: "mobile-app" }),
+      });
+      setSupportTicketId(payload?.ticketId || supportTicketId);
+      setSupportMessage("");
+      setSupportStatus(t.supportSent);
+    } catch {
+      setSupportStatus(t.supportFailed);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function renderPanel() {
+    if (!panel) return null;
+    const close = () => setPanel(null);
+    return (
+      <Modal transparent visible animationType="slide" onRequestClose={close}>
+        <View style={styles.headerPanelBackdrop}>
+          <View style={styles.headerPanel}>
+            <View style={styles.headerPanelTop}>
+              <View>
+                <Text style={styles.headerPanelEyebrow}>Timviz</Text>
+                <Text style={styles.headerPanelTitle}>
+                  {panel === "setup" ? t.setupAssistant : panel === "share" ? t.bookingPage : panel === "support" ? t.supportTitle : panel === "notifications" ? t.reminders : t.accountMenu || t.settings}
+                </Text>
+              </View>
+              <Pressable style={styles.headerPanelClose} onPress={close}>
+                <Ionicons name="close" size={22} color="#FFFFFF" />
+              </Pressable>
+            </View>
+
+            {panel === "setup" ? (
+              <View style={styles.headerPanelBody}>
+                <Text style={styles.panelHint}>{t.setupAssistantText}</Text>
+                <View style={styles.setupProgressRow}>
+                  <Text style={styles.setupProgressTitle}>{t.setupProgress}</Text>
+                  <Text style={styles.setupProgressValue}>{setupDone}/{setupItems.length}</Text>
+                </View>
+                {setupItems.map((item) => (
+                  <Pressable
+                    key={item.id}
+                    style={styles.setupStep}
+                    onPress={() => {
+                      if (item.id === "services") setActiveTab("services");
+                      if (item.id === "booking" || item.id === "address") setPanel("share");
+                      if (item.id === "telegram") onTelegramPress();
+                      if (item.id === "schedule") setActiveTab("settings");
+                      if (item.id !== "booking" && item.id !== "address") close();
+                    }}
+                  >
+                    <View style={[styles.setupStepIcon, item.done && styles.setupStepIconDone]}>
+                      <Ionicons name={item.done ? "checkmark" : item.icon} size={18} color={item.done ? "#FFFFFF" : "#6D4AFF"} />
+                    </View>
+                    <Text style={styles.setupStepText}>{item.title}</Text>
+                    <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
+                  </Pressable>
+                ))}
+              </View>
+            ) : null}
+
+            {panel === "share" ? (
+              <View style={styles.headerPanelBody}>
+                <Text style={styles.panelHint}>{t.bookingPageText}</Text>
+                <Pressable style={styles.shareToggleRow} onPress={togglePublicBooking} disabled={busy}>
+                  <View>
+                    <Text style={styles.shareToggleTitle}>{onlineBookingEnabled ? t.onlineBookingOn : t.onlineBookingOff}</Text>
+                    <Text style={styles.clientOptionCaption}>{workspace?.business.name || "Timviz"}</Text>
+                  </View>
+                  <View style={[styles.mobileSwitch, onlineBookingEnabled && styles.mobileSwitchActive]}>
+                    <View style={[styles.mobileSwitchThumb, onlineBookingEnabled && styles.mobileSwitchThumbActive]} />
+                  </View>
+                </Pressable>
+                <TextInput value={publicBookingUrl} editable={false} style={styles.shareUrlInput} />
+                <View style={styles.headerPanelActions}>
+                  <Pressable style={styles.headerGhostButton} onPress={openBookingPage} disabled={!publicBookingUrl}>
+                    <Text style={styles.headerGhostButtonText}>{t.openPage}</Text>
+                  </Pressable>
+                  <Pressable style={styles.headerPrimaryButton} onPress={shareBookingPage} disabled={!publicBookingUrl}>
+                    <Text style={styles.headerPrimaryButtonText}>{t.sharePage}</Text>
+                  </Pressable>
+                </View>
+              </View>
+            ) : null}
+
+            {panel === "support" ? (
+              <View style={styles.headerPanelBody}>
+                <View style={styles.supportGuideCard}>
+                  <Text style={styles.supportGuideTitle}>{t.supportGuideTitle}</Text>
+                  <Text style={styles.panelHint}>{t.supportGuideText}</Text>
+                  {supportTicketId ? <Text style={styles.supportTicket}>{supportTicketId}</Text> : null}
+                </View>
+                <Text style={styles.supportBubble}>{t.supportGreeting}</Text>
+                <TextInput
+                  value={supportMessage}
+                  onChangeText={setSupportMessage}
+                  placeholder={t.supportPlaceholder}
+                  multiline
+                  style={styles.supportInput}
+                />
+                <Pressable style={[styles.headerPrimaryButton, busy && styles.disabled]} onPress={sendSupportMessage} disabled={busy}>
+                  <Text style={styles.headerPrimaryButtonText}>{t.supportSend}</Text>
+                </Pressable>
+                {supportStatus ? <Text style={styles.supportStatusText}>{supportStatus}</Text> : null}
+              </View>
+            ) : null}
+
+            {panel === "notifications" ? (
+              <ScrollView style={styles.headerPanelBody} showsVerticalScrollIndicator={false}>
+                <View style={styles.notificationHeading}>
+                  <Text style={styles.notificationHeadingText}>{t.notificationPendingBookings}</Text>
+                  <Text style={styles.notificationBadgeText}>{notifications.pendingOnlineBookings?.length || 0}</Text>
+                </View>
+                {loadingNotifications ? <ActivityIndicator color="#6D4AFF" /> : null}
+                {!loadingNotifications && !(notifications.pendingOnlineBookings?.length || notifications.pendingJoinRequests?.length) ? (
+                  <View style={styles.notificationEmptyCard}>
+                    <Text style={styles.notificationCardTitle}>{t.reminders}</Text>
+                    <Text style={styles.clientOptionCaption}>{t.notificationEmpty}</Text>
+                  </View>
+                ) : null}
+                {(notifications.pendingOnlineBookings || []).map((item) => (
+                  <NotificationCard
+                    key={item.id}
+                    item={item}
+                    t={t}
+                    onPress={() => {
+                      close();
+                      onOpenNotification(item);
+                    }}
+                  />
+                ))}
+                <View style={styles.notificationHeading}>
+                  <Text style={styles.notificationHeadingText}>{t.notificationsArchive}</Text>
+                  <Text style={styles.notificationBadgeText}>{notifications.archivedOnlineBookings?.length || 0}</Text>
+                </View>
+                {(notifications.archivedOnlineBookings || []).map((item) => (
+                  <NotificationCard key={item.id} item={item} t={t} />
+                ))}
+              </ScrollView>
+            ) : null}
+
+            {panel === "account" ? (
+              <View style={styles.headerPanelBody}>
+                <View style={styles.accountMenuHeader}>
+                  <View style={styles.accountAvatarLarge}>
+                    <Text style={styles.accountAvatarLargeText}>{session.displayName.slice(0, 1).toUpperCase()}</Text>
+                  </View>
+                  <View>
+                    <Text style={styles.accountName}>{session.displayName}</Text>
+                    <Text style={styles.clientOptionCaption}>{workspace?.business.name || session.email}</Text>
+                  </View>
+                </View>
+                <Pressable style={styles.accountMenuItem} onPress={() => { close(); onSettingsPress(); }}>
+                  <Text style={styles.accountMenuItemText}>{t.myProfile}</Text>
+                </Pressable>
+                <Pressable style={styles.accountMenuItem} onPress={() => { close(); onSettingsPress(); }}>
+                  <Text style={styles.accountMenuItemText}>{t.personalSettings}</Text>
+                </Pressable>
+                <Pressable style={styles.accountMenuItem} onPress={() => setPanel("support")}>
+                  <Text style={styles.accountMenuItemText}>{t.helpSupport}</Text>
+                </Pressable>
+                <Text style={styles.accountMenuLabel}>{t.language}</Text>
+                <View style={styles.accountLanguageRow}>
+                  {(["ru", "uk", "en"] as AppLanguage[]).map((item) => (
+                    <Pressable key={item} style={[styles.accountLanguageButton, language === item && styles.accountLanguageButtonActive]} onPress={() => setLanguage(item)}>
+                      <Text style={[styles.accountLanguageText, language === item && styles.accountLanguageTextActive]}>{languageNames[item]}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+                <Pressable style={styles.accountLogout} onPress={() => { close(); void onSignOut(); }}>
+                  <Text style={styles.accountLogoutText}>{t.signOut}</Text>
+                </Pressable>
+              </View>
+            ) : null}
+          </View>
+        </View>
+      </Modal>
+    );
+  }
 
   return (
     <View style={styles.nativeHeader}>
@@ -2468,17 +2861,18 @@ function WorkspaceHeader({
         </Text>
       </View>
       <View style={styles.nativeHeaderActions}>
-        <AppIconButton icon="rocket" active />
-        <AppIconButton icon="cloud-upload-outline" />
-        <AppIconButton icon="chatbubble-ellipses-outline" tone="cyan" onPress={onTelegramPress} />
-        <AppIconButton icon="notifications-outline" />
-        <Pressable style={styles.profilePill} onPress={onSettingsPress}>
+        <AppIconButton icon="rocket" active={panel === "setup"} onPress={() => void openPanel("setup")} />
+        <AppIconButton icon="cloud-upload-outline" active={panel === "share"} onPress={() => void openPanel("share")} />
+        <AppIconButton icon="chatbubble-ellipses-outline" tone="cyan" active={panel === "support"} onPress={() => void openPanel("support")} />
+        <AppIconButton icon="notifications-outline" active={panel === "notifications"} badge={pendingCount} onPress={() => void openPanel("notifications")} />
+        <Pressable style={styles.profilePill} onPress={() => void openPanel("account")}>
           <View style={styles.smallAvatar}>
             <Text style={styles.smallAvatarText}>{session.displayName.slice(0, 1).toUpperCase()}</Text>
           </View>
           <Ionicons name="chevron-down" size={12} color="#64748B" />
         </Pressable>
       </View>
+      {renderPanel()}
     </View>
   );
 }
@@ -2487,16 +2881,50 @@ function AppIconButton({
   icon,
   active,
   tone,
+  badge,
   onPress,
 }: {
   icon: ComponentProps<typeof Ionicons>["name"];
   active?: boolean;
   tone?: "cyan";
+  badge?: number;
   onPress?: () => void;
 }) {
   return (
     <Pressable onPress={onPress} style={[styles.headerIconButton, active && styles.headerIconButtonActive, tone === "cyan" && styles.headerIconButtonCyan]}>
       <Ionicons name={icon} size={20} color={active ? "#FFFFFF" : tone === "cyan" ? "#0891B2" : "#432C75"} />
+      {badge ? (
+        <View style={styles.headerIconBadge}>
+          <Text style={styles.headerIconBadgeText}>{badge > 9 ? "9+" : badge}</Text>
+        </View>
+      ) : null}
+    </Pressable>
+  );
+}
+
+function NotificationCard({
+  item,
+  t,
+  onPress,
+}: {
+  item: MobileNotificationRecord;
+  t: Record<string, string>;
+  onPress?: () => void;
+}) {
+  const statusText = item.status === "cancelled" ? t.statusCancelled : item.status === "confirmed" ? t.statusConfirmed : t.statusPending;
+  return (
+    <Pressable style={styles.notificationCard} onPress={onPress} disabled={!onPress}>
+      <View style={styles.notificationCardHeader}>
+        <Text style={styles.notificationCardTitle}>{item.customerName || t.customer}</Text>
+        <Text style={styles.clientOptionCaption}>{formatShortDate(item.appointmentDate, "ru")}</Text>
+      </View>
+      <Text style={styles.notificationService}>{item.serviceName}</Text>
+      <Text style={styles.clientOptionCaption}>
+        {item.appointmentDate} · {item.startTime}{item.professionalName ? ` · ${item.professionalName}` : ""}
+      </Text>
+      <View style={[styles.notificationStatusPill, item.status === "cancelled" ? styles.notificationStatusCancelled : item.status === "confirmed" ? styles.notificationStatusConfirmed : null]}>
+        <Text style={[styles.notificationStatusText, item.status === "cancelled" ? styles.notificationStatusCancelledText : item.status === "confirmed" ? styles.notificationStatusConfirmedText : null]}>{statusText}</Text>
+      </View>
     </Pressable>
   );
 }
@@ -3020,6 +3448,23 @@ const styles = StyleSheet.create({
     borderColor: "#DDD6FE",
     backgroundColor: "#FFFFFF",
   },
+  headerIconBadge: {
+    position: "absolute",
+    top: -5,
+    right: -5,
+    minWidth: 17,
+    height: 17,
+    paddingHorizontal: 4,
+    borderRadius: 9,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#6D4AFF",
+  },
+  headerIconBadgeText: {
+    color: "#FFFFFF",
+    fontSize: 9,
+    fontWeight: "900",
+  },
   headerIconButtonActive: {
     borderColor: "#7C3AED",
     backgroundColor: "#7047EE",
@@ -3056,6 +3501,390 @@ const styles = StyleSheet.create({
   smallAvatarText: {
     color: "#FFFFFF",
     fontSize: 13,
+    fontWeight: "900",
+  },
+  headerPanelBackdrop: {
+    flex: 1,
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(15, 23, 42, 0.35)",
+  },
+  headerPanel: {
+    maxHeight: "88%",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    overflow: "hidden",
+    backgroundColor: "#FFFFFF",
+  },
+  headerPanelTop: {
+    minHeight: 88,
+    paddingHorizontal: 18,
+    paddingVertical: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    backgroundColor: "#18AFC0",
+  },
+  headerPanelEyebrow: {
+    color: "rgba(255, 255, 255, 0.82)",
+    fontSize: 11,
+    fontWeight: "900",
+    textTransform: "uppercase",
+  },
+  headerPanelTitle: {
+    marginTop: 6,
+    color: "#FFFFFF",
+    fontSize: 20,
+    fontWeight: "900",
+  },
+  headerPanelClose: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255,255,255,0.18)",
+  },
+  headerPanelBody: {
+    padding: 16,
+  },
+  panelHint: {
+    color: "#4B5563",
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: "600",
+  },
+  setupProgressRow: {
+    marginTop: 14,
+    marginBottom: 8,
+    padding: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderRadius: 14,
+    backgroundColor: "#F3E8FF",
+  },
+  setupProgressTitle: {
+    color: "#4C1D95",
+    fontSize: 14,
+    fontWeight: "900",
+  },
+  setupProgressValue: {
+    color: "#4C1D95",
+    fontSize: 16,
+    fontWeight: "900",
+  },
+  setupStep: {
+    minHeight: 58,
+    marginTop: 8,
+    padding: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    backgroundColor: "#FFFFFF",
+  },
+  setupStepIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#F3E8FF",
+  },
+  setupStepIconDone: {
+    backgroundColor: "#22C55E",
+  },
+  setupStepText: {
+    flex: 1,
+    color: "#0F172A",
+    fontSize: 14,
+    fontWeight: "900",
+  },
+  shareToggleRow: {
+    marginTop: 14,
+    minHeight: 72,
+    padding: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderRadius: 16,
+    backgroundColor: "#F8FAFC",
+  },
+  shareToggleTitle: {
+    color: "#0F172A",
+    fontSize: 15,
+    fontWeight: "900",
+  },
+  mobileSwitch: {
+    width: 54,
+    height: 32,
+    padding: 3,
+    borderRadius: 16,
+    backgroundColor: "#CBD5E1",
+  },
+  mobileSwitchActive: {
+    backgroundColor: "#6D4AFF",
+  },
+  mobileSwitchThumb: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: "#FFFFFF",
+  },
+  mobileSwitchThumbActive: {
+    transform: [{ translateX: 22 }],
+  },
+  shareUrlInput: {
+    minHeight: 48,
+    marginTop: 12,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#CBD5E1",
+    color: "#475569",
+    backgroundColor: "#F8FAFC",
+  },
+  headerPanelActions: {
+    marginTop: 12,
+    flexDirection: "row",
+    gap: 10,
+  },
+  headerGhostButton: {
+    flex: 1,
+    minHeight: 48,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#CBD5E1",
+  },
+  headerGhostButtonText: {
+    color: "#0F172A",
+    fontSize: 14,
+    fontWeight: "900",
+  },
+  headerPrimaryButton: {
+    flex: 1,
+    minHeight: 48,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 14,
+    backgroundColor: "#15100D",
+  },
+  headerPrimaryButtonText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "900",
+  },
+  supportGuideCard: {
+    padding: 14,
+    borderRadius: 16,
+    backgroundColor: "#F4F1ED",
+  },
+  supportGuideTitle: {
+    color: "#171717",
+    fontSize: 16,
+    fontWeight: "900",
+  },
+  supportTicket: {
+    marginTop: 10,
+    alignSelf: "flex-start",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 14,
+    overflow: "hidden",
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "900",
+    backgroundColor: "#15100D",
+  },
+  supportBubble: {
+    marginTop: 14,
+    maxWidth: "86%",
+    padding: 12,
+    borderRadius: 14,
+    overflow: "hidden",
+    color: "#171717",
+    fontSize: 14,
+    lineHeight: 20,
+    backgroundColor: "#F1F2F4",
+  },
+  supportInput: {
+    minHeight: 92,
+    marginTop: 14,
+    padding: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#D8CFC7",
+    color: "#0F172A",
+    textAlignVertical: "top",
+  },
+  supportStatusText: {
+    marginTop: 8,
+    color: "#64748B",
+    fontSize: 12,
+    fontWeight: "800",
+  },
+  notificationHeading: {
+    marginTop: 8,
+    marginBottom: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  notificationHeadingText: {
+    color: "#0F172A",
+    fontSize: 16,
+    fontWeight: "900",
+  },
+  notificationBadgeText: {
+    minWidth: 28,
+    paddingVertical: 6,
+    borderRadius: 14,
+    overflow: "hidden",
+    textAlign: "center",
+    color: "#6D4AFF",
+    fontSize: 12,
+    fontWeight: "900",
+    backgroundColor: "#EEF2FF",
+  },
+  notificationEmptyCard: {
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#D8E2F1",
+    backgroundColor: "#F8FAFC",
+  },
+  notificationCard: {
+    marginBottom: 10,
+    padding: 14,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#D8E2F1",
+    backgroundColor: "#FFFFFF",
+  },
+  notificationCardHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    gap: 8,
+  },
+  notificationCardTitle: {
+    flex: 1,
+    color: "#0F172A",
+    fontSize: 15,
+    fontWeight: "900",
+  },
+  notificationService: {
+    marginTop: 10,
+    color: "#667085",
+    fontSize: 14,
+    fontWeight: "700",
+  },
+  notificationStatusPill: {
+    marginTop: 10,
+    minHeight: 30,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 15,
+    backgroundColor: "#FEF3C7",
+  },
+  notificationStatusConfirmed: {
+    backgroundColor: "#D1FAE5",
+  },
+  notificationStatusCancelled: {
+    backgroundColor: "#FCE7F3",
+  },
+  notificationStatusText: {
+    color: "#92400E",
+    fontSize: 12,
+    fontWeight: "900",
+  },
+  notificationStatusConfirmedText: {
+    color: "#047857",
+  },
+  notificationStatusCancelledText: {
+    color: "#BE123C",
+  },
+  accountMenuHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingBottom: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E2E8F0",
+  },
+  accountAvatarLarge: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#EC4899",
+  },
+  accountAvatarLargeText: {
+    color: "#FFFFFF",
+    fontSize: 24,
+    fontWeight: "900",
+  },
+  accountName: {
+    color: "#0F172A",
+    fontSize: 18,
+    fontWeight: "900",
+  },
+  accountMenuItem: {
+    minHeight: 54,
+    justifyContent: "center",
+    borderBottomWidth: 1,
+    borderBottomColor: "#EEF2F7",
+  },
+  accountMenuItemText: {
+    color: "#0F172A",
+    fontSize: 15,
+    fontWeight: "900",
+  },
+  accountMenuLabel: {
+    marginTop: 14,
+    color: "#94A3B8",
+    fontSize: 12,
+    fontWeight: "900",
+    textTransform: "uppercase",
+  },
+  accountLanguageRow: {
+    marginTop: 8,
+    flexDirection: "row",
+    gap: 8,
+  },
+  accountLanguageButton: {
+    flex: 1,
+    minHeight: 46,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#CBD5E1",
+    backgroundColor: "#F8FAFC",
+  },
+  accountLanguageButtonActive: {
+    borderColor: "#A5B4FC",
+    backgroundColor: "#EEF2FF",
+  },
+  accountLanguageText: {
+    color: "#0F172A",
+    fontSize: 14,
+    fontWeight: "900",
+  },
+  accountLanguageTextActive: {
+    color: "#6D4AFF",
+  },
+  accountLogout: {
+    minHeight: 54,
+    justifyContent: "center",
+  },
+  accountLogoutText: {
+    color: "#E11D48",
+    fontSize: 15,
     fontWeight: "900",
   },
   calendarScreen: {

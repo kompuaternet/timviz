@@ -6,14 +6,18 @@ import {
   createCalendarAppointment,
   createCalendarAppointmentsBatch,
   deleteCalendarAppointment,
+  getAppointmentsForBusinessDates,
+  getCalendarNotificationsContext,
   getCalendarDaySnapshot,
   updateCalendarAppointmentMeta,
   updateCalendarAppointmentTime
 } from "../../../../../lib/pro-calendar";
 import {
   cancelBookingFromCalendarAppointment,
+  getNotificationBookingsForSalonSlug,
   syncBookingStatusFromCalendarAppointment
 } from "../../../../../lib/bookings";
+import { getJoinRequestsForOwner } from "../../../../../lib/pro-data";
 import {
   resetTelegramReminderEventsForAppointment,
   sendBookingCancelledTelegramNotification,
@@ -23,6 +27,99 @@ import {
 
 function normalizedTimeValue(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
+}
+
+function mapBookingStatusForNotification(status: string) {
+  return status === "pending" ? "pending" : status === "cancelled" ? "cancelled" : "confirmed";
+}
+
+function mapAttendanceToNotificationStatus(attendance: string) {
+  return attendance === "pending" ? "pending" : "confirmed";
+}
+
+async function getMobileOnlineBookingNotifications(professionalId: string) {
+  const context = await getCalendarNotificationsContext({ professionalId });
+  const businessId = context.businessId;
+  if (!businessId) {
+    return { pendingOnlineBookings: [], archivedOnlineBookings: [], pendingJoinRequests: [] };
+  }
+
+  const bookings = await getNotificationBookingsForSalonSlug(`business:${businessId}`);
+  const memberNameMap = new Map(
+    context.teamMembers.map((member) => [
+      member.id,
+      `${member.firstName} ${member.lastName}`.trim() || member.role
+    ])
+  );
+  const businessAppointments = await getAppointmentsForBusinessDates(
+    businessId,
+    bookings.map((booking) => booking.appointmentDate)
+  );
+  const appointmentPool = businessAppointments.map((appointment) => ({
+    ...appointment,
+    professionalName: memberNameMap.get(appointment.professionalId) ?? ""
+  }));
+
+  const notifications = bookings
+    .map((booking) => {
+      const appointment =
+        appointmentPool.find(
+          (item) =>
+            item.kind === "appointment" &&
+            item.appointmentDate === booking.appointmentDate &&
+            item.startTime === booking.appointmentTime &&
+            item.customerName.trim().toLowerCase() === booking.customerName.trim().toLowerCase()
+        ) ||
+        appointmentPool.find(
+          (item) =>
+            item.kind === "appointment" &&
+            item.appointmentDate === booking.appointmentDate &&
+            item.startTime === booking.appointmentTime
+        );
+      const status =
+        booking.status === "pending" && appointment?.kind === "appointment"
+          ? mapAttendanceToNotificationStatus(appointment.attendance)
+          : mapBookingStatusForNotification(booking.status);
+
+      return {
+        id: booking.id,
+        bookingId: booking.id,
+        appointmentId: appointment?.id ?? "",
+        appointmentDate: booking.appointmentDate,
+        startTime: booking.appointmentTime,
+        endTime: appointment?.endTime ?? "",
+        customerName: booking.customerName,
+        customerPhone: booking.customerPhone,
+        serviceName: booking.serviceName,
+        professionalId: appointment?.professionalId ?? "",
+        professionalName: appointment?.professionalName ?? "",
+        createdAt: booking.createdAt,
+        status
+      };
+    })
+    .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime());
+
+  const joinRequests = await getJoinRequestsForOwner(professionalId).catch(() => []);
+  const pendingJoinRequests = joinRequests
+    .filter((item) => item.status === "pending" && !item.viewedAt)
+    .map((request) => ({
+      id: request.id,
+      createdAt: request.createdAt,
+      role: request.role,
+      professionalId: request.professionalId,
+      professionalName:
+        request.professional
+          ? `${request.professional.firstName} ${request.professional.lastName}`.trim() ||
+            request.professional.email ||
+            request.professional.phone
+          : ""
+    }));
+
+  return {
+    pendingOnlineBookings: notifications.filter((item) => item.status === "pending"),
+    archivedOnlineBookings: notifications.filter((item) => item.status !== "pending").slice(0, 12),
+    pendingJoinRequests
+  };
 }
 
 export async function GET(request: Request) {
@@ -38,6 +135,14 @@ export async function GET(request: Request) {
     const url = new URL(request.url);
     const appointmentDate = url.searchParams.get("date") || new Date().toISOString().slice(0, 10);
     const targetProfessionalId = url.searchParams.get("targetProfessionalId") || undefined;
+    const mode = url.searchParams.get("mode") || "day";
+
+    if (mode === "notifications") {
+      const notifications = await getMobileOnlineBookingNotifications(professionalId);
+      timer({ status: 200 });
+      return NextResponse.json(notifications);
+    }
+
     const snapshot = await getCalendarDaySnapshot({ professionalId, appointmentDate, targetProfessionalId });
 
     timer({ status: 200 });
