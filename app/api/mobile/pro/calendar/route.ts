@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { createApiTimer } from "../../../../../lib/api-timing";
 import { getMobileProfessionalId } from "../_auth";
 import {
   createBlockedCalendarTime,
@@ -24,9 +25,12 @@ function normalizedTimeValue(value: unknown) {
 }
 
 export async function GET(request: Request) {
+  const timer = createApiTimer("api/mobile/pro/calendar GET");
+
   try {
     const professionalId = getMobileProfessionalId(request);
     if (!professionalId) {
+      timer({ status: 401 });
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
 
@@ -35,9 +39,11 @@ export async function GET(request: Request) {
     const targetProfessionalId = url.searchParams.get("targetProfessionalId") || undefined;
     const snapshot = await getCalendarDaySnapshot({ professionalId, appointmentDate, targetProfessionalId });
 
+    timer({ status: 200 });
     return NextResponse.json(snapshot);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to load calendar.";
+    timer({ status: 400, error: true });
     return NextResponse.json({ error: message }, { status: 400 });
   }
 }

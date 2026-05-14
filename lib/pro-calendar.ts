@@ -455,6 +455,50 @@ export async function getAppointmentsForBusiness(businessId: string) {
     );
 }
 
+export async function getAppointmentsForBusinessDates(businessId: string, appointmentDates: string[]) {
+  const dates = Array.from(
+    new Set(appointmentDates.map((date) => date.trim()).filter(Boolean))
+  );
+
+  if (!businessId.trim() || dates.length === 0) {
+    return [];
+  }
+
+  if (isSupabaseConfigured()) {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      return [];
+    }
+
+    const { data, error } = await supabase
+      .from("calendar_appointments")
+      .select(
+        "id, business_id, professional_id, appointment_date, start_time, end_time, kind, customer_name, customer_phone, service_name, notes, attendance, price_amount, created_at"
+      )
+      .eq("business_id", businessId)
+      .in("appointment_date", dates)
+      .order("appointment_date", { ascending: false })
+      .order("start_time", { ascending: false })
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return (data ?? []).map((row) => mapSupabaseAppointment(row as CalendarAppointmentRow));
+  }
+
+  const dateSet = new Set(dates);
+  const store = await readStore();
+  return store.appointments
+    .filter((appointment) => appointment.businessId === businessId && dateSet.has(appointment.appointmentDate))
+    .sort((left, right) =>
+      `${right.appointmentDate}${right.startTime}${right.createdAt}`.localeCompare(
+        `${left.appointmentDate}${left.startTime}${left.createdAt}`
+      )
+    );
+}
+
 export async function getPublicCalendarAppointments(input: { bypassCache?: boolean } = {}): Promise<PublicCalendarAppointment[]> {
   if (
     !input.bypassCache &&

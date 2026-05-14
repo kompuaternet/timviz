@@ -291,18 +291,25 @@ alter table public.telegram_connections add column if not exists last_interactio
 alter table public.telegram_connections add column if not exists updated_at timestamptz not null default timezone('utc', now());
 
 create index if not exists bookings_salon_date_idx on public.bookings (salon_slug, appointment_date, appointment_time);
+create index if not exists bookings_salon_status_created_idx on public.bookings (salon_slug, status, created_at desc);
 create index if not exists bookings_customer_email_idx on public.bookings (customer_email, created_at desc);
 create index if not exists professionals_paddle_customer_idx on public.professionals (paddle_customer_id);
 create index if not exists professionals_paddle_subscription_idx on public.professionals (paddle_subscription_id);
 create index if not exists business_memberships_professional_idx on public.business_memberships (professional_id);
+create index if not exists business_memberships_business_professional_idx on public.business_memberships (business_id, professional_id);
+create index if not exists business_memberships_business_scope_idx on public.business_memberships (business_id, scope);
 create index if not exists business_join_requests_business_status_viewed_idx on public.business_join_requests (business_id, status, viewed_at, created_at desc);
 create index if not exists business_services_business_idx on public.business_services (business_id, sort_order, created_at);
 create index if not exists business_services_blocked_idx on public.business_services (is_blocked, created_at desc);
 create index if not exists business_services_source_idx on public.business_services (source, moderation_status, is_blocked, created_at desc);
 create index if not exists business_staff_invitations_business_idx on public.business_staff_invitations (business_id, created_at desc);
+create index if not exists business_staff_invitations_business_status_email_idx on public.business_staff_invitations (business_id, status, email);
 create unique index if not exists business_staff_invitations_token_uidx on public.business_staff_invitations (token);
 create index if not exists calendar_appointments_professional_day_idx on public.calendar_appointments (professional_id, appointment_date, start_time);
+create index if not exists calendar_appointments_professional_kind_date_idx on public.calendar_appointments (professional_id, kind, appointment_date);
+create index if not exists calendar_appointments_professional_kind_created_idx on public.calendar_appointments (professional_id, kind, created_at desc);
 create index if not exists calendar_appointments_business_day_idx on public.calendar_appointments (business_id, appointment_date, start_time);
+create index if not exists calendar_appointments_business_kind_recent_idx on public.calendar_appointments (business_id, kind, appointment_date desc, start_time desc, created_at desc);
 create index if not exists customer_accounts_updated_idx on public.customer_accounts (updated_at desc);
 create index if not exists global_service_catalog_category_idx on public.global_service_catalog (category, group_key, sort_order);
 create index if not exists pro_clients_professional_idx on public.pro_clients (professional_id, created_at desc);
@@ -311,6 +318,7 @@ create unique index if not exists support_messages_telegram_update_uidx on publi
 create unique index if not exists support_messages_telegram_message_uidx on public.support_messages (telegram_message_id) where telegram_message_id is not null;
 create unique index if not exists telegram_connections_professional_uidx on public.telegram_connections (professional_id);
 create unique index if not exists telegram_connections_connect_token_uidx on public.telegram_connections (connect_token);
+create index if not exists telegram_connections_telegram_user_idx on public.telegram_connections (telegram_user_id, updated_at desc);
 create index if not exists telegram_connections_business_idx on public.telegram_connections (business_id);
 create index if not exists telegram_connections_chat_idx on public.telegram_connections (chat_id);
 create unique index if not exists telegram_reminder_events_unique_idx on public.telegram_reminder_events (appointment_id, professional_id, reminder_type);

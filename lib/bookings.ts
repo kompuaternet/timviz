@@ -66,6 +66,10 @@ export type PublicBusinessBookingInput = {
 };
 
 const bookingsPath = path.join(process.cwd(), "data", "bookings.json");
+const BOOKING_SELECT_FIELDS =
+  "id, salon_slug, salon_name, service_name, appointment_date, appointment_time, customer_name, customer_email, customer_phone, customer_notes, status, created_at";
+const LEGACY_BOOKING_SELECT_FIELDS =
+  "id, salon_slug, salon_name, service_name, appointment_date, appointment_time, customer_name, customer_phone, customer_notes, status, created_at";
 
 function createBookingId() {
   const randomPart = Math.random().toString(36).slice(2, 8).toUpperCase();
@@ -257,6 +261,79 @@ async function fetchSupabaseBookingsForSalonSlug(salonSlug: string) {
   }
 
   return rows.map(mapBookingRow);
+}
+
+async function fetchSupabaseBookingRows(
+  buildQuery: (selectFields: string) => PromiseLike<{
+    data: unknown;
+    error: { message: string } | null;
+  }>
+) {
+  const primaryResult = await buildQuery(BOOKING_SELECT_FIELDS);
+  let rows = (primaryResult.data as Array<Record<string, unknown>> | null) ?? [];
+  let error = primaryResult.error;
+
+  if (error && /customer_email/i.test(error.message)) {
+    const fallbackResult = await buildQuery(LEGACY_BOOKING_SELECT_FIELDS);
+    rows = (fallbackResult.data as Array<Record<string, unknown>> | null) ?? [];
+    error = fallbackResult.error;
+  }
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return rows.map(mapBookingRow);
+}
+
+export async function getNotificationBookingsForSalonSlug(salonSlug: string) {
+  if (isSupabaseConfigured()) {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      return [] as BookingRecord[];
+    }
+
+    const [pendingBookings, archivedBookings] = await Promise.all([
+      fetchSupabaseBookingRows((selectFields) =>
+        supabase
+          .from("bookings")
+          .select(selectFields)
+          .eq("salon_slug", salonSlug)
+          .eq("status", "pending")
+          .order("created_at", { ascending: false })
+      ),
+      fetchSupabaseBookingRows((selectFields) =>
+        supabase
+          .from("bookings")
+          .select(selectFields)
+          .eq("salon_slug", salonSlug)
+          .neq("status", "pending")
+          .order("created_at", { ascending: false })
+          .limit(12)
+      )
+    ]);
+
+    const seen = new Set<string>();
+    return [...pendingBookings, ...archivedBookings].filter((booking) => {
+      if (seen.has(booking.id)) {
+        return false;
+      }
+      seen.add(booking.id);
+      return true;
+    });
+  }
+
+  const bookings = await readLocalBookings();
+  const scoped = bookings.filter((item) => item.salonSlug === salonSlug);
+  const pendingBookings = scoped
+    .filter((item) => item.status === "pending")
+    .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime());
+  const archivedBookings = scoped
+    .filter((item) => item.status !== "pending")
+    .sort((left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime())
+    .slice(0, 12);
+
+  return [...pendingBookings, ...archivedBookings];
 }
 
 function pickMatchingBookingCandidate(items: BookingRecord[], input: BookingMatchInput) {

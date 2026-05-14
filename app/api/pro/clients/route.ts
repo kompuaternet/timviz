@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { createApiTimer } from "../../../../lib/api-timing";
 import { getSessionCookieName, verifySessionValue } from "../../../../lib/pro-auth";
 import {
   createClientProfile,
@@ -14,13 +15,16 @@ async function getProfessionalId() {
 }
 
 export async function GET() {
+  const timer = createApiTimer("api/pro/clients GET");
   const professionalId = await getProfessionalId();
 
   if (!professionalId) {
+    timer({ status: 401 });
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
   const clients = await getClientsList(professionalId);
+  timer({ status: 200, clients: clients.length });
   return NextResponse.json({ clients });
 }
 

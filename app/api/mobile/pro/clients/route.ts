@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { createApiTimer } from "../../../../../lib/api-timing";
 import { getMobileProfessionalId } from "../_auth";
 import {
   createClientProfile,
@@ -8,16 +9,21 @@ import {
 } from "../../../../../lib/pro-clients";
 
 export async function GET(request: Request) {
+  const timer = createApiTimer("api/mobile/pro/clients GET");
+
   try {
     const professionalId = getMobileProfessionalId(request);
     if (!professionalId) {
+      timer({ status: 401 });
       return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
     }
 
     const clients = await getClientsList(professionalId);
+    timer({ status: 200, clients: clients.length });
     return NextResponse.json({ clients });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to load clients.";
+    timer({ status: 400, error: true });
     return NextResponse.json({ error: message }, { status: 400 });
   }
 }

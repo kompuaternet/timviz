@@ -101,11 +101,27 @@ Expected impact:
 - Smaller payloads on client-list refreshes, especially for professionals with long appointment history.
 - Keeps the full-table `select("*")` only in `scripts/db-backup.mjs`, where complete backups require it.
 
+## Stage 5 (Notification path + DB index tuning)
+
+Changed `app/api/pro/calendar/route.ts`, `lib/bookings.ts`, and `lib/pro-calendar.ts`:
+- Calendar notifications now load only pending online bookings plus the latest archived notifications instead of every booking for the business.
+- Notification appointment matching now fetches business appointments only for the relevant booking dates instead of full business appointment history.
+
+Changed `supabase/schema.sql`:
+- Added indexes for booking notification queries, membership lookups, staff invitation updates, calendar usage/client-directory queries, recent business calendar activity, and Telegram user lookups.
+
+Changed API routes:
+- Added lightweight API timing logs for key web/mobile GET endpoints. Logs are enabled in development or with `TIMVIZ_API_TIMING=1`.
+
+Expected impact:
+- Lower DB read volume on `/api/pro/calendar`, especially for businesses with long booking/appointment history.
+- Faster owner/team membership and Telegram lookups under load.
+- Easier local/Railway diagnosis when API latency regresses.
+
 ## Pending next optimization stages
-1. Add DB index migration script for hottest WHERE/ORDER patterns.
-2. Improve client search endpoint pattern (debounce + limits already partly in UI, verify end-to-end).
-3. Add lightweight performance timing logs in dev for dashboard/calendar API.
-4. Tune directory cache TTL + invalidation strategy.
+1. Improve client search endpoint pattern (server-side query + result limits for very large client lists).
+2. Tune directory cache TTL + invalidation strategy.
+3. Split heavier `/pro/calendar` client components if bundle size becomes the next bottleneck.
 
 ## Build status after current changes
 - `npm run build`: ✅ passes

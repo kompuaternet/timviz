@@ -1,9 +1,10 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { createApiTimer } from "../../../../lib/api-timing";
 import {
   cancelBookingFromCalendarAppointment,
   updateBookingStatus,
-  getBookingsForSalonSlug,
+  getNotificationBookingsForSalonSlug,
   syncBookingStatusFromCalendarAppointment,
   type BookingRecord,
   type BookingStatus
@@ -21,7 +22,7 @@ import {
   createCalendarAppointment,
   createCalendarAppointmentsBatch,
   deleteCalendarAppointment,
-  getAppointmentsForBusiness,
+  getAppointmentsForBusinessDates,
   getCalendarNotificationsContext,
   getCalendarDaySnapshot,
   updateCalendarAppointmentMeta,
@@ -161,14 +162,17 @@ async function getOnlineBookingNotifications(input: {
     };
   }
 
-  const bookings = await getBookingsForSalonSlug(`business:${businessId}`);
+  const bookings = await getNotificationBookingsForSalonSlug(`business:${businessId}`);
   const memberNameMap = new Map(
     input.teamMembers.map((member) => [
       member.id,
       `${member.firstName} ${member.lastName}`.trim() || member.role
     ])
   );
-  const businessAppointments = await getAppointmentsForBusiness(businessId);
+  const businessAppointments = await getAppointmentsForBusinessDates(
+    businessId,
+    bookings.map((booking) => booking.appointmentDate)
+  );
   const appointmentPool = businessAppointments.map((appointment) => ({
       ...appointment,
       professionalName: memberNameMap.get(appointment.professionalId) ?? ""
@@ -299,6 +303,9 @@ async function getOnlineBookingNotifications(input: {
 }
 
 export async function GET(request: Request) {
+  const timer = createApiTimer("api/pro/calendar GET");
+  let mode = "day";
+
   try {
     const cookieStore = await cookies();
     const professionalId = verifySessionValue(
@@ -312,7 +319,7 @@ export async function GET(request: Request) {
     const url = new URL(request.url);
     const appointmentDate = url.searchParams.get("date") || new Date().toISOString().slice(0, 10);
     const targetProfessionalId = url.searchParams.get("targetProfessionalId") || undefined;
-    const mode = url.searchParams.get("mode");
+    mode = url.searchParams.get("mode") || "day";
 
     if (mode === "notifications") {
       const context = await getCalendarNotificationsContext({ professionalId });
@@ -320,6 +327,7 @@ export async function GET(request: Request) {
         ...context,
         viewerProfessionalId: professionalId
       });
+      timer({ mode, status: 200 });
       return NextResponse.json(notifications);
     }
 
@@ -334,9 +342,11 @@ export async function GET(request: Request) {
       ...notifications
     };
 
+    timer({ mode, status: 200 });
     return NextResponse.json(decoratedResult);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to load calendar.";
+    timer({ mode, status: 400, error: true });
     return NextResponse.json({ error: message }, { status: 400 });
   }
 }
