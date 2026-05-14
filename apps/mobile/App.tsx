@@ -198,18 +198,34 @@ type StaffMemberRecord = {
     lastName: string;
     email?: string;
     phone?: string;
+    language?: string;
+    accountStatus?: "active" | "placeholder";
+    createdAt?: string;
     avatarUrl?: string | null;
   };
   membership: {
+    id?: string;
     role: string;
     scope: "owner" | "member";
+    createdAt?: string;
     workScheduleMode: "fixed" | "flexible";
     workSchedule: WorkScheduleRecord;
     customSchedule?: Record<string, WorkDayScheduleRecord>;
   };
+  source?: "owner" | "join_request" | "email_invitation" | "member";
+  workspaceAccess?: "owner" | "active" | "invited" | "offline";
+  pendingInvitation?: {
+    id: string;
+    email: string;
+    createdAt: string;
+  } | null;
+  services?: string[];
   stats?: {
+    totalBookings?: number;
     monthBookings?: number;
     upcomingBookings?: number;
+    completedBookings?: number;
+    revenue?: number;
   };
 };
 
@@ -217,13 +233,47 @@ type StaffSnapshot = {
   business: {
     id: string;
     name: string;
+    categories?: string[];
+    accountType?: "solo" | "team";
     currency?: string;
   };
   summary?: {
     totalPeople?: number;
     activeEmployees?: number;
+    pendingRequests?: number;
+    pendingInvitations?: number;
+    monthBookings?: number;
+    monthRevenue?: number;
   };
+  services?: Array<{
+    id: string;
+    name: string;
+    category: string;
+  }>;
   members: StaffMemberRecord[];
+  joinRequests?: Array<{
+    id: string;
+    role: string;
+    createdAt: string;
+    professional: {
+      id: string;
+      firstName: string;
+      lastName: string;
+      email: string;
+      phone: string;
+    } | null;
+  }>;
+  invitations?: Array<{
+    id: string;
+    email: string;
+    role: string;
+    createdAt: string;
+    invitedProfessional?: {
+      id: string;
+      firstName: string;
+      lastName: string;
+    } | null;
+  }>;
 };
 
 type ServiceDraftState = {
@@ -399,6 +449,33 @@ const copy = {
     setupTelegram: "Підключіть Telegram",
     staffSchedule: "Графік змін",
     staffScheduleHint: "Керуйте робочими днями співробітників так само, як у кабінеті на сайті.",
+    teamMembers: "Учасники команди",
+    teamMembersHint: "Додавайте співробітників, редагуйте контакти, роль і доступ до кабінету.",
+    addMember: "Додати співробітника",
+    editMember: "Редагувати співробітника",
+    saveMember: "Зберегти співробітника",
+    fullName: "Ім'я та прізвище",
+    role: "Роль",
+    workspaceAccess: "Доступ",
+    invite: "Запросити",
+    resendInvite: "Надіслати ще раз",
+    revokeInvite: "Скасувати запрошення",
+    sendInvite: "Надіслати запрошення на email",
+    pendingInvites: "Очікують запрошення",
+    monthBookings: "Записів за місяць",
+    upcomingBookings: "Майбутні записи",
+    scheduleMenu: "Графік",
+    currentWeek: "На цьому тижні",
+    previousWeek: "Попередній тиждень",
+    nextWeek: "Наступний тиждень",
+    chooseWeek: "Обрати тиждень",
+    repeatingSchedule: "Повторюваний графік",
+    oneWeekSchedule: "Тиждень календаря",
+    applyToWeekdays: "Застосувати до всіх буднів",
+    clearWeek: "Очистити тиждень",
+    noWork: "Не працює",
+    addBreak: "Додати перерву",
+    removeBreak: "Прибрати перерву",
     onThisWeek: "На цьому тижні",
     saveSchedule: "Зберегти графік",
     workFrom: "З",
@@ -588,6 +665,33 @@ const copy = {
     setupTelegram: "Подключите Telegram",
     staffSchedule: "График смен",
     staffScheduleHint: "Управляйте рабочими днями сотрудников так же, как в кабинете на сайте.",
+    teamMembers: "Участники команды",
+    teamMembersHint: "Добавляйте сотрудников, редактируйте контакты, роль и доступ к кабинету.",
+    addMember: "Добавить сотрудника",
+    editMember: "Редактировать сотрудника",
+    saveMember: "Сохранить сотрудника",
+    fullName: "Имя и фамилия",
+    role: "Роль",
+    workspaceAccess: "Доступ",
+    invite: "Пригласить",
+    resendInvite: "Отправить еще раз",
+    revokeInvite: "Отозвать приглашение",
+    sendInvite: "Отправить приглашение на email",
+    pendingInvites: "Ожидают приглашение",
+    monthBookings: "Записей за месяц",
+    upcomingBookings: "Будущие записи",
+    scheduleMenu: "График",
+    currentWeek: "На этой неделе",
+    previousWeek: "Предыдущая неделя",
+    nextWeek: "Следующая неделя",
+    chooseWeek: "Выбрать неделю",
+    repeatingSchedule: "Повторяющийся график",
+    oneWeekSchedule: "Неделя календаря",
+    applyToWeekdays: "Применить ко всем будням",
+    clearWeek: "Очистить неделю",
+    noWork: "Не работает",
+    addBreak: "Добавить перерыв",
+    removeBreak: "Убрать перерыв",
     onThisWeek: "На этой неделе",
     saveSchedule: "Сохранить график",
     workFrom: "С",
@@ -777,6 +881,33 @@ const copy = {
     setupTelegram: "Connect Telegram",
     staffSchedule: "Shift schedule",
     staffScheduleHint: "Manage team working days like in the web workspace.",
+    teamMembers: "Team members",
+    teamMembersHint: "Add employees, edit contacts, role, and workspace access.",
+    addMember: "Add employee",
+    editMember: "Edit employee",
+    saveMember: "Save employee",
+    fullName: "Full name",
+    role: "Role",
+    workspaceAccess: "Access",
+    invite: "Invite",
+    resendInvite: "Resend invite",
+    revokeInvite: "Revoke invite",
+    sendInvite: "Send email invite",
+    pendingInvites: "Pending invites",
+    monthBookings: "Month bookings",
+    upcomingBookings: "Upcoming bookings",
+    scheduleMenu: "Schedule",
+    currentWeek: "This week",
+    previousWeek: "Previous week",
+    nextWeek: "Next week",
+    chooseWeek: "Choose week",
+    repeatingSchedule: "Repeating schedule",
+    oneWeekSchedule: "Calendar week",
+    applyToWeekdays: "Apply to weekdays",
+    clearWeek: "Clear week",
+    noWork: "Off",
+    addBreak: "Add break",
+    removeBreak: "Remove break",
     onThisWeek: "This week",
     saveSchedule: "Save schedule",
     workFrom: "From",
@@ -1676,16 +1807,22 @@ export default function App() {
     }
   }
 
-  async function saveStaffSchedule(member: StaffMemberRecord, workSchedule: WorkScheduleRecord) {
+  async function saveStaffSchedule(
+    member: StaffMemberRecord,
+    workSchedule: WorkScheduleRecord,
+    customSchedule: Record<string, WorkDayScheduleRecord> = member.membership.customSchedule || {},
+    workScheduleMode: "fixed" | "flexible" = member.membership.workScheduleMode || "fixed"
+  ) {
     setBusy(true);
     try {
       await apiFetch("/api/mobile/pro/staff", {
         method: "POST",
         body: JSON.stringify({
+          action: "saveSchedule",
           targetProfessionalId: member.professional.id,
-          workScheduleMode: member.membership.workScheduleMode || "fixed",
+          workScheduleMode,
           workSchedule,
-          customSchedule: member.membership.customSchedule || {},
+          customSchedule,
         }),
       });
       await refreshAll();
@@ -1837,12 +1974,14 @@ export default function App() {
               />
             ) : null}
             {activeTab === "staff" ? (
-              <StaffScheduleTab
+              <StaffWorkspaceTab
                 t={t}
                 language={language}
                 staff={staffSnapshot}
                 workspace={workspace}
                 busy={busy}
+                apiFetch={apiFetch}
+                onRefreshWorkspace={() => refreshAll(session, selectedDate)}
                 onSaveSchedule={saveStaffSchedule}
               />
             ) : null}
@@ -3745,22 +3884,8 @@ function ClientsTab({
 
 const staffWeekKeys = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
 
-function StaffScheduleTab({
-  t,
-  language,
-  staff,
-  workspace,
-  busy,
-  onSaveSchedule,
-}: {
-  t: Record<string, string>;
-  language: AppLanguage;
-  staff: StaffSnapshot | null;
-  workspace: WorkspaceSnapshot | null;
-  busy: boolean;
-  onSaveSchedule: (member: StaffMemberRecord, workSchedule: WorkScheduleRecord) => Promise<boolean>;
-}) {
-  const members = staff?.members?.length
+function makeStaffMembers(staff: StaffSnapshot | null, workspace: WorkspaceSnapshot | null, t: Record<string, string>): StaffMemberRecord[] {
+  return staff?.members?.length
     ? staff.members
     : workspace
       ? [
@@ -3773,14 +3898,348 @@ function StaffScheduleTab({
               workSchedule: workspace.memberSchedule?.workSchedule || {},
               customSchedule: workspace.memberSchedule?.customSchedule || {},
             },
+            workspaceAccess: "owner" as const,
+            pendingInvitation: null,
+            stats: {
+              monthBookings: 0,
+              upcomingBookings: 0,
+            },
           },
         ]
       : [];
+}
+
+function makeStaffMemberName(member: StaffMemberRecord, fallback: string) {
+  return `${member.professional.firstName || ""} ${member.professional.lastName || ""}`.trim() || member.professional.email || fallback;
+}
+
+function splitStaffFullName(value: string) {
+  const parts = value.trim().split(/\s+/).filter(Boolean);
+  return {
+    firstName: parts[0] || "",
+    lastName: parts.slice(1).join(" "),
+  };
+}
+
+function StaffWorkspaceTab({
+  t,
+  language,
+  staff,
+  workspace,
+  busy,
+  apiFetch,
+  onRefreshWorkspace,
+  onSaveSchedule,
+}: {
+  t: Record<string, string>;
+  language: AppLanguage;
+  staff: StaffSnapshot | null;
+  workspace: WorkspaceSnapshot | null;
+  busy: boolean;
+  apiFetch: (path: string, options?: RequestInit) => Promise<any>;
+  onRefreshWorkspace: () => void;
+  onSaveSchedule: (member: StaffMemberRecord, workSchedule: WorkScheduleRecord, customSchedule?: Record<string, WorkDayScheduleRecord>, mode?: "fixed" | "flexible") => Promise<boolean>;
+}) {
+  const [section, setSection] = useState<"members" | "schedule">("members");
+
+  return (
+    <View style={styles.sectionStack}>
+      <View style={styles.staffLocalNav}>
+        <Pressable style={[styles.staffLocalNavItem, section === "members" && styles.staffLocalNavItemActive]} onPress={() => setSection("members")}>
+          <Ionicons name="people-outline" size={18} color={section === "members" ? "#FFFFFF" : "#64748B"} />
+          <Text style={[styles.staffLocalNavText, section === "members" && styles.staffLocalNavTextActive]}>{t.teamMembers}</Text>
+        </Pressable>
+        <Pressable style={[styles.staffLocalNavItem, section === "schedule" && styles.staffLocalNavItemActive]} onPress={() => setSection("schedule")}>
+          <Ionicons name="calendar-outline" size={18} color={section === "schedule" ? "#FFFFFF" : "#64748B"} />
+          <Text style={[styles.staffLocalNavText, section === "schedule" && styles.staffLocalNavTextActive]}>{t.staffSchedule}</Text>
+        </Pressable>
+      </View>
+
+      {section === "members" ? (
+        <StaffMembersTab
+          t={t}
+          staff={staff}
+          workspace={workspace}
+          busy={busy}
+          apiFetch={apiFetch}
+          onRefreshWorkspace={onRefreshWorkspace}
+          onOpenSchedule={() => setSection("schedule")}
+        />
+      ) : (
+        <StaffScheduleTab
+          t={t}
+          language={language}
+          staff={staff}
+          workspace={workspace}
+          busy={busy}
+          onSaveSchedule={onSaveSchedule}
+          onOpenMembers={() => setSection("members")}
+        />
+      )}
+    </View>
+  );
+}
+
+function StaffMembersTab({
+  t,
+  staff,
+  workspace,
+  busy,
+  apiFetch,
+  onRefreshWorkspace,
+  onOpenSchedule,
+}: {
+  t: Record<string, string>;
+  staff: StaffSnapshot | null;
+  workspace: WorkspaceSnapshot | null;
+  busy: boolean;
+  apiFetch: (path: string, options?: RequestInit) => Promise<any>;
+  onRefreshWorkspace: () => void;
+  onOpenSchedule: () => void;
+}) {
+  const members = makeStaffMembers(staff, workspace, t);
+  const [addOpen, setAddOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [editId, setEditId] = useState("");
+  const [draft, setDraft] = useState({ fullName: "", role: t.employee, email: "", phone: "", sendInvitation: false });
+  const [editDraft, setEditDraft] = useState({ fullName: "", role: "", email: "", phone: "" });
+
+  async function staffAction(body: Record<string, unknown>) {
+    setSaving(true);
+    try {
+      await apiFetch("/api/mobile/pro/staff", {
+        method: "POST",
+        body: JSON.stringify(body),
+      });
+      onRefreshWorkspace();
+      return true;
+    } catch (error) {
+      Alert.alert(t.staff, error instanceof Error ? error.message : t.staff);
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function createMember() {
+    const parsed = splitStaffFullName(draft.fullName);
+    if (!parsed.firstName) {
+      Alert.alert(t.requiredTitle, t.requiredText);
+      return;
+    }
+    const ok = await staffAction({
+      action: "createMember",
+      firstName: parsed.firstName,
+      lastName: parsed.lastName,
+      role: draft.role,
+      email: draft.email,
+      phone: draft.phone,
+      sendInvitation: draft.sendInvitation,
+    });
+    if (ok) {
+      setDraft({ fullName: "", role: t.employee, email: "", phone: "", sendInvitation: false });
+      setAddOpen(false);
+    }
+  }
+
+  function startEdit(member: StaffMemberRecord) {
+    setEditId(member.professional.id);
+    setEditDraft({
+      fullName: makeStaffMemberName(member, t.employee),
+      role: member.membership.role || t.employee,
+      email: member.professional.email || "",
+      phone: member.professional.phone || "",
+    });
+  }
+
+  async function updateMember(member: StaffMemberRecord) {
+    const parsed = splitStaffFullName(editDraft.fullName);
+    if (!parsed.firstName) {
+      Alert.alert(t.requiredTitle, t.requiredText);
+      return;
+    }
+    const ok = await staffAction({
+      action: "updateMember",
+      memberProfessionalId: member.professional.id,
+      firstName: parsed.firstName,
+      lastName: parsed.lastName,
+      role: editDraft.role,
+      email: editDraft.email,
+      phone: editDraft.phone,
+    });
+    if (ok) setEditId("");
+  }
+
+  async function inviteMember(member: StaffMemberRecord) {
+    if (!member.professional.email) {
+      startEdit(member);
+      return;
+    }
+    await staffAction({
+      action: "inviteMember",
+      memberProfessionalId: member.professional.id,
+      email: member.professional.email,
+      role: member.membership.role,
+    });
+  }
+
+  async function revokeInvitation(invitationId: string) {
+    await staffAction({ action: "revokeInvitation", invitationId });
+  }
+
+  async function resolveJoinRequest(requestId: string, requestAction: "approve" | "reject") {
+    await staffAction({ action: "resolveJoinRequest", requestId, requestAction });
+  }
+
+  return (
+    <View style={styles.sectionStack}>
+      <Panel title={t.teamMembers}>
+        <Text style={styles.emptyText}>{t.teamMembersHint}</Text>
+        <View style={styles.staffSummaryRow}>
+          <View style={styles.staffSummaryTile}>
+            <Text style={styles.statValue}>{staff?.summary?.totalPeople || members.length}</Text>
+            <Text style={styles.statLabel}>{t.staff}</Text>
+          </View>
+          <View style={styles.staffSummaryTile}>
+            <Text style={styles.statValue}>{staff?.summary?.pendingInvitations || 0}</Text>
+            <Text style={styles.statLabel}>{t.pendingInvites}</Text>
+          </View>
+        </View>
+        <View style={styles.settingsActionRow}>
+          <SecondaryButton label={t.staffSchedule} onPress={onOpenSchedule} />
+          <PrimaryButton label={addOpen ? t.cancel : t.addMember} onPress={() => setAddOpen(!addOpen)} disabled={busy || saving} />
+        </View>
+      </Panel>
+
+      {addOpen ? (
+        <Panel title={t.addMember}>
+          <Field label={t.fullName} value={draft.fullName} onChangeText={(value) => setDraft({ ...draft, fullName: value })} />
+          <Field label={t.role} value={draft.role} onChangeText={(value) => setDraft({ ...draft, role: value })} />
+          <Field label={t.email} value={draft.email} onChangeText={(value) => setDraft({ ...draft, email: value })} keyboardType="email-address" autoCapitalize="none" />
+          <Field label={t.phone} value={draft.phone} onChangeText={(value) => setDraft({ ...draft, phone: value })} keyboardType="phone-pad" />
+          <Pressable style={styles.staffToggleRow} onPress={() => setDraft({ ...draft, sendInvitation: !draft.sendInvitation })}>
+            <Text style={styles.settingsCardTitle}>{t.sendInvite}</Text>
+            <View style={[styles.mobileSwitch, draft.sendInvitation && styles.mobileSwitchActive]}>
+              <View style={[styles.mobileSwitchThumb, draft.sendInvitation && styles.mobileSwitchThumbActive]} />
+            </View>
+          </Pressable>
+          <PrimaryButton label={t.addMember} onPress={() => void createMember()} disabled={busy || saving} />
+        </Panel>
+      ) : null}
+
+      {members.map((member) => {
+        const editing = editId === member.professional.id;
+        const name = makeStaffMemberName(member, t.employee);
+        const isOwner = member.membership.scope === "owner";
+        const access = member.workspaceAccess === "owner" ? t.owner : member.workspaceAccess === "active" ? t.connected : member.workspaceAccess === "invited" ? t.pendingInvites : t.notConnected;
+        return (
+          <Panel key={member.professional.id} title={name}>
+            {editing ? (
+              <View style={styles.sectionStack}>
+                <Field label={t.fullName} value={editDraft.fullName} onChangeText={(value) => setEditDraft({ ...editDraft, fullName: value })} />
+                <Field label={t.role} value={editDraft.role} onChangeText={(value) => setEditDraft({ ...editDraft, role: value })} editable={!isOwner} />
+                <Field label={t.email} value={editDraft.email} onChangeText={(value) => setEditDraft({ ...editDraft, email: value })} keyboardType="email-address" autoCapitalize="none" editable={!isOwner} />
+                <Field label={t.phone} value={editDraft.phone} onChangeText={(value) => setEditDraft({ ...editDraft, phone: value })} keyboardType="phone-pad" />
+                <View style={styles.settingsActionRow}>
+                  <SecondaryButton label={t.cancel} onPress={() => setEditId("")} disabled={saving} />
+                  <PrimaryButton label={t.saveMember} onPress={() => void updateMember(member)} disabled={saving || busy} />
+                </View>
+              </View>
+            ) : (
+              <>
+                <View style={styles.staffMemberCardTop}>
+                  <View style={styles.staffAvatar}>
+                    <Text style={styles.staffAvatarText}>{name.slice(0, 1).toUpperCase()}</Text>
+                  </View>
+                  <View style={styles.staffMemberCardInfo}>
+                    <Text style={styles.settingsCardTitle}>{name}</Text>
+                    <Text style={styles.clientOptionCaption}>{member.membership.role || t.employee} · {access}</Text>
+                    <Text style={styles.clientOptionCaption}>{member.professional.email || member.professional.phone || t.empty}</Text>
+                  </View>
+                  <Pressable style={styles.iconGhostButton} onPress={() => startEdit(member)}>
+                    <Ionicons name="create-outline" size={18} color="#334155" />
+                  </Pressable>
+                </View>
+                <View style={styles.settingsSummaryGrid}>
+                  <View style={styles.settingsSummaryTile}>
+                    <Text style={styles.statValue}>{member.stats?.monthBookings || 0}</Text>
+                    <Text style={styles.statLabel}>{t.monthBookings}</Text>
+                  </View>
+                  <View style={styles.settingsSummaryTile}>
+                    <Text style={styles.statValue}>{member.stats?.upcomingBookings || 0}</Text>
+                    <Text style={styles.statLabel}>{t.upcomingBookings}</Text>
+                  </View>
+                </View>
+                <View style={styles.settingsActionRow}>
+                  <SecondaryButton label={t.scheduleMenu} onPress={onOpenSchedule} />
+                  {!isOwner && member.pendingInvitation ? (
+                    <SecondaryButton label={t.revokeInvite} onPress={() => void revokeInvitation(member.pendingInvitation?.id || "")} disabled={saving || busy} />
+                  ) : !isOwner ? (
+                    <SecondaryButton label={member.workspaceAccess === "invited" ? t.resendInvite : t.invite} onPress={() => void inviteMember(member)} disabled={saving || busy} />
+                  ) : null}
+                </View>
+              </>
+            )}
+          </Panel>
+        );
+      })}
+
+      <Panel title={t.joinRequests}>
+        {staff?.joinRequests?.length ? (
+          staff.joinRequests.map((request) => (
+            <View key={request.id} style={styles.joinRequestCard}>
+              <View>
+                <Text style={styles.settingsMiniTitle}>{request.professional ? `${request.professional.firstName} ${request.professional.lastName}`.trim() || request.professional.email : t.empty}</Text>
+                <Text style={styles.clientOptionCaption}>{request.professional?.email || request.professional?.phone || request.role}</Text>
+              </View>
+              <View style={styles.joinRequestActions}>
+                <Pressable style={styles.joinRejectButton} onPress={() => void resolveJoinRequest(request.id, "reject")} disabled={saving}>
+                  <Ionicons name="close" size={18} color="#DC2626" />
+                </Pressable>
+                <Pressable style={styles.joinApproveButton} onPress={() => void resolveJoinRequest(request.id, "approve")} disabled={saving}>
+                  <Ionicons name="checkmark" size={18} color="#FFFFFF" />
+                </Pressable>
+              </View>
+            </View>
+          ))
+        ) : (
+          <Text style={styles.emptyText}>{t.noJoinRequests}</Text>
+        )}
+      </Panel>
+    </View>
+  );
+}
+
+function StaffScheduleTab({
+  t,
+  language,
+  staff,
+  workspace,
+  busy,
+  onSaveSchedule,
+  onOpenMembers,
+}: {
+  t: Record<string, string>;
+  language: AppLanguage;
+  staff: StaffSnapshot | null;
+  workspace: WorkspaceSnapshot | null;
+  busy: boolean;
+  onSaveSchedule: (member: StaffMemberRecord, workSchedule: WorkScheduleRecord, customSchedule?: Record<string, WorkDayScheduleRecord>, mode?: "fixed" | "flexible") => Promise<boolean>;
+  onOpenMembers: () => void;
+}) {
+  const members = makeStaffMembers(staff, workspace, t);
   const [selectedMemberId, setSelectedMemberId] = useState("");
   const selectedMember = members.find((member) => member.professional.id === selectedMemberId) || members[0] || null;
-  const [draftSchedule, setDraftSchedule] = useState<WorkScheduleRecord>({});
-  const weekDates = getWeekDates(getTodayIso());
+  const [workDraft, setWorkDraft] = useState<WorkScheduleRecord>({});
+  const [customDraft, setCustomDraft] = useState<Record<string, WorkDayScheduleRecord>>({});
+  const [scheduleMode, setScheduleMode] = useState<"fixed" | "flexible">("fixed");
+  const [weekStart, setWeekStart] = useState(getWeekDates(getTodayIso())[0]);
+  const [calendarOpen, setCalendarOpen] = useState(false);
+  const [pickerMonth, setPickerMonth] = useState(getTodayIso().slice(0, 7) + "-01");
+  const weekDates = getWeekDates(weekStart);
   const weekTitle = formatCalendarTitle("week", weekDates[0], language);
+  const monthDates = getMonthGridDates(pickerMonth);
+  const monthTitle = new Intl.DateTimeFormat(language === "en" ? "en-US" : language === "uk" ? "uk-UA" : "ru-RU", { month: "long", year: "numeric" }).format(new Date(`${pickerMonth}T12:00:00`));
 
   useEffect(() => {
     if (!selectedMemberId && members[0]?.professional.id) {
@@ -3790,39 +4249,89 @@ function StaffScheduleTab({
 
   useEffect(() => {
     if (!selectedMember) return;
-    setDraftSchedule(copyWorkSchedule(selectedMember.membership.workSchedule));
-  }, [selectedMember?.professional.id]);
+    setWorkDraft(copyWorkSchedule(selectedMember.membership.workSchedule, weekDates[0]));
+    setCustomDraft({ ...(selectedMember.membership.customSchedule || {}) });
+    setScheduleMode(selectedMember.membership.workScheduleMode || "fixed");
+  }, [selectedMember?.professional.id, weekStart]);
 
-  const weeklyMinutes = staffWeekKeys.reduce((sum, key, index) => {
-    const day = normalizeScheduleDay(draftSchedule[key], weekDates[index] || getTodayIso());
+  const weeklyMinutes = weekDates.reduce((sum, date, index) => {
+    const day = getDraftDay(staffWeekKeys[index], date);
     if (!day.enabled) return sum;
     const breakMinutes = (day.breaks || []).reduce((breakSum, item) => breakSum + Math.max(0, timeToMinutes(item.endTime) - timeToMinutes(item.startTime)), 0);
     return sum + Math.max(0, timeToMinutes(day.endTime) - timeToMinutes(day.startTime) - breakMinutes);
   }, 0);
 
-  function memberName(member: StaffMemberRecord) {
-    return `${member.professional.firstName || ""} ${member.professional.lastName || ""}`.trim() || member.professional.email || t.employee;
+  function getDraftDay(key: string, date: string) {
+    if (scheduleMode === "flexible") {
+      return normalizeScheduleDay(customDraft[date] || selectedMember?.membership.customSchedule?.[date], date);
+    }
+    return normalizeScheduleDay(workDraft[key], date);
   }
 
-  function updateDay(key: string, patch: Partial<WorkDayScheduleRecord>) {
-    const index = staffWeekKeys.indexOf(key);
-    const current = normalizeScheduleDay(draftSchedule[key], weekDates[index] || getTodayIso());
-    const next = {
-      ...current,
-      ...patch,
-    };
+  function normalizeNextDay(current: WorkDayScheduleRecord, patch: Partial<WorkDayScheduleRecord>) {
+    const next = { ...current, ...patch };
     const enabled = patch.enabled ?? next.enabled;
-    setDraftSchedule({
-      ...draftSchedule,
-      [key]: {
-        ...next,
-        enabled,
-        dayType: enabled ? "workday" : "day-off",
-        breakStart: next.breakStart || "13:00",
-        breakEnd: next.breakEnd || "14:00",
-        breaks: next.breakStart && next.breakEnd && next.breakStart < next.breakEnd ? [{ startTime: next.breakStart, endTime: next.breakEnd }] : [],
-      },
+    const breakStart = typeof patch.breakStart === "string" ? patch.breakStart : next.breakStart || next.breaks?.[0]?.startTime || "13:00";
+    const breakEnd = typeof patch.breakEnd === "string" ? patch.breakEnd : next.breakEnd || next.breaks?.[0]?.endTime || "14:00";
+    const breaks = breakStart && breakEnd && breakStart < breakEnd ? [{ startTime: breakStart, endTime: breakEnd }] : [];
+    return {
+      ...next,
+      enabled,
+      dayType: enabled ? "workday" as const : "day-off" as const,
+      breakStart,
+      breakEnd,
+      breaks,
+    };
+  }
+
+  function updateDay(key: string, date: string, patch: Partial<WorkDayScheduleRecord>) {
+    const index = staffWeekKeys.indexOf(key);
+    const current = getDraftDay(key, date);
+    const next = normalizeNextDay(current, patch);
+    if (scheduleMode === "flexible") {
+      setCustomDraft({ ...customDraft, [date]: next });
+      return;
+    }
+    setWorkDraft({ ...workDraft, [key]: next });
+  }
+
+  function applyToWeekdays() {
+    const monday = getDraftDay("monday", weekDates[0]);
+    if (scheduleMode === "flexible") {
+      const next = { ...customDraft };
+      weekDates.slice(0, 5).forEach((date) => {
+        next[date] = { ...monday };
+      });
+      setCustomDraft(next);
+      return;
+    }
+    const next = { ...workDraft };
+    staffWeekKeys.slice(0, 5).forEach((key) => {
+      next[key] = { ...monday };
     });
+    setWorkDraft(next);
+  }
+
+  function clearWeek() {
+    if (scheduleMode === "flexible") {
+      const next = { ...customDraft };
+      weekDates.forEach((date, index) => {
+        next[date] = normalizeNextDay(getDraftDay(staffWeekKeys[index], date), { enabled: false });
+      });
+      setCustomDraft(next);
+      return;
+    }
+    const next = { ...workDraft };
+    staffWeekKeys.forEach((key, index) => {
+      next[key] = normalizeNextDay(getDraftDay(key, weekDates[index]), { enabled: false });
+    });
+    setWorkDraft(next);
+  }
+
+  function shiftMonth(monthDate: string, months: number) {
+    const date = new Date(`${monthDate}T12:00:00`);
+    date.setMonth(date.getMonth() + months);
+    return date.toISOString().slice(0, 10);
   }
 
   if (!selectedMember) {
@@ -3852,13 +4361,14 @@ function StaffScheduleTab({
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.staffMemberRail}>
           {members.map((member) => {
             const active = member.professional.id === selectedMember.professional.id;
+            const name = makeStaffMemberName(member, t.employee);
             return (
               <Pressable key={member.professional.id} style={[styles.staffMemberChip, active && styles.staffMemberChipActive]} onPress={() => setSelectedMemberId(member.professional.id)}>
                 <View style={styles.staffAvatar}>
-                  <Text style={styles.staffAvatarText}>{memberName(member).slice(0, 1).toUpperCase()}</Text>
+                  <Text style={styles.staffAvatarText}>{name.slice(0, 1).toUpperCase()}</Text>
                 </View>
                 <View>
-                  <Text style={[styles.staffMemberName, active && styles.staffMemberNameActive]}>{memberName(member)}</Text>
+                  <Text style={[styles.staffMemberName, active && styles.staffMemberNameActive]}>{name}</Text>
                   <Text style={[styles.staffMemberRole, active && styles.staffMemberNameActive]}>{member.membership.scope === "owner" ? t.owner : member.membership.role || t.employee}</Text>
                 </View>
               </Pressable>
@@ -3867,13 +4377,80 @@ function StaffScheduleTab({
         </ScrollView>
       </Panel>
 
-      <Panel title={t.onThisWeek}>
+      <Panel title={t.chooseWeek}>
         <View style={styles.staffWeekHeader}>
           <Text style={styles.listTitle}>{weekTitle}</Text>
-          <Text style={styles.listCaption}>{memberName(selectedMember)}</Text>
+          <Text style={styles.listCaption}>{makeStaffMemberName(selectedMember, t.employee)}</Text>
+        </View>
+        <View style={styles.staffCalendarControls}>
+          <Pressable style={styles.dateButton} onPress={() => setWeekStart(shiftDate(weekStart, -7))}>
+            <Ionicons name="chevron-back" size={22} color="#0F172A" />
+          </Pressable>
+          <Pressable style={styles.staffWeekPickerButton} onPress={() => { setPickerMonth(weekStart.slice(0, 7) + "-01"); setCalendarOpen(!calendarOpen); }}>
+            <Text style={styles.staffWeekPickerText}>{weekTitle}</Text>
+          </Pressable>
+          <Pressable style={styles.dateButton} onPress={() => setWeekStart(shiftDate(weekStart, 7))}>
+            <Ionicons name="chevron-forward" size={22} color="#0F172A" />
+          </Pressable>
+        </View>
+        <View style={styles.settingsActionRow}>
+          <SecondaryButton label={t.currentWeek} onPress={() => setWeekStart(getWeekDates(getTodayIso())[0])} />
+          <SecondaryButton label={t.teamMembers} onPress={onOpenMembers} />
+        </View>
+        {calendarOpen ? (
+          <View style={styles.staffCalendarBox}>
+            <View style={styles.staffDayHeader}>
+              <Pressable style={styles.iconGhostButton} onPress={() => setPickerMonth(shiftMonth(pickerMonth, -1))}>
+                <Ionicons name="chevron-back" size={18} color="#334155" />
+              </Pressable>
+              <Text style={styles.settingsCardTitle}>{monthTitle}</Text>
+              <Pressable style={styles.iconGhostButton} onPress={() => setPickerMonth(shiftMonth(pickerMonth, 1))}>
+                <Ionicons name="chevron-forward" size={18} color="#334155" />
+              </Pressable>
+            </View>
+            <View style={styles.staffCalendarGrid}>
+              {monthDates.map((date) => {
+                const inMonth = date.slice(0, 7) === pickerMonth.slice(0, 7);
+                const selected = weekDates.includes(date);
+                return (
+                  <Pressable
+                    key={date}
+                    style={[styles.staffCalendarDay, !inMonth && styles.staffCalendarDayMuted, selected && styles.staffCalendarDayActive]}
+                    onPress={() => {
+                      setWeekStart(getWeekDates(date)[0]);
+                      setCalendarOpen(false);
+                    }}
+                  >
+                    <Text style={[styles.staffCalendarDayText, selected && styles.staffCalendarDayTextActive]}>{Number(date.slice(8, 10))}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+        ) : null}
+      </Panel>
+
+      <Panel title={t.scheduleMenu}>
+        <View style={styles.servicesModeRow}>
+          {[
+            { id: "fixed", label: t.repeatingSchedule },
+            { id: "flexible", label: t.oneWeekSchedule },
+          ].map((item) => {
+            const active = scheduleMode === item.id;
+            return (
+              <Pressable key={item.id} style={[styles.servicesModeButton, active && styles.servicesModeButtonActive]} onPress={() => setScheduleMode(item.id as "fixed" | "flexible")}>
+                <Text style={[styles.servicesModeText, active && styles.servicesModeTextActive]}>{item.label}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+        <View style={styles.settingsActionRow}>
+          <SecondaryButton label={t.applyToWeekdays} onPress={applyToWeekdays} />
+          <SecondaryButton label={t.clearWeek} onPress={clearWeek} />
         </View>
         {staffWeekKeys.map((key, index) => {
-          const day = normalizeScheduleDay(draftSchedule[key], weekDates[index] || getTodayIso());
+          const date = weekDates[index] || getTodayIso();
+          const day = getDraftDay(key, date);
           const active = day.enabled;
           return (
             <View key={key} style={styles.staffDayCard}>
@@ -3882,32 +4459,32 @@ function StaffScheduleTab({
                   <Text style={styles.staffDayTitle}>{formatShortDate(weekDates[index] || getTodayIso(), language)}</Text>
                   <Text style={styles.clientOptionCaption}>{active ? t.workingDay : t.dayOff}</Text>
                 </View>
-                <Pressable style={[styles.mobileSwitch, active && styles.mobileSwitchActive]} onPress={() => updateDay(key, { enabled: !active })}>
+                <Pressable style={[styles.mobileSwitch, active && styles.mobileSwitchActive]} onPress={() => updateDay(key, date, { enabled: !active })}>
                   <View style={[styles.mobileSwitchThumb, active && styles.mobileSwitchThumbActive]} />
                 </Pressable>
               </View>
               {active ? (
                 <View style={styles.staffTimeGrid}>
-                  <StaffTimeInput label={t.workFrom} value={day.startTime} onChangeText={(value) => updateDay(key, { startTime: value })} />
-                  <StaffTimeInput label={t.workTo} value={day.endTime} onChangeText={(value) => updateDay(key, { endTime: value })} />
-                  <StaffTimeInput label={t.breakFrom} value={day.breakStart || day.breaks?.[0]?.startTime || "13:00"} onChangeText={(value) => updateDay(key, { breakStart: value })} />
-                  <StaffTimeInput label={t.breakTo} value={day.breakEnd || day.breaks?.[0]?.endTime || "14:00"} onChangeText={(value) => updateDay(key, { breakEnd: value })} />
+                  <StaffTimeInput label={t.workFrom} value={day.startTime} onChangeText={(value) => updateDay(key, date, { startTime: value })} />
+                  <StaffTimeInput label={t.workTo} value={day.endTime} onChangeText={(value) => updateDay(key, date, { endTime: value })} />
+                  <StaffTimeInput label={t.breakFrom} value={day.breakStart || day.breaks?.[0]?.startTime || "13:00"} onChangeText={(value) => updateDay(key, date, { breakStart: value })} />
+                  <StaffTimeInput label={t.breakTo} value={day.breakEnd || day.breaks?.[0]?.endTime || "14:00"} onChangeText={(value) => updateDay(key, date, { breakEnd: value })} />
                 </View>
               ) : null}
             </View>
           );
         })}
-        <PrimaryButton label={t.saveSchedule} onPress={() => void onSaveSchedule(selectedMember, draftSchedule)} disabled={busy} />
+        <PrimaryButton label={t.saveSchedule} onPress={() => void onSaveSchedule(selectedMember, workDraft, customDraft, scheduleMode)} disabled={busy} />
       </Panel>
     </View>
   );
 }
 
-function copyWorkSchedule(schedule: WorkScheduleRecord | undefined) {
+function copyWorkSchedule(schedule: WorkScheduleRecord | undefined, anchorDate = getTodayIso()) {
   const source = schedule || {};
   return Object.fromEntries(
     staffWeekKeys.map((key, index) => {
-      const date = shiftDate(getWeekDates(getTodayIso())[0], index);
+      const date = shiftDate(getWeekDates(anchorDate)[0], index);
       return [key, normalizeScheduleDay(source[key], date)];
     })
   ) as WorkScheduleRecord;
@@ -6618,6 +7195,37 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: "#F3E8FF",
   },
+  staffLocalNav: {
+    flexDirection: "row",
+    gap: 8,
+    padding: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    backgroundColor: "#FFFFFF",
+  },
+  staffLocalNavItem: {
+    flex: 1,
+    minHeight: 46,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 7,
+    borderRadius: 9,
+    backgroundColor: "#F8FAFC",
+  },
+  staffLocalNavItemActive: {
+    backgroundColor: "#241642",
+  },
+  staffLocalNavText: {
+    color: "#64748B",
+    fontSize: 12,
+    fontWeight: "900",
+    textAlign: "center",
+  },
+  staffLocalNavTextActive: {
+    color: "#FFFFFF",
+  },
   staffSummaryRow: {
     flexDirection: "row",
     gap: 10,
@@ -6675,10 +7283,88 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "800",
   },
+  staffMemberCardTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  staffMemberCardInfo: {
+    flex: 1,
+    minWidth: 0,
+  },
+  staffToggleRow: {
+    minHeight: 56,
+    padding: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    backgroundColor: "#F8FAFC",
+  },
   staffWeekHeader: {
     paddingBottom: 8,
     borderBottomWidth: 1,
     borderBottomColor: "#E2E8F0",
+  },
+  staffCalendarControls: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  staffWeekPickerButton: {
+    flex: 1,
+    minHeight: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#CBD5E1",
+    backgroundColor: "#FFFFFF",
+  },
+  staffWeekPickerText: {
+    color: "#0F172A",
+    fontSize: 14,
+    fontWeight: "900",
+    textAlign: "center",
+  },
+  staffCalendarBox: {
+    gap: 12,
+    padding: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    backgroundColor: "#F8FAFC",
+  },
+  staffCalendarGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+  },
+  staffCalendarDay: {
+    width: 38,
+    height: 38,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 10,
+    backgroundColor: "#EEF2FF",
+  },
+  staffCalendarDayMuted: {
+    opacity: 0.35,
+  },
+  staffCalendarDayActive: {
+    backgroundColor: "#6D4AFF",
+  },
+  staffCalendarDayText: {
+    color: "#0F172A",
+    fontSize: 13,
+    fontWeight: "900",
+  },
+  staffCalendarDayTextActive: {
+    color: "#FFFFFF",
   },
   staffDayCard: {
     paddingVertical: 12,
@@ -6878,6 +7564,7 @@ const styles = StyleSheet.create({
   },
   settingsActionRow: {
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: 10,
   },
   settingsSummaryGrid: {

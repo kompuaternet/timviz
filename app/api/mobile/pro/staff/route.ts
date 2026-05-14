@@ -1,7 +1,15 @@
 import { NextResponse } from "next/server";
 import { getMobileProfessionalId } from "../_auth";
 import { getBusinessStaffSnapshot } from "../../../../../lib/pro-staff";
-import { getWorkspaceSnapshot, updateBusinessScheduleForProfessional } from "../../../../../lib/pro-data";
+import {
+  createManualStaffMember,
+  createStaffInvitation,
+  getWorkspaceSnapshot,
+  revokeStaffInvitation,
+  resolveJoinRequestForOwner,
+  updateBusinessScheduleForProfessional,
+  updateStaffMemberByOwner
+} from "../../../../../lib/pro-data";
 
 export async function GET(request: Request) {
   try {
@@ -68,15 +76,60 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    await updateBusinessScheduleForProfessional({
-      professionalId,
-      targetProfessionalId: typeof body.targetProfessionalId === "string" ? body.targetProfessionalId : undefined,
-      workScheduleMode: body.workScheduleMode,
-      workSchedule: body.workSchedule,
-      customSchedule: body.customSchedule || {}
-    });
+    const action = typeof body.action === "string" ? body.action : "saveSchedule";
 
-    return NextResponse.json({ ok: true });
+    if (action === "createMember") {
+      await createManualStaffMember({
+        ownerProfessionalId: professionalId,
+        firstName: String(body.firstName || ""),
+        lastName: typeof body.lastName === "string" ? body.lastName : "",
+        role: typeof body.role === "string" ? body.role : "",
+        email: typeof body.email === "string" ? body.email : "",
+        phone: typeof body.phone === "string" ? body.phone : "",
+        sendInvitation: body.sendInvitation === true,
+        request
+      });
+    } else if (action === "updateMember") {
+      await updateStaffMemberByOwner({
+        ownerProfessionalId: professionalId,
+        memberProfessionalId: String(body.memberProfessionalId || ""),
+        firstName: String(body.firstName || ""),
+        lastName: typeof body.lastName === "string" ? body.lastName : "",
+        role: typeof body.role === "string" ? body.role : "",
+        email: typeof body.email === "string" ? body.email : "",
+        phone: typeof body.phone === "string" ? body.phone : ""
+      });
+    } else if (action === "inviteMember") {
+      await createStaffInvitation({
+        ownerProfessionalId: professionalId,
+        memberProfessionalId: typeof body.memberProfessionalId === "string" ? body.memberProfessionalId : undefined,
+        email: String(body.email || ""),
+        role: String(body.role || ""),
+        request
+      });
+    } else if (action === "revokeInvitation") {
+      await revokeStaffInvitation({
+        ownerProfessionalId: professionalId,
+        invitationId: String(body.invitationId || "")
+      });
+    } else if (action === "resolveJoinRequest") {
+      await resolveJoinRequestForOwner({
+        ownerProfessionalId: professionalId,
+        requestId: String(body.requestId || ""),
+        action: body.requestAction === "reject" ? "reject" : "approve"
+      });
+    } else {
+      await updateBusinessScheduleForProfessional({
+        professionalId,
+        targetProfessionalId: typeof body.targetProfessionalId === "string" ? body.targetProfessionalId : undefined,
+        workScheduleMode: body.workScheduleMode,
+        workSchedule: body.workSchedule,
+        customSchedule: body.customSchedule || {}
+      });
+    }
+
+    const snapshot = await getBusinessStaffSnapshot(professionalId);
+    return NextResponse.json({ ok: true, staff: snapshot });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to save staff schedule.";
     return NextResponse.json({ error: message }, { status: 400 });
