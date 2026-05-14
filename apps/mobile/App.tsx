@@ -26,7 +26,7 @@ import {
 
 type AppLanguage = "uk" | "ru" | "en";
 type AuthMode = "login" | "register";
-type AppTab = "calendar" | "services" | "clients" | "telegram" | "settings";
+type AppTab = "calendar" | "services" | "clients" | "staff" | "settings";
 type CalendarViewMode = "day" | "threeDays" | "week" | "month";
 
 type MobileSession = {
@@ -170,6 +170,41 @@ type WorkspaceSnapshot = {
   };
 };
 
+type StaffMemberRecord = {
+  professional: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email?: string;
+    phone?: string;
+    avatarUrl?: string | null;
+  };
+  membership: {
+    role: string;
+    scope: "owner" | "member";
+    workScheduleMode: "fixed" | "flexible";
+    workSchedule: WorkScheduleRecord;
+    customSchedule?: Record<string, WorkDayScheduleRecord>;
+  };
+  stats?: {
+    monthBookings?: number;
+    upcomingBookings?: number;
+  };
+};
+
+type StaffSnapshot = {
+  business: {
+    id: string;
+    name: string;
+    currency?: string;
+  };
+  summary?: {
+    totalPeople?: number;
+    activeEmployees?: number;
+  };
+  members: StaffMemberRecord[];
+};
+
 type ServiceDraftState = {
   name: string;
   category: string;
@@ -249,7 +284,7 @@ const copy = {
     calendar: "Календар",
     clients: "Клієнти",
     services: "Послуги",
-    telegram: "Telegram",
+    staff: "Співробітники",
     settings: "Налаштування",
     signOut: "Вийти",
     requiredTitle: "Потрібні дані",
@@ -300,6 +335,19 @@ const copy = {
     setupBooking: "Увімкніть онлайн-запис",
     setupAddress: "Додайте адресу",
     setupTelegram: "Підключіть Telegram",
+    staffSchedule: "Графік змін",
+    staffScheduleHint: "Керуйте робочими днями співробітників так само, як у кабінеті на сайті.",
+    onThisWeek: "На цьому тижні",
+    saveSchedule: "Зберегти графік",
+    workFrom: "З",
+    workTo: "До",
+    breakFrom: "Перерва з",
+    breakTo: "Перерва до",
+    owner: "Власник",
+    employee: "Співробітник",
+    hoursShort: "год",
+    workingDay: "Робочий день",
+    dayOff: "Вихідний",
     bookingPage: "Картка компанії",
     bookingPageText: "Посилання для клієнтів і перемикач онлайн-запису.",
     onlineBookingOn: "Онлайн-запис увімкнено",
@@ -385,7 +433,7 @@ const copy = {
     calendar: "Календарь",
     clients: "Клиенты",
     services: "Услуги",
-    telegram: "Telegram",
+    staff: "Сотрудники",
     settings: "Настройки",
     signOut: "Выйти",
     requiredTitle: "Нужны данные",
@@ -436,6 +484,19 @@ const copy = {
     setupBooking: "Включите онлайн-запись",
     setupAddress: "Добавьте адрес",
     setupTelegram: "Подключите Telegram",
+    staffSchedule: "График смен",
+    staffScheduleHint: "Управляйте рабочими днями сотрудников так же, как в кабинете на сайте.",
+    onThisWeek: "На этой неделе",
+    saveSchedule: "Сохранить график",
+    workFrom: "С",
+    workTo: "До",
+    breakFrom: "Перерыв с",
+    breakTo: "Перерыв до",
+    owner: "Владелец",
+    employee: "Сотрудник",
+    hoursShort: "ч",
+    workingDay: "Рабочий день",
+    dayOff: "Выходной",
     bookingPage: "Карточка компании",
     bookingPageText: "Ссылка для клиентов и переключатель онлайн-записи.",
     onlineBookingOn: "Онлайн-запись включена",
@@ -521,7 +582,7 @@ const copy = {
     calendar: "Calendar",
     clients: "Clients",
     services: "Services",
-    telegram: "Telegram",
+    staff: "Staff",
     settings: "Settings",
     signOut: "Sign out",
     requiredTitle: "Missing details",
@@ -572,6 +633,19 @@ const copy = {
     setupBooking: "Enable online booking",
     setupAddress: "Add address",
     setupTelegram: "Connect Telegram",
+    staffSchedule: "Shift schedule",
+    staffScheduleHint: "Manage team working days like in the web workspace.",
+    onThisWeek: "This week",
+    saveSchedule: "Save schedule",
+    workFrom: "From",
+    workTo: "To",
+    breakFrom: "Break from",
+    breakTo: "Break to",
+    owner: "Owner",
+    employee: "Employee",
+    hoursShort: "h",
+    workingDay: "Working day",
+    dayOff: "Day off",
     bookingPage: "Company page",
     bookingPageText: "Client link and online booking switch.",
     onlineBookingOn: "Online booking is on",
@@ -915,6 +989,7 @@ export default function App() {
   const [calendar, setCalendar] = useState<CalendarSnapshot | null>(null);
   const [clients, setClients] = useState<ClientRecord[]>([]);
   const [serviceCatalog, setServiceCatalog] = useState<ServiceCatalogCategory[]>([]);
+  const [staffSnapshot, setStaffSnapshot] = useState<StaffSnapshot | null>(null);
   const [activeTab, setActiveTab] = useState<AppTab>("calendar");
   const [selectedDate, setSelectedDate] = useState(getTodayIso());
   const [loadingSession, setLoadingSession] = useState(true);
@@ -1001,7 +1076,7 @@ export default function App() {
     setRefreshing(true);
     try {
       const headers = { Authorization: `Bearer ${currentSession.token}` };
-      const [workspaceResult, calendarResult, clientsResult, servicesResult] = await Promise.all([
+      const [workspaceResult, calendarResult, clientsResult, servicesResult, staffResult] = await Promise.all([
         fetch(`${API_BASE_URL}/api/mobile/pro/workspace/${currentSession.professionalId}`, { headers }).then((item) =>
           item.json()
         ),
@@ -1010,17 +1085,20 @@ export default function App() {
         ),
         fetch(`${API_BASE_URL}/api/mobile/pro/clients`, { headers }).then((item) => item.json()),
         fetch(`${API_BASE_URL}/api/mobile/pro/services`, { headers }).then((item) => item.json()),
+        fetch(`${API_BASE_URL}/api/mobile/pro/staff`, { headers }).then((item) => item.json().catch(() => null)).catch(() => null),
       ]);
 
       if (workspaceResult?.error) throw new Error(workspaceResult.error);
       if (calendarResult?.error) throw new Error(calendarResult.error);
       if (clientsResult?.error) throw new Error(clientsResult.error);
       if (servicesResult?.error) throw new Error(servicesResult.error);
+      if (staffResult?.error) throw new Error(staffResult.error);
 
       setWorkspace(workspaceResult);
       setCalendar(calendarResult);
       setClients(Array.isArray(clientsResult.clients) ? clientsResult.clients : []);
       setServiceCatalog(Array.isArray(servicesResult.catalog) ? servicesResult.catalog : []);
+      setStaffSnapshot(staffResult || null);
       setVisitDraft((current) => ({
         ...current,
         customerName: safeText(current.customerName),
@@ -1124,6 +1202,7 @@ export default function App() {
     setCalendar(null);
     setClients([]);
     setServiceCatalog([]);
+    setStaffSnapshot(null);
     setBusy(false);
   }
 
@@ -1415,6 +1494,28 @@ export default function App() {
     }
   }
 
+  async function saveStaffSchedule(member: StaffMemberRecord, workSchedule: WorkScheduleRecord) {
+    setBusy(true);
+    try {
+      await apiFetch("/api/mobile/pro/staff", {
+        method: "POST",
+        body: JSON.stringify({
+          targetProfessionalId: member.professional.id,
+          workScheduleMode: member.membership.workScheduleMode || "fixed",
+          workSchedule,
+          customSchedule: member.membership.customSchedule || {},
+        }),
+      });
+      await refreshAll();
+      return true;
+    } catch (error) {
+      Alert.alert(t.staffSchedule, error instanceof Error ? error.message : t.staffSchedule);
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function removeService(serviceId: string) {
     setBusy(true);
     try {
@@ -1481,7 +1582,7 @@ export default function App() {
             setActiveTab("calendar");
             setSelectedDate(item.appointmentDate);
           }}
-          onTelegramPress={() => setActiveTab("telegram")}
+          onTelegramPress={() => setActiveTab("settings")}
           onSettingsPress={() => setActiveTab("settings")}
           onSignOut={signOut}
         />
@@ -1553,7 +1654,16 @@ export default function App() {
                 busy={busy}
               />
             ) : null}
-            {activeTab === "telegram" ? <TelegramTab t={t} workspace={workspace} /> : null}
+            {activeTab === "staff" ? (
+              <StaffScheduleTab
+                t={t}
+                language={language}
+                staff={staffSnapshot}
+                workspace={workspace}
+                busy={busy}
+                onSaveSchedule={saveStaffSchedule}
+              />
+            ) : null}
             {activeTab === "settings" ? (
               <SettingsTab
                 t={t}
@@ -3137,7 +3247,7 @@ function BottomNavigation({
     { tab: "calendar", icon: "home-outline", label: t.home },
     { tab: "services", icon: "pricetag-outline", label: t.services },
     { tab: "clients", icon: "id-card-outline", label: t.clients },
-    { tab: "telegram", icon: "people-outline", label: t.telegram },
+    { tab: "staff", icon: "people-outline", label: t.staff },
     { tab: "settings", icon: "settings-outline", label: t.settings },
   ];
 
@@ -3447,20 +3557,189 @@ function ClientsTab({
   );
 }
 
-function TelegramTab({ t, workspace }: { t: Record<string, string>; workspace: WorkspaceSnapshot | null }) {
-  const connected = workspace?.telegram?.connected;
+const staffWeekKeys = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"];
+
+function StaffScheduleTab({
+  t,
+  language,
+  staff,
+  workspace,
+  busy,
+  onSaveSchedule,
+}: {
+  t: Record<string, string>;
+  language: AppLanguage;
+  staff: StaffSnapshot | null;
+  workspace: WorkspaceSnapshot | null;
+  busy: boolean;
+  onSaveSchedule: (member: StaffMemberRecord, workSchedule: WorkScheduleRecord) => Promise<boolean>;
+}) {
+  const members = staff?.members?.length
+    ? staff.members
+    : workspace
+      ? [
+          {
+            professional: workspace.professional,
+            membership: {
+              role: t.owner,
+              scope: "owner" as const,
+              workScheduleMode: workspace.memberSchedule?.workScheduleMode === "flexible" ? "flexible" as const : "fixed" as const,
+              workSchedule: workspace.memberSchedule?.workSchedule || {},
+              customSchedule: workspace.memberSchedule?.customSchedule || {},
+            },
+          },
+        ]
+      : [];
+  const [selectedMemberId, setSelectedMemberId] = useState("");
+  const selectedMember = members.find((member) => member.professional.id === selectedMemberId) || members[0] || null;
+  const [draftSchedule, setDraftSchedule] = useState<WorkScheduleRecord>({});
+  const weekDates = getWeekDates(getTodayIso());
+  const weekTitle = formatCalendarTitle("week", weekDates[0], language);
+
+  useEffect(() => {
+    if (!selectedMemberId && members[0]?.professional.id) {
+      setSelectedMemberId(members[0].professional.id);
+    }
+  }, [members, selectedMemberId]);
+
+  useEffect(() => {
+    if (!selectedMember) return;
+    setDraftSchedule(copyWorkSchedule(selectedMember.membership.workSchedule));
+  }, [selectedMember?.professional.id]);
+
+  const weeklyMinutes = staffWeekKeys.reduce((sum, key, index) => {
+    const day = normalizeScheduleDay(draftSchedule[key], weekDates[index] || getTodayIso());
+    if (!day.enabled) return sum;
+    const breakMinutes = (day.breaks || []).reduce((breakSum, item) => breakSum + Math.max(0, timeToMinutes(item.endTime) - timeToMinutes(item.startTime)), 0);
+    return sum + Math.max(0, timeToMinutes(day.endTime) - timeToMinutes(day.startTime) - breakMinutes);
+  }, 0);
+
+  function memberName(member: StaffMemberRecord) {
+    return `${member.professional.firstName || ""} ${member.professional.lastName || ""}`.trim() || member.professional.email || t.employee;
+  }
+
+  function updateDay(key: string, patch: Partial<WorkDayScheduleRecord>) {
+    const index = staffWeekKeys.indexOf(key);
+    const current = normalizeScheduleDay(draftSchedule[key], weekDates[index] || getTodayIso());
+    const next = {
+      ...current,
+      ...patch,
+    };
+    const enabled = patch.enabled ?? next.enabled;
+    setDraftSchedule({
+      ...draftSchedule,
+      [key]: {
+        ...next,
+        enabled,
+        dayType: enabled ? "workday" : "day-off",
+        breakStart: next.breakStart || "13:00",
+        breakEnd: next.breakEnd || "14:00",
+        breaks: next.breakStart && next.breakEnd && next.breakStart < next.breakEnd ? [{ startTime: next.breakStart, endTime: next.breakEnd }] : [],
+      },
+    });
+  }
+
+  if (!selectedMember) {
+    return (
+      <View style={styles.sectionStack}>
+        <Panel title={t.staffSchedule}>
+          <Text style={styles.emptyText}>{t.empty}</Text>
+        </Panel>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.sectionStack}>
-      <Panel title="Telegram">
-        <View style={styles.telegramStatus}>
-          <View style={[styles.telegramDot, connected ? styles.telegramDotConnected : styles.telegramDotMuted]} />
-          <View>
-            <Text style={styles.listTitle}>{connected ? t.connected : t.notConnected}</Text>
-            <Text style={styles.listCaption}>{connected ? workspace?.telegram?.chatId : "Timviz bot"}</Text>
+      <Panel title={t.staffSchedule}>
+        <Text style={styles.emptyText}>{t.staffScheduleHint}</Text>
+        <View style={styles.staffSummaryRow}>
+          <View style={styles.staffSummaryTile}>
+            <Text style={styles.statValue}>{members.length}</Text>
+            <Text style={styles.statLabel}>{t.staff}</Text>
+          </View>
+          <View style={styles.staffSummaryTile}>
+            <Text style={styles.statValue}>{Math.round(weeklyMinutes / 60)}</Text>
+            <Text style={styles.statLabel}>{t.hoursShort}</Text>
           </View>
         </View>
-        <Text style={styles.emptyText}>{t.telegramHint}</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.staffMemberRail}>
+          {members.map((member) => {
+            const active = member.professional.id === selectedMember.professional.id;
+            return (
+              <Pressable key={member.professional.id} style={[styles.staffMemberChip, active && styles.staffMemberChipActive]} onPress={() => setSelectedMemberId(member.professional.id)}>
+                <View style={styles.staffAvatar}>
+                  <Text style={styles.staffAvatarText}>{memberName(member).slice(0, 1).toUpperCase()}</Text>
+                </View>
+                <View>
+                  <Text style={[styles.staffMemberName, active && styles.staffMemberNameActive]}>{memberName(member)}</Text>
+                  <Text style={[styles.staffMemberRole, active && styles.staffMemberNameActive]}>{member.membership.scope === "owner" ? t.owner : member.membership.role || t.employee}</Text>
+                </View>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
       </Panel>
+
+      <Panel title={t.onThisWeek}>
+        <View style={styles.staffWeekHeader}>
+          <Text style={styles.listTitle}>{weekTitle}</Text>
+          <Text style={styles.listCaption}>{memberName(selectedMember)}</Text>
+        </View>
+        {staffWeekKeys.map((key, index) => {
+          const day = normalizeScheduleDay(draftSchedule[key], weekDates[index] || getTodayIso());
+          const active = day.enabled;
+          return (
+            <View key={key} style={styles.staffDayCard}>
+              <View style={styles.staffDayHeader}>
+                <View>
+                  <Text style={styles.staffDayTitle}>{formatShortDate(weekDates[index] || getTodayIso(), language)}</Text>
+                  <Text style={styles.clientOptionCaption}>{active ? t.workingDay : t.dayOff}</Text>
+                </View>
+                <Pressable style={[styles.mobileSwitch, active && styles.mobileSwitchActive]} onPress={() => updateDay(key, { enabled: !active })}>
+                  <View style={[styles.mobileSwitchThumb, active && styles.mobileSwitchThumbActive]} />
+                </Pressable>
+              </View>
+              {active ? (
+                <View style={styles.staffTimeGrid}>
+                  <StaffTimeInput label={t.workFrom} value={day.startTime} onChangeText={(value) => updateDay(key, { startTime: value })} />
+                  <StaffTimeInput label={t.workTo} value={day.endTime} onChangeText={(value) => updateDay(key, { endTime: value })} />
+                  <StaffTimeInput label={t.breakFrom} value={day.breakStart || day.breaks?.[0]?.startTime || "13:00"} onChangeText={(value) => updateDay(key, { breakStart: value })} />
+                  <StaffTimeInput label={t.breakTo} value={day.breakEnd || day.breaks?.[0]?.endTime || "14:00"} onChangeText={(value) => updateDay(key, { breakEnd: value })} />
+                </View>
+              ) : null}
+            </View>
+          );
+        })}
+        <PrimaryButton label={t.saveSchedule} onPress={() => void onSaveSchedule(selectedMember, draftSchedule)} disabled={busy} />
+      </Panel>
+    </View>
+  );
+}
+
+function copyWorkSchedule(schedule: WorkScheduleRecord | undefined) {
+  const source = schedule || {};
+  return Object.fromEntries(
+    staffWeekKeys.map((key, index) => {
+      const date = shiftDate(getWeekDates(getTodayIso())[0], index);
+      return [key, normalizeScheduleDay(source[key], date)];
+    })
+  ) as WorkScheduleRecord;
+}
+
+function StaffTimeInput({
+  label,
+  value,
+  onChangeText,
+}: {
+  label: string;
+  value: string;
+  onChangeText: (value: string) => void;
+}) {
+  return (
+    <View style={styles.staffTimeField}>
+      <Text style={styles.staffTimeLabel}>{label}</Text>
+      <TextInput value={value} onChangeText={onChangeText} keyboardType="numbers-and-punctuation" style={styles.staffTimeInput} />
     </View>
   );
 }
@@ -5776,6 +6055,111 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 8,
     backgroundColor: "#F3E8FF",
+  },
+  staffSummaryRow: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  staffSummaryTile: {
+    flex: 1,
+    minHeight: 74,
+    padding: 12,
+    borderRadius: 14,
+    backgroundColor: "#F8FAFC",
+  },
+  staffMemberRail: {
+    gap: 10,
+    paddingVertical: 2,
+  },
+  staffMemberChip: {
+    minWidth: 190,
+    padding: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    backgroundColor: "#FFFFFF",
+  },
+  staffMemberChipActive: {
+    borderColor: "#6D4AFF",
+    backgroundColor: "#F5F3FF",
+  },
+  staffAvatar: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#EDE9FE",
+  },
+  staffAvatarText: {
+    color: "#6D4AFF",
+    fontSize: 16,
+    fontWeight: "900",
+  },
+  staffMemberName: {
+    color: "#0F172A",
+    fontSize: 14,
+    fontWeight: "900",
+  },
+  staffMemberNameActive: {
+    color: "#4C1D95",
+  },
+  staffMemberRole: {
+    marginTop: 2,
+    color: "#64748B",
+    fontSize: 12,
+    fontWeight: "800",
+  },
+  staffWeekHeader: {
+    paddingBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E2E8F0",
+  },
+  staffDayCard: {
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E2E8F0",
+  },
+  staffDayHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  staffDayTitle: {
+    color: "#0F172A",
+    fontSize: 15,
+    fontWeight: "900",
+    textTransform: "capitalize",
+  },
+  staffTimeGrid: {
+    marginTop: 10,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+  },
+  staffTimeField: {
+    width: "47%",
+    gap: 5,
+  },
+  staffTimeLabel: {
+    color: "#64748B",
+    fontSize: 11,
+    fontWeight: "900",
+  },
+  staffTimeInput: {
+    height: 44,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#CBD5E1",
+    color: "#0F172A",
+    fontSize: 15,
+    fontWeight: "800",
+    backgroundColor: "#FFFFFF",
   },
   telegramStatus: {
     flexDirection: "row",
