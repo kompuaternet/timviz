@@ -3984,6 +3984,7 @@ function CalendarTimeline({
         const isNarrowCard = blockWidth < 92;
         const isTightCard = height < 64 || isNarrowCard;
         const isTinyCard = height < 44 || blockWidth < 68;
+        const isCompactCard = compact || isTightCard;
         const timeLabel = isTinyCard ? appointment.startTime : `${appointment.startTime} - ${appointment.endTime}`;
 
         return (
@@ -3991,7 +3992,7 @@ function CalendarTimeline({
             key={appointment.id}
             style={[
               styles.appointmentBlock,
-              isTightCard && styles.appointmentBlockTight,
+              isCompactCard && styles.appointmentBlockTight,
               {
                 top,
                 height,
@@ -4003,30 +4004,30 @@ function CalendarTimeline({
             onPress={() => onAppointmentPress(appointment)}
           >
             <Pressable
-              style={[styles.appointmentDeleteButton, isTightCard && styles.appointmentDeleteButtonTight]}
+              style={[styles.appointmentDeleteButton, isCompactCard && styles.appointmentDeleteButtonTight]}
               onPress={(event) => {
                 event.stopPropagation();
                 onAppointmentDelete(appointment);
               }}
             >
-              <Ionicons name="close" size={isTightCard ? 11 : 13} color="#F43F5E" />
+              <Ionicons name="close" size={isCompactCard ? 11 : 13} color="#F43F5E" />
             </Pressable>
             <Pressable
-              style={[styles.appointmentMoveButton, isTightCard && styles.appointmentMoveButtonTight]}
+              style={[styles.appointmentMoveButton, isCompactCard && styles.appointmentMoveButtonTight]}
               onPress={(event) => {
                 event.stopPropagation();
                 onAppointmentMove(appointment);
               }}
             >
-              <Ionicons name="move" size={isTightCard ? 10 : 12} color="#475569" />
+              <Ionicons name="move" size={isCompactCard ? 10 : 12} color="#475569" />
             </Pressable>
-            <Text style={[styles.appointmentTime, isTightCard && styles.appointmentTimeTight]} numberOfLines={1} ellipsizeMode="tail" adjustsFontSizeToFit minimumFontScale={0.82}>
+            <Text style={[styles.appointmentTime, isCompactCard && styles.appointmentTimeTight]} numberOfLines={1} ellipsizeMode="tail" adjustsFontSizeToFit minimumFontScale={0.82}>
               {timeLabel}
             </Text>
-            <Text style={[styles.appointmentClient, isTightCard && styles.appointmentClientTight]} numberOfLines={isTightCard ? 1 : 2} ellipsizeMode="tail">
+            <Text style={[styles.appointmentClient, isCompactCard && styles.appointmentClientTight]} numberOfLines={isCompactCard ? 1 : 2} ellipsizeMode="tail">
               {appointment.customerName || "Клиент"}
             </Text>
-            {!isTightCard ? (
+            {!isCompactCard ? (
               <Text style={styles.appointmentService} numberOfLines={1}>
                 {appointment.serviceName}
               </Text>
@@ -8001,6 +8002,7 @@ const styles = StyleSheet.create({
     lineHeight: 12,
   },
   appointmentClient: {
+    maxWidth: "100%",
     marginTop: 2,
     color: "#0F172A",
     fontSize: 14,
