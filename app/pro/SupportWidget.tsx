@@ -19,6 +19,14 @@ type ChatMessage = {
   createdAt?: string;
 };
 
+function getStoredSupportTicketId() {
+  if (typeof window === "undefined" || typeof window.localStorage?.getItem !== "function") {
+    return "";
+  }
+
+  return window.localStorage.getItem("rezervo-support-ticket-id") || "";
+}
+
 export default function SupportWidget({
   isOpen,
   onOpen,
@@ -48,7 +56,7 @@ export default function SupportWidget({
   }, []);
 
   useEffect(() => {
-    const storedTicketId = window.localStorage.getItem("rezervo-support-ticket-id") || "";
+    const storedTicketId = getStoredSupportTicketId();
     setTicketId(storedTicketId);
 
     setMessages((current) =>

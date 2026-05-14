@@ -243,6 +243,18 @@ const MIN_BOOKING_CARD_HEIGHT = 64;
 const MOBILE_MIN_BOOKING_CARD_HEIGHT = 86;
 const SNAPSHOT_CACHE_LIMIT = 30;
 
+function getCalendarStorage() {
+  if (
+    typeof window === "undefined" ||
+    typeof window.localStorage?.getItem !== "function" ||
+    typeof window.localStorage?.setItem !== "function"
+  ) {
+    return null;
+  }
+
+  return window.localStorage;
+}
+
 const CALENDAR_TEXT: Record<AppLanguage, {
   today: string;
   day: string;
@@ -1275,11 +1287,7 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
 
   const [selectedDate, setSelectedDate] = useState(initialDate);
   const [viewMode, setViewMode] = useState<CalendarViewMode>(() => {
-    if (typeof window === "undefined") {
-      return "day";
-    }
-
-    const storedViewMode = window.localStorage.getItem("rezervo-pro-calendar-view-mode");
+    const storedViewMode = getCalendarStorage()?.getItem("rezervo-pro-calendar-view-mode");
     if (
       storedViewMode === "day" ||
       storedViewMode === "threeDay" ||
@@ -1344,16 +1352,17 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
   const [isDeletingAppointment, setIsDeletingAppointment] = useState(false);
   const [isMobileViewport, setIsMobileViewport] = useState(false);
   const [isOffHoursCompressed, setIsOffHoursCompressed] = useState<boolean>(() => {
-    if (typeof window === "undefined") {
-      return true;
-    }
-    return window.localStorage.getItem("rezervo-pro-calendar-offhours-compressed") !== "0";
+    return getCalendarStorage()?.getItem("rezervo-pro-calendar-offhours-compressed") !== "0";
   });
   const [mobileTeamButtonPosition, setMobileTeamButtonPosition] = useState<{ top: number; left: number } | null>(null);
   const [teamQuery, setTeamQuery] = useState("");
   const mobileDayHourColumnWidth = 52;
   const dayMemberColumnWidth = isMobileViewport ? 164 : 280;
-  const teamBoardDayWidth = isMobileViewport ? 92 : 180;
+  const teamBoardMemberRailWidth = isMobileViewport ? 62 : 76;
+  const teamBoardDayWidth = isMobileViewport ? 78 : 180;
+  const teamBoardGridTemplate = isMobileViewport
+    ? `${teamBoardMemberRailWidth}px repeat(${viewMode === "threeDay" ? 3 : 7}, ${teamBoardDayWidth}px)`
+    : `${teamBoardMemberRailWidth}px repeat(${viewMode === "threeDay" ? 3 : 7}, minmax(${teamBoardDayWidth}px, 1fr))`;
   const calendarHourHeight = isMobileViewport ? CALENDAR_MOBILE_HOUR_HEIGHT : CALENDAR_HOUR_HEIGHT;
   const minuteHeight = calendarHourHeight / 60;
   const slotHeight = minuteHeight * CALENDAR_GRID_STEP_MINUTES;
@@ -1511,7 +1520,7 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
   }
 
   useEffect(() => {
-    const storedLanguage = window.localStorage.getItem("rezervo-pro-language");
+    const storedLanguage = getCalendarStorage()?.getItem("rezervo-pro-language") ?? null;
     if (isAppLanguage(storedLanguage)) {
       setUiLanguage(storedLanguage);
     }
@@ -1528,19 +1537,11 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
   }, []);
 
   useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    window.localStorage.setItem("rezervo-pro-calendar-view-mode", viewMode);
+    getCalendarStorage()?.setItem("rezervo-pro-calendar-view-mode", viewMode);
   }, [viewMode]);
 
   useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    window.localStorage.setItem(
+    getCalendarStorage()?.setItem(
       "rezervo-pro-calendar-offhours-compressed",
       isOffHoursCompressed ? "1" : "0"
     );
@@ -2292,7 +2293,7 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
 
     setUiLanguage(nextLanguage);
     document.documentElement.lang = nextLanguage;
-    window.localStorage.setItem("rezervo-pro-language", nextLanguage);
+    getCalendarStorage()?.setItem("rezervo-pro-language", nextLanguage);
     window.dispatchEvent(new CustomEvent("rezervo-language-change", { detail: nextLanguage }));
     setActiveToolbarMenu(null);
 
@@ -5193,7 +5194,7 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
               <div
                 className={styles.calendarTeamBoardHeader}
                 style={{
-                  gridTemplateColumns: `76px repeat(${teamBoardKeys.length}, minmax(${teamBoardDayWidth}px, 1fr))`
+                  gridTemplateColumns: teamBoardGridTemplate
                 }}
               >
                 <div className={styles.calendarTeamBoardMemberSpacer} />
@@ -5222,7 +5223,7 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
                       key={member.professionalId}
                       className={styles.calendarTeamBoardRow}
                       style={{
-                        gridTemplateColumns: `76px repeat(${teamBoardKeys.length}, minmax(${teamBoardDayWidth}px, 1fr))`
+                        gridTemplateColumns: teamBoardGridTemplate
                       }}
                     >
                       <button

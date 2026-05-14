@@ -7206,7 +7206,7 @@
   overflow-y: scroll;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior-y: contain;
-  touch-action: pan-y;
+  touch-action: pan-x pan-y;
 }
 
 .calendarDayColumnsHeader {
@@ -9969,7 +9969,7 @@
     overflow-x: auto;
     overflow-y: auto;
     overscroll-behavior: contain;
-    touch-action: pan-y;
+    touch-action: pan-x pan-y;
   }
 
   .calendarV2Drawer {
@@ -11424,13 +11424,15 @@
   }
 
   .calendarMonthTeamGrid {
-    min-width: 700px;
+    min-width: 0;
+    width: 100%;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
     gap: 8px;
   }
 
   .calendarMonthTeamDay {
-    min-height: 112px;
-    padding: 10px;
+    min-height: 88px;
+    padding: 8px;
     gap: 8px;
   }
 
@@ -11508,7 +11510,7 @@
     overflow-y: auto;
     overscroll-behavior: contain;
     -webkit-overflow-scrolling: touch;
-    touch-action: pan-y;
+    touch-action: pan-x pan-y;
     padding-bottom: calc(10px + env(safe-area-inset-bottom));
     background: #ffffff;
   }
@@ -11661,7 +11663,7 @@
   }
 
   .calendarTeamMemberRail {
-    padding: 8px 2px;
+    padding: 8px 1px;
     gap: 6px;
   }
 
@@ -11672,7 +11674,7 @@
   }
 
   .calendarTeamMemberRail strong {
-    font-size: 0.68rem;
+    font-size: 0.64rem;
     line-height: 1.05;
   }
 
@@ -11713,22 +11715,25 @@
   }
 
   .calendarMonthTeamGrid {
-    min-width: 520px;
-    gap: 6px;
+    min-width: 0;
+    width: 100%;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 4px;
   }
 
   .calendarMonthTeamDay {
-    min-height: 96px;
-    padding: 8px;
-    border-radius: 16px;
+    min-height: 72px;
+    padding: 5px 4px;
+    border-radius: 10px;
+    gap: 4px;
   }
 
   .calendarMonthTeamDayHeader strong {
-    font-size: 0.92rem;
+    font-size: 0.82rem;
   }
 
   .calendarMonthTeamDayHeader span {
-    font-size: 0.68rem;
+    font-size: 0.62rem;
   }
 
   .calendarDayMemberHeaderCard strong {

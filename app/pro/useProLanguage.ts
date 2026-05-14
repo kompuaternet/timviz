@@ -3,11 +3,19 @@
 import { useEffect, useState } from "react";
 import { isProLanguage, proText, type ProLanguage } from "./i18n";
 
+function getStoredProLanguage() {
+  if (typeof window === "undefined" || typeof window.localStorage?.getItem !== "function") {
+    return null;
+  }
+
+  return window.localStorage.getItem("rezervo-pro-language");
+}
+
 export function useProLanguage(defaultLanguage: ProLanguage = "ru") {
   const [language, setLanguage] = useState<ProLanguage>(defaultLanguage);
 
   useEffect(() => {
-    const storedLanguage = window.localStorage.getItem("rezervo-pro-language");
+    const storedLanguage = getStoredProLanguage();
     const nextLanguage = isProLanguage(storedLanguage) ? storedLanguage : defaultLanguage;
     setLanguage(nextLanguage);
     document.documentElement.lang = nextLanguage;

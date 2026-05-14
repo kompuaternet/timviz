@@ -19,7 +19,10 @@ const switcherLabels: Record<SiteLanguage, string> = {
 function getBrowserLanguage(): SiteLanguage {
   if (typeof window === "undefined") return "ru";
 
-  const savedLanguage = window.localStorage.getItem("rezervo-pro-language");
+  const savedLanguage =
+    typeof window.localStorage?.getItem === "function"
+      ? window.localStorage.getItem("rezervo-pro-language")
+      : null;
   if (isSiteLanguage(savedLanguage)) return savedLanguage;
 
   const candidates = [navigator.language, ...(navigator.languages ?? [])]
@@ -46,7 +49,9 @@ export default function GlobalLanguageSwitcher({ mode = "fixed" }: GlobalLanguag
   useEffect(() => {
     const initialLanguage = routeLanguage ?? getBrowserLanguage();
     setLanguage(initialLanguage);
-    window.localStorage.setItem("rezervo-pro-language", initialLanguage);
+    if (typeof window.localStorage?.setItem === "function") {
+      window.localStorage.setItem("rezervo-pro-language", initialLanguage);
+    }
     document.documentElement.lang = initialLanguage;
     window.dispatchEvent(new CustomEvent("rezervo-language-change", { detail: initialLanguage }));
 
@@ -76,7 +81,9 @@ export default function GlobalLanguageSwitcher({ mode = "fixed" }: GlobalLanguag
   function changeLanguage(nextLanguage: SiteLanguage) {
     setLanguage(nextLanguage);
     setIsOpen(false);
-    window.localStorage.setItem("rezervo-pro-language", nextLanguage);
+    if (typeof window.localStorage?.setItem === "function") {
+      window.localStorage.setItem("rezervo-pro-language", nextLanguage);
+    }
     document.documentElement.lang = nextLanguage;
     window.dispatchEvent(new CustomEvent("rezervo-language-change", { detail: nextLanguage }));
 
