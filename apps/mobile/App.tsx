@@ -4440,10 +4440,6 @@ function StaffScheduleTab({
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [pickerMonth, setPickerMonth] = useState(getTodayIso().slice(0, 7) + "-01");
   const [selectedMonthDates, setSelectedMonthDates] = useState<string[]>([]);
-  const [monthTemplateIntervals, setMonthTemplateIntervals] = useState<WorkIntervalRecord[]>([
-    { startTime: "09:00", endTime: "13:00" },
-    { startTime: "14:00", endTime: "18:00" },
-  ]);
   const weekDates = getWeekDates(weekStart);
   const weekTitle = formatCalendarTitle("week", weekDates[0], language);
   const monthDates = getMonthGridDates(pickerMonth);
@@ -4547,45 +4543,91 @@ function StaffScheduleTab({
   }
 
   function toggleMonthDate(date: string) {
-    setSelectedMonthDates((current) => current.includes(date) ? current.filter((item) => item !== date) : [...current, date].sort());
+    const selected = selectedMonthDates.includes(date);
+    if (selected) {
+      setSelectedMonthDates((current) => current.filter((item) => item !== date));
+      return;
+    }
+
+    const existing = customDraft[date] || selectedMember?.membership.customSchedule?.[date];
+    if (!existing) {
+      setCustomDraft((current) => ({
+        ...current,
+        [date]: serializeIntervalsToDay(true, [
+          { startTime: "09:00", endTime: "13:00" },
+          { startTime: "14:00", endTime: "18:00" },
+        ], getFallbackSchedule(date)),
+      }));
+    }
+    setSelectedMonthDates((current) => [...current, date].sort());
   }
 
-  function updateMonthTemplateInterval(index: number, field: keyof WorkIntervalRecord, value: string) {
-    setMonthTemplateIntervals((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, [field]: value } : item));
+  function getMonthDraftDay(date: string) {
+    return normalizeScheduleDay(customDraft[date] || selectedMember?.membership.customSchedule?.[date], date);
   }
 
-  function addMonthTemplateInterval(index: number) {
-    const next = insertWorkIntervalRecord(monthTemplateIntervals, index);
-    if (!next) {
+  function setMonthDateSchedule(date: string, next: WorkDayScheduleRecord) {
+    setCustomDraft((current) => ({ ...current, [date]: next }));
+  }
+
+  function updateMonthDateEnabled(date: string, enabled: boolean) {
+    const current = getMonthDraftDay(date);
+    setMonthDateSchedule(date, serializeIntervalsToDay(enabled, getDayIntervalsRecord(current), current));
+  }
+
+  function updateMonthDateInterval(date: string, index: number, field: keyof WorkIntervalRecord, value: string) {
+    const current = getMonthDraftDay(date);
+    const intervals = getDayIntervalsRecord(current).map((item, itemIndex) => itemIndex === index ? { ...item, [field]: value } : item);
+    setMonthDateSchedule(date, serializeIntervalsToDay(true, intervals, current));
+  }
+
+  function addMonthDateInterval(date: string, index: number) {
+    const current = getMonthDraftDay(date);
+    const nextIntervals = insertWorkIntervalRecord(getDayIntervalsRecord(current), index);
+    if (!nextIntervals) {
       Alert.alert(t.staffSchedule, t.noRoomForInterval);
       return;
     }
-    setMonthTemplateIntervals(next);
+    setMonthDateSchedule(date, serializeIntervalsToDay(true, nextIntervals, current));
   }
 
-  function removeMonthTemplateInterval(index: number) {
-    const next = monthTemplateIntervals.filter((_, itemIndex) => itemIndex !== index);
-    setMonthTemplateIntervals(next.length ? next : [{ startTime: "09:00", endTime: "18:00" }]);
+  function removeMonthDateInterval(date: string, index: number) {
+    const current = getMonthDraftDay(date);
+    const nextIntervals = getDayIntervalsRecord(current).filter((_, itemIndex) => itemIndex !== index);
+    setMonthDateSchedule(date, serializeIntervalsToDay(nextIntervals.length > 0, nextIntervals, current));
+  }
+
+  function validateMonthSelectionBeforeSave() {
+    for (const date of selectedMonthDates) {
+      const day = getMonthDraftDay(date);
+      if (!day.enabled) continue;
+      const validation = validateWorkIntervals(getDayIntervalsRecord(day));
+      if (!validation.ok) {
+        Alert.alert(t.staffSchedule, validation.reason === "overlap" ? t.overlappingIntervals : t.invalidIntervalRange);
+        return false;
+      }
+    }
+
+    return true;
   }
 
   function applyMonthSelection() {
-    const validation = validateWorkIntervals(monthTemplateIntervals);
-    if (!validation.ok) {
-      Alert.alert(t.staffSchedule, validation.reason === "overlap" ? t.overlappingIntervals : t.invalidIntervalRange);
-      return;
-    }
     if (!selectedMonthDates.length) {
       Alert.alert(t.monthPlanner, t.selectedDaysHint);
       return;
     }
-    const next = { ...customDraft };
-    selectedMonthDates.forEach((date) => {
-      next[date] = serializeIntervalsToDay(true, validation.intervals, getFallbackSchedule(date));
-    });
-    setCustomDraft(next);
+    if (!validateMonthSelectionBeforeSave()) {
+      return;
+    }
+    const nextWeek = getWeekDates(selectedMonthDates[0])[0];
+    setWeekStart(nextWeek);
+    setCalendarOpen(false);
   }
-
   function validateScheduleBeforeSave() {
+    if (!validateMonthSelectionBeforeSave()) {
+      return false;
+    }
+
     const daysToCheck = scheduleMode === "flexible"
       ? weekDates.map((date, index) => getDraftDay(staffWeekKeys[index], date))
       : staffWeekKeys.map((key, index) => getDraftDay(key, weekDates[index]));
@@ -4749,16 +4791,39 @@ function StaffScheduleTab({
                 );
               })}
             </View>
-            <View style={styles.staffIntervalsBox}>
-              <Text style={styles.staffTimeLabel}>{t.workIntervals}</Text>
-              <WorkIntervalsEditor
-                t={t}
-                intervals={monthTemplateIntervals}
-                onChange={updateMonthTemplateInterval}
-                onAddAfter={addMonthTemplateInterval}
-                onRemove={removeMonthTemplateInterval}
-              />
-            </View>
+            {selectedMonthDates.length ? (
+              <View style={styles.staffSelectedDaysStack}>
+                {selectedMonthDates.map((date) => {
+                  const day = getMonthDraftDay(date);
+                  const intervals = getDayIntervalsRecord(day);
+                  return (
+                    <View key={date} style={styles.staffSelectedDayCard}>
+                      <View style={styles.staffDayHeader}>
+                        <View>
+                          <Text style={styles.staffDayTitle}>{formatShortDate(date, language)}</Text>
+                          <Text style={styles.clientOptionCaption}>{day.enabled ? formatMoneylessHours(getIntervalsDurationMinutes(intervals), t.hoursShort) : t.noWork}</Text>
+                        </View>
+                        <Pressable style={[styles.mobileSwitch, day.enabled && styles.mobileSwitchActive]} onPress={() => updateMonthDateEnabled(date, !day.enabled)}>
+                          <View style={[styles.mobileSwitchThumb, day.enabled && styles.mobileSwitchThumbActive]} />
+                        </Pressable>
+                      </View>
+                      {day.enabled ? (
+                        <View style={styles.staffIntervalsBox}>
+                          <Text style={styles.staffTimeLabel}>{t.workIntervals}</Text>
+                          <WorkIntervalsEditor
+                            t={t}
+                            intervals={intervals}
+                            onChange={(intervalIndex, field, value) => updateMonthDateInterval(date, intervalIndex, field, value)}
+                            onAddAfter={(intervalIndex) => addMonthDateInterval(date, intervalIndex)}
+                            onRemove={(intervalIndex) => removeMonthDateInterval(date, intervalIndex)}
+                          />
+                        </View>
+                      ) : null}
+                    </View>
+                  );
+                })}
+              </View>
+            ) : null}
             <View style={styles.settingsActionRow}>
               <Text style={styles.badgeText}>{selectedMonthDates.length}</Text>
               <PrimaryButton label={t.applyToSelectedDays} onPress={applyMonthSelection} disabled={busy} />
@@ -7731,6 +7796,17 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#D8E2EF",
     backgroundColor: "#F8FAFC",
+  },
+  staffSelectedDaysStack: {
+    gap: 10,
+  },
+  staffSelectedDayCard: {
+    gap: 8,
+    padding: 10,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    backgroundColor: "#FFFFFF",
   },
   staffDayCard: {
     paddingVertical: 12,
