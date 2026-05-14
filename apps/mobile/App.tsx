@@ -3511,10 +3511,15 @@ function CalendarTimeline({
           <View pointerEvents="none" key={hour} style={[styles.hourRow, { top, height }]}>
             <Text style={[styles.hourText, !showLabel && styles.hourTextHidden]}>{showLabel ? `${String(hour).padStart(2, "0")}:00` : ""}</Text>
             <View style={styles.hourGrid}>
-              <View style={styles.majorLine} />
-              {height >= 34
-                ? [1, 2, 3, 4, 5].map((part) => <View key={part} style={[styles.minorLine, { top: (height / 6) * part }]} />)
-                : null}
+              {(height >= 34 ? [0, 1, 2, 3, 4, 5, 6] : [0, 6]).map((part) => (
+                <View
+                  key={part}
+                  style={[
+                    part === 0 || part === 6 ? styles.majorLine : styles.minorLine,
+                    { top: (height / 6) * part },
+                  ]}
+                />
+              ))}
             </View>
           </View>
         );
@@ -3574,12 +3579,6 @@ function CalendarTimeline({
           ) : null}
         </Pressable>
       ))}
-
-      {compact && schedule.enabled ? (
-        <View pointerEvents="none" style={[styles.boundaryTimeLabel, { top: Math.max(0, getScaledMinuteTop(workEnd) - 9) }]}>
-          <Text style={styles.boundaryTimeText}>{schedule.endTime}</Text>
-        </View>
-      ) : null}
 
       {showCurrentTime && nowTop >= 0 && nowTop <= timelineHeight ? (
         <View style={[styles.currentTimeLine, { top: nowTop }]}>
@@ -7209,8 +7208,10 @@ const styles = StyleSheet.create({
   },
   hourText: {
     width: 43,
-    paddingTop: 2,
     paddingRight: 5,
+    height: 18,
+    lineHeight: 18,
+    marginTop: -9,
     textAlign: "right",
     color: "#475569",
     fontSize: 12,
@@ -7267,21 +7268,6 @@ const styles = StyleSheet.create({
     color: "#94A3B8",
     fontSize: 10,
     fontWeight: "800",
-  },
-  boundaryTimeLabel: {
-    position: "absolute",
-    left: 0,
-    width: 43,
-    height: 18,
-    alignItems: "flex-end",
-    justifyContent: "center",
-    paddingRight: 5,
-    zIndex: 2,
-  },
-  boundaryTimeText: {
-    color: "#475569",
-    fontSize: 12,
-    fontWeight: "700",
   },
   timeSlotHitbox: {
     position: "absolute",
