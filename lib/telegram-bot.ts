@@ -72,6 +72,9 @@ type TelegramStore = {
   reminderEvents: TelegramReminderEvent[];
 };
 
+const TELEGRAM_CONNECTION_SELECT_FIELDS =
+  "id, professional_id, business_id, connect_token, connect_token_expires_at, chat_id, telegram_user_id, telegram_username, telegram_first_name, telegram_last_name, language, timezone, notifications_new_booking, notifications_cabinet_booking, notifications_rescheduled, notifications_cancelled, notifications_reminder, notifications_today, forwarding_enabled, reminder_lead_minutes, connected_at, last_interaction_at, created_at, updated_at";
+
 type TelegramApiResponse<T> = {
   ok: boolean;
   result?: T;
@@ -1037,7 +1040,7 @@ async function upsertConnection(connection: TelegramConnection) {
     let result = await supabase
       .from("telegram_connections")
       .upsert(fullPayload, { onConflict: "professional_id" })
-      .select("*")
+      .select(TELEGRAM_CONNECTION_SELECT_FIELDS)
       .maybeSingle();
 
     if (
@@ -1058,7 +1061,7 @@ async function upsertConnection(connection: TelegramConnection) {
       result = await supabase
         .from("telegram_connections")
         .upsert(legacyPayload, { onConflict: "professional_id" })
-        .select("*")
+        .select(TELEGRAM_CONNECTION_SELECT_FIELDS)
         .maybeSingle();
     }
 
@@ -1100,7 +1103,7 @@ export async function getTelegramConnectionByProfessionalId(professionalId: stri
 
     const { data, error } = await supabase
       .from("telegram_connections")
-      .select("*")
+      .select(TELEGRAM_CONNECTION_SELECT_FIELDS)
       .eq("professional_id", id)
       .order("updated_at", { ascending: false })
       .limit(1)
@@ -1131,7 +1134,7 @@ export async function getTelegramConnectionByChatId(chatId: string) {
 
     const { data, error } = await supabase
       .from("telegram_connections")
-      .select("*")
+      .select(TELEGRAM_CONNECTION_SELECT_FIELDS)
       .eq("chat_id", normalized)
       .order("updated_at", { ascending: false })
       .limit(1)
@@ -1161,7 +1164,7 @@ export async function getTelegramConnectionByTelegramUserId(telegramUserId: numb
 
     const { data, error } = await supabase
       .from("telegram_connections")
-      .select("*")
+      .select(TELEGRAM_CONNECTION_SELECT_FIELDS)
       .eq("telegram_user_id", telegramUserId)
       .order("updated_at", { ascending: false })
       .limit(1)
@@ -1325,7 +1328,7 @@ async function findConnectionByConnectToken(token: string) {
 
     const { data, error } = await supabase
       .from("telegram_connections")
-      .select("*")
+      .select(TELEGRAM_CONNECTION_SELECT_FIELDS)
       .eq("connect_token", normalized)
       .order("updated_at", { ascending: false })
       .limit(1)
@@ -2612,7 +2615,7 @@ export async function getAllConnectedTelegramConnections() {
 
     const { data, error } = await supabase
       .from("telegram_connections")
-      .select("*")
+      .select(TELEGRAM_CONNECTION_SELECT_FIELDS)
       .not("chat_id", "is", null);
 
     if (error) {
@@ -2660,7 +2663,7 @@ async function getConnectedOwnerTelegramConnectionsForBusiness(businessId: strin
 
     const { data: connections, error: connectionsError } = await supabase
       .from("telegram_connections")
-      .select("*")
+      .select(TELEGRAM_CONNECTION_SELECT_FIELDS)
       .in("professional_id", ownerIds)
       .eq("business_id", normalizedBusinessId)
       .not("chat_id", "is", null);

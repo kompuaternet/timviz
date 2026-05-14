@@ -23,6 +23,8 @@ export type GlobalCatalogItem = {
 };
 
 const storePath = path.join(process.cwd(), "data", "global-service-catalog.json");
+const GLOBAL_SERVICE_CATALOG_SELECT_FIELDS =
+  "id, category, group_key, name, localized_name_ru, localized_name_uk, localized_name_en, duration_minutes, price, sort_order";
 
 function makeId(prefix: string) {
   return `${prefix}_${crypto.randomUUID()}`;
@@ -204,7 +206,7 @@ export async function getRootCatalogItems(): Promise<GlobalCatalogItem[]> {
     if (supabase) {
       const { data, error } = await supabase
         .from("global_service_catalog")
-        .select("*")
+        .select(GLOBAL_SERVICE_CATALOG_SELECT_FIELDS)
         .order("category", { ascending: true })
         .order("group_key", { ascending: true })
         .order("sort_order", { ascending: true });

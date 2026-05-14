@@ -263,6 +263,18 @@ let activeDirectorySnapshotPromise: Promise<BusinessDirectorySnapshot> | null = 
 let cachedDirectorySnapshot: BusinessDirectorySnapshot | null = null;
 let cachedDirectorySnapshotAt = 0;
 const DIRECTORY_SNAPSHOT_TTL_MS = Number(process.env.DIRECTORY_SNAPSHOT_TTL_MS || 15000);
+const BUSINESS_SELECT_FIELDS =
+  "id, name, website, categories, account_type, service_mode, address, address_details, address_lat, address_lon, work_schedule_mode, work_schedule, custom_schedule, allow_online_booking, photos, owner_professional_id, created_at";
+const PROFESSIONAL_SELECT_FIELDS =
+  "id, first_name, last_name, email, password_hash, avatar_url, phone, country, timezone, language, currency, booking_credits_total, wallet_balance, plan, premium_status, premium_until, paddle_customer_id, paddle_subscription_id, paddle_price_id, owner_mode, account_status, created_at";
+const MEMBERSHIP_SELECT_FIELDS =
+  "id, business_id, professional_id, role, scope, work_schedule_mode, work_schedule, custom_schedule, created_at";
+const SERVICE_SELECT_FIELDS =
+  "id, business_id, name, price, category, duration_minutes, color, sort_order, created_by_professional_id, source, moderation_status, moderated_at, is_blocked, created_at";
+const JOIN_REQUEST_SELECT_FIELDS =
+  "id, business_id, professional_id, role, status, created_at, resolved_at, viewed_at";
+const STAFF_INVITATION_SELECT_FIELDS =
+  "id, business_id, email, role, invited_by_professional_id, accepted_professional_id, token, status, created_at, accepted_at, revoked_at";
 
 function createEmptyDirectorySnapshot(): BusinessDirectorySnapshot {
   return {
@@ -984,12 +996,19 @@ async function loadBusinessDirectorySnapshot(): Promise<BusinessDirectorySnapsho
       { data: joinRequests, error: joinRequestsError },
       { data: staffInvitations, error: staffInvitationsError }
     ] = await Promise.all([
-      supabase.from("businesses").select("*").order("created_at", { ascending: true }),
-      supabase.from("professionals").select("*").order("created_at", { ascending: true }),
-      supabase.from("business_memberships").select("*").order("created_at", { ascending: true }),
-      supabase.from("business_services").select("*").order("sort_order", { ascending: true }).order("created_at", { ascending: true }),
-      supabase.from("business_join_requests").select("*").order("created_at", { ascending: false }),
-      supabase.from("business_staff_invitations").select("*").order("created_at", { ascending: false })
+      supabase.from("businesses").select(BUSINESS_SELECT_FIELDS).order("created_at", { ascending: true }),
+      supabase.from("professionals").select(PROFESSIONAL_SELECT_FIELDS).order("created_at", { ascending: true }),
+      supabase.from("business_memberships").select(MEMBERSHIP_SELECT_FIELDS).order("created_at", { ascending: true }),
+      supabase
+        .from("business_services")
+        .select(SERVICE_SELECT_FIELDS)
+        .order("sort_order", { ascending: true })
+        .order("created_at", { ascending: true }),
+      supabase.from("business_join_requests").select(JOIN_REQUEST_SELECT_FIELDS).order("created_at", { ascending: false }),
+      supabase
+        .from("business_staff_invitations")
+        .select(STAFF_INVITATION_SELECT_FIELDS)
+        .order("created_at", { ascending: false })
     ]);
 
     if (businessesError) {
@@ -2892,7 +2911,7 @@ export async function resolveJoinRequestForOwner(input: {
 
     const { data: request, error: requestError } = await supabase
       .from("business_join_requests")
-      .select("*")
+      .select(JOIN_REQUEST_SELECT_FIELDS)
       .eq("id", input.requestId)
       .eq("business_id", workspace.business.id)
       .maybeSingle();
@@ -2906,7 +2925,7 @@ export async function resolveJoinRequestForOwner(input: {
     if (!canUseJoinRequestsTable || !request) {
       const { data: pendingMembership, error: membershipLookupError } = await supabase
         .from("business_memberships")
-        .select("*")
+        .select(MEMBERSHIP_SELECT_FIELDS)
         .eq("id", input.requestId)
         .eq("business_id", workspace.business.id)
         .eq("scope", "pending")

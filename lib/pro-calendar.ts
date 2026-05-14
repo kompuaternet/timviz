@@ -133,6 +133,14 @@ type CalendarAppointmentRow = {
   created_at: string;
 };
 
+type ClientDirectoryAppointmentRow = {
+  customer_name?: string | null;
+  customer_phone?: string | null;
+  attendance?: string | null;
+  price_amount?: number | null;
+  created_at: string;
+};
+
 const storePath = path.join(process.cwd(), "data", "pro-calendar.json");
 const PUBLIC_APPOINTMENTS_CACHE_TTL_MS = Number(process.env.PUBLIC_APPOINTMENTS_CACHE_TTL_MS || 5000);
 let cachedPublicCalendarAppointments: PublicCalendarAppointment[] | null = null;
@@ -289,6 +297,47 @@ async function readAppointmentsForProfessional(professionalId: string) {
           `${right.appointmentDate}${right.startTime}${right.createdAt}`
         )
     );
+}
+
+async function readClientDirectoryAppointments(professionalId: string) {
+  if (isSupabaseConfigured()) {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      return [];
+    }
+
+    const { data, error } = await supabase
+      .from("calendar_appointments")
+      .select("customer_name, customer_phone, attendance, price_amount, created_at")
+      .eq("professional_id", professionalId)
+      .eq("kind", "appointment")
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return (data ?? []).map((row) => {
+      const appointment = row as ClientDirectoryAppointmentRow;
+      return {
+        customerName: appointment.customer_name ?? "",
+        customerPhone: appointment.customer_phone ?? "",
+        attendance: normalizeAttendance(appointment.attendance),
+        priceAmount: appointment.price_amount ?? 0,
+        createdAt: appointment.created_at
+      };
+    });
+  }
+
+  return (await readAppointmentsForProfessional(professionalId))
+    .filter((appointment) => appointment.kind === "appointment")
+    .map((appointment) => ({
+      customerName: appointment.customerName,
+      customerPhone: appointment.customerPhone,
+      attendance: appointment.attendance,
+      priceAmount: appointment.priceAmount,
+      createdAt: appointment.createdAt
+    }));
 }
 
 async function readBusinessAppointmentsForDate(businessId: string, appointmentDate: string) {
@@ -1132,9 +1181,8 @@ export async function createCalendarAppointment(input: {
 }
 
 export async function getClientDirectory(professionalId: string): Promise<ClientDirectoryEntry[]> {
-  const appointments = (await readAppointmentsForProfessional(professionalId)).filter(
+  const appointments = (await readClientDirectoryAppointments(professionalId)).filter(
     (appointment) =>
-      appointment.kind === "appointment" &&
       appointment.attendance !== "pending" &&
       appointment.customerName.trim() &&
       appointment.customerName.trim().toLowerCase() !== "клиент"

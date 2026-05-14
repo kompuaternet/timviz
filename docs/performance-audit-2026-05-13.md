@@ -79,13 +79,33 @@ Expected impact:
 - Fewer repeated requests.
 - Faster client picker reopen.
 
+## Stage 4 (Shared data payload reduction)
+
+Changed `lib/pro-data.ts`:
+- Replaced directory snapshot `select("*")` calls with exact field lists for businesses, professionals, memberships, services, join requests, and staff invitations.
+- Reused the exact field lists for owner join-request resolution fallbacks.
+
+Changed `lib/global-service-catalog.ts`:
+- Replaced catalog `select("*")` with the exact columns used by the root catalog mapper.
+
+Changed `lib/telegram-bot.ts`:
+- Replaced Telegram connection `select("*")` calls with the exact connection fields used by `mapConnectionRow()`.
+
+Changed `lib/pro-calendar.ts`:
+- Added a narrow appointment reader for client-directory aggregation.
+- `/api/pro/clients` no longer needs the full appointment payload when deriving clients from calendar history.
+
+Expected impact:
+- Smaller Supabase response payloads for shared directory/catalog refreshes and Telegram connection lookups.
+- Less memory churn in server-side mappers.
+- Smaller payloads on client-list refreshes, especially for professionals with long appointment history.
+- Keeps the full-table `select("*")` only in `scripts/db-backup.mjs`, where complete backups require it.
+
 ## Pending next optimization stages
-1. Replace critical `select("*")` in `lib/pro-data.ts` with exact field lists.
-2. Add DB index migration script for hottest WHERE/ORDER patterns.
-3. Improve client search endpoint pattern (debounce + limits already partly in UI, verify end-to-end).
-4. Add lightweight performance timing logs in dev for dashboard/calendar API.
-5. Tune directory cache TTL + invalidation strategy.
+1. Add DB index migration script for hottest WHERE/ORDER patterns.
+2. Improve client search endpoint pattern (debounce + limits already partly in UI, verify end-to-end).
+3. Add lightweight performance timing logs in dev for dashboard/calendar API.
+4. Tune directory cache TTL + invalidation strategy.
 
 ## Build status after current changes
 - `npm run build`: ✅ passes
-

@@ -4,6 +4,7 @@ import ProfileAvatar from "../ProfileAvatar";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from "react";
 import FloatingPopover from "./FloatingPopover";
+import { PlanBadge } from "./PlanBadge";
 import SupportWidget from "./SupportWidget";
 import styles from "./pro.module.css";
 import { getPostLogoutRedirectPath } from "./telegram-context";
@@ -482,12 +483,6 @@ export default function ProWorkspaceHeader({
       </div>
 
       <div className={styles.calendarWorkspaceActions}>
-        {isPremium ? (
-          <span className={styles.calendarPremiumBadge} aria-label="Timviz Premium">
-            PRO
-          </span>
-        ) : null}
-
         {onboardingCta && !onboardingCta.completed ? (
           <button
             type="button"
@@ -545,6 +540,8 @@ export default function ProWorkspaceHeader({
           <BellIcon />
           {notificationsCount ? <span className={styles.calendarNotificationBadge}>{notificationsCount}</span> : null}
         </button>
+
+        {isPremium ? <PlanBadge variant="header" className={styles.headerPlanBadge} /> : null}
 
         <button
           ref={accountMenuButtonRef}
@@ -676,7 +673,10 @@ export default function ProWorkspaceHeader({
             </div>
             <div>
               <strong>{viewerName}</strong>
-              <span>{businessName || "Timviz"}</span>
+              <div className={styles.profileMenuCompanyRow}>
+                <span className={styles.profileMenuCompanyName}>{businessName || "Timviz"}</span>
+                {isPremium ? <PlanBadge variant="menu" /> : null}
+              </div>
             </div>
           </div>
 
