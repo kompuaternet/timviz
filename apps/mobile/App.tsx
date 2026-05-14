@@ -1,5 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import * as ImagePicker from "expo-image-picker";
 import * as Localization from "expo-localization";
 import { StatusBar } from "expo-status-bar";
 import type { ComponentProps } from "react";
@@ -624,7 +625,11 @@ const copy = {
     settingsAddress: "Адреса",
     profileAndBusiness: "Профіль і бізнес",
     ownerContacts: "Контакти власника",
-    avatarLink: "Посилання на аватар",
+    avatarLink: "Аватар майстра",
+    avatarHint: "Фото показується в календарі, картці майстра і верхньому меню.",
+    changeAvatar: "Змінити аватар",
+    deleteAvatar: "Видалити аватар",
+    avatarPermission: "Дозвольте доступ до фото, щоб змінити аватар.",
     newPassword: "Новий пароль",
     leaveBlankPassword: "залиште порожнім, якщо пароль не змінюється",
     businessFormat: "Назва і формат",
@@ -893,7 +898,11 @@ const copy = {
     settingsAddress: "Адрес",
     profileAndBusiness: "Профиль и бизнес",
     ownerContacts: "Контакты владельца",
-    avatarLink: "Ссылка на аватар",
+    avatarLink: "Аватар мастера",
+    avatarHint: "Фото показывается в календаре, карточке мастера и верхнем меню.",
+    changeAvatar: "Сменить аватар",
+    deleteAvatar: "Удалить аватар",
+    avatarPermission: "Разрешите доступ к фото, чтобы изменить аватар.",
     newPassword: "Новый пароль",
     leaveBlankPassword: "оставьте пустым, если пароль не меняется",
     businessFormat: "Название и формат",
@@ -1162,7 +1171,11 @@ const copy = {
     settingsAddress: "Address",
     profileAndBusiness: "Profile and business",
     ownerContacts: "Owner contacts",
-    avatarLink: "Avatar link",
+    avatarLink: "Master avatar",
+    avatarHint: "The photo appears in the calendar, master card, and top menu.",
+    changeAvatar: "Change avatar",
+    deleteAvatar: "Delete avatar",
+    avatarPermission: "Allow photo access to change the avatar.",
     newPassword: "New password",
     leaveBlankPassword: "leave blank if unchanged",
     businessFormat: "Name and format",
@@ -5392,6 +5405,31 @@ function SettingsTab({
     await Linking.openURL(publicBookingUrl).catch(() => undefined);
   }
 
+  async function pickAvatar() {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert(t.avatarLink, t.avatarPermission);
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: "images",
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.82,
+      base64: true,
+    });
+
+    if (result.canceled || !result.assets?.[0]) return;
+    const asset = result.assets[0];
+    if (!asset.base64) return;
+    updateDraft("avatarUrl", `data:${asset.mimeType || "image/jpeg"};base64,${asset.base64}`);
+  }
+
+  function removeAvatar() {
+    updateDraft("avatarUrl", "");
+  }
+
   async function resolveJoinRequest(requestId: string, action: "approve" | "reject") {
     setSaving(true);
     try {
@@ -5544,19 +5582,24 @@ function SettingsTab({
         <>
           <Panel title={t.ownerContacts}>
             <View style={styles.settingsAvatarRow}>
-              <View style={styles.settingsAvatar}>
-                <Text style={styles.settingsAvatarText}>{(draft.firstName || draft.email || "T").slice(0, 1).toUpperCase()}</Text>
-              </View>
+              {draft.avatarUrl ? (
+                <Image source={{ uri: draft.avatarUrl }} style={styles.settingsAvatarImage} />
+              ) : (
+                <View style={styles.settingsAvatar}>
+                  <Text style={styles.settingsAvatarText}>{(draft.firstName || draft.email || "T").slice(0, 1).toUpperCase()}</Text>
+                </View>
+              )}
               <View style={styles.settingsAvatarInfo}>
                 <Text style={styles.settingsCardTitle}>{t.avatarLink}</Text>
-                <Text style={styles.clientOptionCaption}>{t.photosHint}</Text>
+                <Text style={styles.clientOptionCaption}>{t.avatarHint}</Text>
+                <View style={styles.settingsAvatarActions}>
+                  <SecondaryButton label={t.changeAvatar} onPress={pickAvatar} disabled={saving || busy} />
+                  <SecondaryButton label={t.deleteAvatar} onPress={removeAvatar} disabled={saving || busy || !draft.avatarUrl} />
+                </View>
               </View>
             </View>
-            <Field label={t.avatarLink} value={draft.avatarUrl} onChangeText={(value) => updateDraft("avatarUrl", value)} placeholder="https://..." />
-            <View style={styles.twoColumns}>
-              <Field label={t.firstName} value={draft.firstName} onChangeText={(value) => updateDraft("firstName", value)} />
-              <Field label={t.lastName} value={draft.lastName} onChangeText={(value) => updateDraft("lastName", value)} />
-            </View>
+            <Field label={t.firstName} value={draft.firstName} onChangeText={(value) => updateDraft("firstName", value)} />
+            <Field label={t.lastName} value={draft.lastName} onChangeText={(value) => updateDraft("lastName", value)} />
             <Field label={t.email} value={draft.email} onChangeText={(value) => updateDraft("email", value)} keyboardType="email-address" autoCapitalize="none" />
             <Field label={t.phone} value={draft.phone} onChangeText={(value) => updateDraft("phone", value)} keyboardType="phone-pad" />
             <Field label={t.newPassword} hint={t.leaveBlankPassword} value={newPassword} onChangeText={setNewPassword} secureTextEntry />
@@ -6148,16 +6191,20 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    gap: 8,
   },
   label: {
+    flexShrink: 1,
     color: "#0F172A",
     fontSize: 13,
     fontWeight: "800",
   },
   hint: {
+    flexShrink: 1,
     color: "#64748B",
     fontSize: 12,
     fontWeight: "600",
+    textAlign: "right",
   },
   input: {
     height: 52,
@@ -8532,9 +8579,9 @@ const styles = StyleSheet.create({
   },
   settingsAvatarRow: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     gap: 12,
-    padding: 10,
+    padding: 12,
     borderRadius: 18,
     borderWidth: 1,
     borderColor: "#E6ECF5",
@@ -8553,9 +8600,21 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: "900",
   },
+  settingsAvatarImage: {
+    width: 58,
+    height: 58,
+    borderRadius: 18,
+    backgroundColor: "#E2E8F0",
+  },
   settingsAvatarInfo: {
     flex: 1,
     minWidth: 0,
+  },
+  settingsAvatarActions: {
+    marginTop: 10,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
   },
   settingsCardTitle: {
     color: "#0F172A",
