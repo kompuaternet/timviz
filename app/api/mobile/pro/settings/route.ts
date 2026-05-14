@@ -22,6 +22,20 @@ async function getPayload(professionalId: string) {
   };
 }
 
+export async function GET(request: Request) {
+  const professionalId = getMobileProfessionalId(request);
+  if (!professionalId) {
+    return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  }
+
+  const payload = await getPayload(professionalId);
+  if (!payload) {
+    return NextResponse.json({ error: "Workspace not found." }, { status: 404 });
+  }
+
+  return NextResponse.json(payload);
+}
+
 export async function PATCH(request: Request) {
   const professionalId = getMobileProfessionalId(request);
   if (!professionalId) {

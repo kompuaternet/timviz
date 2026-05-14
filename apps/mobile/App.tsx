@@ -143,20 +143,41 @@ type WorkspaceSnapshot = {
     id: string;
     firstName: string;
     lastName: string;
+    avatarUrl?: string | null;
     email: string;
     phone: string;
     language: string;
     currency?: string;
     timezone: string;
     country: string;
+    bookingCreditsTotal?: number;
   };
   business: {
     id: string;
     name: string;
+    website?: string;
+    categories?: string[];
+    accountType?: "solo" | "team";
+    serviceMode?: string;
     address: string;
+    addressDetails?: string;
+    addressLat?: number | null;
+    addressLon?: number | null;
     publicBookingUrl?: string;
     allowOnlineBooking?: boolean;
     workScheduleMode?: string;
+    photos?: Array<{
+      id: string;
+      url: string;
+      isPrimary: boolean;
+      createdAt: string;
+      caption?: string;
+      status?: "active" | "blocked";
+    }>;
+  };
+  membership?: {
+    scope: "owner" | "member" | "pending";
+    role: string;
   };
   memberSchedule?: {
     workScheduleMode?: string;
@@ -255,12 +276,53 @@ type MobileNotificationsPayload = {
   }>;
 };
 
+type MobileSettingsSection = "general" | "online" | "services" | "schedule" | "telegram" | "address";
+
+type SettingsDraftState = {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  avatarUrl: string;
+  businessName: string;
+  website: string;
+  accountType: "solo" | "team";
+  serviceMode: string;
+  categoriesText: string;
+  country: string;
+  timezone: string;
+  language: AppLanguage;
+  currency: string;
+  allowOnlineBooking: boolean;
+  address: string;
+  addressDetails: string;
+};
+
 const STORAGE_KEY = "timviz_mobile_session_v2";
 const API_BASE_URL = (process.env.EXPO_PUBLIC_API_BASE_URL || "https://timviz.com").replace(/\/+$/, "");
 const WORDMARK = require("./assets/timviz-wordmark.png");
 const DEFAULT_SERVICE_CATEGORY = "Без категории";
 const SERVICE_COLORS = ["#9AD86A", "#8ED1F2", "#FF9A84", "#F7C948", "#A78BFA", "#34D399", "#F472B6", "#60A5FA"];
 const APP_ICON = require("./assets/timviz-icon.png");
+const SETTINGS_SECTIONS: MobileSettingsSection[] = ["general", "online", "services", "schedule", "telegram", "address"];
+const COUNTRY_OPTIONS = ["Ukraine", "Russia", "Poland", "United Kingdom", "United States", "Germany", "France", "Spain", "Italy", "International"];
+const TIMEZONE_OPTIONS = ["Europe/Kiev", "Europe/Warsaw", "Europe/Berlin", "Europe/London", "America/New_York", "Europe/Moscow", "Asia/Dubai", "UTC"];
+const TIMEZONE_LABELS: Record<string, string> = {
+  "Europe/Kiev": "UTC+2 · Kyiv",
+  "Europe/Warsaw": "UTC+1 · Warsaw",
+  "Europe/Berlin": "UTC+1 · Berlin",
+  "Europe/London": "UTC+0 · London",
+  "America/New_York": "UTC-5 · New York",
+  "Europe/Moscow": "UTC+3 · Moscow",
+  "Asia/Dubai": "UTC+4 · Dubai",
+  UTC: "UTC+0 · UTC",
+};
+const CURRENCY_OPTIONS = ["UAH", "EUR", "USD", "PLN", "GBP", "KZT", "GEL", "AED", "CAD"];
+const SERVICE_MODE_OPTIONS = [
+  "Клиенты приходят в мое физическое заведение",
+  "Я работаю с выездом к клиенту",
+  "Я предоставляю услуги онлайн",
+];
 
 const languageNames: Record<AppLanguage, string> = {
   uk: "UA",
@@ -416,6 +478,46 @@ const copy = {
     onlineBooking: "Онлайн-запис",
     address: "Адреса",
     publicPage: "Сторінка запису",
+    settingsSaved: "Зміни збережено",
+    settingsSaveError: "Не вдалося зберегти налаштування.",
+    settingsGeneral: "Основне",
+    settingsOnline: "Онлайн-запис",
+    settingsServices: "Послуги",
+    settingsSchedule: "Графік",
+    settingsTelegram: "Telegram",
+    settingsAddress: "Адреса",
+    profileAndBusiness: "Профіль і бізнес",
+    ownerContacts: "Контакти власника",
+    avatarLink: "Посилання на аватар",
+    newPassword: "Новий пароль",
+    leaveBlankPassword: "залиште порожнім, якщо пароль не змінюється",
+    businessFormat: "Назва і формат",
+    website: "Сайт",
+    accountType: "Тип акаунта",
+    soloAccount: "Я працюю один",
+    teamAccount: "Команда",
+    serviceMode: "Формат роботи",
+    categoriesText: "Категорії",
+    categoriesHint: "через кому",
+    localization: "Країна, мова і валюта",
+    country: "Країна",
+    timezone: "Часовий пояс",
+    currency: "Валюта",
+    saveSettings: "Зберегти налаштування",
+    publicLink: "Публічне посилання",
+    copyLink: "Копіювати",
+    manageServices: "Керувати послугами",
+    manageSchedule: "Керувати графіком",
+    joinRequests: "Запити на приєднання",
+    noJoinRequests: "Нових запитів поки немає.",
+    approve: "Підтвердити",
+    reject: "Відхилити",
+    businessPhotos: "Фото бізнесу",
+    photosHint: "Перші фото відображаються на сторінці онлайн-запису.",
+    streetAddress: "Адреса",
+    addressDetails: "Деталі адреси",
+    mapCoordinates: "Координати зберігаються з сайту; у застосунку редагується текстова адреса.",
+    ownerOnlyHint: "Налаштування бізнесу може змінювати тільки власник акаунта.",
     empty: "Поки порожньо",
   },
   ru: {
@@ -565,6 +667,46 @@ const copy = {
     onlineBooking: "Онлайн-запись",
     address: "Адрес",
     publicPage: "Страница записи",
+    settingsSaved: "Изменения сохранены",
+    settingsSaveError: "Не удалось сохранить настройки.",
+    settingsGeneral: "Основное",
+    settingsOnline: "Онлайн-запись",
+    settingsServices: "Услуги",
+    settingsSchedule: "График",
+    settingsTelegram: "Telegram",
+    settingsAddress: "Адрес",
+    profileAndBusiness: "Профиль и бизнес",
+    ownerContacts: "Контакты владельца",
+    avatarLink: "Ссылка на аватар",
+    newPassword: "Новый пароль",
+    leaveBlankPassword: "оставьте пустым, если пароль не меняется",
+    businessFormat: "Название и формат",
+    website: "Сайт",
+    accountType: "Тип аккаунта",
+    soloAccount: "Я работаю один",
+    teamAccount: "Команда",
+    serviceMode: "Формат работы",
+    categoriesText: "Категории",
+    categoriesHint: "через запятую",
+    localization: "Страна, язык и валюта",
+    country: "Страна",
+    timezone: "Часовой пояс",
+    currency: "Валюта",
+    saveSettings: "Сохранить настройки",
+    publicLink: "Публичная ссылка",
+    copyLink: "Копировать",
+    manageServices: "Управлять услугами",
+    manageSchedule: "Управлять графиком",
+    joinRequests: "Запросы на присоединение",
+    noJoinRequests: "Новых запросов пока нет.",
+    approve: "Подтвердить",
+    reject: "Отклонить",
+    businessPhotos: "Фото бизнеса",
+    photosHint: "Первые фото отображаются на странице онлайн-записи.",
+    streetAddress: "Адрес",
+    addressDetails: "Детали адреса",
+    mapCoordinates: "Координаты сохраняются с сайта; в приложении редактируется текстовый адрес.",
+    ownerOnlyHint: "Настройки бизнеса может менять только владелец аккаунта.",
     empty: "Пока пусто",
   },
   en: {
@@ -714,6 +856,46 @@ const copy = {
     onlineBooking: "Online booking",
     address: "Address",
     publicPage: "Booking page",
+    settingsSaved: "Changes saved",
+    settingsSaveError: "Could not save settings.",
+    settingsGeneral: "General",
+    settingsOnline: "Online booking",
+    settingsServices: "Services",
+    settingsSchedule: "Schedule",
+    settingsTelegram: "Telegram",
+    settingsAddress: "Address",
+    profileAndBusiness: "Profile and business",
+    ownerContacts: "Owner contacts",
+    avatarLink: "Avatar link",
+    newPassword: "New password",
+    leaveBlankPassword: "leave blank if unchanged",
+    businessFormat: "Name and format",
+    website: "Website",
+    accountType: "Account type",
+    soloAccount: "I work alone",
+    teamAccount: "Team",
+    serviceMode: "Work format",
+    categoriesText: "Categories",
+    categoriesHint: "comma separated",
+    localization: "Country, language and currency",
+    country: "Country",
+    timezone: "Timezone",
+    currency: "Currency",
+    saveSettings: "Save settings",
+    publicLink: "Public link",
+    copyLink: "Copy",
+    manageServices: "Manage services",
+    manageSchedule: "Manage schedule",
+    joinRequests: "Join requests",
+    noJoinRequests: "There are no new requests yet.",
+    approve: "Approve",
+    reject: "Reject",
+    businessPhotos: "Business photos",
+    photosHint: "The first photos appear on the online booking page.",
+    streetAddress: "Address",
+    addressDetails: "Address details",
+    mapCoordinates: "Coordinates are saved from the website; the app edits the text address.",
+    ownerOnlyHint: "Only the account owner can change business settings.",
     empty: "Empty for now",
   },
 } satisfies Record<AppLanguage, Record<string, string>>;
@@ -1670,6 +1852,10 @@ export default function App() {
                 language={language}
                 setLanguage={setLanguage}
                 workspace={workspace}
+                staff={staffSnapshot}
+                apiFetch={apiFetch}
+                onRefreshWorkspace={() => refreshAll(session, selectedDate)}
+                setActiveTab={setActiveTab}
                 onSignOut={signOut}
                 busy={busy}
               />
@@ -3744,11 +3930,46 @@ function StaffTimeInput({
   );
 }
 
+function makeSettingsDraft(workspace: WorkspaceSnapshot | null, language: AppLanguage): SettingsDraftState {
+  return {
+    firstName: workspace?.professional.firstName || "",
+    lastName: workspace?.professional.lastName || "",
+    email: workspace?.professional.email || "",
+    phone: workspace?.professional.phone || "",
+    avatarUrl: workspace?.professional.avatarUrl || "",
+    businessName: workspace?.business.name || "",
+    website: workspace?.business.website || "",
+    accountType: workspace?.business.accountType || "solo",
+    serviceMode: workspace?.business.serviceMode || SERVICE_MODE_OPTIONS[0],
+    categoriesText: (workspace?.business.categories || []).join(", "),
+    country: workspace?.professional.country || "Ukraine",
+    timezone: workspace?.professional.timezone || "Europe/Kiev",
+    language,
+    currency: workspace?.professional.currency || "UAH",
+    allowOnlineBooking: workspace?.business.allowOnlineBooking === true,
+    address: workspace?.business.address || "",
+    addressDetails: workspace?.business.addressDetails || "",
+  };
+}
+
+function settingsSectionLabel(section: MobileSettingsSection, t: Record<string, string>) {
+  if (section === "general") return t.settingsGeneral;
+  if (section === "online") return t.settingsOnline;
+  if (section === "services") return t.settingsServices;
+  if (section === "schedule") return t.settingsSchedule;
+  if (section === "telegram") return t.settingsTelegram;
+  return t.settingsAddress;
+}
+
 function SettingsTab({
   t,
   language,
   setLanguage,
   workspace,
+  staff,
+  apiFetch,
+  onRefreshWorkspace,
+  setActiveTab,
   onSignOut,
   busy,
 }: {
@@ -3756,18 +3977,359 @@ function SettingsTab({
   language: AppLanguage;
   setLanguage: (language: AppLanguage) => void;
   workspace: WorkspaceSnapshot | null;
+  staff: StaffSnapshot | null;
+  apiFetch: (path: string, options?: RequestInit) => Promise<any>;
+  onRefreshWorkspace: () => void;
+  setActiveTab: (tab: AppTab) => void;
   onSignOut: () => void;
   busy: boolean;
 }) {
+  const [activeSection, setActiveSection] = useState<MobileSettingsSection>("general");
+  const [draft, setDraft] = useState<SettingsDraftState>(() => makeSettingsDraft(workspace, language));
+  const [newPassword, setNewPassword] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [statusText, setStatusText] = useState("");
+  const [pendingJoinRequests, setPendingJoinRequests] = useState<NonNullable<MobileNotificationsPayload["pendingJoinRequests"]>>([]);
+  const isOwner = workspace?.membership?.scope !== "member";
+  const publicBookingUrl = workspace?.business.publicBookingUrl || "";
+  const photos = workspace?.business.photos?.filter((photo) => photo.status !== "blocked") || [];
+
+  useEffect(() => {
+    setDraft(makeSettingsDraft(workspace, language));
+    setNewPassword("");
+  }, [workspace, language]);
+
+  useEffect(() => {
+    apiFetch("/api/mobile/pro/calendar?mode=notifications")
+      .then((payload) => setPendingJoinRequests(payload?.pendingJoinRequests || []))
+      .catch(() => setPendingJoinRequests([]));
+  }, [workspace?.business.id]);
+
+  function updateDraft<K extends keyof SettingsDraftState>(key: K, value: SettingsDraftState[K]) {
+    setDraft((current) => ({ ...current, [key]: value }));
+    setStatusText("");
+  }
+
+  async function saveSettings() {
+    if (!workspace) return;
+    setSaving(true);
+    setStatusText("");
+    try {
+      const nextLanguage: AppLanguage = ["uk", "ru", "en"].includes(draft.language) ? draft.language : language;
+      await apiFetch("/api/mobile/pro/settings", {
+        method: "PATCH",
+        body: JSON.stringify({
+          professional: {
+            firstName: draft.firstName,
+            lastName: draft.lastName,
+            avatarUrl: draft.avatarUrl,
+            email: draft.email,
+            phone: draft.phone,
+            country: draft.country,
+            timezone: draft.timezone,
+            language: nextLanguage,
+            currency: draft.currency,
+          },
+          business: isOwner
+            ? {
+                name: draft.businessName,
+                website: draft.website,
+                accountType: draft.accountType,
+                serviceMode: draft.serviceMode,
+                categories: draft.categoriesText.split(",").map((item) => item.trim()).filter(Boolean),
+                allowOnlineBooking: draft.allowOnlineBooking,
+                address: draft.address,
+                addressDetails: draft.addressDetails,
+              }
+            : undefined,
+          newPassword: newPassword.trim() || undefined,
+        }),
+      });
+      setLanguage(nextLanguage);
+      setNewPassword("");
+      setStatusText(t.settingsSaved);
+      onRefreshWorkspace();
+    } catch (error) {
+      Alert.alert(t.settings, error instanceof Error ? error.message : t.settingsSaveError);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function copyPublicLink() {
+    if (!publicBookingUrl) return;
+    await Share.share({ message: publicBookingUrl, url: publicBookingUrl }).catch(() => undefined);
+  }
+
+  async function openPublicLink() {
+    if (!publicBookingUrl) return;
+    await Linking.openURL(publicBookingUrl).catch(() => undefined);
+  }
+
+  async function resolveJoinRequest(requestId: string, action: "approve" | "reject") {
+    setSaving(true);
+    try {
+      await apiFetch("/api/mobile/pro/join-requests", {
+        method: "POST",
+        body: JSON.stringify({ requestId, action }),
+      });
+      setPendingJoinRequests((items) => items.filter((item) => item.id !== requestId));
+      onRefreshWorkspace();
+    } catch (error) {
+      Alert.alert(t.joinRequests, error instanceof Error ? error.message : t.settingsSaveError);
+    } finally {
+      setSaving(false);
+    }
+  }
+
   return (
     <View style={styles.sectionStack}>
-      <Panel title={t.settings}>
-        <LanguageSwitch language={language} setLanguage={setLanguage} />
-        <InfoLine label={t.onlineBooking} value={workspace?.business.allowOnlineBooking ? t.connected : t.notConnected} />
-        <InfoLine label={t.address} value={workspace?.business.address || t.empty} />
-        <InfoLine label={t.publicPage} value={workspace?.business.publicBookingUrl || t.empty} />
-        <SecondaryButton label={t.signOut} onPress={onSignOut} disabled={busy} />
+      <View style={styles.settingsHero}>
+        <Text style={styles.settingsEyebrow}>{t.dashboard}</Text>
+        <Text style={styles.settingsHeroTitle}>{t.settings}</Text>
+        <Text style={styles.settingsHeroText}>{workspace?.business.name || t.companyName}</Text>
+      </View>
+
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.settingsSectionRail}>
+        {SETTINGS_SECTIONS.map((section) => (
+          <Pressable
+            key={section}
+            style={[styles.settingsSectionChip, activeSection === section && styles.settingsSectionChipActive]}
+            onPress={() => setActiveSection(section)}
+          >
+            <Text style={[styles.settingsSectionText, activeSection === section && styles.settingsSectionTextActive]}>{settingsSectionLabel(section, t)}</Text>
+          </Pressable>
+        ))}
+      </ScrollView>
+
+      {statusText ? <Text style={styles.settingsStatusText}>{statusText}</Text> : null}
+      {!isOwner ? <Text style={styles.settingsMutedNotice}>{t.ownerOnlyHint}</Text> : null}
+
+      {activeSection === "general" ? (
+        <>
+          <Panel title={t.ownerContacts}>
+            <View style={styles.settingsAvatarRow}>
+              <View style={styles.settingsAvatar}>
+                <Text style={styles.settingsAvatarText}>{(draft.firstName || draft.email || "T").slice(0, 1).toUpperCase()}</Text>
+              </View>
+              <View style={styles.settingsAvatarInfo}>
+                <Text style={styles.settingsCardTitle}>{t.avatarLink}</Text>
+                <Text style={styles.clientOptionCaption}>{t.photosHint}</Text>
+              </View>
+            </View>
+            <Field label={t.avatarLink} value={draft.avatarUrl} onChangeText={(value) => updateDraft("avatarUrl", value)} placeholder="https://..." />
+            <View style={styles.twoColumns}>
+              <Field label={t.firstName} value={draft.firstName} onChangeText={(value) => updateDraft("firstName", value)} />
+              <Field label={t.lastName} value={draft.lastName} onChangeText={(value) => updateDraft("lastName", value)} />
+            </View>
+            <Field label={t.email} value={draft.email} onChangeText={(value) => updateDraft("email", value)} keyboardType="email-address" autoCapitalize="none" />
+            <Field label={t.phone} value={draft.phone} onChangeText={(value) => updateDraft("phone", value)} keyboardType="phone-pad" />
+            <Field label={t.newPassword} hint={t.leaveBlankPassword} value={newPassword} onChangeText={setNewPassword} secureTextEntry />
+          </Panel>
+
+          <Panel title={t.businessFormat}>
+            <Field label={t.companyName} value={draft.businessName} editable={isOwner} onChangeText={(value) => updateDraft("businessName", value)} />
+            <Field label={t.website} value={draft.website} editable={isOwner} onChangeText={(value) => updateDraft("website", value)} placeholder="www.yoursite.com" autoCapitalize="none" />
+            <Text style={styles.label}>{t.accountType}</Text>
+            <View style={styles.settingsChoiceRow}>
+              {[
+                { value: "solo" as const, label: t.soloAccount },
+                { value: "team" as const, label: t.teamAccount },
+              ].map((item) => (
+                <Pressable
+                  key={item.value}
+                  disabled={!isOwner}
+                  style={[styles.settingsChoice, draft.accountType === item.value && styles.settingsChoiceActive]}
+                  onPress={() => updateDraft("accountType", item.value)}
+                >
+                  <Text style={[styles.settingsChoiceText, draft.accountType === item.value && styles.settingsChoiceTextActive]}>{item.label}</Text>
+                </Pressable>
+              ))}
+            </View>
+            <Text style={styles.label}>{t.serviceMode}</Text>
+            <View style={styles.settingsStackedChoices}>
+              {SERVICE_MODE_OPTIONS.map((item) => (
+                <Pressable
+                  key={item}
+                  disabled={!isOwner}
+                  style={[styles.settingsLongChoice, draft.serviceMode === item && styles.settingsChoiceActive]}
+                  onPress={() => updateDraft("serviceMode", item)}
+                >
+                  <Text style={[styles.settingsChoiceText, draft.serviceMode === item && styles.settingsChoiceTextActive]}>{item}</Text>
+                </Pressable>
+              ))}
+            </View>
+            <Field label={t.categoriesText} hint={t.categoriesHint} value={draft.categoriesText} editable={isOwner} onChangeText={(value) => updateDraft("categoriesText", value)} />
+          </Panel>
+
+          <Panel title={t.localization}>
+            <LanguageSwitch language={draft.language} setLanguage={(value) => updateDraft("language", value)} />
+            <SettingsOptionRail label={t.country} value={draft.country} options={COUNTRY_OPTIONS} onSelect={(value) => updateDraft("country", value)} />
+            <SettingsOptionRail label={t.timezone} value={draft.timezone} options={TIMEZONE_OPTIONS} onSelect={(value) => updateDraft("timezone", value)} renderLabel={(value) => TIMEZONE_LABELS[value] || value} />
+            <SettingsOptionRail label={t.currency} value={draft.currency} options={CURRENCY_OPTIONS} onSelect={(value) => updateDraft("currency", value)} />
+          </Panel>
+        </>
+      ) : null}
+
+      {activeSection === "online" ? (
+        <Panel title={t.settingsOnline}>
+          <Pressable style={styles.shareToggleRow} onPress={() => updateDraft("allowOnlineBooking", !draft.allowOnlineBooking)} disabled={!isOwner}>
+            <View>
+              <Text style={styles.shareToggleTitle}>{draft.allowOnlineBooking ? t.onlineBookingOn : t.onlineBookingOff}</Text>
+              <Text style={styles.clientOptionCaption}>{workspace?.business.name || t.companyName}</Text>
+            </View>
+            <View style={[styles.mobileSwitch, draft.allowOnlineBooking && styles.mobileSwitchActive]}>
+              <View style={[styles.mobileSwitchThumb, draft.allowOnlineBooking && styles.mobileSwitchThumbActive]} />
+            </View>
+          </Pressable>
+          <InfoLine label={t.publicLink} value={publicBookingUrl || t.empty} />
+          <View style={styles.settingsActionRow}>
+            <SecondaryButton label={t.openPage} onPress={openPublicLink} disabled={!publicBookingUrl} />
+            <SecondaryButton label={t.copyLink} onPress={copyPublicLink} disabled={!publicBookingUrl} />
+          </View>
+        </Panel>
+      ) : null}
+
+      {activeSection === "services" ? (
+        <Panel title={t.settingsServices}>
+          <View style={styles.settingsSummaryGrid}>
+            <View style={styles.settingsSummaryTile}>
+              <Text style={styles.statValue}>{workspace?.services.length || 0}</Text>
+              <Text style={styles.statLabel}>{t.yourServices}</Text>
+            </View>
+            <View style={styles.settingsSummaryTile}>
+              <Text style={styles.statValue}>{workspace?.business.categories?.length || 0}</Text>
+              <Text style={styles.statLabel}>{t.categoriesText}</Text>
+            </View>
+          </View>
+          <Text style={styles.emptyText}>{t.myServicesHint}</Text>
+          {(workspace?.services || []).slice(0, 4).map((service) => (
+            <View key={service.id} style={styles.settingsMiniRow}>
+              <View style={[styles.serviceDot, { backgroundColor: service.color || "#8ED1F2" }]} />
+              <View style={styles.settingsMiniInfo}>
+                <Text style={styles.settingsMiniTitle}>{service.name}</Text>
+                <Text style={styles.clientOptionCaption}>{service.durationMinutes || 0} хв</Text>
+              </View>
+              <Text style={styles.settingsMiniPrice}>{formatMoney(service.price, workspace?.professional.currency || "UAH")}</Text>
+            </View>
+          ))}
+          <SecondaryButton label={t.manageServices} onPress={() => setActiveTab("services")} />
+        </Panel>
+      ) : null}
+
+      {activeSection === "schedule" ? (
+        <Panel title={t.settingsSchedule}>
+          <View style={styles.settingsSummaryGrid}>
+            <View style={styles.settingsSummaryTile}>
+              <Text style={styles.statValue}>{staff?.summary?.totalPeople || staff?.members.length || 1}</Text>
+              <Text style={styles.statLabel}>{t.staff}</Text>
+            </View>
+            <View style={styles.settingsSummaryTile}>
+              <Text style={styles.statValue}>{workspace?.memberSchedule?.workScheduleMode === "flexible" ? t.compact : t.weekView}</Text>
+              <Text style={styles.statLabel}>{t.staffSchedule}</Text>
+            </View>
+          </View>
+          <Text style={styles.emptyText}>{t.staffScheduleHint}</Text>
+          <SecondaryButton label={t.manageSchedule} onPress={() => setActiveTab("staff")} />
+        </Panel>
+      ) : null}
+
+      {activeSection === "telegram" ? (
+        <>
+          <Panel title={t.settingsTelegram}>
+            <View style={styles.telegramStatus}>
+              <View style={[styles.telegramDot, workspace?.telegram?.connected ? styles.telegramDotConnected : styles.telegramDotDisconnected]} />
+              <View>
+                <Text style={styles.settingsCardTitle}>{workspace?.telegram?.connected ? t.connected : t.notConnected}</Text>
+                <Text style={styles.clientOptionCaption}>{workspace?.telegram?.chatId || t.telegramHint}</Text>
+              </View>
+            </View>
+          </Panel>
+          <Panel title={t.joinRequests}>
+            {pendingJoinRequests.length === 0 ? <Text style={styles.emptyText}>{t.noJoinRequests}</Text> : null}
+            {pendingJoinRequests.map((request) => (
+              <View key={request.id} style={styles.joinRequestCard}>
+                <View>
+                  <Text style={styles.settingsMiniTitle}>{request.professionalName}</Text>
+                  <Text style={styles.clientOptionCaption}>{request.role}</Text>
+                </View>
+                <View style={styles.joinRequestActions}>
+                  <Pressable style={styles.joinApproveButton} onPress={() => resolveJoinRequest(request.id, "approve")} disabled={saving}>
+                    <Ionicons name="checkmark" size={18} color="#FFFFFF" />
+                  </Pressable>
+                  <Pressable style={styles.joinRejectButton} onPress={() => resolveJoinRequest(request.id, "reject")} disabled={saving}>
+                    <Ionicons name="close" size={18} color="#DC2626" />
+                  </Pressable>
+                </View>
+              </View>
+            ))}
+          </Panel>
+        </>
+      ) : null}
+
+      {activeSection === "address" ? (
+        <Panel title={t.settingsAddress}>
+          <Field label={t.streetAddress} value={draft.address} editable={isOwner} onChangeText={(value) => updateDraft("address", value)} />
+          <View style={styles.field}>
+            <Text style={styles.label}>{t.addressDetails}</Text>
+            <TextInput
+              value={draft.addressDetails}
+              editable={isOwner}
+              onChangeText={(value) => updateDraft("addressDetails", value)}
+              multiline
+              textAlignVertical="top"
+              placeholderTextColor="#94A3B8"
+              style={[styles.input, styles.settingsMultilineInput, !isOwner && styles.inputDisabled]}
+            />
+          </View>
+          <Text style={styles.emptyText}>{t.mapCoordinates}</Text>
+          <View style={styles.settingsPhotosBox}>
+            <Text style={styles.settingsCardTitle}>{t.businessPhotos}</Text>
+            <Text style={styles.emptyText}>{t.photosHint}</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.settingsPhotoRail}>
+              {photos.length ? photos.map((photo) => (
+                <Image key={photo.id} source={{ uri: photo.url }} style={styles.settingsPhoto} />
+              )) : (
+                <View style={styles.settingsPhotoPlaceholder}>
+                  <Ionicons name="image-outline" size={24} color="#94A3B8" />
+                </View>
+              )}
+            </ScrollView>
+          </View>
+        </Panel>
+      ) : null}
+
+      <Panel title={t.profileAndBusiness}>
+        <PrimaryButton label={saving ? t.signingIn : t.saveSettings} onPress={saveSettings} disabled={saving || busy || !workspace} />
+        <SecondaryButton label={t.signOut} onPress={onSignOut} disabled={busy || saving} />
       </Panel>
+    </View>
+  );
+}
+
+function SettingsOptionRail({
+  label,
+  value,
+  options,
+  onSelect,
+  renderLabel,
+}: {
+  label: string;
+  value: string;
+  options: string[];
+  onSelect: (value: string) => void;
+  renderLabel?: (value: string) => string;
+}) {
+  return (
+    <View style={styles.settingsOptionBlock}>
+      <Text style={styles.label}>{label}</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.settingsOptionRail}>
+        {options.map((item) => (
+          <Pressable key={item} style={[styles.choiceChip, value === item && styles.choiceChipActive]} onPress={() => onSelect(item)}>
+            <Text style={[styles.choiceText, value === item && styles.choiceTextActive]}>{renderLabel ? renderLabel(item) : item}</Text>
+          </Pressable>
+        ))}
+      </ScrollView>
     </View>
   );
 }
@@ -6161,6 +6723,265 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     backgroundColor: "#FFFFFF",
   },
+  settingsHero: {
+    padding: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    backgroundColor: "#FFFFFF",
+  },
+  settingsEyebrow: {
+    color: "#64748B",
+    fontSize: 12,
+    fontWeight: "900",
+    letterSpacing: 1.2,
+    textTransform: "uppercase",
+  },
+  settingsHeroTitle: {
+    marginTop: 5,
+    color: "#0F172A",
+    fontSize: 30,
+    lineHeight: 35,
+    fontWeight: "900",
+  },
+  settingsHeroText: {
+    marginTop: 4,
+    color: "#64748B",
+    fontSize: 14,
+    fontWeight: "800",
+  },
+  settingsSectionRail: {
+    gap: 8,
+    paddingRight: 8,
+  },
+  settingsSectionChip: {
+    minHeight: 38,
+    paddingHorizontal: 13,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#D8E2EF",
+    backgroundColor: "#FFFFFF",
+  },
+  settingsSectionChipActive: {
+    borderColor: "#6D4AFF",
+    backgroundColor: "#F5F3FF",
+  },
+  settingsSectionText: {
+    color: "#475569",
+    fontSize: 13,
+    fontWeight: "900",
+  },
+  settingsSectionTextActive: {
+    color: "#4C1D95",
+  },
+  settingsStatusText: {
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderRadius: 8,
+    overflow: "hidden",
+    color: "#166534",
+    fontSize: 13,
+    fontWeight: "900",
+    backgroundColor: "#DCFCE7",
+  },
+  settingsMutedNotice: {
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderRadius: 8,
+    overflow: "hidden",
+    color: "#92400E",
+    fontSize: 13,
+    fontWeight: "800",
+    backgroundColor: "#FEF3C7",
+  },
+  settingsAvatarRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    padding: 10,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    backgroundColor: "#F8FAFC",
+  },
+  settingsAvatar: {
+    width: 58,
+    height: 58,
+    borderRadius: 18,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#EC4899",
+  },
+  settingsAvatarText: {
+    color: "#FFFFFF",
+    fontSize: 28,
+    fontWeight: "900",
+  },
+  settingsAvatarInfo: {
+    flex: 1,
+    minWidth: 0,
+  },
+  settingsCardTitle: {
+    color: "#0F172A",
+    fontSize: 16,
+    fontWeight: "900",
+  },
+  settingsChoiceRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  settingsChoice: {
+    flex: 1,
+    minHeight: 46,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#D8E2EF",
+    backgroundColor: "#FFFFFF",
+  },
+  settingsChoiceActive: {
+    borderColor: "#6D4AFF",
+    backgroundColor: "#F5F3FF",
+  },
+  settingsChoiceText: {
+    color: "#475569",
+    fontSize: 13,
+    lineHeight: 17,
+    fontWeight: "900",
+    textAlign: "center",
+  },
+  settingsChoiceTextActive: {
+    color: "#4C1D95",
+  },
+  settingsStackedChoices: {
+    gap: 8,
+  },
+  settingsLongChoice: {
+    minHeight: 46,
+    justifyContent: "center",
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#D8E2EF",
+    backgroundColor: "#FFFFFF",
+  },
+  settingsOptionBlock: {
+    gap: 8,
+  },
+  settingsOptionRail: {
+    gap: 8,
+    paddingRight: 8,
+  },
+  settingsActionRow: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  settingsSummaryGrid: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  settingsSummaryTile: {
+    flex: 1,
+    minHeight: 78,
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    backgroundColor: "#F8FAFC",
+  },
+  settingsMiniRow: {
+    minHeight: 58,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingVertical: 9,
+    borderBottomWidth: 1,
+    borderBottomColor: "#E2E8F0",
+  },
+  settingsMiniInfo: {
+    flex: 1,
+    minWidth: 0,
+  },
+  settingsMiniTitle: {
+    color: "#0F172A",
+    fontSize: 15,
+    fontWeight: "900",
+  },
+  settingsMiniPrice: {
+    color: "#334155",
+    fontSize: 13,
+    fontWeight: "900",
+  },
+  joinRequestCard: {
+    minHeight: 66,
+    padding: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    backgroundColor: "#FFFFFF",
+  },
+  joinRequestActions: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  joinApproveButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#22C55E",
+  },
+  joinRejectButton: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#FEE2E2",
+  },
+  settingsMultilineInput: {
+    minHeight: 104,
+    height: 104,
+    paddingTop: 12,
+    paddingBottom: 12,
+  },
+  settingsPhotosBox: {
+    gap: 10,
+    padding: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    backgroundColor: "#F8FAFC",
+  },
+  settingsPhotoRail: {
+    gap: 10,
+    paddingRight: 8,
+  },
+  settingsPhoto: {
+    width: 92,
+    height: 92,
+    borderRadius: 14,
+    backgroundColor: "#E2E8F0",
+  },
+  settingsPhotoPlaceholder: {
+    width: 92,
+    height: 92,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#CBD5E1",
+    backgroundColor: "#FFFFFF",
+  },
   telegramStatus: {
     flexDirection: "row",
     alignItems: "center",
@@ -6173,6 +6994,9 @@ const styles = StyleSheet.create({
   },
   telegramDotConnected: {
     backgroundColor: "#22C55E",
+  },
+  telegramDotDisconnected: {
+    backgroundColor: "#CBD5E1",
   },
   telegramDotMuted: {
     backgroundColor: "#CBD5E1",
