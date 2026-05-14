@@ -288,6 +288,17 @@ type StaffSnapshot = {
   }>;
 };
 
+type MobileWorkspaceCache = {
+  professionalId: string;
+  selectedDate: string;
+  updatedAt: number;
+  workspace: WorkspaceSnapshot | null;
+  calendar: CalendarSnapshot | null;
+  clients: ClientRecord[];
+  serviceCatalog: ServiceCatalogCategory[];
+  staffSnapshot: StaffSnapshot | null;
+};
+
 type ServiceDraftState = {
   name: string;
   category: string;
@@ -437,6 +448,7 @@ type TelegramBooleanSettingKey =
   | "forwardingEnabled";
 
 const STORAGE_KEY = "timviz_mobile_session_v2";
+const WORKSPACE_CACHE_KEY = "timviz_mobile_workspace_cache_v2";
 const API_BASE_URL = (process.env.EXPO_PUBLIC_API_BASE_URL || "https://timviz.com").replace(/\/+$/, "");
 const WORDMARK = require("./assets/timviz-wordmark.png");
 const DEFAULT_SERVICE_CATEGORY = "Без категории";
@@ -1814,6 +1826,93 @@ export default function App() {
   const [serviceDraft, setServiceDraft] = useState<ServiceDraftState>({ name: "", category: DEFAULT_SERVICE_CATEGORY, durationMinutes: "60", price: "0", color: SERVICE_COLORS[0] });
   const [clientDraft, setClientDraft] = useState({ firstName: "", lastName: "", phone: "", email: "" });
 
+  function hasVisibleWorkspaceData() {
+    return Boolean(workspace || calendar || clients.length || staffSnapshot);
+  }
+
+  function applyWorkspaceCache(cache: MobileWorkspaceCache) {
+    setWorkspace(cache.workspace);
+    setCalendar(cache.calendar);
+    setClients(Array.isArray(cache.clients) ? cache.clients : []);
+    setServiceCatalog(Array.isArray(cache.serviceCatalog) ? cache.serviceCatalog : []);
+    setStaffSnapshot(cache.staffSnapshot || null);
+    if (cache.selectedDate) setSelectedDate(cache.selectedDate);
+  }
+
+  function persistWorkspaceCache(currentSession: MobileSession, date: string, snapshot: Omit<MobileWorkspaceCache, "professionalId" | "selectedDate" | "updatedAt">) {
+    const payload: MobileWorkspaceCache = {
+      professionalId: currentSession.professionalId,
+      selectedDate: date,
+      updatedAt: Date.now(),
+      ...snapshot,
+    };
+    void AsyncStorage.setItem(WORKSPACE_CACHE_KEY, JSON.stringify(payload)).catch(() => undefined);
+  }
+
+  function mergeCalendarAppointments(date: string, updater: (appointments: AppointmentRecord[]) => AppointmentRecord[]) {
+    setCalendar((current) => {
+      if (!current) return current;
+      const nextAppointments = updater(current.appointments || []);
+      const nextMemberCalendars = current.memberCalendars?.map((member) => ({
+        ...member,
+        appointments: updater(member.appointments || []).filter((appointment) => (appointment.professionalId || member.professionalId) === member.professionalId),
+      }));
+      return {
+        ...current,
+        appointments: nextAppointments,
+        memberCalendars: nextMemberCalendars,
+        stats: {
+          ...current.stats,
+          day: {
+            ...current.stats.day,
+            visitsCount: nextAppointments.filter((item) => item.kind === "appointment" && (item.appointmentDate || date) === date).length,
+          },
+        },
+      };
+    });
+  }
+
+  function mergeWorkspaceServices(updater: (services: ServiceRecord[]) => ServiceRecord[]) {
+    setWorkspace((current) => {
+      if (!current) return current;
+      return {
+        ...current,
+        services: updater(current.services || []),
+      };
+    });
+  }
+
+  function makeOptimisticAppointment(input: {
+    appointmentDate: string;
+    startTime: string;
+    endTime: string;
+    customerName: string;
+    customerPhone: string;
+    serviceName: string;
+    priceAmount: number;
+    targetProfessionalId?: string;
+    kind?: "appointment" | "blocked";
+  }): AppointmentRecord {
+    return {
+      id: createLocalId("optimistic"),
+      professionalId: input.targetProfessionalId || workspace?.professional.id,
+      appointmentDate: input.appointmentDate,
+      startTime: input.startTime,
+      endTime: input.endTime,
+      kind: input.kind || "appointment",
+      customerName: input.customerName,
+      customerPhone: input.customerPhone,
+      serviceName: input.serviceName,
+      attendance: "confirmed",
+      priceAmount: input.priceAmount,
+    };
+  }
+
+  function revalidateWorkspace(date = selectedDate, silent = true) {
+    if (!session) return;
+    void refreshAll(session, date, { silent });
+  }
+
   function openSettingsSection(section: MobileSettingsSection = "general") {
     setSettingsSection(section);
     setActiveTab("settings");
@@ -1826,7 +1925,17 @@ export default function App() {
         return;
       }
       try {
-        setSession(JSON.parse(raw) as MobileSession);
+        const cachedSession = JSON.parse(raw) as MobileSession;
+        setSession(cachedSession);
+        AsyncStorage.getItem(WORKSPACE_CACHE_KEY)
+          .then((cacheRaw) => {
+            if (!cacheRaw) return;
+            const cache = JSON.parse(cacheRaw) as MobileWorkspaceCache;
+            if (cache.professionalId === cachedSession.professionalId) {
+              applyWorkspaceCache(cache);
+            }
+          })
+          .catch(() => undefined);
       } catch {
         setSession(null);
       }
@@ -1836,7 +1945,7 @@ export default function App() {
 
   useEffect(() => {
     if (session) {
-      refreshAll(session, selectedDate);
+      refreshAll(session, selectedDate, { silent: hasVisibleWorkspaceData() });
     }
   }, [session, selectedDate]);
 
@@ -1874,10 +1983,10 @@ export default function App() {
     return Object.fromEntries(entries.filter((entry): entry is readonly [string, CalendarSnapshot] => Boolean(entry[1])));
   }, [session]);
 
-  async function refreshAll(currentSession = session, date = selectedDate) {
+  async function refreshAll(currentSession = session, date = selectedDate, options: { silent?: boolean } = {}) {
     if (!currentSession) return;
 
-    setRefreshing(true);
+    if (!options.silent) setRefreshing(true);
     try {
       const headers = { Authorization: `Bearer ${currentSession.token}` };
       const [workspaceResult, calendarResult, clientsResult, servicesResult, staffResult] = await Promise.all([
@@ -1898,11 +2007,20 @@ export default function App() {
       if (servicesResult?.error) throw new Error(servicesResult.error);
       if (staffResult?.error) throw new Error(staffResult.error);
 
+      const nextClients = Array.isArray(clientsResult.clients) ? clientsResult.clients : [];
+      const nextCatalog = Array.isArray(servicesResult.catalog) ? servicesResult.catalog : [];
       setWorkspace(workspaceResult);
       setCalendar(calendarResult);
-      setClients(Array.isArray(clientsResult.clients) ? clientsResult.clients : []);
-      setServiceCatalog(Array.isArray(servicesResult.catalog) ? servicesResult.catalog : []);
+      setClients(nextClients);
+      setServiceCatalog(nextCatalog);
       setStaffSnapshot(staffResult || null);
+      persistWorkspaceCache(currentSession, date, {
+        workspace: workspaceResult,
+        calendar: calendarResult,
+        clients: nextClients,
+        serviceCatalog: nextCatalog,
+        staffSnapshot: staffResult || null,
+      });
       setVisitDraft((current) => ({
         ...current,
         customerName: safeText(current.customerName),
@@ -1913,9 +2031,11 @@ export default function App() {
         items: Array.isArray(current.items) && current.items.length ? current.items : [createVisitServiceDraft(safeText(current.startTime) || "09:00")],
       }));
     } catch (error) {
-      Alert.alert("Timviz", error instanceof Error ? error.message : "Failed to load workspace.");
+      if (!options.silent) {
+        Alert.alert("Timviz", error instanceof Error ? error.message : "Failed to load workspace.");
+      }
     } finally {
-      setRefreshing(false);
+      if (!options.silent) setRefreshing(false);
     }
   }
 
@@ -2001,6 +2121,7 @@ export default function App() {
   async function signOut() {
     setBusy(true);
     await AsyncStorage.removeItem(STORAGE_KEY);
+    await AsyncStorage.removeItem(WORKSPACE_CACHE_KEY);
     setSession(null);
     setWorkspace(null);
     setCalendar(null);
@@ -2032,9 +2153,23 @@ export default function App() {
     const appointmentDate = visitDraft.appointmentDate || selectedDate;
     const customerName = safeText(visitDraft.customerName).trim();
     const customerPhone = safeText(visitDraft.customerPhone).trim();
-    setBusy(true);
-    try {
-      await apiFetch("/api/mobile/pro/calendar", {
+    const optimisticAppointments = items.map((item) =>
+      makeOptimisticAppointment({
+        appointmentDate,
+        startTime: item.startTime,
+        endTime: item.endTime,
+        customerName,
+        customerPhone,
+        serviceName: item.serviceName,
+        priceAmount: item.priceAmount,
+        targetProfessionalId: visitDraft.targetProfessionalId,
+      })
+    );
+    mergeCalendarAppointments(appointmentDate, (appointments) =>
+      [...appointments, ...optimisticAppointments].sort((left, right) => left.startTime.localeCompare(right.startTime))
+    );
+    setVisitDraft(createDefaultVisitDraft(appointmentDate, items[0]?.startTime || "09:00"));
+    void apiFetch("/api/mobile/pro/calendar", {
         method: "POST",
         body: JSON.stringify({
           targetProfessionalId: visitDraft.targetProfessionalId,
@@ -2050,16 +2185,13 @@ export default function App() {
             notes: "",
           })),
         }),
+      })
+      .then(() => refreshAll(session, appointmentDate, { silent: true }))
+      .catch((error) => {
+        Alert.alert(t.addVisit, error instanceof Error ? error.message : t.addVisit);
+        revalidateWorkspace(appointmentDate);
       });
-      setVisitDraft(createDefaultVisitDraft(appointmentDate, items[0]?.startTime || "09:00"));
-      await refreshAll(session, appointmentDate);
-      return true;
-    } catch (error) {
-      Alert.alert(t.addVisit, error instanceof Error ? error.message : t.addVisit);
-      return false;
-    } finally {
-      setBusy(false);
-    }
+    return true;
   }
 
   async function saveEditedVisit() {
@@ -2075,9 +2207,37 @@ export default function App() {
     const appointmentDate = visitDraft.appointmentDate || editingAppointment.appointmentDate || selectedDate;
     const customerName = safeText(visitDraft.customerName).trim();
     const customerPhone = safeText(visitDraft.customerPhone).trim();
-    setBusy(true);
-    try {
-      await apiFetch("/api/mobile/pro/calendar", {
+    const updatedAppointment: AppointmentRecord = {
+      ...editingAppointment,
+      professionalId: editingAppointment.professionalId || visitDraft.targetProfessionalId,
+      appointmentDate,
+      customerName,
+      customerPhone,
+      startTime: primaryItem.startTime,
+      endTime: primaryItem.endTime,
+      serviceName: primaryItem.serviceName,
+      priceAmount: primaryItem.priceAmount,
+    };
+    const optimisticExtraAppointments = extraItems.map((item) =>
+      makeOptimisticAppointment({
+        appointmentDate,
+        startTime: item.startTime,
+        endTime: item.endTime,
+        customerName,
+        customerPhone,
+        serviceName: item.serviceName,
+        priceAmount: item.priceAmount,
+        targetProfessionalId: editingAppointment.professionalId || visitDraft.targetProfessionalId,
+      })
+    );
+    mergeCalendarAppointments(appointmentDate, (appointments) =>
+      [
+        ...appointments.map((appointment) => (appointment.id === editingAppointment.id ? updatedAppointment : appointment)),
+        ...optimisticExtraAppointments,
+      ].sort((left, right) => left.startTime.localeCompare(right.startTime))
+    );
+    setEditingAppointment(null);
+    void apiFetch("/api/mobile/pro/calendar", {
         method: "PATCH",
         body: JSON.stringify({
           mode: "meta",
@@ -2094,9 +2254,10 @@ export default function App() {
           previousCustomerPhone: editingAppointment.customerPhone,
           previousAppointmentTime: editingAppointment.startTime,
         }),
-      });
-      if (extraItems.length) {
-        await apiFetch("/api/mobile/pro/calendar", {
+      })
+      .then(() => {
+        if (!extraItems.length) return null;
+        return apiFetch("/api/mobile/pro/calendar", {
           method: "POST",
           body: JSON.stringify({
             targetProfessionalId: editingAppointment.professionalId || visitDraft.targetProfessionalId,
@@ -2113,16 +2274,13 @@ export default function App() {
             })),
           }),
         });
-      }
-      await refreshAll(session, appointmentDate);
-      setEditingAppointment(null);
-      return true;
-    } catch (error) {
-      Alert.alert(t.editVisit, error instanceof Error ? error.message : t.editVisit);
-      return false;
-    } finally {
-      setBusy(false);
-    }
+      })
+      .then(() => refreshAll(session, appointmentDate, { silent: true }))
+      .catch((error) => {
+        Alert.alert(t.editVisit, error instanceof Error ? error.message : t.editVisit);
+        revalidateWorkspace(appointmentDate);
+      });
+    return true;
   }
 
   async function createClientFromVisit(input: { fullName: string; phone: string; email: string }) {
@@ -2132,9 +2290,18 @@ export default function App() {
       return null;
     }
 
-    setBusy(true);
-    try {
-      const result = await apiFetch("/api/mobile/pro/clients", {
+    const optimisticClient: ClientRecord = {
+      id: createLocalId("client"),
+      fullName: input.fullName.trim() || input.phone.trim(),
+      firstName: parts[0] || "",
+      lastName: parts.slice(1).join(" "),
+      phone: input.phone.trim(),
+      email: input.email.trim(),
+      visitsCount: 0,
+      totalSales: 0,
+    };
+    setClients((current) => [optimisticClient, ...current]);
+    void apiFetch("/api/mobile/pro/clients", {
         method: "POST",
         body: JSON.stringify({
           firstName: parts[0] || "",
@@ -2144,15 +2311,13 @@ export default function App() {
           notificationsTelegram: true,
           marketingTelegram: false,
         }),
+      })
+      .then(() => refreshAll(session, selectedDate, { silent: true }))
+      .catch((error) => {
+        Alert.alert(t.addClient, error instanceof Error ? error.message : t.addClient);
+        revalidateWorkspace();
       });
-      await refreshAll();
-      return result?.client as ClientRecord;
-    } catch (error) {
-      Alert.alert(t.addClient, error instanceof Error ? error.message : t.addClient);
-      return null;
-    } finally {
-      setBusy(false);
-    }
+    return optimisticClient;
   }
 
   async function deleteAppointment(appointment: AppointmentRecord) {
@@ -2162,25 +2327,28 @@ export default function App() {
         text: t.delete,
         style: "destructive",
         onPress: async () => {
-          setBusy(true);
-          try {
-            const target = appointment.professionalId ? `&targetProfessionalId=${encodeURIComponent(appointment.professionalId)}` : "";
-            await apiFetch(`/api/mobile/pro/calendar?appointmentId=${encodeURIComponent(appointment.id)}${target}`, { method: "DELETE" });
-            await refreshAll(session, appointment.appointmentDate || selectedDate);
-          } catch (error) {
-            Alert.alert(t.delete, error instanceof Error ? error.message : t.delete);
-          } finally {
-            setBusy(false);
-          }
+          const appointmentDate = appointment.appointmentDate || selectedDate;
+          mergeCalendarAppointments(appointmentDate, (appointments) => appointments.filter((item) => item.id !== appointment.id));
+          const target = appointment.professionalId ? `&targetProfessionalId=${encodeURIComponent(appointment.professionalId)}` : "";
+          void apiFetch(`/api/mobile/pro/calendar?appointmentId=${encodeURIComponent(appointment.id)}${target}`, { method: "DELETE" })
+            .then(() => refreshAll(session, appointmentDate, { silent: true }))
+            .catch((error) => {
+              Alert.alert(t.delete, error instanceof Error ? error.message : t.delete);
+              revalidateWorkspace(appointmentDate);
+            });
         },
       },
     ]);
   }
 
   async function updateAppointmentTime(appointment: AppointmentRecord, startTime: string, endTime: string) {
-    setBusy(true);
-    try {
-      await apiFetch("/api/mobile/pro/calendar", {
+    const appointmentDate = appointment.appointmentDate || selectedDate;
+    mergeCalendarAppointments(appointmentDate, (appointments) =>
+      appointments
+        .map((item) => (item.id === appointment.id ? { ...item, startTime, endTime } : item))
+        .sort((left, right) => left.startTime.localeCompare(right.startTime))
+    );
+    void apiFetch("/api/mobile/pro/calendar", {
         method: "PATCH",
         body: JSON.stringify({
           targetProfessionalId: appointment.professionalId,
@@ -2190,21 +2358,31 @@ export default function App() {
           previousAppointmentTime: appointment.startTime,
           previousAppointmentDate: appointment.appointmentDate,
         }),
+      })
+      .then(() => refreshAll(session, appointmentDate, { silent: true }))
+      .catch((error) => {
+        Alert.alert(t.editVisit, error instanceof Error ? error.message : t.editVisit);
+        revalidateWorkspace(appointmentDate);
       });
-      await refreshAll(session, appointment.appointmentDate || selectedDate);
-      return true;
-    } catch (error) {
-      Alert.alert(t.editVisit, error instanceof Error ? error.message : t.editVisit);
-      return false;
-    } finally {
-      setBusy(false);
-    }
+    return true;
   }
 
   async function createBlockedTime(date: string, startTime: string, endTime: string, label: string, targetProfessionalId?: string) {
-    setBusy(true);
-    try {
-      await apiFetch("/api/mobile/pro/calendar", {
+    const optimisticBlocked = makeOptimisticAppointment({
+      appointmentDate: date,
+      startTime,
+      endTime,
+      customerName: "",
+      customerPhone: "",
+      serviceName: label,
+      priceAmount: 0,
+      targetProfessionalId,
+      kind: "blocked",
+    });
+    mergeCalendarAppointments(date, (appointments) =>
+      [...appointments, optimisticBlocked].sort((left, right) => left.startTime.localeCompare(right.startTime))
+    );
+    void apiFetch("/api/mobile/pro/calendar", {
         method: "POST",
         body: JSON.stringify({
           kind: "blocked",
@@ -2214,13 +2392,12 @@ export default function App() {
           endTime,
           serviceName: label,
         }),
+      })
+      .then(() => refreshAll(session, date, { silent: true }))
+      .catch((error) => {
+        Alert.alert(label, error instanceof Error ? error.message : label);
+        revalidateWorkspace(date);
       });
-      await refreshAll(session, date);
-    } catch (error) {
-      Alert.alert(label, error instanceof Error ? error.message : label);
-    } finally {
-      setBusy(false);
-    }
   }
 
   async function createService() {
@@ -2229,28 +2406,34 @@ export default function App() {
       return false;
     }
 
-    setBusy(true);
-    try {
-      await apiFetch("/api/mobile/pro/services", {
+    const optimisticService: ServiceRecord = {
+      id: createLocalId("service"),
+      name: serviceDraft.name.trim(),
+      category: serviceDraft.category.trim() || DEFAULT_SERVICE_CATEGORY,
+      durationMinutes: Number(serviceDraft.durationMinutes || 60),
+      price: Number(serviceDraft.price || 0),
+      color: serviceDraft.color || SERVICE_COLORS[0],
+      source: "custom",
+    };
+    mergeWorkspaceServices((services) => [optimisticService, ...services]);
+    setServiceDraft({ name: "", category: serviceDraft.category || DEFAULT_SERVICE_CATEGORY, durationMinutes: "60", price: "0", color: SERVICE_COLORS[0] });
+    void apiFetch("/api/mobile/pro/services", {
         method: "POST",
         body: JSON.stringify({
-          name: serviceDraft.name.trim(),
-          category: serviceDraft.category.trim() || DEFAULT_SERVICE_CATEGORY,
-          durationMinutes: Number(serviceDraft.durationMinutes || 60),
-          price: Number(serviceDraft.price || 0),
-          color: serviceDraft.color || SERVICE_COLORS[0],
+          name: optimisticService.name,
+          category: optimisticService.category,
+          durationMinutes: optimisticService.durationMinutes,
+          price: optimisticService.price,
+          color: optimisticService.color,
           source: "custom",
         }),
+      })
+      .then(() => refreshAll(session, selectedDate, { silent: true }))
+      .catch((error) => {
+        Alert.alert(t.addService, error instanceof Error ? error.message : t.addService);
+        revalidateWorkspace();
       });
-      setServiceDraft({ name: "", category: serviceDraft.category || DEFAULT_SERVICE_CATEGORY, durationMinutes: "60", price: "0", color: SERVICE_COLORS[0] });
-      await refreshAll();
-      return true;
-    } catch (error) {
-      Alert.alert(t.addService, error instanceof Error ? error.message : t.addService);
-      return false;
-    } finally {
-      setBusy(false);
-    }
+    return true;
   }
 
   async function updateService(serviceId: string, draft: ServiceDraftState) {
@@ -2259,49 +2442,61 @@ export default function App() {
       return false;
     }
 
-    setBusy(true);
-    try {
-      await apiFetch("/api/mobile/pro/services", {
+    const updatedService: ServiceRecord = {
+      id: serviceId,
+      name: draft.name.trim(),
+      category: draft.category.trim() || DEFAULT_SERVICE_CATEGORY,
+      durationMinutes: Number(draft.durationMinutes || 60),
+      price: Number(draft.price || 0),
+      color: draft.color || SERVICE_COLORS[0],
+    };
+    mergeWorkspaceServices((services) => services.map((service) => (service.id === serviceId ? { ...service, ...updatedService } : service)));
+    void apiFetch("/api/mobile/pro/services", {
         method: "PATCH",
         body: JSON.stringify({
           serviceId,
-          name: draft.name.trim(),
-          category: draft.category.trim() || DEFAULT_SERVICE_CATEGORY,
-          durationMinutes: Number(draft.durationMinutes || 60),
-          price: Number(draft.price || 0),
-          color: draft.color || SERVICE_COLORS[0],
+          name: updatedService.name,
+          category: updatedService.category,
+          durationMinutes: updatedService.durationMinutes,
+          price: updatedService.price,
+          color: updatedService.color,
         }),
+      })
+      .then(() => refreshAll(session, selectedDate, { silent: true }))
+      .catch((error) => {
+        Alert.alert(t.editService, error instanceof Error ? error.message : t.editService);
+        revalidateWorkspace();
       });
-      await refreshAll();
-      return true;
-    } catch (error) {
-      Alert.alert(t.editService, error instanceof Error ? error.message : t.editService);
-      return false;
-    } finally {
-      setBusy(false);
-    }
+    return true;
   }
 
   async function addCatalogService(service: ServiceTemplateRecord & { category: string }) {
-    setBusy(true);
-    try {
-      await apiFetch("/api/mobile/pro/services", {
+    const optimisticService: ServiceRecord = {
+      id: createLocalId("service"),
+      name: service.name,
+      category: service.category || DEFAULT_SERVICE_CATEGORY,
+      durationMinutes: Number(service.durationMinutes || 60),
+      price: Number(service.price || 0),
+      color: SERVICE_COLORS[(workspace?.services.length || 0) % SERVICE_COLORS.length],
+      source: "catalog",
+    };
+    mergeWorkspaceServices((services) => [optimisticService, ...services]);
+    void apiFetch("/api/mobile/pro/services", {
         method: "POST",
         body: JSON.stringify({
-          name: service.name,
-          category: service.category || DEFAULT_SERVICE_CATEGORY,
-          durationMinutes: Number(service.durationMinutes || 60),
-          price: Number(service.price || 0),
-          color: SERVICE_COLORS[(workspace?.services.length || 0) % SERVICE_COLORS.length],
+          name: optimisticService.name,
+          category: optimisticService.category,
+          durationMinutes: optimisticService.durationMinutes,
+          price: optimisticService.price,
+          color: optimisticService.color,
           source: "catalog",
         }),
+      })
+      .then(() => refreshAll(session, selectedDate, { silent: true }))
+      .catch((error) => {
+        Alert.alert(t.addFromCatalog, error instanceof Error ? error.message : t.addFromCatalog);
+        revalidateWorkspace();
       });
-      await refreshAll();
-    } catch (error) {
-      Alert.alert(t.addFromCatalog, error instanceof Error ? error.message : t.addFromCatalog);
-    } finally {
-      setBusy(false);
-    }
   }
 
   async function saveStaffSchedule(
@@ -2333,15 +2528,13 @@ export default function App() {
   }
 
   async function removeService(serviceId: string) {
-    setBusy(true);
-    try {
-      await apiFetch(`/api/mobile/pro/services?serviceId=${encodeURIComponent(serviceId)}`, { method: "DELETE" });
-      await refreshAll();
-    } catch (error) {
-      Alert.alert(t.delete, error instanceof Error ? error.message : t.delete);
-    } finally {
-      setBusy(false);
-    }
+    mergeWorkspaceServices((services) => services.filter((service) => service.id !== serviceId));
+    void apiFetch(`/api/mobile/pro/services?serviceId=${encodeURIComponent(serviceId)}`, { method: "DELETE" })
+      .then(() => refreshAll(session, selectedDate, { silent: true }))
+      .catch((error) => {
+        Alert.alert(t.delete, error instanceof Error ? error.message : t.delete);
+        revalidateWorkspace();
+      });
   }
 
   async function createClient() {
@@ -2350,26 +2543,34 @@ export default function App() {
       return;
     }
 
-    setBusy(true);
-    try {
-      await apiFetch("/api/mobile/pro/clients", {
+    const optimisticClient: ClientRecord = {
+      id: createLocalId("client"),
+      fullName: [clientDraft.firstName.trim(), clientDraft.lastName.trim()].filter(Boolean).join(" ") || clientDraft.phone.trim(),
+      firstName: clientDraft.firstName.trim(),
+      lastName: clientDraft.lastName.trim(),
+      phone: clientDraft.phone.trim(),
+      email: clientDraft.email.trim(),
+      visitsCount: 0,
+      totalSales: 0,
+    };
+    setClients((current) => [optimisticClient, ...current]);
+    setClientDraft({ firstName: "", lastName: "", phone: "", email: "" });
+    void apiFetch("/api/mobile/pro/clients", {
         method: "POST",
         body: JSON.stringify({
-          firstName: clientDraft.firstName.trim(),
-          lastName: clientDraft.lastName.trim(),
-          phone: clientDraft.phone.trim(),
-          email: clientDraft.email.trim(),
+          firstName: optimisticClient.firstName,
+          lastName: optimisticClient.lastName,
+          phone: optimisticClient.phone,
+          email: optimisticClient.email,
           notificationsTelegram: true,
           marketingTelegram: false,
         }),
+      })
+      .then(() => refreshAll(session, selectedDate, { silent: true }))
+      .catch((error) => {
+        Alert.alert(t.addClient, error instanceof Error ? error.message : t.addClient);
+        revalidateWorkspace();
       });
-      setClientDraft({ firstName: "", lastName: "", phone: "", email: "" });
-      await refreshAll();
-    } catch (error) {
-      Alert.alert(t.addClient, error instanceof Error ? error.message : t.addClient);
-    } finally {
-      setBusy(false);
-    }
   }
 
   if (loadingSession) {
@@ -2651,6 +2852,11 @@ function CalendarTab({
   const [newClientDraft, setNewClientDraft] = useState({ firstName: "", lastName: "", phone: "" });
   const visibleDates = useMemo(() => getCalendarModeDates(viewMode, selectedDate), [selectedDate, viewMode]);
   const visibleDatesKey = visibleDates.join("|");
+  const preloadDates = useMemo(
+    () => (viewMode === "day" ? [shiftDate(selectedDate, -1), selectedDate, shiftDate(selectedDate, 1)] : visibleDates),
+    [selectedDate, viewMode, visibleDatesKey]
+  );
+  const preloadDatesKey = preloadDates.join("|");
   const [rangeSnapshots, setRangeSnapshots] = useState<Record<string, CalendarSnapshot>>({});
   const calendarMembers = useMemo<CalendarMemberView[]>(() => {
     const map = new Map<string, CalendarMemberView>();
@@ -2769,9 +2975,8 @@ function CalendarTab({
   }, [calendar?.viewedProfessionalId, calendarMembers, workspace?.professional.id]);
 
   useEffect(() => {
-    if (viewMode === "day") return;
     let cancelled = false;
-    loadCalendarDays(visibleDates)
+    loadCalendarDays(preloadDates)
       .then((snapshots) => {
         if (!cancelled) setRangeSnapshots((current) => ({ ...current, ...snapshots }));
       })
@@ -2779,14 +2984,14 @@ function CalendarTab({
     return () => {
       cancelled = true;
     };
-  }, [loadCalendarDays, viewMode, visibleDatesKey]);
+  }, [loadCalendarDays, preloadDatesKey]);
 
   function getAppointmentsForDate(date: string) {
     return appointmentsByDate.get(date) || [];
   }
 
   function getSnapshotForDate(date: string) {
-    return date === selectedDate ? calendar : rangeSnapshots[date] || null;
+    return date === selectedDate ? calendar || rangeSnapshots[date] || null : rangeSnapshots[date] || null;
   }
 
   function getAppointmentsForMember(date: string, memberId: string) {
