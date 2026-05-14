@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import ProfileAvatar from "../../ProfileAvatar";
 import styles from "../pro.module.css";
 import FloatingPopover from "../FloatingPopover";
+import { PlanBadge } from "../PlanBadge";
 import ProSidebar from "../ProSidebar";
 import SupportWidget from "../SupportWidget";
 import { getPostLogoutRedirectPath } from "../telegram-context";
@@ -1395,6 +1396,8 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
   const scrollFrameRef = useRef<HTMLDivElement | null>(null);
   const snapshotCacheRef = useRef<Map<string, CalendarSnapshot>>(new Map());
   const snapshotAbortRef = useRef<AbortController | null>(null);
+  const directoryClientsCacheRef = useRef<CalendarDirectoryClient[] | null>(null);
+  const isDirectoryClientsLoadingRef = useRef(false);
   const snapshotRequestIdRef = useRef(0);
   const snapshotPrefetchRef = useRef<Set<string>>(new Set());
   const lastCalendarNavigationDirectionRef = useRef<-1 | 0 | 1>(0);
@@ -1692,10 +1695,10 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
 
     if (viewMode === "week") {
       if (direction > 0) {
-        return [addDays(dateKey, 7), addDays(dateKey, 14), addDays(dateKey, 21), addDays(dateKey, -7)];
+        return [addDays(dateKey, 7), addDays(dateKey, 14), addDays(dateKey, -7)];
       }
       if (direction < 0) {
-        return [addDays(dateKey, -7), addDays(dateKey, -14), addDays(dateKey, -21), addDays(dateKey, 7)];
+        return [addDays(dateKey, -7), addDays(dateKey, -14), addDays(dateKey, 7)];
       }
       return [addDays(dateKey, 7), addDays(dateKey, -7), addDays(dateKey, 14), addDays(dateKey, -14)];
     }
@@ -1715,12 +1718,9 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
         addDays(dateKey, 1),
         addDays(dateKey, 2),
         addDays(dateKey, 3),
-        addDays(dateKey, 4),
-        addDays(dateKey, 5),
-        addDays(dateKey, 6),
-        addDays(dateKey, 7),
         addDays(dateKey, -1),
-        addDays(dateKey, -2)
+        addDays(dateKey, -2),
+        addDays(dateKey, 4)
       ];
     }
     if (direction < 0) {
@@ -1728,12 +1728,9 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
         addDays(dateKey, -1),
         addDays(dateKey, -2),
         addDays(dateKey, -3),
-        addDays(dateKey, -4),
-        addDays(dateKey, -5),
-        addDays(dateKey, -6),
-        addDays(dateKey, -7),
         addDays(dateKey, 1),
-        addDays(dateKey, 2)
+        addDays(dateKey, 2),
+        addDays(dateKey, -4)
       ];
     }
     return [
@@ -1744,13 +1741,7 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
       addDays(dateKey, 3),
       addDays(dateKey, -3),
       addDays(dateKey, 4),
-      addDays(dateKey, -4),
-      addDays(dateKey, 5),
-      addDays(dateKey, -5),
-      addDays(dateKey, 6),
-      addDays(dateKey, -6),
-      addDays(dateKey, 7),
-      addDays(dateKey, -7)
+      addDays(dateKey, -4)
     ];
   }
 
@@ -2132,12 +2123,27 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
       return;
     }
 
+    if (directoryClientsCacheRef.current) {
+      setDirectoryClients(directoryClientsCacheRef.current);
+      return;
+    }
+
+    if (isDirectoryClientsLoadingRef.current) {
+      return;
+    }
+
+    isDirectoryClientsLoadingRef.current = true;
     void fetch("/api/pro/clients")
       .then((response) => response.json())
       .then((payload: { clients?: CalendarDirectoryClient[] }) => {
-        setDirectoryClients(payload.clients ?? []);
+        const nextClients = payload.clients ?? [];
+        directoryClientsCacheRef.current = nextClients;
+        setDirectoryClients(nextClients);
       })
-      .catch(() => setDirectoryClients([]));
+      .catch(() => setDirectoryClients([]))
+      .finally(() => {
+        isDirectoryClientsLoadingRef.current = false;
+      });
   }, [drawerStage]);
 
   useEffect(() => {
@@ -4324,12 +4330,6 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
           </div>
 
           <div className={styles.calendarWorkspaceActions}>
-            {viewerHasPremium ? (
-              <span className={styles.calendarPremiumBadge} aria-label="Timviz Premium">
-                PRO
-              </span>
-            ) : null}
-
             {onboardingCta && !onboardingCta.completed ? (
               <button
                 type="button"
@@ -4415,6 +4415,8 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
               </svg>
               {totalPendingNotifications ? <span className={styles.calendarNotificationBadge}>{totalPendingNotifications}</span> : null}
             </button>
+
+            {viewerHasPremium ? <PlanBadge variant="header" className={styles.headerPlanBadge} /> : null}
 
             <button
               ref={accountMenuButtonRef}
@@ -4540,7 +4542,10 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
                 />
                 <div>
                   <strong>{viewerName}</strong>
-                  <span>{snapshot?.workspace.business.name ?? "Timviz"}</span>
+                  <div className={styles.profileMenuCompanyRow}>
+                    <span className={styles.profileMenuCompanyName}>{snapshot?.workspace.business.name ?? "Timviz"}</span>
+                    {viewerHasPremium ? <PlanBadge variant="menu" /> : null}
+                  </div>
                 </div>
               </div>
 

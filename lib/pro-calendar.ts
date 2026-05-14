@@ -291,6 +291,83 @@ async function readAppointmentsForProfessional(professionalId: string) {
     );
 }
 
+async function readBusinessAppointmentsForDate(businessId: string, appointmentDate: string) {
+  if (!businessId.trim() || !appointmentDate.trim()) {
+    return [];
+  }
+
+  if (isSupabaseConfigured()) {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      return [];
+    }
+
+    const { data, error } = await supabase
+      .from("calendar_appointments")
+      .select(
+        "id, business_id, professional_id, appointment_date, start_time, end_time, kind, customer_name, customer_phone, service_name, notes, attendance, price_amount, created_at"
+      )
+      .eq("business_id", businessId)
+      .eq("appointment_date", appointmentDate)
+      .order("start_time", { ascending: true })
+      .order("created_at", { ascending: true });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return (data ?? []).map((row) => mapSupabaseAppointment(row as CalendarAppointmentRow));
+  }
+
+  const store = await readStore();
+  return store.appointments
+    .filter((appointment) => appointment.businessId === businessId && appointment.appointmentDate === appointmentDate)
+    .sort((left, right) =>
+      `${left.startTime}${left.createdAt}`.localeCompare(`${right.startTime}${right.createdAt}`)
+    );
+}
+
+async function readRecentBusinessAppointments(businessId: string, limit = 8) {
+  if (!businessId.trim()) {
+    return [];
+  }
+
+  if (isSupabaseConfigured()) {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      return [];
+    }
+
+    const { data, error } = await supabase
+      .from("calendar_appointments")
+      .select(
+        "id, business_id, professional_id, appointment_date, start_time, end_time, kind, customer_name, customer_phone, service_name, notes, attendance, price_amount, created_at"
+      )
+      .eq("business_id", businessId)
+      .eq("kind", "appointment")
+      .order("appointment_date", { ascending: false })
+      .order("start_time", { ascending: false })
+      .order("created_at", { ascending: false })
+      .limit(Math.max(1, limit));
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return (data ?? []).map((row) => mapSupabaseAppointment(row as CalendarAppointmentRow));
+  }
+
+  const store = await readStore();
+  return store.appointments
+    .filter((appointment) => appointment.businessId === businessId && appointment.kind === "appointment")
+    .sort((left, right) =>
+      `${right.appointmentDate}${right.startTime}${right.createdAt}`.localeCompare(
+        `${left.appointmentDate}${left.startTime}${left.createdAt}`
+      )
+    )
+    .slice(0, Math.max(1, limit));
+}
+
 export async function getAppointmentsForBusiness(businessId: string) {
   if (!businessId.trim()) {
     return [];
@@ -615,9 +692,12 @@ export async function getCalendarDaySnapshot(input: {
     targetProfessionalId: input.targetProfessionalId
   });
   const professionalAppointments = await readAppointmentsForProfessional(access.targetWorkspace.professional.id);
-  const businessAppointments = access.canManageTeam
-    ? await getAppointmentsForBusiness(access.targetWorkspace.business.id)
-    : professionalAppointments;
+  const businessAppointmentsForDay = access.canManageTeam
+    ? await readBusinessAppointmentsForDate(access.targetWorkspace.business.id, input.appointmentDate)
+    : professionalAppointments.filter((appointment) => appointment.appointmentDate === input.appointmentDate);
+  const recentBusinessAppointments = access.canManageTeam
+    ? await readRecentBusinessAppointments(access.targetWorkspace.business.id, 8)
+    : [];
   const existing = professionalAppointments.filter(
     (appointment) => appointment.appointmentDate === input.appointmentDate
   );
@@ -642,7 +722,7 @@ export async function getCalendarDaySnapshot(input: {
   ).sort((left, right) => left.name.localeCompare(right.name, "ru"));
 
   const activitySource = access.canManageTeam
-    ? businessAppointments
+    ? recentBusinessAppointments
     : [...professionalAppointments].sort((left, right) =>
         `${right.createdAt}${right.appointmentDate}${right.startTime}`.localeCompare(
           `${left.createdAt}${left.appointmentDate}${left.startTime}`
@@ -671,7 +751,7 @@ export async function getCalendarDaySnapshot(input: {
         scope: entry.membership.scope === "owner" ? "owner" : "member",
         isViewer: entry.professional.id === input.professionalId,
         memberSchedule: memberWorkspace.memberSchedule,
-        appointments: businessAppointments
+        appointments: businessAppointmentsForDay
           .filter(
             (appointment) =>
               appointment.professionalId === entry.professional.id &&
