@@ -469,12 +469,12 @@ const TIMEZONE_LABELS: Record<string, string> = {
 };
 const CURRENCY_OPTIONS = ["UAH", "EUR", "USD", "PLN", "GBP", "KZT", "GEL", "AED", "CAD"];
 const TELEGRAM_REMINDER_LEAD_OPTIONS = [15, 30, 60, 120, 180, 1440];
-const SERVICE_MODE_OPTIONS = [
-  "Клиенты приходят в мое физическое заведение",
-  "Я работаю с выездом к клиенту",
-  "Я предоставляю услуги онлайн",
-];
-
+const SERVICE_MODE_IDS = ["onsite", "travel", "online"] as const;
+const SERVICE_MODE_VALUES: Record<(typeof SERVICE_MODE_IDS)[number], string> = {
+  onsite: "Клиенты приходят в мое физическое заведение",
+  travel: "Я работаю с выездом к клиенту",
+  online: "Я предоставляю услуги онлайн",
+};
 const languageNames: Record<AppLanguage, string> = {
   uk: "UA",
   ru: "RU",
@@ -757,6 +757,13 @@ const copy = {
     minutesBefore: "хв до запису",
     hoursBefore: "год до запису",
     dayBefore: "за день",
+    minutesShort: "хв",
+    defaultServiceCategory: "Без категорії",
+    serviceModeOnsite: "Клієнти приходять у мій заклад",
+    serviceModeTravel: "Я працюю з виїздом до клієнта",
+    serviceModeOnline: "Я надаю послуги онлайн",
+    calendarHeaderTitle: "Денний календар",
+    loadWorkspaceFailed: "Не вдалося завантажити кабінет.",
     empty: "Поки порожньо",
   },
   ru: {
@@ -1034,6 +1041,13 @@ const copy = {
     minutesBefore: "мин до записи",
     hoursBefore: "ч до записи",
     dayBefore: "за день",
+    minutesShort: "мин",
+    defaultServiceCategory: "Без категории",
+    serviceModeOnsite: "Клиенты приходят в мое заведение",
+    serviceModeTravel: "Я работаю с выездом к клиенту",
+    serviceModeOnline: "Я предоставляю услуги онлайн",
+    calendarHeaderTitle: "Дневной календарь",
+    loadWorkspaceFailed: "Не удалось загрузить кабинет.",
     empty: "Пока пусто",
   },
   en: {
@@ -1311,6 +1325,13 @@ const copy = {
     minutesBefore: "min before",
     hoursBefore: "h before",
     dayBefore: "one day before",
+    minutesShort: "min",
+    defaultServiceCategory: "Uncategorized",
+    serviceModeOnsite: "Clients come to my location",
+    serviceModeTravel: "I travel to clients",
+    serviceModeOnline: "I provide services online",
+    calendarHeaderTitle: "Daily calendar",
+    loadWorkspaceFailed: "Failed to load workspace.",
     empty: "Empty for now",
   },
 } satisfies Record<AppLanguage, Record<string, string>>;
@@ -1320,6 +1341,69 @@ function detectLanguage(): AppLanguage {
   if (languageCode === "ru") return "ru";
   if (languageCode === "uk") return "uk";
   return "en";
+}
+
+function localeForLanguage(language: AppLanguage) {
+  return language === "en" ? "en-US" : language === "uk" ? "uk-UA" : "ru-RU";
+}
+
+const COUNTRY_LABELS: Record<AppLanguage, Record<string, string>> = {
+  uk: {
+    Ukraine: "Україна",
+    Russia: "Росія",
+    Poland: "Польща",
+    "United Kingdom": "Велика Британія",
+    "United States": "США",
+    Germany: "Німеччина",
+    France: "Франція",
+    Spain: "Іспанія",
+    Italy: "Італія",
+    International: "Міжнародний",
+  },
+  ru: {
+    Ukraine: "Украина",
+    Russia: "Россия",
+    Poland: "Польша",
+    "United Kingdom": "Великобритания",
+    "United States": "США",
+    Germany: "Германия",
+    France: "Франция",
+    Spain: "Испания",
+    Italy: "Италия",
+    International: "Международный",
+  },
+  en: {},
+};
+
+function localizeCountry(country: string, language: AppLanguage) {
+  return COUNTRY_LABELS[language][country] || country;
+}
+
+function localizeServiceCategory(category: string | undefined, t: Record<string, string>) {
+  const value = safeText(category).trim();
+  if (!value || value === DEFAULT_SERVICE_CATEGORY || value === "Без категорії" || value === "Uncategorized") {
+    return t.defaultServiceCategory;
+  }
+  return value;
+}
+
+function formatDuration(minutes: number | undefined, t: Record<string, string>) {
+  return `${Number(minutes || 0)} ${t.minutesShort}`;
+}
+
+function getServiceModeId(value: string): (typeof SERVICE_MODE_IDS)[number] {
+  const normalized = safeText(value).trim().toLowerCase();
+  if (!normalized) return "onsite";
+  if (normalized === SERVICE_MODE_VALUES.travel.toLowerCase() || normalized.includes("выезд") || normalized.includes("виїзд") || normalized.includes("travel")) return "travel";
+  if (normalized === SERVICE_MODE_VALUES.online.toLowerCase() || normalized.includes("online") || normalized.includes("онлайн")) return "online";
+  return "onsite";
+}
+
+function localizeServiceMode(value: string, t: Record<string, string>) {
+  const modeId = getServiceModeId(value);
+  if (modeId === "travel") return t.serviceModeTravel;
+  if (modeId === "online") return t.serviceModeOnline;
+  return t.serviceModeOnsite;
 }
 
 function getDetectedCountry() {
@@ -1467,7 +1551,7 @@ function safeText(value: unknown) {
 
 function formatDayLabel(date: string, language: AppLanguage) {
   const parsed = new Date(`${date}T12:00:00`);
-  return new Intl.DateTimeFormat(language === "en" ? "en-US" : language === "uk" ? "uk-UA" : "ru-RU", {
+  return new Intl.DateTimeFormat(localeForLanguage(language), {
     weekday: "short",
     day: "numeric",
     month: "short",
@@ -1524,7 +1608,7 @@ function shiftCalendarDate(mode: CalendarViewMode, date: string, direction: -1 |
 
 function formatShortDate(date: string, language: AppLanguage) {
   const parsed = new Date(`${date}T12:00:00`);
-  return new Intl.DateTimeFormat(language === "en" ? "en-US" : language === "uk" ? "uk-UA" : "ru-RU", {
+  return new Intl.DateTimeFormat(localeForLanguage(language), {
     weekday: "short",
     day: "numeric",
   })
@@ -1541,7 +1625,7 @@ function formatTimeFromMinutes(totalMinutes: number) {
 
 function formatCalendarTitle(mode: CalendarViewMode, date: string, language: AppLanguage) {
   if (mode === "day") return formatDayLabel(date, language);
-  const locale = language === "en" ? "en-US" : language === "uk" ? "uk-UA" : "ru-RU";
+  const locale = localeForLanguage(language);
   if (mode === "month") {
     return new Intl.DateTimeFormat(locale, { month: "long" }).format(new Date(`${date}T12:00:00`));
   }
@@ -2032,7 +2116,7 @@ export default function App() {
       }));
     } catch (error) {
       if (!options.silent) {
-        Alert.alert("Timviz", error instanceof Error ? error.message : "Failed to load workspace.");
+        Alert.alert("Timviz", error instanceof Error ? error.message : t.loadWorkspaceFailed);
       }
     } finally {
       if (!options.silent) setRefreshing(false);
@@ -4213,7 +4297,7 @@ function CalendarTimeline({
               {timeLabel}
             </Text>
             <Text style={[styles.appointmentClient, isCompactCard && styles.appointmentClientTight]} numberOfLines={isCompactCard ? 1 : 2} ellipsizeMode="tail">
-              {appointment.customerName || "Клиент"}
+              {appointment.customerName || t.customer}
             </Text>
             {!isTinyCard ? (
               <Text style={[styles.appointmentService, isCompactCard && styles.appointmentServiceTight]} numberOfLines={1} ellipsizeMode="tail">
@@ -4255,7 +4339,7 @@ function WorkspaceHeader({
   onOpenSettingsSection: (section?: MobileSettingsSection) => void;
   onSignOut: () => void;
 }) {
-  const title = activeTab === "calendar" ? "денний календар" : t[activeTab];
+  const title = activeTab === "calendar" ? t.calendarHeaderTitle : t[activeTab];
   const [panel, setPanel] = useState<"setup" | "share" | "support" | "notifications" | "account" | null>(null);
   const [supportMessage, setSupportMessage] = useState("");
   const [supportTicketId, setSupportTicketId] = useState("");
@@ -4458,6 +4542,7 @@ function WorkspaceHeader({
                     key={item.id}
                     item={item}
                     t={t}
+                    language={language}
                     onPress={() => {
                       close();
                       onOpenNotification(item);
@@ -4469,7 +4554,7 @@ function WorkspaceHeader({
                   <Text style={styles.notificationBadgeText}>{notifications.archivedOnlineBookings?.length || 0}</Text>
                 </View>
                 {(notifications.archivedOnlineBookings || []).map((item) => (
-                  <NotificationCard key={item.id} item={item} t={t} />
+                  <NotificationCard key={item.id} item={item} t={t} language={language} />
                 ))}
               </ScrollView>
             ) : null}
@@ -4570,10 +4655,12 @@ function AppIconButton({
 function NotificationCard({
   item,
   t,
+  language,
   onPress,
 }: {
   item: MobileNotificationRecord;
   t: Record<string, string>;
+  language: AppLanguage;
   onPress?: () => void;
 }) {
   const statusText = item.status === "cancelled" ? t.statusCancelled : item.status === "confirmed" ? t.statusConfirmed : t.statusPending;
@@ -4581,7 +4668,7 @@ function NotificationCard({
     <Pressable style={styles.notificationCard} onPress={onPress} disabled={!onPress}>
       <View style={styles.notificationCardHeader}>
         <Text style={styles.notificationCardTitle}>{item.customerName || t.customer}</Text>
-        <Text style={styles.clientOptionCaption}>{formatShortDate(item.appointmentDate, "ru")}</Text>
+        <Text style={styles.clientOptionCaption}>{formatShortDate(item.appointmentDate, language)}</Text>
       </View>
       <Text style={styles.notificationService}>{item.serviceName}</Text>
       <Text style={styles.clientOptionCaption}>
@@ -4747,7 +4834,7 @@ function ServicesTab({
                   {isEditing ? (
                     <View style={styles.serviceEditStack}>
                       <Field label={t.serviceName} value={editDraft.name} onChangeText={(value) => setEditDraft({ ...editDraft, name: value })} />
-                      <CategoryChips categories={categories} selected={editDraft.category} onSelect={(category) => setEditDraft({ ...editDraft, category })} />
+                      <CategoryChips t={t} categories={categories} selected={editDraft.category} onSelect={(category) => setEditDraft({ ...editDraft, category })} />
                       <View style={styles.twoColumns}>
                         <Field label={t.duration} value={editDraft.durationMinutes} onChangeText={(value) => setEditDraft({ ...editDraft, durationMinutes: value })} keyboardType="number-pad" />
                         <Field label={t.price} value={editDraft.price} onChangeText={(value) => setEditDraft({ ...editDraft, price: value })} keyboardType="number-pad" />
@@ -4764,7 +4851,7 @@ function ServicesTab({
                         <View style={[styles.serviceDot, { backgroundColor: service.color || "#7C3AED" }]} />
                         <View style={styles.serviceTextBlock}>
                           <Text style={styles.listTitle}>{service.name}</Text>
-                          <Text style={styles.listCaption}>{service.category || DEFAULT_SERVICE_CATEGORY} · {service.durationMinutes || 60} {t.duration.toLowerCase()}</Text>
+                          <Text style={styles.listCaption}>{localizeServiceCategory(service.category, t)} · {formatDuration(service.durationMinutes || 60, t)}</Text>
                         </View>
                       </View>
                       <View style={styles.rowRight}>
@@ -4791,7 +4878,7 @@ function ServicesTab({
         <Panel title={t.ownService}>
           <Field label={t.serviceName} value={draft.name} onChangeText={(value) => setDraft({ ...draft, name: value })} />
           <Text style={styles.label}>{t.selectedCategory}</Text>
-          <CategoryChips categories={categories} selected={draft.category} onSelect={(category) => setDraft({ ...draft, category })} />
+          <CategoryChips t={t} categories={categories} selected={draft.category} onSelect={(category) => setDraft({ ...draft, category })} />
           <View style={styles.categoryAddRow}>
             <Field label={t.newCategory} value={customCategory} onChangeText={setCustomCategory} />
             <Pressable style={styles.categoryAddButton} onPress={addCustomCategory}>
@@ -4811,7 +4898,7 @@ function ServicesTab({
         <Panel title={t.generalCatalog}>
           <Text style={styles.emptyText}>{t.catalogHint}</Text>
           <Field label={t.search} value={catalogQuery} onChangeText={setCatalogQuery} placeholder={t.searchService} />
-          <CategoryChips categories={catalog.map((item) => item.title)} selected={currentCatalogCategory} onSelect={setActiveCatalogCategory} />
+          <CategoryChips t={t} categories={catalog.map((item) => item.title)} selected={currentCatalogCategory} onSelect={setActiveCatalogCategory} />
           {catalogServices.length ? (
             catalogServices.map((service) => {
               const exists = serviceExists(service.name);
@@ -4819,7 +4906,7 @@ function ServicesTab({
                 <Pressable key={`${service.category}-${service.name}`} style={[styles.catalogServiceCard, exists && styles.catalogServiceCardActive]} onPress={() => !exists && onAddCatalog(service)} disabled={busy || exists}>
                   <View style={styles.serviceTextBlock}>
                     <Text style={styles.listTitle}>{service.name}</Text>
-                    <Text style={styles.listCaption}>{service.category} · {service.durationMinutes || 60} {t.duration.toLowerCase()} · {formatMoney(Number(service.price || 0), currency)}</Text>
+                    <Text style={styles.listCaption}>{localizeServiceCategory(service.category, t)} · {formatDuration(service.durationMinutes || 60, t)} · {formatMoney(Number(service.price || 0), currency)}</Text>
                   </View>
                   <View style={[styles.catalogAddBadge, exists && styles.catalogAddBadgeDone]}>
                     <Ionicons name={exists ? "checkmark" : "add"} size={20} color={exists ? "#166534" : "#FFFFFF"} />
@@ -4838,10 +4925,12 @@ function ServicesTab({
 }
 
 function CategoryChips({
+  t,
   categories,
   selected,
   onSelect,
 }: {
+  t: Record<string, string>;
   categories: string[];
   selected: string;
   onSelect: (category: string) => void;
@@ -4853,7 +4942,7 @@ function CategoryChips({
         const active = category === selected;
         return (
           <Pressable key={category} style={[styles.choiceChip, active && styles.choiceChipActive]} onPress={() => onSelect(category)}>
-            <Text style={[styles.choiceText, active && styles.choiceTextActive]}>{category}</Text>
+            <Text style={[styles.choiceText, active && styles.choiceTextActive]}>{localizeServiceCategory(category, t)}</Text>
           </Pressable>
         );
       })}
@@ -5769,7 +5858,7 @@ function makeSettingsDraft(workspace: WorkspaceSnapshot | null, language: AppLan
     businessName: workspace?.business.name || "",
     website: workspace?.business.website || "",
     accountType: workspace?.business.accountType || "solo",
-    serviceMode: workspace?.business.serviceMode || SERVICE_MODE_OPTIONS[0],
+    serviceMode: workspace?.business.serviceMode || SERVICE_MODE_VALUES.onsite,
     categoriesText: (workspace?.business.categories || []).join(", "),
     country: workspace?.professional.country || "Ukraine",
     timezone: workspace?.professional.timezone || "Europe/Kiev",
@@ -6225,7 +6314,7 @@ function SettingsTab({
 
           <Panel title={t.localization}>
             <LanguageSwitch language={draft.language} setLanguage={(value) => updateDraft("language", value)} />
-            <SettingsOptionRail label={t.country} value={draft.country} options={COUNTRY_OPTIONS} onSelect={(value) => updateDraft("country", value)} />
+            <SettingsOptionRail label={t.country} value={draft.country} options={COUNTRY_OPTIONS} onSelect={(value) => updateDraft("country", value)} renderLabel={(value) => localizeCountry(value, language)} />
             <SettingsOptionRail label={t.timezone} value={draft.timezone} options={TIMEZONE_OPTIONS} onSelect={(value) => updateDraft("timezone", value)} renderLabel={(value) => TIMEZONE_LABELS[value] || value} />
             <SettingsOptionRail label={t.currency} value={draft.currency} options={CURRENCY_OPTIONS} onSelect={(value) => updateDraft("currency", value)} />
           </Panel>
@@ -6276,14 +6365,14 @@ function SettingsTab({
           <Panel title={t.businessFormat}>
             <Text style={styles.label}>{t.serviceMode}</Text>
             <View style={styles.settingsStackedChoices}>
-              {SERVICE_MODE_OPTIONS.map((item) => (
+              {SERVICE_MODE_IDS.map((item) => (
                 <Pressable
                   key={item}
                   disabled={!isOwner}
-                  style={[styles.settingsLongChoice, draft.serviceMode === item && styles.settingsChoiceActive]}
-                  onPress={() => updateDraft("serviceMode", item)}
+                  style={[styles.settingsLongChoice, getServiceModeId(draft.serviceMode) === item && styles.settingsChoiceActive]}
+                  onPress={() => updateDraft("serviceMode", SERVICE_MODE_VALUES[item])}
                 >
-                  <Text style={[styles.settingsChoiceText, draft.serviceMode === item && styles.settingsChoiceTextActive]}>{item}</Text>
+                  <Text style={[styles.settingsChoiceText, getServiceModeId(draft.serviceMode) === item && styles.settingsChoiceTextActive]}>{localizeServiceMode(SERVICE_MODE_VALUES[item], t)}</Text>
                 </Pressable>
               ))}
             </View>
@@ -6307,7 +6396,7 @@ function SettingsTab({
                 <View style={[styles.serviceDot, { backgroundColor: service.color || "#8ED1F2" }]} />
                 <View style={styles.settingsMiniInfo}>
                   <Text style={styles.settingsMiniTitle}>{service.name}</Text>
-                  <Text style={styles.clientOptionCaption}>{service.durationMinutes || 0} хв</Text>
+                  <Text style={styles.clientOptionCaption}>{formatDuration(service.durationMinutes || 0, t)}</Text>
                 </View>
                 <Text style={styles.settingsMiniPrice}>{formatMoney(service.price, workspace?.professional.currency || "UAH")}</Text>
               </View>
@@ -6445,7 +6534,7 @@ function SettingsTab({
             <Pressable key={`${suggestion.label}-${suggestion.lat}-${suggestion.lon}`} style={styles.addressSuggestionCard} onPress={() => applyAddressSuggestion(suggestion)}>
               <View style={styles.settingsMiniInfo}>
                 <Text style={styles.settingsMiniTitle}>{[suggestion.street, suggestion.house].filter(Boolean).join(", ") || suggestion.label}</Text>
-                <Text style={styles.clientOptionCaption}>{[suggestion.city, suggestion.region, suggestion.postcode, suggestion.country].filter(Boolean).join(", ")}</Text>
+                <Text style={styles.clientOptionCaption}>{[suggestion.city, suggestion.region, suggestion.postcode, suggestion.country ? localizeCountry(suggestion.country, language) : ""].filter(Boolean).join(", ")}</Text>
               </View>
               <Text style={styles.addressSuggestionAction}>{t.selectAddress}</Text>
             </Pressable>
@@ -6470,7 +6559,7 @@ function SettingsTab({
             </View>
             <View style={styles.settingsSummaryTile}>
               <Text style={styles.statLabel}>{t.country}</Text>
-              <Text style={styles.settingsMiniTitle}>{draft.country || t.empty}</Text>
+              <Text style={styles.settingsMiniTitle}>{draft.country ? localizeCountry(draft.country, language) : t.empty}</Text>
             </View>
           </View>
           <InfoLine label={t.selectedAddress} value={typeof draft.addressLat === "number" && typeof draft.addressLon === "number" ? `${draft.addressLat.toFixed(5)}, ${draft.addressLon.toFixed(5)}` : t.empty} />
