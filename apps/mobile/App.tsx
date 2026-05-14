@@ -3547,18 +3547,8 @@ function CalendarTimeline({
               height: getRangeHeight(range.start, range.end),
             },
           ]}
-        >
-          {range.kind !== "off" && getRangeHeight(range.start, range.end) >= 24 ? <Text style={styles.closedBlockText}>{range.label}</Text> : null}
-        </View>
+        />
       ))}
-
-      {compact && schedule.enabled
-        ? compactBreaks.map((range) => (
-            <View key={`break-label-${range.start}-${range.end}`} pointerEvents="none" style={[styles.compactClosedRangeLabel, { top: Math.max(0, getScaledMinuteTop(range.start) - 3) }]}>
-              <Text style={styles.compactClosedRangeText}>{range.label}</Text>
-            </View>
-          ))
-        : null}
 
       {blockedAppointments.map((range) => (
         <Pressable
@@ -7330,19 +7320,6 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     backgroundColor: "rgba(15, 23, 42, 0.28)",
     zIndex: 5,
-  },
-  compactClosedRangeLabel: {
-    position: "absolute",
-    left: 55,
-    right: 10,
-    minHeight: 18,
-    justifyContent: "center",
-    zIndex: 2,
-  },
-  compactClosedRangeText: {
-    color: "#64748B",
-    fontSize: 11,
-    fontWeight: "900",
   },
   fabButton: {
     position: "absolute",
