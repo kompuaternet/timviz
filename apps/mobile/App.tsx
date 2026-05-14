@@ -666,6 +666,7 @@ const copy = {
     photoCaption: "Підпис до фото",
     addPhotoUrl: "Додати фото за посиланням",
     addPhoto: "Додати фото",
+    uploadPhoto: "Завантажити фото",
     makePrimary: "Зробити головним",
     primaryPhoto: "Головне фото",
     addressSearch: "Знайти адресу на карті",
@@ -939,6 +940,7 @@ const copy = {
     photoCaption: "Подпись к фото",
     addPhotoUrl: "Добавить фото по ссылке",
     addPhoto: "Добавить фото",
+    uploadPhoto: "Загрузить фото",
     makePrimary: "Сделать главным",
     primaryPhoto: "Главное фото",
     addressSearch: "Найти адрес на карте",
@@ -1212,6 +1214,7 @@ const copy = {
     photoCaption: "Photo caption",
     addPhotoUrl: "Add photo by link",
     addPhoto: "Add photo",
+    uploadPhoto: "Upload photo",
     makePrimary: "Make primary",
     primaryPhoto: "Primary photo",
     addressSearch: "Find address on map",
@@ -5472,6 +5475,35 @@ function SettingsTab({
     void saveBusinessPhotos([...photos, nextPhoto]);
   }
 
+  async function pickBusinessPhoto() {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert(t.businessPhotos, t.avatarPermission);
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: "images",
+      allowsEditing: true,
+      quality: 0.82,
+      base64: true,
+    });
+
+    if (result.canceled || !result.assets?.[0]) return;
+    const asset = result.assets[0];
+    if (!asset.base64) return;
+    const nextPhoto: BusinessPhotoRecord = {
+      id: createLocalId("photo"),
+      url: `data:${asset.mimeType || "image/jpeg"};base64,${asset.base64}`,
+      caption: photoDraft.caption.trim(),
+      isPrimary: photos.length === 0,
+      createdAt: new Date().toISOString(),
+      status: "active",
+    };
+    setPhotoDraft({ url: "", caption: "" });
+    void saveBusinessPhotos([...photos, nextPhoto]);
+  }
+
   function makePrimaryPhoto(photoId: string) {
     void saveBusinessPhotos(photos.map((photo) => ({ ...photo, isPrimary: photo.id === photoId })));
   }
@@ -5728,7 +5760,10 @@ function SettingsTab({
             </ScrollView>
             <Field label={t.photoUrl} value={photoDraft.url} editable={isOwner} onChangeText={(value) => setPhotoDraft((current) => ({ ...current, url: value }))} placeholder="https://..." autoCapitalize="none" />
             <Field label={t.photoCaption} value={photoDraft.caption} editable={isOwner} onChangeText={(value) => setPhotoDraft((current) => ({ ...current, caption: value }))} />
-            <SecondaryButton label={t.addPhoto} onPress={addBusinessPhoto} disabled={!isOwner || saving} />
+            <View style={styles.settingsActionRow}>
+              <SecondaryButton label={t.uploadPhoto} onPress={pickBusinessPhoto} disabled={!isOwner || saving} />
+              <SecondaryButton label={t.addPhoto} onPress={addBusinessPhoto} disabled={!isOwner || saving} />
+            </View>
           </Panel>
         </>
       ) : null}
