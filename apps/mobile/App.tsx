@@ -3015,44 +3015,45 @@ function CalendarTab({
 
       {viewMode === "day" ? (
         <>
-          <ScrollView
-            horizontal
-            style={styles.teamCalendarHorizontal}
-            contentContainerStyle={styles.teamCalendarHorizontalContent}
-            showsHorizontalScrollIndicator={false}
-          >
-            <View style={styles.teamCalendarBoard}>
-              <View style={styles.teamCalendarHeaderRow}>
-                <View style={styles.teamPickerRail}>
-                  <Pressable style={styles.teamPickerButton} onPress={() => setMemberPickerOpen(true)}>
-                    <Ionicons name="people-outline" size={19} color="#0F172A" />
-                    {calendarMembers.length > 1 ? (
-                      <View style={styles.teamPickerBadge}>
-                        <Text style={styles.teamPickerBadgeText}>{selectedMembers.length || 1}</Text>
-                      </View>
-                    ) : null}
-                  </Pressable>
-                </View>
-                {visibleCalendarMembers.map((member) => {
-                  return (
-                    <View key={member.id} style={[styles.teamDayHeader, { width: dayMemberColumnWidth }]}>
-                      <MemberAvatar member={member} size={34} />
-                      <Text style={styles.masterName} numberOfLines={1}>{member.name}</Text>
+          <View style={styles.teamCalendarBoard}>
+            <View style={styles.teamCalendarHeaderRow}>
+              <View style={styles.teamPickerRail}>
+                <Pressable style={styles.teamPickerButton} onPress={() => setMemberPickerOpen(true)}>
+                  <Ionicons name="people-outline" size={19} color="#0F172A" />
+                  {calendarMembers.length > 1 ? (
+                    <View style={styles.teamPickerBadge}>
+                      <Text style={styles.teamPickerBadgeText}>{selectedMembers.length || 1}</Text>
                     </View>
-                  );
-                })}
+                  ) : null}
+                </Pressable>
               </View>
-              <ScrollView
-                style={styles.calendarScroll}
-                contentContainerStyle={styles.calendarContent}
-                refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#7C3AED" />}
-                showsVerticalScrollIndicator
-                alwaysBounceVertical
-                nestedScrollEnabled
-                keyboardShouldPersistTaps="handled"
-              >
-                <View style={styles.teamCalendarBodyRow}>
-                  <CalendarTimeAxis date={selectedDate} compact={isCompact} schedule={selectedSchedule} />
+              <ScrollView horizontal style={styles.teamMembersHorizontal} contentContainerStyle={styles.teamMembersHorizontalContent} showsHorizontalScrollIndicator={false}>
+                {visibleCalendarMembers.map((member) => (
+                  <View key={member.id} style={[styles.teamDayHeader, { width: dayMemberColumnWidth }]}>
+                    <MemberAvatar member={member} size={34} />
+                    <Text style={styles.masterName} numberOfLines={1}>{member.name}</Text>
+                  </View>
+                ))}
+              </ScrollView>
+            </View>
+            <ScrollView
+              style={styles.calendarScroll}
+              contentContainerStyle={styles.calendarContent}
+              refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#7C3AED" />}
+              showsVerticalScrollIndicator
+              alwaysBounceVertical
+              nestedScrollEnabled
+              keyboardShouldPersistTaps="handled"
+            >
+              <View style={styles.teamCalendarBodyRow}>
+                <CalendarTimeAxis date={selectedDate} compact={isCompact} schedule={selectedSchedule} />
+                <ScrollView
+                  horizontal
+                  style={styles.teamMembersHorizontal}
+                  contentContainerStyle={styles.teamMembersHorizontalContent}
+                  showsHorizontalScrollIndicator={false}
+                  nestedScrollEnabled
+                >
                   {visibleCalendarMembers.map((member) => {
                     const memberAppointments = getAppointmentsForMember(selectedDate, member.id);
                     const memberSchedule = getScheduleForMember(selectedDate, member);
@@ -3077,10 +3078,10 @@ function CalendarTab({
                       </View>
                     );
                   })}
-                </View>
-              </ScrollView>
-            </View>
-          </ScrollView>
+                </ScrollView>
+              </View>
+            </ScrollView>
+          </View>
         </>
       ) : (
         <CalendarOverview
@@ -7307,14 +7308,14 @@ const styles = StyleSheet.create({
   calendarContent: {
     paddingBottom: 10,
   },
-  teamCalendarHorizontal: {
-    flex: 1,
-  },
-  teamCalendarHorizontalContent: {
-    alignItems: "stretch",
-  },
   teamCalendarBoard: {
     flex: 1,
+  },
+  teamMembersHorizontal: {
+    flex: 1,
+  },
+  teamMembersHorizontalContent: {
+    alignItems: "stretch",
   },
   teamCalendarHeaderRow: {
     flexDirection: "row",
