@@ -22,6 +22,7 @@ import {
   createCalendarAppointment,
   createCalendarAppointmentsBatch,
   deleteCalendarAppointment,
+  type CalendarAppointment,
   getAppointmentsForBusinessDates,
   getCalendarNotificationsContext,
   getCalendarDaySnapshot,
@@ -42,6 +43,7 @@ type CalendarRouteAppointment = {
   notes: string;
   attendance: "pending" | "confirmed" | "arrived" | "no_show";
   priceAmount: number;
+  createdAt: string;
 };
 
 type CalendarRouteSnapshot = Awaited<ReturnType<typeof getCalendarDaySnapshot>> & {
@@ -55,6 +57,14 @@ type CalendarRouteTeamMember = {
   firstName: string;
   lastName: string;
   role: string;
+};
+
+type CalendarRangeDay = {
+  appointments: CalendarRouteAppointment[];
+  memberCalendars: Array<{
+    professionalId: string;
+    appointments: CalendarRouteAppointment[];
+  }>;
 };
 
 type PendingBookingSyncPayload = {
@@ -99,6 +109,37 @@ function parseAppointmentTimestamp(date: string, time: string) {
 
 function normalizedTimeValue(value: unknown) {
   return typeof value === "string" ? value.trim() : "";
+}
+
+function normalizeRangeDates(value: string | null, fallbackDate: string) {
+  const dates = Array.from(
+    new Set(
+      (value || fallbackDate)
+        .split(",")
+        .map((date) => date.trim())
+        .filter((date) => /^\d{4}-\d{2}-\d{2}$/.test(date))
+    )
+  );
+
+  return dates.slice(0, 62);
+}
+
+function toRouteAppointment(appointment: CalendarAppointment): CalendarRouteAppointment {
+  return {
+    id: appointment.id,
+    professionalId: appointment.professionalId,
+    appointmentDate: appointment.appointmentDate,
+    startTime: appointment.startTime,
+    endTime: appointment.endTime,
+    kind: appointment.kind,
+    customerName: appointment.customerName,
+    customerPhone: appointment.customerPhone,
+    serviceName: appointment.serviceName,
+    notes: appointment.notes,
+    attendance: appointment.attendance,
+    priceAmount: appointment.priceAmount,
+    createdAt: appointment.createdAt
+  };
 }
 
 function pickMatchingAppointment(
@@ -332,6 +373,46 @@ export async function GET(request: Request) {
     }
 
     const result = await getCalendarDaySnapshot({ professionalId, appointmentDate, targetProfessionalId });
+
+    if (mode === "range") {
+      const rangeDates = normalizeRangeDates(url.searchParams.get("dates"), appointmentDate);
+      const rangeDateSet = new Set(rangeDates);
+      const allowedProfessionalIds = new Set(result.memberCalendars.map((member) => member.professionalId));
+      const businessAppointments = await getAppointmentsForBusinessDates(
+        result.workspace.business.id,
+        rangeDates
+      );
+      const visibleAppointments = businessAppointments
+        .filter(
+          (appointment) =>
+            rangeDateSet.has(appointment.appointmentDate) &&
+            allowedProfessionalIds.has(appointment.professionalId)
+        )
+        .map(toRouteAppointment);
+      const days = rangeDates.reduce<Record<string, CalendarRangeDay>>((map, dateKey) => {
+        map[dateKey] = {
+          appointments: visibleAppointments.filter(
+            (appointment) =>
+              appointment.appointmentDate === dateKey &&
+              appointment.professionalId === result.viewedProfessionalId
+          ),
+          memberCalendars: result.memberCalendars.map((member) => ({
+            professionalId: member.professionalId,
+            appointments: visibleAppointments.filter(
+              (appointment) =>
+                appointment.appointmentDate === dateKey &&
+                appointment.professionalId === member.professionalId
+            )
+          }))
+        };
+
+        return map;
+      }, {});
+
+      timer({ mode, status: 200 });
+      return NextResponse.json({ days });
+    }
+
     const notifications = await getOnlineBookingNotifications({
       businessId: result.workspace.business.id,
       teamMembers: result.teamMembers,

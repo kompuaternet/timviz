@@ -190,6 +190,19 @@ type CalendarSnapshot = {
   };
 };
 
+type CalendarRangePayload = {
+  days?: Record<
+    string,
+    {
+      appointments?: CalendarAppointment[];
+      memberCalendars?: Array<{
+        professionalId: string;
+        appointments?: CalendarAppointment[];
+      }>;
+    }
+  >;
+};
+
 type CalendarDayViewProps = {
   professionalId: string;
   initialDate: string;
@@ -241,7 +254,7 @@ const CALENDAR_GRID_STEP_MINUTES = 10;
 const TIME_SELECT_STEP_MINUTES = 5;
 const MIN_BOOKING_CARD_HEIGHT = 64;
 const MOBILE_MIN_BOOKING_CARD_HEIGHT = 86;
-const SNAPSHOT_CACHE_LIMIT = 30;
+const SNAPSHOT_CACHE_LIMIT = 120;
 
 function getCalendarStorage() {
   if (
@@ -1578,6 +1591,25 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
     return `/api/pro/calendar?${params.toString()}`;
   }
 
+  function buildCalendarRangeUrl(
+    dateKeys: string[],
+    anchorDate = selectedDate,
+    targetId = selectedProfessionalId
+  ) {
+    const uniqueDateKeys = Array.from(new Set(dateKeys.filter(Boolean)));
+    const params = new URLSearchParams({
+      mode: "range",
+      date: anchorDate,
+      dates: uniqueDateKeys.join(",")
+    });
+
+    if (targetId) {
+      params.set("targetProfessionalId", targetId);
+    }
+
+    return `/api/pro/calendar?${params.toString()}`;
+  }
+
   function buildNotificationsUrl(dateKey = selectedDate) {
     const params = new URLSearchParams({
       mode: "notifications",
@@ -1612,6 +1644,70 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
     }
 
     setSnapshotCacheVersion((current) => current + 1);
+  }
+
+  function buildSnapshotForDay(
+    baseSnapshot: CalendarSnapshot,
+    dateKey: string,
+    dayPayload: NonNullable<CalendarRangePayload["days"]>[string]
+  ): CalendarSnapshot {
+    const memberAppointments = new Map(
+      (dayPayload.memberCalendars ?? []).map((member) => [
+        member.professionalId,
+        sortAppointmentsByTime(member.appointments ?? [])
+      ])
+    );
+
+    return {
+      ...baseSnapshot,
+      appointments: sortAppointmentsByTime(dayPayload.appointments ?? []),
+      memberCalendars: baseSnapshot.memberCalendars.map((member) => ({
+        ...member,
+        appointments: memberAppointments.get(member.professionalId) ?? []
+      }))
+    };
+  }
+
+  function cacheRangePayload(
+    baseSnapshot: CalendarSnapshot,
+    dateKeys: string[],
+    targetId: string,
+    payload: CalendarRangePayload
+  ) {
+    const days = payload.days ?? {};
+    let changed = false;
+
+    for (const dateKey of dateKeys) {
+      const dayPayload = days[dateKey];
+      if (!dayPayload) {
+        continue;
+      }
+
+      const daySnapshot = buildSnapshotForDay(baseSnapshot, dateKey, dayPayload);
+      const keys = new Set([buildSnapshotCacheKey(dateKey, targetId)]);
+
+      if (daySnapshot.viewedProfessionalId) {
+        keys.add(buildSnapshotCacheKey(dateKey, daySnapshot.viewedProfessionalId));
+      }
+
+      for (const key of keys) {
+        snapshotCacheRef.current.delete(key);
+        snapshotCacheRef.current.set(key, daySnapshot);
+        changed = true;
+      }
+    }
+
+    while (snapshotCacheRef.current.size > SNAPSHOT_CACHE_LIMIT) {
+      const oldestKey = snapshotCacheRef.current.keys().next().value as string | undefined;
+      if (!oldestKey) {
+        break;
+      }
+      snapshotCacheRef.current.delete(oldestKey);
+    }
+
+    if (changed) {
+      setSnapshotCacheVersion((current) => current + 1);
+    }
   }
 
   function applySnapshotState(data: CalendarSnapshot, options: { preserveUi?: boolean } = {}) {
@@ -1666,6 +1762,22 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
 
     if (!response.ok) {
       throw new Error("Failed to load calendar snapshot.");
+    }
+
+    return data;
+  }
+
+  async function fetchRangeSnapshotData(
+    dateKeys: string[],
+    anchorDate: string,
+    targetId: string,
+    signal?: AbortSignal
+  ): Promise<CalendarRangePayload> {
+    const response = await fetch(buildCalendarRangeUrl(dateKeys, anchorDate, targetId), { signal });
+    const data = (await response.json()) as CalendarRangePayload;
+
+    if (!response.ok) {
+      throw new Error("Failed to load calendar range.");
     }
 
     return data;
@@ -2834,42 +2946,76 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
     }
 
     let cancelled = false;
-    const queue = [...missingDays];
-    const workerCount = Math.min(4, queue.length);
-
-    const workers = Array.from({ length: workerCount }, async () => {
-      while (!cancelled) {
-        const nextDate = queue.shift();
-        if (!nextDate) {
-          return;
-        }
-
-        const cacheKey = buildSnapshotCacheKey(nextDate, targetId);
-        if (snapshotCacheRef.current.has(cacheKey) || snapshotPrefetchRef.current.has(cacheKey)) {
-          continue;
-        }
-
-        snapshotPrefetchRef.current.add(cacheKey);
-
-        try {
-          const data = await fetchSnapshotData(nextDate, targetId);
-          if (!cancelled) {
-            cacheSnapshot(nextDate, targetId, data);
-          }
-        } catch {
-          // Ignore background range prefetch failures.
-        } finally {
-          snapshotPrefetchRef.current.delete(cacheKey);
-        }
-      }
+    missingDays.forEach((dateKey) => {
+      snapshotPrefetchRef.current.add(buildSnapshotCacheKey(dateKey, targetId));
     });
 
-    void Promise.allSettled(workers);
+    void fetchRangeSnapshotData(missingDays, selectedDate, targetId)
+      .then((payload) => {
+        if (!cancelled) {
+          cacheRangePayload(snapshot, missingDays, targetId, payload);
+        }
+      })
+      .catch(() => {
+        // Ignore background range prefetch failures.
+      })
+      .finally(() => {
+        missingDays.forEach((dateKey) => {
+          snapshotPrefetchRef.current.delete(buildSnapshotCacheKey(dateKey, targetId));
+        });
+      });
 
     return () => {
       cancelled = true;
     };
   }, [selectedProfessionalId, snapshot, visibleRangeKeys]);
+
+  useEffect(() => {
+    if (!snapshot) {
+      return;
+    }
+
+    const targetId = selectedProfessionalId;
+    const warmDateKeys = Array.from(
+      new Set([
+        ...threeDayKeys,
+        ...weekKeys,
+        ...monthGrid.map((day) => day.key)
+      ])
+    );
+    const missingDays = warmDateKeys.filter((dateKey) => {
+      const cacheKey = buildSnapshotCacheKey(dateKey, targetId);
+      return !snapshotCacheRef.current.has(cacheKey) && !snapshotPrefetchRef.current.has(cacheKey);
+    });
+
+    if (!missingDays.length) {
+      return;
+    }
+
+    let cancelled = false;
+    missingDays.forEach((dateKey) => {
+      snapshotPrefetchRef.current.add(buildSnapshotCacheKey(dateKey, targetId));
+    });
+
+    void fetchRangeSnapshotData(missingDays, selectedDate, targetId)
+      .then((payload) => {
+        if (!cancelled) {
+          cacheRangePayload(snapshot, missingDays, targetId, payload);
+        }
+      })
+      .catch(() => {
+        // Keep the current day usable even if warm cache loading fails.
+      })
+      .finally(() => {
+        missingDays.forEach((dateKey) => {
+          snapshotPrefetchRef.current.delete(buildSnapshotCacheKey(dateKey, targetId));
+        });
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [monthGrid, selectedDate, selectedProfessionalId, snapshot, threeDayKeys, weekKeys]);
 
   useEffect(() => {
     if (!memberCalendars.length) {
