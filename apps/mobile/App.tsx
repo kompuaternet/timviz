@@ -115,6 +115,11 @@ type WorkBreakRecord = {
   endTime: string;
 };
 
+type WorkIntervalRecord = {
+  startTime: string;
+  endTime: string;
+};
+
 type WorkDayScheduleRecord = {
   enabled: boolean;
   startTime: string;
@@ -474,6 +479,16 @@ const copy = {
     applyToWeekdays: "Застосувати до всіх буднів",
     clearWeek: "Очистити тиждень",
     noWork: "Не працює",
+    workIntervals: "Робочий час",
+    addWorkTime: "Додати час",
+    removeWorkTime: "Видалити час",
+    monthPlanner: "Робочі дні місяця",
+    selectedDays: "Обрано днів",
+    applyToSelectedDays: "Застосувати до обраних",
+    selectedDaysHint: "Оберіть дні на місяць і задайте їм однакові робочі інтервали.",
+    noRoomForInterval: "Немає місця для ще одного інтервалу.",
+    invalidIntervalRange: "Кінець має бути пізніше початку.",
+    overlappingIntervals: "Інтервали не мають перетинатися.",
     addBreak: "Додати перерву",
     removeBreak: "Прибрати перерву",
     onThisWeek: "На цьому тижні",
@@ -690,6 +705,16 @@ const copy = {
     applyToWeekdays: "Применить ко всем будням",
     clearWeek: "Очистить неделю",
     noWork: "Не работает",
+    workIntervals: "Рабочее время",
+    addWorkTime: "Добавить время",
+    removeWorkTime: "Удалить время",
+    monthPlanner: "Рабочие дни месяца",
+    selectedDays: "Выбрано дней",
+    applyToSelectedDays: "Применить к выбранным",
+    selectedDaysHint: "Выберите дни на месяц и задайте им одинаковые рабочие интервалы.",
+    noRoomForInterval: "Нет места для еще одного интервала.",
+    invalidIntervalRange: "Конец должен быть позже начала.",
+    overlappingIntervals: "Интервалы не должны пересекаться.",
     addBreak: "Добавить перерыв",
     removeBreak: "Убрать перерыв",
     onThisWeek: "На этой неделе",
@@ -906,6 +931,16 @@ const copy = {
     applyToWeekdays: "Apply to weekdays",
     clearWeek: "Clear week",
     noWork: "Off",
+    workIntervals: "Work time",
+    addWorkTime: "Add time",
+    removeWorkTime: "Remove time",
+    monthPlanner: "Month work days",
+    selectedDays: "Selected days",
+    applyToSelectedDays: "Apply to selected",
+    selectedDaysHint: "Select month days and apply the same working intervals to them.",
+    noRoomForInterval: "No room for another interval.",
+    invalidIntervalRange: "End must be later than start.",
+    overlappingIntervals: "Intervals cannot overlap.",
     addBreak: "Add break",
     removeBreak: "Remove break",
     onThisWeek: "This week",
@@ -1128,6 +1163,13 @@ function timeToMinutes(time: string) {
   return hours * 60 + mins;
 }
 
+function minutesToTime(minutes: number) {
+  const safeMinutes = Math.max(0, Math.min(24 * 60 - 1, Math.round(minutes)));
+  const hours = Math.floor(safeMinutes / 60);
+  const mins = safeMinutes % 60;
+  return `${String(hours).padStart(2, "0")}:${String(mins).padStart(2, "0")}`;
+}
+
 function isValidTime(time: string) {
   const match = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(time);
   return Boolean(match);
@@ -1288,6 +1330,167 @@ function getWorkTimeParts(schedule: WorkDayScheduleRecord) {
     start: schedule.startTime,
     end: schedule.endTime,
   };
+}
+
+function getDayBreaksRecord(day: WorkDayScheduleRecord | undefined) {
+  if (!day) return [];
+  if (Array.isArray(day.breaks)) {
+    return day.breaks
+      .filter((item) => item?.startTime && item?.endTime && item.startTime < item.endTime)
+      .map((item) => ({ startTime: item.startTime, endTime: item.endTime }))
+      .sort((left, right) => timeToMinutes(left.startTime) - timeToMinutes(right.startTime));
+  }
+  if (day.breakStart && day.breakEnd && day.breakStart < day.breakEnd) {
+    return [{ startTime: day.breakStart, endTime: day.breakEnd }];
+  }
+  return [];
+}
+
+function getDayIntervalsRecord(day: WorkDayScheduleRecord | undefined) {
+  if (!day) return [{ startTime: "09:00", endTime: "18:00" }];
+  const dayStart = timeToMinutes(day.startTime);
+  const dayEnd = timeToMinutes(day.endTime);
+  if (dayStart >= dayEnd) {
+    return [{ startTime: day.startTime, endTime: day.endTime }];
+  }
+
+  const intervals: WorkIntervalRecord[] = [];
+  let cursor = dayStart;
+  for (const item of getDayBreaksRecord(day)) {
+    const breakStart = Math.max(dayStart, Math.min(dayEnd, timeToMinutes(item.startTime)));
+    const breakEnd = Math.max(dayStart, Math.min(dayEnd, timeToMinutes(item.endTime)));
+    if (breakStart > cursor) {
+      intervals.push({ startTime: minutesToTime(cursor), endTime: minutesToTime(breakStart) });
+    }
+    cursor = Math.max(cursor, breakEnd);
+  }
+  if (cursor < dayEnd) {
+    intervals.push({ startTime: minutesToTime(cursor), endTime: minutesToTime(dayEnd) });
+  }
+  return intervals.length ? intervals : [{ startTime: day.startTime, endTime: day.endTime }];
+}
+
+function validateWorkIntervals(intervals: WorkIntervalRecord[]) {
+  const sorted = [...intervals]
+    .map((item) => ({ startTime: item.startTime, endTime: item.endTime }))
+    .sort((left, right) => timeToMinutes(left.startTime) - timeToMinutes(right.startTime));
+
+  if (sorted.some((item) => timeToMinutes(item.startTime) >= timeToMinutes(item.endTime))) {
+    return { ok: false as const, reason: "range" as const, intervals: sorted };
+  }
+
+  const normalized: WorkIntervalRecord[] = [];
+  for (const interval of sorted) {
+    const previous = normalized[normalized.length - 1];
+    if (!previous) {
+      normalized.push(interval);
+      continue;
+    }
+    if (timeToMinutes(interval.startTime) < timeToMinutes(previous.endTime)) {
+      return { ok: false as const, reason: "overlap" as const, intervals: sorted };
+    }
+    if (interval.startTime === previous.endTime) {
+      previous.endTime = interval.endTime;
+      continue;
+    }
+    normalized.push(interval);
+  }
+
+  return { ok: true as const, reason: null, intervals: normalized };
+}
+
+function serializeIntervalsToDay(enabled: boolean, intervals: WorkIntervalRecord[], fallback?: WorkDayScheduleRecord) {
+  const validation = validateWorkIntervals(intervals);
+  const normalized = validation.ok ? validation.intervals : intervals;
+  const fallbackStart = fallback?.startTime || normalized[0]?.startTime || "09:00";
+  const fallbackEnd = fallback?.endTime || normalized[normalized.length - 1]?.endTime || "18:00";
+
+  if (!enabled || normalized.length === 0) {
+    return {
+      enabled: false,
+      startTime: fallbackStart,
+      endTime: fallbackEnd,
+      breakStart: fallbackStart,
+      breakEnd: fallbackStart,
+      breaks: [],
+      dayType: "day-off" as const,
+    };
+  }
+
+  const first = normalized[0];
+  const last = normalized[normalized.length - 1];
+  const breaks: WorkBreakRecord[] = [];
+  for (let index = 0; index < normalized.length - 1; index += 1) {
+    const current = normalized[index];
+    const next = normalized[index + 1];
+    breaks.push({ startTime: current.endTime, endTime: next.startTime });
+  }
+
+  return {
+    enabled: true,
+    startTime: first.startTime,
+    endTime: last.endTime,
+    breakStart: breaks[0]?.startTime || first.startTime,
+    breakEnd: breaks[0]?.endTime || first.startTime,
+    breaks,
+    dayType: "workday" as const,
+  };
+}
+
+function getIntervalsDurationMinutes(intervals: WorkIntervalRecord[]) {
+  return intervals.reduce((sum, item) => sum + Math.max(0, timeToMinutes(item.endTime) - timeToMinutes(item.startTime)), 0);
+}
+
+function formatMoneylessHours(minutes: number, unit: string) {
+  const hours = Math.round((minutes / 60) * 10) / 10;
+  const value = Number.isInteger(hours) ? String(hours) : hours.toFixed(1).replace(".", ",");
+  return `${value} ${unit}`;
+}
+
+function createSplitWorkIntervals(interval: WorkIntervalRecord) {
+  const start = timeToMinutes(interval.startTime);
+  const end = timeToMinutes(interval.endTime);
+  const duration = end - start;
+  if (duration < 180) return null;
+  const gap = 60;
+  const firstEnd = Math.round((start + (duration - gap) / 2) / 15) * 15;
+  const safeFirstEnd = Math.max(start + 60, Math.min(firstEnd, end - gap - 60));
+  const secondStart = safeFirstEnd + gap;
+  if (safeFirstEnd <= start || secondStart >= end) return null;
+  return [
+    { startTime: minutesToTime(start), endTime: minutesToTime(safeFirstEnd) },
+    { startTime: minutesToTime(secondStart), endTime: minutesToTime(end) },
+  ];
+}
+
+function createWorkIntervalAfter(intervals: WorkIntervalRecord[], index: number) {
+  const current = intervals[index];
+  if (!current) return null;
+  const next = intervals[index + 1];
+  const minGap = 15;
+  const currentEnd = timeToMinutes(current.endTime);
+  const nextStart = next ? timeToMinutes(next.startTime) : 24 * 60;
+  if (nextStart - currentEnd > minGap) {
+    const windowStart = currentEnd + minGap;
+    const desiredEnd = Math.min(nextStart - minGap, windowStart + 60);
+    if (desiredEnd - windowStart >= 15) {
+      return { startTime: minutesToTime(windowStart), endTime: minutesToTime(desiredEnd) };
+    }
+  }
+  const desiredStart = Math.min(currentEnd + 60, 24 * 60 - 30);
+  const desiredEnd = Math.min(24 * 60 - 1, desiredStart + 60);
+  if (desiredEnd - desiredStart < 15) return null;
+  return { startTime: minutesToTime(desiredStart), endTime: minutesToTime(desiredEnd) };
+}
+
+function insertWorkIntervalRecord(intervals: WorkIntervalRecord[], index: number) {
+  if (intervals.length === 1) {
+    const split = createSplitWorkIntervals(intervals[0]);
+    if (split) return split;
+  }
+  const suggestion = createWorkIntervalAfter(intervals, index);
+  if (!suggestion) return null;
+  return [...intervals.slice(0, index + 1), suggestion, ...intervals.slice(index + 1)];
 }
 
 function getClosedShortLabel(language: AppLanguage) {
@@ -4236,6 +4439,11 @@ function StaffScheduleTab({
   const [weekStart, setWeekStart] = useState(getWeekDates(getTodayIso())[0]);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [pickerMonth, setPickerMonth] = useState(getTodayIso().slice(0, 7) + "-01");
+  const [selectedMonthDates, setSelectedMonthDates] = useState<string[]>([]);
+  const [monthTemplateIntervals, setMonthTemplateIntervals] = useState<WorkIntervalRecord[]>([
+    { startTime: "09:00", endTime: "13:00" },
+    { startTime: "14:00", endTime: "18:00" },
+  ]);
   const weekDates = getWeekDates(weekStart);
   const weekTitle = formatCalendarTitle("week", weekDates[0], language);
   const monthDates = getMonthGridDates(pickerMonth);
@@ -4257,8 +4465,7 @@ function StaffScheduleTab({
   const weeklyMinutes = weekDates.reduce((sum, date, index) => {
     const day = getDraftDay(staffWeekKeys[index], date);
     if (!day.enabled) return sum;
-    const breakMinutes = (day.breaks || []).reduce((breakSum, item) => breakSum + Math.max(0, timeToMinutes(item.endTime) - timeToMinutes(item.startTime)), 0);
-    return sum + Math.max(0, timeToMinutes(day.endTime) - timeToMinutes(day.startTime) - breakMinutes);
+    return sum + getIntervalsDurationMinutes(getDayIntervalsRecord(day));
   }, 0);
 
   function getDraftDay(key: string, date: string) {
@@ -4268,31 +4475,40 @@ function StaffScheduleTab({
     return normalizeScheduleDay(workDraft[key], date);
   }
 
-  function normalizeNextDay(current: WorkDayScheduleRecord, patch: Partial<WorkDayScheduleRecord>) {
-    const next = { ...current, ...patch };
-    const enabled = patch.enabled ?? next.enabled;
-    const breakStart = typeof patch.breakStart === "string" ? patch.breakStart : next.breakStart || next.breaks?.[0]?.startTime || "13:00";
-    const breakEnd = typeof patch.breakEnd === "string" ? patch.breakEnd : next.breakEnd || next.breaks?.[0]?.endTime || "14:00";
-    const breaks = breakStart && breakEnd && breakStart < breakEnd ? [{ startTime: breakStart, endTime: breakEnd }] : [];
-    return {
-      ...next,
-      enabled,
-      dayType: enabled ? "workday" as const : "day-off" as const,
-      breakStart,
-      breakEnd,
-      breaks,
-    };
-  }
-
-  function updateDay(key: string, date: string, patch: Partial<WorkDayScheduleRecord>) {
-    const index = staffWeekKeys.indexOf(key);
-    const current = getDraftDay(key, date);
-    const next = normalizeNextDay(current, patch);
+  function setDaySchedule(key: string, date: string, next: WorkDayScheduleRecord) {
     if (scheduleMode === "flexible") {
       setCustomDraft({ ...customDraft, [date]: next });
       return;
     }
     setWorkDraft({ ...workDraft, [key]: next });
+  }
+
+  function updateDayEnabled(key: string, date: string, enabled: boolean) {
+    const current = getDraftDay(key, date);
+    const intervals = getDayIntervalsRecord(current);
+    setDaySchedule(key, date, serializeIntervalsToDay(enabled, intervals, current));
+  }
+
+  function updateDayInterval(key: string, date: string, index: number, field: keyof WorkIntervalRecord, value: string) {
+    const current = getDraftDay(key, date);
+    const intervals = getDayIntervalsRecord(current).map((item, itemIndex) => itemIndex === index ? { ...item, [field]: value } : item);
+    setDaySchedule(key, date, serializeIntervalsToDay(true, intervals, current));
+  }
+
+  function addDayInterval(key: string, date: string, index: number) {
+    const current = getDraftDay(key, date);
+    const nextIntervals = insertWorkIntervalRecord(getDayIntervalsRecord(current), index);
+    if (!nextIntervals) {
+      Alert.alert(t.staffSchedule, t.noRoomForInterval);
+      return;
+    }
+    setDaySchedule(key, date, serializeIntervalsToDay(true, nextIntervals, current));
+  }
+
+  function removeDayInterval(key: string, date: string, index: number) {
+    const current = getDraftDay(key, date);
+    const nextIntervals = getDayIntervalsRecord(current).filter((_, itemIndex) => itemIndex !== index);
+    setDaySchedule(key, date, serializeIntervalsToDay(nextIntervals.length > 0, nextIntervals, current));
   }
 
   function applyToWeekdays() {
@@ -4316,16 +4532,74 @@ function StaffScheduleTab({
     if (scheduleMode === "flexible") {
       const next = { ...customDraft };
       weekDates.forEach((date, index) => {
-        next[date] = normalizeNextDay(getDraftDay(staffWeekKeys[index], date), { enabled: false });
+        const current = getDraftDay(staffWeekKeys[index], date);
+        next[date] = serializeIntervalsToDay(false, getDayIntervalsRecord(current), current);
       });
       setCustomDraft(next);
       return;
     }
     const next = { ...workDraft };
     staffWeekKeys.forEach((key, index) => {
-      next[key] = normalizeNextDay(getDraftDay(key, weekDates[index]), { enabled: false });
+      const current = getDraftDay(key, weekDates[index]);
+      next[key] = serializeIntervalsToDay(false, getDayIntervalsRecord(current), current);
     });
     setWorkDraft(next);
+  }
+
+  function toggleMonthDate(date: string) {
+    setSelectedMonthDates((current) => current.includes(date) ? current.filter((item) => item !== date) : [...current, date].sort());
+  }
+
+  function updateMonthTemplateInterval(index: number, field: keyof WorkIntervalRecord, value: string) {
+    setMonthTemplateIntervals((current) => current.map((item, itemIndex) => itemIndex === index ? { ...item, [field]: value } : item));
+  }
+
+  function addMonthTemplateInterval(index: number) {
+    const next = insertWorkIntervalRecord(monthTemplateIntervals, index);
+    if (!next) {
+      Alert.alert(t.staffSchedule, t.noRoomForInterval);
+      return;
+    }
+    setMonthTemplateIntervals(next);
+  }
+
+  function removeMonthTemplateInterval(index: number) {
+    const next = monthTemplateIntervals.filter((_, itemIndex) => itemIndex !== index);
+    setMonthTemplateIntervals(next.length ? next : [{ startTime: "09:00", endTime: "18:00" }]);
+  }
+
+  function applyMonthSelection() {
+    const validation = validateWorkIntervals(monthTemplateIntervals);
+    if (!validation.ok) {
+      Alert.alert(t.staffSchedule, validation.reason === "overlap" ? t.overlappingIntervals : t.invalidIntervalRange);
+      return;
+    }
+    if (!selectedMonthDates.length) {
+      Alert.alert(t.monthPlanner, t.selectedDaysHint);
+      return;
+    }
+    const next = { ...customDraft };
+    selectedMonthDates.forEach((date) => {
+      next[date] = serializeIntervalsToDay(true, validation.intervals, getFallbackSchedule(date));
+    });
+    setCustomDraft(next);
+  }
+
+  function validateScheduleBeforeSave() {
+    const daysToCheck = scheduleMode === "flexible"
+      ? weekDates.map((date, index) => getDraftDay(staffWeekKeys[index], date))
+      : staffWeekKeys.map((key, index) => getDraftDay(key, weekDates[index]));
+
+    for (const day of daysToCheck) {
+      if (!day.enabled) continue;
+      const validation = validateWorkIntervals(getDayIntervalsRecord(day));
+      if (!validation.ok) {
+        Alert.alert(t.staffSchedule, validation.reason === "overlap" ? t.overlappingIntervals : t.invalidIntervalRange);
+        return false;
+      }
+    }
+
+    return true;
   }
 
   function shiftMonth(monthDate: string, months: number) {
@@ -4448,33 +4722,81 @@ function StaffScheduleTab({
           <SecondaryButton label={t.applyToWeekdays} onPress={applyToWeekdays} />
           <SecondaryButton label={t.clearWeek} onPress={clearWeek} />
         </View>
+        {scheduleMode === "flexible" ? (
+          <View style={styles.staffMonthPlanner}>
+            <View>
+              <Text style={styles.settingsCardTitle}>{t.monthPlanner}</Text>
+              <Text style={styles.clientOptionCaption}>{t.selectedDaysHint}</Text>
+            </View>
+            <View style={styles.staffCalendarGrid}>
+              {monthDates.map((date) => {
+                const inMonth = date.slice(0, 7) === pickerMonth.slice(0, 7);
+                const selected = selectedMonthDates.includes(date);
+                const working = customDraft[date]?.enabled === true;
+                return (
+                  <Pressable
+                    key={`month-${date}`}
+                    style={[
+                      styles.staffCalendarDay,
+                      !inMonth && styles.staffCalendarDayMuted,
+                      working && styles.staffCalendarDayWork,
+                      selected && styles.staffCalendarDayActive,
+                    ]}
+                    onPress={() => toggleMonthDate(date)}
+                  >
+                    <Text style={[styles.staffCalendarDayText, selected && styles.staffCalendarDayTextActive]}>{Number(date.slice(8, 10))}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+            <View style={styles.staffIntervalsBox}>
+              <Text style={styles.staffTimeLabel}>{t.workIntervals}</Text>
+              <WorkIntervalsEditor
+                t={t}
+                intervals={monthTemplateIntervals}
+                onChange={updateMonthTemplateInterval}
+                onAddAfter={addMonthTemplateInterval}
+                onRemove={removeMonthTemplateInterval}
+              />
+            </View>
+            <View style={styles.settingsActionRow}>
+              <Text style={styles.badgeText}>{selectedMonthDates.length}</Text>
+              <PrimaryButton label={t.applyToSelectedDays} onPress={applyMonthSelection} disabled={busy} />
+            </View>
+          </View>
+        ) : null}
         {staffWeekKeys.map((key, index) => {
           const date = weekDates[index] || getTodayIso();
           const day = getDraftDay(key, date);
           const active = day.enabled;
+          const intervals = getDayIntervalsRecord(day);
           return (
             <View key={key} style={styles.staffDayCard}>
               <View style={styles.staffDayHeader}>
                 <View>
                   <Text style={styles.staffDayTitle}>{formatShortDate(weekDates[index] || getTodayIso(), language)}</Text>
-                  <Text style={styles.clientOptionCaption}>{active ? t.workingDay : t.dayOff}</Text>
+                  <Text style={styles.clientOptionCaption}>{active ? `${t.workingDay} · ${formatMoneylessHours(getIntervalsDurationMinutes(intervals), t.hoursShort)}` : t.dayOff}</Text>
                 </View>
-                <Pressable style={[styles.mobileSwitch, active && styles.mobileSwitchActive]} onPress={() => updateDay(key, date, { enabled: !active })}>
+                <Pressable style={[styles.mobileSwitch, active && styles.mobileSwitchActive]} onPress={() => updateDayEnabled(key, date, !active)}>
                   <View style={[styles.mobileSwitchThumb, active && styles.mobileSwitchThumbActive]} />
                 </Pressable>
               </View>
               {active ? (
-                <View style={styles.staffTimeGrid}>
-                  <StaffTimeInput label={t.workFrom} value={day.startTime} onChangeText={(value) => updateDay(key, date, { startTime: value })} />
-                  <StaffTimeInput label={t.workTo} value={day.endTime} onChangeText={(value) => updateDay(key, date, { endTime: value })} />
-                  <StaffTimeInput label={t.breakFrom} value={day.breakStart || day.breaks?.[0]?.startTime || "13:00"} onChangeText={(value) => updateDay(key, date, { breakStart: value })} />
-                  <StaffTimeInput label={t.breakTo} value={day.breakEnd || day.breaks?.[0]?.endTime || "14:00"} onChangeText={(value) => updateDay(key, date, { breakEnd: value })} />
+                <View style={styles.staffIntervalsBox}>
+                  <Text style={styles.staffTimeLabel}>{t.workIntervals}</Text>
+                  <WorkIntervalsEditor
+                    t={t}
+                    intervals={intervals}
+                    onChange={(intervalIndex, field, value) => updateDayInterval(key, date, intervalIndex, field, value)}
+                    onAddAfter={(intervalIndex) => addDayInterval(key, date, intervalIndex)}
+                    onRemove={(intervalIndex) => removeDayInterval(key, date, intervalIndex)}
+                  />
                 </View>
               ) : null}
             </View>
           );
         })}
-        <PrimaryButton label={t.saveSchedule} onPress={() => void onSaveSchedule(selectedMember, workDraft, customDraft, scheduleMode)} disabled={busy} />
+        <PrimaryButton label={t.saveSchedule} onPress={() => { if (validateScheduleBeforeSave()) void onSaveSchedule(selectedMember, workDraft, customDraft, scheduleMode); }} disabled={busy} />
       </Panel>
     </View>
   );
@@ -4488,6 +4810,39 @@ function copyWorkSchedule(schedule: WorkScheduleRecord | undefined, anchorDate =
       return [key, normalizeScheduleDay(source[key], date)];
     })
   ) as WorkScheduleRecord;
+}
+
+function WorkIntervalsEditor({
+  t,
+  intervals,
+  onChange,
+  onAddAfter,
+  onRemove,
+}: {
+  t: Record<string, string>;
+  intervals: WorkIntervalRecord[];
+  onChange: (index: number, field: keyof WorkIntervalRecord, value: string) => void;
+  onAddAfter: (index: number) => void;
+  onRemove: (index: number) => void;
+}) {
+  return (
+    <View style={styles.staffIntervalsStack}>
+      {intervals.map((interval, index) => (
+        <View key={index} style={styles.staffIntervalRow}>
+          <StaffTimeInput label={t.workFrom} value={interval.startTime} onChangeText={(value) => onChange(index, "startTime", value)} />
+          <StaffTimeInput label={t.workTo} value={interval.endTime} onChangeText={(value) => onChange(index, "endTime", value)} />
+          <View style={styles.staffIntervalActions}>
+            <Pressable style={styles.staffIntervalIconButton} onPress={() => onAddAfter(index)} accessibilityLabel={t.addWorkTime}>
+              <Ionicons name="add-circle-outline" size={22} color="#334155" />
+            </Pressable>
+            <Pressable style={styles.staffIntervalIconButton} onPress={() => onRemove(index)} accessibilityLabel={t.removeWorkTime}>
+              <Ionicons name="trash-outline" size={20} color="#DC2626" />
+            </Pressable>
+          </View>
+        </View>
+      ))}
+    </View>
+  );
 }
 
 function StaffTimeInput({
@@ -7358,6 +7713,9 @@ const styles = StyleSheet.create({
   staffCalendarDayActive: {
     backgroundColor: "#6D4AFF",
   },
+  staffCalendarDayWork: {
+    backgroundColor: "#DCFCE7",
+  },
   staffCalendarDayText: {
     color: "#0F172A",
     fontSize: 13,
@@ -7365,6 +7723,14 @@ const styles = StyleSheet.create({
   },
   staffCalendarDayTextActive: {
     color: "#FFFFFF",
+  },
+  staffMonthPlanner: {
+    gap: 12,
+    padding: 12,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#D8E2EF",
+    backgroundColor: "#F8FAFC",
   },
   staffDayCard: {
     paddingVertical: 12,
@@ -7389,8 +7755,35 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: 10,
   },
+  staffIntervalsBox: {
+    marginTop: 10,
+    gap: 8,
+  },
+  staffIntervalsStack: {
+    gap: 10,
+  },
+  staffIntervalRow: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    gap: 8,
+  },
+  staffIntervalActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingBottom: 1,
+  },
+  staffIntervalIconButton: {
+    width: 34,
+    height: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 10,
+    backgroundColor: "#F1F5F9",
+  },
   staffTimeField: {
-    width: "47%",
+    flex: 1,
+    minWidth: 92,
     gap: 5,
   },
   staffTimeLabel: {
