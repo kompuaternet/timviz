@@ -3028,7 +3028,7 @@ function CalendarTab({
                   </Pressable>
                 </View>
                 {(selectedMembers.length ? selectedMembers : calendarMembers.slice(0, 1)).map((member, _, list) => {
-                  const columnWidth = list.length > 1 ? Math.max(158, (screenWidth - 58) / 2) : Math.max(280, screenWidth - 54);
+                  const columnWidth = list.length > 1 ? Math.max(164, (screenWidth - 54) / list.length) : Math.max(280, screenWidth - 54);
                   return (
                     <View key={member.id} style={[styles.teamDayHeader, { width: columnWidth }]}>
                       <MemberAvatar member={member} size={34} />
@@ -3047,9 +3047,9 @@ function CalendarTab({
                 keyboardShouldPersistTaps="handled"
               >
                 <View style={styles.teamCalendarBodyRow}>
-                  <View style={styles.teamPickerRailBody} />
-                  {(selectedMembers.length ? selectedMembers : calendarMembers.slice(0, 1)).map((member, index, list) => {
-                    const columnWidth = list.length > 1 ? Math.max(158, (screenWidth - 58) / 2) : Math.max(280, screenWidth - 54);
+                  <CalendarTimeAxis date={selectedDate} compact={isCompact} schedule={selectedSchedule} />
+                  {(selectedMembers.length ? selectedMembers : calendarMembers.slice(0, 1)).map((member, _, list) => {
+                    const columnWidth = list.length > 1 ? Math.max(164, (screenWidth - 54) / list.length) : Math.max(280, screenWidth - 54);
                     const memberAppointments = getAppointmentsForMember(selectedDate, member.id);
                     const memberSchedule = getScheduleForMember(selectedDate, member);
                     return (
@@ -3062,7 +3062,7 @@ function CalendarTab({
                           schedule={memberSchedule}
                           t={t}
                           columnWidth={columnWidth}
-                          showTimeColumn={index === 0}
+                          showTimeColumn={false}
                           onTimePress={(time) => setTimeAction({ date: selectedDate, time, targetProfessionalId: member.id })}
                           onAppointmentPress={openAppointmentEditor}
                           onBlockedAppointmentPress={openBlockedAppointmentEditor}
@@ -3477,6 +3477,90 @@ function MemberAvatar({ member, size = 34 }: { member: CalendarMemberView; size?
   );
 }
 
+function CalendarTimeAxis({ date, compact, schedule }: { date: string; compact: boolean; schedule: WorkDayScheduleRecord }) {
+  const startHour = 0;
+  const endHour = 23;
+  const workStart = schedule.enabled ? timeToMinutes(schedule.startTime) : 9 * 60;
+  const workEnd = schedule.enabled ? timeToMinutes(schedule.endTime) : 18 * 60;
+  const workHourHeight = compact ? 72 : 88;
+  const offHourHeight = compact ? workHourHeight / 10 : workHourHeight;
+  const breakHourHeight = compact ? workHourHeight / 2.5 : workHourHeight;
+  const breaks = schedule.enabled ? schedule.breaks || [] : [];
+  const compactBreaks = breaks
+    .map((item) => ({
+      start: Math.max(workStart, Math.min(workEnd, timeToMinutes(item.startTime))),
+      end: Math.max(workStart, Math.min(workEnd, timeToMinutes(item.endTime))),
+    }))
+    .filter((item) => item.end > item.start)
+    .sort((left, right) => left.start - right.start);
+  const compactSegments = (() => {
+    if (!compact || !schedule.enabled) return [];
+    const segments: Array<{ start: number; end: number; height: number }> = [];
+    const pushSegment = (start: number, end: number, height: number) => {
+      if (end > start) segments.push({ start, end, height });
+    };
+    let cursor = 0;
+    pushSegment(cursor, workStart, offHourHeight);
+    cursor = workStart;
+    for (const item of compactBreaks) {
+      pushSegment(cursor, item.start, workHourHeight);
+      pushSegment(item.start, item.end, breakHourHeight);
+      cursor = Math.max(cursor, item.end);
+    }
+    pushSegment(cursor, workEnd, workHourHeight);
+    pushSegment(workEnd, 24 * 60, offHourHeight);
+    return segments;
+  })();
+
+  function getScaledMinuteTop(minutes: number) {
+    const safe = Math.max(0, Math.min(24 * 60, minutes));
+    if (!compact) return (safe / 60) * workHourHeight;
+    if (!schedule.enabled) return (safe / 60) * offHourHeight;
+    let top = 0;
+    for (const segment of compactSegments) {
+      if (safe >= segment.end) {
+        top += ((segment.end - segment.start) / 60) * segment.height;
+      } else if (safe > segment.start) {
+        top += ((safe - segment.start) / 60) * segment.height;
+        break;
+      } else {
+        break;
+      }
+    }
+    return top;
+  }
+
+  function getRangeHeight(start: number, end: number) {
+    return Math.max(1, getScaledMinuteTop(end) - getScaledMinuteTop(start));
+  }
+
+  const timelineHeight = getScaledMinuteTop(24 * 60);
+  const now = new Date();
+  const nowTop = getScaledMinuteTop(now.getHours() * 60 + now.getMinutes());
+  const showCurrentTime = date === getTodayIso();
+
+  return (
+    <View style={[styles.timeAxisColumn, { height: timelineHeight }]}>
+      {Array.from({ length: endHour - startHour + 1 }).map((_, index) => {
+        const hour = startHour + index;
+        const rowStart = hour * 60;
+        const rowEnd = (hour + 1) * 60;
+        const top = getScaledMinuteTop(rowStart);
+        const height = getRangeHeight(rowStart, rowEnd);
+        const showLabel = height >= 18 || hour === Math.floor(workStart / 60);
+        return (
+          <View key={hour} pointerEvents="none" style={[styles.timeAxisHour, { top, height }]}>
+            <Text style={[styles.hourText, !showLabel && styles.hourTextHidden]}>{showLabel ? `${String(hour).padStart(2, "0")}:00` : ""}</Text>
+          </View>
+        );
+      })}
+      {showCurrentTime && nowTop >= 0 && nowTop <= timelineHeight ? (
+        <View pointerEvents="none" style={[styles.timeAxisCurrentDot, { top: nowTop - 5 }]} />
+      ) : null}
+    </View>
+  );
+}
+
 function CalendarOverview({
   t,
   language,
@@ -3852,7 +3936,7 @@ function CalendarTimeline({
 
       {showCurrentTime && nowTop >= 0 && nowTop <= timelineHeight ? (
         <View style={[styles.currentTimeLine, { top: nowTop, left: timeColumnWidth }]}>
-          <View style={styles.currentTimeDot} />
+          {showTimeColumn ? <View style={styles.currentTimeDot} /> : null}
         </View>
       ) : null}
 
@@ -3870,7 +3954,7 @@ function CalendarTimeline({
         const isTinyCard = height < 44;
         const color = index % 3 === 0 ? "#FF9A82" : index % 3 === 1 ? "#FFD166" : "#9ED96B";
         const availableWidth = gridWidth - laneGap * 2;
-        const blockGap = laneCount > 1 ? 8 : 0;
+        const blockGap = laneCount > 1 ? 4 : 0;
         const blockWidth = laneCount > 1 ? (availableWidth - blockGap * (laneCount - 1)) / laneCount : availableWidth;
         const blockLeft = timeColumnWidth + laneGap + laneIndex * (blockWidth + blockGap);
 
@@ -3891,24 +3975,24 @@ function CalendarTimeline({
             onPress={() => onAppointmentPress(appointment)}
           >
             <Pressable
-              style={styles.appointmentDeleteButton}
+              style={[styles.appointmentDeleteButton, isTightCard && styles.appointmentDeleteButtonTight]}
               onPress={(event) => {
                 event.stopPropagation();
                 onAppointmentDelete(appointment);
               }}
             >
-              <Ionicons name="close" size={13} color="#F43F5E" />
+              <Ionicons name="close" size={isTightCard ? 11 : 13} color="#F43F5E" />
             </Pressable>
             <Pressable
-              style={styles.appointmentMoveButton}
+              style={[styles.appointmentMoveButton, isTightCard && styles.appointmentMoveButtonTight]}
               onPress={(event) => {
                 event.stopPropagation();
                 onAppointmentMove(appointment);
               }}
             >
-              <Ionicons name="move" size={12} color="#475569" />
+              <Ionicons name="move" size={isTightCard ? 10 : 12} color="#475569" />
             </Pressable>
-            <Text style={styles.appointmentTime}>
+            <Text style={[styles.appointmentTime, isTightCard && styles.appointmentTimeTight]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.78}>
               {appointment.startTime} - {appointment.endTime}
             </Text>
             <Text style={[styles.appointmentClient, isTightCard && styles.appointmentClientTight]} numberOfLines={isTinyCard ? 1 : 2}>
@@ -7250,6 +7334,30 @@ const styles = StyleSheet.create({
     borderRightColor: "#E2E8F0",
     backgroundColor: "#FFFFFF",
   },
+  timeAxisColumn: {
+    width: 54,
+    position: "relative",
+    borderRightWidth: 1,
+    borderRightColor: "#E2E8F0",
+    backgroundColor: "#FFFFFF",
+  },
+  timeAxisHour: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    alignItems: "flex-end",
+  },
+  timeAxisCurrentDot: {
+    position: "absolute",
+    right: -6,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: "#F43F5E",
+    backgroundColor: "#FFFFFF",
+    zIndex: 5,
+  },
   teamPickerButton: {
     width: 44,
     height: 44,
@@ -7801,9 +7909,9 @@ const styles = StyleSheet.create({
     position: "absolute",
     zIndex: 3,
     borderRadius: 8,
-    paddingVertical: 8,
-    paddingLeft: 9,
-    paddingRight: 28,
+    paddingVertical: 7,
+    paddingLeft: 7,
+    paddingRight: 24,
     overflow: "hidden",
     shadowColor: "#0F172A",
     shadowOpacity: 0.04,
@@ -7811,8 +7919,9 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 3 },
   },
   appointmentBlockTight: {
-    paddingVertical: 6,
-    paddingRight: 26,
+    paddingVertical: 5,
+    paddingLeft: 6,
+    paddingRight: 22,
   },
   appointmentDeleteButton: {
     position: "absolute",
@@ -7826,6 +7935,13 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255, 255, 255, 0.78)",
     zIndex: 4,
   },
+  appointmentDeleteButtonTight: {
+    top: 5,
+    right: 5,
+    width: 19,
+    height: 19,
+    borderRadius: 10,
+  },
   appointmentMoveButton: {
     position: "absolute",
     right: 6,
@@ -7838,27 +7954,40 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255, 255, 255, 0.78)",
     zIndex: 4,
   },
+  appointmentMoveButtonTight: {
+    right: 5,
+    bottom: 5,
+    width: 19,
+    height: 19,
+    borderRadius: 10,
+  },
   appointmentTime: {
     color: "#0F172A",
-    fontSize: 12,
+    fontSize: 11,
+    lineHeight: 14,
     fontWeight: "800",
   },
+  appointmentTimeTight: {
+    fontSize: 10,
+    lineHeight: 12,
+  },
   appointmentClient: {
-    marginTop: 3,
+    marginTop: 2,
     color: "#0F172A",
-    fontSize: 15,
-    lineHeight: 18,
+    fontSize: 14,
+    lineHeight: 16,
     fontWeight: "900",
   },
   appointmentClientTight: {
-    marginTop: 2,
-    fontSize: 14,
-    lineHeight: 16,
+    marginTop: 1,
+    fontSize: 13,
+    lineHeight: 15,
   },
   appointmentService: {
-    marginTop: 2,
+    marginTop: 1,
     color: "#0F172A",
-    fontSize: 13,
+    fontSize: 12,
+    lineHeight: 14,
     fontWeight: "700",
   },
   appointmentPrice: {
