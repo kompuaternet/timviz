@@ -81,6 +81,20 @@ type ServiceRecord = {
   category?: string;
   durationMinutes?: number;
   color?: string;
+  source?: "catalog" | "custom";
+};
+
+type ServiceTemplateRecord = {
+  name: string;
+  durationMinutes?: number;
+  price?: number;
+};
+
+type ServiceCatalogCategory = {
+  key: string;
+  title: string;
+  topSuggestions?: ServiceTemplateRecord[];
+  popularServices?: ServiceTemplateRecord[];
 };
 
 type AppointmentRecord = {
@@ -156,6 +170,14 @@ type WorkspaceSnapshot = {
   };
 };
 
+type ServiceDraftState = {
+  name: string;
+  category: string;
+  durationMinutes: string;
+  price: string;
+  color: string;
+};
+
 type CalendarSnapshot = {
   appointments: AppointmentRecord[];
   stats: {
@@ -201,6 +223,8 @@ type MobileNotificationsPayload = {
 const STORAGE_KEY = "timviz_mobile_session_v2";
 const API_BASE_URL = (process.env.EXPO_PUBLIC_API_BASE_URL || "https://timviz.com").replace(/\/+$/, "");
 const WORDMARK = require("./assets/timviz-wordmark.png");
+const DEFAULT_SERVICE_CATEGORY = "Без категории";
+const SERVICE_COLORS = ["#9AD86A", "#8ED1F2", "#FF9A84", "#F7C948", "#A78BFA", "#34D399", "#F472B6", "#60A5FA"];
 const APP_ICON = require("./assets/timviz-icon.png");
 
 const languageNames: Record<AppLanguage, string> = {
@@ -315,6 +339,19 @@ const copy = {
     noAppointments: "На цей день записів поки немає.",
     recent: "Останні записи",
     addService: "Додати послугу",
+    yourServices: "Ваші послуги",
+    ownService: "Своя послуга",
+    generalCatalog: "Загальний каталог",
+    serviceName: "Назва послуги",
+    category: "Категорія",
+    newCategory: "Нова категорія",
+    selectedCategory: "Обрана категорія",
+    editService: "Редагувати послугу",
+    saveService: "Зберегти послугу",
+    addFromCatalog: "Додати з каталогу",
+    alreadyAdded: "У ваших послугах",
+    catalogHint: "Оберіть готову послугу з загального каталогу Timviz.",
+    myServicesHint: "Тут послуги, які доступні для запису клієнтів. Натисніть на послугу, щоб змінити ціну або час.",
     price: "Ціна",
     duration: "Хвилини",
     delete: "Видалити",
@@ -432,6 +469,19 @@ const copy = {
     noAppointments: "На этот день записей пока нет.",
     recent: "Последние записи",
     addService: "Добавить услугу",
+    yourServices: "Ваши услуги",
+    ownService: "Своя услуга",
+    generalCatalog: "Общий каталог",
+    serviceName: "Название услуги",
+    category: "Категория",
+    newCategory: "Новая категория",
+    selectedCategory: "Выбранная категория",
+    editService: "Редактировать услугу",
+    saveService: "Сохранить услугу",
+    addFromCatalog: "Добавить из каталога",
+    alreadyAdded: "В ваших услугах",
+    catalogHint: "Выберите готовую услугу из общего каталога Timviz.",
+    myServicesHint: "Тут услуги, которые доступны для записи клиентов. Нажмите на услугу, чтобы изменить цену или время.",
     price: "Цена",
     duration: "Минуты",
     delete: "Удалить",
@@ -549,6 +599,19 @@ const copy = {
     noAppointments: "No bookings for this day yet.",
     recent: "Recent bookings",
     addService: "Add service",
+    yourServices: "Your services",
+    ownService: "Custom service",
+    generalCatalog: "Global catalog",
+    serviceName: "Service name",
+    category: "Category",
+    newCategory: "New category",
+    selectedCategory: "Selected category",
+    editService: "Edit service",
+    saveService: "Save service",
+    addFromCatalog: "Add from catalog",
+    alreadyAdded: "In your services",
+    catalogHint: "Choose a ready-made service from the Timviz global catalog.",
+    myServicesHint: "These services are available for client booking. Tap a service to change price or duration.",
     price: "Price",
     duration: "Minutes",
     delete: "Delete",
@@ -833,6 +896,7 @@ export default function App() {
   const [workspace, setWorkspace] = useState<WorkspaceSnapshot | null>(null);
   const [calendar, setCalendar] = useState<CalendarSnapshot | null>(null);
   const [clients, setClients] = useState<ClientRecord[]>([]);
+  const [serviceCatalog, setServiceCatalog] = useState<ServiceCatalogCategory[]>([]);
   const [activeTab, setActiveTab] = useState<AppTab>("calendar");
   const [selectedDate, setSelectedDate] = useState(getTodayIso());
   const [loadingSession, setLoadingSession] = useState(true);
@@ -855,7 +919,7 @@ export default function App() {
   const [visitDraft, setVisitDraft] = useState<VisitDraft>(() => createDefaultVisitDraft(selectedDate, "09:00"));
   const [editingAppointment, setEditingAppointment] = useState<AppointmentRecord | null>(null);
   const [timeAction, setTimeAction] = useState<{ date: string; time: string } | null>(null);
-  const [serviceDraft, setServiceDraft] = useState({ name: "", durationMinutes: "60", price: "0" });
+  const [serviceDraft, setServiceDraft] = useState<ServiceDraftState>({ name: "", category: DEFAULT_SERVICE_CATEGORY, durationMinutes: "60", price: "0", color: SERVICE_COLORS[0] });
   const [clientDraft, setClientDraft] = useState({ firstName: "", lastName: "", phone: "", email: "" });
 
   useEffect(() => {
@@ -919,7 +983,7 @@ export default function App() {
     setRefreshing(true);
     try {
       const headers = { Authorization: `Bearer ${currentSession.token}` };
-      const [workspaceResult, calendarResult, clientsResult] = await Promise.all([
+      const [workspaceResult, calendarResult, clientsResult, servicesResult] = await Promise.all([
         fetch(`${API_BASE_URL}/api/mobile/pro/workspace/${currentSession.professionalId}`, { headers }).then((item) =>
           item.json()
         ),
@@ -927,15 +991,18 @@ export default function App() {
           item.json()
         ),
         fetch(`${API_BASE_URL}/api/mobile/pro/clients`, { headers }).then((item) => item.json()),
+        fetch(`${API_BASE_URL}/api/mobile/pro/services`, { headers }).then((item) => item.json()),
       ]);
 
       if (workspaceResult?.error) throw new Error(workspaceResult.error);
       if (calendarResult?.error) throw new Error(calendarResult.error);
       if (clientsResult?.error) throw new Error(clientsResult.error);
+      if (servicesResult?.error) throw new Error(servicesResult.error);
 
       setWorkspace(workspaceResult);
       setCalendar(calendarResult);
       setClients(Array.isArray(clientsResult.clients) ? clientsResult.clients : []);
+      setServiceCatalog(Array.isArray(servicesResult.catalog) ? servicesResult.catalog : []);
       setVisitDraft((current) => ({
         ...current,
         customerName: safeText(current.customerName),
@@ -1038,6 +1105,7 @@ export default function App() {
     setWorkspace(null);
     setCalendar(null);
     setClients([]);
+    setServiceCatalog([]);
     setBusy(false);
   }
 
@@ -1251,7 +1319,7 @@ export default function App() {
   async function createService() {
     if (!serviceDraft.name.trim()) {
       Alert.alert(t.requiredTitle, t.requiredText);
-      return;
+      return false;
     }
 
     setBusy(true);
@@ -1260,15 +1328,70 @@ export default function App() {
         method: "POST",
         body: JSON.stringify({
           name: serviceDraft.name.trim(),
+          category: serviceDraft.category.trim() || DEFAULT_SERVICE_CATEGORY,
           durationMinutes: Number(serviceDraft.durationMinutes || 60),
           price: Number(serviceDraft.price || 0),
+          color: serviceDraft.color || SERVICE_COLORS[0],
           source: "custom",
         }),
       });
-      setServiceDraft({ name: "", durationMinutes: "60", price: "0" });
+      setServiceDraft({ name: "", category: serviceDraft.category || DEFAULT_SERVICE_CATEGORY, durationMinutes: "60", price: "0", color: SERVICE_COLORS[0] });
       await refreshAll();
+      return true;
     } catch (error) {
       Alert.alert(t.addService, error instanceof Error ? error.message : t.addService);
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function updateService(serviceId: string, draft: ServiceDraftState) {
+    if (!draft.name.trim()) {
+      Alert.alert(t.requiredTitle, t.requiredText);
+      return false;
+    }
+
+    setBusy(true);
+    try {
+      await apiFetch("/api/mobile/pro/services", {
+        method: "PATCH",
+        body: JSON.stringify({
+          serviceId,
+          name: draft.name.trim(),
+          category: draft.category.trim() || DEFAULT_SERVICE_CATEGORY,
+          durationMinutes: Number(draft.durationMinutes || 60),
+          price: Number(draft.price || 0),
+          color: draft.color || SERVICE_COLORS[0],
+        }),
+      });
+      await refreshAll();
+      return true;
+    } catch (error) {
+      Alert.alert(t.editService, error instanceof Error ? error.message : t.editService);
+      return false;
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function addCatalogService(service: ServiceTemplateRecord & { category: string }) {
+    setBusy(true);
+    try {
+      await apiFetch("/api/mobile/pro/services", {
+        method: "POST",
+        body: JSON.stringify({
+          name: service.name,
+          category: service.category || DEFAULT_SERVICE_CATEGORY,
+          durationMinutes: Number(service.durationMinutes || 60),
+          price: Number(service.price || 0),
+          color: SERVICE_COLORS[(workspace?.services.length || 0) % SERVICE_COLORS.length],
+          source: "catalog",
+        }),
+      });
+      await refreshAll();
+    } catch (error) {
+      Alert.alert(t.addFromCatalog, error instanceof Error ? error.message : t.addFromCatalog);
     } finally {
       setBusy(false);
     }
@@ -1392,9 +1515,12 @@ export default function App() {
               <ServicesTab
                 t={t}
                 workspace={workspace}
+                catalog={serviceCatalog}
                 draft={serviceDraft}
                 setDraft={setServiceDraft}
                 onCreate={createService}
+                onUpdate={updateService}
+                onAddCatalog={addCatalogService}
                 onDelete={removeService}
                 busy={busy}
               />
@@ -2978,54 +3104,242 @@ function BottomNavigation({
 function ServicesTab({
   t,
   workspace,
+  catalog,
   draft,
   setDraft,
   onCreate,
+  onUpdate,
+  onAddCatalog,
   onDelete,
   busy,
 }: {
   t: Record<string, string>;
   workspace: WorkspaceSnapshot | null;
-  draft: { name: string; durationMinutes: string; price: string };
-  setDraft: (draft: { name: string; durationMinutes: string; price: string }) => void;
-  onCreate: () => void;
+  catalog: ServiceCatalogCategory[];
+  draft: ServiceDraftState;
+  setDraft: (draft: ServiceDraftState) => void;
+  onCreate: () => Promise<boolean>;
+  onUpdate: (serviceId: string, draft: ServiceDraftState) => Promise<boolean>;
+  onAddCatalog: (service: ServiceTemplateRecord & { category: string }) => void;
   onDelete: (serviceId: string) => void;
   busy: boolean;
 }) {
+  const services = workspace?.services || [];
+  const currency = workspace?.professional.currency;
+  const [mode, setMode] = useState<"mine" | "custom" | "catalog">("mine");
+  const [editId, setEditId] = useState("");
+  const [editDraft, setEditDraft] = useState<ServiceDraftState>({ name: "", category: DEFAULT_SERVICE_CATEGORY, durationMinutes: "60", price: "0", color: SERVICE_COLORS[0] });
+  const [customCategory, setCustomCategory] = useState("");
+  const [catalogQuery, setCatalogQuery] = useState("");
+  const [activeCatalogCategory, setActiveCatalogCategory] = useState("");
+
+  const categories = useMemo(() => {
+    const names = [
+      ...services.map((service) => service.category || ""),
+      ...catalog.map((item) => item.title),
+      draft.category,
+      customCategory,
+      DEFAULT_SERVICE_CATEGORY,
+    ]
+      .map((item) => item.trim())
+      .filter(Boolean);
+    return Array.from(new Set(names));
+  }, [catalog, customCategory, draft.category, services]);
+
+  const currentCatalogCategory = activeCatalogCategory || catalog[0]?.title || categories[0] || DEFAULT_SERVICE_CATEGORY;
+  const catalogServices = useMemo(() => {
+    const query = catalogQuery.trim().toLowerCase();
+    return catalog
+      .filter((group) => query || group.title === currentCatalogCategory)
+      .flatMap((group) => [...(group.topSuggestions || []), ...(group.popularServices || [])].map((service) => ({ ...service, category: group.title })))
+      .filter((service) => !query || service.name.toLowerCase().includes(query));
+  }, [catalog, catalogQuery, currentCatalogCategory]);
+
+  function startEdit(service: ServiceRecord) {
+    setEditId(service.id);
+    setEditDraft({
+      name: service.name,
+      category: service.category || DEFAULT_SERVICE_CATEGORY,
+      durationMinutes: String(service.durationMinutes || 60),
+      price: String(service.price || 0),
+      color: service.color || SERVICE_COLORS[0],
+    });
+  }
+
+  async function saveEdit() {
+    const saved = await onUpdate(editId, editDraft);
+    if (saved) {
+      setEditId("");
+    }
+  }
+
+  function addCustomCategory() {
+    const value = customCategory.trim();
+    if (!value) return;
+    setDraft({ ...draft, category: value });
+    setActiveCatalogCategory(value);
+    setCustomCategory("");
+  }
+
+  function serviceExists(serviceName: string) {
+    return services.some((service) => service.name.trim().toLowerCase() === serviceName.trim().toLowerCase());
+  }
+
+  async function saveCustomService() {
+    const created = await onCreate();
+    if (created) {
+      setMode("mine");
+    }
+  }
+
   return (
     <View style={styles.sectionStack}>
-      <Panel title={t.addService}>
-        <Field label={t.service} value={draft.name} onChangeText={(value) => setDraft({ ...draft, name: value })} />
-        <View style={styles.twoColumns}>
-          <Field label={t.duration} value={draft.durationMinutes} onChangeText={(value) => setDraft({ ...draft, durationMinutes: value })} keyboardType="number-pad" />
-          <Field label={t.price} value={draft.price} onChangeText={(value) => setDraft({ ...draft, price: value })} keyboardType="number-pad" />
-        </View>
-        <PrimaryButton label={t.addService} onPress={onCreate} disabled={busy} />
-      </Panel>
+      <View style={styles.servicesModeRow}>
+        {[
+          { id: "mine", label: t.yourServices },
+          { id: "custom", label: t.ownService },
+          { id: "catalog", label: t.generalCatalog },
+        ].map((item) => {
+          const active = mode === item.id;
+          return (
+            <Pressable key={item.id} style={[styles.servicesModeButton, active && styles.servicesModeButtonActive]} onPress={() => setMode(item.id as "mine" | "custom" | "catalog")}>
+              <Text style={[styles.servicesModeText, active && styles.servicesModeTextActive]}>{item.label}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
 
-      <Panel title={t.services}>
-        {workspace?.services.length ? (
-          workspace.services.map((service) => (
-            <View key={service.id} style={styles.listItem}>
-              <View style={styles.serviceColorRow}>
-                <View style={[styles.serviceDot, { backgroundColor: service.color || "#7C3AED" }]} />
-                <View>
-                  <Text style={styles.listTitle}>{service.name}</Text>
-                  <Text style={styles.listCaption}>{service.durationMinutes || 60} хв</Text>
+      {mode === "mine" ? (
+        <Panel title={t.yourServices}>
+          <Text style={styles.emptyText}>{t.myServicesHint}</Text>
+          {services.length ? (
+            services.map((service) => {
+              const isEditing = editId === service.id;
+              return (
+                <View key={service.id} style={styles.serviceManageCard}>
+                  {isEditing ? (
+                    <View style={styles.serviceEditStack}>
+                      <Field label={t.serviceName} value={editDraft.name} onChangeText={(value) => setEditDraft({ ...editDraft, name: value })} />
+                      <CategoryChips categories={categories} selected={editDraft.category} onSelect={(category) => setEditDraft({ ...editDraft, category })} />
+                      <View style={styles.twoColumns}>
+                        <Field label={t.duration} value={editDraft.durationMinutes} onChangeText={(value) => setEditDraft({ ...editDraft, durationMinutes: value })} keyboardType="number-pad" />
+                        <Field label={t.price} value={editDraft.price} onChangeText={(value) => setEditDraft({ ...editDraft, price: value })} keyboardType="number-pad" />
+                      </View>
+                      <ColorSwatches value={editDraft.color} onChange={(color) => setEditDraft({ ...editDraft, color })} />
+                      <View style={styles.serviceActionRow}>
+                        <SecondaryButton label={t.cancel} onPress={() => setEditId("")} disabled={busy} />
+                        <PrimaryButton label={t.saveService} onPress={() => void saveEdit()} disabled={busy} />
+                      </View>
+                    </View>
+                  ) : (
+                    <Pressable style={styles.serviceManageSummary} onPress={() => startEdit(service)}>
+                      <View style={styles.serviceColorRow}>
+                        <View style={[styles.serviceDot, { backgroundColor: service.color || "#7C3AED" }]} />
+                        <View style={styles.serviceTextBlock}>
+                          <Text style={styles.listTitle}>{service.name}</Text>
+                          <Text style={styles.listCaption}>{service.category || DEFAULT_SERVICE_CATEGORY} · {service.durationMinutes || 60} {t.duration.toLowerCase()}</Text>
+                        </View>
+                      </View>
+                      <View style={styles.rowRight}>
+                        <Text style={styles.moneyText}>{formatMoney(service.price, currency)}</Text>
+                        <Pressable style={styles.iconGhostButton} onPress={() => startEdit(service)}>
+                          <Ionicons name="create-outline" size={18} color="#334155" />
+                        </Pressable>
+                        <Pressable style={styles.smallDanger} onPress={() => onDelete(service.id)}>
+                          <Text style={styles.smallDangerText}>×</Text>
+                        </Pressable>
+                      </View>
+                    </Pressable>
+                  )}
                 </View>
-              </View>
-              <View style={styles.rowRight}>
-                <Text style={styles.moneyText}>{formatMoney(service.price, workspace.professional.currency)}</Text>
-                <Pressable style={styles.smallDanger} onPress={() => onDelete(service.id)}>
-                  <Text style={styles.smallDangerText}>×</Text>
+              );
+            })
+          ) : (
+            <Text style={styles.emptyText}>{t.empty}</Text>
+          )}
+        </Panel>
+      ) : null}
+
+      {mode === "custom" ? (
+        <Panel title={t.ownService}>
+          <Field label={t.serviceName} value={draft.name} onChangeText={(value) => setDraft({ ...draft, name: value })} />
+          <Text style={styles.label}>{t.selectedCategory}</Text>
+          <CategoryChips categories={categories} selected={draft.category} onSelect={(category) => setDraft({ ...draft, category })} />
+          <View style={styles.categoryAddRow}>
+            <Field label={t.newCategory} value={customCategory} onChangeText={setCustomCategory} />
+            <Pressable style={styles.categoryAddButton} onPress={addCustomCategory}>
+              <Ionicons name="add" size={22} color="#FFFFFF" />
+            </Pressable>
+          </View>
+          <View style={styles.twoColumns}>
+            <Field label={t.duration} value={draft.durationMinutes} onChangeText={(value) => setDraft({ ...draft, durationMinutes: value })} keyboardType="number-pad" />
+            <Field label={t.price} value={draft.price} onChangeText={(value) => setDraft({ ...draft, price: value })} keyboardType="number-pad" />
+          </View>
+          <ColorSwatches value={draft.color} onChange={(color) => setDraft({ ...draft, color })} />
+          <PrimaryButton label={t.addService} onPress={() => void saveCustomService()} disabled={busy} />
+        </Panel>
+      ) : null}
+
+      {mode === "catalog" ? (
+        <Panel title={t.generalCatalog}>
+          <Text style={styles.emptyText}>{t.catalogHint}</Text>
+          <Field label={t.search} value={catalogQuery} onChangeText={setCatalogQuery} placeholder={t.searchService} />
+          <CategoryChips categories={catalog.map((item) => item.title)} selected={currentCatalogCategory} onSelect={setActiveCatalogCategory} />
+          {catalogServices.length ? (
+            catalogServices.map((service) => {
+              const exists = serviceExists(service.name);
+              return (
+                <Pressable key={`${service.category}-${service.name}`} style={[styles.catalogServiceCard, exists && styles.catalogServiceCardActive]} onPress={() => !exists && onAddCatalog(service)} disabled={busy || exists}>
+                  <View style={styles.serviceTextBlock}>
+                    <Text style={styles.listTitle}>{service.name}</Text>
+                    <Text style={styles.listCaption}>{service.category} · {service.durationMinutes || 60} {t.duration.toLowerCase()} · {formatMoney(Number(service.price || 0), currency)}</Text>
+                  </View>
+                  <View style={[styles.catalogAddBadge, exists && styles.catalogAddBadgeDone]}>
+                    <Ionicons name={exists ? "checkmark" : "add"} size={20} color={exists ? "#166534" : "#FFFFFF"} />
+                  </View>
+                  <Text style={[styles.catalogStateText, exists && styles.catalogStateTextDone]}>{exists ? t.alreadyAdded : t.addFromCatalog}</Text>
                 </Pressable>
-              </View>
-            </View>
-          ))
-        ) : (
-          <Text style={styles.emptyText}>{t.empty}</Text>
-        )}
-      </Panel>
+              );
+            })
+          ) : (
+            <Text style={styles.emptyText}>{t.empty}</Text>
+          )}
+        </Panel>
+      ) : null}
+    </View>
+  );
+}
+
+function CategoryChips({
+  categories,
+  selected,
+  onSelect,
+}: {
+  categories: string[];
+  selected: string;
+  onSelect: (category: string) => void;
+}) {
+  const safeCategories = categories.length ? categories : [DEFAULT_SERVICE_CATEGORY];
+  return (
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.servicePicker}>
+      {safeCategories.map((category) => {
+        const active = category === selected;
+        return (
+          <Pressable key={category} style={[styles.choiceChip, active && styles.choiceChipActive]} onPress={() => onSelect(category)}>
+            <Text style={[styles.choiceText, active && styles.choiceTextActive]}>{category}</Text>
+          </Pressable>
+        );
+      })}
+    </ScrollView>
+  );
+}
+
+function ColorSwatches({ value, onChange }: { value: string; onChange: (color: string) => void }) {
+  return (
+    <View style={styles.colorSwatchRow}>
+      {SERVICE_COLORS.map((color) => (
+        <Pressable key={color} style={[styles.colorSwatch, { backgroundColor: color }, value === color && styles.colorSwatchActive]} onPress={() => onChange(color)} />
+      ))}
     </View>
   );
 }
@@ -4938,6 +5252,36 @@ const styles = StyleSheet.create({
   sectionStack: {
     gap: 12,
   },
+  servicesModeRow: {
+    flexDirection: "row",
+    gap: 8,
+    padding: 4,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    backgroundColor: "#FFFFFF",
+  },
+  servicesModeButton: {
+    flex: 1,
+    minHeight: 42,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 8,
+    borderRadius: 9,
+    backgroundColor: "#F8FAFC",
+  },
+  servicesModeButtonActive: {
+    backgroundColor: "#0F172A",
+  },
+  servicesModeText: {
+    color: "#475569",
+    fontSize: 12,
+    fontWeight: "900",
+    textAlign: "center",
+  },
+  servicesModeTextActive: {
+    color: "#FFFFFF",
+  },
   dateRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -5033,6 +5377,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 8,
+    paddingVertical: 2,
   },
   choiceChip: {
     paddingHorizontal: 12,
@@ -5064,6 +5409,105 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderBottomWidth: 1,
     borderBottomColor: "#E2E8F0",
+  },
+  serviceManageCard: {
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    backgroundColor: "#FFFFFF",
+  },
+  serviceManageSummary: {
+    padding: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 10,
+  },
+  serviceTextBlock: {
+    flex: 1,
+    minWidth: 0,
+  },
+  serviceEditStack: {
+    padding: 12,
+    gap: 10,
+  },
+  serviceActionRow: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  iconGhostButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#F1F5F9",
+  },
+  colorSwatchRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 9,
+  },
+  colorSwatch: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 2,
+    borderColor: "#FFFFFF",
+  },
+  colorSwatchActive: {
+    borderColor: "#111827",
+  },
+  categoryAddRow: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    gap: 10,
+  },
+  categoryAddButton: {
+    width: 50,
+    height: 50,
+    marginBottom: 1,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#6D4AFF",
+  },
+  catalogServiceCard: {
+    minHeight: 72,
+    padding: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "#D8E2EF",
+    backgroundColor: "#F8FAFC",
+  },
+  catalogServiceCardActive: {
+    borderColor: "#BBF7D0",
+    backgroundColor: "#F0FDF4",
+  },
+  catalogAddBadge: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#6D4AFF",
+  },
+  catalogAddBadgeDone: {
+    backgroundColor: "#DCFCE7",
+  },
+  catalogStateText: {
+    width: 74,
+    color: "#432C75",
+    fontSize: 11,
+    lineHeight: 14,
+    fontWeight: "900",
+    textAlign: "center",
+  },
+  catalogStateTextDone: {
+    color: "#166534",
   },
   listItemCompact: {
     paddingVertical: 10,
