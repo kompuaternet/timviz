@@ -299,6 +299,51 @@ async function readAppointmentsForProfessional(professionalId: string) {
     );
 }
 
+async function readAppointmentsForProfessionalDates(professionalId: string, appointmentDates: string[]) {
+  const dates = Array.from(
+    new Set(appointmentDates.map((date) => date.trim()).filter(Boolean))
+  );
+
+  if (!professionalId.trim() || dates.length === 0) {
+    return [];
+  }
+
+  if (isSupabaseConfigured()) {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      return [];
+    }
+
+    const { data, error } = await supabase
+      .from("calendar_appointments")
+      .select(
+        "id, business_id, professional_id, appointment_date, start_time, end_time, kind, customer_name, customer_phone, service_name, notes, attendance, price_amount, created_at"
+      )
+      .eq("professional_id", professionalId)
+      .in("appointment_date", dates)
+      .order("appointment_date", { ascending: true })
+      .order("start_time", { ascending: true })
+      .order("created_at", { ascending: true });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return (data ?? []).map((row) => mapSupabaseAppointment(row as CalendarAppointmentRow));
+  }
+
+  const dateSet = new Set(dates);
+  const store = await readStore();
+  return store.appointments
+    .filter((appointment) => appointment.professionalId === professionalId && dateSet.has(appointment.appointmentDate))
+    .sort(
+      (left, right) =>
+        `${left.appointmentDate}${left.startTime}${left.createdAt}`.localeCompare(
+          `${right.appointmentDate}${right.startTime}${right.createdAt}`
+        )
+    );
+}
+
 async function readClientDirectoryAppointments(professionalId: string) {
   if (isSupabaseConfigured()) {
     const supabase = getSupabaseAdmin();
@@ -668,6 +713,21 @@ function buildWorkspaceSnapshotFromDirectory(
   };
 }
 
+function compactWorkspaceForCalendar(workspace: WorkspaceSnapshot): WorkspaceSnapshot {
+  return {
+    ...workspace,
+    professional: {
+      ...workspace.professional,
+      avatarUrl: ""
+    },
+    business: {
+      ...workspace.business,
+      photos: []
+    },
+    services: []
+  };
+}
+
 async function resolveCalendarAccess(input: {
   viewerProfessionalId: string;
   targetProfessionalId?: string;
@@ -775,58 +835,74 @@ export async function getCalendarNotificationsContext(input: {
   };
 }
 
-export async function getCalendarDaySnapshot(input: {
+type CalendarAccess = Awaited<ReturnType<typeof resolveCalendarAccess>>;
+
+function buildCalendarDaySnapshot(input: {
   professionalId: string;
   appointmentDate: string;
-  targetProfessionalId?: string;
+  access: CalendarAccess;
+  professionalAppointments: CalendarAppointment[];
+  businessAppointmentsForDay: CalendarAppointment[];
+  recentBusinessAppointments: CalendarAppointment[];
+  includeMeta?: boolean;
 }) {
-  const access = await resolveCalendarAccess({
-    viewerProfessionalId: input.professionalId,
-    targetProfessionalId: input.targetProfessionalId
-  });
-  const professionalAppointments = await readAppointmentsForProfessional(access.targetWorkspace.professional.id);
-  const businessAppointmentsForDay = access.canManageTeam
-    ? await readBusinessAppointmentsForDate(access.targetWorkspace.business.id, input.appointmentDate)
-    : professionalAppointments.filter((appointment) => appointment.appointmentDate === input.appointmentDate);
-  const recentBusinessAppointments = access.canManageTeam
-    ? await readRecentBusinessAppointments(access.targetWorkspace.business.id, 8)
-    : [];
+  const { access, professionalAppointments, businessAppointmentsForDay, recentBusinessAppointments } = input;
+  const includeMeta = input.includeMeta !== false;
   const existing = professionalAppointments.filter(
     (appointment) => appointment.appointmentDate === input.appointmentDate
   );
   const weekRange = getWeekRange(input.appointmentDate);
   const monthRange = getMonthRange(input.appointmentDate);
-  const clients = Array.from(
-    new Map(
-      professionalAppointments
-        .filter(
-          (appointment) =>
-            appointment.customerName.trim() &&
-            appointment.customerName.trim().toLowerCase() !== "клиент"
-        )
-        .map((appointment) => [
-          `${appointment.customerName.trim().toLowerCase()}::${appointment.customerPhone.trim()}`,
-          {
-            name: appointment.customerName.trim(),
-            phone: appointment.customerPhone.trim()
-          }
-        ])
-    ).values()
-  ).sort((left, right) => left.name.localeCompare(right.name, "ru"));
+  const clients = includeMeta
+    ? Array.from(
+        new Map(
+          professionalAppointments
+            .filter(
+              (appointment) =>
+                appointment.customerName.trim() &&
+                appointment.customerName.trim().toLowerCase() !== "клиент"
+            )
+            .map((appointment) => [
+              `${appointment.customerName.trim().toLowerCase()}::${appointment.customerPhone.trim()}`,
+              {
+                name: appointment.customerName.trim(),
+                phone: appointment.customerPhone.trim()
+              }
+            ])
+        ).values()
+      ).sort((left, right) => left.name.localeCompare(right.name, "ru"))
+    : [];
 
-  const activitySource = access.canManageTeam
-    ? recentBusinessAppointments
-    : [...professionalAppointments].sort((left, right) =>
-        `${right.createdAt}${right.appointmentDate}${right.startTime}`.localeCompare(
-          `${left.createdAt}${left.appointmentDate}${left.startTime}`
+  const activitySource = includeMeta
+    ? access.canManageTeam
+      ? recentBusinessAppointments
+      : [...professionalAppointments].sort((left, right) =>
+          `${right.createdAt}${right.appointmentDate}${right.startTime}`.localeCompare(
+            `${left.createdAt}${left.appointmentDate}${left.startTime}`
+          )
         )
-      );
+    : [];
   const teamMemberLabels = new Map(
     access.teamMembers.map((member) => [member.id, `${member.firstName} ${member.lastName}`.trim() || member.role])
   );
   const memberCalendars: CalendarMemberDaySnapshot[] = access.teamEntries
     .filter((entry) => access.canManageTeam || entry.professional.id === access.targetWorkspace.professional.id)
     .map((entry) => {
+      const appointments = businessAppointmentsForDay
+        .filter(
+          (appointment) =>
+            appointment.professionalId === entry.professional.id &&
+            appointment.appointmentDate === input.appointmentDate
+        )
+        .sort((left, right) => left.startTime.localeCompare(right.startTime));
+
+      if (!includeMeta) {
+        return {
+          professionalId: entry.professional.id,
+          appointments
+        } as CalendarMemberDaySnapshot;
+      }
+
       const memberWorkspace = buildWorkspaceSnapshotFromDirectory(
         entry.professional,
         entry.membership,
@@ -844,13 +920,7 @@ export async function getCalendarDaySnapshot(input: {
         scope: entry.membership.scope === "owner" ? "owner" : "member",
         isViewer: entry.professional.id === input.professionalId,
         memberSchedule: memberWorkspace.memberSchedule,
-        appointments: businessAppointmentsForDay
-          .filter(
-            (appointment) =>
-              appointment.professionalId === entry.professional.id &&
-              appointment.appointmentDate === input.appointmentDate
-          )
-          .sort((left, right) => left.startTime.localeCompare(right.startTime))
+        appointments
       };
     });
 
@@ -859,7 +929,7 @@ export async function getCalendarDaySnapshot(input: {
       id: access.viewerWorkspace.professional.id,
       firstName: access.viewerWorkspace.professional.firstName,
       lastName: access.viewerWorkspace.professional.lastName,
-      avatarUrl: access.viewerWorkspace.professional.avatarUrl,
+      avatarUrl: includeMeta ? access.viewerWorkspace.professional.avatarUrl : "",
       role: access.viewerWorkspace.membership.role,
       scope: access.viewerWorkspace.membership.scope === "owner" ? "owner" : "member",
       language: access.viewerWorkspace.professional.language,
@@ -869,16 +939,16 @@ export async function getCalendarDaySnapshot(input: {
       premiumStatus: access.viewerWorkspace.professional.premiumStatus,
       premiumUntil: access.viewerWorkspace.professional.premiumUntil
     },
-    teamMembers: access.teamMembers,
+    teamMembers: includeMeta ? access.teamMembers : access.teamMembers.map((member) => ({ ...member, avatarUrl: "" })),
     viewedProfessionalId: access.targetWorkspace.professional.id,
     memberCalendars,
-    workspace: access.targetWorkspace,
+    workspace: includeMeta ? access.targetWorkspace : compactWorkspaceForCalendar(access.targetWorkspace),
     appointments: existing.sort((left, right) => left.startTime.localeCompare(right.startTime)),
     clients,
     stats: {
-      day: summarizeAppointments(professionalAppointments, input.appointmentDate, input.appointmentDate),
-      week: summarizeAppointments(professionalAppointments, weekRange.start, weekRange.end),
-      month: summarizeAppointments(professionalAppointments, monthRange.start, monthRange.end)
+      day: includeMeta ? summarizeAppointments(professionalAppointments, input.appointmentDate, input.appointmentDate) : { visitsCount: existing.length, revenue: 0 },
+      week: includeMeta ? summarizeAppointments(professionalAppointments, weekRange.start, weekRange.end) : { visitsCount: 0, revenue: 0 },
+      month: includeMeta ? summarizeAppointments(professionalAppointments, monthRange.start, monthRange.end) : { visitsCount: 0, revenue: 0 }
     },
     recentActivity: activitySource
       .filter((appointment) => appointment.kind === "appointment")
@@ -894,6 +964,74 @@ export async function getCalendarDaySnapshot(input: {
         createdAt: appointment.createdAt
       }))
   };
+}
+
+export async function getCalendarRangeSnapshots(input: {
+  professionalId: string;
+  appointmentDates: string[];
+  targetProfessionalId?: string;
+  includeMeta?: boolean;
+}) {
+  const appointmentDates = Array.from(
+    new Set(input.appointmentDates.map((date) => date.trim()).filter(Boolean))
+  );
+  if (!appointmentDates.length) {
+    return {};
+  }
+
+  const access = await resolveCalendarAccess({
+    viewerProfessionalId: input.professionalId,
+    targetProfessionalId: input.targetProfessionalId
+  });
+  const includeMeta = input.includeMeta !== false;
+  const professionalAppointments = includeMeta
+    ? await readAppointmentsForProfessional(access.targetWorkspace.professional.id)
+    : await readAppointmentsForProfessionalDates(access.targetWorkspace.professional.id, appointmentDates);
+  const dateSet = new Set(appointmentDates);
+  const businessAppointmentsForRange = access.canManageTeam
+    ? await getAppointmentsForBusinessDates(access.targetWorkspace.business.id, appointmentDates)
+    : professionalAppointments.filter((appointment) => dateSet.has(appointment.appointmentDate));
+  const recentBusinessAppointments = access.canManageTeam
+    ? !includeMeta
+      ? []
+      : await readRecentBusinessAppointments(access.targetWorkspace.business.id, 8)
+    : [];
+  const businessAppointmentsByDate = new Map<string, CalendarAppointment[]>();
+  for (const appointment of businessAppointmentsForRange) {
+    const list = businessAppointmentsByDate.get(appointment.appointmentDate) || [];
+    list.push(appointment);
+    businessAppointmentsByDate.set(appointment.appointmentDate, list);
+  }
+
+  return Object.fromEntries(
+    appointmentDates.map((appointmentDate) => [
+      appointmentDate,
+      buildCalendarDaySnapshot({
+        professionalId: input.professionalId,
+        appointmentDate,
+        access,
+        professionalAppointments,
+        businessAppointmentsForDay: businessAppointmentsByDate.get(appointmentDate) || [],
+        recentBusinessAppointments,
+        includeMeta: input.includeMeta
+      })
+    ])
+  );
+}
+
+export async function getCalendarDaySnapshot(input: {
+  professionalId: string;
+  appointmentDate: string;
+  targetProfessionalId?: string;
+  includeMeta?: boolean;
+}) {
+  const snapshots = await getCalendarRangeSnapshots({
+    professionalId: input.professionalId,
+    appointmentDates: [input.appointmentDate],
+    targetProfessionalId: input.targetProfessionalId,
+    includeMeta: input.includeMeta
+  });
+  return snapshots[input.appointmentDate];
 }
 
 async function prepareCalendarAppointmentWithWorkspace(input: {

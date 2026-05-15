@@ -4,7 +4,7 @@ import * as ImagePicker from "expo-image-picker";
 import * as Localization from "expo-localization";
 import { StatusBar } from "expo-status-bar";
 import type { ComponentProps } from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -474,6 +474,9 @@ const TIMEZONE_LABELS: Record<string, string> = {
 };
 const CURRENCY_OPTIONS = ["UAH", "EUR", "USD", "PLN", "GBP", "KZT", "GEL", "AED", "CAD"];
 const TELEGRAM_REMINDER_LEAD_OPTIONS = [15, 30, 60, 120, 180, 1440];
+const CALENDAR_MEMORY_TTL_MS = 30_000;
+const CALENDAR_BACKGROUND_SYNC_MS = 12_000;
+const CALENDAR_WARM_CHUNK_SIZE = 90;
 const SERVICE_MODE_IDS = ["onsite", "travel", "online"] as const;
 const SERVICE_MODE_VALUES: Record<(typeof SERVICE_MODE_IDS)[number], string> = {
   onsite: "Клиенты приходят в мое физическое заведение",
@@ -1654,6 +1657,31 @@ function getCalendarModeDates(mode: CalendarViewMode, date: string) {
   return [date];
 }
 
+function uniqueDates(dates: string[]) {
+  return Array.from(new Set(dates.filter(Boolean))).sort();
+}
+
+function chunkDates(dates: string[], size = CALENDAR_WARM_CHUNK_SIZE) {
+  const chunks: string[][] = [];
+  for (let index = 0; index < dates.length; index += size) {
+    chunks.push(dates.slice(index, index + size));
+  }
+  return chunks;
+}
+
+function getCalendarWarmDates(mode: CalendarViewMode, date: string) {
+  if (mode === "month") {
+    return getMonthGridDates(date);
+  }
+  if (mode === "week") {
+    return uniqueDates(Array.from({ length: 21 }, (_, index) => shiftDate(date, index - 7)));
+  }
+  if (mode === "threeDays") {
+    return uniqueDates(Array.from({ length: 11 }, (_, index) => shiftDate(date, index - 4)));
+  }
+  return uniqueDates(Array.from({ length: 7 }, (_, index) => shiftDate(date, index - 3)));
+}
+
 function getMonthGridDates(date: string) {
   const parsed = new Date(`${date}T12:00:00`);
   const year = parsed.getFullYear();
@@ -1955,6 +1983,7 @@ export default function App() {
   const [session, setSession] = useState<MobileSession | null>(null);
   const [workspace, setWorkspace] = useState<WorkspaceSnapshot | null>(null);
   const [calendar, setCalendar] = useState<CalendarSnapshot | null>(null);
+  const [calendarDate, setCalendarDate] = useState(getTodayIso());
   const [clients, setClients] = useState<ClientRecord[]>([]);
   const [serviceCatalog, setServiceCatalog] = useState<ServiceCatalogCategory[]>([]);
   const [staffSnapshot, setStaffSnapshot] = useState<StaffSnapshot | null>(null);
@@ -1991,6 +2020,7 @@ export default function App() {
   function applyWorkspaceCache(cache: MobileWorkspaceCache) {
     setWorkspace(cache.workspace);
     setCalendar(cache.calendar);
+    setCalendarDate(cache.selectedDate || selectedDate);
     setClients(Array.isArray(cache.clients) ? cache.clients : []);
     setServiceCatalog(Array.isArray(cache.serviceCatalog) ? cache.serviceCatalog : []);
     setStaffSnapshot(cache.staffSnapshot || null);
@@ -2010,6 +2040,7 @@ export default function App() {
   function mergeCalendarAppointments(date: string, updater: (appointments: AppointmentRecord[]) => AppointmentRecord[]) {
     setCalendar((current) => {
       if (!current) return current;
+      if (calendarDate !== date) return current;
       const nextAppointments = updater(current.appointments || []);
       const nextMemberCalendars = current.memberCalendars?.map((member) => ({
         ...member,
@@ -2105,7 +2136,7 @@ export default function App() {
     if (session) {
       refreshAll(session, selectedDate, { silent: hasVisibleWorkspaceData() });
     }
-  }, [session, selectedDate]);
+  }, [session]);
 
   async function apiFetch(path: string, options: RequestInit = {}) {
     const response = await fetch(`${API_BASE_URL}${path}`, {
@@ -2125,10 +2156,23 @@ export default function App() {
 
   const loadCalendarDays = useCallback(async (dates: string[]) => {
     if (!session) return {};
-    const uniqueDates = Array.from(new Set(dates)).filter(Boolean);
+    const requestedDates = uniqueDates(dates);
     const headers = { Authorization: `Bearer ${session.token}` };
+
+    if (requestedDates.length > 1) {
+      const params = new URLSearchParams({ mode: "range", meta: "0", dates: requestedDates.join(",") });
+      const response = await fetch(`${API_BASE_URL}/api/mobile/pro/calendar?${params.toString()}`, { headers });
+      const result = await response.json().catch(() => ({}));
+      if (response.ok && !result?.error && result?.snapshots && typeof result.snapshots === "object") {
+        return result.snapshots as Record<string, CalendarSnapshot>;
+      }
+      if (requestedDates.length > 3) {
+        return {};
+      }
+    }
+
     const entries = await Promise.all(
-      uniqueDates.map(async (date) => {
+      requestedDates.map(async (date) => {
         const response = await fetch(`${API_BASE_URL}/api/mobile/pro/calendar?date=${encodeURIComponent(date)}`, { headers });
         const result = await response.json().catch(() => ({}));
         if (!response.ok || result?.error) {
@@ -2141,14 +2185,33 @@ export default function App() {
     return Object.fromEntries(entries.filter((entry): entry is readonly [string, CalendarSnapshot] => Boolean(entry[1])));
   }, [session]);
 
-  async function refreshAll(currentSession = session, date = selectedDate, options: { silent?: boolean } = {}) {
+  async function refreshCalendarOnly(currentSession = session, date = selectedDate) {
+    if (!currentSession) return;
+    try {
+      const headers = { Authorization: `Bearer ${currentSession.token}` };
+      const response = await fetch(`${API_BASE_URL}/api/mobile/pro/calendar?date=${encodeURIComponent(date)}`, { headers });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || result?.error) return;
+      setCalendar(result as CalendarSnapshot);
+      setCalendarDate(date);
+    } catch {
+      // Background calendar refresh should never block navigation.
+    }
+  }
+
+  useEffect(() => {
+    if (!session) return;
+    void refreshCalendarOnly(session, selectedDate);
+  }, [session, selectedDate]);
+
+  async function refreshAll(currentSession = session, date = selectedDate, options: { silent?: boolean; media?: boolean } = {}) {
     if (!currentSession) return;
 
     if (!options.silent) setRefreshing(true);
     try {
       const headers = { Authorization: `Bearer ${currentSession.token}` };
       const [workspaceResult, calendarResult, clientsResult, servicesResult, staffResult] = await Promise.all([
-        fetch(`${API_BASE_URL}/api/mobile/pro/workspace/${currentSession.professionalId}`, { headers }).then((item) =>
+        fetch(`${API_BASE_URL}/api/mobile/pro/workspace/${currentSession.professionalId}?media=${options.media ? "1" : "0"}`, { headers }).then((item) =>
           item.json()
         ),
         fetch(`${API_BASE_URL}/api/mobile/pro/calendar?date=${encodeURIComponent(date)}`, { headers }).then((item) =>
@@ -2169,6 +2232,7 @@ export default function App() {
       const nextCatalog = Array.isArray(servicesResult.catalog) ? servicesResult.catalog : [];
       setWorkspace(workspaceResult);
       setCalendar(calendarResult);
+      setCalendarDate(date);
       setClients(nextClients);
       setServiceCatalog(nextCatalog);
       setStaffSnapshot(staffResult || null);
@@ -2196,6 +2260,12 @@ export default function App() {
       if (!options.silent) setRefreshing(false);
     }
   }
+
+  useEffect(() => {
+    if (session && activeTab === "settings") {
+      refreshAll(session, selectedDate, { silent: true, media: true });
+    }
+  }, [activeTab, session]);
 
   async function persistSession(nextSession: MobileSession) {
     await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(nextSession));
@@ -2283,6 +2353,7 @@ export default function App() {
     setSession(null);
     setWorkspace(null);
     setCalendar(null);
+    setCalendarDate(getTodayIso());
     setClients([]);
     setServiceCatalog([]);
     setStaffSnapshot(null);
@@ -2344,7 +2415,7 @@ export default function App() {
           })),
         }),
       })
-      .then(() => refreshAll(session, appointmentDate, { silent: true }))
+      .then(() => refreshCalendarOnly(session, appointmentDate))
       .catch((error) => {
         Alert.alert(t.addVisit, error instanceof Error ? error.message : t.addVisit);
         revalidateWorkspace(appointmentDate);
@@ -2433,7 +2504,7 @@ export default function App() {
           }),
         });
       })
-      .then(() => refreshAll(session, appointmentDate, { silent: true }))
+      .then(() => refreshCalendarOnly(session, appointmentDate))
       .catch((error) => {
         Alert.alert(t.editVisit, error instanceof Error ? error.message : t.editVisit);
         revalidateWorkspace(appointmentDate);
@@ -2489,7 +2560,7 @@ export default function App() {
           mergeCalendarAppointments(appointmentDate, (appointments) => appointments.filter((item) => item.id !== appointment.id));
           const target = appointment.professionalId ? `&targetProfessionalId=${encodeURIComponent(appointment.professionalId)}` : "";
           void apiFetch(`/api/mobile/pro/calendar?appointmentId=${encodeURIComponent(appointment.id)}${target}`, { method: "DELETE" })
-            .then(() => refreshAll(session, appointmentDate, { silent: true }))
+            .then(() => refreshCalendarOnly(session, appointmentDate))
             .catch((error) => {
               Alert.alert(t.delete, error instanceof Error ? error.message : t.delete);
               revalidateWorkspace(appointmentDate);
@@ -2517,7 +2588,7 @@ export default function App() {
           previousAppointmentDate: appointment.appointmentDate,
         }),
       })
-      .then(() => refreshAll(session, appointmentDate, { silent: true }))
+      .then(() => refreshCalendarOnly(session, appointmentDate))
       .catch((error) => {
         Alert.alert(t.editVisit, error instanceof Error ? error.message : t.editVisit);
         revalidateWorkspace(appointmentDate);
@@ -2551,7 +2622,7 @@ export default function App() {
           serviceName: label,
         }),
       })
-      .then(() => refreshAll(session, date, { silent: true }))
+      .then(() => refreshCalendarOnly(session, date))
       .catch((error) => {
         Alert.alert(label, error instanceof Error ? error.message : label);
         revalidateWorkspace(date);
@@ -2779,6 +2850,7 @@ export default function App() {
             workspace={workspace}
             staff={staffSnapshot}
             calendar={calendar}
+            calendarDate={calendarDate}
             clients={clients}
             selectedDate={selectedDate}
             setSelectedDate={setSelectedDate}
@@ -2951,6 +3023,7 @@ function CalendarTab({
   workspace,
   staff,
   calendar,
+  calendarDate,
   clients,
   selectedDate,
   setSelectedDate,
@@ -2980,6 +3053,7 @@ function CalendarTab({
   workspace: WorkspaceSnapshot | null;
   staff: StaffSnapshot | null;
   calendar: CalendarSnapshot | null;
+  calendarDate: string;
   clients: ClientRecord[];
   selectedDate: string;
   setSelectedDate: (date: string) => void;
@@ -3027,7 +3101,12 @@ function CalendarTab({
     [selectedDate, viewMode, visibleDatesKey]
   );
   const preloadDatesKey = preloadDates.join("|");
+  const warmDates = useMemo(() => getCalendarWarmDates(viewMode, selectedDate), [selectedDate, viewMode]);
+  const warmDatesKey = warmDates.join("|");
   const [rangeSnapshots, setRangeSnapshots] = useState<Record<string, CalendarSnapshot>>({});
+  const rangeSnapshotsRef = useRef<Record<string, CalendarSnapshot>>({});
+  const rangeSnapshotTimesRef = useRef<Record<string, number>>({});
+  const loadingDatesRef = useRef<Set<string>>(new Set());
   const calendarMembers = useMemo<CalendarMemberView[]>(() => {
     const map = new Map<string, CalendarMemberView>();
     const addMember = (member: CalendarMemberView) => {
@@ -3097,17 +3176,11 @@ function CalendarTab({
     for (const [date, snapshot] of Object.entries(rangeSnapshots)) {
       map.set(date, snapshot.appointments || []);
     }
-    for (const appointment of calendar?.appointments || []) {
-      const key = appointment.appointmentDate || selectedDate;
-      const list = map.get(key) || [];
-      if (list.some((item) => item.id === appointment.id)) {
-        continue;
-      }
-      list.push(appointment);
-      map.set(key, list);
+    if (calendar) {
+      map.set(calendarDate, calendar.appointments || []);
     }
     return map;
-  }, [calendar?.appointments, rangeSnapshots, selectedDate]);
+  }, [calendar?.appointments, calendarDate, rangeSnapshots]);
   const viewOptions: Array<{ value: CalendarViewMode; label: string }> = [
     { value: "day", label: t.dayView },
     { value: "threeDays", label: t.threeDays },
@@ -3133,6 +3206,45 @@ function CalendarTab({
     return `${member.name} ${member.role}`.toLowerCase().includes(query);
   });
 
+  const mergeRangeSnapshots = useCallback((snapshots: Record<string, CalendarSnapshot>) => {
+    const entries = Object.entries(snapshots);
+    if (!entries.length) return;
+    const loadedAt = Date.now();
+    for (const [date] of entries) {
+      rangeSnapshotTimesRef.current[date] = loadedAt;
+    }
+    setRangeSnapshots((current) => {
+      const next = { ...current, ...snapshots };
+      rangeSnapshotsRef.current = next;
+      return next;
+    });
+  }, []);
+
+  const loadCalendarSnapshotDates = useCallback(
+    async (dates: string[], options: { force?: boolean } = {}) => {
+      const now = Date.now();
+      const targetDates = uniqueDates(dates).filter((date) => {
+        if (loadingDatesRef.current.has(date)) return false;
+        if (options.force) return true;
+        const loadedAt = rangeSnapshotTimesRef.current[date] || 0;
+        return !rangeSnapshotsRef.current[date] || now - loadedAt > CALENDAR_MEMORY_TTL_MS;
+      });
+
+      if (!targetDates.length) return;
+
+      targetDates.forEach((date) => loadingDatesRef.current.add(date));
+      try {
+        for (const chunk of chunkDates(targetDates)) {
+          const snapshots = await loadCalendarDays(chunk);
+          mergeRangeSnapshots(snapshots);
+        }
+      } finally {
+        targetDates.forEach((date) => loadingDatesRef.current.delete(date));
+      }
+    },
+    [loadCalendarDays, mergeRangeSnapshots]
+  );
+
   useEffect(() => {
     if (!calendarMembers.length) return;
     const validIds = new Set(calendarMembers.map((member) => member.id));
@@ -3145,23 +3257,35 @@ function CalendarTab({
   }, [calendar?.viewedProfessionalId, calendarMembers, workspace?.professional.id]);
 
   useEffect(() => {
-    let cancelled = false;
-    loadCalendarDays(preloadDates)
-      .then((snapshots) => {
-        if (!cancelled) setRangeSnapshots((current) => ({ ...current, ...snapshots }));
-      })
-      .catch(() => undefined);
-    return () => {
-      cancelled = true;
-    };
-  }, [loadCalendarDays, preloadDatesKey]);
+    if (!calendar) return;
+    mergeRangeSnapshots({ [calendarDate]: calendar });
+  }, [calendar, calendarDate, mergeRangeSnapshots]);
+
+  useEffect(() => {
+    void loadCalendarSnapshotDates(preloadDates);
+  }, [loadCalendarSnapshotDates, preloadDatesKey]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      void loadCalendarSnapshotDates(warmDates);
+    }, 180);
+    return () => clearTimeout(timer);
+  }, [loadCalendarSnapshotDates, warmDatesKey]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const syncDates = viewMode === "day" ? preloadDates : visibleDates;
+      void loadCalendarSnapshotDates(syncDates, { force: true });
+    }, CALENDAR_BACKGROUND_SYNC_MS);
+    return () => clearInterval(interval);
+  }, [loadCalendarSnapshotDates, preloadDatesKey, viewMode, visibleDatesKey]);
 
   function getAppointmentsForDate(date: string) {
     return appointmentsByDate.get(date) || [];
   }
 
   function getSnapshotForDate(date: string) {
-    return date === selectedDate ? calendar || rangeSnapshots[date] || null : rangeSnapshots[date] || null;
+    return date === calendarDate && calendar ? calendar : rangeSnapshots[date] || null;
   }
 
   function getAppointmentsForMember(date: string, memberId: string) {
@@ -3354,15 +3478,26 @@ function CalendarTab({
     if (saved) setBlockedTimeDraft(null);
   }
 
+  function warmCalendarMode(date: string, nextMode = viewMode) {
+    void loadCalendarSnapshotDates(getCalendarModeDates(nextMode, date));
+    void loadCalendarSnapshotDates(getCalendarWarmDates(nextMode, date));
+  }
+
   function chooseDate(date: string, nextMode: CalendarViewMode = viewMode) {
+    warmCalendarMode(date, nextMode);
     setSelectedDate(date);
     if (nextMode !== viewMode) setViewMode(nextMode);
+  }
+
+  function chooseViewMode(nextMode: CalendarViewMode) {
+    warmCalendarMode(selectedDate, nextMode);
+    setViewMode(nextMode);
   }
 
   return (
     <View style={styles.calendarScreen}>
       <View style={styles.calendarToolbar}>
-        <Pressable style={styles.dateButton} onPress={() => setSelectedDate(shiftCalendarDate(viewMode, selectedDate, -1))}>
+        <Pressable style={styles.dateButton} onPress={() => chooseDate(shiftCalendarDate(viewMode, selectedDate, -1))}>
           <Ionicons name="chevron-back" size={18} color="#0F172A" />
         </Pressable>
         <View style={styles.datePill}>
@@ -3373,7 +3508,7 @@ function CalendarTab({
             {viewMode === "day" ? getWorkTimeLabel(selectedSchedule, t) : t.selected}
           </Text>
         </View>
-        <Pressable style={styles.dateButton} onPress={() => setSelectedDate(shiftCalendarDate(viewMode, selectedDate, 1))}>
+        <Pressable style={styles.dateButton} onPress={() => chooseDate(shiftCalendarDate(viewMode, selectedDate, 1))}>
           <Ionicons name="chevron-forward" size={18} color="#0F172A" />
         </Pressable>
         <View style={styles.toolbarSpacer} />
@@ -3740,7 +3875,7 @@ function CalendarTab({
                   key={option.value}
                   style={[styles.viewMenuItem, active && styles.viewMenuItemActive]}
                   onPress={() => {
-                    setViewMode(option.value);
+                    chooseViewMode(option.value);
                     setViewMenuOpen(false);
                   }}
                 >
@@ -6175,7 +6310,7 @@ function SettingsTab({
       mediaTypes: "images",
       allowsEditing: true,
       aspect: [1, 1],
-      quality: 0.82,
+      quality: 0.45,
       base64: true,
     });
 
@@ -6251,7 +6386,7 @@ function SettingsTab({
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: "images",
       allowsEditing: true,
-      quality: 0.82,
+      quality: 0.5,
       base64: true,
     });
 

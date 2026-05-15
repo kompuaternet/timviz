@@ -9,6 +9,7 @@ import {
   getAppointmentsForBusinessDates,
   getCalendarNotificationsContext,
   getCalendarDaySnapshot,
+  getCalendarRangeSnapshots,
   updateCalendarAppointmentMeta,
   updateCalendarAppointmentTime
 } from "../../../../../lib/pro-calendar";
@@ -35,6 +36,21 @@ function mapBookingStatusForNotification(status: string) {
 
 function mapAttendanceToNotificationStatus(attendance: string) {
   return attendance === "pending" ? "pending" : "confirmed";
+}
+
+function parseCalendarDateList(value: string | null) {
+  if (!value) return [];
+  const seen = new Set<string>();
+  return value
+    .split(",")
+    .map((item) => item.trim())
+    .filter((item) => /^\d{4}-\d{2}-\d{2}$/.test(item))
+    .filter((item) => {
+      if (seen.has(item)) return false;
+      seen.add(item);
+      return true;
+    })
+    .slice(0, 120);
 }
 
 async function getMobileOnlineBookingNotifications(professionalId: string) {
@@ -143,7 +159,25 @@ export async function GET(request: Request) {
       return NextResponse.json(notifications);
     }
 
-    const snapshot = await getCalendarDaySnapshot({ professionalId, appointmentDate, targetProfessionalId });
+    if (mode === "range") {
+      const dates = parseCalendarDateList(url.searchParams.get("dates"));
+      const snapshots = await getCalendarRangeSnapshots({
+        professionalId,
+        appointmentDates: dates,
+        targetProfessionalId,
+        includeMeta: url.searchParams.get("meta") === "1"
+      });
+
+      timer({ status: 200 });
+      return NextResponse.json({ snapshots });
+    }
+
+    const snapshot = await getCalendarDaySnapshot({
+      professionalId,
+      appointmentDate,
+      targetProfessionalId,
+      includeMeta: url.searchParams.get("meta") === "1"
+    });
 
     timer({ status: 200 });
     return NextResponse.json(snapshot);

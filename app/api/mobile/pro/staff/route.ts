@@ -10,6 +10,20 @@ import {
   updateBusinessScheduleForProfessional,
   updateStaffMemberByOwner
 } from "../../../../../lib/pro-data";
+import type { BusinessStaffSnapshot } from "../../../../../lib/pro-staff";
+
+function compactStaffMedia(snapshot: BusinessStaffSnapshot): BusinessStaffSnapshot {
+  return {
+    ...snapshot,
+    members: snapshot.members.map((member) => ({
+      ...member,
+      professional: {
+        ...member.professional,
+        avatarUrl: ""
+      }
+    }))
+  };
+}
 
 export async function GET(request: Request) {
   try {
@@ -20,7 +34,7 @@ export async function GET(request: Request) {
 
     const ownerSnapshot = await getBusinessStaffSnapshot(professionalId);
     if (ownerSnapshot) {
-      return NextResponse.json(ownerSnapshot);
+      return NextResponse.json(request.url.includes("media=1") ? ownerSnapshot : compactStaffMedia(ownerSnapshot));
     }
 
     const workspace = await getWorkspaceSnapshot(professionalId);
@@ -46,7 +60,7 @@ export async function GET(request: Request) {
             lastName: workspace.professional.lastName,
             email: workspace.professional.email,
             phone: workspace.professional.phone,
-            avatarUrl: workspace.professional.avatarUrl
+            avatarUrl: request.url.includes("media=1") ? workspace.professional.avatarUrl : ""
           },
           membership: {
             role: workspace.membership.role,
