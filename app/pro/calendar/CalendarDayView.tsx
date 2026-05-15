@@ -2690,6 +2690,10 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
   });
   const datePickerButtonLabel = uiLanguage === "en" ? "Date" : "Дата";
   const datePickerTodayLabel = uiLanguage === "en" ? "Today" : uiLanguage === "uk" ? "Сьогодні" : "Сегодня";
+  const previousPeriodLabel =
+    uiLanguage === "en" ? "Previous period" : uiLanguage === "uk" ? "Попередній період" : "Предыдущий период";
+  const nextPeriodLabel =
+    uiLanguage === "en" ? "Next period" : uiLanguage === "uk" ? "Наступний період" : "Следующий период";
   const datePickerMonthLabel = new Date(`${datePickerMonth}T00:00:00`).toLocaleDateString(locale, {
     month: "long",
     year: "numeric"
@@ -4948,7 +4952,7 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
               <button
                 type="button"
                 className={styles.calendarMobilePeriodButton}
-                aria-label="Предыдущий период"
+                aria-label={previousPeriodLabel}
                 onClick={() => moveMobileVisiblePeriod(-1)}
               >
                 ‹
@@ -5004,7 +5008,7 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
               <button
                 type="button"
                 className={styles.calendarMobilePeriodButton}
-                aria-label="Следующий период"
+                aria-label={nextPeriodLabel}
                 onClick={() => moveMobileVisiblePeriod(1)}
               >
                 ›
