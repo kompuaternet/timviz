@@ -3462,6 +3462,26 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
     ],
     [selectedAppointmentContactLinks.call, selectedAppointmentContactLinks.telegram, selectedAppointmentContactLinks.viber, selectedAppointmentContactLinks.whatsapp, t.call, t.telegram, t.viber, t.whatsapp]
   );
+  async function copySelectedAppointmentPhone() {
+    const phone = selectedAppointmentContactPhone || detailsCustomerPhoneDraft.trim();
+    if (!phone) {
+      return;
+    }
+
+    const copiedLabel =
+      uiLanguage === "en"
+        ? "Phone copied"
+        : uiLanguage === "uk"
+          ? "Телефон скопійовано"
+          : "Телефон скопирован";
+
+    try {
+      await navigator.clipboard.writeText(phone);
+      showToast(copiedLabel, "success");
+    } catch {
+      showToast(phone, "info");
+    }
+  }
   const calendarStats = snapshot?.stats ?? {
     day: { visitsCount: 0, revenue: 0 },
     week: { visitsCount: 0, revenue: 0 },
@@ -6473,11 +6493,24 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
           <div className={styles.calendarV2Panel}>
             <div className={styles.calendarV2PanelHeader}>
               <button type="button" className={styles.calendarDrawerBack} onClick={() => setDrawerStage("closed")}>←</button>
-              <strong>
-                {selectedAppointment.kind === "blocked"
-                  ? selectedAppointment.serviceName
-                  : detailsCustomerNameDraft.trim() || selectedAppointment.customerName || t.customer}
-              </strong>
+              <div className={styles.calendarDrawerHeaderTitle}>
+                <strong>
+                  {selectedAppointment.kind === "blocked"
+                    ? selectedAppointment.serviceName
+                    : detailsCustomerNameDraft.trim() || selectedAppointment.customerName || t.customer}
+                </strong>
+                <span className={styles.calendarDrawerStatusBadge}>
+                  {selectedAppointment.kind === "blocked"
+                    ? t.blockedTimeFallback
+                    : attendanceDraft === "confirmed"
+                      ? t.attendanceConfirmed
+                      : attendanceDraft === "arrived"
+                        ? t.attendanceArrived
+                        : attendanceDraft === "no_show"
+                          ? t.attendanceNoShow
+                          : t.attendancePending}
+                </span>
+              </div>
             </div>
 
             {selectedAppointment.kind === "blocked" ? (
@@ -6580,6 +6613,16 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
                         </button>
                       )
                     )}
+                    <button
+                      type="button"
+                      className={`${styles.calendarContactAction} ${styles.calendarContactActionCopy}`}
+                      onClick={() => void copySelectedAppointmentPhone()}
+                      disabled={!selectedAppointmentContactPhone && !detailsCustomerPhoneDraft.trim()}
+                      aria-label={uiLanguage === "en" ? "Copy phone" : uiLanguage === "uk" ? "Скопіювати телефон" : "Скопировать телефон"}
+                      title={uiLanguage === "en" ? "Copy phone" : uiLanguage === "uk" ? "Скопіювати телефон" : "Скопировать телефон"}
+                    >
+                      <span className={styles.calendarContactActionIcon}>⧉</span>
+                    </button>
                   </div>
                 </div>
 
