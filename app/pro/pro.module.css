@@ -8,6 +8,23 @@
     linear-gradient(180deg, #fff 0%, #fbf9ff 54%, #fff 100%);
 }
 
+@keyframes calendarMobileFabPulse {
+  0%,
+  100% {
+    box-shadow:
+      0 18px 44px rgba(91, 78, 224, 0.34),
+      0 0 0 10px rgba(116, 87, 240, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.46);
+  }
+
+  50% {
+    box-shadow:
+      0 20px 48px rgba(91, 78, 224, 0.4),
+      0 0 0 15px rgba(116, 87, 240, 0.07),
+      inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  }
+}
+
 .formSide {
   position: relative;
   display: flex;
@@ -7116,6 +7133,12 @@
   display: none;
 }
 
+.calendarMobileTopBar,
+.calendarMobileStatsScroller,
+.calendarMobileCreateOverlay {
+  display: none;
+}
+
 .calendarMobileJumpNow,
 .calendarMobileCreateButton {
   min-height: 54px;
@@ -11169,6 +11192,10 @@
 
 @media (max-width: 980px) {
   .calendarWorkspaceHeader {
+    display: none;
+  }
+
+  .calendarWorkspaceHeader {
     padding: 10px 14px 8px;
     gap: 8px;
     grid-template-columns: minmax(0, 1fr) auto;
@@ -11235,19 +11262,150 @@
   }
 
   .calendarTopBarV2 {
-    display: flex;
-    flex-wrap: nowrap;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 6px;
-    padding: 6px 10px;
-    overflow-x: auto;
-    overflow-y: hidden;
-    scrollbar-width: none;
+    display: block;
+    padding: calc(8px + env(safe-area-inset-top, 0px)) 10px 8px;
+    border-top: 0;
+    border-bottom: 1px solid rgba(224, 230, 245, 0.82);
+    background: rgba(248, 250, 255, 0.82);
+    backdrop-filter: blur(22px);
+    -webkit-backdrop-filter: blur(22px);
   }
 
   .calendarTopBarV2::-webkit-scrollbar {
     display: none;
+  }
+
+  .calendarTopBarV2 > .calendarTopLeft,
+  .calendarTopBarV2 > .calendarTopRight {
+    display: none;
+  }
+
+  .calendarMobileTopBar {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) 38px 38px;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .calendarMobileTodayButton,
+  .calendarMobileDateButton,
+  .calendarMobileHeaderIcon {
+    min-height: 38px;
+    border: 1px solid rgba(216, 224, 245, 0.72);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.78);
+    color: #222738;
+    font: inherit;
+    box-shadow:
+      0 10px 28px rgba(83, 97, 139, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.84);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+  }
+
+  .calendarMobileTodayButton {
+    padding: 0 12px;
+    font-size: 0.78rem;
+    font-weight: 800;
+  }
+
+  .calendarMobileDateButton {
+    min-width: 0;
+    padding: 4px 12px;
+    display: grid;
+    align-content: center;
+    text-align: left;
+  }
+
+  .calendarMobileDateButton strong {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.9rem;
+    line-height: 1.05;
+  }
+
+  .calendarMobileDateButton span {
+    color: #737d97;
+    font-size: 0.62rem;
+    font-weight: 800;
+  }
+
+  .calendarMobileHeaderIcon {
+    position: relative;
+    width: 38px;
+    min-width: 38px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .calendarMobileHeaderIcon svg {
+    width: 21px;
+    height: 21px;
+  }
+
+  .calendarMobileHeaderAdd {
+    border-color: rgba(111, 92, 255, 0.26);
+    background:
+      radial-gradient(circle at 35% 25%, rgba(255, 255, 255, 0.94), transparent 34%),
+      linear-gradient(135deg, rgba(128, 99, 255, 0.9), rgba(73, 64, 221, 0.94));
+    color: #ffffff;
+    box-shadow:
+      0 12px 30px rgba(98, 84, 238, 0.28),
+      0 0 0 5px rgba(111, 92, 255, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.34);
+  }
+
+  .calendarMobileHeaderAdd span {
+    display: block;
+    font-size: 1.55rem;
+    line-height: 1;
+    transform: translateY(-1px);
+  }
+
+  .calendarMobileStatsScroller {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding: 8px 10px;
+    background: #f7f8fc;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+
+  .calendarMobileStatsScroller::-webkit-scrollbar {
+    display: none;
+  }
+
+  .calendarMobileStatsScroller div {
+    min-width: 118px;
+    padding: 9px 10px;
+    border: 1px solid rgba(222, 229, 246, 0.9);
+    border-radius: 16px;
+    background:
+      radial-gradient(circle at top right, rgba(111, 92, 255, 0.12), transparent 42%),
+      rgba(255, 255, 255, 0.88);
+    box-shadow: 0 10px 24px rgba(82, 96, 139, 0.08);
+    scroll-snap-align: start;
+  }
+
+  .calendarMobileStatsScroller span,
+  .calendarMobileStatsScroller small {
+    display: block;
+    color: #7a849b;
+    font-size: 0.66rem;
+    font-weight: 800;
+  }
+
+  .calendarMobileStatsScroller strong {
+    display: block;
+    margin: 3px 0;
+    color: #202536;
+    font-size: 1.1rem;
+    line-height: 1;
   }
 
   .calendarTopLeft {
@@ -11512,7 +11670,77 @@
     -webkit-overflow-scrolling: touch;
     touch-action: pan-x pan-y;
     padding-bottom: calc(10px + env(safe-area-inset-bottom));
-    background: #ffffff;
+    background: #fbfcff;
+  }
+
+  .calendarMobileCreateOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 138;
+    display: grid;
+    align-items: end;
+    background: rgba(14, 18, 31, 0.18);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+  }
+
+  .calendarMobileCreateSheet {
+    display: grid;
+    gap: 8px;
+    padding: 8px 12px calc(18px + env(safe-area-inset-bottom));
+    border-radius: 26px 26px 0 0;
+    border: 1px solid rgba(229, 234, 248, 0.9);
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: 0 -22px 56px rgba(48, 58, 97, 0.22);
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    animation: calendarMobileSheetIn 280ms cubic-bezier(0.2, 0.9, 0.2, 1);
+  }
+
+  .calendarMobileCreateHandle {
+    justify-self: center;
+    width: 42px;
+    height: 4px;
+    margin: 2px 0 6px;
+    border-radius: 999px;
+    background: rgba(119, 129, 154, 0.28);
+  }
+
+  .calendarMobileCreateSheet button {
+    width: 100%;
+    min-height: 58px;
+    padding: 10px 14px;
+    border: 1px solid rgba(224, 230, 245, 0.94);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.86);
+    color: #222738;
+    font: inherit;
+    display: grid;
+    justify-items: start;
+    gap: 3px;
+    box-shadow: 0 10px 24px rgba(83, 97, 139, 0.08);
+  }
+
+  .calendarMobileCreateSheet button strong {
+    font-size: 0.98rem;
+    line-height: 1.1;
+  }
+
+  .calendarMobileCreateSheet button span {
+    color: #7a849b;
+    font-size: 0.76rem;
+    font-weight: 700;
+  }
+
+  @keyframes calendarMobileSheetIn {
+    from {
+      opacity: 0;
+      transform: translateY(18px) scale(0.98);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
   }
 
   .calendarMobileActionBar {
@@ -13324,5 +13552,199 @@
 
   .calendarToast span {
     font-size: 0.88rem;
+  }
+}
+
+@media (max-width: 980px) {
+  .calendarWorkspaceHeader {
+    display: none !important;
+  }
+
+  .calendarTopBarV2 {
+    position: sticky;
+    top: 0;
+    z-index: 42;
+    border-bottom: 1px solid rgba(225, 231, 244, 0.88);
+  }
+
+  .calendarV2ScrollFrame {
+    background:
+      linear-gradient(180deg, rgba(251, 252, 255, 0.98), rgba(247, 249, 253, 0.96)),
+      #f8faff;
+  }
+
+  .calendarV2Grid {
+    grid-template-columns: 48px minmax(0, 1fr);
+  }
+
+  .calendarV2HourColumn {
+    border-right: 1px solid rgba(221, 228, 243, 0.9);
+    background: rgba(251, 252, 255, 0.96);
+  }
+
+  .calendarV2HourLabel,
+  .hourLabel {
+    color: #7d879d;
+    font-size: 0.68rem;
+    font-weight: 700;
+  }
+
+  .calendarV2Body {
+    background-image:
+      linear-gradient(90deg, rgba(228, 234, 246, 0.72) 1px, transparent 1px),
+      linear-gradient(180deg, rgba(223, 230, 243, 0.72) 1px, transparent 1px);
+  }
+
+  .calendarDayColumnsHeader {
+    border-bottom: 1px solid rgba(224, 231, 245, 0.95);
+    box-shadow: 0 10px 28px rgba(45, 58, 92, 0.06);
+  }
+
+  .bookingBlock {
+    border-radius: 16px;
+    padding: 12px 11px 14px;
+    box-shadow:
+      0 14px 32px rgba(60, 72, 112, 0.12),
+      inset 0 1px 0 rgba(255, 255, 255, 0.44);
+  }
+
+  .bookingTime,
+  .bookingTitle,
+  .bookingService {
+    padding-right: 8px;
+  }
+
+  .bookingControlRow,
+  .bookingDragHandle,
+  .bookingResizeHandle {
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.88);
+    transition:
+      opacity 160ms ease,
+      transform 180ms cubic-bezier(0.2, 0.9, 0.2, 1);
+  }
+
+  .bookingBlockMobileActionsOpen .bookingControlRow,
+  .bookingBlockMobileActionsOpen .bookingDragHandle,
+  .bookingBlockMobileActionsOpen .bookingResizeHandle {
+    opacity: 1;
+    pointer-events: auto;
+    transform: scale(1);
+  }
+
+  .bookingBlockMobileActionsOpen .bookingTime,
+  .bookingBlockMobileActionsOpen .bookingTitle,
+  .bookingBlockMobileActionsOpen .bookingService {
+    padding-right: 50px;
+  }
+
+  .calendarMobilePlusButton {
+    width: 62px;
+    height: 62px;
+    border: 1px solid rgba(255, 255, 255, 0.72);
+    border-radius: 999px;
+    background:
+      radial-gradient(circle at 30% 24%, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.1) 34%),
+      linear-gradient(145deg, rgba(117, 81, 236, 0.92), rgba(84, 74, 223, 0.92));
+    box-shadow:
+      0 18px 44px rgba(91, 78, 224, 0.34),
+      0 0 0 10px rgba(116, 87, 240, 0.1),
+      inset 0 1px 0 rgba(255, 255, 255, 0.46);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    transition:
+      transform 280ms cubic-bezier(0.2, 1.35, 0.28, 1),
+      box-shadow 220ms ease;
+    animation: calendarMobileFabPulse 2.8s ease-in-out infinite;
+  }
+
+  .calendarMobilePlusButton:hover,
+  .calendarMobilePlusButton:active {
+    transform: translateY(-3px) scale(1.06);
+    box-shadow:
+      0 24px 54px rgba(91, 78, 224, 0.42),
+      0 0 0 12px rgba(116, 87, 240, 0.13),
+      inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  }
+
+  .mobileWorkspaceNavLink {
+    transition:
+      transform 220ms cubic-bezier(0.2, 1.05, 0.3, 1),
+      background 180ms ease,
+      box-shadow 180ms ease;
+  }
+
+  .mobileWorkspaceNavActive {
+    transform: translateY(-5px) scale(1.05);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0)),
+      #2f225f;
+    box-shadow:
+      0 18px 34px rgba(47, 34, 95, 0.3),
+      0 0 0 7px rgba(108, 84, 230, 0.11);
+  }
+
+  .mobileWorkspaceNavActive .mobileWorkspaceNavIcon {
+    transform: translateY(-1px) scale(1.08);
+  }
+
+  .calendarMonthTeamGrid {
+    gap: 5px;
+  }
+
+  .calendarMonthTeamDay {
+    min-height: 78px;
+    padding: 7px 6px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.82);
+    box-shadow: inset 0 0 0 1px rgba(211, 239, 223, 0.82);
+  }
+
+  .calendarMonthTeamDayHeader {
+    align-items: flex-start;
+  }
+
+  .calendarMonthTeamDayHeader span {
+    min-width: 22px;
+    min-height: 18px;
+    padding: 2px 5px;
+    border-radius: 999px;
+    background: rgba(111, 84, 230, 0.1);
+    color: #6549db;
+    text-align: center;
+    font-weight: 800;
+  }
+
+  .calendarMonthTeamDayList {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .calendarMonthTeamPill {
+    width: 9px;
+    min-width: 9px;
+    height: 9px;
+    min-height: 9px;
+    padding: 0;
+    border-radius: 999px;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.74);
+  }
+
+  .calendarMonthTeamPill strong,
+  .calendarMonthTeamPill span {
+    display: none;
+  }
+
+  .calendarMonthOverviewDay small {
+    display: inline-flex;
+    width: fit-content;
+    max-width: 100%;
+    padding: 2px 6px;
+    border-radius: 999px;
+    background: rgba(111, 84, 230, 0.1);
+    color: #6047d8;
+    font-weight: 800;
   }
 }

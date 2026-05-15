@@ -249,11 +249,11 @@ const SERVICE_COLORS = [
 ];
 
 const CALENDAR_HOUR_HEIGHT = 96;
-const CALENDAR_MOBILE_HOUR_HEIGHT = 144;
+const CALENDAR_MOBILE_HOUR_HEIGHT = 112;
 const CALENDAR_GRID_STEP_MINUTES = 10;
 const TIME_SELECT_STEP_MINUTES = 5;
 const MIN_BOOKING_CARD_HEIGHT = 64;
-const MOBILE_MIN_BOOKING_CARD_HEIGHT = 86;
+const MOBILE_MIN_BOOKING_CARD_HEIGHT = 74;
 const SNAPSHOT_CACHE_LIMIT = 120;
 
 function getCalendarStorage() {
@@ -1299,19 +1299,7 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
   const timeOptionCount = (24 * 60) / TIME_SELECT_STEP_MINUTES;
 
   const [selectedDate, setSelectedDate] = useState(initialDate);
-  const [viewMode, setViewMode] = useState<CalendarViewMode>(() => {
-    const storedViewMode = getCalendarStorage()?.getItem("rezervo-pro-calendar-view-mode");
-    if (
-      storedViewMode === "day" ||
-      storedViewMode === "threeDay" ||
-      storedViewMode === "week" ||
-      storedViewMode === "month"
-    ) {
-      return storedViewMode;
-    }
-
-    return "day";
-  });
+  const [viewMode, setViewMode] = useState<CalendarViewMode>("day");
   const [selectedProfessionalId, setSelectedProfessionalId] = useState(professionalId);
   const [visibleProfessionalIds, setVisibleProfessionalIds] = useState<string[]>([professionalId]);
   const [activeToolbarMenu, setActiveToolbarMenu] = useState<null | "view" | "team" | "share" | "account">(null);
@@ -1363,6 +1351,8 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
   const [isTogglingPublicBooking, setIsTogglingPublicBooking] = useState(false);
   const [deleteConfirmTarget, setDeleteConfirmTarget] = useState<CalendarAppointment | null>(null);
   const [isDeletingAppointment, setIsDeletingAppointment] = useState(false);
+  const [isMobileCreateSheetOpen, setIsMobileCreateSheetOpen] = useState(false);
+  const [activeMobileBookingId, setActiveMobileBookingId] = useState<string | null>(null);
   const [isMobileViewport, setIsMobileViewport] = useState(false);
   const [isOffHoursCompressed, setIsOffHoursCompressed] = useState<boolean>(() => {
     return getCalendarStorage()?.getItem("rezervo-pro-calendar-offhours-compressed") !== "0";
@@ -1392,6 +1382,8 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
   const accountMenuPanelRef = useRef<HTMLDivElement | null>(null);
   const shareLinkInputRef = useRef<HTMLInputElement | null>(null);
   const quickMenuRef = useRef<HTMLDivElement | null>(null);
+  const bookingLongPressTimerRef = useRef<number | null>(null);
+  const bookingLongPressTriggeredRef = useRef(false);
   const newClientPrefixMenuRef = useRef<HTMLDivElement | null>(null);
   const detailsPrefixMenuRef = useRef<HTMLDivElement | null>(null);
   const mobileDrawerScrollLockRef = useRef<{
@@ -3061,6 +3053,18 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
   }, [canSwitchProfessional, isMobileViewport, mobileDayHourColumnWidth, viewMode, selectedDate, visibleCalendarIds.length]);
 
   useEffect(() => {
+    if (!isMobileViewport) {
+      setIsMobileCreateSheetOpen(false);
+      setActiveMobileBookingId(null);
+      bookingLongPressTriggeredRef.current = false;
+      if (bookingLongPressTimerRef.current !== null) {
+        window.clearTimeout(bookingLongPressTimerRef.current);
+        bookingLongPressTimerRef.current = null;
+      }
+    }
+  }, [isMobileViewport]);
+
+  useEffect(() => {
     if (!isMobileViewport || typeof navigator === "undefined") {
       return;
     }
@@ -3709,6 +3713,7 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
   }
 
   function openNewVisit(slot: string, targetProfessionalId = selectedProfessionalId) {
+    setIsMobileCreateSheetOpen(false);
     const targetMember = memberCalendars.find((member) => member.professionalId === targetProfessionalId) ?? null;
     const targetScheduleOverrides =
       targetMember?.memberSchedule.workScheduleMode === "flexible"
@@ -3736,6 +3741,50 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
       showToast(t.outsideScheduleWarning, "warning");
     }
     setDrawerStage("visit");
+  }
+
+  function openMobileCreateSheet() {
+    setActiveToolbarMenu(null);
+    setQuickMenu((current) => ({ ...current, visible: false, x: 0, y: 0, time: "" }));
+    setIsMobileCreateSheetOpen(true);
+  }
+
+  function openMobileNewClient() {
+    setIsMobileCreateSheetOpen(false);
+    setActiveToolbarMenu(null);
+    setClientSearchReturnStage("visit");
+    setSelectedCustomer(null);
+    setClientQuery("");
+    setShowNewClientForm(true);
+    setDrawerStage("client-search");
+  }
+
+  function openMobileNewService() {
+    setIsMobileCreateSheetOpen(false);
+    router.push("/pro/services");
+  }
+
+  function startMobileBookingLongPress(appointmentId: string) {
+    if (!isMobileViewport) {
+      return;
+    }
+
+    bookingLongPressTriggeredRef.current = false;
+    if (bookingLongPressTimerRef.current !== null) {
+      window.clearTimeout(bookingLongPressTimerRef.current);
+    }
+
+    bookingLongPressTimerRef.current = window.setTimeout(() => {
+      bookingLongPressTriggeredRef.current = true;
+      setActiveMobileBookingId(appointmentId);
+    }, 420);
+  }
+
+  function clearMobileBookingLongPress() {
+    if (bookingLongPressTimerRef.current !== null) {
+      window.clearTimeout(bookingLongPressTimerRef.current);
+      bookingLongPressTimerRef.current = null;
+    }
   }
 
   function handleSlotClick(slot: string, clientX: number, top: number, bodyWidth: number, targetProfessionalId: string) {
@@ -4763,6 +4812,92 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
         </div>
 
         <header className={styles.calendarTopBarV2}>
+          {isMobileViewport ? (
+            <div className={styles.calendarMobileTopBar}>
+              <button type="button" className={styles.calendarMobileTodayButton} onClick={jumpToCurrentTime}>
+                {t.today}
+              </button>
+              <button
+                ref={viewMenuButtonRef}
+                type="button"
+                className={styles.calendarMobileDateButton}
+                aria-expanded={activeToolbarMenu === "view"}
+                onClick={() => {
+                  setDrawerStage("closed");
+                  setActiveToolbarMenu((current) => (current === "view" ? null : "view"));
+                }}
+              >
+                <strong>{activeDateLabel}</strong>
+                <span>{viewModeOptions.find((option) => option.value === viewMode)?.label ?? t.day}</span>
+              </button>
+              <FloatingPopover
+                open={isMobileViewport && activeToolbarMenu === "view"}
+                anchorEl={viewMenuButtonRef.current}
+                panelRef={viewMenuPanelRef}
+                className={styles.calendarToolbarMenu}
+                placement="bottom-end"
+                offset={12}
+              >
+                <div className={styles.calendarToolbarMenuList}>
+                  {viewModeOptions.map((option) => (
+                    <button
+                      key={option.value}
+                      type="button"
+                      className={`${styles.calendarToolbarMenuItem} ${option.value === viewMode ? styles.calendarToolbarMenuItemActive : ""}`}
+                      onClick={() => {
+                        setViewMode(option.value);
+                        setActiveToolbarMenu(null);
+                      }}
+                    >
+                      <div>
+                        <strong>{option.label}</strong>
+                        <span>
+                          {option.value === "day"
+                            ? t.daySchedule
+                            : option.value === "threeDay"
+                              ? t.threeDays
+                              : option.value === "week"
+                                ? t.week
+                                : t.month}
+                        </span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </FloatingPopover>
+              <button
+                type="button"
+                className={`${styles.calendarMobileHeaderIcon} ${drawerStage === "notifications" ? styles.calendarIconButtonActive : ""}`}
+                aria-label={t.notifications}
+                onClick={() => {
+                  const shouldOpen = drawerStage !== "notifications";
+                  setActiveToolbarMenu(null);
+                  setIsMobileCreateSheetOpen(false);
+                  if (!shouldOpen) {
+                    setDrawerStage("closed");
+                    return;
+                  }
+
+                  setDrawerStage("notifications");
+                  void loadNotifications(selectedDate).catch(() => undefined);
+                }}
+              >
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M6.7 8.8a5.3 5.3 0 1 1 10.6 0c0 5.1 2.1 6.1 2.1 6.1H4.6s2.1-1 2.1-6.1" />
+                  <path d="M10.2 18.2a2.1 2.1 0 0 0 3.6 0" />
+                </svg>
+                {totalPendingNotifications ? <span className={styles.calendarNotificationBadge}>{totalPendingNotifications}</span> : null}
+              </button>
+              <button
+                type="button"
+                className={`${styles.calendarMobileHeaderIcon} ${styles.calendarMobileHeaderAdd}`}
+                aria-label={t.quickNewVisit}
+                onClick={openMobileCreateSheet}
+              >
+                <span>+</span>
+              </button>
+            </div>
+          ) : null}
           <div className={styles.calendarTopLeft}>
             <button type="button" className={styles.calendarTodayButton} onClick={jumpToCurrentTime}>
               {t.today}
@@ -4774,7 +4909,7 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
             </div>
             <button type="button" className={styles.calendarSquareButton} onClick={() => moveVisiblePeriod(1)}>›</button>
 
-            {canSwitchProfessional && !isMobileViewport ? (
+            {canSwitchProfessional && memberCalendars.length > 1 && !isMobileViewport ? (
               <>
                 <button
                   ref={teamMenuButtonRef}
@@ -4892,55 +5027,59 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
                 </button>
               ) : null}
 
-              <button
-                ref={viewMenuButtonRef}
-                type="button"
-                className={styles.calendarViewPill}
-                aria-expanded={activeToolbarMenu === "view"}
-                onClick={() => {
-                  setDrawerStage("closed");
-                  setActiveToolbarMenu((current) => (current === "view" ? null : "view"));
-                }}
-              >
-                <span>{viewModeOptions.find((option) => option.value === viewMode)?.label ?? t.day}</span>
-                <span className={styles.calendarToolbarChevron}>⌄</span>
-              </button>
+              {!isMobileViewport ? (
+                <>
+                  <button
+                    ref={viewMenuButtonRef}
+                    type="button"
+                    className={styles.calendarViewPill}
+                    aria-expanded={activeToolbarMenu === "view"}
+                    onClick={() => {
+                      setDrawerStage("closed");
+                      setActiveToolbarMenu((current) => (current === "view" ? null : "view"));
+                    }}
+                  >
+                    <span>{viewModeOptions.find((option) => option.value === viewMode)?.label ?? t.day}</span>
+                    <span className={styles.calendarToolbarChevron}>⌄</span>
+                  </button>
 
-              <FloatingPopover
-                open={activeToolbarMenu === "view"}
-                anchorEl={viewMenuButtonRef.current}
-                panelRef={viewMenuPanelRef}
-                className={styles.calendarToolbarMenu}
-                placement="bottom-end"
-                offset={12}
-              >
-                <div className={styles.calendarToolbarMenuList}>
-                  {viewModeOptions.map((option) => (
-                    <button
-                      key={option.value}
-                      type="button"
-                      className={`${styles.calendarToolbarMenuItem} ${option.value === viewMode ? styles.calendarToolbarMenuItemActive : ""}`}
-                      onClick={() => {
-                        setViewMode(option.value);
-                        setActiveToolbarMenu(null);
-                      }}
-                    >
-                      <div>
-                        <strong>{option.label}</strong>
-                        <span>
-                          {option.value === "day"
-                            ? t.daySchedule
-                            : option.value === "threeDay"
-                              ? t.threeDays
-                              : option.value === "week"
-                                ? t.week
-                                : t.month}
-                        </span>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              </FloatingPopover>
+                  <FloatingPopover
+                    open={activeToolbarMenu === "view"}
+                    anchorEl={viewMenuButtonRef.current}
+                    panelRef={viewMenuPanelRef}
+                    className={styles.calendarToolbarMenu}
+                    placement="bottom-end"
+                    offset={12}
+                  >
+                    <div className={styles.calendarToolbarMenuList}>
+                      {viewModeOptions.map((option) => (
+                        <button
+                          key={option.value}
+                          type="button"
+                          className={`${styles.calendarToolbarMenuItem} ${option.value === viewMode ? styles.calendarToolbarMenuItemActive : ""}`}
+                          onClick={() => {
+                            setViewMode(option.value);
+                            setActiveToolbarMenu(null);
+                          }}
+                        >
+                          <div>
+                            <strong>{option.label}</strong>
+                            <span>
+                              {option.value === "day"
+                                ? t.daySchedule
+                                : option.value === "threeDay"
+                                  ? t.threeDays
+                                  : option.value === "week"
+                                    ? t.week
+                                    : t.month}
+                            </span>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </FloatingPopover>
+                </>
+              ) : null}
 
               <button
                 type="button"
@@ -4953,7 +5092,27 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
           </div>
         </header>
 
-        {canSwitchProfessional && isMobileViewport && mobileTeamButtonPosition ? (
+        {isMobileViewport && visibleCalendarIds.length === 1 ? (
+          <div className={styles.calendarMobileStatsScroller} aria-label={t.dailyCalendar}>
+            <div>
+              <span>{t.today}</span>
+              <strong>{calendarStats.day.visitsCount}</strong>
+              <small>{formatMoney(calendarStats.day.revenue, accountCurrency, locale)}</small>
+            </div>
+            <div>
+              <span>{t.week}</span>
+              <strong>{calendarStats.week.visitsCount}</strong>
+              <small>{formatMoney(calendarStats.week.revenue, accountCurrency, locale)}</small>
+            </div>
+            <div>
+              <span>{t.month}</span>
+              <strong>{calendarStats.month.visitsCount}</strong>
+              <small>{formatMoney(calendarStats.month.revenue, accountCurrency, locale)}</small>
+            </div>
+          </div>
+        ) : null}
+
+        {canSwitchProfessional && memberCalendars.length > 1 && isMobileViewport && mobileTeamButtonPosition ? (
           <>
             <button
               ref={mobileTeamMenuButtonRef}
@@ -5051,38 +5210,67 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
 
         {renderCalendarToast()}
 
+        {isMobileViewport && isMobileCreateSheetOpen ? (
+          <div
+            className={styles.calendarMobileCreateOverlay}
+            onPointerDown={(event) => {
+              if (event.target === event.currentTarget) {
+                setIsMobileCreateSheetOpen(false);
+              }
+            }}
+          >
+            <div className={styles.calendarMobileCreateSheet} role="dialog" aria-label={t.quickNewVisit}>
+              <div className={styles.calendarMobileCreateHandle} />
+              <button type="button" onClick={() => openNewVisit(getSuggestedVisitStartTime(), selectedProfessionalId)}>
+                <strong>{t.quickNewVisit}</strong>
+                <span>{formatDisplayTime(getSuggestedVisitStartTime())}</span>
+              </button>
+              <button type="button" onClick={openMobileNewClient}>
+                <strong>{t.addClientTitle}</strong>
+                <span>{t.clients}</span>
+              </button>
+              <button type="button" onClick={openMobileNewService}>
+                <strong>{uiLanguage === "en" ? "New service" : uiLanguage === "uk" ? "Нова послуга" : "Новая услуга"}</strong>
+                <span>{t.services}</span>
+              </button>
+            </div>
+          </div>
+        ) : null}
+
         {viewMode === "day" ? (
         <>
         <div ref={scrollFrameRef} className={styles.calendarV2ScrollFrame}>
-          <div className={styles.calendarDayColumnsHeader}>
-            <div className={styles.calendarDayHourSpacer} />
-            <div
-              className={styles.calendarDayMemberHeaderGrid}
-              style={{ gridTemplateColumns: `repeat(${Math.max(1, visibleCalendars.length)}, minmax(${dayMemberColumnWidth}px, 1fr))` }}
-            >
-              {visibleCalendars.map((member) => {
-                const memberLabel = buildDisplayName(member.firstName, member.lastName, t.masterFallback);
-                return (
-                  <button
-                  key={member.professionalId}
-                  type="button"
-                  className={`${styles.calendarDayMemberHeaderCard} ${selectedProfessionalId === member.professionalId ? styles.calendarDayMemberHeaderCardActive : ""}`}
-                  onClick={() => setSelectedProfessionalId(member.professionalId)}
-                >
-                    <ProfileAvatar
-                      avatarUrl={member.avatarUrl}
-                      initials={getMemberInitials(member)}
-                      label={memberLabel}
-                      className={styles.calendarDayMemberHeaderAvatar}
-                      imageClassName={styles.avatarImage}
-                      fallbackClassName={styles.avatarFallback}
-                    />
-                    <strong>{memberLabel}</strong>
-                  </button>
-                );
-              })}
+          {visibleCalendars.length > 1 ? (
+            <div className={styles.calendarDayColumnsHeader}>
+              <div className={styles.calendarDayHourSpacer} />
+              <div
+                className={styles.calendarDayMemberHeaderGrid}
+                style={{ gridTemplateColumns: `repeat(${Math.max(1, visibleCalendars.length)}, minmax(${dayMemberColumnWidth}px, 1fr))` }}
+              >
+                {visibleCalendars.map((member) => {
+                  const memberLabel = buildDisplayName(member.firstName, member.lastName, t.masterFallback);
+                  return (
+                    <button
+                    key={member.professionalId}
+                    type="button"
+                    className={`${styles.calendarDayMemberHeaderCard} ${selectedProfessionalId === member.professionalId ? styles.calendarDayMemberHeaderCardActive : ""}`}
+                    onClick={() => setSelectedProfessionalId(member.professionalId)}
+                  >
+                      <ProfileAvatar
+                        avatarUrl={member.avatarUrl}
+                        initials={getMemberInitials(member)}
+                        label={memberLabel}
+                        className={styles.calendarDayMemberHeaderAvatar}
+                        imageClassName={styles.avatarImage}
+                        fallbackClassName={styles.avatarFallback}
+                      />
+                      <strong>{memberLabel}</strong>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          ) : null}
           <div className={styles.calendarV2Grid} style={{ minHeight: `${dayDisplayGridHeight}px` }}>
             <div className={styles.calendarV2HourColumn}>
               {hours.map((hour) => (
@@ -5094,9 +5282,9 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
                 <button
                   type="button"
                   className={styles.calendarMobilePlusButton}
-                  onClick={() => openNewVisit(getSuggestedVisitStartTime(), selectedProfessionalId)}
-                  aria-label="Добавить запись"
-                  title="Добавить запись"
+                  onClick={openMobileCreateSheet}
+                  aria-label={t.quickNewVisit}
+                  title={t.quickNewVisit}
                 >
                   <span>+</span>
                 </button>
@@ -5258,7 +5446,7 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
                       return (
                         <article
                           key={appointment.id}
-                          className={`${styles.bookingBlock} ${draggingId === appointment.id ? styles.bookingDragging : ""} ${isBlocked ? styles.bookingBlocked : ""} ${isPastAppointment && !isBlocked ? styles.bookingPast : ""} ${isPendingApproval && !isBlocked ? styles.bookingPending : ""}`}
+                          className={`${styles.bookingBlock} ${activeMobileBookingId === appointment.id ? styles.bookingBlockMobileActionsOpen : ""} ${draggingId === appointment.id ? styles.bookingDragging : ""} ${isBlocked ? styles.bookingBlocked : ""} ${isPastAppointment && !isBlocked ? styles.bookingPast : ""} ${isPendingApproval && !isBlocked ? styles.bookingPending : ""}`}
                           style={{
                             top: `${top}px`,
                             height: `${height}px`,
@@ -5267,7 +5455,22 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
                             right: "auto",
                             background: isBlocked ? undefined : bookingColor
                           }}
+                          onPointerDown={() => startMobileBookingLongPress(appointment.id)}
+                          onPointerUp={clearMobileBookingLongPress}
+                          onPointerCancel={clearMobileBookingLongPress}
+                          onPointerLeave={clearMobileBookingLongPress}
+                          onContextMenu={(event) => {
+                            if (!isMobileViewport) {
+                              return;
+                            }
+                            event.preventDefault();
+                            setActiveMobileBookingId(appointment.id);
+                          }}
                           onClick={() => {
+                            if (isMobileViewport && bookingLongPressTriggeredRef.current) {
+                              bookingLongPressTriggeredRef.current = false;
+                              return;
+                            }
                             setSelectedProfessionalId(member.professionalId);
                             if (isBlocked) {
                               setSelectedAppointmentId(appointment.id);
