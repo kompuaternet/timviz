@@ -20,7 +20,9 @@ const loginText = {
     loading: "Входим...",
     submit: "Войти",
     noAccount: "Нет аккаунта?",
-    createProfile: "Создать профессиональный профиль"
+    createProfile: "Создать профессиональный профиль",
+    createMaster: "Создать аккаунт мастера",
+    createMasterSubtitle: "1 минута — и вы сможете открыть календарь."
   },
   uk: {
     googleConfigError: "Google вхід тимчасово недоступний: ключі не налаштовані.",
@@ -36,7 +38,9 @@ const loginText = {
     loading: "Входимо...",
     submit: "Увійти",
     noAccount: "Немає акаунта?",
-    createProfile: "Створити професійний профіль"
+    createProfile: "Створити професійний профіль",
+    createMaster: "Створити акаунт майстра",
+    createMasterSubtitle: "1 хвилина — і ви зможете відкрити календар."
   },
   en: {
     googleConfigError: "Google sign-in is temporarily unavailable: keys are not configured.",
@@ -52,7 +56,9 @@ const loginText = {
     loading: "Signing in...",
     submit: "Sign in",
     noAccount: "No account yet?",
-    createProfile: "Create a professional profile"
+    createProfile: "Create a professional profile",
+    createMaster: "Create master account",
+    createMasterSubtitle: "1 minute — and you can open your calendar."
   }
 } as const;
 
@@ -184,6 +190,22 @@ export default function LoginForm({ staleSession = false, returnTo = "" }: Login
     return `/api/pro/auth/google/start?${query.toString()}`;
   }, [inviteToken, isTelegramSource, returnToPath, telegramStartParam]);
 
+  const createAccountHref = useMemo(() => {
+    const params = new URLSearchParams();
+    if (inviteToken) {
+      params.set("invite", inviteToken);
+    }
+    if (email.trim()) {
+      params.set("email", email.trim());
+    }
+    if (isTelegramSource) {
+      params.set("source", "telegram");
+      params.set("startapp", telegramStartParam || "calendar");
+    }
+    const query = params.toString();
+    return query ? `/pro/create-account?${query}` : "/pro/create-account";
+  }, [email, inviteToken, isTelegramSource, telegramStartParam]);
+
   function handleGoogleSignIn() {
     if (typeof window === "undefined") {
       return;
@@ -249,6 +271,11 @@ export default function LoginForm({ staleSession = false, returnTo = "" }: Login
         </p>
       </div>
 
+      <a href={createAccountHref} className={styles.loginCreateMasterCta}>
+        <strong>{copy.createMaster}</strong>
+        <span>{copy.createMasterSubtitle}</span>
+      </a>
+
       <div className={styles.fieldStack}>
         <div className={styles.field}>
           <label htmlFor="loginEmail">Email</label>
@@ -306,25 +333,7 @@ export default function LoginForm({ staleSession = false, returnTo = "" }: Login
       <div className={styles.helperBlock}>
         {copy.noAccount}{" "}
         <a
-          href={
-            inviteToken
-              ? `/pro/create-account?invite=${encodeURIComponent(inviteToken)}${
-                  email.trim() ? `&email=${encodeURIComponent(email.trim())}` : ""
-                }${
-                  isTelegramSource
-                    ? `${email.trim() || inviteToken ? "&" : "?"}source=telegram${
-                        telegramStartParam ? `&startapp=${encodeURIComponent(telegramStartParam)}` : ""
-                      }`
-                    : ""
-                }`
-              : `/pro/create-account${
-                  isTelegramSource
-                    ? `?source=telegram${
-                        telegramStartParam ? `&startapp=${encodeURIComponent(telegramStartParam)}` : ""
-                      }`
-                    : ""
-                }`
-          }
+          href={createAccountHref}
           className={styles.mutedLink}
         >
           {copy.createProfile}

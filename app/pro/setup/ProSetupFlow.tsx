@@ -214,6 +214,9 @@ const setupText = {
     close: "Закрыть",
     continue: "Продолжить →",
     saving: "Сохраняем...",
+    stepProgress: (current: number, total: number) => `Шаг ${current} из ${total}`,
+    skipToCabinet: "Пропустить и открыть кабинет",
+    openCabinet: "Открыть кабинет",
     ownerSetup: {
       eyebrow: "Настройка аккаунта",
       title: "Как вы хотите настроить профессиональный аккаунт?",
@@ -338,6 +341,9 @@ const setupText = {
     close: "Закрити",
     continue: "Продовжити →",
     saving: "Зберігаємо...",
+    stepProgress: (current: number, total: number) => `Крок ${current} з ${total}`,
+    skipToCabinet: "Пропустити та відкрити кабінет",
+    openCabinet: "Відкрити кабінет",
     ownerSetup: {
       eyebrow: "Налаштування акаунта",
       title: "Як ви хочете налаштувати професійний акаунт?",
@@ -462,6 +468,9 @@ const setupText = {
     close: "Close",
     continue: "Continue →",
     saving: "Saving...",
+    stepProgress: (current: number, total: number) => `Step ${current} of ${total}`,
+    skipToCabinet: "Skip and open workspace",
+    openCabinet: "Open workspace",
     ownerSetup: {
       eyebrow: "Account setup",
       title: "How do you want to set up your professional account?",
@@ -707,12 +716,29 @@ export default function ProSetupFlow({
       (draft.ownerMode === "owner" && step === 2 && draft.categories.length > 0) ||
       (draft.ownerMode === "owner" && step === 3) ||
       (draft.ownerMode === "owner" && step === 4);
+
+  function getContinueLabel() {
+    if (isSaving) {
+      return t.saving;
+    }
+    if (isInvitationFlow) {
+      return t.join.acceptInviteButton;
+    }
+    if (draft.ownerMode === "member" && step === 2) {
+      return t.join.requestButton;
+    }
+    if (draft.ownerMode === "owner") {
+      if (step === 0) return t.businessName.title;
+      if (step === 1) return t.categories.title;
+      if (step === 2) return t.servicesReview.title;
+      if (step === 3) return t.place.title;
+      if (step === 4) return t.openCabinet;
+    }
+    return t.continue;
+  }
+
   const continueLabel =
-    isInvitationFlow
-      ? t.join.acceptInviteButton
-      : draft.ownerMode === "member" && step === 2
-        ? t.join.requestButton
-        : t.continue;
+    getContinueLabel();
 
   const mapEmbedUrl = useMemo(() => {
     if (draft.addressLat === null || draft.addressLon === null) {
@@ -1009,6 +1035,17 @@ export default function ProSetupFlow({
     router.push("/pro/pending");
   }
 
+  async function skipToCabinet() {
+    await finishSetup({
+      ...draft,
+      ownerMode: "owner",
+      companyName: draft.companyName.trim() || "Timviz",
+      categories: draft.categories,
+      services: draft.services,
+      accountType: draft.accountType || "solo"
+    });
+  }
+
   async function handleContinue() {
     if (isInvitationFlow) {
       await finishSetup();
@@ -1139,7 +1176,7 @@ export default function ProSetupFlow({
               void handleContinue();
             }}
           >
-            {isSaving ? t.saving : continueLabel}
+            {continueLabel}
           </button>
           <GlobalLanguageSwitcher mode="inline" />
         </div>
@@ -1629,6 +1666,27 @@ export default function ProSetupFlow({
             ) : null}
           </section>
         ) : null}
+
+        <div className={styles.setupCardBottomCta}>
+          <span>{t.stepProgress(Math.min(step + 1, totalSteps), totalSteps)}</span>
+          <div>
+            {draft.ownerMode === "owner" && step > 0 ? (
+              <button type="button" className={styles.ghostButton} disabled={isSaving} onClick={() => void skipToCabinet()}>
+                {t.skipToCabinet}
+              </button>
+            ) : null}
+            <button
+              type="button"
+              className={styles.primaryButton}
+              disabled={!canContinue || isSaving}
+              onClick={() => {
+                void handleContinue();
+              }}
+            >
+              {continueLabel}
+            </button>
+          </div>
+        </div>
       </div>
 
       {showManualService ? (

@@ -236,6 +236,8 @@ type SetupAccountDraft = {
   currency?: string;
 };
 
+type FieldErrors = Partial<Record<"firstName" | "email" | "password" | "phone" | "terms", string>>;
+
 function readStoredJson<T>(storage: Storage, key: string) {
   try {
     const raw = storage.getItem(key);
@@ -266,20 +268,27 @@ function makeGeneratedPassword() {
   return `G-${randomPart}-timviz`;
 }
 
+function logFunnelStep(step: string, payload?: unknown) {
+  if (process.env.NODE_ENV !== "development") {
+    return;
+  }
+  console.info(`[funnel] ${step}`, payload ?? "");
+}
+
 const formCopy = {
   ru: {
     introEyebrow: "Timviz для профессионалов",
-    introTitle: "Создайте аккаунт или войдите для управления бизнесом.",
-    introText: "Начните с Google или продолжите по email. На следующем шаге мы попросим только основные данные.",
+    introTitle: "Создайте аккаунт мастера",
+    introText: "Начните с email или Google. Настройки бизнеса можно добавить позже.",
     introEmailPlaceholder: "Введите email",
-    introContinue: "Продолжить",
+    introContinue: "Продолжить регистрацию",
     introOr: "или",
     introGoogle: "Войти через Google",
     introChecking: "Проверяем...",
     introHelper: "Вы клиент и хотите открыть профиль мастера?",
     introHelperLink: "Перейти к поиску профилей",
-    detailsTitle: "Проверьте и подтвердите",
-    detailsText: "Имя, телефон, страна, валюта и часовой пояс можно изменить сейчас. Именно эти данные мы используем для первого рабочего кабинета.",
+    detailsTitle: "Создайте аккаунт мастера",
+    detailsText: "Осталось добавить основные данные. Календарь откроется сразу после регистрации.",
     firstName: "Имя",
     firstNamePlaceholder: "Введите свое имя",
     lastName: "Фамилия",
@@ -288,7 +297,9 @@ const formCopy = {
     passwordPlaceholder: "Создайте пароль",
     email: "Email",
     phone: "Номер мобильного",
-    phonePlaceholder: "Введите номер мобильного телефона",
+    phonePlaceholder: "Например: 67 123 45 67",
+    phoneHelper: "Телефон нужен для уведомлений и связи с клиентами.",
+    optionalDetails: "Дополнительно",
     prefixAria: "Выбрать телефонный префикс",
     prefixSearch: "Поиск по стране или коду",
     country: "Страна",
@@ -297,28 +308,32 @@ const formCopy = {
     timezonePlaceholder: "Выберите часовой пояс",
     cabinetLanguage: "Язык кабинета",
     terms: "Я принимаю политику конфиденциальности, условия предоставления услуг и условия сотрудничества.",
-    submit: "Продолжить",
+    submit: "Создать аккаунт мастера",
     login: "Уже есть аккаунт?",
     loginLink: "Войти в кабинет",
     accountExistsTitle: "Этот email уже зарегистрирован",
     accountExistsText: "Можно сразу войти в кабинет или восстановить пароль, чтобы не создавать второй аккаунт.",
     forgotPassword: "Восстановить пароль",
     googleNotice: "Аккаунт не найден. Завершите регистрацию бизнеса через Google.",
-    mobileRequired: "Номер мобильного требуется"
+    mobileRequired: "Введите номер телефона",
+    nameRequired: "Введите имя",
+    emailRequired: "Введите email",
+    passwordRequired: "Создайте пароль",
+    termsRequired: "Примите условия, чтобы продолжить"
   },
   uk: {
     introEyebrow: "Timviz для професіоналів",
-    introTitle: "Створіть акаунт або увійдіть для керування бізнесом.",
-    introText: "Почніть з Google або продовжіть за email. На наступному кроці ми попросимо лише основні дані.",
+    introTitle: "Створіть акаунт майстра",
+    introText: "Почніть з email або Google. Налаштування бізнесу можна додати пізніше.",
     introEmailPlaceholder: "Введіть email",
-    introContinue: "Продовжити",
+    introContinue: "Продовжити реєстрацію",
     introOr: "або",
     introGoogle: "Увійти через Google",
     introChecking: "Перевіряємо...",
     introHelper: "Ви клієнт і хочете відкрити профіль майстра?",
     introHelperLink: "Перейти до пошуку профілів",
-    detailsTitle: "Перевірте і підтвердіть",
-    detailsText: "Ім'я, телефон, країну, валюту і часовий пояс можна змінити зараз. Саме ці дані ми використаємо для першого робочого кабінету.",
+    detailsTitle: "Створіть акаунт майстра",
+    detailsText: "Залишилося додати основні дані. Календар відкриється одразу після реєстрації.",
     firstName: "Ім'я",
     firstNamePlaceholder: "Введіть своє ім'я",
     lastName: "Прізвище",
@@ -327,7 +342,9 @@ const formCopy = {
     passwordPlaceholder: "Створіть пароль",
     email: "Email",
     phone: "Номер мобільного",
-    phonePlaceholder: "Введіть номер мобільного телефону",
+    phonePlaceholder: "Наприклад: 67 123 45 67",
+    phoneHelper: "Телефон потрібен для сповіщень і зв'язку з клієнтами.",
+    optionalDetails: "Додатково",
     prefixAria: "Вибрати телефонний префікс",
     prefixSearch: "Пошук за країною або кодом",
     country: "Країна",
@@ -343,21 +360,25 @@ const formCopy = {
     accountExistsText: "Можна одразу увійти в кабінет або відновити пароль, щоб не створювати другий акаунт.",
     forgotPassword: "Відновити пароль",
     googleNotice: "Акаунт не знайдено. Завершіть реєстрацію бізнесу через Google.",
-    mobileRequired: "Номер мобільного обов'язковий"
+    mobileRequired: "Введіть номер телефону",
+    nameRequired: "Введіть ім'я",
+    emailRequired: "Введіть email",
+    passwordRequired: "Створіть пароль",
+    termsRequired: "Прийміть умови, щоб продовжити"
   },
   en: {
     introEyebrow: "Timviz for professionals",
-    introTitle: "Create an account or sign in to run your business.",
-    introText: "Start with Google or continue with email. On the next step we only ask for the essentials.",
+    introTitle: "Create a master account",
+    introText: "Start with email or Google. Business settings can be added later.",
     introEmailPlaceholder: "Enter your email",
-    introContinue: "Continue",
+    introContinue: "Continue registration",
     introOr: "or",
     introGoogle: "Continue with Google",
     introChecking: "Checking...",
     introHelper: "Are you a client looking to book a service?",
     introHelperLink: "Go to the client catalog",
-    detailsTitle: "Review and confirm",
-    detailsText: "You can adjust your name, phone, country, currency and time zone now. We use these details to set up your first workspace.",
+    detailsTitle: "Create a master account",
+    detailsText: "Add the essentials. Your calendar opens right after registration.",
     firstName: "First name",
     firstNamePlaceholder: "Enter your first name",
     lastName: "Last name",
@@ -366,7 +387,9 @@ const formCopy = {
     passwordPlaceholder: "Create a password",
     email: "Email",
     phone: "Mobile number",
-    phonePlaceholder: "Enter your mobile number",
+    phonePlaceholder: "For example: 67 123 45 67",
+    phoneHelper: "Phone is needed for notifications and client contact.",
+    optionalDetails: "Additional",
     prefixAria: "Choose phone prefix",
     prefixSearch: "Search by country or code",
     country: "Country",
@@ -375,14 +398,18 @@ const formCopy = {
     timezonePlaceholder: "Choose a time zone",
     cabinetLanguage: "Workspace language",
     terms: "I accept the privacy policy, terms of service and cooperation terms.",
-    submit: "Continue",
+    submit: "Create master account",
     login: "Already have an account?",
     loginLink: "Sign in",
     accountExistsTitle: "This email is already registered",
     accountExistsText: "You can sign in right away or reset your password instead of creating a second account.",
     forgotPassword: "Reset password",
     googleNotice: "Account not found. Finish business registration with Google.",
-    mobileRequired: "Mobile number is required"
+    mobileRequired: "Enter your phone number",
+    nameRequired: "Enter your name",
+    emailRequired: "Enter your email",
+    passwordRequired: "Create a password",
+    termsRequired: "Accept the terms to continue"
   }
 } satisfies Record<ProLanguage, Record<string, string>>;
 
@@ -403,6 +430,8 @@ export default function CreateAccountForm() {
   const [language, setLanguage] = useState<ProLanguage>("ru");
   const [currency, setCurrency] = useState("UAH");
   const [phoneError, setPhoneError] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
+  const [isAdditionalOpen, setIsAdditionalOpen] = useState(false);
   const [isPrefixOpen, setIsPrefixOpen] = useState(false);
   const [prefixSearch, setPrefixSearch] = useState("");
   const [googleNotice, setGoogleNotice] = useState("");
@@ -416,6 +445,7 @@ export default function CreateAccountForm() {
   const phoneRule = getPhoneRule(phoneCountry);
   const phoneIsValid = isPhoneValid(phoneCountry, phone);
   const t = formCopy[language];
+  const phonePlaceholder = phoneCountry === "Ukraine" ? t.phonePlaceholder : phoneRule.placeholder;
 
   function applyLanguage(nextLanguage: ProLanguage) {
     setLanguage(nextLanguage);
@@ -498,6 +528,7 @@ export default function CreateAccountForm() {
   }
 
   useEffect(() => {
+    logFunnelStep("visited_create_account");
     const savedLanguage = window.localStorage.getItem("rezervo-pro-language");
     const initialLanguage = languages.includes(savedLanguage as ProLanguage)
       ? (savedLanguage as ProLanguage)
@@ -698,9 +729,13 @@ export default function CreateAccountForm() {
   }
 
   async function moveToDetails() {
-    if (!email.trim()) return;
+    if (!email.trim()) {
+      setFieldErrors({ email: t.emailRequired });
+      return;
+    }
 
     setIsCheckingEmail(true);
+    logFunnelStep("email_step_completed");
     const exists = await emailAlreadyExists(email);
     setIsCheckingEmail(false);
 
@@ -712,52 +747,136 @@ export default function CreateAccountForm() {
     setStep("details");
   }
 
-  async function continueToSetup() {
-    if (!phone.trim()) {
-      setPhoneError(t.mobileRequired);
+  function scrollToFirstInvalid(errors: FieldErrors) {
+    const firstKey = (["firstName", "email", "phone", "password", "terms"] as const).find((key) => errors[key]);
+    if (!firstKey) {
       return;
     }
-    if (!phoneIsValid) {
-      setPhoneError(getPhoneValidationMessage(phoneCountry));
+
+    const target = document.getElementById(firstKey === "terms" ? "termsAccepted" : firstKey);
+    target?.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (target instanceof HTMLElement) {
+      window.setTimeout(() => target.focus(), 250);
+    }
+  }
+
+  function validateDetails() {
+    const errors: FieldErrors = {};
+
+    if (!firstName.trim()) {
+      errors.firstName = t.nameRequired;
+    }
+    if (!email.trim()) {
+      errors.email = t.emailRequired;
+    }
+    if (!phone.trim()) {
+      errors.phone = t.mobileRequired;
+    } else if (!phoneIsValid) {
+      errors.phone = getPhoneValidationMessage(phoneCountry);
+    }
+    if (!password.trim()) {
+      errors.password = t.passwordRequired;
+    }
+    if (!termsAccepted) {
+      errors.terms = t.termsRequired;
+    }
+
+    setFieldErrors(errors);
+    setPhoneError(errors.phone || "");
+    if (Object.keys(errors).length > 0) {
+      logFunnelStep("details_step_failed_validation", Object.keys(errors));
+      scrollToFirstInvalid(errors);
+      return false;
+    }
+
+    return true;
+  }
+
+  async function createMasterAccount() {
+    logFunnelStep("details_step_attempted");
+    if (!validateDetails()) {
       return;
     }
 
     setIsCheckingEmail(true);
     const exists = await emailAlreadyExists(email);
-    setIsCheckingEmail(false);
 
     if (exists) {
+      setIsCheckingEmail(false);
       setExistingAccountEmail(email.trim());
       setStep("entry");
       return;
     }
 
-    window.localStorage.setItem(
-      setupDraftKey,
-      JSON.stringify({
-        firstName,
-        lastName,
-        email,
-        password,
-        avatarUrl,
-        phone: buildInternationalPhone(phoneCountry, phone),
-        country,
-        timezone,
-        language: languageLabels[language],
-        currency
-      })
-    );
+    const account = {
+      firstName: firstName.trim(),
+      lastName: lastName.trim(),
+      email: email.trim(),
+      password,
+      avatarUrl,
+      phone: buildInternationalPhone(phoneCountry, phone),
+      country,
+      timezone: timezone || inferTimezone(country),
+      language: languageLabels[language],
+      currency
+    };
 
-    const params = new URLSearchParams();
+    window.localStorage.setItem(setupDraftKey, JSON.stringify(account));
+
+    logFunnelStep("details_step_completed");
+
     if (inviteToken) {
+      const params = new URLSearchParams();
       params.set("invite", inviteToken);
+      if (isTelegramSource) {
+        params.set("source", "telegram");
+        params.set("startapp", telegramStartParam || "setup");
+      }
+      router.push(`/pro/setup?${params.toString()}`);
+      return;
     }
-    if (isTelegramSource) {
-      params.set("source", "telegram");
-      params.set("startapp", telegramStartParam || "setup");
+
+    logFunnelStep("setup_started");
+
+    const response = await fetch("/api/pro/setup", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        account,
+        setup: {
+          ownerMode: "owner",
+          joinBusinessId: "",
+          joinBusinessName: "",
+          joinBusinessRole: "",
+          companyName: firstName.trim() ? `${firstName.trim()} Timviz` : "Timviz",
+          website: "",
+          categories: [],
+          services: [],
+          accountType: "solo",
+          serviceMode: "Клиенты приходят в мое физическое заведение",
+          address: "",
+          addressDetails: "",
+          addressLat: null,
+          addressLon: null
+        },
+        invitationToken: inviteToken || undefined
+      })
+    });
+
+    const result = await response.json().catch(() => ({}));
+    setIsCheckingEmail(false);
+
+    if (!response.ok) {
+      setFieldErrors({ email: result.error || t.emailRequired });
+      return;
     }
-    const query = params.toString();
-    router.push(query ? `/pro/setup?${query}` : "/pro/setup");
+
+    logFunnelStep("setup_completed");
+    window.sessionStorage.removeItem(liveDraftKey);
+    router.push("/pro/calendar");
+    router.refresh();
   }
 
   if (step === "entry") {
@@ -775,7 +894,10 @@ export default function CreateAccountForm() {
             className={`${styles.input} ${styles.createEntryInput}`}
             placeholder={t.introEmailPlaceholder}
             value={email}
-            onChange={(event) => setEmail(event.target.value)}
+            onChange={(event) => {
+              setEmail(event.target.value);
+              setFieldErrors((current) => ({ ...current, email: "" }));
+            }}
             onKeyDown={(event) => {
               if (event.key === "Enter") {
                 event.preventDefault();
@@ -783,6 +905,7 @@ export default function CreateAccountForm() {
               }
             }}
           />
+          {fieldErrors.email ? <span className={styles.fieldError}>{fieldErrors.email}</span> : null}
           <button type="button" className={`${styles.primaryButton} ${styles.createEntryPrimary}`} onClick={moveToDetails} disabled={!email.trim()}>
             {isCheckingEmail ? t.introChecking : t.introContinue}
           </button>
@@ -848,19 +971,32 @@ export default function CreateAccountForm() {
       <div className={`${styles.fieldStack} ${styles.createAccountGrid}`}>
         <div className={styles.field}>
           <label htmlFor="firstName">{t.firstName}</label>
-          <input id="firstName" className={styles.input} placeholder={t.firstNamePlaceholder} value={firstName} onChange={(event) => setFirstName(event.target.value)} />
-        </div>
-        <div className={styles.field}>
-          <label htmlFor="lastName">{t.lastName}</label>
-          <input id="lastName" className={styles.input} placeholder={t.lastNamePlaceholder} value={lastName} onChange={(event) => setLastName(event.target.value)} />
-        </div>
-        <div className={styles.field}>
-          <label htmlFor="password">{t.password}</label>
-          <input id="password" type="password" className={styles.input} placeholder={t.passwordPlaceholder} value={password} onChange={(event) => setPassword(event.target.value)} />
+          <input
+            id="firstName"
+            className={styles.input}
+            placeholder={t.firstNamePlaceholder}
+            value={firstName}
+            onChange={(event) => {
+              setFirstName(event.target.value);
+              setFieldErrors((current) => ({ ...current, firstName: "" }));
+            }}
+          />
+          {fieldErrors.firstName ? <span className={styles.fieldError}>{fieldErrors.firstName}</span> : null}
         </div>
         <div className={styles.field}>
           <label htmlFor="email">{t.email}</label>
-          <input id="email" type="email" className={styles.input} placeholder="you@example.com" value={email} onChange={(event) => setEmail(event.target.value)} />
+          <input
+            id="email"
+            type="email"
+            className={styles.input}
+            placeholder="you@example.com"
+            value={email}
+            onChange={(event) => {
+              setEmail(event.target.value);
+              setFieldErrors((current) => ({ ...current, email: "" }));
+            }}
+          />
+          {fieldErrors.email ? <span className={styles.fieldError}>{fieldErrors.email}</span> : null}
         </div>
         <div className={`${styles.field} ${styles.createFieldFull}`}>
           <label htmlFor="phone">{t.phone}</label>
@@ -911,11 +1047,12 @@ export default function CreateAccountForm() {
               id="phone"
               className={styles.phoneInput}
               inputMode="numeric"
-              placeholder={t.phonePlaceholder}
+              placeholder={phonePlaceholder}
               value={phone}
               onChange={(event) => {
                 setPhone(formatPhoneLocal(event.target.value, phoneRule));
                 setPhoneError("");
+                setFieldErrors((current) => ({ ...current, phone: "" }));
               }}
               onBlur={() => {
                 if (phone.trim() && !phoneIsValid) {
@@ -924,69 +1061,95 @@ export default function CreateAccountForm() {
               }}
             />
           </div>
+          <span className={styles.fieldHint}>{t.phoneHelper}</span>
           {phoneError ? <span className={styles.fieldError}>{phoneError}</span> : null}
         </div>
         <div className={styles.field}>
-          <label htmlFor="country">{t.country}</label>
-          <select
-            id="country"
-            className={styles.select}
-            value={country}
-            onChange={(event) => syncCountry(event.target.value, "country")}
-          >
-            {countries.map((countryOption) => (
-              <option key={countryOption} value={countryOption}>{countryOption}</option>
-            ))}
-          </select>
+          <label htmlFor="password">{t.password}</label>
+          <input
+            id="password"
+            type="password"
+            className={styles.input}
+            placeholder={t.passwordPlaceholder}
+            value={password}
+            onChange={(event) => {
+              setPassword(event.target.value);
+              setFieldErrors((current) => ({ ...current, password: "" }));
+            }}
+          />
+          {fieldErrors.password ? <span className={styles.fieldError}>{fieldErrors.password}</span> : null}
         </div>
-        <div className={styles.field}>
-          <label htmlFor="currency">{t.currency}</label>
-          <select id="currency" className={styles.select} value={currency} onChange={(event) => setCurrency(event.target.value)}>
-            {currencies.map((currencyOption) => (
-              <option key={currencyOption} value={currencyOption}>{currencyOption}</option>
-            ))}
-          </select>
-        </div>
-        <div className={`${styles.field} ${styles.createFieldFull}`}>
-          <label htmlFor="timezone">{t.timezone}</label>
-          <select id="timezone" className={styles.select} value={timezone} onChange={(event) => setTimezone(event.target.value)}>
-            <option value="">{t.timezonePlaceholder}</option>
-            {timezones.filter((option) => option.value).map((timezoneOption) => (
-              <option key={timezoneOption.value} value={timezoneOption.value}>{timezoneOption.label}</option>
-            ))}
-          </select>
-        </div>
-        <div className={styles.field}>
-          <label htmlFor="cabinetLanguage">{t.cabinetLanguage}</label>
-          <select
-            id="cabinetLanguage"
-            className={styles.select}
-            value={language}
-            onChange={(event) => applyLanguage(event.target.value as ProLanguage)}
-          >
-            {languages.map((languageOption) => (
-              <option key={languageOption} value={languageOption}>
-                {languageLabels[languageOption]}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className={styles.createFieldSpacer} aria-hidden="true" />
       </div>
+
+      <details
+        className={styles.createOptionalDetails}
+        open={isAdditionalOpen}
+        onToggle={(event) => setIsAdditionalOpen(event.currentTarget.open)}
+      >
+        <summary>{t.optionalDetails}</summary>
+        <div className={`${styles.fieldStack} ${styles.createAccountGrid}`}>
+          <div className={styles.field}>
+            <label htmlFor="lastName">{t.lastName}</label>
+            <input id="lastName" className={styles.input} placeholder={t.lastNamePlaceholder} value={lastName} onChange={(event) => setLastName(event.target.value)} />
+          </div>
+          <div className={styles.field}>
+            <label htmlFor="country">{t.country}</label>
+            <select id="country" className={styles.select} value={country} onChange={(event) => syncCountry(event.target.value, "country")}>
+              {countries.map((countryOption) => (
+                <option key={countryOption} value={countryOption}>{countryOption}</option>
+              ))}
+            </select>
+          </div>
+          <div className={styles.field}>
+            <label htmlFor="currency">{t.currency}</label>
+            <select id="currency" className={styles.select} value={currency} onChange={(event) => setCurrency(event.target.value)}>
+              {currencies.map((currencyOption) => (
+                <option key={currencyOption} value={currencyOption}>{currencyOption}</option>
+              ))}
+            </select>
+          </div>
+          <div className={`${styles.field} ${styles.createFieldFull}`}>
+            <label htmlFor="timezone">{t.timezone}</label>
+            <select id="timezone" className={styles.select} value={timezone} onChange={(event) => setTimezone(event.target.value)}>
+              <option value="">{t.timezonePlaceholder}</option>
+              {timezones.filter((option) => option.value).map((timezoneOption) => (
+                <option key={timezoneOption.value} value={timezoneOption.value}>{timezoneOption.label}</option>
+              ))}
+            </select>
+          </div>
+          <div className={styles.field}>
+            <label htmlFor="cabinetLanguage">{t.cabinetLanguage}</label>
+            <select id="cabinetLanguage" className={styles.select} value={language} onChange={(event) => applyLanguage(event.target.value as ProLanguage)}>
+              {languages.map((languageOption) => (
+                <option key={languageOption} value={languageOption}>{languageLabels[languageOption]}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </details>
 
       {googleNotice ? <div className={styles.addressWarning}>{googleNotice}</div> : null}
 
       <label className={styles.terms}>
-        <input type="checkbox" checked={termsAccepted} onChange={(event) => setTermsAccepted(event.target.checked)} />
+        <input
+          id="termsAccepted"
+          type="checkbox"
+          checked={termsAccepted}
+          onChange={(event) => {
+            setTermsAccepted(event.target.checked);
+            setFieldErrors((current) => ({ ...current, terms: "" }));
+          }}
+        />
         <span>{t.terms}</span>
       </label>
+      {fieldErrors.terms ? <span className={styles.fieldError}>{fieldErrors.terms}</span> : null}
 
       <div className={styles.createAccountActions}>
         <button
           type="button"
           className={styles.primaryButton}
-          disabled={!termsAccepted || !firstName.trim() || !lastName.trim() || !email.trim() || !password.trim() || !phoneIsValid || isCheckingEmail}
-          onClick={() => void continueToSetup()}
+          disabled={isCheckingEmail}
+          onClick={() => void createMasterAccount()}
         >
           {isCheckingEmail ? t.introChecking : t.submit}
         </button>
@@ -996,6 +1159,13 @@ export default function CreateAccountForm() {
         >
           {t.loginLink}
         </a>
+      </div>
+
+      <div className={styles.createMobileStickyCta}>
+        <button type="button" className={styles.primaryButton} disabled={isCheckingEmail} onClick={() => void createMasterAccount()}>
+          {isCheckingEmail ? t.introChecking : t.submit}
+        </button>
+        <a className={styles.mutedLink} href={loginHref}>{t.loginLink}</a>
       </div>
     </div>
   );

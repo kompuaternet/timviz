@@ -787,6 +787,30 @@
   cursor: not-allowed;
 }
 
+.loginCreateMasterCta {
+  display: grid;
+  gap: 6px;
+  padding: 18px 20px;
+  border: 1px solid rgba(112, 88, 255, 0.24);
+  border-radius: 24px;
+  background:
+    linear-gradient(135deg, rgba(112, 88, 255, 0.12), rgba(255, 255, 255, 0.94)),
+    #fff;
+  color: #171411;
+  text-decoration: none;
+  box-shadow: 0 18px 42px rgba(95, 73, 221, 0.14);
+}
+
+.loginCreateMasterCta strong {
+  color: #4f3df1;
+  font-size: 1.08rem;
+}
+
+.loginCreateMasterCta span {
+  color: #626b7a;
+  font-weight: 750;
+}
+
 .ghostButton {
   display: inline-flex;
   align-items: center;
@@ -1697,6 +1721,63 @@
 
 .createPhoneRowWide {
   grid-template-columns: 120px minmax(0, 1fr);
+}
+
+.fieldHint {
+  color: #7b8497;
+  font-size: 0.88rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.createOptionalDetails {
+  border: 1px solid rgba(224, 230, 242, 0.88);
+  border-radius: 22px;
+  background: rgba(255, 255, 255, 0.7);
+  overflow: hidden;
+}
+
+.createOptionalDetails summary {
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  padding: 0 18px;
+  color: #312a44;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.createOptionalDetails .fieldStack {
+  padding: 0 18px 18px;
+}
+
+.createMobileStickyCta {
+  display: none;
+}
+
+.setupCardBottomCta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px;
+  border: 1px solid rgba(224, 230, 242, 0.88);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 18px 46px rgba(39, 48, 78, 0.08);
+}
+
+.setupCardBottomCta > span {
+  color: #6a7284;
+  font-size: 0.88rem;
+  font-weight: 850;
+}
+
+.setupCardBottomCta > div {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .phonePrefixButtonWide {
@@ -10466,6 +10547,39 @@
     width: 100%;
     min-width: 0;
   }
+
+  .createDetailsPanel {
+    padding-bottom: calc(112px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .createAccountActions {
+    display: none;
+  }
+
+  .createMobileStickyCta {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 80;
+    display: grid;
+    gap: 8px;
+    padding: 12px 18px calc(12px + env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid rgba(224, 230, 242, 0.92);
+    background: rgba(255, 255, 255, 0.94);
+    box-shadow: 0 -18px 42px rgba(39, 48, 78, 0.12);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+  }
+
+  .createMobileStickyCta .primaryButton,
+  .createMobileStickyCta .mutedLink {
+    width: 100%;
+  }
+
+  .createMobileStickyCta .mutedLink {
+    text-align: center;
+  }
 }
 
 @media (max-width: 880px) {
@@ -10520,6 +10634,25 @@
 
   .hourColumn {
     display: none;
+  }
+
+  .setupCardBottomCta {
+    position: sticky;
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    z-index: 20;
+    align-items: stretch;
+    flex-direction: column;
+    margin-top: 18px;
+  }
+
+  .setupCardBottomCta > div {
+    display: grid;
+    width: 100%;
+  }
+
+  .setupCardBottomCta .primaryButton,
+  .setupCardBottomCta .ghostButton {
+    width: 100%;
   }
 }
 
