@@ -334,9 +334,11 @@ export default function ClientsView({
   const [isPrefixOpen, setIsPrefixOpen] = useState(false);
   const [prefixSearch, setPrefixSearch] = useState("");
   const [saving, setSaving] = useState(false);
+  const [isRefreshingClients, setIsRefreshingClients] = useState(false);
   const [statusText, setStatusText] = useState("");
   const phoneRule = getPhoneRule(phoneCountry || accountCountry || "Ukraine");
   const t = CLIENTS_TEXT[uiLanguage];
+  const syncLabel = uiLanguage === "en" ? "Syncing" : uiLanguage === "uk" ? "Синхронізація" : "Синхронизация";
   const locale = getLocale(uiLanguage);
   const prefixMenuRef = useRef<HTMLDivElement | null>(null);
 
@@ -456,9 +458,15 @@ export default function ClientsView({
   }
 
   async function refreshClients() {
-    const response = await fetch("/api/pro/clients");
-    const payload = await response.json();
-    setClients(payload.clients ?? []);
+    setIsRefreshingClients(true);
+
+    try {
+      const response = await fetch("/api/pro/clients");
+      const payload = await response.json();
+      setClients(payload.clients ?? []);
+    } finally {
+      setIsRefreshingClients(false);
+    }
   }
 
   async function handleSave() {
@@ -528,6 +536,7 @@ export default function ClientsView({
             </div>
 
             <div className={styles.clientsActions}>
+              {isRefreshingClients ? <span className={styles.clientsSyncPill}>{syncLabel}</span> : null}
               <button type="button" className={styles.clientsPrimaryAddButton} onClick={openCreateModal}>
                 + {t.addClient}
               </button>
@@ -588,6 +597,18 @@ export default function ClientsView({
             </div>
 
             <div className={styles.clientsRows}>
+              {isRefreshingClients && filteredClients.length === 0 ? (
+                <div className={styles.clientsSkeletonList} aria-hidden="true">
+                  {[0, 1, 2, 3].map((item) => (
+                    <div key={item} className={styles.clientsSkeletonRow}>
+                      <span className={styles.mobileSkeletonDot} />
+                      <span className={styles.mobileSkeletonLine} />
+                      <span className={styles.mobileSkeletonLineShort} />
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+
               {filteredClients.map((client) => (
                 <article key={client.id} className={styles.clientsRow} onClick={() => openEditModal(client)}>
                   <div className={styles.clientsCheckboxCell} onClick={(event) => event.stopPropagation()}>
@@ -607,7 +628,7 @@ export default function ClientsView({
                 </article>
               ))}
 
-              {filteredClients.length === 0 ? (
+              {filteredClients.length === 0 && !isRefreshingClients ? (
                 <div className={styles.clientsEmptyState}>
                   <strong>{t.noClientsTitle}</strong>
                   <span>{t.noClientsHint}</span>

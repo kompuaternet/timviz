@@ -143,6 +143,7 @@ function formatServicePrice(value: number, language: "ru" | "uk" | "en", currenc
 export default function ServicesView({ initialWorkspace, catalog, onboardingCta }: ServicesViewProps) {
   const { t, language } = useProLanguage();
   const copy = serviceExtras[language];
+  const syncLabel = language === "en" ? "Syncing" : language === "uk" ? "Синхронізація" : "Синхронизация";
   const accountCurrency = initialWorkspace.professional.currency || "USD";
   const [services, setServices] = useState<ServiceRecord[]>(() => normalizeServices(initialWorkspace.services));
   const [activeCategory, setActiveCategory] = useState<string>(ALL_CATEGORIES_KEY);
@@ -159,6 +160,7 @@ export default function ServicesView({ initialWorkspace, catalog, onboardingCta 
   );
   const [statusText, setStatusText] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [isRefreshingServices, setIsRefreshingServices] = useState(false);
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [serviceToDelete, setServiceToDelete] = useState<ServiceRecord | null>(null);
 
@@ -264,10 +266,16 @@ export default function ServicesView({ initialWorkspace, catalog, onboardingCta 
   }, [catalog, catalogQuery, language]);
 
   async function reloadServices() {
-    const response = await fetch("/api/pro/services");
-    const payload = await response.json();
-    if (response.ok) {
-      setServices(normalizeServices(payload.workspace.services));
+    setIsRefreshingServices(true);
+
+    try {
+      const response = await fetch("/api/pro/services");
+      const payload = await response.json();
+      if (response.ok) {
+        setServices(normalizeServices(payload.workspace.services));
+      }
+    } finally {
+      setIsRefreshingServices(false);
     }
   }
 
@@ -515,6 +523,7 @@ export default function ServicesView({ initialWorkspace, catalog, onboardingCta 
             <p>{t.services.subtitle}</p>
           </div>
           <div className={styles.servicesHeroActions}>
+            {isRefreshingServices ? <span className={styles.servicesSyncPill}>{syncLabel}</span> : null}
             <span>{services.length} {t.services.count}</span>
             <button type="button" className={styles.primaryButton} onClick={() => document.getElementById("new-service")?.scrollIntoView({ behavior: "smooth" })}>
               {t.common.add}
@@ -594,7 +603,17 @@ export default function ServicesView({ initialWorkspace, catalog, onboardingCta 
             </div>
 
             <div className={styles.servicesMenuList}>
-              {visibleServices.length === 0 ? (
+              {isRefreshingServices && visibleServices.length === 0 ? (
+                <div className={styles.servicesSkeletonList} aria-hidden="true">
+                  {[0, 1, 2].map((item) => (
+                    <div key={item} className={styles.servicesSkeletonRow}>
+                      <span className={styles.mobileSkeletonDot} />
+                      <span className={styles.mobileSkeletonLine} />
+                      <span className={styles.mobileSkeletonLineShort} />
+                    </div>
+                  ))}
+                </div>
+              ) : visibleServices.length === 0 ? (
                 <div className={styles.servicesEmptyState}>
                   <strong>{serviceQuery.trim() ? t.services.searchPlaceholder : copy.emptyTitle}</strong>
                   <span>{serviceQuery.trim() ? t.services.enterName : copy.emptyText}</span>

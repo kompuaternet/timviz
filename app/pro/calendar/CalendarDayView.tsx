@@ -1380,6 +1380,8 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
   const [datePickerMonth, setDatePickerMonth] = useState(initialDate);
   const [isMobileViewport, setIsMobileViewport] = useState(false);
   const [mobileOnboardingState, setMobileOnboardingState] = useState<MobileOnboardingState>({});
+  const [isSnapshotRefreshing, setIsSnapshotRefreshing] = useState(false);
+  const [isNotificationsRefreshing, setIsNotificationsRefreshing] = useState(false);
   const [isOffHoursCompressed, setIsOffHoursCompressed] = useState<boolean>(() => {
     return getCalendarStorage()?.getItem("rezervo-pro-calendar-offhours-compressed") !== "0";
   });
@@ -2205,14 +2207,20 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
   }
 
   async function loadNotifications(dateKey = selectedDate) {
-    const response = await fetch(buildNotificationsUrl(dateKey));
-    const data = (await response.json()) as Pick<CalendarSnapshot, "pendingOnlineBookings" | "pendingJoinRequests" | "archivedOnlineBookings">;
+    setIsNotificationsRefreshing(true);
 
-    if (!response.ok) {
-      throw new Error("Failed to load notifications.");
+    try {
+      const response = await fetch(buildNotificationsUrl(dateKey));
+      const data = (await response.json()) as Pick<CalendarSnapshot, "pendingOnlineBookings" | "pendingJoinRequests" | "archivedOnlineBookings">;
+
+      if (!response.ok) {
+        throw new Error("Failed to load notifications.");
+      }
+
+      applyNotificationPayload(data);
+    } finally {
+      setIsNotificationsRefreshing(false);
     }
-
-    applyNotificationPayload(data);
   }
 
   async function loadSnapshot(
@@ -2224,6 +2232,7 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
     snapshotAbortRef.current?.abort();
     const controller = new AbortController();
     snapshotAbortRef.current = controller;
+    setIsSnapshotRefreshing(true);
 
     try {
       const data = await fetchSnapshotData(dateKey, targetId, controller.signal);
@@ -2244,6 +2253,7 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
     } finally {
       if (snapshotAbortRef.current === controller) {
         snapshotAbortRef.current = null;
+        setIsSnapshotRefreshing(false);
       }
     }
   }
@@ -5299,6 +5309,11 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
               </button>
             </div>
           ) : null}
+          {isMobileViewport && isSnapshotRefreshing && snapshot ? (
+            <div className={styles.calendarMobileSyncPill} aria-live="polite">
+              {t.refresh}
+            </div>
+          ) : null}
           <div className={styles.calendarTopLeft}>
             <button
               ref={!isMobileViewport ? dateMenuButtonRef : null}
@@ -6292,6 +6307,13 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
             </div>
 
             <div className={styles.calendarNotificationsPanel}>
+              {isNotificationsRefreshing ? (
+                <div className={styles.calendarNotificationsSync} aria-live="polite">
+                  <span className={styles.mobileSkeletonDot} />
+                  <span>{t.refresh}</span>
+                </div>
+              ) : null}
+
               {pendingJoinRequests.length ? (
                 <>
                   <div className={styles.calendarNotificationsHeading}>
@@ -6326,7 +6348,14 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
                 <span>{pendingOnlineBookings.length}</span>
               </div>
 
-              {pendingOnlineBookings.length ? (
+              {isNotificationsRefreshing && !pendingOnlineBookings.length && !pendingJoinRequests.length && !archivedOnlineBookings.length ? (
+                <div className={styles.calendarNotificationSkeletonList} aria-hidden="true">
+                  <span className={styles.mobileSkeletonLine} />
+                  <span className={styles.mobileSkeletonLineShort} />
+                  <span className={styles.mobileSkeletonCard} />
+                  <span className={styles.mobileSkeletonCard} />
+                </div>
+              ) : pendingOnlineBookings.length ? (
                 <div className={styles.calendarNotificationsList}>
                   {pendingOnlineBookings.map((item) => (
                     <button

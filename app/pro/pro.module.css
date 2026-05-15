@@ -8,6 +8,223 @@
     linear-gradient(180deg, #fff 0%, #fbf9ff 54%, #fff 100%);
 }
 
+@keyframes mobileSkeletonShimmer {
+  0% {
+    background-position: 120% 0;
+  }
+  100% {
+    background-position: -120% 0;
+  }
+}
+
+@keyframes mobileSoftEnter {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 6px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.mobileSkeletonLine,
+.mobileSkeletonLineShort,
+.mobileSkeletonCard,
+.mobileSkeletonDot {
+  display: block;
+  border-radius: 999px;
+  background:
+    linear-gradient(90deg, rgba(235, 239, 248, 0.74) 0%, rgba(249, 251, 255, 0.96) 42%, rgba(235, 239, 248, 0.74) 82%);
+  background-size: 220% 100%;
+  animation: mobileSkeletonShimmer 1.28s ease-in-out infinite;
+}
+
+.mobileSkeletonLine {
+  width: 100%;
+  height: 12px;
+}
+
+.mobileSkeletonLineShort {
+  width: 58%;
+  height: 10px;
+}
+
+.mobileSkeletonCard {
+  height: 86px;
+  border-radius: 20px;
+}
+
+.mobileSkeletonDot {
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+}
+
+.calendarMobileSyncPill,
+.calendarNotificationsSync,
+.servicesSyncPill,
+.clientsSyncPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  width: fit-content;
+  min-height: 28px;
+  padding: 0 10px;
+  border: 1px solid rgba(218, 225, 239, 0.92);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.82);
+  color: #657086;
+  font-size: 0.74rem;
+  font-weight: 800;
+  box-shadow: 0 10px 24px rgba(56, 67, 102, 0.08);
+  animation: mobileSoftEnter 160ms ease both;
+}
+
+.calendarNotificationSkeletonList,
+.servicesSkeletonList,
+.clientsSkeletonList {
+  display: grid;
+  gap: 10px;
+  width: 100%;
+  animation: mobileSoftEnter 180ms ease both;
+}
+
+.servicesSkeletonRow,
+.clientsSkeletonRow {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 10px 12px;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid rgba(224, 230, 242, 0.86);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.servicesSkeletonRow .mobileSkeletonLineShort,
+.clientsSkeletonRow .mobileSkeletonLineShort {
+  grid-column: 2;
+}
+
+@media (max-width: 980px) {
+  .calendarMobileSyncPill {
+    position: absolute;
+    top: calc(58px + env(safe-area-inset-top, 0px));
+    left: 50%;
+    z-index: 18;
+    transform: translateX(-50%);
+    pointer-events: none;
+  }
+
+  .calendarV2ScrollFrame,
+  .calendarNotificationsPanel,
+  .servicesMenuList,
+  .servicesCategoryList,
+  .clientsRows,
+  .clientsModalContent {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
+  }
+
+  .calendarV2ScrollFrame::-webkit-scrollbar,
+  .calendarNotificationsPanel::-webkit-scrollbar,
+  .servicesMenuList::-webkit-scrollbar,
+  .servicesCategoryList::-webkit-scrollbar,
+  .clientsRows::-webkit-scrollbar,
+  .clientsModalContent::-webkit-scrollbar {
+    display: none;
+  }
+
+  .calendarMobileTodayButton,
+  .calendarMobileNavButton,
+  .calendarMobileDateButton,
+  .calendarMobileHeaderIcon,
+  .primaryButton,
+  .calendarSecondaryAction,
+  .clientsPrimaryAddButton,
+  .servicesCategoryList button,
+  .serviceMenuRow,
+  .clientsRow,
+  .calendarToolbarMenuItem,
+  .miniCalendarDay {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition:
+      transform 150ms cubic-bezier(0.2, 0.9, 0.2, 1),
+      box-shadow 150ms cubic-bezier(0.2, 0.9, 0.2, 1),
+      filter 150ms ease,
+      background-color 150ms ease;
+  }
+
+  .calendarMobileTodayButton:active,
+  .calendarMobileNavButton:active,
+  .calendarMobileDateButton:active,
+  .calendarMobileHeaderIcon:active,
+  .primaryButton:active,
+  .calendarSecondaryAction:active,
+  .clientsPrimaryAddButton:active,
+  .servicesCategoryList button:active,
+  .serviceMenuRow:active,
+  .clientsRow:active,
+  .calendarToolbarMenuItem:active,
+  .miniCalendarDay:active {
+    transform: scale(0.985);
+    filter: brightness(1.025);
+  }
+
+  .calendarTopBarV2 {
+    min-height: 58px;
+    contain: layout paint;
+  }
+
+  .calendarV2Panel {
+    min-height: min(520px, 78dvh);
+    contain: layout paint;
+  }
+
+  .calendarNotificationsPanel,
+  .servicesMenuList,
+  .clientsRows {
+    min-height: 220px;
+  }
+
+  .calendarNotificationCard,
+  .serviceMenuRow,
+  .clientsRow,
+  .servicesQuickStats article,
+  .clientsSummaryGrid article {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    animation: mobileSoftEnter 170ms ease both;
+  }
+
+  .calendarNotificationSkeletonList {
+    padding-top: 8px;
+  }
+
+  .calendarNotificationsSync {
+    margin-bottom: 10px;
+  }
+
+  .calendarNotificationsSync .mobileSkeletonDot {
+    width: 8px;
+    height: 8px;
+  }
+
+  .servicesHeroActions,
+  .clientsActions {
+    min-height: 50px;
+    align-items: center;
+  }
+
+  .servicesSyncPill,
+  .clientsSyncPill {
+    min-height: 32px;
+  }
+}
+
 @keyframes calendarMobileFabPulse {
   0%,
   100% {

@@ -2118,6 +2118,36 @@
   cursor: pointer;
 }
 
+@media (max-width: 760px) {
+  .company-week-strip,
+  .company-slot-list {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
+  }
+
+  .company-week-day,
+  .company-slot-item,
+  .company-flow-card button,
+  .company-booking-submit {
+    min-height: 44px;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    transition:
+      transform 150ms cubic-bezier(0.2, 0.9, 0.2, 1),
+      box-shadow 150ms cubic-bezier(0.2, 0.9, 0.2, 1),
+      filter 150ms ease;
+  }
+
+  .company-week-day:active,
+  .company-slot-item:active,
+  .company-flow-card button:active,
+  .company-booking-submit:active {
+    transform: scale(0.985);
+    filter: brightness(1.025);
+  }
+}
+
 .company-slot-item.active {
   border-color: #7058ff;
   background: #7058ff;
