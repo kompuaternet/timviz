@@ -9130,6 +9130,10 @@ const styles = StyleSheet.create({
     borderColor: "#DCD5FF",
     backgroundColor: DESIGN.colors.primarySoft,
   },
+  bottomNavItemPressed: {
+    opacity: 0.82,
+    transform: [{ scale: 0.97 }],
+  },
   bottomNavText: {
     color: DESIGN.colors.muted,
     fontSize: 9,
