@@ -791,6 +791,12 @@ const copy = {
     addFirstVisit: "Додати перший візит",
     quickVisit: "Швидкий запис",
     createVisitWithoutService: "Створити запис без послуги",
+    addServiceFirstTitle: "Спочатку додайте послугу",
+    addServiceFirstText: "У вас поки немає послуг. Додайте першу послугу або створіть швидкий запис без послуги.",
+    servicesEmptyPickerTitle: "Послуг поки немає",
+    servicesEmptyPickerText: "Додайте першу послугу або створіть запис без послуги.",
+    createServiceAction: "Створити послугу",
+    bookingWithoutService: "Запис без послуги",
     firstServiceTitle: "Додайте першу послугу",
     firstServiceText: "Послуги потрібні, щоб створювати записи й відкрити онлайн-запис для клієнтів.",
     chooseFromCatalog: "Обрати з каталогу",
@@ -1106,6 +1112,12 @@ const copy = {
     addFirstVisit: "Добавить первый визит",
     quickVisit: "Быстрая запись",
     createVisitWithoutService: "Создать запись без услуги",
+    addServiceFirstTitle: "Сначала добавьте услугу",
+    addServiceFirstText: "У вас пока нет услуг. Добавьте первую услугу или создайте быструю запись без услуги.",
+    servicesEmptyPickerTitle: "Услуг пока нет",
+    servicesEmptyPickerText: "Добавьте первую услугу или создайте запись без услуги.",
+    createServiceAction: "Создать услугу",
+    bookingWithoutService: "Запись без услуги",
     firstServiceTitle: "Добавьте первую услугу",
     firstServiceText: "Услуги нужны, чтобы создавать записи и открыть онлайн-запись для клиентов.",
     chooseFromCatalog: "Выбрать из каталога",
@@ -1421,6 +1433,12 @@ const copy = {
     addFirstVisit: "Add first visit",
     quickVisit: "Quick booking",
     createVisitWithoutService: "Create booking without service",
+    addServiceFirstTitle: "Add a service first",
+    addServiceFirstText: "You do not have services yet. Add your first service or create a quick booking without a service.",
+    servicesEmptyPickerTitle: "No services yet",
+    servicesEmptyPickerText: "Add your first service or create a booking without a service.",
+    createServiceAction: "Create service",
+    bookingWithoutService: "Booking without service",
     firstServiceTitle: "Add your first service",
     firstServiceText: "Services help you create bookings and open online booking for clients.",
     chooseFromCatalog: "Choose from catalog",
@@ -3231,6 +3249,7 @@ function CalendarTab({
   const [selectedMemberIds, setSelectedMemberIds] = useState<string[]>([]);
   const [blockedTimeDraft, setBlockedTimeDraft] = useState<BlockedTimeDraft | null>(null);
   const [visitPickerMode, setVisitPickerMode] = useState<"client" | "service" | null>(null);
+  const [noServicesHelper, setNoServicesHelper] = useState<{ date: string; time: string; targetProfessionalId?: string; source: "time" | "visit" } | null>(null);
   const [editingServiceIndex, setEditingServiceIndex] = useState(0);
   const [serviceQuery, setServiceQuery] = useState("");
   const [clientQuery, setClientQuery] = useState("");
@@ -3529,7 +3548,71 @@ function CalendarTab({
     setVisitPickerMode(null);
   }
 
+  function markVisitItemWithoutService(index = editingServiceIndex) {
+    const draftItems = Array.isArray(visitDraft.items) && visitDraft.items.length ? visitDraft.items : [createVisitServiceDraft(visitDraft.startTime || "09:00")];
+    const currentItem = draftItems[index] || draftItems[0] || createVisitServiceDraft(visitDraft.startTime || "09:00");
+    const startTime = safeText(currentItem.startTime) || visitDraft.startTime || getRoundedTime(10);
+    const fallbackEndTime = addMinutes(startTime, Math.max(5, currentItem.durationMinutes || 15));
+    const endTime = isValidTime(safeText(currentItem.endTime)) && timeToMinutes(currentItem.endTime) > timeToMinutes(startTime) ? currentItem.endTime : fallbackEndTime;
+    updateVisitItem(index, {
+      serviceId: "",
+      serviceName: t.withoutService,
+      startTime,
+      endTime,
+      durationMinutes: Math.max(5, timeToMinutes(endTime) - timeToMinutes(startTime)),
+      priceAmount: Number(currentItem.priceAmount || 0),
+    });
+    setServiceQuery("");
+    setVisitPickerMode(null);
+  }
+
+  function openVisitServicePicker(index: number, item: VisitServiceDraft) {
+    setEditingServiceIndex(index);
+    if (!hasServices) {
+      setNoServicesHelper({
+        date: visitDraft.appointmentDate || selectedDate,
+        time: item.startTime || visitDraft.startTime || getRoundedTime(10),
+        targetProfessionalId: visitDraft.targetProfessionalId,
+        source: "visit",
+      });
+      return;
+    }
+    setVisitPickerMode("service");
+  }
+
+  function openServicesFromCalendar() {
+    setNoServicesHelper(null);
+    setTimeAction(null);
+    setVisitPickerMode(null);
+    setComposerOpen(false);
+    setEditingAppointment(null);
+    onOpenServices();
+  }
+
+  function continueWithoutServiceFromHelper() {
+    const helper = noServicesHelper;
+    setNoServicesHelper(null);
+    if (helper?.source === "visit") {
+      markVisitItemWithoutService(editingServiceIndex);
+      return;
+    }
+    const action = helper || timeAction;
+    setTimeAction(null);
+    if (action) {
+      openComposerAt(action.time, action.date, action.targetProfessionalId, { withoutService: true });
+    }
+  }
+
   function addAnotherService() {
+    if (!hasServices) {
+      setNoServicesHelper({
+        date: visitDraft.appointmentDate || selectedDate,
+        time: draftVisitItems[draftVisitItems.length - 1]?.endTime || visitDraft.startTime || getRoundedTime(10),
+        targetProfessionalId: visitDraft.targetProfessionalId,
+        source: "visit",
+      });
+      return;
+    }
     const draftItems = Array.isArray(visitDraft.items) && visitDraft.items.length ? visitDraft.items : [createVisitServiceDraft(visitDraft.startTime || "09:00")];
     const lastItem = draftItems[draftItems.length - 1];
     const nextStart = lastItem?.endTime || visitDraft.startTime || "09:00";
@@ -3782,7 +3865,7 @@ function CalendarTab({
         />
       )}
 
-      {!(composerOpen || blockedTimeDraft || timeAction || memberPickerOpen || viewMenuOpen) ? (
+      {!(composerOpen || blockedTimeDraft || timeAction || noServicesHelper || memberPickerOpen || viewMenuOpen) ? (
         <Pressable
           style={({ pressed }) => [styles.fabButton, pressed && styles.fabButtonPressed]}
           onPress={() => {
@@ -3892,19 +3975,39 @@ function CalendarTab({
               </>
             ) : visitPickerMode === "service" ? (
               <>
-                <SearchInput value={serviceQuery} onChangeText={setServiceQuery} placeholder={t.searchService} />
-                <ScrollView style={styles.pickerList} showsVerticalScrollIndicator={false}>
-                  {filteredServices.map((service) => (
-                    <Pressable key={service.id} style={styles.serviceOptionCard} onPress={() => selectVisitService(service)}>
-                      <View style={[styles.serviceTone, { backgroundColor: service.color || "#6D4AFF" }]} />
-                      <View style={styles.clientOptionText}>
-                        <Text style={styles.clientOptionTitle} numberOfLines={2} ellipsizeMode="tail">{getServiceDisplayName(service, language)}</Text>
-                        <Text style={styles.clientOptionCaption}>{formatDuration(service.durationMinutes || 60, t)}</Text>
-                      </View>
-                      <Text style={styles.serviceOptionPrice}>{formatMoney(service.price, currency)}</Text>
-                    </Pressable>
-                  ))}
-                </ScrollView>
+                {hasServices ? (
+                  <>
+                    <SearchInput value={serviceQuery} onChangeText={setServiceQuery} placeholder={t.searchService} />
+                    <ScrollView style={styles.pickerList} showsVerticalScrollIndicator={false}>
+                      {filteredServices.map((service) => (
+                        <Pressable key={service.id} style={styles.serviceOptionCard} onPress={() => selectVisitService(service)}>
+                          <View style={[styles.serviceTone, { backgroundColor: service.color || "#6D4AFF" }]} />
+                          <View style={styles.clientOptionText}>
+                            <Text style={styles.clientOptionTitle} numberOfLines={2} ellipsizeMode="tail">{getServiceDisplayName(service, language)}</Text>
+                            <Text style={styles.clientOptionCaption}>{formatDuration(service.durationMinutes || 60, t)}</Text>
+                          </View>
+                          <Text style={styles.serviceOptionPrice}>{formatMoney(service.price, currency)}</Text>
+                        </Pressable>
+                      ))}
+                    </ScrollView>
+                  </>
+                ) : (
+                  <View style={styles.servicePickerEmptyCard}>
+                    <View style={styles.firstRunIcon}>
+                      <Ionicons name="pricetag-outline" size={22} color="#6D4AFF" />
+                    </View>
+                    <Text style={styles.firstRunTitle}>{t.servicesEmptyPickerTitle}</Text>
+                    <Text style={styles.firstRunText}>{t.servicesEmptyPickerText}</Text>
+                    <View style={styles.firstRunActions}>
+                      <Pressable style={styles.firstRunPrimaryButton} onPress={openServicesFromCalendar}>
+                        <Text style={styles.firstRunPrimaryText}>{t.createServiceAction}</Text>
+                      </Pressable>
+                      <Pressable style={styles.firstRunSecondaryButton} onPress={() => markVisitItemWithoutService(editingServiceIndex)}>
+                        <Text style={styles.firstRunSecondaryText}>{t.bookingWithoutService}</Text>
+                      </Pressable>
+                    </View>
+                  </View>
+                )}
               </>
             ) : (
               <>
@@ -3931,10 +4034,7 @@ function CalendarTab({
                       <View style={styles.visitServiceCardHeader}>
                         <Pressable
                           style={styles.visitServicePickerButton}
-                          onPress={() => {
-                            setEditingServiceIndex(index);
-                            setVisitPickerMode("service");
-                          }}
+                          onPress={() => openVisitServicePicker(index, item)}
                         >
                           <Text style={[styles.visitServicePickerText, !item.serviceName && styles.mutedText]} numberOfLines={1}>
                             {(getServiceDisplayName(services.find((service) => service.id === item.serviceId), language) || item.serviceName || t.chooseService)} →
@@ -3950,6 +4050,13 @@ function CalendarTab({
                         <Field label={t.start} value={item.startTime} onChangeText={(value) => updateVisitItem(index, { startTime: value })} keyboardType="numbers-and-punctuation" placeholder="09:00" />
                         <Field label={t.end} value={item.endTime} onChangeText={(value) => updateVisitItem(index, { endTime: value })} keyboardType="numbers-and-punctuation" placeholder="10:00" />
                       </View>
+                      <Field
+                        label={t.price}
+                        value={String(Number(item.priceAmount || 0))}
+                        onChangeText={(value) => updateVisitItem(index, { priceAmount: Number(value.replace(",", ".")) || 0 })}
+                        keyboardType="decimal-pad"
+                        placeholder="0"
+                      />
                       <View style={styles.visitServiceMeta}>
                         <Text style={styles.clientOptionCaption}>{getServiceDisplayName(services.find((service) => service.id === item.serviceId), language) || item.serviceName || t.withoutService}</Text>
                         <Text style={styles.visitServicePrice}>{formatMoney(item.priceAmount, currency)}</Text>
@@ -4070,21 +4177,24 @@ function CalendarTab({
         <Pressable style={styles.timeActionBackdrop} onPress={() => setTimeAction(null)}>
           <View style={styles.timeActionMenu}>
             <View style={styles.sheetHandle} />
-            <Text style={styles.timeActionTitle}>{timeAction?.time}</Text>
             {!hasServices ? (
-              <>
+              <View style={styles.noServicesActionSheet}>
+                <View style={styles.firstRunIcon}>
+                  <Ionicons name="pricetag-outline" size={22} color="#6D4AFF" />
+                </View>
+                <Text style={styles.noServicesActionTitle}>{t.addServiceFirstTitle}</Text>
+                <Text style={styles.noServicesActionText}>{t.addServiceFirstText}</Text>
                 <Pressable
-                  style={styles.timeActionItem}
+                  style={[styles.firstRunPrimaryButton, styles.noServicesFullButton]}
                   onPress={() => {
                     setTimeAction(null);
                     onOpenServices();
                   }}
                 >
-                  <Ionicons name="pricetag-outline" size={20} color="#0F172A" />
-                  <Text style={styles.timeActionText}>{t.addService}</Text>
+                  <Text style={styles.firstRunPrimaryText}>{t.addService}</Text>
                 </Pressable>
                 <Pressable
-                  style={styles.timeActionItem}
+                  style={[styles.firstRunSecondaryButton, styles.noServicesFullButton]}
                   onPress={() => {
                     if (!timeAction) return;
                     const action = timeAction;
@@ -4092,12 +4202,15 @@ function CalendarTab({
                     openComposerAt(action.time, action.date, action.targetProfessionalId, { withoutService: true });
                   }}
                 >
-                  <Ionicons name="calendar-outline" size={20} color="#0F172A" />
-                  <Text style={styles.timeActionText}>{t.createVisitWithoutService}</Text>
+                  <Text style={styles.firstRunSecondaryText}>{t.createVisitWithoutService}</Text>
                 </Pressable>
-              </>
+                <Pressable style={styles.noServicesCancelButton} onPress={() => setTimeAction(null)}>
+                  <Text style={styles.noServicesCancelText}>{t.cancel}</Text>
+                </Pressable>
+              </View>
             ) : (
               <>
+                <Text style={styles.timeActionTitle}>{timeAction?.time}</Text>
                 <Pressable
                   style={styles.timeActionItem}
                   onPress={() => {
@@ -4136,6 +4249,30 @@ function CalendarTab({
                 </Pressable>
               </>
             )}
+          </View>
+        </Pressable>
+      </Modal>
+
+      <Modal transparent visible={Boolean(noServicesHelper)} animationType="fade" onRequestClose={() => setNoServicesHelper(null)}>
+        <Pressable style={styles.timeActionBackdrop} onPress={() => setNoServicesHelper(null)}>
+          <View style={styles.timeActionMenu}>
+            <View style={styles.noServicesActionSheet}>
+              <View style={styles.sheetHandle} />
+              <View style={styles.firstRunIcon}>
+                <Ionicons name="pricetag-outline" size={22} color="#6D4AFF" />
+              </View>
+              <Text style={styles.noServicesActionTitle}>{t.addServiceFirstTitle}</Text>
+              <Text style={styles.noServicesActionText}>{t.addServiceFirstText}</Text>
+              <Pressable style={[styles.firstRunPrimaryButton, styles.noServicesFullButton]} onPress={openServicesFromCalendar}>
+                <Text style={styles.firstRunPrimaryText}>{t.addService}</Text>
+              </Pressable>
+              <Pressable style={[styles.firstRunSecondaryButton, styles.noServicesFullButton]} onPress={continueWithoutServiceFromHelper}>
+                <Text style={styles.firstRunSecondaryText}>{t.createVisitWithoutService}</Text>
+              </Pressable>
+              <Pressable style={styles.noServicesCancelButton} onPress={() => setNoServicesHelper(null)}>
+                <Text style={styles.noServicesCancelText}>{t.cancel}</Text>
+              </Pressable>
+            </View>
           </View>
         </Pressable>
       </Modal>
@@ -9195,6 +9332,41 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: "900",
   },
+  noServicesActionSheet: {
+    alignItems: "center",
+    gap: 10,
+    padding: 8,
+  },
+  noServicesActionTitle: {
+    color: DESIGN.colors.text,
+    fontSize: 18,
+    lineHeight: 23,
+    fontWeight: "900",
+    textAlign: "center",
+  },
+  noServicesActionText: {
+    marginBottom: 4,
+    color: DESIGN.colors.muted,
+    fontSize: 13,
+    lineHeight: 19,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  noServicesCancelButton: {
+    minHeight: 42,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 16,
+    borderRadius: DESIGN.radius.md,
+  },
+  noServicesFullButton: {
+    width: "100%",
+  },
+  noServicesCancelText: {
+    color: DESIGN.colors.muted,
+    fontSize: 14,
+    fontWeight: "800",
+  },
   timeActionItem: {
     minHeight: 52,
     flexDirection: "row",
@@ -9630,6 +9802,15 @@ const styles = StyleSheet.create({
     fontWeight: "800",
     textAlign: "right",
     maxWidth: 88,
+  },
+  servicePickerEmptyCard: {
+    marginTop: 10,
+    padding: 16,
+    alignItems: "center",
+    borderRadius: DESIGN.radius.xl,
+    borderWidth: 1,
+    borderColor: "#DDD6FE",
+    backgroundColor: "#FBFAFF",
   },
   bottomNav: {
     position: "absolute",
