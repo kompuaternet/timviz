@@ -4951,7 +4951,7 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
               </FloatingPopover>
               <button
                 type="button"
-                className={styles.calendarMobilePeriodButton}
+                className={styles.calendarMobileNavButton}
                 aria-label={previousPeriodLabel}
                 onClick={() => moveMobileVisiblePeriod(-1)}
               >
@@ -5007,7 +5007,7 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
               </FloatingPopover>
               <button
                 type="button"
-                className={styles.calendarMobilePeriodButton}
+                className={styles.calendarMobileNavButton}
                 aria-label={nextPeriodLabel}
                 onClick={() => moveMobileVisiblePeriod(1)}
               >

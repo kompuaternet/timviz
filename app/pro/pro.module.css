@@ -11258,13 +11258,6 @@
     display: none !important;
   }
 
-  .calendarWorkspaceHeader {
-    padding: 10px 14px 8px;
-    gap: 8px;
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
-  }
-
   .proPageWorkspaceHeader {
     padding-left: 14px;
     padding-right: 14px;
@@ -11344,14 +11337,14 @@
 
   .calendarMobileTopBar {
     display: grid;
-    grid-template-columns: auto 38px minmax(0, 1fr) 38px 38px 38px;
+    grid-template-columns: auto 34px minmax(0, 1fr) 34px 38px 38px;
     align-items: center;
     gap: 6px;
   }
 
   .calendarMobileTodayButton,
   .calendarMobileDateButton,
-  .calendarMobilePeriodButton,
+  .calendarMobileNavButton,
   .calendarMobileHeaderIcon {
     height: 40px;
     min-height: 40px;
@@ -11374,16 +11367,16 @@
     white-space: nowrap;
   }
 
-  .calendarMobilePeriodButton {
-    width: 38px;
-    min-width: 38px;
+  .calendarMobileNavButton {
+    width: 34px;
+    min-width: 34px;
     padding: 0;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     font: inherit;
-    font-size: 1.28rem;
-    font-weight: 900;
+    font-size: 1.25rem;
+    font-weight: 800;
     line-height: 1;
   }
 
