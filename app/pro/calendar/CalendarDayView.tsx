@@ -252,7 +252,7 @@ const CALENDAR_HOUR_HEIGHT = 96;
 const CALENDAR_MOBILE_HOUR_HEIGHT = 112;
 const CALENDAR_GRID_STEP_MINUTES = 10;
 const TIME_SELECT_STEP_MINUTES = 5;
-const MOBILE_READABLE_BOOKING_HEIGHT = 76;
+const MOBILE_READABLE_BOOKING_HEIGHT = 52;
 const SNAPSHOT_CACHE_LIMIT = 120;
 
 function getCalendarStorage() {
@@ -1429,6 +1429,11 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
   const snapshotRequestIdRef = useRef(0);
   const snapshotPrefetchRef = useRef<Set<string>>(new Set());
   const lastCalendarNavigationDirectionRef = useRef<-1 | 0 | 1>(0);
+
+  function clearActiveMobileBookingActions() {
+    setActiveMobileBookingId(null);
+    bookingLongPressTriggeredRef.current = false;
+  }
 
   function showToast(text: string, tone: CalendarToastTone = "info") {
     setToast({
@@ -3098,14 +3103,53 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
   useEffect(() => {
     if (!isMobileViewport) {
       setIsMobileCreateSheetOpen(false);
-      setActiveMobileBookingId(null);
-      bookingLongPressTriggeredRef.current = false;
+      clearActiveMobileBookingActions();
       if (bookingLongPressTimerRef.current !== null) {
         window.clearTimeout(bookingLongPressTimerRef.current);
         bookingLongPressTimerRef.current = null;
       }
     }
   }, [isMobileViewport]);
+
+  useEffect(() => {
+    if (!isMobileViewport || !activeMobileBookingId) {
+      return;
+    }
+
+    const frame = scrollFrameRef.current;
+    if (!frame) {
+      return;
+    }
+
+    function handleScroll() {
+      clearActiveMobileBookingActions();
+    }
+
+    frame.addEventListener("scroll", handleScroll, { passive: true });
+    return () => frame.removeEventListener("scroll", handleScroll);
+  }, [activeMobileBookingId, isMobileViewport]);
+
+  useEffect(() => {
+    if (!isMobileViewport || !activeMobileBookingId) {
+      return;
+    }
+
+    function handlePointerDown(event: PointerEvent) {
+      const target = event.target;
+      if (!(target instanceof HTMLElement)) {
+        return;
+      }
+
+      if (target.closest(`.${styles.bookingBlock}`)) {
+        return;
+      }
+
+      clearActiveMobileBookingActions();
+    }
+
+    window.addEventListener("pointerdown", handlePointerDown);
+    return () => window.removeEventListener("pointerdown", handlePointerDown);
+  }, [activeMobileBookingId, isMobileViewport]);
 
   useEffect(() => {
     if (!isMobileViewport || typeof navigator === "undefined") {
@@ -3661,6 +3705,7 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
 
   function handleNotificationSelect(item: CalendarOnlineBookingNotification) {
     setActiveToolbarMenu(null);
+    clearActiveMobileBookingActions();
     setQuickMenu((current) => ({ ...current, visible: false, x: 0, y: 0, time: "" }));
     setDeleteConfirmTarget(null);
     setViewMode("day");
@@ -3698,6 +3743,7 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
 
   function handleJoinRequestNotificationSelect() {
     setActiveToolbarMenu(null);
+    clearActiveMobileBookingActions();
     setQuickMenu((current) => ({ ...current, visible: false, x: 0, y: 0, time: "" }));
     setDeleteConfirmTarget(null);
     setDrawerStage("closed");
@@ -3735,6 +3781,9 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
       appointmentId: appointment.id,
       mode: "move"
     };
+    if (isMobileViewport) {
+      bookingLongPressTriggeredRef.current = true;
+    }
     setDraggingId(appointment.id);
   }
 
@@ -3753,13 +3802,15 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
       appointmentId: appointment.id,
       mode: "resize"
     };
+    if (isMobileViewport) {
+      bookingLongPressTriggeredRef.current = true;
+    }
     setDraggingId(appointment.id);
   }
 
   function openNewVisit(slot: string, targetProfessionalId = selectedProfessionalId) {
     setIsMobileCreateSheetOpen(false);
-    setActiveMobileBookingId(null);
-    bookingLongPressTriggeredRef.current = false;
+    clearActiveMobileBookingActions();
     const targetMember = memberCalendars.find((member) => member.professionalId === targetProfessionalId) ?? null;
     const targetScheduleOverrides =
       targetMember?.memberSchedule.workScheduleMode === "flexible"
@@ -3792,8 +3843,7 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
   function openMobileCreateSheet() {
     setDrawerStage("closed");
     setActiveToolbarMenu(null);
-    setActiveMobileBookingId(null);
-    bookingLongPressTriggeredRef.current = false;
+    clearActiveMobileBookingActions();
     setQuickMenu((current) => ({ ...current, visible: false, x: 0, y: 0, time: "" }));
     setIsMobileCreateSheetOpen(true);
   }
@@ -3801,6 +3851,7 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
   function openMobileNewClient() {
     setIsMobileCreateSheetOpen(false);
     setActiveToolbarMenu(null);
+    clearActiveMobileBookingActions();
     setClientSearchReturnStage("visit");
     setSelectedCustomer(null);
     setClientQuery("");
@@ -3810,6 +3861,7 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
 
   function openMobileNewService() {
     setIsMobileCreateSheetOpen(false);
+    clearActiveMobileBookingActions();
     router.push("/pro/services");
   }
 
@@ -3818,6 +3870,7 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
       return;
     }
 
+    setActiveMobileBookingId((current) => (current === appointmentId ? current : null));
     bookingLongPressTriggeredRef.current = false;
     if (bookingLongPressTimerRef.current !== null) {
       window.clearTimeout(bookingLongPressTimerRef.current);
@@ -4466,13 +4519,13 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
   function openDatePickerMenu() {
     setDrawerStage("closed");
     setIsMobileCreateSheetOpen(false);
-    setActiveMobileBookingId(null);
-    bookingLongPressTriggeredRef.current = false;
+    clearActiveMobileBookingActions();
     setDatePickerMonth(selectedDate);
     setActiveToolbarMenu((current) => (current === "date" ? null : "date"));
   }
 
   function selectCalendarDate(dateKey: string) {
+    clearActiveMobileBookingActions();
     if (dateKey !== selectedDate) {
       lastCalendarNavigationDirectionRef.current =
         dateKey > selectedDate ? 1 : dateKey < selectedDate ? -1 : 0;
@@ -4487,7 +4540,7 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
   function moveMobileVisiblePeriod(direction: -1 | 1) {
     setActiveToolbarMenu(null);
     setIsMobileCreateSheetOpen(false);
-    setActiveMobileBookingId(null);
+    clearActiveMobileBookingActions();
     moveVisiblePeriod(direction);
   }
 
@@ -4538,6 +4591,9 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
   }
 
   function moveVisiblePeriod(direction: -1 | 1) {
+    if (isMobileViewport) {
+      clearActiveMobileBookingActions();
+    }
     lastCalendarNavigationDirectionRef.current = direction;
     let nextDate = selectedDate;
 
@@ -5029,8 +5085,7 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
                   const shouldOpen = drawerStage !== "notifications";
                   setActiveToolbarMenu(null);
                   setIsMobileCreateSheetOpen(false);
-                  setActiveMobileBookingId(null);
-                  bookingLongPressTriggeredRef.current = false;
+                  clearActiveMobileBookingActions();
                   if (!shouldOpen) {
                     setDrawerStage("closed");
                     return;
@@ -5645,7 +5700,8 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
                             left: `calc(${layout.lane * laneWidth}% + 0px)`,
                             width: `calc(${laneWidth}% - 8px)`,
                             right: "auto",
-                            background: isBlocked ? undefined : bookingColor
+                            ["--booking-color" as never]: bookingColor,
+                            background: isBlocked || isMobileViewport ? undefined : bookingColor
                           }}
                           onPointerDown={() => startMobileBookingLongPress(appointment.id)}
                           onPointerUp={clearMobileBookingLongPress}
@@ -5663,6 +5719,10 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
                               bookingLongPressTriggeredRef.current = false;
                               return;
                             }
+                            if (isMobileViewport && draggingId === appointment.id) {
+                              return;
+                            }
+                            clearActiveMobileBookingActions();
                             setSelectedProfessionalId(member.professionalId);
                             if (isBlocked) {
                               setSelectedAppointmentId(appointment.id);
