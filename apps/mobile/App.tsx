@@ -508,6 +508,7 @@ const copy = {
     services: "Послуги",
     staff: "Команда",
     settings: "Налаштування",
+    moreTab: "Ще",
     signOut: "Вийти",
     requiredTitle: "Потрібні дані",
     requiredText: "Заповніть усі поля.",
@@ -551,6 +552,8 @@ const copy = {
     withoutService: "Послугу не обрано",
     setupAssistant: "Помічник налаштування",
     setupAssistantText: "Пройдіть кроки, щоб профіль був готовий до онлайн-запису.",
+    setupCompleteTitle: "Профіль готовий до онлайн-запису",
+    setupCompleteText: "Клієнти вже можуть записуватися через ваше посилання.",
     setupProgress: "Готовність",
     setupServices: "Додайте послуги",
     setupSchedule: "Налаштуйте графік",
@@ -625,6 +628,7 @@ const copy = {
     supportSent: "Повідомлення надіслано.",
     supportFailed: "Не вдалося надіслати повідомлення.",
     notificationPendingBookings: "Непідтверджені онлайн-записи",
+    notificationsNew: "Нові",
     notificationsArchive: "Архів",
     notificationEmpty: "Поки немає нових подій.",
     statusPending: "Очікує підтвердження",
@@ -776,6 +780,7 @@ const copy = {
     empty: "Поки порожньо",
     emptyCalendarTitle: "Поки немає записів",
     emptyCalendarText: "Натисніть +, щоб додати перший візит",
+    noBookingsToday: "Сьогодні записів немає",
   },
   ru: {
     login: "Войти",
@@ -794,6 +799,7 @@ const copy = {
     services: "Услуги",
     staff: "Команда",
     settings: "Настройки",
+    moreTab: "Ещё",
     signOut: "Выйти",
     requiredTitle: "Нужны данные",
     requiredText: "Заполните все поля.",
@@ -837,6 +843,8 @@ const copy = {
     withoutService: "Услуга не выбрана",
     setupAssistant: "Помощник настройки",
     setupAssistantText: "Пройдите шаги, чтобы профиль был готов к онлайн-записи.",
+    setupCompleteTitle: "Профиль готов к онлайн-записи",
+    setupCompleteText: "Клиенты уже могут записываться через вашу ссылку.",
     setupProgress: "Готовность",
     setupServices: "Добавьте услуги",
     setupSchedule: "Настройте график",
@@ -911,6 +919,7 @@ const copy = {
     supportSent: "Сообщение отправлено.",
     supportFailed: "Не удалось отправить сообщение.",
     notificationPendingBookings: "Неподтвержденные онлайн-записи",
+    notificationsNew: "Новые",
     notificationsArchive: "Архив",
     notificationEmpty: "Пока нет новых событий.",
     statusPending: "Ожидает подтверждения",
@@ -1062,6 +1071,7 @@ const copy = {
     empty: "Пока пусто",
     emptyCalendarTitle: "Пока нет записей",
     emptyCalendarText: "Нажмите +, чтобы добавить первый визит",
+    noBookingsToday: "Сегодня записей нет",
   },
   en: {
     login: "Sign in",
@@ -1080,6 +1090,7 @@ const copy = {
     services: "Services",
     staff: "Team",
     settings: "Settings",
+    moreTab: "More",
     signOut: "Sign out",
     requiredTitle: "Missing details",
     requiredText: "Fill in all fields.",
@@ -1123,6 +1134,8 @@ const copy = {
     withoutService: "No service selected",
     setupAssistant: "Setup assistant",
     setupAssistantText: "Finish the steps so your profile is ready for online booking.",
+    setupCompleteTitle: "Profile is ready for online booking",
+    setupCompleteText: "Clients can already book through your link.",
     setupProgress: "Readiness",
     setupServices: "Add services",
     setupSchedule: "Set schedule",
@@ -1197,6 +1210,7 @@ const copy = {
     supportSent: "Message sent.",
     supportFailed: "Could not send the message.",
     notificationPendingBookings: "Pending online bookings",
+    notificationsNew: "New",
     notificationsArchive: "Archive",
     notificationEmpty: "There are no new updates yet.",
     statusPending: "Pending",
@@ -1348,6 +1362,7 @@ const copy = {
     empty: "Empty for now",
     emptyCalendarTitle: "No bookings yet",
     emptyCalendarText: "Tap + to add the first visit",
+    noBookingsToday: "No bookings today",
   },
 } satisfies Record<AppLanguage, Record<string, string>>;
 
@@ -3619,7 +3634,7 @@ function CalendarTab({
             </ScrollView>
             {!visibleDayAppointmentCount ? (
               <View pointerEvents="none" style={styles.calendarEmptyState}>
-                <Text style={styles.calendarEmptyTitle}>{t.emptyCalendarTitle || t.empty}</Text>
+                <Text style={styles.calendarEmptyTitle}>{selectedDate === getTodayIso() ? t.noBookingsToday || t.emptyCalendarTitle : t.emptyCalendarTitle || t.empty}</Text>
                 <Text style={styles.calendarEmptyText}>{t.emptyCalendarText || t.newVisit}</Text>
               </View>
             ) : null}
@@ -3644,20 +3659,23 @@ function CalendarTab({
         />
       )}
 
-      <Pressable
-        style={({ pressed }) => [styles.fabButton, pressed && styles.pressablePressed]}
-        onPress={() => {
-          setTimeAction({ date: selectedDate, time: getRoundedTime(10), targetProfessionalId: primaryMember?.id });
-        }}
-      >
-        <Ionicons name="add" size={34} color="#FFFFFF" />
-      </Pressable>
+      {!(composerOpen || blockedTimeDraft || timeAction || memberPickerOpen || viewMenuOpen) ? (
+        <Pressable
+          style={({ pressed }) => [styles.fabButton, pressed && styles.fabButtonPressed]}
+          onPress={() => {
+            setTimeAction({ date: selectedDate, time: getRoundedTime(10), targetProfessionalId: primaryMember?.id });
+          }}
+        >
+          <Ionicons name="add" size={31} color="#FFFFFF" />
+        </Pressable>
+      ) : null}
 
       <Modal transparent visible={composerOpen} animationType="slide" onRequestClose={() => setComposerOpen(false)}>
         <View style={styles.modalBackdrop}>
           <View style={[styles.visitSheet, styles.visitEditorSheet]}>
+            <View style={styles.sheetHandle} />
             <View style={styles.sheetHeader}>
-              <Text style={styles.sheetTitle}>
+              <Text style={styles.sheetTitle} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.82}>
                 {visitPickerMode === "client" ? t.chooseClient : visitPickerMode === "service" ? t.chooseService : editingAppointment ? t.editVisit : t.newVisit}
               </Text>
               <Pressable
@@ -3734,12 +3752,19 @@ function CalendarTab({
                         <Text style={styles.clientAvatarText}>{(client.fullName || client.phone || "C").slice(0, 1).toUpperCase()}</Text>
                       </View>
                       <View style={styles.clientOptionText}>
-                        <Text style={styles.clientOptionTitle}>{client.fullName || client.phone}</Text>
-                        <Text style={styles.clientOptionCaption}>{client.phone || client.email || t.clients}</Text>
+                        <Text style={styles.clientOptionTitle} numberOfLines={1} ellipsizeMode="tail">{client.fullName || client.phone}</Text>
+                        <Text style={styles.clientOptionCaption} numberOfLines={1} ellipsizeMode="tail">{client.phone || client.email || t.clients}</Text>
                       </View>
                     </Pressable>
                   ))}
-                  {!filteredClients.length && hasClientSearch ? <Text style={styles.emptyText}>{t.noClientFound}</Text> : null}
+                  {!filteredClients.length && hasClientSearch ? (
+                    <View style={styles.pickerEmptyState}>
+                      <Text style={styles.pickerEmptyTitle}>{t.noClientFound}</Text>
+                      <Pressable style={styles.pickerEmptyButton} onPress={() => openInlineClientForm(clientQuery)}>
+                        <Text style={styles.pickerEmptyButtonText}>{t.createClientFromSearch}</Text>
+                      </Pressable>
+                    </View>
+                  ) : null}
                 </ScrollView>
               </>
             ) : visitPickerMode === "service" ? (
@@ -3750,7 +3775,7 @@ function CalendarTab({
                     <Pressable key={service.id} style={styles.serviceOptionCard} onPress={() => selectVisitService(service)}>
                       <View style={[styles.serviceTone, { backgroundColor: service.color || "#6D4AFF" }]} />
                       <View style={styles.clientOptionText}>
-                        <Text style={styles.clientOptionTitle}>{getServiceDisplayName(service, language)}</Text>
+                        <Text style={styles.clientOptionTitle} numberOfLines={2} ellipsizeMode="tail">{getServiceDisplayName(service, language)}</Text>
                         <Text style={styles.clientOptionCaption}>{formatDuration(service.durationMinutes || 60, t)}</Text>
                       </View>
                       <Text style={styles.serviceOptionPrice}>{formatMoney(service.price, currency)}</Text>
@@ -3813,10 +3838,9 @@ function CalendarTab({
                   </Pressable>
                 </ScrollView>
                 <View style={styles.visitTotals}>
-                  <Text style={styles.clientOptionCaption}>{t.total}</Text>
-                  <Text style={styles.visitTotalValue}>{formatMoney(visitTotal, currency)}</Text>
-                  <Text style={styles.clientOptionCaption}>{t.payable}</Text>
-                  <Text style={styles.visitTotalValue}>{formatMoney(visitTotal, currency)}</Text>
+                  <Text style={styles.visitTotalsText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
+                    {t.total} {formatMoney(visitTotal, currency)} · {t.payable.toLowerCase()} {formatMoney(visitTotal, currency)}
+                  </Text>
                 </View>
                 <PrimaryButton
                   label={editingAppointment ? t.save : t.saveVisit}
@@ -3922,6 +3946,7 @@ function CalendarTab({
       <Modal transparent visible={Boolean(timeAction)} animationType="fade" onRequestClose={() => setTimeAction(null)}>
         <Pressable style={styles.timeActionBackdrop} onPress={() => setTimeAction(null)}>
           <View style={styles.timeActionMenu}>
+            <View style={styles.sheetHandle} />
             <Text style={styles.timeActionTitle}>{timeAction?.time}</Text>
             <Pressable
               style={styles.timeActionItem}
@@ -3966,8 +3991,9 @@ function CalendarTab({
       <Modal transparent visible={Boolean(blockedTimeDraft)} animationType="slide" onRequestClose={() => setBlockedTimeDraft(null)}>
         <View style={styles.modalBackdrop}>
           <View style={styles.visitSheet}>
+            <View style={styles.sheetHandle} />
             <View style={styles.sheetHeader}>
-              <Text style={styles.sheetTitle}>{blockedTimeDraft?.title || t.unavailableTime}</Text>
+              <Text style={styles.sheetTitle} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.82}>{blockedTimeDraft?.title || t.unavailableTime}</Text>
               <Pressable style={styles.sheetClose} onPress={() => setBlockedTimeDraft(null)}>
                 <Ionicons name="close" size={22} color="#0F172A" />
               </Pressable>
@@ -4154,7 +4180,6 @@ function CalendarOverview({
         {dates.map((date) => {
           const appointments = members.length ? members.flatMap((member) => getAppointmentsForMember(date, member.id)) : getAppointmentsForDate(date);
           const schedule = getScheduleForDate(workspace, date);
-          const workParts = getWorkTimeParts(schedule);
           const selected = date === selectedDate;
           const muted = !isSameMonth(date, selectedDate);
           const closed = !schedule.enabled;
@@ -4182,16 +4207,7 @@ function CalendarOverview({
                     ))}
                   </View>
                 </View>
-              ) : (
-                <View style={styles.compactWorkTime}>
-                  <Text style={[styles.monthWorkText, muted && styles.mutedText]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72}>
-                    {workParts.start}
-                  </Text>
-                  <Text style={[styles.monthWorkText, muted && styles.mutedText]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72}>
-                    {workParts.end}
-                  </Text>
-                </View>
-              )}
+              ) : null}
             </Pressable>
           );
         })}
@@ -4199,8 +4215,11 @@ function CalendarOverview({
     );
   }
 
-  const dayColumnWidth = mode === "threeDays" ? 104 : 96;
-  const memberRowHeight = 108;
+  const selectedDateIndex = Math.max(0, dates.indexOf(selectedDate));
+  const mobileWeekStart = Math.max(0, Math.min(Math.max(0, dates.length - 3), selectedDateIndex - 1));
+  const overviewDates = mode === "week" && dates.length > 3 ? dates.slice(mobileWeekStart, mobileWeekStart + 3) : dates;
+  const dayColumnWidth = 104;
+  const memberRowHeight = 104;
 
   return (
     <ScrollView
@@ -4212,7 +4231,7 @@ function CalendarOverview({
       <View style={styles.teamOverviewGrid}>
         <View style={styles.teamOverviewHeaderRow}>
           <View style={styles.teamOverviewMemberHeader} />
-          {dates.map((date) => {
+          {overviewDates.map((date) => {
             const selected = date === selectedDate;
             return (
               <Pressable
@@ -4232,7 +4251,7 @@ function CalendarOverview({
               <MemberAvatar member={member} size={34} />
               <Text style={styles.teamOverviewMemberName} numberOfLines={1}>{member.name}</Text>
             </Pressable>
-            {dates.map((date) => {
+            {overviewDates.map((date) => {
               const appointments = getAppointmentsForMember(date, member.id);
               const schedule = getScheduleForMember(date, member);
               const selected = date === selectedDate;
@@ -4599,6 +4618,7 @@ function WorkspaceHeader({
   ];
   const setupDone = setupItems.filter((item) => item.done).length;
   const setupMissingCount = setupItems.length - setupDone;
+  const setupComplete = setupMissingCount === 0;
   const pendingCount = (notifications.pendingOnlineBookings?.length || 0) + (notifications.pendingJoinRequests?.length || 0);
 
   async function openPanel(nextPanel: typeof panel) {
@@ -4668,29 +4688,43 @@ function WorkspaceHeader({
       <Modal transparent visible animationType="slide" onRequestClose={close}>
         <View style={styles.headerPanelBackdrop}>
           <View style={styles.headerPanel}>
+            <View style={styles.sheetHandle} />
             <View style={styles.headerPanelTop}>
-              <View>
+              <View style={styles.headerPanelTitleStack}>
                 <Text style={styles.headerPanelEyebrow}>Timviz</Text>
-                <Text style={styles.headerPanelTitle}>
-                  {panel === "setup" ? t.setupAssistant : panel === "share" ? t.bookingPage : panel === "support" ? t.supportTitle : panel === "notifications" ? t.reminders : t.accountMenu || t.settings}
+                <Text style={styles.headerPanelTitle} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.82}>
+                  {panel === "setup" ? (setupComplete ? t.setupCompleteTitle : t.setupAssistant) : panel === "share" ? t.bookingPage : panel === "support" ? t.supportTitle : panel === "notifications" ? t.reminders : t.accountMenu || t.settings}
                 </Text>
               </View>
               <Pressable style={styles.headerPanelClose} onPress={close}>
-                <Ionicons name="close" size={22} color="#FFFFFF" />
+                <Ionicons name="close" size={21} color="#0F172A" />
               </Pressable>
             </View>
 
             {panel === "setup" ? (
               <View style={styles.headerPanelBody}>
-                <Text style={styles.panelHint}>{t.setupAssistantText}</Text>
-                <View style={styles.setupProgressRow}>
+                <Text style={styles.panelHint}>{setupComplete ? t.setupCompleteText : t.setupAssistantText}</Text>
+                <View style={[styles.setupProgressRow, setupComplete && styles.setupProgressRowDone]}>
                   <Text style={styles.setupProgressTitle}>{t.setupProgress}</Text>
-                  <Text style={styles.setupProgressValue}>{setupDone}/{setupItems.length}</Text>
+                  <View style={styles.setupProgressValueRow}>
+                    {setupComplete ? <Text style={styles.setupReadyBadge}>{t.ready}</Text> : null}
+                    <Text style={styles.setupProgressValue}>{setupDone}/{setupItems.length}</Text>
+                  </View>
                 </View>
+                {setupComplete ? (
+                  <View style={styles.headerPanelActions}>
+                    <Pressable style={styles.headerGhostButton} onPress={shareBookingPage} disabled={!publicBookingUrl}>
+                      <Text style={styles.headerGhostButtonText}>{t.copyLink}</Text>
+                    </Pressable>
+                    <Pressable style={styles.headerPrimaryButton} onPress={openBookingPage} disabled={!publicBookingUrl}>
+                      <Text style={styles.headerPrimaryButtonText}>{t.openPage}</Text>
+                    </Pressable>
+                  </View>
+                ) : null}
                 {setupItems.map((item) => (
                   <Pressable
                     key={item.id}
-                    style={styles.setupStep}
+                    style={[styles.setupStep, item.done && styles.setupStepDone]}
                     onPress={() => {
                       if (item.id === "services") setActiveTab("services");
                       if (item.id === "booking") onOpenSettingsSection("online");
@@ -4704,7 +4738,7 @@ function WorkspaceHeader({
                       <Ionicons name={item.done ? "checkmark" : item.icon} size={18} color={item.done ? "#FFFFFF" : "#6D4AFF"} />
                     </View>
                     <Text style={styles.setupStepText}>{item.title}</Text>
-                    <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
+                    {item.done ? <Text style={styles.setupDoneText}>{t.ready}</Text> : <Ionicons name="chevron-forward" size={18} color="#94A3B8" />}
                   </Pressable>
                 ))}
               </View>
@@ -4768,7 +4802,10 @@ function WorkspaceHeader({
             {panel === "notifications" ? (
               <ScrollView style={styles.headerPanelBody} showsVerticalScrollIndicator={false}>
                 <View style={styles.notificationHeading}>
-                  <Text style={styles.notificationHeadingText}>{t.notificationPendingBookings}</Text>
+                  <View style={styles.notificationHeadingTextStack}>
+                    <Text style={styles.notificationHeadingText}>{t.notificationsNew}</Text>
+                    <Text style={styles.notificationHeadingCaption}>{t.notificationPendingBookings}</Text>
+                  </View>
                   <Text style={styles.notificationBadgeText}>{notifications.pendingOnlineBookings?.length || 0}</Text>
                 </View>
                 {loadingNotifications ? <ActivityIndicator color="#6D4AFF" /> : null}
@@ -4886,9 +4923,10 @@ function AppIconButton({
   badgeTone?: "red";
   onPress?: () => void;
 }) {
+  const doneIcon = icon === "checkmark";
   return (
-    <Pressable onPress={onPress} style={[styles.headerIconButton, active && styles.headerIconButtonActive, tone === "cyan" && styles.headerIconButtonCyan]}>
-      <Ionicons name={icon} size={18} color={active ? "#FFFFFF" : tone === "cyan" ? "#0891B2" : "#432C75"} />
+    <Pressable onPress={onPress} style={[styles.headerIconButton, doneIcon && styles.headerIconButtonDone, active && styles.headerIconButtonActive, tone === "cyan" && styles.headerIconButtonCyan]}>
+      <Ionicons name={icon} size={18} color={active ? "#FFFFFF" : doneIcon ? "#16A34A" : tone === "cyan" ? "#0891B2" : "#432C75"} />
       {badge ? (
         <View style={[styles.headerIconBadge, badgeTone === "red" && styles.headerIconBadgeRed]}>
           <Text style={styles.headerIconBadgeText}>{badge > 9 ? "9+" : badge}</Text>
@@ -4944,7 +4982,7 @@ function BottomNavigation({
     { tab: "services", icon: "pricetag-outline", label: t.services },
     { tab: "clients", icon: "id-card-outline", label: t.clients },
     { tab: "staff", icon: "people-outline", label: t.teamAccount || t.staff },
-    { tab: "settings", icon: "settings-outline", label: t.settings },
+    { tab: "settings", icon: "ellipsis-horizontal-circle-outline", label: t.moreTab || t.settings },
   ];
 
   return (
@@ -7039,6 +7077,13 @@ const DESIGN = {
     screen: 16,
     card: 16,
   },
+  type: {
+    pageTitle: 18,
+    sheetTitle: 23,
+    section: 14,
+    body: 14,
+    caption: 12,
+  },
 };
 
 const styles = StyleSheet.create({
@@ -7211,7 +7256,7 @@ const styles = StyleSheet.create({
     textAlign: "right",
   },
   input: {
-    height: 54,
+    height: 52,
     borderRadius: DESIGN.radius.md,
     borderWidth: 1,
     borderColor: DESIGN.colors.border,
@@ -7225,7 +7270,7 @@ const styles = StyleSheet.create({
     color: DESIGN.colors.muted,
   },
   primaryButton: {
-    minHeight: 56,
+    minHeight: 52,
     marginTop: 6,
     borderRadius: DESIGN.radius.lg,
     alignItems: "center",
@@ -7233,15 +7278,15 @@ const styles = StyleSheet.create({
     backgroundColor: DESIGN.colors.primary,
     paddingHorizontal: 18,
     shadowColor: DESIGN.colors.primary,
-    shadowOpacity: 0.24,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.2,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 8 },
     elevation: 2,
   },
   primaryButtonText: {
     color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "900",
+    fontSize: 15,
+    fontWeight: "800",
   },
   secondaryButton: {
     minHeight: 52,
@@ -7279,10 +7324,10 @@ const styles = StyleSheet.create({
     backgroundColor: DESIGN.colors.background,
   },
   nativeHeader: {
-    minHeight: 66,
+    minHeight: 62,
     paddingHorizontal: DESIGN.spacing.screen,
-    paddingTop: 9,
-    paddingBottom: 9,
+    paddingTop: 7,
+    paddingBottom: 7,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -7302,14 +7347,14 @@ const styles = StyleSheet.create({
   },
   nativeHeaderTitle: {
     color: DESIGN.colors.text,
-    fontSize: 18,
+    fontSize: DESIGN.type.pageTitle,
     lineHeight: 22,
     fontWeight: "800",
   },
   headerBusinessInline: {
-    marginTop: 3,
+    marginTop: 2,
     color: DESIGN.colors.muted,
-    fontSize: 11,
+    fontSize: 10,
     fontWeight: "800",
     textTransform: "uppercase",
   },
@@ -7319,8 +7364,8 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   headerIconButton: {
-    width: 36,
-    height: 36,
+    width: 40,
+    height: 40,
     borderRadius: DESIGN.radius.pill,
     alignItems: "center",
     justifyContent: "center",
@@ -7362,13 +7407,17 @@ const styles = StyleSheet.create({
     shadowRadius: 14,
     shadowOffset: { width: 0, height: 8 },
   },
+  headerIconButtonDone: {
+    borderColor: "#BBF7D0",
+    backgroundColor: "#F0FDF4",
+  },
   headerIconButtonCyan: {
     borderColor: "#BAE6FD",
     backgroundColor: "#ECFEFF",
   },
   profilePill: {
-    height: 36,
-    minWidth: 54,
+    height: 40,
+    minWidth: 58,
     paddingHorizontal: 4,
     flexDirection: "row",
     alignItems: "center",
@@ -7384,8 +7433,8 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 3 },
   },
   smallAvatar: {
-    width: 27,
-    height: 27,
+    width: 30,
+    height: 30,
     borderRadius: DESIGN.radius.pill,
     alignItems: "center",
     justifyContent: "center",
@@ -7399,35 +7448,44 @@ const styles = StyleSheet.create({
   headerPanelBackdrop: {
     flex: 1,
     justifyContent: "flex-end",
-    backgroundColor: "rgba(15, 23, 42, 0.28)",
+    backgroundColor: "rgba(15, 23, 42, 0.24)",
   },
   headerPanel: {
-    maxHeight: "88%",
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    maxHeight: "90%",
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
     overflow: "hidden",
     backgroundColor: "#FFFFFF",
   },
   headerPanelTop: {
-    minHeight: 88,
+    minHeight: 72,
     paddingHorizontal: 18,
-    paddingVertical: 16,
+    paddingTop: 8,
+    paddingBottom: 12,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: "#18AFC0",
+    borderBottomWidth: 1,
+    borderBottomColor: DESIGN.colors.border,
+    backgroundColor: DESIGN.colors.surface,
+  },
+  headerPanelTitleStack: {
+    flex: 1,
+    minWidth: 0,
+    paddingRight: 12,
   },
   headerPanelEyebrow: {
-    color: "rgba(255, 255, 255, 0.82)",
+    color: DESIGN.colors.primary,
     fontSize: 11,
-    fontWeight: "900",
+    fontWeight: "800",
     textTransform: "uppercase",
   },
   headerPanelTitle: {
-    marginTop: 6,
-    color: "#FFFFFF",
-    fontSize: 20,
-    fontWeight: "900",
+    marginTop: 4,
+    color: DESIGN.colors.text,
+    fontSize: DESIGN.type.sheetTitle,
+    lineHeight: 28,
+    fontWeight: "800",
   },
   headerPanelClose: {
     width: 40,
@@ -7435,10 +7493,12 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.18)",
+    backgroundColor: DESIGN.colors.surfaceSoft,
+    borderWidth: 1,
+    borderColor: DESIGN.colors.border,
   },
   headerPanelBody: {
-    padding: 16,
+    padding: 14,
   },
   panelHint: {
     color: "#4B5563",
@@ -7447,14 +7507,32 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   setupProgressRow: {
-    marginTop: 14,
-    marginBottom: 10,
-    padding: 14,
+    marginTop: 12,
+    marginBottom: 8,
+    padding: 12,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     borderRadius: DESIGN.radius.lg,
     backgroundColor: DESIGN.colors.primarySoft,
+  },
+  setupProgressRowDone: {
+    backgroundColor: "#F0FDF4",
+  },
+  setupProgressValueRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  setupReadyBadge: {
+    paddingHorizontal: 9,
+    paddingVertical: 4,
+    borderRadius: 999,
+    overflow: "hidden",
+    color: DESIGN.colors.success,
+    fontSize: 11,
+    fontWeight: "800",
+    backgroundColor: "#DCFCE7",
   },
   setupProgressTitle: {
     color: DESIGN.colors.primaryDark,
@@ -7467,9 +7545,9 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
   setupStep: {
-    minHeight: 64,
+    minHeight: 58,
     marginTop: 8,
-    padding: 12,
+    padding: 11,
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
@@ -7478,22 +7556,31 @@ const styles = StyleSheet.create({
     borderColor: DESIGN.colors.border,
     backgroundColor: DESIGN.colors.surface,
   },
+  setupStepDone: {
+    backgroundColor: "#FAFBFF",
+    opacity: 0.86,
+  },
   setupStepIcon: {
-    width: 40,
-    height: 40,
+    width: 36,
+    height: 36,
     borderRadius: DESIGN.radius.pill,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: DESIGN.colors.primarySoft,
   },
   setupStepIconDone: {
-    backgroundColor: DESIGN.colors.success,
+    backgroundColor: "#22C55E",
   },
   setupStepText: {
     flex: 1,
     color: DESIGN.colors.text,
     fontSize: 14,
-    fontWeight: "900",
+    fontWeight: "800",
+  },
+  setupDoneText: {
+    color: DESIGN.colors.success,
+    fontSize: 12,
+    fontWeight: "800",
   },
   shareToggleRow: {
     marginTop: 14,
@@ -7649,38 +7736,50 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   notificationHeading: {
-    marginTop: 8,
+    marginTop: 6,
     marginBottom: 8,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
+    gap: 12,
+  },
+  notificationHeadingTextStack: {
+    flex: 1,
+    minWidth: 0,
   },
   notificationHeadingText: {
     color: "#0F172A",
-    fontSize: 16,
-    fontWeight: "900",
+    fontSize: 15,
+    fontWeight: "800",
+  },
+  notificationHeadingCaption: {
+    marginTop: 2,
+    color: DESIGN.colors.muted,
+    fontSize: 12,
+    fontWeight: "600",
   },
   notificationBadgeText: {
-    minWidth: 28,
-    paddingVertical: 6,
+    minWidth: 26,
+    paddingVertical: 5,
+    paddingHorizontal: 8,
     borderRadius: 14,
     overflow: "hidden",
     textAlign: "center",
     color: "#6D4AFF",
     fontSize: 12,
-    fontWeight: "900",
+    fontWeight: "800",
     backgroundColor: "#EEF2FF",
   },
   notificationEmptyCard: {
-    padding: 16,
+    padding: 13,
     borderRadius: 16,
     borderWidth: 1,
     borderColor: "#D8E2F1",
     backgroundColor: "#F8FAFC",
   },
   notificationCard: {
-    marginBottom: 10,
-    padding: 14,
+    marginBottom: 8,
+    padding: 12,
     borderRadius: 16,
     borderWidth: 1,
     borderColor: "#D8E2F1",
@@ -7694,18 +7793,18 @@ const styles = StyleSheet.create({
   notificationCardTitle: {
     flex: 1,
     color: "#0F172A",
-    fontSize: 15,
-    fontWeight: "900",
+    fontSize: 14,
+    fontWeight: "800",
   },
   notificationService: {
-    marginTop: 10,
+    marginTop: 8,
     color: "#667085",
-    fontSize: 14,
-    fontWeight: "700",
+    fontSize: 13,
+    fontWeight: "600",
   },
   notificationStatusPill: {
-    marginTop: 10,
-    minHeight: 30,
+    marginTop: 8,
+    minHeight: 26,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 15,
@@ -7719,8 +7818,8 @@ const styles = StyleSheet.create({
   },
   notificationStatusText: {
     color: "#92400E",
-    fontSize: 12,
-    fontWeight: "900",
+    fontSize: 11,
+    fontWeight: "800",
   },
   notificationStatusConfirmedText: {
     color: "#047857",
@@ -7813,7 +7912,7 @@ const styles = StyleSheet.create({
     backgroundColor: DESIGN.colors.background,
   },
   calendarToolbar: {
-    minHeight: 54,
+    minHeight: 52,
     paddingHorizontal: 10,
     flexDirection: "row",
     alignItems: "center",
@@ -7829,7 +7928,7 @@ const styles = StyleSheet.create({
     minWidth: 58,
     maxWidth: 98,
     flexShrink: 1,
-    height: 40,
+    height: 38,
     paddingHorizontal: 10,
     flexDirection: "row",
     alignItems: "center",
@@ -7932,15 +8031,15 @@ const styles = StyleSheet.create({
     left: CALENDAR_TIME_AXIS_WIDTH + 18,
     right: 18,
     top: 128,
-    padding: 16,
+    padding: 14,
     borderRadius: DESIGN.radius.lg,
     borderWidth: 1,
     borderColor: "rgba(216, 208, 255, 0.72)",
-    backgroundColor: "rgba(255, 255, 255, 0.86)",
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
   },
   calendarEmptyTitle: {
     color: DESIGN.colors.text,
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "800",
   },
   calendarEmptyText: {
@@ -7958,7 +8057,7 @@ const styles = StyleSheet.create({
   },
   teamMembersHeaderRow: {
     flexDirection: "row",
-    height: 62,
+    height: 58,
     borderBottomWidth: 1,
     borderBottomColor: DESIGN.colors.border,
     backgroundColor: "#FFFFFF",
@@ -7977,7 +8076,7 @@ const styles = StyleSheet.create({
   },
   teamPickerRail: {
     width: CALENDAR_TIME_AXIS_WIDTH,
-    height: 62,
+    height: 58,
     borderRightWidth: 1,
     borderBottomWidth: 1,
     borderRightColor: DESIGN.colors.border,
@@ -8016,10 +8115,10 @@ const styles = StyleSheet.create({
     zIndex: 5,
   },
   teamPickerButton: {
-    width: 40,
-    height: 40,
-    marginTop: 10,
-    marginLeft: 12,
+    width: 38,
+    height: 38,
+    marginTop: 9,
+    marginLeft: 13,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 22,
@@ -8126,7 +8225,7 @@ const styles = StyleSheet.create({
   },
   teamOverviewContent: {
     paddingHorizontal: 10,
-    paddingVertical: 12,
+    paddingVertical: 10,
   },
   teamOverviewGrid: {
     overflow: "hidden",
@@ -8137,7 +8236,7 @@ const styles = StyleSheet.create({
   },
   teamOverviewHeaderRow: {
     flexDirection: "row",
-    minHeight: 52,
+    minHeight: 48,
     borderBottomWidth: 1,
     borderBottomColor: DESIGN.colors.border,
   },
@@ -8159,7 +8258,7 @@ const styles = StyleSheet.create({
   },
   teamOverviewDateNumber: {
     color: "#0F172A",
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: "800",
   },
   teamOverviewDateWeekday: {
@@ -8201,7 +8300,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#FBFAFF",
   },
   teamOverviewAppointmentBar: {
-    height: 17,
+    height: 16,
     marginBottom: 4,
     paddingHorizontal: 5,
     justifyContent: "center",
@@ -8391,15 +8490,15 @@ const styles = StyleSheet.create({
   },
   monthCell: {
     width: "12.85%",
-    minHeight: 72,
-    padding: 6,
-    borderRadius: 12,
+    minHeight: 64,
+    padding: 5,
+    borderRadius: 11,
     borderWidth: 1,
     borderColor: DESIGN.colors.border,
     backgroundColor: "#FFFFFF",
   },
   monthCellTop: {
-    minHeight: 21,
+    minHeight: 18,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -8415,7 +8514,7 @@ const styles = StyleSheet.create({
   },
   monthDayNumber: {
     color: "#0F172A",
-    fontSize: 17,
+    fontSize: 15,
     fontWeight: "800",
   },
   monthWorkText: {
@@ -8430,8 +8529,8 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   closedBadge: {
-    marginTop: 7,
-    height: 22,
+    marginTop: 6,
+    height: 20,
     paddingHorizontal: 5,
     alignSelf: "flex-start",
     flexDirection: "row",
@@ -8446,15 +8545,15 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   monthVisitBadge: {
-    marginTop: 7,
+    marginTop: 6,
     maxWidth: "100%",
     alignSelf: "flex-start",
     gap: 4,
   },
   monthVisitBadgeText: {
     maxWidth: "100%",
-    paddingHorizontal: 5,
-    paddingVertical: 3,
+    paddingHorizontal: 4,
+    paddingVertical: 2,
     borderRadius: 8,
     overflow: "hidden",
     color: DESIGN.colors.primaryDark,
@@ -8519,7 +8618,7 @@ const styles = StyleSheet.create({
     flex: 1,
     position: "relative",
     borderLeftWidth: 1,
-    borderLeftColor: DESIGN.colors.border,
+    borderLeftColor: "#E8EEF6",
   },
   majorLine: {
     position: "absolute",
@@ -8527,14 +8626,14 @@ const styles = StyleSheet.create({
     right: 0,
     top: 0,
     height: 1,
-    backgroundColor: "#DDE5F0",
+    backgroundColor: "#E3EAF4",
   },
   minorLine: {
     position: "absolute",
     left: 0,
     right: 0,
     height: 1,
-    backgroundColor: "#EEF3FA",
+    backgroundColor: "#F4F7FB",
   },
   closedBlock: {
     position: "absolute",
@@ -8592,16 +8691,16 @@ const styles = StyleSheet.create({
   appointmentBlock: {
     position: "absolute",
     zIndex: 3,
-    borderRadius: 14,
-    paddingVertical: 7,
+    borderRadius: 15,
+    paddingVertical: 6,
     paddingLeft: 8,
     paddingRight: 8,
     overflow: "hidden",
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.52)",
     shadowColor: "#0F172A",
-    shadowOpacity: 0.035,
-    shadowRadius: 5,
+    shadowOpacity: 0.025,
+    shadowRadius: 4,
     shadowOffset: { width: 0, height: 3 },
   },
   appointmentBlockTight: {
@@ -8654,8 +8753,8 @@ const styles = StyleSheet.create({
   },
   appointmentTime: {
     color: DESIGN.colors.text,
-    fontSize: 12,
-    lineHeight: 15,
+    fontSize: 11,
+    lineHeight: 14,
     fontWeight: "800",
   },
   appointmentTimeTight: {
@@ -8670,8 +8769,8 @@ const styles = StyleSheet.create({
     maxWidth: "100%",
     marginTop: 2,
     color: DESIGN.colors.text,
-    fontSize: 15,
-    lineHeight: 17,
+    fontSize: 14,
+    lineHeight: 16,
     fontWeight: "800",
   },
   appointmentClientTight: {
@@ -8716,18 +8815,22 @@ const styles = StyleSheet.create({
   fabButton: {
     position: "absolute",
     right: 22,
-    bottom: 92,
-    width: 58,
-    height: 58,
+    bottom: Platform.OS === "ios" ? 98 : 90,
+    width: 56,
+    height: 56,
     borderRadius: DESIGN.radius.pill,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: DESIGN.colors.primary,
     shadowColor: DESIGN.colors.primary,
-    shadowOpacity: 0.32,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.26,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 10 },
     elevation: 6,
+  },
+  fabButtonPressed: {
+    opacity: 0.9,
+    transform: [{ scale: 0.96 }],
   },
   modalBackdrop: {
     flex: 1,
@@ -8764,7 +8867,11 @@ const styles = StyleSheet.create({
   timeActionMenu: {
     width: "100%",
     padding: 10,
-    borderRadius: 24,
+    paddingTop: 8,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
     borderWidth: 1,
     borderColor: "#E2E8F0",
     backgroundColor: "#FFFFFF",
@@ -8775,14 +8882,14 @@ const styles = StyleSheet.create({
   },
   timeActionTitle: {
     paddingHorizontal: 12,
-    paddingTop: 3,
-    paddingBottom: 8,
+    paddingTop: 2,
+    paddingBottom: 7,
     color: "#64748B",
     fontSize: 13,
     fontWeight: "900",
   },
   timeActionItem: {
-    minHeight: 50,
+    minHeight: 52,
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
@@ -8818,11 +8925,21 @@ const styles = StyleSheet.create({
   viewMenuTextActive: {
     color: "#5B21B6",
   },
+  sheetHandle: {
+    alignSelf: "center",
+    width: 42,
+    height: 4,
+    marginTop: 8,
+    marginBottom: 8,
+    borderRadius: 999,
+    backgroundColor: "#D8E0EC",
+  },
   visitSheet: {
-    gap: 12,
+    gap: 10,
     maxHeight: "90%",
-    padding: 18,
-    paddingBottom: 30,
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    paddingBottom: 26,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
     backgroundColor: DESIGN.colors.surface,
@@ -8836,19 +8953,21 @@ const styles = StyleSheet.create({
   },
   sheetHeader: {
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "flex-start",
     justifyContent: "space-between",
-    paddingBottom: 4,
+    gap: 12,
+    paddingBottom: 2,
   },
   sheetTitle: {
+    flex: 1,
     color: DESIGN.colors.text,
-    fontSize: 24,
-    lineHeight: 29,
+    fontSize: DESIGN.type.sheetTitle,
+    lineHeight: 28,
     fontWeight: "800",
   },
   sheetClose: {
-    width: 42,
-    height: 42,
+    width: 40,
+    height: 40,
     borderRadius: DESIGN.radius.pill,
     alignItems: "center",
     justifyContent: "center",
@@ -8873,11 +8992,11 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   visitEditorScroll: {
-    maxHeight: 490,
+    maxHeight: 480,
   },
   visitClientCard: {
-    minHeight: 82,
-    padding: 14,
+    minHeight: 76,
+    padding: 12,
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
@@ -8887,8 +9006,8 @@ const styles = StyleSheet.create({
     backgroundColor: DESIGN.colors.primarySoft,
   },
   clientAvatarLarge: {
-    width: 50,
-    height: 50,
+    width: 46,
+    height: 46,
     borderRadius: DESIGN.radius.pill,
     alignItems: "center",
     justifyContent: "center",
@@ -8911,27 +9030,27 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   visitSectionHeader: {
-    marginTop: 16,
-    paddingBottom: 10,
+    marginTop: 13,
+    paddingBottom: 8,
     borderBottomWidth: 1,
     borderBottomColor: DESIGN.colors.border,
   },
   visitSectionTitle: {
     color: DESIGN.colors.text,
-    fontSize: 13,
-    fontWeight: "900",
+    fontSize: DESIGN.type.section,
+    fontWeight: "800",
     textTransform: "uppercase",
   },
   visitSectionDate: {
-    marginTop: 6,
+    marginTop: 4,
     color: DESIGN.colors.muted,
-    fontSize: 15,
-    fontWeight: "800",
+    fontSize: 14,
+    fontWeight: "700",
   },
   visitServiceCard: {
-    marginTop: 12,
-    padding: 12,
-    gap: 12,
+    marginTop: 10,
+    padding: 10,
+    gap: 10,
     borderRadius: DESIGN.radius.lg,
     borderWidth: 1,
     borderColor: DESIGN.colors.border,
@@ -8944,7 +9063,7 @@ const styles = StyleSheet.create({
   },
   visitServicePickerButton: {
     flex: 1,
-    minHeight: 52,
+    minHeight: 48,
     justifyContent: "center",
     paddingHorizontal: 14,
     borderRadius: DESIGN.radius.md,
@@ -8958,8 +9077,8 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   smallIconButton: {
-    width: 42,
-    height: 42,
+    width: 38,
+    height: 38,
     borderRadius: DESIGN.radius.md,
     alignItems: "center",
     justifyContent: "center",
@@ -8977,8 +9096,8 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
   addAnotherServiceButton: {
-    marginTop: 12,
-    minHeight: 50,
+    marginTop: 10,
+    minHeight: 46,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: DESIGN.radius.lg,
@@ -8988,19 +9107,22 @@ const styles = StyleSheet.create({
   },
   addAnotherServiceText: {
     color: DESIGN.colors.primaryDark,
-    fontSize: 14,
-    fontWeight: "900",
+    fontSize: 13,
+    fontWeight: "800",
     textTransform: "uppercase",
   },
   visitTotals: {
-    minHeight: 40,
+    minHeight: 34,
     paddingTop: 8,
-    flexDirection: "row",
     alignItems: "center",
-    justifyContent: "flex-end",
-    gap: 6,
+    justifyContent: "center",
     borderTopWidth: 1,
     borderTopColor: DESIGN.colors.border,
+  },
+  visitTotalsText: {
+    color: DESIGN.colors.muted,
+    fontSize: 13,
+    fontWeight: "700",
   },
   dangerTextButton: {
     minHeight: 44,
@@ -9022,9 +9144,39 @@ const styles = StyleSheet.create({
   pickerList: {
     maxHeight: 470,
   },
+  pickerEmptyState: {
+    marginTop: 8,
+    padding: 14,
+    alignItems: "center",
+    borderRadius: DESIGN.radius.lg,
+    borderWidth: 1,
+    borderColor: DESIGN.colors.border,
+    backgroundColor: DESIGN.colors.surfaceSoft,
+  },
+  pickerEmptyTitle: {
+    color: DESIGN.colors.muted,
+    fontSize: 13,
+    lineHeight: 18,
+    textAlign: "center",
+    fontWeight: "700",
+  },
+  pickerEmptyButton: {
+    marginTop: 10,
+    minHeight: 40,
+    paddingHorizontal: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: DESIGN.radius.md,
+    backgroundColor: DESIGN.colors.primarySoft,
+  },
+  pickerEmptyButtonText: {
+    color: DESIGN.colors.primaryDark,
+    fontSize: 13,
+    fontWeight: "800",
+  },
   searchInputShell: {
-    minHeight: 54,
-    paddingHorizontal: 16,
+    minHeight: 48,
+    paddingHorizontal: 14,
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
@@ -9035,10 +9187,10 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    minHeight: 50,
+    minHeight: 46,
     color: DESIGN.colors.text,
-    fontSize: 16,
-    fontWeight: "700",
+    fontSize: 15,
+    fontWeight: "600",
   },
   searchClearButton: {
     width: 30,
@@ -9049,9 +9201,9 @@ const styles = StyleSheet.create({
     backgroundColor: DESIGN.colors.border,
   },
   clientOptionCard: {
-    minHeight: 66,
-    marginBottom: 9,
-    padding: 12,
+    minHeight: 60,
+    marginBottom: 8,
+    padding: 10,
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
@@ -9121,9 +9273,9 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   clientAvatar: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 42,
+    height: 42,
+    borderRadius: 21,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: DESIGN.colors.primarySoft,
@@ -9140,7 +9292,7 @@ const styles = StyleSheet.create({
   clientOptionTitle: {
     color: DESIGN.colors.text,
     fontSize: 14,
-    fontWeight: "900",
+    fontWeight: "800",
   },
   clientOptionCaption: {
     marginTop: 2,
@@ -9149,9 +9301,9 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   serviceOptionCard: {
-    minHeight: 68,
-    marginBottom: 9,
-    padding: 12,
+    minHeight: 74,
+    marginBottom: 8,
+    padding: 10,
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
@@ -9161,35 +9313,37 @@ const styles = StyleSheet.create({
     backgroundColor: DESIGN.colors.surface,
   },
   serviceTone: {
-    width: 12,
-    height: 38,
-    borderRadius: 6,
+    width: 10,
+    height: 44,
+    borderRadius: 5,
   },
   serviceOptionPrice: {
     color: DESIGN.colors.text,
     fontSize: 13,
-    fontWeight: "900",
+    fontWeight: "800",
+    textAlign: "right",
+    maxWidth: 88,
   },
   bottomNav: {
     position: "absolute",
     left: 14,
     right: 14,
-    bottom: Platform.OS === "ios" ? 12 : 10,
-    minHeight: 66,
-    paddingHorizontal: 6,
-    paddingTop: 6,
-    paddingBottom: Platform.OS === "ios" ? 11 : 7,
+    bottom: Platform.OS === "ios" ? 10 : 8,
+    minHeight: 64,
+    paddingHorizontal: 5,
+    paddingTop: 5,
+    paddingBottom: Platform.OS === "ios" ? 10 : 6,
     flexDirection: "row",
     alignItems: "stretch",
-    gap: 4,
-    borderRadius: 26,
+    gap: 3,
+    borderRadius: 24,
     borderWidth: 1,
     borderColor: "rgba(229, 234, 243, 0.95)",
     backgroundColor: "rgba(255, 255, 255, 0.98)",
     shadowColor: "#0F172A",
-    shadowOpacity: 0.11,
-    shadowRadius: 26,
-    shadowOffset: { width: 0, height: -10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 22,
+    shadowOffset: { width: 0, height: -8 },
     elevation: 8,
   },
   bottomNavItem: {
@@ -9197,8 +9351,8 @@ const styles = StyleSheet.create({
     minWidth: 0,
     alignItems: "center",
     justifyContent: "center",
-    gap: 3,
-    borderRadius: 19,
+    gap: 2,
+    borderRadius: 18,
   },
   bottomNavItemActive: {
     borderWidth: 1,
@@ -9211,7 +9365,7 @@ const styles = StyleSheet.create({
   },
   bottomNavText: {
     color: DESIGN.colors.muted,
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: "700",
   },
   bottomNavTextActive: {
@@ -9351,9 +9505,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   dateButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 15,
+    width: 38,
+    height: 38,
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
@@ -9367,8 +9521,8 @@ const styles = StyleSheet.create({
   },
   datePill: {
     minWidth: 128,
-    height: 42,
-    borderRadius: 15,
+    height: 40,
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
@@ -9377,7 +9531,7 @@ const styles = StyleSheet.create({
   },
   dateText: {
     color: DESIGN.colors.text,
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "800",
   },
   dateSubText: {
