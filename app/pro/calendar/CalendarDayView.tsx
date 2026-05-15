@@ -2694,6 +2694,8 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
     uiLanguage === "en" ? "Previous period" : uiLanguage === "uk" ? "Попередній період" : "Предыдущий период";
   const nextPeriodLabel =
     uiLanguage === "en" ? "Next period" : uiLanguage === "uk" ? "Наступний період" : "Следующий период";
+  const editBookingLabel =
+    uiLanguage === "en" ? "Edit" : uiLanguage === "uk" ? "Редагувати" : "Редактировать";
   const datePickerMonthLabel = new Date(`${datePickerMonth}T00:00:00`).toLocaleDateString(locale, {
     month: "long",
     year: "numeric"
@@ -3144,6 +3146,7 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
             `.${styles.phonePrefixMenu}`,
             `.${styles.phonePrefixButton}`,
             `.${styles.bookingDeleteButton}`,
+            `.${styles.bookingEditButton}`,
             `.${styles.bookingDragHandle}`,
             `.${styles.bookingResizeHandle}`
           ].join(",")
@@ -5656,6 +5659,41 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
                           <div className={styles.bookingControlRow}>
                             <button
                               type="button"
+                              className={styles.bookingEditButton}
+                              aria-label={editBookingLabel}
+                              title={editBookingLabel}
+                              onClick={(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                bookingLongPressTriggeredRef.current = false;
+                                setActiveMobileBookingId(null);
+                                setSelectedProfessionalId(member.professionalId);
+                                setSelectedAppointmentId(appointment.id);
+                                if (!isBlocked) {
+                                  setAttendanceDraft(appointment.attendance);
+                                  setPriceAmountDraft(String(appointment.priceAmount ?? 0));
+                                }
+                                setDrawerStage("details");
+                                setQuickMenu((current) => ({ ...current, visible: false, x: 0, y: 0, time: "" }));
+                              }}
+                            >
+                              ✎
+                            </button>
+                            <button
+                              type="button"
+                              className={styles.bookingDragHandle}
+                              aria-label={t.moveVisit}
+                              title={t.moveVisit}
+                              onPointerDown={(event) => startAppointmentDrag(event, appointment, member.professionalId)}
+                              onClick={(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
+                              }}
+                            >
+                              <MoveHandleIcon />
+                            </button>
+                            <button
+                              type="button"
                               className={styles.bookingDeleteButton}
                               aria-label={isBlocked ? t.deleteBlock : t.deleteVisit}
                               title={isBlocked ? t.deleteBlock : t.deleteVisit}
@@ -5671,19 +5709,6 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
                             {isBlocked ? appointment.serviceName || t.blockedTimeFallback : appointment.customerName || t.walkInClient}
                           </strong>
                           {!isBlocked ? <span className={styles.bookingService}>{appointment.serviceName}</span> : null}
-                          <button
-                            type="button"
-                            className={styles.bookingDragHandle}
-                            aria-label={t.moveVisit}
-                            title={t.moveVisit}
-                            onPointerDown={(event) => startAppointmentDrag(event, appointment, member.professionalId)}
-                            onClick={(event) => {
-                              event.preventDefault();
-                              event.stopPropagation();
-                            }}
-                          >
-                            <MoveHandleIcon />
-                          </button>
                           <button
                             type="button"
                             className={styles.bookingResizeHandle}
