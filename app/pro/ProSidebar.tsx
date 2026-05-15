@@ -94,6 +94,16 @@ const mainLinks = [
   { key: "clients", href: "/pro/clients", icon: <ClientIcon /> }
 ] as const;
 
+const priorityPrefetchLinks = [
+  "/pro/calendar",
+  "/pro/services",
+  "/pro/clients",
+  "/pro/staff/schedule",
+  "/pro/staff/members",
+  "/pro/schedule",
+  "/pro/settings"
+] as const;
+
 export default function ProSidebar({
   active,
   professionalId = "",
@@ -102,7 +112,7 @@ export default function ProSidebar({
   const router = useRouter();
   const { t } = useProLanguage();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [optimisticMobileActive, setOptimisticMobileActive] = useState<SidebarSection | null>(null);
+  const [optimisticActive, setOptimisticActive] = useState<SidebarSection | null>(null);
   const [showScheduleReminder, setShowScheduleReminder] = useState(
     () => active !== "staff" && hasPendingScheduleReminder(professionalId)
   );
@@ -117,8 +127,29 @@ export default function ProSidebar({
   };
 
   useEffect(() => {
-    setOptimisticMobileActive(null);
+    setOptimisticActive(null);
   }, [active]);
+
+  useEffect(() => {
+    const prefetch = () => {
+      for (const href of priorityPrefetchLinks) {
+        router.prefetch(href);
+      }
+    };
+
+    const browserWindow = window as Window & {
+      requestIdleCallback?: (callback: IdleRequestCallback, options?: IdleRequestOptions) => number;
+      cancelIdleCallback?: (handle: number) => void;
+    };
+
+    if (browserWindow.requestIdleCallback) {
+      const idleId = browserWindow.requestIdleCallback(prefetch, { timeout: 1200 });
+      return () => browserWindow.cancelIdleCallback?.(idleId);
+    }
+
+    const timeoutId = globalThis.setTimeout(prefetch, 300);
+    return () => globalThis.clearTimeout(timeoutId);
+  }, [router]);
 
   useEffect(() => {
     if (!professionalId) {
@@ -179,6 +210,14 @@ export default function ProSidebar({
     }
   }
 
+  function warmRoute(href: string) {
+    router.prefetch(href);
+  }
+
+  function isDesktopLinkActive(key: SidebarSection) {
+    return optimisticActive === key || (!optimisticActive && active === key);
+  }
+
   const mobileNav = (
     <nav
       className={styles.mobileWorkspaceNav}
@@ -190,13 +229,16 @@ export default function ProSidebar({
           key={link.key}
           href={link.href}
           className={`${styles.mobileWorkspaceNavLink} ${
-            optimisticMobileActive === link.key || (!optimisticMobileActive && link.active)
+            optimisticActive === link.key || (!optimisticActive && link.active)
               ? styles.mobileWorkspaceNavActive
               : ""
           }`}
           aria-label={link.label}
           title={link.label}
-          onClick={() => setOptimisticMobileActive(link.key)}
+          onMouseEnter={() => warmRoute(link.href)}
+          onFocus={() => warmRoute(link.href)}
+          onTouchStart={() => warmRoute(link.href)}
+          onClick={() => setOptimisticActive(link.key)}
         >
           <span className={styles.mobileWorkspaceNavIcon}>
             {link.icon}
@@ -218,9 +260,12 @@ export default function ProSidebar({
             <Link
               key={link.key}
               href={link.href}
-              className={`${styles.workspaceNavButton} ${active === link.key ? styles.workspaceActive : ""}`}
+              className={`${styles.workspaceNavButton} ${isDesktopLinkActive(link.key) ? styles.workspaceActive : ""}`}
               aria-label={labels[link.key]}
               title={labels[link.key]}
+              onMouseEnter={() => warmRoute(link.href)}
+              onFocus={() => warmRoute(link.href)}
+              onClick={() => setOptimisticActive(link.key)}
             >
               {link.icon}
               {link.key === "staff" && showScheduleReminder ? (
@@ -233,9 +278,12 @@ export default function ProSidebar({
         <div className={styles.workspaceSidebarBottom}>
           <Link
             href="/pro/settings"
-            className={`${styles.workspaceNavButton} ${active === "settings" ? styles.workspaceActive : ""}`}
+            className={`${styles.workspaceNavButton} ${isDesktopLinkActive("settings") ? styles.workspaceActive : ""}`}
             aria-label={t.nav.settings}
             title={t.nav.settings}
+            onMouseEnter={() => warmRoute("/pro/settings")}
+            onFocus={() => warmRoute("/pro/settings")}
+            onClick={() => setOptimisticActive("settings")}
           >
             <SettingsIcon />
           </Link>
