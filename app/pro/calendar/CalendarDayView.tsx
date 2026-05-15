@@ -254,17 +254,29 @@ const CALENDAR_GRID_STEP_MINUTES = 10;
 const TIME_SELECT_STEP_MINUTES = 5;
 const MOBILE_READABLE_BOOKING_HEIGHT = 52;
 const SNAPSHOT_CACHE_LIMIT = 120;
+const MOBILE_ONBOARDING_STORAGE_KEY = "rezervo-pro-calendar-mobile-onboarding-v1";
+
+type MobileOnboardingState = {
+  firstBookingHintDismissed?: boolean;
+  shareNudgeDismissed?: boolean;
+  checklistCollapsed?: boolean;
+};
 
 function getCalendarStorage() {
-  if (
-    typeof window === "undefined" ||
-    typeof window.localStorage?.getItem !== "function" ||
-    typeof window.localStorage?.setItem !== "function"
-  ) {
+  if (typeof window === "undefined") {
     return null;
   }
 
-  return window.localStorage;
+  try {
+    const storage = window.localStorage;
+    if (!storage || typeof storage.getItem !== "function" || typeof storage.setItem !== "function") {
+      return null;
+    }
+
+    return storage;
+  } catch {
+    return null;
+  }
 }
 
 const CALENDAR_TEXT: Record<AppLanguage, {
@@ -1367,6 +1379,7 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
   const [activeMobileBookingId, setActiveMobileBookingId] = useState<string | null>(null);
   const [datePickerMonth, setDatePickerMonth] = useState(initialDate);
   const [isMobileViewport, setIsMobileViewport] = useState(false);
+  const [mobileOnboardingState, setMobileOnboardingState] = useState<MobileOnboardingState>({});
   const [isOffHoursCompressed, setIsOffHoursCompressed] = useState<boolean>(() => {
     return getCalendarStorage()?.getItem("rezervo-pro-calendar-offhours-compressed") !== "0";
   });
@@ -1440,6 +1453,14 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
       id: Date.now() + Math.round(Math.random() * 1000),
       text,
       tone
+    });
+  }
+
+  function updateMobileOnboardingState(patch: MobileOnboardingState) {
+    setMobileOnboardingState((current) => {
+      const nextState = { ...current, ...patch };
+      getCalendarStorage()?.setItem(MOBILE_ONBOARDING_STORAGE_KEY, JSON.stringify(nextState));
+      return nextState;
     });
   }
 
@@ -1570,6 +1591,19 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
       isOffHoursCompressed ? "1" : "0"
     );
   }, [isOffHoursCompressed]);
+
+  useEffect(() => {
+    const storedState = getCalendarStorage()?.getItem(MOBILE_ONBOARDING_STORAGE_KEY);
+    if (!storedState) {
+      return;
+    }
+
+    try {
+      setMobileOnboardingState(JSON.parse(storedState) as MobileOnboardingState);
+    } catch {
+      getCalendarStorage()?.removeItem(MOBILE_ONBOARDING_STORAGE_KEY);
+    }
+  }, []);
 
   useEffect(() => {
     if (!snapshot?.viewer.language) {
@@ -2510,6 +2544,127 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
   );
   const publicBookingUrl = snapshot?.workspace.business.publicBookingUrl ?? "";
   const publicBookingEnabled = snapshot?.workspace.business.allowOnlineBooking === true;
+  const workspaceServices = snapshot?.workspace.services ?? [];
+  const todayBookingCount = useMemo(
+    () =>
+      visibleCalendars.reduce(
+        (count, member) =>
+          count + member.appointments.filter((appointment) => appointment.appointmentDate === selectedDate && appointment.kind !== "blocked").length,
+        0
+      ),
+    [selectedDate, visibleCalendars]
+  );
+  const totalBookingCount = useMemo(
+    () => allCalendarAppointments.filter((appointment) => appointment.kind !== "blocked").length,
+    [allCalendarAppointments]
+  );
+  const hasConfiguredSchedule = useMemo(
+    () =>
+      memberCalendars.some((member) =>
+        Object.values(member.memberSchedule.workSchedule).some((dayScheduleItem) => dayScheduleItem.enabled)
+      ),
+    [memberCalendars]
+  );
+  const mobileOnboardingCopy = useMemo(() => {
+    if (uiLanguage === "en") {
+      return {
+        emptyTitle: "No bookings today",
+        emptyText: "Add the first appointment or open online booking for clients.",
+        addBooking: "Add appointment",
+        setupOnlineBooking: "Set up online booking",
+        firstHintTitle: "Clients can book themselves",
+        firstHintText: "Free slots in your calendar become available online, so there are fewer messages and no double bookings.",
+        firstHintAction: "Create first appointment",
+        shareTitle: "Clients will be able to book themselves",
+        shareAction: "Enable online booking",
+        checklistTitle: "Setup checklist",
+        checklistProgress: (done: number, total: number) => `${done} of ${total}`,
+        checklistServices: "Add service",
+        checklistSchedule: "Set schedule",
+        checklistBooking: "Enable online booking",
+        checklistShare: "Share link",
+        collapse: "Collapse",
+        expand: "Expand",
+        dismiss: "Dismiss",
+        servicesEmptyTitle: "No services yet",
+        servicesEmptyText: "Add services with duration and price so bookings are created faster.",
+        servicesEmptyAction: "Add service",
+        clientsEmptyAction: "Add client"
+      };
+    }
+
+    if (uiLanguage === "uk") {
+      return {
+        emptyTitle: "Сьогодні записів немає",
+        emptyText: "Додайте перший запис або відкрийте онлайн-запис для клієнтів.",
+        addBooking: "Додати запис",
+        setupOnlineBooking: "Налаштувати онлайн-запис",
+        firstHintTitle: "Клієнти можуть записуватися самі",
+        firstHintText: "Вільні слоти в календарі стають доступними онлайн, тож менше повідомлень і жодних подвійних записів.",
+        firstHintAction: "Створити перший запис",
+        shareTitle: "Клієнти зможуть записуватися самі",
+        shareAction: "Увімкнути онлайн-запис",
+        checklistTitle: "Чеклист запуску",
+        checklistProgress: (done: number, total: number) => `${done} з ${total}`,
+        checklistServices: "Додати послугу",
+        checklistSchedule: "Налаштувати графік",
+        checklistBooking: "Увімкнути онлайн-запис",
+        checklistShare: "Поділитися посиланням",
+        collapse: "Згорнути",
+        expand: "Розгорнути",
+        dismiss: "Сховати",
+        servicesEmptyTitle: "Послуг ще немає",
+        servicesEmptyText: "Додайте послуги з тривалістю та ціною, щоб створювати записи швидше.",
+        servicesEmptyAction: "Додати послугу",
+        clientsEmptyAction: "Додати клієнта"
+      };
+    }
+
+    return {
+      emptyTitle: "Сегодня записей нет",
+      emptyText: "Добавьте первую запись или откройте онлайн-запись для клиентов.",
+      addBooking: "Добавить запись",
+      setupOnlineBooking: "Настроить онлайн-запись",
+      firstHintTitle: "Клиенты могут записываться сами",
+      firstHintText: "Свободные окна в календаре становятся доступными онлайн, меньше переписок и без двойных записей.",
+      firstHintAction: "Создать первую запись",
+      shareTitle: "Клиенты смогут записываться сами",
+      shareAction: "Включить онлайн-запись",
+      checklistTitle: "Чеклист запуска",
+      checklistProgress: (done: number, total: number) => `${done} из ${total}`,
+      checklistServices: "Добавить услугу",
+      checklistSchedule: "Настроить график",
+      checklistBooking: "Включить онлайн-запись",
+      checklistShare: "Поделиться ссылкой",
+      collapse: "Свернуть",
+      expand: "Развернуть",
+      dismiss: "Скрыть",
+      servicesEmptyTitle: "Услуг пока нет",
+      servicesEmptyText: "Добавьте услуги с длительностью и ценой, чтобы быстрее создавать записи.",
+      servicesEmptyAction: "Добавить услугу",
+      clientsEmptyAction: "Добавить клиента"
+    };
+  }, [uiLanguage]);
+  const mobileChecklistItems = useMemo(
+    () => [
+      { key: "services", label: mobileOnboardingCopy.checklistServices, done: workspaceServices.length > 0 },
+      { key: "schedule", label: mobileOnboardingCopy.checklistSchedule, done: hasConfiguredSchedule },
+      { key: "booking", label: mobileOnboardingCopy.checklistBooking, done: publicBookingEnabled },
+      { key: "share", label: mobileOnboardingCopy.checklistShare, done: publicBookingEnabled && Boolean(publicBookingUrl) }
+    ],
+    [hasConfiguredSchedule, mobileOnboardingCopy, publicBookingEnabled, publicBookingUrl, workspaceServices.length]
+  );
+  const mobileChecklistDoneCount = mobileChecklistItems.filter((item) => item.done).length;
+  const shouldShowMobileOnboarding =
+    isMobileViewport && viewMode === "day" && drawerStage === "closed" && Boolean(snapshot);
+  const shouldShowFirstBookingHint =
+    shouldShowMobileOnboarding && totalBookingCount === 0 && !mobileOnboardingState.firstBookingHintDismissed;
+  const shouldShowShareNudge =
+    shouldShowMobileOnboarding && !publicBookingEnabled && !mobileOnboardingState.shareNudgeDismissed;
+  const shouldShowMobileChecklist =
+    shouldShowMobileOnboarding && mobileChecklistDoneCount < mobileChecklistItems.length;
+  const shouldShowEmptyCalendarState =
+    shouldShowMobileOnboarding && todayBookingCount === 0;
   const canUseNativeShare =
     typeof navigator !== "undefined" && typeof navigator.share === "function";
   const filteredNewClientPhoneCountries = useMemo(() => {
@@ -5475,6 +5630,82 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
 
         {renderCalendarToast()}
 
+        {shouldShowMobileOnboarding ? (
+          <section className={styles.calendarMobileOnboardingStack} aria-label={mobileOnboardingCopy.checklistTitle}>
+            {shouldShowFirstBookingHint ? (
+              <article className={`${styles.calendarMobileOnboardingCard} ${styles.calendarMobileOnboardingCardHero}`}>
+                <button
+                  type="button"
+                  className={styles.calendarMobileOnboardingDismiss}
+                  aria-label={mobileOnboardingCopy.dismiss}
+                  onClick={() => updateMobileOnboardingState({ firstBookingHintDismissed: true })}
+                >
+                  ×
+                </button>
+                <div>
+                  <strong>{mobileOnboardingCopy.firstHintTitle}</strong>
+                  <span>{mobileOnboardingCopy.firstHintText}</span>
+                </div>
+                <button type="button" className={styles.calendarMobileOnboardingPrimary} onClick={() => openNewVisit(getSuggestedVisitStartTime())}>
+                  {mobileOnboardingCopy.firstHintAction}
+                </button>
+              </article>
+            ) : null}
+
+            {shouldShowShareNudge ? (
+              <article className={styles.calendarMobileOnboardingCard}>
+                <button
+                  type="button"
+                  className={styles.calendarMobileOnboardingDismiss}
+                  aria-label={mobileOnboardingCopy.dismiss}
+                  onClick={() => updateMobileOnboardingState({ shareNudgeDismissed: true })}
+                >
+                  ×
+                </button>
+                <div>
+                  <strong>{mobileOnboardingCopy.shareTitle}</strong>
+                  <span>{t.publicLinkHint}</span>
+                </div>
+                <button
+                  type="button"
+                  className={styles.calendarMobileOnboardingGhost}
+                  onClick={() => void togglePublicBooking()}
+                  disabled={!canTogglePublicBooking || isTogglingPublicBooking}
+                >
+                  {mobileOnboardingCopy.shareAction}
+                </button>
+              </article>
+            ) : null}
+
+            {shouldShowMobileChecklist ? (
+              <article className={styles.calendarMobileChecklistCard}>
+                <button
+                  type="button"
+                  className={styles.calendarMobileChecklistHeader}
+                  aria-expanded={!mobileOnboardingState.checklistCollapsed}
+                  onClick={() => updateMobileOnboardingState({ checklistCollapsed: !mobileOnboardingState.checklistCollapsed })}
+                >
+                  <span>
+                    <strong>{mobileOnboardingCopy.checklistTitle}</strong>
+                    <small>{mobileOnboardingCopy.checklistProgress(mobileChecklistDoneCount, mobileChecklistItems.length)}</small>
+                  </span>
+                  <em>{mobileOnboardingState.checklistCollapsed ? mobileOnboardingCopy.expand : mobileOnboardingCopy.collapse}</em>
+                </button>
+                {!mobileOnboardingState.checklistCollapsed ? (
+                  <div className={styles.calendarMobileChecklistItems}>
+                    {mobileChecklistItems.map((item) => (
+                      <span key={item.key} className={item.done ? styles.calendarMobileChecklistItemDone : ""}>
+                        <b>{item.done ? "✓" : ""}</b>
+                        {item.label}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
+              </article>
+            ) : null}
+          </section>
+        ) : null}
+
         {isMobileViewport && isMobileCreateSheetOpen ? (
           <div
             className={styles.calendarMobileCreateOverlay}
@@ -5828,6 +6059,26 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
                 );
               })}
             </div>
+            {shouldShowEmptyCalendarState ? (
+              <article className={styles.calendarMobileEmptyDayCard}>
+                <div>
+                  <strong>{mobileOnboardingCopy.emptyTitle}</strong>
+                  <span>{mobileOnboardingCopy.emptyText}</span>
+                </div>
+                <div className={styles.calendarMobileEmptyDayActions}>
+                  <button type="button" onClick={() => openNewVisit(getSuggestedVisitStartTime())}>
+                    {mobileOnboardingCopy.addBooking}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void togglePublicBooking()}
+                    disabled={publicBookingEnabled || !canTogglePublicBooking || isTogglingPublicBooking}
+                  >
+                    {publicBookingEnabled ? t.publicLinkEnabled : mobileOnboardingCopy.setupOnlineBooking}
+                  </button>
+                </div>
+              </article>
+            ) : null}
           </div>
         </div>
         </>
@@ -6306,6 +6557,16 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
                   {t.addNewService(serviceQuery.trim())}
                 </button>
               ) : null}
+
+              {!serviceQuery.trim() && filteredServices.length === 0 ? (
+                <div className={styles.calendarServiceEmpty}>
+                  <strong>{mobileOnboardingCopy.servicesEmptyTitle}</strong>
+                  <span>{mobileOnboardingCopy.servicesEmptyText}</span>
+                  <button type="button" className={styles.ghostButton} onClick={() => router.push("/pro/services")}>
+                    {mobileOnboardingCopy.servicesEmptyAction}
+                  </button>
+                </div>
+              ) : null}
             </div>
           </div>
         ) : drawerStage === "client-search" ? (
@@ -6484,6 +6745,18 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
                     }}
                   >
                     {t.addNamedClient(clientQuery.trim())}
+                  </button>
+                ) : null}
+                {!clientQuery.trim() && !showNewClientForm ? (
+                  <button
+                    type="button"
+                    className={styles.ghostButton}
+                    onClick={() => {
+                      setShowNewClientForm(true);
+                      setNewClientName("");
+                    }}
+                  >
+                    {mobileOnboardingCopy.clientsEmptyAction}
                   </button>
                 ) : null}
               </div>
