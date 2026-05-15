@@ -324,23 +324,34 @@ export default function ServicesView({ initialWorkspace, catalog, onboardingCta 
     setIsSaving(true);
     setStatusText("");
 
-    const response = await fetch("/api/pro/services", {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ serviceId: editId, ...editDraft })
-    });
-    const payload = await response.json();
+    try {
+      const response = await fetch("/api/pro/services", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ serviceId: editId, ...editDraft })
+      });
+      const payload = await response.json();
 
-    if (!response.ok) {
-      setStatusText(payload.error || t.services.enterName);
+      if (!response.ok) {
+        setStatusText(payload.error || t.services.enterName);
+        return;
+      }
+
+      if (payload?.id) {
+        setServices((current) =>
+          normalizeServices(current.map((service) => (service.id === payload.id ? payload : service)))
+        );
+      } else {
+        await reloadServices();
+      }
+
+      setEditId(null);
+      setStatusText(t.services.updated);
+    } catch {
+      setStatusText(t.services.enterName);
+    } finally {
       setIsSaving(false);
-      return;
     }
-
-    await reloadServices();
-    setEditId(null);
-    setStatusText(t.services.updated);
-    setIsSaving(false);
   }
 
   async function removeService() {
