@@ -506,7 +506,7 @@ const copy = {
     calendar: "Календар",
     clients: "Клієнти",
     services: "Послуги",
-    staff: "Співробітники",
+    staff: "Команда",
     settings: "Налаштування",
     signOut: "Вийти",
     requiredTitle: "Потрібні дані",
@@ -771,9 +771,11 @@ const copy = {
     serviceModeOnsite: "Клієнти приходять у мій заклад",
     serviceModeTravel: "Я працюю з виїздом до клієнта",
     serviceModeOnline: "Я надаю послуги онлайн",
-    calendarHeaderTitle: "Денний календар",
+    calendarHeaderTitle: "Календар",
     loadWorkspaceFailed: "Не вдалося завантажити кабінет.",
     empty: "Поки порожньо",
+    emptyCalendarTitle: "Поки немає записів",
+    emptyCalendarText: "Натисніть +, щоб додати перший візит",
   },
   ru: {
     login: "Войти",
@@ -790,7 +792,7 @@ const copy = {
     calendar: "Календарь",
     clients: "Клиенты",
     services: "Услуги",
-    staff: "Сотрудники",
+    staff: "Команда",
     settings: "Настройки",
     signOut: "Выйти",
     requiredTitle: "Нужны данные",
@@ -1055,9 +1057,11 @@ const copy = {
     serviceModeOnsite: "Клиенты приходят в мое заведение",
     serviceModeTravel: "Я работаю с выездом к клиенту",
     serviceModeOnline: "Я предоставляю услуги онлайн",
-    calendarHeaderTitle: "Дневной календарь",
+    calendarHeaderTitle: "Календарь",
     loadWorkspaceFailed: "Не удалось загрузить кабинет.",
     empty: "Пока пусто",
+    emptyCalendarTitle: "Пока нет записей",
+    emptyCalendarText: "Нажмите +, чтобы добавить первый визит",
   },
   en: {
     login: "Sign in",
@@ -1074,7 +1078,7 @@ const copy = {
     calendar: "Calendar",
     clients: "Clients",
     services: "Services",
-    staff: "Staff",
+    staff: "Team",
     settings: "Settings",
     signOut: "Sign out",
     requiredTitle: "Missing details",
@@ -1339,9 +1343,11 @@ const copy = {
     serviceModeOnsite: "Clients come to my location",
     serviceModeTravel: "I travel to clients",
     serviceModeOnline: "I provide services online",
-    calendarHeaderTitle: "Daily calendar",
+    calendarHeaderTitle: "Calendar",
     loadWorkspaceFailed: "Failed to load workspace.",
     empty: "Empty for now",
+    emptyCalendarTitle: "No bookings yet",
+    emptyCalendarText: "Tap + to add the first visit",
   },
 } satisfies Record<AppLanguage, Record<string, string>>;
 
@@ -1986,7 +1992,9 @@ function insertWorkIntervalRecord(intervals: WorkIntervalRecord[], index: number
 }
 
 function getClosedShortLabel(language: AppLanguage) {
-  return "of";
+  if (language === "uk") return "Вих.";
+  if (language === "ru") return "Вых.";
+  return "Off";
 }
 
 export default function App() {
@@ -3217,6 +3225,10 @@ function CalendarTab({
     if (!query) return true;
     return `${member.name} ${member.role}`.toLowerCase().includes(query);
   });
+  const visibleDayAppointmentCount = visibleCalendarMembers.reduce(
+    (sum, member) => sum + getAppointmentsForMember(selectedDate, member.id).filter((appointment) => appointment.kind !== "blocked").length,
+    0
+  );
 
   const mergeRangeSnapshots = useCallback((snapshots: Record<string, CalendarSnapshot>) => {
     const entries = Object.entries(snapshots);
@@ -3524,14 +3536,6 @@ function CalendarTab({
           <Ionicons name="chevron-forward" size={18} color="#0F172A" />
         </Pressable>
         <View style={styles.toolbarSpacer} />
-        <Pressable
-          style={styles.modeButton}
-          onPress={() => setIsCompact((current) => !current)}
-        >
-          <Text style={styles.modeButtonText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.66}>
-            {isCompact ? t.detailed : t.compact}
-          </Text>
-        </Pressable>
         <Pressable style={styles.modeButton} onPress={() => setViewMenuOpen(true)}>
           <Text style={styles.modeButtonText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.66}>
             {activeViewLabel}
@@ -3555,14 +3559,14 @@ function CalendarTab({
               <View style={styles.teamCalendarBodyRow}>
                 <View style={styles.teamLeftAxisColumn}>
                   <View style={styles.teamPickerRail}>
-                    <Pressable style={styles.teamPickerButton} onPress={() => setMemberPickerOpen(true)}>
-                      <Ionicons name="people-outline" size={19} color="#0F172A" />
-                      {calendarMembers.length > 1 ? (
+                    {calendarMembers.length > 1 ? (
+                      <Pressable style={styles.teamPickerButton} onPress={() => setMemberPickerOpen(true)}>
+                        <Ionicons name="people-outline" size={18} color="#0F172A" />
                         <View style={styles.teamPickerBadge}>
                           <Text style={styles.teamPickerBadgeText}>{selectedMembers.length || 1}</Text>
                         </View>
-                      ) : null}
-                    </Pressable>
+                      </Pressable>
+                    ) : null}
                   </View>
                   <CalendarTimeAxis date={selectedDate} compact={isCompact} schedule={selectedSchedule} />
                 </View>
@@ -3613,6 +3617,12 @@ function CalendarTab({
                 </ScrollView>
               </View>
             </ScrollView>
+            {!visibleDayAppointmentCount ? (
+              <View pointerEvents="none" style={styles.calendarEmptyState}>
+                <Text style={styles.calendarEmptyTitle}>{t.emptyCalendarTitle || t.empty}</Text>
+                <Text style={styles.calendarEmptyText}>{t.emptyCalendarText || t.newVisit}</Text>
+              </View>
+            ) : null}
           </View>
         </>
       ) : (
@@ -3637,9 +3647,7 @@ function CalendarTab({
       <Pressable
         style={({ pressed }) => [styles.fabButton, pressed && styles.pressablePressed]}
         onPress={() => {
-          setEditingAppointment(null);
-          setVisitDraft({ ...createDefaultVisitDraft(selectedDate, getRoundedTime(10)), targetProfessionalId: primaryMember?.id });
-          setComposerOpen(true);
+          setTimeAction({ date: selectedDate, time: getRoundedTime(10), targetProfessionalId: primaryMember?.id });
         }}
       >
         <Ionicons name="add" size={34} color="#FFFFFF" />
@@ -3823,14 +3831,14 @@ function CalendarTab({
                 />
                 {editingAppointment ? (
                   <Pressable
-                    style={[styles.secondaryButton, styles.dangerButton, busy && styles.disabled]}
+                    style={[styles.dangerTextButton, busy && styles.disabled]}
                     disabled={busy}
                     onPress={() => {
                       setComposerOpen(false);
                       onDeleteAppointment(editingAppointment);
                     }}
                   >
-                    <Text style={styles.dangerButtonText}>{t.delete}</Text>
+                    <Text style={styles.dangerTextButtonText}>{t.delete}</Text>
                   </Pressable>
                 ) : null}
               </>
@@ -3896,12 +3904,23 @@ function CalendarTab({
                 </Pressable>
               );
             })}
+            <View style={styles.viewMenuDivider} />
+            <Pressable
+              style={styles.viewMenuItem}
+              onPress={() => {
+                setIsCompact((current) => !current);
+                setViewMenuOpen(false);
+              }}
+            >
+              <Text style={styles.viewMenuText}>{isCompact ? t.detailed : t.compact}</Text>
+              <Ionicons name="options-outline" size={18} color="#64748B" />
+            </Pressable>
           </View>
         </Pressable>
       </Modal>
 
       <Modal transparent visible={Boolean(timeAction)} animationType="fade" onRequestClose={() => setTimeAction(null)}>
-        <Pressable style={styles.menuBackdrop} onPress={() => setTimeAction(null)}>
+        <Pressable style={styles.timeActionBackdrop} onPress={() => setTimeAction(null)}>
           <View style={styles.timeActionMenu}>
             <Text style={styles.timeActionTitle}>{timeAction?.time}</Text>
             <Pressable
@@ -4149,16 +4168,19 @@ function CalendarOverview({
                 <Text style={[styles.monthDayNumber, selected && styles.summaryDateActive, closed && styles.summaryClosedText, muted && styles.mutedText]}>
                   {Number(date.slice(-2))}
                 </Text>
-                {appointments.length ? (
-                  <View style={styles.dayCountBadge}>
-                    <Text style={styles.dayCountBadgeText}>{appointments.length}</Text>
-                  </View>
-                ) : null}
               </View>
               {closed ? (
                 <View style={styles.closedBadge}>
-                  <Ionicons name="moon-outline" size={12} color="#64748B" />
                   <Text style={styles.closedBadgeText}>{getClosedShortLabel(language)}</Text>
+                </View>
+              ) : appointments.length ? (
+                <View style={styles.monthVisitBadge}>
+                  <Text style={styles.monthVisitBadgeText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72}>{appointments.length} {t.visits}</Text>
+                  <View style={styles.monthVisitDots}>
+                    {appointments.slice(0, 3).map((appointment, index) => (
+                      <View key={`${appointment.id}-${appointment.startTime}-${index}`} style={[styles.monthVisitDot, { backgroundColor: index % 3 === 0 ? "#A78BFA" : index % 3 === 1 ? "#7DD3FC" : "#86EFAC" }]} />
+                    ))}
+                  </View>
                 </View>
               ) : (
                 <View style={styles.compactWorkTime}>
@@ -4170,10 +4192,6 @@ function CalendarOverview({
                   </Text>
                 </View>
               )}
-              <View style={styles.visitMiniLine}>
-                <Ionicons name="people-outline" size={12} color={appointments.length ? "#6D4AFF" : "#94A3B8"} />
-                <Text style={[styles.visitMiniText, appointments.length ? styles.visitMiniTextActive : null]}>{appointments.length}</Text>
-              </View>
             </Pressable>
           );
         })}
@@ -4181,8 +4199,8 @@ function CalendarOverview({
     );
   }
 
-  const dayColumnWidth = mode === "threeDays" ? 102 : 92;
-  const memberRowHeight = 122;
+  const dayColumnWidth = mode === "threeDays" ? 104 : 96;
+  const memberRowHeight = 108;
 
   return (
     <ScrollView
@@ -4211,8 +4229,8 @@ function CalendarOverview({
         {(members.length ? members : []).map((member) => (
           <View key={member.id} style={[styles.teamOverviewRow, { minHeight: memberRowHeight }]}>
             <Pressable style={styles.teamOverviewMemberCell} onPress={() => onOpenDay(selectedDate)}>
-              <MemberAvatar member={member} size={38} />
-              <Text style={styles.teamOverviewMemberName} numberOfLines={2}>{member.name}</Text>
+              <MemberAvatar member={member} size={34} />
+              <Text style={styles.teamOverviewMemberName} numberOfLines={1}>{member.name}</Text>
             </Pressable>
             {dates.map((date) => {
               const appointments = getAppointmentsForMember(date, member.id);
@@ -4226,7 +4244,7 @@ function CalendarOverview({
                   onLongPress={() => onCreateAt(date, member.id)}
                 >
                   {appointments.slice(0, 3).map((appointment, index) => (
-                    <View key={appointment.id} style={[styles.teamOverviewAppointmentBar, { backgroundColor: index % 3 === 0 ? "#8DD8C7" : index % 3 === 1 ? "#FF9A82" : "#9ED96B" }]}>
+                    <View key={appointment.id} style={[styles.teamOverviewAppointmentBar, { backgroundColor: index % 3 === 0 ? "#BFEDE4" : index % 3 === 1 ? "#FFD4C8" : "#D9F5BE" }]}>
                       <Text style={styles.teamOverviewAppointmentText}>{appointment.startTime}</Text>
                     </View>
                   ))}
@@ -4488,7 +4506,7 @@ function CalendarTimeline({
         const visualGap = actualHeight > 8 ? 2 : 0;
         const blockTop = top + visualGap / 2;
         const height = Math.max(1, actualHeight - visualGap);
-        const color = index % 3 === 0 ? "#FF9A82" : index % 3 === 1 ? "#FFD166" : "#9ED96B";
+        const color = index % 3 === 0 ? "#FFD7CB" : index % 3 === 1 ? "#FFE8A8" : "#D8F4BE";
         const availableWidth = gridWidth - laneGap * 2;
         const blockGap = laneCount > 1 ? 2 : 0;
         const blockWidth = laneCount > 1 ? (availableWidth - blockGap * (laneCount - 1)) / laneCount : availableWidth;
@@ -4516,36 +4534,17 @@ function CalendarTimeline({
               },
             ]}
             onPress={() => onAppointmentPress(appointment)}
+            onLongPress={() => onAppointmentMove(appointment)}
           >
-            <Pressable
-              style={[styles.appointmentDeleteButton, isCompactCard && styles.appointmentDeleteButtonTight]}
-              onPress={(event) => {
-                event.stopPropagation();
-                onAppointmentDelete(appointment);
-              }}
-            >
-              <Ionicons name="close" size={isCompactCard ? 11 : 13} color="#F43F5E" />
-            </Pressable>
-            <Pressable
-              style={[styles.appointmentMoveButton, isCompactCard && styles.appointmentMoveButtonTight]}
-              onPress={(event) => {
-                event.stopPropagation();
-                onAppointmentMove(appointment);
-              }}
-            >
-              <Ionicons name="move" size={isCompactCard ? 10 : 12} color="#475569" />
-            </Pressable>
             <Text style={[styles.appointmentTime, isCompactCard && styles.appointmentTimeTight, isVeryTightCard && styles.appointmentTimeVeryTight]} numberOfLines={1} ellipsizeMode="tail" adjustsFontSizeToFit minimumFontScale={0.78}>
               {timeLabel}
             </Text>
             <Text style={[styles.appointmentClient, isCompactCard && styles.appointmentClientTight, isVeryTightCard && styles.appointmentClientVeryTight]} numberOfLines={1} ellipsizeMode="tail">
               {appointment.customerName || t.customer}
             </Text>
-            {!isTinyCard ? (
-              <Text style={[styles.appointmentService, isCompactCard && styles.appointmentServiceTight, isVeryTightCard && styles.appointmentServiceVeryTight]} numberOfLines={1} ellipsizeMode="tail">
-                {formatAppointmentServiceName ? formatAppointmentServiceName(appointment) : appointment.serviceName}
-              </Text>
-            ) : null}
+            <Text style={[styles.appointmentService, isCompactCard && styles.appointmentServiceTight, isVeryTightCard && styles.appointmentServiceVeryTight]} numberOfLines={1} ellipsizeMode="tail">
+              {formatAppointmentServiceName ? formatAppointmentServiceName(appointment) : appointment.serviceName}
+            </Text>
             <Text style={styles.appointmentPrice}>{formatMoney(appointment.priceAmount, currency)}</Text>
           </Pressable>
         );
@@ -4852,9 +4851,13 @@ function WorkspaceHeader({
         </Text>
       </View>
       <View style={styles.nativeHeaderActions}>
-        <AppIconButton icon="rocket" active={panel === "setup"} badge={setupMissingCount} badgeTone="red" onPress={() => void openPanel("setup")} />
-        <AppIconButton icon="cloud-upload-outline" active={panel === "share"} onPress={() => void openPanel("share")} />
-        <AppIconButton icon="chatbubble-ellipses-outline" tone="cyan" active={panel === "support"} onPress={() => void openPanel("support")} />
+        <AppIconButton icon={setupMissingCount ? "rocket" : "checkmark"} active={panel === "setup"} badge={setupMissingCount} badgeTone="red" onPress={() => void openPanel("setup")} />
+        {activeTab !== "calendar" ? (
+          <>
+            <AppIconButton icon="cloud-upload-outline" active={panel === "share"} onPress={() => void openPanel("share")} />
+            <AppIconButton icon="chatbubble-ellipses-outline" tone="cyan" active={panel === "support"} onPress={() => void openPanel("support")} />
+          </>
+        ) : null}
         <AppIconButton icon="notifications-outline" active={panel === "notifications"} badge={pendingCount} onPress={() => void openPanel("notifications")} />
         <Pressable style={styles.profilePill} onPress={() => void openPanel("account")}>
           <View style={styles.smallAvatar}>
@@ -4885,7 +4888,7 @@ function AppIconButton({
 }) {
   return (
     <Pressable onPress={onPress} style={[styles.headerIconButton, active && styles.headerIconButtonActive, tone === "cyan" && styles.headerIconButtonCyan]}>
-      <Ionicons name={icon} size={20} color={active ? "#FFFFFF" : tone === "cyan" ? "#0891B2" : "#432C75"} />
+      <Ionicons name={icon} size={18} color={active ? "#FFFFFF" : tone === "cyan" ? "#0891B2" : "#432C75"} />
       {badge ? (
         <View style={[styles.headerIconBadge, badgeTone === "red" && styles.headerIconBadgeRed]}>
           <Text style={styles.headerIconBadgeText}>{badge > 9 ? "9+" : badge}</Text>
@@ -4940,7 +4943,7 @@ function BottomNavigation({
     { tab: "calendar", icon: "home-outline", label: t.home },
     { tab: "services", icon: "pricetag-outline", label: t.services },
     { tab: "clients", icon: "id-card-outline", label: t.clients },
-    { tab: "staff", icon: "people-outline", label: t.staff },
+    { tab: "staff", icon: "people-outline", label: t.teamAccount || t.staff },
     { tab: "settings", icon: "settings-outline", label: t.settings },
   ];
 
@@ -7276,10 +7279,10 @@ const styles = StyleSheet.create({
     backgroundColor: DESIGN.colors.background,
   },
   nativeHeader: {
-    minHeight: 68,
+    minHeight: 66,
     paddingHorizontal: DESIGN.spacing.screen,
-    paddingTop: 10,
-    paddingBottom: 10,
+    paddingTop: 9,
+    paddingBottom: 9,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -7287,10 +7290,10 @@ const styles = StyleSheet.create({
     borderBottomColor: "rgba(229, 234, 243, 0.9)",
     backgroundColor: "rgba(255, 255, 255, 0.96)",
     shadowColor: "#64748B",
-    shadowOpacity: 0.08,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: 6 },
-    elevation: 3,
+    shadowOpacity: 0.06,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 5 },
+    elevation: 2,
   },
   headerTitleStack: {
     flex: 1,
@@ -7299,9 +7302,9 @@ const styles = StyleSheet.create({
   },
   nativeHeaderTitle: {
     color: DESIGN.colors.text,
-    fontSize: 19,
-    lineHeight: 23,
-    fontWeight: "900",
+    fontSize: 18,
+    lineHeight: 22,
+    fontWeight: "800",
   },
   headerBusinessInline: {
     marginTop: 3,
@@ -7313,11 +7316,11 @@ const styles = StyleSheet.create({
   nativeHeaderActions: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 7,
+    gap: 6,
   },
   headerIconButton: {
-    width: 38,
-    height: 38,
+    width: 36,
+    height: 36,
     borderRadius: DESIGN.radius.pill,
     alignItems: "center",
     justifyContent: "center",
@@ -7325,9 +7328,9 @@ const styles = StyleSheet.create({
     borderColor: "#E2DDFF",
     backgroundColor: DESIGN.colors.surface,
     shadowColor: "#64748B",
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04,
+    shadowRadius: 7,
+    shadowOffset: { width: 0, height: 3 },
   },
   headerIconBadge: {
     position: "absolute",
@@ -7364,9 +7367,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#ECFEFF",
   },
   profilePill: {
-    height: 40,
-    minWidth: 58,
-    paddingHorizontal: 5,
+    height: 36,
+    minWidth: 54,
+    paddingHorizontal: 4,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
@@ -7376,13 +7379,13 @@ const styles = StyleSheet.create({
     borderColor: DESIGN.colors.border,
     backgroundColor: DESIGN.colors.surface,
     shadowColor: "#64748B",
-    shadowOpacity: 0.07,
-    shadowRadius: 9,
-    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.04,
+    shadowRadius: 7,
+    shadowOffset: { width: 0, height: 3 },
   },
   smallAvatar: {
-    width: 29,
-    height: 29,
+    width: 27,
+    height: 27,
     borderRadius: DESIGN.radius.pill,
     alignItems: "center",
     justifyContent: "center",
@@ -7810,14 +7813,14 @@ const styles = StyleSheet.create({
     backgroundColor: DESIGN.colors.background,
   },
   calendarToolbar: {
-    minHeight: 62,
+    minHeight: 54,
     paddingHorizontal: 10,
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
     borderBottomWidth: 1,
     borderBottomColor: DESIGN.colors.border,
-    backgroundColor: DESIGN.colors.surfaceSoft,
+    backgroundColor: DESIGN.colors.surface,
   },
   toolbarSpacer: {
     flex: 1,
@@ -7826,7 +7829,7 @@ const styles = StyleSheet.create({
     minWidth: 58,
     maxWidth: 98,
     flexShrink: 1,
-    height: 42,
+    height: 40,
     paddingHorizontal: 10,
     flexDirection: "row",
     alignItems: "center",
@@ -7843,8 +7846,8 @@ const styles = StyleSheet.create({
   },
   modeButtonText: {
     color: DESIGN.colors.text,
-    fontSize: 12,
-    fontWeight: "900",
+    fontSize: 13,
+    fontWeight: "800",
   },
   modeButtonTextActive: {
     color: DESIGN.colors.primaryDark,
@@ -7909,10 +7912,10 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
   masterName: {
-    marginTop: 5,
+    marginTop: 4,
     color: "#1F2937",
-    fontSize: 13,
-    fontWeight: "900",
+    fontSize: 12,
+    fontWeight: "800",
   },
   calendarScroll: {
     flex: 1,
@@ -7924,6 +7927,29 @@ const styles = StyleSheet.create({
   teamCalendarBoard: {
     flex: 1,
   },
+  calendarEmptyState: {
+    position: "absolute",
+    left: CALENDAR_TIME_AXIS_WIDTH + 18,
+    right: 18,
+    top: 128,
+    padding: 16,
+    borderRadius: DESIGN.radius.lg,
+    borderWidth: 1,
+    borderColor: "rgba(216, 208, 255, 0.72)",
+    backgroundColor: "rgba(255, 255, 255, 0.86)",
+  },
+  calendarEmptyTitle: {
+    color: DESIGN.colors.text,
+    fontSize: 16,
+    fontWeight: "800",
+  },
+  calendarEmptyText: {
+    marginTop: 4,
+    color: DESIGN.colors.muted,
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: "600",
+  },
   teamMembersHorizontal: {
     flex: 1,
   },
@@ -7932,9 +7958,9 @@ const styles = StyleSheet.create({
   },
   teamMembersHeaderRow: {
     flexDirection: "row",
-    height: 70,
+    height: 62,
     borderBottomWidth: 1,
-    borderBottomColor: "#E2E8F0",
+    borderBottomColor: DESIGN.colors.border,
     backgroundColor: "#FFFFFF",
   },
   teamMembersBodyRow: {
@@ -7951,11 +7977,11 @@ const styles = StyleSheet.create({
   },
   teamPickerRail: {
     width: CALENDAR_TIME_AXIS_WIDTH,
-    height: 70,
+    height: 62,
     borderRightWidth: 1,
     borderBottomWidth: 1,
-    borderRightColor: "#E2E8F0",
-    borderBottomColor: "#E2E8F0",
+    borderRightColor: DESIGN.colors.border,
+    borderBottomColor: DESIGN.colors.border,
     backgroundColor: "#FFFFFF",
   },
   teamPickerRailBody: {
@@ -7990,10 +8016,10 @@ const styles = StyleSheet.create({
     zIndex: 5,
   },
   teamPickerButton: {
-    width: 44,
-    height: 44,
-    marginTop: 12,
-    marginLeft: 10,
+    width: 40,
+    height: 40,
+    marginTop: 10,
+    marginLeft: 12,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 22,
@@ -8021,15 +8047,15 @@ const styles = StyleSheet.create({
   teamDayColumn: {
     overflow: "hidden",
     borderRightWidth: 1,
-    borderRightColor: "#E2E8F0",
+    borderRightColor: DESIGN.colors.border,
     backgroundColor: "#FFFFFF",
   },
   teamDayHeader: {
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 8,
+    paddingHorizontal: 6,
     borderRightWidth: 1,
-    borderRightColor: "#E2E8F0",
+    borderRightColor: DESIGN.colors.border,
     backgroundColor: "#FFFFFF",
   },
   teamPickerMenu: {
@@ -8090,7 +8116,7 @@ const styles = StyleSheet.create({
   },
   overviewScroll: {
     flex: 1,
-    backgroundColor: "#F6F8FC",
+    backgroundColor: DESIGN.colors.background,
   },
   summaryStrip: {
     paddingHorizontal: 12,
@@ -8099,92 +8125,92 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
   },
   teamOverviewContent: {
-    paddingHorizontal: 12,
-    paddingVertical: 14,
+    paddingHorizontal: 10,
+    paddingVertical: 12,
   },
   teamOverviewGrid: {
     overflow: "hidden",
-    borderRadius: 14,
+    borderRadius: 18,
     borderWidth: 1,
-    borderColor: "#D8E2F1",
+    borderColor: DESIGN.colors.border,
     backgroundColor: "#FFFFFF",
   },
   teamOverviewHeaderRow: {
     flexDirection: "row",
-    minHeight: 58,
+    minHeight: 52,
     borderBottomWidth: 1,
-    borderBottomColor: "#E2E8F0",
+    borderBottomColor: DESIGN.colors.border,
   },
   teamOverviewMemberHeader: {
-    width: 78,
+    width: 70,
     borderRightWidth: 1,
-    borderRightColor: "#E2E8F0",
-    backgroundColor: "#F8FAFC",
+    borderRightColor: DESIGN.colors.border,
+    backgroundColor: DESIGN.colors.surfaceSoft,
   },
   teamOverviewDateHeader: {
     alignItems: "center",
     justifyContent: "center",
     borderRightWidth: 1,
-    borderRightColor: "#E2E8F0",
+    borderRightColor: DESIGN.colors.border,
     backgroundColor: "#FFFFFF",
   },
   teamOverviewDateHeaderActive: {
-    backgroundColor: "#F3E8FF",
+    backgroundColor: DESIGN.colors.primarySoft,
   },
   teamOverviewDateNumber: {
     color: "#0F172A",
-    fontSize: 18,
-    fontWeight: "900",
+    fontSize: 17,
+    fontWeight: "800",
   },
   teamOverviewDateWeekday: {
     color: "#64748B",
     fontSize: 11,
-    fontWeight: "800",
+    fontWeight: "700",
   },
   teamOverviewRow: {
     flexDirection: "row",
     borderBottomWidth: 1,
-    borderBottomColor: "#E2E8F0",
+    borderBottomColor: DESIGN.colors.border,
   },
   teamOverviewMemberCell: {
-    width: 78,
+    width: 70,
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 6,
     borderRightWidth: 1,
-    borderRightColor: "#E2E8F0",
+    borderRightColor: DESIGN.colors.border,
     backgroundColor: "#FFFFFF",
   },
   teamOverviewMemberName: {
     marginTop: 6,
     textAlign: "center",
     color: "#0F172A",
-    fontSize: 11,
+    fontSize: 10,
     lineHeight: 12,
-    fontWeight: "900",
+    fontWeight: "800",
   },
   teamOverviewDayCell: {
-    padding: 6,
+    padding: 5,
     borderRightWidth: 1,
-    borderRightColor: "#E2E8F0",
+    borderRightColor: DESIGN.colors.border,
     backgroundColor: "#FFFFFF",
   },
   teamOverviewDayCellActive: {
-    borderWidth: 2,
-    borderColor: "#B9A8FF",
+    borderWidth: 1,
+    borderColor: "#C4B5FD",
     backgroundColor: "#FBFAFF",
   },
   teamOverviewAppointmentBar: {
-    height: 18,
-    marginBottom: 5,
+    height: 17,
+    marginBottom: 4,
     paddingHorizontal: 5,
     justifyContent: "center",
-    borderRadius: 5,
+    borderRadius: 6,
   },
   teamOverviewAppointmentText: {
     color: "#0F172A",
     fontSize: 10,
-    fontWeight: "900",
+    fontWeight: "800",
   },
   teamOverviewMoreText: {
     color: "#6D4AFF",
@@ -8361,15 +8387,15 @@ const styles = StyleSheet.create({
     paddingBottom: 130,
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 6,
+    gap: 5,
   },
   monthCell: {
     width: "12.85%",
-    minHeight: 74,
+    minHeight: 72,
     padding: 6,
-    borderRadius: 8,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#BBF7D0",
+    borderColor: DESIGN.colors.border,
     backgroundColor: "#FFFFFF",
   },
   monthCellTop: {
@@ -8380,23 +8406,23 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   monthCellActive: {
-    borderColor: "#F43F5E",
-    borderWidth: 2,
-    backgroundColor: "#FFF7F8",
+    borderColor: "#A78BFA",
+    borderWidth: 1,
+    backgroundColor: "#FBFAFF",
   },
   monthCellMuted: {
     opacity: 0.45,
   },
   monthDayNumber: {
     color: "#0F172A",
-    fontSize: 15,
-    fontWeight: "900",
+    fontSize: 17,
+    fontWeight: "800",
   },
   monthWorkText: {
     color: "#64748B",
     fontSize: 8,
     lineHeight: 10,
-    fontWeight: "900",
+    fontWeight: "700",
   },
   compactWorkTime: {
     marginTop: 5,
@@ -8405,8 +8431,8 @@ const styles = StyleSheet.create({
   },
   closedBadge: {
     marginTop: 7,
-    height: 24,
-    paddingHorizontal: 4,
+    height: 22,
+    paddingHorizontal: 5,
     alignSelf: "flex-start",
     flexDirection: "row",
     alignItems: "center",
@@ -8417,8 +8443,34 @@ const styles = StyleSheet.create({
   closedBadgeText: {
     color: "#475569",
     fontSize: 9,
-    fontWeight: "900",
-    textTransform: "uppercase",
+    fontWeight: "800",
+  },
+  monthVisitBadge: {
+    marginTop: 7,
+    maxWidth: "100%",
+    alignSelf: "flex-start",
+    gap: 4,
+  },
+  monthVisitBadgeText: {
+    maxWidth: "100%",
+    paddingHorizontal: 5,
+    paddingVertical: 3,
+    borderRadius: 8,
+    overflow: "hidden",
+    color: DESIGN.colors.primaryDark,
+    fontSize: 9,
+    lineHeight: 11,
+    fontWeight: "800",
+    backgroundColor: DESIGN.colors.primarySoft,
+  },
+  monthVisitDots: {
+    flexDirection: "row",
+    gap: 3,
+  },
+  monthVisitDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
   visitMiniLine: {
     marginTop: 5,
@@ -8451,7 +8503,7 @@ const styles = StyleSheet.create({
   },
   hourText: {
     width: CALENDAR_TIME_AXIS_WIDTH,
-    paddingRight: 10,
+    paddingRight: 8,
     height: 18,
     lineHeight: 18,
     marginTop: -9,
@@ -8522,7 +8574,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: CALENDAR_TIME_AXIS_WIDTH,
     right: 0,
-    height: 2,
+    height: 1,
     backgroundColor: "#F43F5E",
     zIndex: 2,
   },
@@ -8540,27 +8592,27 @@ const styles = StyleSheet.create({
   appointmentBlock: {
     position: "absolute",
     zIndex: 3,
-    borderRadius: 10,
+    borderRadius: 14,
     paddingVertical: 7,
     paddingLeft: 8,
-    paddingRight: 24,
+    paddingRight: 8,
     overflow: "hidden",
     borderWidth: 1,
     borderColor: "rgba(255, 255, 255, 0.52)",
     shadowColor: "#0F172A",
-    shadowOpacity: 0.05,
-    shadowRadius: 6,
-    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.035,
+    shadowRadius: 5,
+    shadowOffset: { width: 0, height: 3 },
   },
   appointmentBlockTight: {
     paddingVertical: 5,
     paddingLeft: 7,
-    paddingRight: 21,
+    paddingRight: 7,
   },
   appointmentBlockVeryTight: {
     paddingVertical: 4,
     paddingLeft: 6,
-    paddingRight: 20,
+    paddingRight: 6,
   },
   appointmentDeleteButton: {
     position: "absolute",
@@ -8602,8 +8654,8 @@ const styles = StyleSheet.create({
   },
   appointmentTime: {
     color: DESIGN.colors.text,
-    fontSize: 11,
-    lineHeight: 14,
+    fontSize: 12,
+    lineHeight: 15,
     fontWeight: "800",
   },
   appointmentTimeTight: {
@@ -8618,9 +8670,9 @@ const styles = StyleSheet.create({
     maxWidth: "100%",
     marginTop: 2,
     color: DESIGN.colors.text,
-    fontSize: 14,
-    lineHeight: 16,
-    fontWeight: "900",
+    fontSize: 15,
+    lineHeight: 17,
+    fontWeight: "800",
   },
   appointmentClientTight: {
     marginTop: 1,
@@ -8637,7 +8689,7 @@ const styles = StyleSheet.create({
     color: DESIGN.colors.text,
     fontSize: 12,
     lineHeight: 14,
-    fontWeight: "700",
+    fontWeight: "600",
   },
   appointmentServiceTight: {
     fontSize: 11,
@@ -8663,10 +8715,10 @@ const styles = StyleSheet.create({
   },
   fabButton: {
     position: "absolute",
-    right: 24,
-    bottom: 96,
-    width: 62,
-    height: 62,
+    right: 22,
+    bottom: 92,
+    width: 58,
+    height: 58,
     borderRadius: DESIGN.radius.pill,
     alignItems: "center",
     justifyContent: "center",
@@ -8690,10 +8742,17 @@ const styles = StyleSheet.create({
     paddingRight: 12,
     backgroundColor: "rgba(15, 23, 42, 0.18)",
   },
+  timeActionBackdrop: {
+    flex: 1,
+    justifyContent: "flex-end",
+    paddingHorizontal: 14,
+    paddingBottom: Platform.OS === "ios" ? 98 : 88,
+    backgroundColor: "rgba(15, 23, 42, 0.20)",
+  },
   viewMenu: {
-    width: 190,
+    width: 176,
     padding: 6,
-    borderRadius: 8,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: "#E2E8F0",
     backgroundColor: "#FFFFFF",
@@ -8703,33 +8762,32 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 12 },
   },
   timeActionMenu: {
-    width: 284,
-    marginTop: 118,
-    marginRight: 16,
-    padding: 12,
-    borderRadius: 8,
+    width: "100%",
+    padding: 10,
+    borderRadius: 24,
     borderWidth: 1,
     borderColor: "#E2E8F0",
     backgroundColor: "#FFFFFF",
     shadowColor: "#0F172A",
-    shadowOpacity: 0.14,
-    shadowRadius: 22,
+    shadowOpacity: 0.16,
+    shadowRadius: 24,
     shadowOffset: { width: 0, height: 14 },
   },
   timeActionTitle: {
-    paddingHorizontal: 8,
+    paddingHorizontal: 12,
+    paddingTop: 3,
     paddingBottom: 8,
     color: "#64748B",
     fontSize: 13,
     fontWeight: "900",
   },
   timeActionItem: {
-    minHeight: 48,
+    minHeight: 50,
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
-    paddingHorizontal: 8,
-    borderRadius: 8,
+    paddingHorizontal: 12,
+    borderRadius: 16,
   },
   timeActionText: {
     color: "#0F172A",
@@ -8747,6 +8805,11 @@ const styles = StyleSheet.create({
   viewMenuItemActive: {
     backgroundColor: "#F3E8FF",
   },
+  viewMenuDivider: {
+    height: 1,
+    marginVertical: 5,
+    backgroundColor: DESIGN.colors.border,
+  },
   viewMenuText: {
     color: "#0F172A",
     fontSize: 14,
@@ -8756,9 +8819,9 @@ const styles = StyleSheet.create({
     color: "#5B21B6",
   },
   visitSheet: {
-    gap: 14,
-    maxHeight: "92%",
-    padding: 20,
+    gap: 12,
+    maxHeight: "90%",
+    padding: 18,
     paddingBottom: 30,
     borderTopLeftRadius: 28,
     borderTopRightRadius: 28,
@@ -8769,7 +8832,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: -10 },
   },
   visitEditorSheet: {
-    maxHeight: "92%",
+    maxHeight: "90%",
   },
   sheetHeader: {
     flexDirection: "row",
@@ -8781,7 +8844,7 @@ const styles = StyleSheet.create({
     color: DESIGN.colors.text,
     fontSize: 24,
     lineHeight: 29,
-    fontWeight: "900",
+    fontWeight: "800",
   },
   sheetClose: {
     width: 42,
@@ -8813,8 +8876,8 @@ const styles = StyleSheet.create({
     maxHeight: 490,
   },
   visitClientCard: {
-    minHeight: 96,
-    padding: 16,
+    minHeight: 82,
+    padding: 14,
     flexDirection: "row",
     alignItems: "center",
     gap: 12,
@@ -8844,8 +8907,8 @@ const styles = StyleSheet.create({
   visitClientTitle: {
     marginTop: 2,
     color: DESIGN.colors.text,
-    fontSize: 16,
-    fontWeight: "900",
+    fontSize: 15,
+    fontWeight: "800",
   },
   visitSectionHeader: {
     marginTop: 16,
@@ -8892,7 +8955,7 @@ const styles = StyleSheet.create({
   visitServicePickerText: {
     color: DESIGN.colors.text,
     fontSize: 15,
-    fontWeight: "900",
+    fontWeight: "800",
   },
   smallIconButton: {
     width: 42,
@@ -8938,6 +9001,18 @@ const styles = StyleSheet.create({
     gap: 6,
     borderTopWidth: 1,
     borderTopColor: DESIGN.colors.border,
+  },
+  dangerTextButton: {
+    minHeight: 44,
+    marginTop: 4,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: DESIGN.radius.md,
+  },
+  dangerTextButtonText: {
+    color: DESIGN.colors.danger,
+    fontSize: 14,
+    fontWeight: "800",
   },
   visitTotalValue: {
     color: DESIGN.colors.text,
@@ -9100,7 +9175,7 @@ const styles = StyleSheet.create({
     left: 14,
     right: 14,
     bottom: Platform.OS === "ios" ? 12 : 10,
-    minHeight: 68,
+    minHeight: 66,
     paddingHorizontal: 6,
     paddingTop: 6,
     paddingBottom: Platform.OS === "ios" ? 11 : 7,
@@ -9122,8 +9197,8 @@ const styles = StyleSheet.create({
     minWidth: 0,
     alignItems: "center",
     justifyContent: "center",
-    gap: 4,
-    borderRadius: 20,
+    gap: 3,
+    borderRadius: 19,
   },
   bottomNavItemActive: {
     borderWidth: 1,
@@ -9136,8 +9211,8 @@ const styles = StyleSheet.create({
   },
   bottomNavText: {
     color: DESIGN.colors.muted,
-    fontSize: 9,
-    fontWeight: "900",
+    fontSize: 10,
+    fontWeight: "700",
   },
   bottomNavTextActive: {
     color: DESIGN.colors.primaryDark,
@@ -9276,9 +9351,9 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   dateButton: {
-    width: 42,
-    height: 42,
-    borderRadius: DESIGN.radius.md,
+    width: 40,
+    height: 40,
+    borderRadius: 15,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
@@ -9291,9 +9366,9 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   datePill: {
-    minWidth: 132,
-    height: 46,
-    borderRadius: DESIGN.radius.md,
+    minWidth: 128,
+    height: 42,
+    borderRadius: 15,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
@@ -9303,7 +9378,7 @@ const styles = StyleSheet.create({
   dateText: {
     color: DESIGN.colors.text,
     fontSize: 15,
-    fontWeight: "900",
+    fontWeight: "800",
   },
   dateSubText: {
     marginTop: 1,
