@@ -544,6 +544,7 @@ const copy = {
     visitTab: "Візит",
     search: "Пошук",
     searchService: "Назва послуги",
+    serviceSearchEmpty: "Послугу не знайдено.",
     clientNameOrPhone: "Ім'я або телефон",
     addNewClient: "Додати нового клієнта",
     addAndSelectClient: "Додати й обрати",
@@ -868,6 +869,7 @@ const copy = {
     visitTab: "Визит",
     search: "Поиск",
     searchService: "Название услуги",
+    serviceSearchEmpty: "Услуга не найдена.",
     clientNameOrPhone: "Имя или телефон",
     addNewClient: "Добавить нового клиента",
     addAndSelectClient: "Добавить и выбрать",
@@ -1192,6 +1194,7 @@ const copy = {
     visitTab: "Visit",
     search: "Search",
     searchService: "Service name",
+    serviceSearchEmpty: "Service not found.",
     clientNameOrPhone: "Name or phone",
     addNewClient: "Add new client",
     addAndSelectClient: "Add and select",
@@ -4018,18 +4021,35 @@ function CalendarTab({
               <>
                 {hasServices ? (
                   <>
-                    <SearchInput value={serviceQuery} onChangeText={setServiceQuery} placeholder={t.searchService} />
+                    <View style={styles.servicePickerSearchBar}>
+                      <SearchInput value={serviceQuery} onChangeText={setServiceQuery} placeholder={t.searchService} />
+                    </View>
                     <ScrollView style={styles.pickerList} showsVerticalScrollIndicator={false}>
-                      {filteredServices.map((service) => (
-                        <Pressable key={service.id} style={styles.serviceOptionCard} onPress={() => selectVisitService(service)}>
-                          <View style={[styles.serviceTone, { backgroundColor: service.color || "#6D4AFF" }]} />
-                          <View style={styles.clientOptionText}>
-                            <Text style={styles.clientOptionTitle} numberOfLines={2} ellipsizeMode="tail">{getServiceDisplayName(service, language)}</Text>
-                            <Text style={styles.clientOptionCaption}>{formatDuration(service.durationMinutes || 60, t)}</Text>
+                      {filteredServices.length ? (
+                        filteredServices.map((service) => (
+                          <Pressable key={service.id} style={styles.serviceOptionCard} onPress={() => selectVisitService(service)}>
+                            <View style={[styles.serviceTone, { backgroundColor: service.color || "#6D4AFF" }]} />
+                            <View style={styles.serviceOptionInfo}>
+                              <Text style={styles.serviceOptionTitle} numberOfLines={1} ellipsizeMode="tail">{getServiceDisplayName(service, language)}</Text>
+                              <Text style={styles.serviceOptionDuration}>{formatDuration(service.durationMinutes || 60, t)}</Text>
+                            </View>
+                            <Text style={styles.serviceOptionPrice} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.78}>{formatMoney(service.price, currency)}</Text>
+                          </Pressable>
+                        ))
+                      ) : (
+                        <View style={styles.servicePickerEmptyCard}>
+                          <Text style={styles.firstRunTitle}>{t.serviceSearchEmpty}</Text>
+                          <Text style={styles.firstRunText}>{t.servicesEmptyPickerText}</Text>
+                          <View style={styles.firstRunActions}>
+                            <Pressable style={styles.firstRunPrimaryButton} onPress={openServicesFromCalendar}>
+                              <Text style={styles.firstRunPrimaryText}>{t.createServiceAction}</Text>
+                            </Pressable>
+                            <Pressable style={styles.firstRunSecondaryButton} onPress={() => markVisitItemWithoutService(editingServiceIndex)}>
+                              <Text style={styles.firstRunSecondaryText}>{t.bookingWithoutService}</Text>
+                            </Pressable>
                           </View>
-                          <Text style={styles.serviceOptionPrice}>{formatMoney(service.price, currency)}</Text>
-                        </Pressable>
-                      ))}
+                        </View>
+                      )}
                     </ScrollView>
                   </>
                 ) : (
@@ -9869,6 +9889,11 @@ const styles = StyleSheet.create({
   pickerList: {
     maxHeight: 470,
   },
+  servicePickerSearchBar: {
+    zIndex: 2,
+    paddingBottom: 8,
+    backgroundColor: DESIGN.colors.surface,
+  },
   pickerEmptyState: {
     marginTop: 8,
     padding: 14,
@@ -10026,9 +10051,11 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   serviceOptionCard: {
-    minHeight: 74,
+    minHeight: 76,
+    maxHeight: 84,
     marginBottom: 8,
-    padding: 10,
+    paddingVertical: 9,
+    paddingHorizontal: 10,
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
@@ -10038,16 +10065,35 @@ const styles = StyleSheet.create({
     backgroundColor: DESIGN.colors.surface,
   },
   serviceTone: {
-    width: 10,
-    height: 44,
-    borderRadius: 5,
+    width: 8,
+    height: 48,
+    borderRadius: 4,
+  },
+  serviceOptionInfo: {
+    flex: 1,
+    minWidth: 0,
+    justifyContent: "center",
+  },
+  serviceOptionTitle: {
+    color: DESIGN.colors.text,
+    fontSize: 14,
+    lineHeight: 18,
+    fontWeight: "800",
+  },
+  serviceOptionDuration: {
+    marginTop: 3,
+    color: DESIGN.colors.muted,
+    fontSize: 12,
+    lineHeight: 15,
+    fontWeight: "700",
   },
   serviceOptionPrice: {
     color: DESIGN.colors.text,
     fontSize: 13,
     fontWeight: "800",
     textAlign: "right",
-    maxWidth: 88,
+    minWidth: 74,
+    maxWidth: 92,
   },
   servicePickerEmptyCard: {
     marginTop: 10,
