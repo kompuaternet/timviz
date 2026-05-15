@@ -785,7 +785,10 @@ const copy = {
     emptyCalendarTitle: "Поки немає записів",
     emptyCalendarText: "Натисніть +, щоб додати перший візит",
     noBookingsToday: "Сьогодні записів немає",
+    noBookingsThisDay: "На цей день записів немає",
+    calendarNoServicesText: "Спочатку додайте послугу або створіть перший запис без послуги.",
     calendarEmptyActionText: "Додайте перший візит або налаштуйте послуги для онлайн-запису.",
+    createBooking: "Створити запис",
     firstRunCalendarTitle: "Почніть з послуги",
     firstRunCalendarText: "Додайте послугу, щоб швидше створювати записи й відкрити онлайн-запис.",
     addFirstVisit: "Додати перший візит",
@@ -1106,7 +1109,10 @@ const copy = {
     emptyCalendarTitle: "Пока нет записей",
     emptyCalendarText: "Нажмите +, чтобы добавить первый визит",
     noBookingsToday: "Сегодня записей нет",
+    noBookingsThisDay: "На этот день записей нет",
+    calendarNoServicesText: "Сначала добавьте услугу или создайте первую запись без услуги.",
     calendarEmptyActionText: "Добавьте первый визит или настройте услуги для онлайн-записи.",
+    createBooking: "Создать запись",
     firstRunCalendarTitle: "Начните с услуги",
     firstRunCalendarText: "Добавьте услугу, чтобы создавать записи быстрее и открыть онлайн-запись.",
     addFirstVisit: "Добавить первый визит",
@@ -1427,7 +1433,10 @@ const copy = {
     emptyCalendarTitle: "No bookings yet",
     emptyCalendarText: "Tap + to add the first visit",
     noBookingsToday: "No bookings today",
+    noBookingsThisDay: "No bookings for this day",
+    calendarNoServicesText: "Add a service first or create your first booking without a service.",
     calendarEmptyActionText: "Add your first visit or set up services for online booking.",
+    createBooking: "Create booking",
     firstRunCalendarTitle: "Start with a service",
     firstRunCalendarText: "Add a service to create bookings faster and open online booking.",
     addFirstVisit: "Add first visit",
@@ -3370,6 +3379,30 @@ function CalendarTab({
     (sum, member) => sum + getAppointmentsForMember(selectedDate, member.id).filter((appointment) => appointment.kind !== "blocked").length,
     0
   );
+  const isSelectedDateToday = selectedDate === getTodayIso();
+  const emptyCalendarTitle = isSelectedDateToday ? t.noBookingsToday || t.emptyCalendarTitle : t.noBookingsThisDay || t.emptyCalendarTitle;
+  const emptyCalendarText = hasServices ? t.emptyCalendarText : t.calendarNoServicesText || t.firstRunCalendarText;
+  const emptyCalendarPrimaryLabel = hasServices ? t.addFirstVisit : t.addService;
+  const emptyCalendarSecondaryLabel = hasServices ? "" : t.createBooking || t.addVisit;
+  const emptyCalendarTop = (() => {
+    const workStart = selectedSchedule.enabled ? timeToMinutes(selectedSchedule.startTime) : 9 * 60;
+    const workHourHeight = isCompact ? 72 : 88;
+    const offHourHeight = isCompact ? workHourHeight / 10 : workHourHeight;
+    const compressedStartTop = selectedSchedule.enabled && isCompact ? Math.min(workStart, 9 * 60) / 60 * offHourHeight : Math.min(workStart / 60 * offHourHeight, 92);
+    return 58 + Math.max(52, Math.min(112, compressedStartTop + 10));
+  })();
+
+  function openEmptyCalendarPrimaryAction() {
+    if (!hasServices) {
+      onOpenServices();
+      return;
+    }
+    openComposerAt(getRoundedTime(10), selectedDate, primaryMember?.id);
+  }
+
+  function openEmptyCalendarSecondaryAction() {
+    openComposerAt(getRoundedTime(10), selectedDate, primaryMember?.id, { withoutService: true });
+  }
 
   const mergeRangeSnapshots = useCallback((snapshots: Record<string, CalendarSnapshot>) => {
     const entries = Object.entries(snapshots);
@@ -3827,22 +3860,20 @@ function CalendarTab({
               </View>
             </ScrollView>
             {!visibleDayAppointmentCount ? (
-              <View style={styles.calendarEmptyState}>
-                <Text style={styles.calendarEmptyTitle}>
-                  {!hasServices ? t.firstRunCalendarTitle : selectedDate === getTodayIso() ? t.noBookingsToday || t.emptyCalendarTitle : t.emptyCalendarTitle || t.empty}
-                </Text>
-                <Text style={styles.calendarEmptyText}>
-                  {!hasServices ? t.firstRunCalendarText : t.calendarEmptyActionText || t.emptyCalendarText}
-                </Text>
+              <Pressable style={[styles.calendarEmptyState, { top: emptyCalendarTop }]} onPress={openEmptyCalendarPrimaryAction}>
+                <Text style={styles.calendarEmptyTitle}>{emptyCalendarTitle}</Text>
+                <Text style={styles.calendarEmptyText}>{emptyCalendarText}</Text>
                 <View style={styles.emptyActionRow}>
-                  <Pressable style={styles.emptyPrimaryAction} onPress={() => (!hasServices ? onOpenServices() : openComposerAt(getRoundedTime(10), selectedDate, primaryMember?.id))}>
-                    <Text style={styles.emptyPrimaryActionText}>{!hasServices ? t.addService : t.addFirstVisit}</Text>
+                  <Pressable style={styles.emptyPrimaryAction} onPress={openEmptyCalendarPrimaryAction}>
+                    <Text style={styles.emptyPrimaryActionText}>{emptyCalendarPrimaryLabel}</Text>
                   </Pressable>
-                  <Pressable style={styles.emptySecondaryAction} onPress={() => (!hasServices ? openComposerAt(getRoundedTime(10), selectedDate, primaryMember?.id, { withoutService: true }) : onOpenServices())}>
-                    <Text style={styles.emptySecondaryActionText}>{!hasServices ? t.quickVisit : t.addService}</Text>
-                  </Pressable>
+                  {emptyCalendarSecondaryLabel ? (
+                    <Pressable style={styles.emptySecondaryAction} onPress={openEmptyCalendarSecondaryAction}>
+                      <Text style={styles.emptySecondaryActionText}>{emptyCalendarSecondaryLabel}</Text>
+                    </Pressable>
+                  ) : null}
                 </View>
-              </View>
+              </Pressable>
             ) : null}
           </View>
         </>
@@ -8435,35 +8466,35 @@ const styles = StyleSheet.create({
   },
   calendarEmptyState: {
     position: "absolute",
-    left: CALENDAR_TIME_AXIS_WIDTH + 18,
-    right: 18,
-    top: 128,
-    padding: 14,
-    borderRadius: DESIGN.radius.lg,
+    left: CALENDAR_TIME_AXIS_WIDTH + 14,
+    right: 14,
+    top: 120,
+    padding: 12,
+    borderRadius: DESIGN.radius.md,
     borderWidth: 1,
     borderColor: "rgba(216, 208, 255, 0.72)",
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    backgroundColor: "rgba(255, 255, 255, 0.94)",
   },
   calendarEmptyTitle: {
     color: DESIGN.colors.text,
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "800",
   },
   calendarEmptyText: {
-    marginTop: 4,
+    marginTop: 3,
     color: DESIGN.colors.muted,
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 12,
+    lineHeight: 17,
     fontWeight: "600",
   },
   emptyActionRow: {
-    marginTop: 12,
+    marginTop: 10,
     flexDirection: "row",
     gap: 8,
   },
   emptyPrimaryAction: {
-    flex: 1.1,
-    minHeight: 42,
+    flex: 1,
+    minHeight: 38,
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 10,
@@ -8472,13 +8503,13 @@ const styles = StyleSheet.create({
   },
   emptyPrimaryActionText: {
     color: "#FFFFFF",
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: "800",
     textAlign: "center",
   },
   emptySecondaryAction: {
     flex: 1,
-    minHeight: 42,
+    minHeight: 38,
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 10,
@@ -8489,7 +8520,7 @@ const styles = StyleSheet.create({
   },
   emptySecondaryActionText: {
     color: DESIGN.colors.primaryDark,
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: "800",
     textAlign: "center",
   },
