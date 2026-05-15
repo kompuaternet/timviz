@@ -15296,7 +15296,7 @@
     content: "";
     position: fixed;
     inset: 0;
-    z-index: 88;
+    z-index: 138;
     background: rgba(16, 22, 38, 0.3);
     backdrop-filter: blur(3px);
     -webkit-backdrop-filter: blur(3px);
@@ -15314,7 +15314,7 @@
     max-width: none;
     height: auto;
     max-height: 92dvh;
-    z-index: 90;
+    z-index: 140;
     border-left: 0;
     border-radius: 28px 28px 0 0;
     background: transparent;
@@ -15539,6 +15539,7 @@
     position: sticky;
     bottom: 0;
     z-index: 6;
+    grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
     gap: 8px;
     margin-top: 10px;
     padding: 12px 0 calc(14px + env(safe-area-inset-bottom, 0px));
