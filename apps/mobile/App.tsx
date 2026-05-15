@@ -1782,7 +1782,7 @@ function getWeekDates(date: string) {
 
 function getCalendarModeDates(mode: CalendarViewMode, date: string) {
   if (mode === "threeDays") return [date, shiftDate(date, 1), shiftDate(date, 2)];
-  if (mode === "week") return Array.from({ length: 7 }, (_, index) => shiftDate(date, index));
+  if (mode === "week") return getWeekDates(date);
   if (mode === "month") {
     return getMonthGridDates(date);
   }
@@ -1848,6 +1848,16 @@ function formatShortDate(date: string, language: AppLanguage) {
   })
     .format(parsed)
     .replace(".", "");
+}
+
+function formatWeekdayShort(date: string, language: AppLanguage) {
+  const day = new Date(`${date}T12:00:00`).getDay();
+  const labels: Record<AppLanguage, string[]> = {
+    uk: ["Нд", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"],
+    ru: ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"],
+    en: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+  };
+  return labels[language][day] || labels.ru[day] || "";
 }
 
 function formatTimeFromMinutes(totalMinutes: number) {
@@ -4494,6 +4504,8 @@ function CalendarOverview({
   onOpenDay: (date: string) => void;
   onCreateAt: (date: string, memberId?: string) => void;
 }) {
+  const { width: screenWidth } = useWindowDimensions();
+
   if (mode === "month") {
     return (
       <ScrollView style={styles.overviewScroll} contentContainerStyle={styles.monthGrid} showsVerticalScrollIndicator={false}>
@@ -4535,9 +4547,89 @@ function CalendarOverview({
     );
   }
 
-  const selectedDateIndex = Math.max(0, dates.indexOf(selectedDate));
-  const mobileWeekStart = Math.max(0, Math.min(Math.max(0, dates.length - 3), selectedDateIndex - 1));
-  const overviewDates = mode === "week" && dates.length > 3 ? dates.slice(mobileWeekStart, mobileWeekStart + 3) : dates;
+  if (mode === "week") {
+    const weekDayCardWidth = Math.min(132, Math.max(96, Math.floor((screenWidth - 36) / 3)));
+    const selectedDateIndex = Math.max(0, dates.indexOf(selectedDate));
+    const initialWeekOffset = Math.max(0, Math.min(selectedDateIndex, Math.max(0, dates.length - 3))) * (weekDayCardWidth + 8);
+    return (
+      <ScrollView
+        key={`week-${dates[0]}-${selectedDate}`}
+        style={styles.overviewScroll}
+        horizontal
+        contentContainerStyle={styles.mobileWeekContent}
+        showsHorizontalScrollIndicator={false}
+        contentOffset={{ x: initialWeekOffset, y: 0 }}
+        decelerationRate="fast"
+        snapToAlignment="start"
+        snapToInterval={weekDayCardWidth + 8}
+      >
+        {dates.map((date) => {
+          const selected = date === selectedDate;
+          const memberAppointments = members.length
+            ? members.flatMap((member) => getAppointmentsForMember(date, member.id).map((appointment) => ({ appointment, member })))
+            : getAppointmentsForDate(date).map((appointment) => ({ appointment, member: null as CalendarMemberView | null }));
+          const appointments = memberAppointments
+            .sort((left, right) => left.appointment.startTime.localeCompare(right.appointment.startTime));
+          const hasWorkDay = members.length
+            ? members.some((member) => getScheduleForMember(date, member).enabled)
+            : getScheduleForDate(workspace, date).enabled;
+          const visibleAppointments = appointments.slice(0, 3);
+          const emptyLabel = hasWorkDay ? (date === getTodayIso() ? t.noBookingsToday : t.noBookingsThisDay || t.emptyCalendarTitle) : t.dayOff;
+          return (
+            <Pressable
+              key={date}
+              style={[styles.mobileWeekDayCard, { width: weekDayCardWidth }, !hasWorkDay && styles.mobileWeekDayCardClosed, selected && styles.mobileWeekDayCardActive]}
+              onPress={() => onSelectDate(date)}
+              onLongPress={() => onCreateAt(date, members[0]?.id)}
+            >
+              <View style={styles.mobileWeekDayHeader}>
+                <View>
+                  <Text style={[styles.mobileWeekWeekday, selected && styles.mobileWeekDateActive]}>{formatWeekdayShort(date, language)}</Text>
+                  <Text style={[styles.mobileWeekDateNumber, selected && styles.mobileWeekDateActive]}>{Number(date.slice(8, 10))}</Text>
+                </View>
+                {appointments.length ? (
+                  <View style={styles.mobileWeekBadge}>
+                    <Text style={styles.mobileWeekBadgeText}>{appointments.length}</Text>
+                  </View>
+                ) : null}
+              </View>
+              <View style={styles.mobileWeekAppointments}>
+                {visibleAppointments.length ? (
+                  visibleAppointments.map(({ appointment, member }, index) => {
+                    const blocked = appointment.kind === "blocked";
+                    const title = blocked ? appointment.serviceName || t.unavailableTime : appointment.customerName || appointment.serviceName || t.customer;
+                    const subtitle = blocked ? t.unavailableTime : appointment.serviceName || member?.name || "";
+                    return (
+                      <Pressable
+                        key={`${appointment.id}-${appointment.startTime}-${index}`}
+                        style={[styles.mobileWeekAppointmentPill, blocked && styles.mobileWeekAppointmentPillBlocked]}
+                        onPress={() => onOpenDay(date)}
+                      >
+                        <Text style={styles.mobileWeekAppointmentTime} numberOfLines={1}>{appointment.startTime}</Text>
+                        <Text style={styles.mobileWeekAppointmentTitle} numberOfLines={1} ellipsizeMode="tail">{title}</Text>
+                        {subtitle ? <Text style={styles.mobileWeekAppointmentSubtitle} numberOfLines={1} ellipsizeMode="tail">{subtitle}</Text> : null}
+                      </Pressable>
+                    );
+                  })
+                ) : (
+                  <Pressable style={styles.mobileWeekEmptySlot} onPress={() => (hasWorkDay ? onCreateAt(date, members[0]?.id) : onSelectDate(date))}>
+                    <Text style={styles.mobileWeekEmptyText} numberOfLines={2}>{emptyLabel}</Text>
+                  </Pressable>
+                )}
+                {appointments.length > visibleAppointments.length ? (
+                  <Pressable style={styles.mobileWeekMorePill} onPress={() => onOpenDay(date)}>
+                    <Text style={styles.mobileWeekMoreText}>+{appointments.length - visibleAppointments.length}</Text>
+                  </Pressable>
+                ) : null}
+              </View>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+    );
+  }
+
+  const overviewDates = dates;
   const dayColumnWidth = 104;
   const memberRowHeight = 104;
 
@@ -8691,6 +8783,129 @@ const styles = StyleSheet.create({
   overviewScroll: {
     flex: 1,
     backgroundColor: DESIGN.colors.background,
+  },
+  mobileWeekContent: {
+    paddingHorizontal: 10,
+    paddingTop: 10,
+    paddingBottom: 14,
+    gap: 8,
+    alignItems: "flex-start",
+  },
+  mobileWeekDayCard: {
+    minHeight: 198,
+    padding: 10,
+    borderRadius: DESIGN.radius.lg,
+    borderWidth: 1,
+    borderColor: DESIGN.colors.border,
+    backgroundColor: DESIGN.colors.surface,
+  },
+  mobileWeekDayCardActive: {
+    borderColor: DESIGN.colors.primary,
+    backgroundColor: "#FBFAFF",
+  },
+  mobileWeekDayCardClosed: {
+    backgroundColor: "#F8FAFC",
+  },
+  mobileWeekDayHeader: {
+    minHeight: 42,
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 8,
+  },
+  mobileWeekWeekday: {
+    color: DESIGN.colors.muted,
+    fontSize: 12,
+    lineHeight: 15,
+    fontWeight: "800",
+    textTransform: "uppercase",
+  },
+  mobileWeekDateNumber: {
+    marginTop: 1,
+    color: DESIGN.colors.text,
+    fontSize: 22,
+    lineHeight: 25,
+    fontWeight: "900",
+  },
+  mobileWeekDateActive: {
+    color: DESIGN.colors.primary,
+  },
+  mobileWeekBadge: {
+    minWidth: 22,
+    height: 22,
+    paddingHorizontal: 6,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 11,
+    backgroundColor: DESIGN.colors.primary,
+  },
+  mobileWeekBadgeText: {
+    color: "#FFFFFF",
+    fontSize: 11,
+    fontWeight: "900",
+  },
+  mobileWeekAppointments: {
+    marginTop: 8,
+    gap: 7,
+  },
+  mobileWeekAppointmentPill: {
+    minHeight: 42,
+    paddingVertical: 6,
+    paddingHorizontal: 7,
+    borderRadius: 12,
+    backgroundColor: "#EDE9FE",
+  },
+  mobileWeekAppointmentPillBlocked: {
+    backgroundColor: "#EEF2F7",
+  },
+  mobileWeekAppointmentTime: {
+    color: DESIGN.colors.text,
+    fontSize: 11,
+    lineHeight: 13,
+    fontWeight: "900",
+  },
+  mobileWeekAppointmentTitle: {
+    marginTop: 2,
+    color: DESIGN.colors.text,
+    fontSize: 12,
+    lineHeight: 14,
+    fontWeight: "800",
+  },
+  mobileWeekAppointmentSubtitle: {
+    marginTop: 1,
+    color: DESIGN.colors.muted,
+    fontSize: 10,
+    lineHeight: 12,
+    fontWeight: "700",
+  },
+  mobileWeekEmptySlot: {
+    minHeight: 54,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 6,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: DESIGN.colors.border,
+    backgroundColor: DESIGN.colors.surfaceSoft,
+  },
+  mobileWeekEmptyText: {
+    color: DESIGN.colors.faint,
+    fontSize: 11,
+    lineHeight: 15,
+    fontWeight: "800",
+    textAlign: "center",
+  },
+  mobileWeekMorePill: {
+    minHeight: 28,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 999,
+    backgroundColor: DESIGN.colors.primarySoft,
+  },
+  mobileWeekMoreText: {
+    color: DESIGN.colors.primary,
+    fontSize: 12,
+    fontWeight: "900",
   },
   summaryStrip: {
     paddingHorizontal: 12,
