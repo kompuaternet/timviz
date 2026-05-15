@@ -7610,6 +7610,69 @@
   display: none;
 }
 
+.calendarDatePickerMenu {
+  width: min(330px, calc(100vw - 20px));
+  padding: 0;
+  border-radius: 24px;
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+}
+
+.calendarDatePickerCard {
+  border: 1px solid rgba(223, 229, 244, 0.92);
+  border-radius: 24px;
+  background: rgba(255, 255, 255, 0.96);
+  padding: 14px;
+  display: grid;
+  gap: 12px;
+  box-shadow: 0 24px 58px rgba(45, 58, 92, 0.18);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.calendarDatePickerToday {
+  min-height: 38px;
+  border: 1px solid rgba(218, 225, 243, 0.95);
+  border-radius: 14px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.9), rgba(247, 249, 253, 0.9)),
+    #ffffff;
+  color: #272d3d;
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.calendarDatePickerCard .miniCalendarDay {
+  min-height: 36px;
+  height: 36px;
+}
+
+.calendarDatePickerCard .miniCalendarDay small {
+  position: absolute;
+  right: 4px;
+  bottom: 3px;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: rgba(111, 84, 230, 0.12);
+  color: #6247d9;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.58rem;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.calendarDatePickerCard .miniCalendarDayActive small {
+  background: rgba(255, 255, 255, 0.22);
+  color: rgba(255, 255, 255, 0.9);
+}
+
 .calendarOverviewPanel {
   min-height: 0;
   overflow: auto;

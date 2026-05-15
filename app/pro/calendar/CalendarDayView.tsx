@@ -252,8 +252,6 @@ const CALENDAR_HOUR_HEIGHT = 96;
 const CALENDAR_MOBILE_HOUR_HEIGHT = 112;
 const CALENDAR_GRID_STEP_MINUTES = 10;
 const TIME_SELECT_STEP_MINUTES = 5;
-const MIN_BOOKING_CARD_HEIGHT = 64;
-const MOBILE_MIN_BOOKING_CARD_HEIGHT = 74;
 const SNAPSHOT_CACHE_LIMIT = 120;
 
 function getCalendarStorage() {
@@ -1108,6 +1106,17 @@ function formatDisplayTime(time: string) {
   return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
 }
 
+function getAppointmentInstanceKey(appointment: CalendarAppointment) {
+  return [
+    appointment.id,
+    appointment.appointmentDate,
+    appointment.professionalId,
+    appointment.startTime,
+    appointment.endTime,
+    appointment.serviceName || "",
+  ].join(":");
+}
+
 function getScheduleLabel(schedule: WorkDaySchedule | null, closedLabel: string) {
   if (!schedule || !schedule.enabled) {
     return closedLabel;
@@ -1226,7 +1235,8 @@ function getAppointmentLayouts(appointments: CalendarAppointment[]) {
   const sorted = [...appointments].sort(
     (left, right) =>
       timeToMinutes(left.startTime) - timeToMinutes(right.startTime) ||
-      timeToMinutes(left.endTime) - timeToMinutes(right.endTime)
+      timeToMinutes(left.endTime) - timeToMinutes(right.endTime) ||
+      getAppointmentInstanceKey(left).localeCompare(getAppointmentInstanceKey(right))
   );
   const layouts = new Map<string, { lane: number; laneCount: number }>();
   const groups: CalendarAppointment[][] = [];
@@ -1262,13 +1272,14 @@ function getAppointmentLayouts(appointments: CalendarAppointment[]) {
       }
 
       laneEnds[lane] = timeToMinutes(appointment.endTime);
-      assigned.set(appointment.id, lane);
+      assigned.set(getAppointmentInstanceKey(appointment), lane);
     }
 
     const laneCount = Math.max(1, laneEnds.length);
     for (const appointment of group) {
-      layouts.set(appointment.id, {
-        lane: assigned.get(appointment.id) ?? 0,
+      const appointmentKey = getAppointmentInstanceKey(appointment);
+      layouts.set(appointmentKey, {
+        lane: assigned.get(appointmentKey) ?? 0,
         laneCount
       });
     }
@@ -1302,7 +1313,7 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
   const [viewMode, setViewMode] = useState<CalendarViewMode>("day");
   const [selectedProfessionalId, setSelectedProfessionalId] = useState(professionalId);
   const [visibleProfessionalIds, setVisibleProfessionalIds] = useState<string[]>([professionalId]);
-  const [activeToolbarMenu, setActiveToolbarMenu] = useState<null | "view" | "team" | "share" | "account">(null);
+  const [activeToolbarMenu, setActiveToolbarMenu] = useState<null | "view" | "team" | "share" | "account" | "date">(null);
   const [uiLanguage, setUiLanguage] = useState<AppLanguage>("ru");
   const [snapshot, setSnapshot] = useState<CalendarSnapshot | null>(null);
   const [snapshotCacheVersion, setSnapshotCacheVersion] = useState(0);
@@ -1353,6 +1364,7 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
   const [isDeletingAppointment, setIsDeletingAppointment] = useState(false);
   const [isMobileCreateSheetOpen, setIsMobileCreateSheetOpen] = useState(false);
   const [activeMobileBookingId, setActiveMobileBookingId] = useState<string | null>(null);
+  const [datePickerMonth, setDatePickerMonth] = useState(initialDate);
   const [isMobileViewport, setIsMobileViewport] = useState(false);
   const [isOffHoursCompressed, setIsOffHoursCompressed] = useState<boolean>(() => {
     return getCalendarStorage()?.getItem("rezervo-pro-calendar-offhours-compressed") !== "0";
@@ -1370,13 +1382,14 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
   const minuteHeight = calendarHourHeight / 60;
   const slotHeight = minuteHeight * CALENDAR_GRID_STEP_MINUTES;
   const calendarGridHeight = topOffset + dayEndMinutes * minuteHeight;
-  const bookingCardMinHeight = isMobileViewport ? MOBILE_MIN_BOOKING_CARD_HEIGHT : MIN_BOOKING_CARD_HEIGHT;
   const viewMenuButtonRef = useRef<HTMLButtonElement | null>(null);
+  const dateMenuButtonRef = useRef<HTMLButtonElement | null>(null);
   const teamMenuButtonRef = useRef<HTMLButtonElement | null>(null);
   const mobileTeamMenuButtonRef = useRef<HTMLButtonElement | null>(null);
   const shareMenuButtonRef = useRef<HTMLButtonElement | null>(null);
   const accountMenuButtonRef = useRef<HTMLButtonElement | null>(null);
   const viewMenuPanelRef = useRef<HTMLDivElement | null>(null);
+  const dateMenuPanelRef = useRef<HTMLDivElement | null>(null);
   const teamMenuPanelRef = useRef<HTMLDivElement | null>(null);
   const shareMenuPanelRef = useRef<HTMLDivElement | null>(null);
   const accountMenuPanelRef = useRef<HTMLDivElement | null>(null);
@@ -2260,19 +2273,23 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
     const anchor =
       activeToolbarMenu === "view"
         ? viewMenuButtonRef.current
-        : activeToolbarMenu === "team"
-          ? teamAnchor
-          : activeToolbarMenu === "share"
-            ? shareMenuButtonRef.current
-            : accountMenuButtonRef.current;
+        : activeToolbarMenu === "date"
+          ? dateMenuButtonRef.current
+          : activeToolbarMenu === "team"
+            ? teamAnchor
+            : activeToolbarMenu === "share"
+              ? shareMenuButtonRef.current
+              : accountMenuButtonRef.current;
     const panel =
       activeToolbarMenu === "view"
         ? viewMenuPanelRef.current
-        : activeToolbarMenu === "team"
-          ? teamMenuPanelRef.current
-          : activeToolbarMenu === "share"
-            ? shareMenuPanelRef.current
-            : accountMenuPanelRef.current;
+        : activeToolbarMenu === "date"
+          ? dateMenuPanelRef.current
+          : activeToolbarMenu === "team"
+            ? teamMenuPanelRef.current
+            : activeToolbarMenu === "share"
+              ? shareMenuPanelRef.current
+              : accountMenuPanelRef.current;
 
     function handlePointerDown(event: MouseEvent) {
       const target = event.target;
@@ -2671,6 +2688,13 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
   const selectedMonthLabel = new Date(`${selectedDate}T00:00:00`).toLocaleDateString(locale, {
     month: "long"
   });
+  const datePickerButtonLabel = uiLanguage === "en" ? "Date" : "Дата";
+  const datePickerTodayLabel = uiLanguage === "en" ? "Today" : uiLanguage === "uk" ? "Сьогодні" : "Сегодня";
+  const datePickerMonthLabel = new Date(`${datePickerMonth}T00:00:00`).toLocaleDateString(locale, {
+    month: "long",
+    year: "numeric"
+  });
+  const datePickerWeekdayKeys = useMemo(() => getWeekKeys("2024-01-01"), []);
   const weekKeys = useMemo(() => getWeekKeys(selectedDate), [selectedDate]);
   const selectedWeekLabel = `${new Date(`${weekKeys[0]}T00:00:00`).toLocaleDateString(locale, {
     day: "numeric",
@@ -2706,6 +2730,18 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
     { value: "month", label: t.month }
   ];
   const monthGrid = useMemo(() => getMonthGrid(selectedDate), [selectedDate]);
+  const datePickerMonthGrid = useMemo(() => getMonthGrid(datePickerMonth), [datePickerMonth]);
+  const datePickerAppointmentCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    allCalendarAppointments.forEach((appointment) => {
+      if (appointment.kind !== "appointment") {
+        return;
+      }
+
+      counts.set(appointment.appointmentDate, (counts.get(appointment.appointmentDate) ?? 0) + 1);
+    });
+    return counts;
+  }, [allCalendarAppointments]);
   const visibleRangeKeys = useMemo(() => {
     if (viewMode === "month") {
       return monthGrid.map((day) => day.key);
@@ -4414,6 +4450,71 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
 
   const overlayActive = drawerStage !== "closed";
 
+  function openDatePickerMenu() {
+    setDrawerStage("closed");
+    setIsMobileCreateSheetOpen(false);
+    setDatePickerMonth(selectedDate);
+    setActiveToolbarMenu((current) => (current === "date" ? null : "date"));
+  }
+
+  function selectCalendarDate(dateKey: string) {
+    if (dateKey !== selectedDate) {
+      lastCalendarNavigationDirectionRef.current =
+        dateKey > selectedDate ? 1 : dateKey < selectedDate ? -1 : 0;
+      showCachedSnapshot(dateKey, selectedProfessionalId);
+      setSelectedDate(dateKey);
+    }
+
+    setDatePickerMonth(dateKey);
+    setActiveToolbarMenu(null);
+  }
+
+  function renderDatePickerContent() {
+    return (
+      <div className={styles.calendarDatePickerCard}>
+        <div className={styles.miniCalendarHeader}>
+          <strong>{datePickerMonthLabel}</strong>
+          <div className={styles.miniCalendarNav}>
+            <button type="button" aria-label="Previous month" onClick={() => setDatePickerMonth((current) => addMonths(current, -1))}>
+              ‹
+            </button>
+            <button type="button" aria-label="Next month" onClick={() => setDatePickerMonth((current) => addMonths(current, 1))}>
+              ›
+            </button>
+          </div>
+        </div>
+        <button type="button" className={styles.calendarDatePickerToday} onClick={() => selectCalendarDate(todayDate)}>
+          {datePickerTodayLabel}
+        </button>
+        <div className={styles.miniCalendarWeekdays}>
+          {datePickerWeekdayKeys.map((dayKey) => (
+            <span key={dayKey}>{new Date(`${dayKey}T00:00:00`).toLocaleDateString(locale, { weekday: "short" })}</span>
+          ))}
+        </div>
+        <div className={styles.miniCalendarGrid}>
+          {datePickerMonthGrid.map((day) => {
+            const schedule = focusedMemberCalendar ? getMemberScheduleForDate(focusedMemberCalendar, day.key) : null;
+            const appointmentsCount = datePickerAppointmentCounts.get(day.key) ?? 0;
+            const isActive = day.key === selectedDate;
+            const isToday = day.key === todayDate;
+
+            return (
+              <button
+                key={day.key}
+                type="button"
+                className={`${styles.miniCalendarDay} ${schedule?.enabled ? styles.miniCalendarDayWork : styles.miniCalendarDayOff} ${day.outside ? styles.miniCalendarDayOutside : ""} ${isToday ? styles.miniCalendarDayToday : ""} ${isActive ? styles.miniCalendarDayActive : ""}`}
+                onClick={() => selectCalendarDate(day.key)}
+              >
+                <span>{day.day}</span>
+                {appointmentsCount ? <small>{appointmentsCount}</small> : null}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+
   function moveVisiblePeriod(direction: -1 | 1) {
     lastCalendarNavigationDirectionRef.current = direction;
     let nextDate = selectedDate;
@@ -4814,9 +4915,26 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
         <header className={styles.calendarTopBarV2}>
           {isMobileViewport ? (
             <div className={styles.calendarMobileTopBar}>
-              <button type="button" className={styles.calendarMobileTodayButton} onClick={jumpToCurrentTime}>
-                {t.today}
+              <button
+                ref={dateMenuButtonRef}
+                type="button"
+                className={styles.calendarMobileTodayButton}
+                aria-label={datePickerButtonLabel}
+                aria-expanded={activeToolbarMenu === "date"}
+                onClick={openDatePickerMenu}
+              >
+                {datePickerButtonLabel}
               </button>
+              <FloatingPopover
+                open={isMobileViewport && activeToolbarMenu === "date"}
+                anchorEl={dateMenuButtonRef.current}
+                panelRef={dateMenuPanelRef}
+                className={`${styles.calendarToolbarMenu} ${styles.calendarDatePickerMenu}`}
+                placement="bottom-start"
+                offset={12}
+              >
+                {renderDatePickerContent()}
+              </FloatingPopover>
               <button
                 ref={viewMenuButtonRef}
                 type="button"
@@ -4899,9 +5017,28 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
             </div>
           ) : null}
           <div className={styles.calendarTopLeft}>
-            <button type="button" className={styles.calendarTodayButton} onClick={jumpToCurrentTime}>
-              {t.today}
+            <button
+              ref={!isMobileViewport ? dateMenuButtonRef : null}
+              type="button"
+              className={styles.calendarTodayButton}
+              aria-label={datePickerButtonLabel}
+              aria-expanded={activeToolbarMenu === "date"}
+              onClick={openDatePickerMenu}
+            >
+              {datePickerButtonLabel}
             </button>
+            {!isMobileViewport ? (
+              <FloatingPopover
+                open={activeToolbarMenu === "date"}
+                anchorEl={dateMenuButtonRef.current}
+                panelRef={dateMenuPanelRef}
+                className={`${styles.calendarToolbarMenu} ${styles.calendarDatePickerMenu}`}
+                placement="bottom-start"
+                offset={12}
+              >
+                {renderDatePickerContent()}
+              </FloatingPopover>
+            ) : null}
             <button type="button" className={styles.calendarSquareButton} onClick={() => moveVisiblePeriod(-1)}>‹</button>
             <div className={styles.calendarDatePill}>
               <strong>{activeDateLabel}</strong>
@@ -5430,22 +5567,23 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
                     ) : null}
 
                     {member.appointments.map((appointment) => {
+                      const appointmentKey = getAppointmentInstanceKey(appointment);
                       const startMinutes = timeToMinutes(appointment.startTime);
                       const endMinutes = timeToMinutes(appointment.endTime);
                       const top = topOffset + minuteToY(startMinutes);
-                      const height = Math.max(bookingCardMinHeight, minuteToY(endMinutes) - minuteToY(startMinutes));
+                      const layout = memberLayouts.get(appointmentKey) ?? { lane: 0, laneCount: 1 };
+                      const laneWidth = 100 / layout.laneCount;
+                      const actualHeight = Math.max(1, minuteToY(endMinutes) - minuteToY(startMinutes));
+                      const height = actualHeight;
                       const isPastAppointment = getDateTimeValue(appointment.appointmentDate, appointment.endTime) < Date.now();
                       const isBlocked = appointment.kind === "blocked";
                       const isPendingApproval = appointment.attendance === "pending";
                       const bookingColor = isBlocked
                         ? "#d9dce4"
                         : getServiceColor(appointment.serviceName, snapshot?.workspace.services ?? []);
-                      const layout = memberLayouts.get(appointment.id) ?? { lane: 0, laneCount: 1 };
-                      const laneWidth = 100 / layout.laneCount;
-
                       return (
                         <article
-                          key={appointment.id}
+                          key={appointmentKey}
                           className={`${styles.bookingBlock} ${activeMobileBookingId === appointment.id ? styles.bookingBlockMobileActionsOpen : ""} ${draggingId === appointment.id ? styles.bookingDragging : ""} ${isBlocked ? styles.bookingBlocked : ""} ${isPastAppointment && !isBlocked ? styles.bookingPast : ""} ${isPendingApproval && !isBlocked ? styles.bookingPending : ""}`}
                           style={{
                             top: `${top}px`,
