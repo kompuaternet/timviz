@@ -494,6 +494,10 @@ const copy = {
   uk: {
     login: "Увійти",
     register: "Створити акаунт",
+    registerShort: "Створити",
+    newMasterCta: "Новий майстер? Створити акаунт",
+    registerMasterCta: "Створити акаунт майстра",
+    optionalDetails: "Додатково",
     email: "Email",
     password: "Пароль",
     firstName: "Ім'я",
@@ -781,10 +785,34 @@ const copy = {
     emptyCalendarTitle: "Поки немає записів",
     emptyCalendarText: "Натисніть +, щоб додати перший візит",
     noBookingsToday: "Сьогодні записів немає",
+    calendarEmptyActionText: "Додайте перший візит або налаштуйте послуги для онлайн-запису.",
+    firstRunCalendarTitle: "Почніть з послуги",
+    firstRunCalendarText: "Додайте послугу, щоб швидше створювати записи й відкрити онлайн-запис.",
+    addFirstVisit: "Додати перший візит",
+    quickVisit: "Швидкий запис",
+    createVisitWithoutService: "Створити запис без послуги",
+    firstServiceTitle: "Додайте першу послугу",
+    firstServiceText: "Послуги потрібні, щоб створювати записи й відкрити онлайн-запис для клієнтів.",
+    chooseFromCatalog: "Обрати з каталогу",
+    createOwnService: "Створити свою послугу",
+    servicesMineShort: "Мої",
+    servicesCreateShort: "Створити",
+    servicesCatalogShort: "Каталог",
+    serviceSuggestionManicure: "Манікюр",
+    serviceSuggestionHaircut: "Стрижка",
+    serviceSuggestionConsultation: "Консультація",
+    clientsEmptyTitle: "Клієнтів поки немає",
+    clientsEmptyText: "Клієнт з'явиться після першого запису або ви можете додати його вручну.",
+    setupRemaining: "Залишилось {count} кроки",
+    setupFirstServiceText: "Додайте послуги - це перший крок до записів і онлайн-бронювання.",
   },
   ru: {
     login: "Войти",
     register: "Создать аккаунт",
+    registerShort: "Создать",
+    newMasterCta: "Новый мастер? Создать аккаунт",
+    registerMasterCta: "Создать аккаунт мастера",
+    optionalDetails: "Дополнительно",
     email: "Email",
     password: "Пароль",
     firstName: "Имя",
@@ -1072,10 +1100,34 @@ const copy = {
     emptyCalendarTitle: "Пока нет записей",
     emptyCalendarText: "Нажмите +, чтобы добавить первый визит",
     noBookingsToday: "Сегодня записей нет",
+    calendarEmptyActionText: "Добавьте первый визит или настройте услуги для онлайн-записи.",
+    firstRunCalendarTitle: "Начните с услуги",
+    firstRunCalendarText: "Добавьте услугу, чтобы создавать записи быстрее и открыть онлайн-запись.",
+    addFirstVisit: "Добавить первый визит",
+    quickVisit: "Быстрая запись",
+    createVisitWithoutService: "Создать запись без услуги",
+    firstServiceTitle: "Добавьте первую услугу",
+    firstServiceText: "Услуги нужны, чтобы создавать записи и открыть онлайн-запись для клиентов.",
+    chooseFromCatalog: "Выбрать из каталога",
+    createOwnService: "Создать свою услугу",
+    servicesMineShort: "Мои",
+    servicesCreateShort: "Создать",
+    servicesCatalogShort: "Каталог",
+    serviceSuggestionManicure: "Маникюр",
+    serviceSuggestionHaircut: "Стрижка",
+    serviceSuggestionConsultation: "Консультация",
+    clientsEmptyTitle: "Клиентов пока нет",
+    clientsEmptyText: "Клиент появится после первой записи или вы можете добавить его вручную.",
+    setupRemaining: "Осталось {count} шага",
+    setupFirstServiceText: "Добавьте услуги - это первый шаг к записям и онлайн-бронированию.",
   },
   en: {
     login: "Sign in",
     register: "Create account",
+    registerShort: "Create",
+    newMasterCta: "New pro? Create account",
+    registerMasterCta: "Create pro account",
+    optionalDetails: "More details",
     email: "Email",
     password: "Password",
     firstName: "First name",
@@ -1363,6 +1415,26 @@ const copy = {
     emptyCalendarTitle: "No bookings yet",
     emptyCalendarText: "Tap + to add the first visit",
     noBookingsToday: "No bookings today",
+    calendarEmptyActionText: "Add your first visit or set up services for online booking.",
+    firstRunCalendarTitle: "Start with a service",
+    firstRunCalendarText: "Add a service to create bookings faster and open online booking.",
+    addFirstVisit: "Add first visit",
+    quickVisit: "Quick booking",
+    createVisitWithoutService: "Create booking without service",
+    firstServiceTitle: "Add your first service",
+    firstServiceText: "Services help you create bookings and open online booking for clients.",
+    chooseFromCatalog: "Choose from catalog",
+    createOwnService: "Create custom service",
+    servicesMineShort: "Mine",
+    servicesCreateShort: "Create",
+    servicesCatalogShort: "Catalog",
+    serviceSuggestionManicure: "Manicure",
+    serviceSuggestionHaircut: "Haircut",
+    serviceSuggestionConsultation: "Consultation",
+    clientsEmptyTitle: "No clients yet",
+    clientsEmptyText: "A client appears after the first booking, or you can add one manually.",
+    setupRemaining: "{count} steps left",
+    setupFirstServiceText: "Add services first - this unlocks faster bookings and online booking.",
   },
 } satisfies Record<AppLanguage, Record<string, string>>;
 
@@ -2029,6 +2101,7 @@ export default function App() {
   const [refreshing, setRefreshing] = useState(false);
   const [busy, setBusy] = useState(false);
   const [visitComposerOpen, setVisitComposerOpen] = useState(false);
+  const [registerDetailsOpen, setRegisterDetailsOpen] = useState(false);
   const detectedCountry = useMemo(() => getDetectedCountry(), []);
   const detectedTimezone = useMemo(() => getDetectedTimezone(), []);
   const t = copy[language];
@@ -2047,6 +2120,16 @@ export default function App() {
   const [timeAction, setTimeAction] = useState<{ date: string; time: string; targetProfessionalId?: string } | null>(null);
   const [serviceDraft, setServiceDraft] = useState<ServiceDraftState>({ name: "", category: DEFAULT_SERVICE_CATEGORY, durationMinutes: "60", price: "0", color: SERVICE_COLORS[0] });
   const [clientDraft, setClientDraft] = useState({ firstName: "", lastName: "", phone: "", email: "" });
+
+  useEffect(() => {
+    Linking.getInitialURL()
+      .then((url) => {
+        if (!url) return;
+        if (url.includes("create-account")) setMode("register");
+        if (url.includes("pro/login")) setMode("login");
+      })
+      .catch(() => undefined);
+  }, []);
 
   function hasVisibleWorkspaceData() {
     return Boolean(workspace || calendar || clients.length || staffSnapshot);
@@ -2336,13 +2419,14 @@ export default function App() {
   }
 
   async function register() {
+    const firstName = registerForm.firstName.trim();
     const payload = {
       ...registerForm,
       email: registerForm.email.trim().toLowerCase(),
-      firstName: registerForm.firstName.trim(),
+      firstName,
       lastName: registerForm.lastName.trim(),
       phone: registerForm.phone.trim(),
-      companyName: registerForm.companyName.trim(),
+      companyName: registerForm.companyName.trim() || `${firstName} Timviz`,
       language,
       country: detectedCountry.country,
       currency: detectedCountry.currency,
@@ -2351,11 +2435,9 @@ export default function App() {
 
     if (
       !payload.firstName ||
-      !payload.lastName ||
       !payload.email ||
       !payload.password ||
-      !payload.phone ||
-      !payload.companyName
+      !payload.phone
     ) {
       Alert.alert(t.requiredTitle, t.requiredText);
       return;
@@ -2903,6 +2985,7 @@ export default function App() {
             onResizeAppointment={(appointment) => updateAppointmentTime(appointment, appointment.startTime, addMinutes(appointment.endTime, 10))}
             onUpdateBlockedTime={updateAppointmentTime}
             onCreateBlockedTime={createBlockedTime}
+            onOpenServices={() => setActiveTab("services")}
             busy={busy}
             refreshing={refreshing}
             onRefresh={() => refreshAll()}
@@ -2945,6 +3028,14 @@ export default function App() {
                 draft={clientDraft}
                 setDraft={setClientDraft}
                 onCreate={createClient}
+                onCreateVisit={() => {
+                  setActiveTab("calendar");
+                  setVisitDraft({
+                    ...createDefaultVisitDraft(selectedDate, getRoundedTime(10)),
+                    items: [{ ...createVisitServiceDraft(getRoundedTime(10)), serviceName: t.withoutService }],
+                  });
+                  setVisitComposerOpen(true);
+                }}
                 busy={busy}
               />
             ) : null}
@@ -2988,7 +3079,7 @@ export default function App() {
     <SafeAreaView style={styles.authScreen}>
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.keyboard}>
         <ScrollView
-          contentContainerStyle={styles.authContent}
+          contentContainerStyle={[styles.authContent, mode === "register" && styles.authContentWithStickyFooter]}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
@@ -3009,12 +3100,15 @@ export default function App() {
                 <Text style={[styles.segmentText, mode === "login" && styles.segmentTextActive]}>{t.login}</Text>
               </Pressable>
               <Pressable onPress={() => setMode("register")} style={[styles.segmentButton, mode === "register" && styles.segmentButtonActive]}>
-                <Text style={[styles.segmentText, mode === "register" && styles.segmentTextActive]}>{t.register}</Text>
+                <Text style={[styles.segmentText, mode === "register" && styles.segmentTextActive]}>{t.registerShort || t.register}</Text>
               </Pressable>
             </View>
 
             {mode === "login" ? (
               <View style={styles.form}>
+                <Pressable style={styles.authInlineCta} onPress={() => setMode("register")}>
+                  <Text style={styles.authInlineCtaText}>{t.newMasterCta}</Text>
+                </Pressable>
                 <Field
                   label={t.email}
                   value={loginForm.email}
@@ -3033,19 +3127,29 @@ export default function App() {
               </View>
             ) : (
               <View style={styles.form}>
-                <View style={styles.twoColumns}>
-                  <Field label={t.firstName} value={registerForm.firstName} onChangeText={(value) => setRegisterForm((current) => ({ ...current, firstName: value }))} />
-                  <Field label={t.lastName} value={registerForm.lastName} onChangeText={(value) => setRegisterForm((current) => ({ ...current, lastName: value }))} />
-                </View>
+                <Field label={t.firstName} value={registerForm.firstName} onChangeText={(value) => setRegisterForm((current) => ({ ...current, firstName: value }))} />
                 <Field label={t.email} value={registerForm.email} onChangeText={(value) => setRegisterForm((current) => ({ ...current, email: value }))} keyboardType="email-address" autoCapitalize="none" placeholder="you@email.com" />
-                <Field label={t.password} hint={t.passwordHint} value={registerForm.password} onChangeText={(value) => setRegisterForm((current) => ({ ...current, password: value }))} secureTextEntry />
                 <Field label={t.phone} value={registerForm.phone} onChangeText={(value) => setRegisterForm((current) => ({ ...current, phone: value }))} keyboardType="phone-pad" />
-                <Field label={t.companyName} value={registerForm.companyName} onChangeText={(value) => setRegisterForm((current) => ({ ...current, companyName: value }))} />
-                <PrimaryButton label={busy ? t.creating : t.continue} onPress={register} disabled={busy} />
+                <Field label={t.password} hint={t.passwordHint} value={registerForm.password} onChangeText={(value) => setRegisterForm((current) => ({ ...current, password: value }))} secureTextEntry />
+                <Pressable style={styles.authDetailsToggle} onPress={() => setRegisterDetailsOpen((current) => !current)}>
+                  <Text style={styles.authDetailsToggleText}>{t.optionalDetails}</Text>
+                  <Ionicons name={registerDetailsOpen ? "chevron-up" : "chevron-down"} size={18} color="#6D4AFF" />
+                </Pressable>
+                {registerDetailsOpen ? (
+                  <View style={styles.authOptionalBlock}>
+                    <Field label={t.lastName} value={registerForm.lastName} onChangeText={(value) => setRegisterForm((current) => ({ ...current, lastName: value }))} />
+                    <Field label={t.companyName} value={registerForm.companyName} onChangeText={(value) => setRegisterForm((current) => ({ ...current, companyName: value }))} placeholder={`${registerForm.firstName.trim() || "Timviz"} Timviz`} />
+                  </View>
+                ) : null}
               </View>
             )}
           </View>
         </ScrollView>
+        {mode === "register" ? (
+          <View style={styles.authStickyFooter}>
+            <PrimaryButton label={busy ? t.creating : t.registerMasterCta || t.register} onPress={register} disabled={busy} />
+          </View>
+        ) : null}
       </KeyboardAvoidingView>
       <StatusBar style="dark" />
     </SafeAreaView>
@@ -3076,6 +3180,7 @@ function CalendarTab({
   onResizeAppointment,
   onUpdateBlockedTime,
   onCreateBlockedTime,
+  onOpenServices,
   busy,
   refreshing,
   onRefresh,
@@ -3106,6 +3211,7 @@ function CalendarTab({
   onResizeAppointment: (appointment: AppointmentRecord) => void;
   onUpdateBlockedTime: (appointment: AppointmentRecord, startTime: string, endTime: string) => Promise<boolean>;
   onCreateBlockedTime: (date: string, startTime: string, endTime: string, label: string, targetProfessionalId?: string) => Promise<void>;
+  onOpenServices: () => void;
   busy: boolean;
   refreshing: boolean;
   onRefresh: () => void;
@@ -3115,6 +3221,7 @@ function CalendarTab({
 }) {
   const currency = workspace?.professional.currency;
   const services = workspace?.services || [];
+  const hasServices = services.length > 0;
   const { width: screenWidth } = useWindowDimensions();
   const [isCompact, setIsCompact] = useState(true);
   const [viewMode, setViewMode] = useState<CalendarViewMode>("day");
@@ -3441,10 +3548,14 @@ function CalendarTab({
     });
   }
 
-  function openComposerAt(time: string, date = selectedDate, targetProfessionalId = primaryMember?.id) {
+  function openComposerAt(time: string, date = selectedDate, targetProfessionalId = primaryMember?.id, options: { withoutService?: boolean } = {}) {
     setEditingAppointment(null);
     setSelectedDate(date);
-    setVisitDraft({ ...createDefaultVisitDraft(date, time), targetProfessionalId });
+    const nextDraft = createDefaultVisitDraft(date, time);
+    if (options.withoutService) {
+      nextDraft.items = [{ ...createVisitServiceDraft(time), serviceName: t.withoutService }];
+    }
+    setVisitDraft({ ...nextDraft, targetProfessionalId });
     setComposerOpen(true);
   }
 
@@ -3633,9 +3744,21 @@ function CalendarTab({
               </View>
             </ScrollView>
             {!visibleDayAppointmentCount ? (
-              <View pointerEvents="none" style={styles.calendarEmptyState}>
-                <Text style={styles.calendarEmptyTitle}>{selectedDate === getTodayIso() ? t.noBookingsToday || t.emptyCalendarTitle : t.emptyCalendarTitle || t.empty}</Text>
-                <Text style={styles.calendarEmptyText}>{t.emptyCalendarText || t.newVisit}</Text>
+              <View style={styles.calendarEmptyState}>
+                <Text style={styles.calendarEmptyTitle}>
+                  {!hasServices ? t.firstRunCalendarTitle : selectedDate === getTodayIso() ? t.noBookingsToday || t.emptyCalendarTitle : t.emptyCalendarTitle || t.empty}
+                </Text>
+                <Text style={styles.calendarEmptyText}>
+                  {!hasServices ? t.firstRunCalendarText : t.calendarEmptyActionText || t.emptyCalendarText}
+                </Text>
+                <View style={styles.emptyActionRow}>
+                  <Pressable style={styles.emptyPrimaryAction} onPress={() => (!hasServices ? onOpenServices() : openComposerAt(getRoundedTime(10), selectedDate, primaryMember?.id))}>
+                    <Text style={styles.emptyPrimaryActionText}>{!hasServices ? t.addService : t.addFirstVisit}</Text>
+                  </Pressable>
+                  <Pressable style={styles.emptySecondaryAction} onPress={() => (!hasServices ? openComposerAt(getRoundedTime(10), selectedDate, primaryMember?.id, { withoutService: true }) : onOpenServices())}>
+                    <Text style={styles.emptySecondaryActionText}>{!hasServices ? t.quickVisit : t.addService}</Text>
+                  </Pressable>
+                </View>
               </View>
             ) : null}
           </View>
@@ -3948,42 +4071,71 @@ function CalendarTab({
           <View style={styles.timeActionMenu}>
             <View style={styles.sheetHandle} />
             <Text style={styles.timeActionTitle}>{timeAction?.time}</Text>
-            <Pressable
-              style={styles.timeActionItem}
-              onPress={() => {
-                if (!timeAction) return;
-                const action = timeAction;
-                setTimeAction(null);
-                openComposerAt(action.time, action.date, action.targetProfessionalId);
-              }}
-            >
-              <Ionicons name="calendar-outline" size={20} color="#0F172A" />
-              <Text style={styles.timeActionText}>{t.newVisit}</Text>
-            </Pressable>
-            <Pressable
-              style={styles.timeActionItem}
-              onPress={() => {
-                if (!timeAction) return;
-                const action = timeAction;
-                setTimeAction(null);
-                openBlockedTimeComposer(action, t.reservedTime, t.reservedTime);
-              }}
-            >
-              <Ionicons name="time-outline" size={20} color="#0F172A" />
-              <Text style={styles.timeActionText}>{t.bookTime}</Text>
-            </Pressable>
-            <Pressable
-              style={styles.timeActionItem}
-              onPress={() => {
-                if (!timeAction) return;
-                const action = timeAction;
-                setTimeAction(null);
-                openBlockedTimeComposer(action, t.unavailableTime, t.unavailableTime);
-              }}
-            >
-              <Ionicons name="ban-outline" size={20} color="#0F172A" />
-              <Text style={styles.timeActionText}>{t.addBlockedTime}</Text>
-            </Pressable>
+            {!hasServices ? (
+              <>
+                <Pressable
+                  style={styles.timeActionItem}
+                  onPress={() => {
+                    setTimeAction(null);
+                    onOpenServices();
+                  }}
+                >
+                  <Ionicons name="pricetag-outline" size={20} color="#0F172A" />
+                  <Text style={styles.timeActionText}>{t.addService}</Text>
+                </Pressable>
+                <Pressable
+                  style={styles.timeActionItem}
+                  onPress={() => {
+                    if (!timeAction) return;
+                    const action = timeAction;
+                    setTimeAction(null);
+                    openComposerAt(action.time, action.date, action.targetProfessionalId, { withoutService: true });
+                  }}
+                >
+                  <Ionicons name="calendar-outline" size={20} color="#0F172A" />
+                  <Text style={styles.timeActionText}>{t.createVisitWithoutService}</Text>
+                </Pressable>
+              </>
+            ) : (
+              <>
+                <Pressable
+                  style={styles.timeActionItem}
+                  onPress={() => {
+                    if (!timeAction) return;
+                    const action = timeAction;
+                    setTimeAction(null);
+                    openComposerAt(action.time, action.date, action.targetProfessionalId);
+                  }}
+                >
+                  <Ionicons name="calendar-outline" size={20} color="#0F172A" />
+                  <Text style={styles.timeActionText}>{t.newVisit}</Text>
+                </Pressable>
+                <Pressable
+                  style={styles.timeActionItem}
+                  onPress={() => {
+                    if (!timeAction) return;
+                    const action = timeAction;
+                    setTimeAction(null);
+                    openBlockedTimeComposer(action, t.reservedTime, t.reservedTime);
+                  }}
+                >
+                  <Ionicons name="time-outline" size={20} color="#0F172A" />
+                  <Text style={styles.timeActionText}>{t.bookTime}</Text>
+                </Pressable>
+                <Pressable
+                  style={styles.timeActionItem}
+                  onPress={() => {
+                    if (!timeAction) return;
+                    const action = timeAction;
+                    setTimeAction(null);
+                    openBlockedTimeComposer(action, t.unavailableTime, t.unavailableTime);
+                  }}
+                >
+                  <Ionicons name="ban-outline" size={20} color="#0F172A" />
+                  <Text style={styles.timeActionText}>{t.addBlockedTime}</Text>
+                </Pressable>
+              </>
+            )}
           </View>
         </Pressable>
       </Modal>
@@ -4619,6 +4771,11 @@ function WorkspaceHeader({
   const setupDone = setupItems.filter((item) => item.done).length;
   const setupMissingCount = setupItems.length - setupDone;
   const setupComplete = setupMissingCount === 0;
+  const setupHintText = setupComplete
+    ? t.setupCompleteText
+    : !workspace?.services?.length
+      ? t.setupFirstServiceText
+      : (t.setupRemaining || t.setupAssistantText).replace("{count}", String(setupMissingCount));
   const pendingCount = (notifications.pendingOnlineBookings?.length || 0) + (notifications.pendingJoinRequests?.length || 0);
 
   async function openPanel(nextPanel: typeof panel) {
@@ -4703,7 +4860,7 @@ function WorkspaceHeader({
 
             {panel === "setup" ? (
               <View style={styles.headerPanelBody}>
-                <Text style={styles.panelHint}>{setupComplete ? t.setupCompleteText : t.setupAssistantText}</Text>
+                <Text style={styles.panelHint}>{setupHintText}</Text>
                 <View style={[styles.setupProgressRow, setupComplete && styles.setupProgressRowDone]}>
                   <Text style={styles.setupProgressTitle}>{t.setupProgress}</Text>
                   <View style={styles.setupProgressValueRow}>
@@ -5061,6 +5218,34 @@ function ServicesTab({
       .flatMap((group) => [...(group.topSuggestions || []), ...(group.popularServices || [])].map((service) => ({ ...service, category: group.title })))
       .filter((service) => !query || getServiceSearchText(service).includes(query));
   }, [catalog, catalogQuery, currentCatalogCategory]);
+  const quickServiceSuggestions = useMemo(() => {
+    const catalogSuggestions = catalog
+      .flatMap((group) => [...(group.topSuggestions || []), ...(group.popularServices || [])].map((service) => ({
+        name: getServiceDisplayName(service, language),
+        category: group.title,
+        durationMinutes: String(service.durationMinutes || 60),
+        price: String(service.price || 0),
+      })))
+      .filter((item) => item.name)
+      .slice(0, 3);
+    if (catalogSuggestions.length) return catalogSuggestions;
+    return [
+      { name: t.serviceSuggestionManicure, category: DEFAULT_SERVICE_CATEGORY, durationMinutes: "60", price: "0" },
+      { name: t.serviceSuggestionHaircut, category: DEFAULT_SERVICE_CATEGORY, durationMinutes: "45", price: "0" },
+      { name: t.serviceSuggestionConsultation, category: DEFAULT_SERVICE_CATEGORY, durationMinutes: "30", price: "0" },
+    ];
+  }, [catalog, language, t]);
+
+  function startCustomServiceFromSuggestion(item?: { name?: string; category?: string; durationMinutes?: string; price?: string }) {
+    setDraft({
+      ...draft,
+      name: item?.name || draft.name,
+      category: item?.category || draft.category || DEFAULT_SERVICE_CATEGORY,
+      durationMinutes: item?.durationMinutes || draft.durationMinutes || "60",
+      price: item?.price || draft.price || "0",
+    });
+    setMode("custom");
+  }
 
   function startEdit(service: ServiceRecord) {
     setEditId(service.id);
@@ -5103,9 +5288,9 @@ function ServicesTab({
     <View style={styles.sectionStack}>
       <View style={styles.servicesModeRow}>
         {[
-          { id: "mine", label: t.yourServices },
-          { id: "custom", label: t.ownService },
-          { id: "catalog", label: t.generalCatalog },
+          { id: "mine", label: t.servicesMineShort || t.yourServices },
+          { id: "custom", label: t.servicesCreateShort || t.ownService },
+          { id: "catalog", label: t.servicesCatalogShort || t.generalCatalog },
         ].map((item) => {
           const active = mode === item.id;
           return (
@@ -5118,51 +5303,74 @@ function ServicesTab({
 
       {mode === "mine" ? (
         <Panel title={t.yourServices}>
-          <Text style={styles.emptyText}>{t.myServicesHint}</Text>
           {services.length ? (
-            services.map((service) => {
-              const isEditing = editId === service.id;
-              return (
-                <View key={service.id} style={styles.serviceManageCard}>
-                  {isEditing ? (
-                    <View style={styles.serviceEditStack}>
-                      <Field label={t.serviceName} value={editDraft.name} onChangeText={(value) => setEditDraft({ ...editDraft, name: value })} />
-                      <CategoryChips t={t} language={language} categories={categories} selected={editDraft.category} onSelect={(category) => setEditDraft({ ...editDraft, category })} />
-                      <View style={styles.twoColumns}>
-                        <Field label={t.duration} value={editDraft.durationMinutes} onChangeText={(value) => setEditDraft({ ...editDraft, durationMinutes: value })} keyboardType="number-pad" />
-                        <Field label={t.price} value={editDraft.price} onChangeText={(value) => setEditDraft({ ...editDraft, price: value })} keyboardType="number-pad" />
-                      </View>
-                      <ColorSwatches value={editDraft.color} onChange={(color) => setEditDraft({ ...editDraft, color })} />
-                      <View style={styles.serviceActionRow}>
-                        <SecondaryButton label={t.cancel} onPress={() => setEditId("")} disabled={busy} />
-                        <PrimaryButton label={t.saveService} onPress={() => void saveEdit()} disabled={busy} />
-                      </View>
-                    </View>
-                  ) : (
-                    <Pressable style={styles.serviceManageSummary} onPress={() => startEdit(service)}>
-                      <View style={styles.serviceColorRow}>
-                        <View style={[styles.serviceDot, { backgroundColor: service.color || "#7C3AED" }]} />
-                        <View style={styles.serviceTextBlock}>
-                          <Text style={styles.listTitle}>{getServiceDisplayName(service, language)}</Text>
-                          <Text style={styles.listCaption}>{getServiceCategoryDisplayName(service.category, service.localizedCategory, language, t)} · {formatDuration(service.durationMinutes || 60, t)}</Text>
+            <>
+              <Text style={styles.emptyText}>{t.myServicesHint}</Text>
+              {services.map((service) => {
+                const isEditing = editId === service.id;
+                return (
+                  <View key={service.id} style={styles.serviceManageCard}>
+                    {isEditing ? (
+                      <View style={styles.serviceEditStack}>
+                        <Field label={t.serviceName} value={editDraft.name} onChangeText={(value) => setEditDraft({ ...editDraft, name: value })} />
+                        <CategoryChips t={t} language={language} categories={categories} selected={editDraft.category} onSelect={(category) => setEditDraft({ ...editDraft, category })} />
+                        <View style={styles.twoColumns}>
+                          <Field label={t.duration} value={editDraft.durationMinutes} onChangeText={(value) => setEditDraft({ ...editDraft, durationMinutes: value })} keyboardType="number-pad" />
+                          <Field label={t.price} value={editDraft.price} onChangeText={(value) => setEditDraft({ ...editDraft, price: value })} keyboardType="number-pad" />
+                        </View>
+                        <ColorSwatches value={editDraft.color} onChange={(color) => setEditDraft({ ...editDraft, color })} />
+                        <View style={styles.serviceActionRow}>
+                          <SecondaryButton label={t.cancel} onPress={() => setEditId("")} disabled={busy} />
+                          <PrimaryButton label={t.saveService} onPress={() => void saveEdit()} disabled={busy} />
                         </View>
                       </View>
-                      <View style={styles.rowRight}>
-                        <Text style={styles.moneyText}>{formatMoney(service.price, currency)}</Text>
-                        <Pressable style={styles.iconGhostButton} onPress={() => startEdit(service)}>
-                          <Ionicons name="create-outline" size={18} color="#334155" />
-                        </Pressable>
-                        <Pressable style={styles.smallDanger} onPress={() => onDelete(service.id)}>
-                          <Text style={styles.smallDangerText}>×</Text>
-                        </Pressable>
-                      </View>
-                    </Pressable>
-                  )}
-                </View>
-              );
-            })
+                    ) : (
+                      <Pressable style={styles.serviceManageSummary} onPress={() => startEdit(service)}>
+                        <View style={styles.serviceColorRow}>
+                          <View style={[styles.serviceDot, { backgroundColor: service.color || "#7C3AED" }]} />
+                          <View style={styles.serviceTextBlock}>
+                            <Text style={styles.listTitle}>{getServiceDisplayName(service, language)}</Text>
+                            <Text style={styles.listCaption}>{getServiceCategoryDisplayName(service.category, service.localizedCategory, language, t)} · {formatDuration(service.durationMinutes || 60, t)}</Text>
+                          </View>
+                        </View>
+                        <View style={styles.rowRight}>
+                          <Text style={styles.moneyText}>{formatMoney(service.price, currency)}</Text>
+                          <Pressable style={styles.iconGhostButton} onPress={() => startEdit(service)}>
+                            <Ionicons name="create-outline" size={18} color="#334155" />
+                          </Pressable>
+                          <Pressable style={styles.smallDanger} onPress={() => onDelete(service.id)}>
+                            <Text style={styles.smallDangerText}>×</Text>
+                          </Pressable>
+                        </View>
+                      </Pressable>
+                    )}
+                  </View>
+                );
+              })}
+            </>
           ) : (
-            <Text style={styles.emptyText}>{t.empty}</Text>
+            <View style={styles.firstRunCard}>
+              <View style={styles.firstRunIcon}>
+                <Ionicons name="pricetag-outline" size={22} color="#6D4AFF" />
+              </View>
+              <Text style={styles.firstRunTitle}>{t.firstServiceTitle}</Text>
+              <Text style={styles.firstRunText}>{t.firstServiceText}</Text>
+              <View style={styles.firstRunActions}>
+                <Pressable style={styles.firstRunPrimaryButton} onPress={() => setMode("catalog")}>
+                  <Text style={styles.firstRunPrimaryText}>{t.chooseFromCatalog}</Text>
+                </Pressable>
+                <Pressable style={styles.firstRunSecondaryButton} onPress={() => startCustomServiceFromSuggestion()}>
+                  <Text style={styles.firstRunSecondaryText}>{t.createOwnService}</Text>
+                </Pressable>
+              </View>
+              <View style={styles.quickSuggestionRow}>
+                {quickServiceSuggestions.map((item) => (
+                  <Pressable key={`${item.category}-${item.name}`} style={styles.quickSuggestionChip} onPress={() => startCustomServiceFromSuggestion(item)}>
+                    <Text style={styles.quickSuggestionText}>{item.name}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
           )}
         </Panel>
       ) : null}
@@ -5261,6 +5469,7 @@ function ClientsTab({
   draft,
   setDraft,
   onCreate,
+  onCreateVisit,
   busy,
 }: {
   t: Record<string, string>;
@@ -5268,6 +5477,7 @@ function ClientsTab({
   draft: { firstName: string; lastName: string; phone: string; email: string };
   setDraft: (draft: { firstName: string; lastName: string; phone: string; email: string }) => void;
   onCreate: () => void;
+  onCreateVisit: () => void;
   busy: boolean;
 }) {
   return (
@@ -5294,7 +5504,21 @@ function ClientsTab({
             </View>
           ))
         ) : (
-          <Text style={styles.emptyText}>{t.empty}</Text>
+          <View style={styles.firstRunCard}>
+            <View style={styles.firstRunIcon}>
+              <Ionicons name="people-outline" size={22} color="#6D4AFF" />
+            </View>
+            <Text style={styles.firstRunTitle}>{t.clientsEmptyTitle}</Text>
+            <Text style={styles.firstRunText}>{t.clientsEmptyText}</Text>
+            <View style={styles.firstRunActions}>
+              <Pressable style={styles.firstRunPrimaryButton} onPress={onCreate}>
+                <Text style={styles.firstRunPrimaryText}>{t.addClient}</Text>
+              </Pressable>
+              <Pressable style={styles.firstRunSecondaryButton} onPress={onCreateVisit}>
+                <Text style={styles.firstRunSecondaryText}>{t.newVisit}</Text>
+              </Pressable>
+            </View>
+          </View>
         )}
       </Panel>
     </View>
@@ -7106,6 +7330,9 @@ const styles = StyleSheet.create({
     paddingTop: 18,
     paddingBottom: 38,
   },
+  authContentWithStickyFooter: {
+    paddingBottom: 126,
+  },
   topBar: {
     flexDirection: "row",
     alignItems: "center",
@@ -7203,6 +7430,7 @@ const styles = StyleSheet.create({
   segmentButton: {
     flex: 1,
     height: 46,
+    minWidth: 0,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: DESIGN.radius.md,
@@ -7218,7 +7446,7 @@ const styles = StyleSheet.create({
   },
   segmentText: {
     color: "#475569",
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "800",
   },
   segmentTextActive: {
@@ -7226,6 +7454,48 @@ const styles = StyleSheet.create({
   },
   form: {
     gap: 12,
+  },
+  authInlineCta: {
+    minHeight: 42,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: DESIGN.radius.md,
+    backgroundColor: DESIGN.colors.primarySoft,
+  },
+  authInlineCtaText: {
+    color: DESIGN.colors.primaryDark,
+    fontSize: 14,
+    fontWeight: "800",
+  },
+  authDetailsToggle: {
+    minHeight: 46,
+    paddingHorizontal: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderRadius: DESIGN.radius.md,
+    borderWidth: 1,
+    borderColor: DESIGN.colors.border,
+    backgroundColor: DESIGN.colors.surfaceSoft,
+  },
+  authDetailsToggleText: {
+    color: DESIGN.colors.text,
+    fontSize: 14,
+    fontWeight: "800",
+  },
+  authOptionalBlock: {
+    gap: 12,
+    padding: 12,
+    borderRadius: DESIGN.radius.lg,
+    backgroundColor: DESIGN.colors.surfaceSoft,
+  },
+  authStickyFooter: {
+    paddingHorizontal: DESIGN.spacing.screen,
+    paddingTop: 10,
+    paddingBottom: Platform.OS === "ios" ? 18 : 12,
+    borderTopWidth: 1,
+    borderTopColor: DESIGN.colors.border,
+    backgroundColor: "rgba(255,255,255,0.98)",
   },
   twoColumns: {
     flexDirection: "row",
@@ -8048,6 +8318,43 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
     fontWeight: "600",
+  },
+  emptyActionRow: {
+    marginTop: 12,
+    flexDirection: "row",
+    gap: 8,
+  },
+  emptyPrimaryAction: {
+    flex: 1.1,
+    minHeight: 42,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 10,
+    borderRadius: DESIGN.radius.md,
+    backgroundColor: DESIGN.colors.primary,
+  },
+  emptyPrimaryActionText: {
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: "800",
+    textAlign: "center",
+  },
+  emptySecondaryAction: {
+    flex: 1,
+    minHeight: 42,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 10,
+    borderRadius: DESIGN.radius.md,
+    borderWidth: 1,
+    borderColor: DESIGN.colors.border,
+    backgroundColor: DESIGN.colors.surface,
+  },
+  emptySecondaryActionText: {
+    color: DESIGN.colors.primaryDark,
+    fontSize: 13,
+    fontWeight: "800",
+    textAlign: "center",
   },
   teamMembersHorizontal: {
     flex: 1,
@@ -9465,16 +9772,16 @@ const styles = StyleSheet.create({
   },
   servicesModeRow: {
     flexDirection: "row",
-    gap: 6,
-    padding: 4,
-    borderRadius: DESIGN.radius.lg,
+    gap: 5,
+    padding: 3,
+    borderRadius: DESIGN.radius.md,
     borderWidth: 1,
     borderColor: DESIGN.colors.border,
     backgroundColor: DESIGN.colors.surfaceSoft,
   },
   servicesModeButton: {
     flex: 1,
-    minHeight: 44,
+    minHeight: 38,
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 8,
@@ -9493,7 +9800,7 @@ const styles = StyleSheet.create({
   servicesModeText: {
     color: DESIGN.colors.muted,
     fontSize: 12,
-    fontWeight: "900",
+    fontWeight: "800",
     textAlign: "center",
   },
   servicesModeTextActive: {
@@ -9636,6 +9943,91 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: DESIGN.colors.border,
     backgroundColor: DESIGN.colors.surfaceSoft,
+  },
+  firstRunCard: {
+    padding: 16,
+    alignItems: "center",
+    borderRadius: DESIGN.radius.xl,
+    borderWidth: 1,
+    borderColor: "#DDD6FE",
+    backgroundColor: "#FBFAFF",
+  },
+  firstRunIcon: {
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: DESIGN.colors.primarySoft,
+  },
+  firstRunTitle: {
+    marginTop: 12,
+    color: DESIGN.colors.text,
+    fontSize: 18,
+    lineHeight: 23,
+    fontWeight: "800",
+    textAlign: "center",
+  },
+  firstRunText: {
+    marginTop: 6,
+    color: DESIGN.colors.muted,
+    fontSize: 13,
+    lineHeight: 19,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  firstRunActions: {
+    width: "100%",
+    marginTop: 14,
+    gap: 8,
+  },
+  firstRunPrimaryButton: {
+    minHeight: 48,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: DESIGN.radius.lg,
+    backgroundColor: DESIGN.colors.primary,
+  },
+  firstRunPrimaryText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "800",
+  },
+  firstRunSecondaryButton: {
+    minHeight: 46,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: DESIGN.radius.lg,
+    borderWidth: 1,
+    borderColor: "#D8D0FF",
+    backgroundColor: DESIGN.colors.surface,
+  },
+  firstRunSecondaryText: {
+    color: DESIGN.colors.primaryDark,
+    fontSize: 14,
+    fontWeight: "800",
+  },
+  quickSuggestionRow: {
+    marginTop: 12,
+    flexDirection: "row",
+    flexWrap: "wrap",
+    justifyContent: "center",
+    gap: 7,
+  },
+  quickSuggestionChip: {
+    minHeight: 34,
+    paddingHorizontal: 11,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 999,
+    backgroundColor: DESIGN.colors.surface,
+    borderWidth: 1,
+    borderColor: DESIGN.colors.border,
+  },
+  quickSuggestionText: {
+    color: DESIGN.colors.text,
+    fontSize: 12,
+    fontWeight: "700",
   },
   serviceManageSummary: {
     minHeight: 70,
