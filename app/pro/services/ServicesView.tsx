@@ -271,7 +271,7 @@ export default function ServicesView({ initialWorkspace, catalog, onboardingCta 
     try {
       const response = await fetch("/api/pro/services");
       const payload = await response.json();
-      if (response.ok) {
+      if (response.ok && Array.isArray(payload.workspace?.services)) {
         setServices(normalizeServices(payload.workspace.services));
       }
     } finally {
@@ -392,49 +392,62 @@ export default function ServicesView({ initialWorkspace, catalog, onboardingCta 
     setIsSaving(true);
     setStatusText("");
 
-    const response = await fetch("/api/pro/services", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: service.name,
-        category: service.category,
-        durationMinutes: service.durationMinutes || 60,
-        price: service.price || 0,
-        color: colorPalette[services.length % colorPalette.length],
-        source: "catalog"
-      })
-    });
-    const payload = await response.json();
+    try {
+      const response = await fetch("/api/pro/services", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: service.name,
+          category: service.category,
+          durationMinutes: service.durationMinutes || 60,
+          price: service.price || 0,
+          color: colorPalette[services.length % colorPalette.length],
+          source: "catalog"
+        })
+      });
+      const payload = await response.json();
 
-    if (!response.ok) {
-      setStatusText(payload.error || copy.addFromCatalogFailed);
+      if (!response.ok) {
+        setStatusText(payload.error || copy.addFromCatalogFailed);
+        return;
+      }
+
+      if (payload?.id) {
+        setServices((current) => normalizeServices([...current.filter((item) => item.id !== payload.id), payload]));
+      } else {
+        await reloadServices();
+      }
+
+      setStatusText(copy.addedNamed(service.localizedLabel || localizeServiceName(service.name, language)));
+    } catch {
+      setStatusText(copy.addFromCatalogFailed);
+    } finally {
       setIsSaving(false);
-      return;
     }
-
-    await reloadServices();
-    setStatusText(copy.addedNamed(service.localizedLabel || localizeServiceName(service.name, language)));
-    setIsSaving(false);
   }
 
   async function removeCatalogService(service: ServiceRecord, localizedLabel?: string) {
     setIsSaving(true);
     setStatusText("");
 
-    const response = await fetch(`/api/pro/services?serviceId=${encodeURIComponent(service.id)}`, {
-      method: "DELETE"
-    });
-    const payload = await response.json();
+    try {
+      const response = await fetch(`/api/pro/services?serviceId=${encodeURIComponent(service.id)}`, {
+        method: "DELETE"
+      });
+      const payload = await response.json();
 
-    if (!response.ok) {
-      setStatusText(payload.error || copy.removeFromCatalogFailed);
+      if (!response.ok) {
+        setStatusText(payload.error || copy.removeFromCatalogFailed);
+        return;
+      }
+
+      setServices((current) => current.filter((item) => item.id !== service.id));
+      setStatusText(copy.removedNamed(localizedLabel || localizeServiceName(service.name, language)));
+    } catch {
+      setStatusText(copy.removeFromCatalogFailed);
+    } finally {
       setIsSaving(false);
-      return;
     }
-
-    await reloadServices();
-    setStatusText(copy.removedNamed(localizedLabel || localizeServiceName(service.name, language)));
-    setIsSaving(false);
   }
 
   function startEdit(service: ServiceRecord) {
