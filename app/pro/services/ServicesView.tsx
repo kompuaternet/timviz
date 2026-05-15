@@ -40,7 +40,18 @@ const serviceExtras = {
     removedNamed: (name: string) => `"${name}" убрана из вашего рабочего списка.`,
     colorLabel: (color: string) => `Цвет ${color}`,
     moveUp: "Выше",
-    moveDown: "Ниже"
+    moveDown: "Ниже",
+    readyTitle: "Готово для онлайн-записи",
+    readyText: "Услуги с ценой и длительностью сразу попадают в календарь и онлайн-запись.",
+    quickAddTitle: "Быстрый старт",
+    quickAddText: "Добавьте свою услугу или выберите готовую из каталога ниже.",
+    emptyTitle: "Услуг пока нет",
+    emptyText: "Добавьте первую услугу с длительностью и ценой, чтобы клиенты могли записываться без переписки.",
+    emptyAction: "Добавить первую услугу",
+    catalogTitle: "Каталог популярных услуг",
+    configuredLabel: "Настроено",
+    categoriesLabel: "Категории",
+    minutesLabel: "Длительность"
   },
   uk: {
     addFromCatalogFailed: "Не вдалося додати послугу з каталогу.",
@@ -49,7 +60,18 @@ const serviceExtras = {
     removedNamed: (name: string) => `"${name}" прибрано з вашого робочого списку.`,
     colorLabel: (color: string) => `Колір ${color}`,
     moveUp: "Вище",
-    moveDown: "Нижче"
+    moveDown: "Нижче",
+    readyTitle: "Готово для онлайн-запису",
+    readyText: "Послуги з ціною та тривалістю одразу потрапляють у календар і онлайн-запис.",
+    quickAddTitle: "Швидкий старт",
+    quickAddText: "Додайте свою послугу або виберіть готову з каталогу нижче.",
+    emptyTitle: "Послуг ще немає",
+    emptyText: "Додайте першу послугу з тривалістю та ціною, щоб клієнти могли записуватися без переписки.",
+    emptyAction: "Додати першу послугу",
+    catalogTitle: "Каталог популярних послуг",
+    configuredLabel: "Налаштовано",
+    categoriesLabel: "Категорії",
+    minutesLabel: "Тривалість"
   },
   en: {
     addFromCatalogFailed: "Could not add the service from the catalog.",
@@ -58,7 +80,18 @@ const serviceExtras = {
     removedNamed: (name: string) => `"${name}" removed from your working list.`,
     colorLabel: (color: string) => `Color ${color}`,
     moveUp: "Move up",
-    moveDown: "Move down"
+    moveDown: "Move down",
+    readyTitle: "Ready for online booking",
+    readyText: "Services with price and duration are available in calendar and online booking right away.",
+    quickAddTitle: "Quick start",
+    quickAddText: "Add your own service or pick a ready-made one from the catalog below.",
+    emptyTitle: "No services yet",
+    emptyText: "Add the first service with duration and price so clients can book without messages.",
+    emptyAction: "Add first service",
+    catalogTitle: "Popular service catalog",
+    configuredLabel: "Configured",
+    categoriesLabel: "Categories",
+    minutesLabel: "Duration"
   }
 } as const;
 
@@ -169,6 +202,25 @@ export default function ServicesView({ initialWorkspace, catalog, onboardingCta 
     }
     return counts;
   }, [services, t.common.noCategory]);
+  const configuredServicesCount = useMemo(
+    () =>
+      services.filter(
+        (service) =>
+          Number.isFinite(service.price) &&
+          service.price > 0 &&
+          Number.isFinite(service.durationMinutes ?? Number.NaN) &&
+          (service.durationMinutes ?? 0) > 0
+      ).length,
+    [services]
+  );
+  const averageDuration = useMemo(() => {
+    if (!services.length) {
+      return 0;
+    }
+
+    const total = services.reduce((sum, service) => sum + (service.durationMinutes || 60), 0);
+    return Math.round(total / services.length);
+  }, [services]);
 
   const servicesByCatalogKey = useMemo(
     () =>
@@ -470,6 +522,24 @@ export default function ServicesView({ initialWorkspace, catalog, onboardingCta 
           </div>
         </header>
 
+        <section className={styles.servicesQuickStats} aria-label={copy.readyTitle}>
+          <article>
+            <span>{copy.configuredLabel}</span>
+            <strong>{configuredServicesCount}/{services.length}</strong>
+            <small>{copy.readyText}</small>
+          </article>
+          <article>
+            <span>{copy.categoriesLabel}</span>
+            <strong>{Math.max(0, categoryCounts.size - 1)}</strong>
+            <small>{activeCategory === ALL_CATEGORIES_KEY ? t.common.allCategories : localizeCategoryName(activeCategory, language)}</small>
+          </article>
+          <article>
+            <span>{copy.minutesLabel}</span>
+            <strong>{averageDuration ? formatDuration(averageDuration, t.common) : "0"}</strong>
+            <small>{copy.quickAddText}</small>
+          </article>
+        </section>
+
         {statusText ? <div className={styles.calendarInlineStatus}>{statusText}</div> : null}
 
         <div className={styles.servicesCompactGrid}>
@@ -524,6 +594,16 @@ export default function ServicesView({ initialWorkspace, catalog, onboardingCta 
             </div>
 
             <div className={styles.servicesMenuList}>
+              {visibleServices.length === 0 ? (
+                <div className={styles.servicesEmptyState}>
+                  <strong>{serviceQuery.trim() ? t.services.searchPlaceholder : copy.emptyTitle}</strong>
+                  <span>{serviceQuery.trim() ? t.services.enterName : copy.emptyText}</span>
+                  <button type="button" className={styles.primaryButton} onClick={() => document.getElementById("new-service")?.scrollIntoView({ behavior: "smooth" })}>
+                    {copy.emptyAction}
+                  </button>
+                </div>
+              ) : null}
+
               {visibleServices.map((service, index) => {
                 const isEditing = editId === service.id;
 
@@ -634,6 +714,7 @@ export default function ServicesView({ initialWorkspace, catalog, onboardingCta 
               <h2>{t.services.addBlockTitle}</h2>
               <p>{t.services.addBlockText}</p>
             </div>
+            <span className={styles.servicesAddBadge}>{copy.quickAddTitle}</span>
           </div>
 
           <div className={styles.servicesAddGrid}>
@@ -704,6 +785,10 @@ export default function ServicesView({ initialWorkspace, catalog, onboardingCta 
             </div>
 
             <div className={styles.servicesCatalogCompact}>
+              <div className={styles.servicesCatalogTitle}>
+                <strong>{copy.catalogTitle}</strong>
+                <span>{catalogGroups.reduce((count, group) => count + group.services.length, 0)} {t.services.count}</span>
+              </div>
               <div className={styles.servicesMenuToolbar}>
                 <input
                   className={styles.input}
