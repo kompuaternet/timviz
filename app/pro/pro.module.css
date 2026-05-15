@@ -11457,6 +11457,30 @@
     transform: translateY(-1px);
   }
 
+  .calendarMobileProfileButton {
+    overflow: hidden;
+    padding: 2px;
+    border-radius: 999px;
+    border-color: rgba(212, 235, 249, 0.96);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(245, 251, 255, 0.86)),
+      #ffffff;
+  }
+
+  .calendarMobileHeaderAvatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    overflow: hidden;
+    display: grid;
+    place-items: center;
+    color: #1091d1;
+    border: 2px solid rgba(212, 235, 249, 0.96);
+    background: #f2fbff;
+    font-size: 0.78rem;
+    font-weight: 800;
+  }
+
   .calendarMobileStatsScroller {
     display: flex;
     gap: 8px;

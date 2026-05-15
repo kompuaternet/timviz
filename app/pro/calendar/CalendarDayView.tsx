@@ -5040,12 +5040,25 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
                 {totalPendingNotifications ? <span className={styles.calendarNotificationBadge}>{totalPendingNotifications}</span> : null}
               </button>
               <button
+                ref={accountMenuButtonRef}
                 type="button"
-                className={`${styles.calendarMobileHeaderIcon} ${styles.calendarMobileHeaderAdd}`}
-                aria-label={t.quickNewVisit}
-                onClick={openMobileCreateSheet}
+                className={`${styles.calendarMobileHeaderIcon} ${styles.calendarMobileProfileButton} ${activeToolbarMenu === "account" ? styles.calendarIconButtonActive : ""}`}
+                aria-label={t.accountMenu}
+                aria-expanded={activeToolbarMenu === "account"}
+                onClick={() => {
+                  setDrawerStage("closed");
+                  setIsMobileCreateSheetOpen(false);
+                  setActiveToolbarMenu((current) => (current === "account" ? null : "account"));
+                }}
               >
-                <span>+</span>
+                <ProfileAvatar
+                  avatarUrl={snapshot?.viewer.avatarUrl}
+                  initials={viewerInitials}
+                  label={viewerName}
+                  className={styles.calendarMobileHeaderAvatar}
+                  imageClassName={styles.avatarImage}
+                  fallbackClassName={styles.avatarFallback}
+                />
               </button>
             </div>
           ) : null}
