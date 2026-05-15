@@ -2465,6 +2465,41 @@
   box-shadow: 0 20px 44px rgba(88, 103, 151, 0.08);
 }
 
+.clientsSummaryGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.clientsSummaryGrid article {
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid #e4e8f3;
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at top right, rgba(111, 90, 255, 0.1), transparent 34%),
+    rgba(255, 255, 255, 0.9);
+  box-shadow: 0 14px 32px rgba(88, 103, 151, 0.07);
+  display: grid;
+  gap: 5px;
+}
+
+.clientsSummaryGrid span,
+.clientsSummaryGrid small {
+  color: #74809a;
+  font-size: 0.84rem;
+  line-height: 1.3;
+}
+
+.clientsSummaryGrid strong {
+  color: #202638;
+  font-size: 1.35rem;
+  line-height: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .clientsToolbarLeft {
   display: flex;
   align-items: center;
@@ -2611,11 +2646,26 @@
 
 .clientsEmptyState {
   min-height: 240px;
+  padding: 28px;
   display: grid;
-  place-items: center;
+  justify-items: center;
+  align-content: center;
   gap: 8px;
-  color: #7f756a;
+  color: #74809a;
   text-align: center;
+  background:
+    radial-gradient(circle at top right, rgba(111, 90, 255, 0.11), transparent 34%),
+    rgba(248, 250, 255, 0.8);
+}
+
+.clientsEmptyState strong {
+  color: #202638;
+  font-size: 1.08rem;
+}
+
+.clientsEmptyState span {
+  max-width: 32rem;
+  line-height: 1.45;
 }
 
 .clientsStatus {
@@ -11971,6 +12021,15 @@
     padding-top: 0;
   }
 
+  .clientsShell {
+    background: #f7f9fd;
+  }
+
+  .clientsMain {
+    gap: 12px;
+    padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px));
+  }
+
   .clientsMain > .proPageWorkspaceHeader,
   .servicesPage > .proPageWorkspaceHeader,
   .settingsShell > .proPageWorkspaceHeader,
@@ -11983,6 +12042,63 @@
     border-left: 0;
     border-right: 0;
     border-radius: 0;
+  }
+
+  .clientsModalBackdrop {
+    align-items: end;
+    padding: 0;
+    background: rgba(16, 22, 38, 0.32);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
+
+  .clientsModal {
+    width: 100%;
+    max-height: 92dvh;
+    border-radius: 28px 28px 0 0;
+    overflow: hidden;
+    box-shadow: 0 -24px 70px rgba(29, 37, 66, 0.24);
+  }
+
+  .clientsModal::before {
+    content: "";
+    position: absolute;
+    top: 8px;
+    left: 50%;
+    z-index: 4;
+    width: 42px;
+    height: 4px;
+    border-radius: 999px;
+    background: rgba(96, 104, 124, 0.28);
+    transform: translateX(-50%);
+  }
+
+  .clientsDrawerHeader {
+    padding-top: 18px;
+    min-height: 68px;
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    background: rgba(255, 255, 255, 0.94);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+  }
+
+  .clientsModalContent {
+    max-height: calc(92dvh - 180px);
+    overflow: auto;
+    padding-bottom: 22px;
+  }
+
+  .clientsDrawerFooter {
+    position: sticky;
+    bottom: 0;
+    z-index: 4;
+    padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.68), rgba(255, 255, 255, 0.98) 30%);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
   }
 }
 
@@ -12254,6 +12370,7 @@
 
   .servicesCompactGrid,
   .servicesQuickStats,
+  .clientsSummaryGrid,
   .servicesAddGrid,
   .servicesLayout,
   .servicesCatalogGrid,
@@ -12265,6 +12382,149 @@
   .servicesPage,
   .clientsMain {
     padding: 18px 14px 28px;
+  }
+
+  .clientsHeader {
+    gap: 14px;
+    padding: 14px;
+    border: 1px solid rgba(224, 231, 244, 0.94);
+    border-radius: 24px;
+    background:
+      radial-gradient(circle at 94% 10%, rgba(111, 90, 255, 0.12), transparent 36%),
+      rgba(255, 255, 255, 0.94);
+    box-shadow: 0 12px 30px rgba(58, 72, 109, 0.08);
+  }
+
+  .clientsTitle {
+    letter-spacing: 0;
+  }
+
+  .clientsSubtitle {
+    margin-top: 6px;
+    font-size: 0.9rem;
+    line-height: 1.4;
+  }
+
+  .clientsActions {
+    width: 100%;
+  }
+
+  .clientsPrimaryAddButton {
+    width: 100%;
+    min-height: 48px;
+    border-radius: 18px;
+    padding: 0 18px;
+  }
+
+  .clientsSummaryGrid {
+    display: flex;
+    overflow-x: auto;
+    gap: 8px;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+  }
+
+  .clientsSummaryGrid::-webkit-scrollbar {
+    display: none;
+  }
+
+  .clientsSummaryGrid article {
+    min-width: 170px;
+    padding: 12px;
+    border-radius: 20px;
+  }
+
+  .clientsToolbar {
+    padding: 8px;
+    border-radius: 22px;
+  }
+
+  .clientsToolbarLeft,
+  .clientsSearch {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .clientsTable {
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    overflow: visible;
+  }
+
+  .clientsTableHead {
+    display: none;
+  }
+
+  .clientsRows {
+    gap: 10px;
+  }
+
+  .clientsRow {
+    min-height: auto;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 8px 12px;
+    padding: 14px;
+    border: 1px solid rgba(224, 231, 244, 0.94);
+    border-radius: 22px;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 255, 0.95));
+    box-shadow: 0 12px 28px rgba(58, 72, 109, 0.07);
+  }
+
+  .clientsRow:hover {
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 255, 0.95));
+  }
+
+  .clientsCheckboxCell {
+    display: none;
+  }
+
+  .clientIdentity {
+    grid-column: 1 / -1;
+    gap: 12px;
+  }
+
+  .clientAvatar {
+    width: 46px;
+    height: 46px;
+    font-size: 1rem;
+  }
+
+  .clientIdentity strong {
+    font-size: 0.98rem;
+  }
+
+  .clientIdentity span {
+    color: #68748c;
+    font-size: 0.82rem;
+  }
+
+  .clientsRow > div[data-label] {
+    min-width: 0;
+    padding: 8px 10px;
+    border-radius: 14px;
+    background: rgba(242, 245, 251, 0.92);
+    color: #1f2637;
+    font-size: 0.84rem;
+    display: grid;
+    gap: 3px;
+  }
+
+  .clientsRow > div[data-label]::before {
+    content: attr(data-label);
+    color: #7a859a;
+    font-size: 0.68rem;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+
+  .clientsEmptyState {
+    min-height: 220px;
+    border: 1px solid rgba(224, 231, 244, 0.94);
+    border-radius: 24px;
   }
 
   .servicesHeroCompact,

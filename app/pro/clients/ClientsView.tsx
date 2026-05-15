@@ -90,6 +90,12 @@ const CLIENTS_TEXT: Record<AppLanguage, {
   saved: string;
   created: string;
   saveError: string;
+  totalSales: string;
+  returningClients: string;
+  withPhone: string;
+  emptyAction: string;
+  quickHintTitle: string;
+  quickHintText: string;
 }> = {
   ru: {
     title: "Клиенты",
@@ -130,7 +136,13 @@ const CLIENTS_TEXT: Record<AppLanguage, {
     notePlaceholder: "Например: предпочитает напоминания только в Telegram",
     saved: "Карточка клиента обновлена.",
     created: "Клиент добавлен.",
-    saveError: "Не удалось сохранить клиента."
+    saveError: "Не удалось сохранить клиента.",
+    totalSales: "Оборот",
+    returningClients: "Повторные",
+    withPhone: "С телефоном",
+    emptyAction: "Добавить первого клиента",
+    quickHintTitle: "База клиентов всегда под рукой",
+    quickHintText: "Сохраняйте телефон, Telegram и заметки, чтобы быстрее создавать повторные записи."
   },
   uk: {
     title: "Клієнти",
@@ -171,7 +183,13 @@ const CLIENTS_TEXT: Record<AppLanguage, {
     notePlaceholder: "Наприклад: хоче нагадування тільки в Telegram",
     saved: "Картку клієнта оновлено.",
     created: "Клієнта додано.",
-    saveError: "Не вдалося зберегти клієнта."
+    saveError: "Не вдалося зберегти клієнта.",
+    totalSales: "Оборот",
+    returningClients: "Повторні",
+    withPhone: "З телефоном",
+    emptyAction: "Додати першого клієнта",
+    quickHintTitle: "База клієнтів завжди під рукою",
+    quickHintText: "Зберігайте телефон, Telegram і нотатки, щоб швидше створювати повторні записи."
   },
   en: {
     title: "Clients",
@@ -212,7 +230,13 @@ const CLIENTS_TEXT: Record<AppLanguage, {
     notePlaceholder: "For example: prefers reminders only in Telegram",
     saved: "Client card updated.",
     created: "Client added.",
-    saveError: "Could not save client."
+    saveError: "Could not save client.",
+    totalSales: "Revenue",
+    returningClients: "Returning",
+    withPhone: "With phone",
+    emptyAction: "Add first client",
+    quickHintTitle: "Client base at your fingertips",
+    quickHintText: "Save phone, Telegram and notes to create repeat bookings faster."
   }
 };
 
@@ -277,6 +301,19 @@ function digitsOnly(value: string) {
   return value.replace(/\D/g, "");
 }
 
+function getClientStorage() {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  try {
+    const storage = window.localStorage;
+    return storage && typeof storage.getItem === "function" ? storage : null;
+  } catch {
+    return null;
+  }
+}
+
 export default function ClientsView({
   professionalId,
   accountCountry,
@@ -304,7 +341,7 @@ export default function ClientsView({
   const prefixMenuRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    const storedLanguage = window.localStorage.getItem("rezervo-pro-language");
+    const storedLanguage = getClientStorage()?.getItem("rezervo-pro-language") ?? null;
     if (isAppLanguage(storedLanguage)) {
       setUiLanguage(storedLanguage);
     }
@@ -373,6 +410,18 @@ export default function ClientsView({
       return country.toLowerCase().includes(normalizedQuery) || rule.prefix.toLowerCase().includes(normalizedQuery);
     });
   }, [prefixSearch]);
+  const clientsTotalSales = useMemo(
+    () => clients.reduce((sum, client) => sum + client.totalSales, 0),
+    [clients]
+  );
+  const returningClientsCount = useMemo(
+    () => clients.filter((client) => client.visitsCount > 1).length,
+    [clients]
+  );
+  const clientsWithPhoneCount = useMemo(
+    () => clients.filter((client) => Boolean(client.phone)).length,
+    [clients]
+  );
 
   function openCreateModal() {
     setForm(emptyForm);
@@ -475,6 +524,7 @@ export default function ClientsView({
                 <h1 className={styles.clientsTitle}>{t.title}</h1>
                 <span className={styles.clientsBadge}>{clients.length}</span>
               </div>
+              <p className={styles.clientsSubtitle}>{t.quickHintText}</p>
             </div>
 
             <div className={styles.clientsActions}>
@@ -483,6 +533,24 @@ export default function ClientsView({
               </button>
             </div>
           </header>
+
+          <section className={styles.clientsSummaryGrid} aria-label={t.quickHintTitle}>
+            <article>
+              <span>{t.totalSales}</span>
+              <strong>{formatMoney(clientsTotalSales, locale, accountCurrency)}</strong>
+              <small>{t.quickHintTitle}</small>
+            </article>
+            <article>
+              <span>{t.returningClients}</span>
+              <strong>{returningClientsCount}</strong>
+              <small>{clients.length ? `${Math.round((returningClientsCount / clients.length) * 100)}%` : "0%"}</small>
+            </article>
+            <article>
+              <span>{t.withPhone}</span>
+              <strong>{clientsWithPhoneCount}</strong>
+              <small>{clients.length ? `${clientsWithPhoneCount}/${clients.length}` : "0"}</small>
+            </article>
+          </section>
 
           <section className={styles.clientsToolbar}>
             <div className={styles.clientsToolbarLeft}>
@@ -544,7 +612,7 @@ export default function ClientsView({
                   <strong>{t.noClientsTitle}</strong>
                   <span>{t.noClientsHint}</span>
                   <button type="button" className={styles.clientsPrimaryAddButton} onClick={openCreateModal}>
-                    + {t.addClient}
+                    + {clients.length ? t.addClient : t.emptyAction}
                   </button>
                 </div>
               ) : null}
