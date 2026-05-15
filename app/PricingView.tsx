@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import BrandLogo from "./BrandLogo";
 import GlobalLanguageSwitcher from "./GlobalLanguageSwitcher";
@@ -227,14 +228,14 @@ export default function PricingView({ language, copy, user, paddle }: PricingVie
   return (
     <main className="public-home pricing-page">
       <header className="public-header">
-        <a className="public-logo" href={getLocalizedPath(language)}>
+        <Link className="public-logo" href={getLocalizedPath(language)}>
           <BrandLogo />
-        </a>
+        </Link>
         <nav className="public-nav" aria-label="Pricing navigation">
           <PublicHeaderAuthMenu language={language} />
-          <a href={getLocalizedPath(language, "/for-business")} className="public-company-button">
+          <Link href={getLocalizedPath(language, "/for-business")} className="public-company-button">
             Timviz Pro
-          </a>
+          </Link>
           <GlobalLanguageSwitcher mode="inline" />
         </nav>
       </header>
@@ -306,23 +307,23 @@ export default function PricingView({ language, copy, user, paddle }: PricingVie
 
       <footer className="public-footer pricing-footer">
         <div>
-          <a className="public-logo" href={getLocalizedPath(language)}>
+          <Link className="public-logo" href={getLocalizedPath(language)}>
             <BrandLogo />
-          </a>
+          </Link>
           <p>{copy.securePaddle}</p>
         </div>
         <div>
           <h3>{footer.about}</h3>
-          <a href={getLocalizedPath(language, "/catalog")}>{footer.catalog}</a>
-          <a href={getLocalizedPath(language, "/for-business")}>{footer.business}</a>
-          <a href={getLocalizedPath(language, "/pricing")}>{footer.pricing}</a>
+          <Link href={getLocalizedPath(language, "/catalog")}>{footer.catalog}</Link>
+          <Link href={getLocalizedPath(language, "/for-business")}>{footer.business}</Link>
+          <Link href={getLocalizedPath(language, "/pricing")}>{footer.pricing}</Link>
         </div>
         <div>
           <h3>{footer.legal}</h3>
-          <a href={getLocalizedPath(language, "/privacy")}>{footer.privacy}</a>
-          <a href={getLocalizedPath(language, "/terms")}>{footer.terms}</a>
-          <a href={getLocalizedPath(language, "/refund-policy")}>{footer.refund}</a>
-          <a href={getLocalizedPath(language, "/contact")}>{footer.contact}</a>
+          <Link href={getLocalizedPath(language, "/privacy")}>{footer.privacy}</Link>
+          <Link href={getLocalizedPath(language, "/terms")}>{footer.terms}</Link>
+          <Link href={getLocalizedPath(language, "/refund-policy")}>{footer.refund}</Link>
+          <Link href={getLocalizedPath(language, "/contact")}>{footer.contact}</Link>
           <a href="mailto:adm@timviz.com">{footer.support}: adm@timviz.com</a>
         </div>
       </footer>

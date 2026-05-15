@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { getLocalizedPath, type SiteLanguage } from "../lib/site-language";
 
@@ -163,8 +164,8 @@ export default function PublicHeaderAuthMenu({ language }: PublicHeaderAuthMenuP
         )}
       </summary>
       <div className="public-menu-panel public-entry-panel">
-        <a href={getLocalizedPath(language, "/account")}>{accountLabel}</a>
-        <a href={proHref}>{proLabel}</a>
+        <Link href={getLocalizedPath(language, "/account")}>{accountLabel}</Link>
+        <Link href={proHref}>{proLabel}</Link>
       </div>
     </details>
   );

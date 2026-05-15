@@ -844,14 +844,14 @@ export default function CatalogView({
   return (
     <main className="company-page catalog-page">
       <header className="public-header company-header">
-        <a className="public-logo" href={getLocalizedPath(language)}>
+        <Link className="public-logo" href={getLocalizedPath(language)}>
           <BrandLogo />
-        </a>
+        </Link>
         <nav className="public-nav" aria-label={navLabel}>
           <PublicHeaderAuthMenu language={language} />
-          <a href={getLocalizedPath(language, "/catalog")} className="public-login">
+          <Link href={getLocalizedPath(language, "/catalog")} className="public-login">
             {catalogLabel}
-          </a>
+          </Link>
 	          <details className="public-menu">
 	            <summary>
 	              <span>{menuLabel}</span>

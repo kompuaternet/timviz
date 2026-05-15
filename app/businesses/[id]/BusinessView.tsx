@@ -649,9 +649,15 @@ export default function BusinessView({
     return localizeServiceName(service.name, language);
   }
 
+  const servicesById = useMemo(() => new Map(services.map((service) => [service.id, service])), [services]);
+  const selectedServiceIdSet = useMemo(() => new Set(selectedServiceIds), [selectedServiceIds]);
   const selectedServices = useMemo(
-    () => services.filter((service) => selectedServiceIds.includes(service.id)),
-    [services, selectedServiceIds]
+    () => selectedServiceIds.map((id) => servicesById.get(id)).filter((service): service is ServiceRecord => Boolean(service)),
+    [selectedServiceIds, servicesById]
+  );
+  const visibleServices = useMemo(
+    () => serviceGroups.find((group) => group.category === serviceCategory)?.items ?? services,
+    [serviceCategory, serviceGroups, services]
   );
   const totalDurationMinutes = useMemo(
     () => selectedServices.reduce((sum, item) => sum + Math.max(5, item.durationMinutes ?? 60), 0),
@@ -705,7 +711,7 @@ export default function BusinessView({
     }
 
     if (draft.selectedServiceIds.length) {
-      setSelectedServiceIds(draft.selectedServiceIds.filter((id) => services.some((service) => service.id === id)));
+      setSelectedServiceIds(draft.selectedServiceIds.filter((id) => servicesById.has(id)));
     } else {
       setSelectedServiceIds([]);
     }
@@ -720,7 +726,7 @@ export default function BusinessView({
       setVisibleMonth(new Date(`${draft.selectedDate}T00:00:00`));
       setWeekStart(getWeekStart(draft.selectedDate));
     }
-  }, [business.id, services]);
+  }, [business.id, servicesById]);
 
   useEffect(() => {
     if (typeof window === "undefined") {
@@ -804,6 +810,7 @@ export default function BusinessView({
 
     return teamMembers.map((member) => member.id);
   }, [selectedProfessionalId, teamMembers]);
+  const shouldResolveSlots = bookingOpen && (bookingStep === "time" || bookingStep === "confirm");
 
   function getScheduleConfigForProfessional(professionalId: string) {
     const member = teamMembers.find((item) => item.id === professionalId);
@@ -840,7 +847,7 @@ export default function BusinessView({
   }
 
   const availableSlots = useMemo(() => {
-    if (!selectedDate || !primaryService) {
+    if (!shouldResolveSlots || !selectedDate || !primaryService) {
       return [];
     }
 
@@ -853,11 +860,15 @@ export default function BusinessView({
     }
 
     return Array.from(combined).sort();
-  }, [primaryService, professionalIdsForSlots, selectedDate, totalDurationMinutes]);
+  }, [primaryService, professionalIdsForSlots, selectedDate, shouldResolveSlots, totalDurationMinutes]);
 
   const monthDays = useMemo(() => buildMonthDays(visibleMonth), [visibleMonth]);
   const availabilityByDate = useMemo(() => {
     const map = new Map<string, { state: "closed" | "available" | "full"; slots: number }>();
+
+    if (!shouldResolveSlots) {
+      return map;
+    }
 
     for (const day of monthDays) {
       if (!primaryService) {
@@ -896,9 +907,13 @@ export default function BusinessView({
     }
 
     return map;
-  }, [monthDays, primaryService, professionalIdsForSlots]);
+  }, [monthDays, primaryService, professionalIdsForSlots, shouldResolveSlots]);
 
   useEffect(() => {
+    if (!shouldResolveSlots) {
+      return;
+    }
+
     if (!primaryService) {
       setSelectedDate("");
       setSelectedTime("");
@@ -928,9 +943,13 @@ export default function BusinessView({
         return;
       }
     }
-  }, [availableSlots.length, primaryService, professionalIdsForSlots, selectedDate]);
+  }, [availableSlots.length, primaryService, professionalIdsForSlots, selectedDate, shouldResolveSlots]);
 
   useEffect(() => {
+    if (!shouldResolveSlots) {
+      return;
+    }
+
     if (!selectedDate) {
       return;
     }
@@ -941,7 +960,7 @@ export default function BusinessView({
     }
 
     setSelectedTime((current) => (current && availableSlots.includes(current) ? current : availableSlots[0]));
-  }, [availableSlots, selectedDate]);
+  }, [availableSlots, selectedDate, shouldResolveSlots]);
 
   const weekDays = useMemo(() => {
     return Array.from({ length: 7 }, (_, index) => {
@@ -983,7 +1002,8 @@ export default function BusinessView({
 
   function toggleService(serviceId: string) {
     setSelectedServiceIds((current) => {
-      if (current.includes(serviceId)) {
+      const currentIds = new Set(current);
+      if (currentIds.has(serviceId)) {
         return current.filter((item) => item !== serviceId);
       }
 
@@ -1304,7 +1324,7 @@ export default function BusinessView({
               </div>
 
               <div className="company-service-list">
-                {(serviceGroups.find((group) => group.category === serviceCategory)?.items ?? services).map((service) => (
+                {visibleServices.map((service) => (
                   <article className="company-service-card" key={service.id}>
                     <div>
                       <h3>{getLocalizedServiceNameLabel(service)}</h3>
@@ -1456,8 +1476,8 @@ export default function BusinessView({
                     </div>
 
                     <div className="company-flow-list">
-                      {(serviceGroups.find((group) => group.category === serviceCategory)?.items ?? services).map((service) => {
-                        const active = selectedServiceIds.includes(service.id);
+                      {visibleServices.map((service) => {
+                        const active = selectedServiceIdSet.has(service.id);
                         return (
                           <button
                             key={service.id}

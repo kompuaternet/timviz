@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import type { PublicHomeStats } from "../lib/public-home-stats";
 import { areMobileAppsAvailable, mobileApps } from "../lib/mobile-apps";
@@ -353,10 +354,10 @@ export default function PublicHome({ searchIndex, stats, initialLanguage = "ru" 
   return (
     <main className="public-home">
       <header className="public-header">
-        <a className="public-logo" href={getLocalizedPath(language)}><BrandLogo /></a>
+        <Link className="public-logo" href={getLocalizedPath(language)}><BrandLogo /></Link>
         <nav className="public-nav" aria-label={String(t.navAria)}>
           <PublicHeaderAuthMenu language={language} />
-          <a href={getLocalizedPath(language, "/for-business")} className="public-company-button">{String(t.create)}</a>
+          <Link href={getLocalizedPath(language, "/for-business")} className="public-company-button">{String(t.create)}</Link>
           <details className="public-menu">
             <summary>
               <span>{String(t.menu)}</span>
@@ -364,15 +365,15 @@ export default function PublicHome({ searchIndex, stats, initialLanguage = "ru" 
             </summary>
             <div className="public-menu-panel">
               <strong>{String(t.clients)}</strong>
-              <a href={getLocalizedPath(language, "/catalog")}>{String(t.browse)}</a>
-              <a href={getLocalizedPath(language, "/account")}>{String(t.clientAuth)}</a>
+              <Link href={getLocalizedPath(language, "/catalog")}>{String(t.browse)}</Link>
+              <Link href={getLocalizedPath(language, "/account")}>{String(t.clientAuth)}</Link>
               <a href="#app">{mobileAppsAvailable ? String(t.app) : String(t.mobileAppsFooter)}</a>
               <a href="#reviews">{String(t.reviews)}</a>
               <hr />
               <strong>{String(t.business)}</strong>
-              <a href={getLocalizedPath(language, "/for-business")}>{String(t.create)}</a>
-              <a href="/pro/login">{String(t.dashboard)}</a>
-              <a href={getLocalizedPath(language, "/for-business")}>{String(t.features)}</a>
+              <Link href={getLocalizedPath(language, "/for-business")}>{String(t.create)}</Link>
+              <Link href="/pro/login">{String(t.dashboard)}</Link>
+              <Link href={getLocalizedPath(language, "/for-business")}>{String(t.features)}</Link>
             </div>
           </details>
           <GlobalLanguageSwitcher mode="inline" />
@@ -394,11 +395,11 @@ export default function PublicHome({ searchIndex, stats, initialLanguage = "ru" 
       <section className="public-section public-carousel-section">
         <div className="public-section-head">
           <h2>{String(t.recommended)}</h2>
-          <a href={getLocalizedPath(language, "/catalog")}>{String(t.seeAll)}</a>
+          <Link href={getLocalizedPath(language, "/catalog")}>{String(t.seeAll)}</Link>
         </div>
         <div className="public-business-grid">
           {businesses.map((business) => (
-            <a className="public-business-card" href={getLocalizedPath(language, "/catalog")} key={business.name}>
+            <Link className="public-business-card" href={getLocalizedPath(language, "/catalog")} key={business.name}>
               <img src={business.image} alt={business.name} />
               <div>
                 <h3>{business.name}</h3>
@@ -406,7 +407,7 @@ export default function PublicHome({ searchIndex, stats, initialLanguage = "ru" 
               </div>
               <p>{business.location[language]}</p>
               <small>{business.category[language]}</small>
-            </a>
+            </Link>
           ))}
         </div>
       </section>
@@ -495,7 +496,7 @@ export default function PublicHome({ searchIndex, stats, initialLanguage = "ru" 
         <div>
           <h2>{String(t.businessTitle)}</h2>
           <p>{String(t.businessText)}</p>
-          <a href={getLocalizedPath(language, "/for-business")}>{String(t.more)}</a>
+          <Link href={getLocalizedPath(language, "/for-business")}>{String(t.more)}</Link>
           <div className="public-business-rating">
             <strong>{String(t.rating)}</strong>
             <span>★★★★★</span>
@@ -549,36 +550,36 @@ export default function PublicHome({ searchIndex, stats, initialLanguage = "ru" 
 
       <footer className="public-footer">
         <div>
-          <a className="public-logo" href={getLocalizedPath(language)}><BrandLogo /></a>
+          <Link className="public-logo" href={getLocalizedPath(language)}><BrandLogo /></Link>
           <span className="public-footer-mobile-note">{mobileAppsAvailable ? String(t.appButton) : String(t.mobileAppsFooter)}</span>
         </div>
         <div>
           <h3>{String(t.about)}</h3>
           <a href="#reviews">{String(t.reviews)}</a>
           <a href="#app">{mobileAppsAvailable ? String(t.app) : String(t.mobileAppsFooter)}</a>
-          <a href={getLocalizedPath(language, "/catalog")}>{String(t.catalog)}</a>
+          <Link href={getLocalizedPath(language, "/catalog")}>{String(t.catalog)}</Link>
         </div>
         <div>
           <h3>{String(t.business)}</h3>
-          <a href={getLocalizedPath(language, "/for-business")}>{String(t.create)}</a>
-          <a href="/pro/login">{String(t.login)}</a>
-          <a href={getLocalizedPath(language, "/for-business")}>{String(t.features)}</a>
+          <Link href={getLocalizedPath(language, "/for-business")}>{String(t.create)}</Link>
+          <Link href="/pro/login">{String(t.login)}</Link>
+          <Link href={getLocalizedPath(language, "/for-business")}>{String(t.features)}</Link>
         </div>
         <div>
           <h3>{String(t.prosFooter)}</h3>
-          <a href={getLocalizedPath(language, `/${getNicheSlug(language, "manicure")}`)}>{language === "uk" ? "Майстри манікюру" : language === "ru" ? "Мастера маникюра" : "Nail artists"}</a>
-          <a href={getLocalizedPath(language, `/${getNicheSlug(language, "hairdressers")}`)}>{language === "uk" ? "Перукарі" : language === "ru" ? "Парикмахеры" : "Hairdressers"}</a>
-          <a href={getLocalizedPath(language, `/${getNicheSlug(language, "barbers")}`)}>{language === "uk" ? "Барбери" : language === "ru" ? "Барберы" : "Barbers"}</a>
-          <a href={getLocalizedPath(language, `/${getNicheSlug(language, "cosmetologists")}`)}>{language === "uk" ? "Косметологи" : language === "ru" ? "Косметологи" : "Cosmetologists"}</a>
-          <a href={getLocalizedPath(language, `/${getNicheSlug(language, "massage")}`)}>{language === "uk" ? "Масажисти" : language === "ru" ? "Массажисты" : "Massage therapists"}</a>
+          <Link href={getLocalizedPath(language, `/${getNicheSlug(language, "manicure")}`)}>{language === "uk" ? "Майстри манікюру" : language === "ru" ? "Мастера маникюра" : "Nail artists"}</Link>
+          <Link href={getLocalizedPath(language, `/${getNicheSlug(language, "hairdressers")}`)}>{language === "uk" ? "Перукарі" : language === "ru" ? "Парикмахеры" : "Hairdressers"}</Link>
+          <Link href={getLocalizedPath(language, `/${getNicheSlug(language, "barbers")}`)}>{language === "uk" ? "Барбери" : language === "ru" ? "Барберы" : "Barbers"}</Link>
+          <Link href={getLocalizedPath(language, `/${getNicheSlug(language, "cosmetologists")}`)}>{language === "uk" ? "Косметологи" : language === "ru" ? "Косметологи" : "Cosmetologists"}</Link>
+          <Link href={getLocalizedPath(language, `/${getNicheSlug(language, "massage")}`)}>{language === "uk" ? "Масажисти" : language === "ru" ? "Массажисты" : "Massage therapists"}</Link>
         </div>
         <div>
           <h3>{String(t.legal)}</h3>
-          <a href={getLocalizedPath(language, "/pricing")}>{language === "uk" ? "Тарифи" : language === "en" ? "Pricing" : "Тарифы"}</a>
-          <a href={getLocalizedPath(language, "/privacy")}>{String(t.privacy)}</a>
-          <a href={getLocalizedPath(language, "/terms")}>{String(t.terms)}</a>
-          <a href={getLocalizedPath(language, "/refund-policy")}>{language === "uk" ? "Політика повернень" : language === "en" ? "Refund policy" : "Политика возвратов"}</a>
-          <a href={getLocalizedPath(language, "/contact")}>{language === "uk" ? "Контакти" : language === "en" ? "Contact" : "Контакты"}</a>
+          <Link href={getLocalizedPath(language, "/pricing")}>{language === "uk" ? "Тарифи" : language === "en" ? "Pricing" : "Тарифы"}</Link>
+          <Link href={getLocalizedPath(language, "/privacy")}>{String(t.privacy)}</Link>
+          <Link href={getLocalizedPath(language, "/terms")}>{String(t.terms)}</Link>
+          <Link href={getLocalizedPath(language, "/refund-policy")}>{language === "uk" ? "Політика повернень" : language === "en" ? "Refund policy" : "Политика возвратов"}</Link>
+          <Link href={getLocalizedPath(language, "/contact")}>{language === "uk" ? "Контакти" : language === "en" ? "Contact" : "Контакты"}</Link>
           <a href="mailto:adm@timviz.com">adm@timviz.com</a>
         </div>
       </footer>

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import BrandLogo from "./BrandLogo";
 import GlobalLanguageSwitcher from "./GlobalLanguageSwitcher";
 import PublicHeaderAuthMenu from "./PublicHeaderAuthMenu";
@@ -89,10 +90,10 @@ export default function PublicLegalPage({ copy, language }: PublicLegalPageProps
   return (
     <main className="public-home legal-page">
       <header className="public-header">
-        <a className="public-logo" href={getLocalizedPath(language)}><BrandLogo /></a>
+        <Link className="public-logo" href={getLocalizedPath(language)}><BrandLogo /></Link>
         <nav className="public-nav" aria-label={t.navAria}>
           <PublicHeaderAuthMenu language={language} />
-          <a href={getLocalizedPath(language, "/for-business")} className="public-company-button">{t.create}</a>
+          <Link href={getLocalizedPath(language, "/for-business")} className="public-company-button">{t.create}</Link>
           <details className="public-menu">
             <summary>
               <span>{t.menu}</span>
@@ -100,18 +101,18 @@ export default function PublicLegalPage({ copy, language }: PublicLegalPageProps
             </summary>
             <div className="public-menu-panel">
               <strong>{t.clients}</strong>
-              <a href={getLocalizedPath(language, "/catalog")}>{t.browse}</a>
-              <a href={getLocalizedPath(language, "/account")}>{t.clientAuth}</a>
-              <a href={getLocalizedPath(language, "/privacy")}>{t.privacy}</a>
-              <a href={getLocalizedPath(language, "/terms")}>{t.terms}</a>
-              <a href={getLocalizedPath(language, "/pricing")}>{t.pricing}</a>
-              <a href={getLocalizedPath(language, "/refund-policy")}>{t.refund}</a>
-              <a href={getLocalizedPath(language, "/contact")}>{t.contact}</a>
+              <Link href={getLocalizedPath(language, "/catalog")}>{t.browse}</Link>
+              <Link href={getLocalizedPath(language, "/account")}>{t.clientAuth}</Link>
+              <Link href={getLocalizedPath(language, "/privacy")}>{t.privacy}</Link>
+              <Link href={getLocalizedPath(language, "/terms")}>{t.terms}</Link>
+              <Link href={getLocalizedPath(language, "/pricing")}>{t.pricing}</Link>
+              <Link href={getLocalizedPath(language, "/refund-policy")}>{t.refund}</Link>
+              <Link href={getLocalizedPath(language, "/contact")}>{t.contact}</Link>
               <hr />
               <strong>{t.business}</strong>
-              <a href={getLocalizedPath(language, "/for-business")}>{t.create}</a>
-              <a href="/pro/login">{t.dashboard}</a>
-              <a href={getLocalizedPath(language, "/for-business")}>{t.features}</a>
+              <Link href={getLocalizedPath(language, "/for-business")}>{t.create}</Link>
+              <Link href="/pro/login">{t.dashboard}</Link>
+              <Link href={getLocalizedPath(language, "/for-business")}>{t.features}</Link>
             </div>
           </details>
           <GlobalLanguageSwitcher mode="inline" />
@@ -143,25 +144,25 @@ export default function PublicLegalPage({ copy, language }: PublicLegalPageProps
 
       <footer className="public-footer legal-footer">
         <div>
-          <a className="public-logo" href={getLocalizedPath(language)}><BrandLogo /></a>
+          <Link className="public-logo" href={getLocalizedPath(language)}><BrandLogo /></Link>
         </div>
         <div>
           <h3>{t.about}</h3>
-          <a href={getLocalizedPath(language, "/catalog")}>{t.catalog}</a>
-          <a href={getLocalizedPath(language, "/for-business")}>{t.features}</a>
-          <a href={getLocalizedPath(language, "/pricing")}>{t.pricing}</a>
+          <Link href={getLocalizedPath(language, "/catalog")}>{t.catalog}</Link>
+          <Link href={getLocalizedPath(language, "/for-business")}>{t.features}</Link>
+          <Link href={getLocalizedPath(language, "/pricing")}>{t.pricing}</Link>
         </div>
         <div>
           <h3>{t.business}</h3>
-          <a href={getLocalizedPath(language, "/for-business")}>{t.create}</a>
-          <a href="/pro/login">{t.login}</a>
+          <Link href={getLocalizedPath(language, "/for-business")}>{t.create}</Link>
+          <Link href="/pro/login">{t.login}</Link>
         </div>
         <div>
           <h3>{t.legal}</h3>
-          <a href={getLocalizedPath(language, "/privacy")}>{t.privacy}</a>
-          <a href={getLocalizedPath(language, "/terms")}>{t.terms}</a>
-          <a href={getLocalizedPath(language, "/refund-policy")}>{t.refund}</a>
-          <a href={getLocalizedPath(language, "/contact")}>{t.contact}</a>
+          <Link href={getLocalizedPath(language, "/privacy")}>{t.privacy}</Link>
+          <Link href={getLocalizedPath(language, "/terms")}>{t.terms}</Link>
+          <Link href={getLocalizedPath(language, "/refund-policy")}>{t.refund}</Link>
+          <Link href={getLocalizedPath(language, "/contact")}>{t.contact}</Link>
           <a href="mailto:adm@timviz.com">{t.support}: adm@timviz.com</a>
         </div>
       </footer>
