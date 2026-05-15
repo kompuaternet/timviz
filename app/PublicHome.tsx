@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import type { PublicHomeStats } from "../lib/public-home-stats";
+import { areMobileAppsAvailable, mobileApps } from "../lib/mobile-apps";
 import type { PublicSearchIndex } from "../lib/public-search";
 import { getNicheSlug } from "../lib/niche-pages";
 import { getLocalizedPath, isSiteLanguage, type SiteLanguage } from "../lib/site-language";
@@ -76,6 +77,41 @@ function getInitialLanguage(): PublicLanguage {
   return "ru";
 }
 
+const businesses = [
+  {
+    name: "SORRY FOR MY HAIR",
+    location: { ru: "Подольский район, Киев", uk: "Подільський район, Київ", en: "Podil district, Kyiv" },
+    category: { ru: "Парикмахерская", uk: "Перукарня", en: "Hair salon" },
+    rating: "5,0",
+    reviews: "132",
+    image: "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&w=900&q=80"
+  },
+  {
+    name: "Soulmates Massage",
+    location: { ru: "Печерск, Киев", uk: "Печерськ, Київ", en: "Pechersk, Kyiv" },
+    category: { ru: "Массажный салон", uk: "Масажний салон", en: "Massage studio" },
+    rating: "4,9",
+    reviews: "86",
+    image: "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=900&q=80"
+  },
+  {
+    name: "Beauty.Que",
+    location: { ru: "Центр, Львов", uk: "Центр, Львів", en: "City center, Lviv" },
+    category: { ru: "Ногти и ресницы", uk: "Нігті та вії", en: "Nails and lashes" },
+    rating: "5,0",
+    reviews: "241",
+    image: "https://images.unsplash.com/photo-1600948836101-f9ffda59d250?auto=format&fit=crop&w=900&q=80"
+  },
+  {
+    name: "La Duette",
+    location: { ru: "Оболонь, Киев", uk: "Оболонь, Київ", en: "Obolon, Kyiv" },
+    category: { ru: "Салон красоты", uk: "Салон краси", en: "Beauty salon" },
+    rating: "5,0",
+    reviews: "48",
+    image: "https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=900&q=80"
+  }
+];
+
 const copy = {
   ru: {
     navAria: "Главное меню",
@@ -84,25 +120,23 @@ const copy = {
     create: "Создать профиль компании",
     menu: "Меню",
     clients: "Для клиентов",
-    browse: "Поиск профилей",
+    browse: "Посмотреть бизнесы",
     clientAuth: "Вход или регистрация",
-    app: "Публичный профиль",
-    reviews: "О сервисе",
+    app: "Скачать приложение",
+    reviews: "Отзывы",
     business: "Для бизнеса",
     dashboard: "Войти в кабинет",
     businessLogin: "Вход для бизнеса",
     features: "Возможности для бизнеса",
-    heroTitle: "Timviz — онлайн-запись и календарь для мастеров",
-    heroText: "Ведите записи, клиентов, расписание и онлайн-бронирования в одном сервисе. Клиенты могут записываться сами по вашей ссылке, а также находить ваш профиль в Timviz.",
-    primaryCta: "Начать бесплатно",
-    secondaryCta: "Найти мастера",
-    bookedToday: "записей обработано сегодня",
-    recommended: "Для мастеров и сервисного бизнеса",
-    seeAll: "Начать бесплатно →",
-    appKicker: "Публичный профиль мастера",
-    appTitle: "Профиль мастера, который удобно отправить клиентам",
-    appText: "Каждый мастер может получить публичную страницу с услугами, расписанием и кнопкой онлайн-записи. Клиенты могут открыть профиль по ссылке, выбрать удобное время и отправить запрос на запись.",
-    appButton: "Начать бесплатно",
+    heroTitle: "Бронируйте услуги рядом",
+    heroText: "Все услуги, которые нужны каждый день, теперь в одном месте.",
+    bookedToday: "записей забронировано сегодня",
+    recommended: "Рекомендуемые",
+    seeAll: "Смотреть все →",
+    appKicker: "Доступно для клиентов",
+    appTitle: "Скачайте приложение Timviz",
+    appText: "Записывайтесь к любимым мастерам, находите новые места, переносите визиты и получайте напоминания в одном удобном приложении.",
+    appButton: "Скачать приложение",
     appSoon: "iOS и Android приложения скоро появятся 💜",
     appStore: "App Store",
     googlePlay: "Google Play",
@@ -110,42 +144,35 @@ const copy = {
     mobileAppsFooter: "Мобильные приложения скоро появятся",
     appCardTitle: "Trendy Studio",
     appCardMeta: "5.0 ★★★★★ · Лондон",
-    appCardButton: "Запрос на запись",
-    reviewTitle: "Что умеет Timviz",
+    appCardButton: "Записаться",
+    reviewTitle: "Отзывы",
     reviewsList: [
       ["Лучшая система бронирования", "Отличный опыт, легко бронировать. Оплачивать процедуры удобно, а напоминания помогают не забывать о записи.", "Люси", "Лондон"],
       ["Простота поиска и записи", "Можно быстро найти хорошего мастера рядом и выбрать удобное время без переписок.", "Дэн", "Нью-Йорк"],
       ["Идеально для барберов", "Нашел несколько барбершопов, сравнил отзывы и записался за пару кликов.", "Дейл", "Сидней"]
     ],
-    statsTitle: "Timviz — SaaS для записи и управления расписанием",
-    statsText: "Timviz продаёт подписку на программное обеспечение для мастеров и сервисного бизнеса, а не услуги третьих лиц.",
-    statsLabel: "записей обработано через рабочие инструменты Timviz",
-    partners: "бизнес-профилей",
+    statsTitle: "Лучшая платформа для записи на услуги",
+    statsText: "Одно решение для клиентов, мастеров и владельцев бизнеса.",
+    statsLabel: "записей забронировано на Timviz",
+    partners: "компаний-партнеров",
     countries: "стран используют Timviz",
     users: "пользователей Timviz",
     businessTitle: "Timviz для бизнеса",
-    businessText: "Управляйте записями, услугами, клиентами, рабочими часами, ссылкой онлайн-записи и уведомлениями из одного кабинета.",
+    businessText: "Управляйте записями, услугами, клиентами, графиком мастеров и поддержкой из одного кабинета.",
     more: "Подробнее →",
     rating: "Отлично 5/5",
     ratingText: "Первые отзывы от партнеров Timviz",
     dashboardToday: "Сегодня",
     dashboardTeam: "Рабочая команда",
     about: "О Timviz",
-    catalog: "Поиск профилей",
+    catalog: "Каталог",
     legal: "Юридическая информация",
     privacy: "Политика конфиденциальности",
     terms: "Условия использования",
     cityIn: "в",
     nichesTitle: "Для кого Timviz",
-    nichesSubtitle: "Timviz помогает специалистам вести расписание, принимать онлайн-записи и управлять клиентами без таблиц, блокнотов и хаоса.",
-    prosFooter: "Для мастеров",
-    audienceCards: ["Парикмахеры и барберы", "Ногтевой сервис", "Косметологи", "Бровисты и визажисты", "Массажисты", "Репетиторы", "Фитнес-тренеры", "Другие услуги по записи"],
-    featureCards: ["Онлайн-календарь записей", "Рабочие часы и услуги", "Самостоятельная запись клиента по ссылке", "Клиентская база", "Напоминания и уведомления", "Аналитика для мастера", "Публичный профиль мастера", "Поиск доступных профилей Timviz"],
-    searchTitle: "Поиск открытых профилей",
-    searchText: "Некоторые мастера могут сделать свой профиль видимым в поиске Timviz, чтобы клиентам было проще найти страницу для записи.",
-    profileDisclaimer: "Timviz не продаёт услуги мастеров и не принимает оплату за услуги клиентов. Сервис предоставляет программные инструменты для записи и управления расписанием.",
-    saasStatement: "Timviz is a SaaS appointment scheduling and business management platform for service professionals. We provide software tools for managing appointments, clients, working hours, online booking pages, notifications, and analytics. Timviz does not sell third-party services, does not act as a marketplace, and does not process payments between clients and service providers.",
-    footerSoftware: "Timviz is appointment scheduling software for service professionals."
+    nichesSubtitle: "Timviz подходит мастерам и салонам, которые работают по записи",
+    prosFooter: "Для мастеров"
   },
   uk: {
     navAria: "Головне меню",
@@ -154,25 +181,23 @@ const copy = {
     create: "Створити профіль компанії",
     menu: "Меню",
     clients: "Для клієнтів",
-    browse: "Пошук профілів",
+    browse: "Переглянути бізнеси",
     clientAuth: "Вхід або реєстрація",
-    app: "Публічний профіль",
-    reviews: "Про сервіс",
+    app: "Завантажити застосунок",
+    reviews: "Відгуки",
     business: "Для бізнесу",
     dashboard: "Увійти в кабінет",
     businessLogin: "Вхід для бізнесу",
     features: "Можливості для бізнесу",
-    heroTitle: "Timviz — онлайн-запис і календар для майстрів",
-    heroText: "Ведіть записи, клієнтів, розклад і онлайн-бронювання в одному сервісі. Клієнти можуть записуватися самостійно за вашим посиланням, а також знаходити ваш профіль у Timviz.",
-    primaryCta: "Почати безкоштовно",
-    secondaryCta: "Знайти майстра",
-    bookedToday: "записів оброблено сьогодні",
-    recommended: "Для майстрів і сервісного бізнесу",
-    seeAll: "Почати безкоштовно →",
-    appKicker: "Публічний профіль майстра",
-    appTitle: "Профіль майстра, який зручно надсилати клієнтам",
-    appText: "Кожен майстер може отримати публічну сторінку з послугами, розкладом і кнопкою онлайн-запису. Клієнти можуть відкрити профіль за посиланням, вибрати зручний час і надіслати запит на запис.",
-    appButton: "Почати безкоштовно",
+    heroTitle: "Бронюйте послуги поруч",
+    heroText: "Усі послуги, які потрібні щодня, тепер в одному місці.",
+    bookedToday: "записів заброньовано сьогодні",
+    recommended: "Рекомендовані",
+    seeAll: "Дивитися всі →",
+    appKicker: "Доступно для клієнтів",
+    appTitle: "Завантажте застосунок Timviz",
+    appText: "Записуйтеся до улюблених майстрів, знаходьте нові місця, переносьте візити й отримуйте нагадування в одному зручному застосунку.",
+    appButton: "Завантажити застосунок",
     appSoon: "Застосунки для iOS та Android скоро з’являться 💜",
     appStore: "App Store",
     googlePlay: "Google Play",
@@ -180,17 +205,17 @@ const copy = {
     mobileAppsFooter: "Мобільні застосунки скоро з’являться",
     appCardTitle: "Trendy Studio",
     appCardMeta: "5.0 ★★★★★ · Лондон",
-    appCardButton: "Запит на запис",
-    reviewTitle: "Що вміє Timviz",
+    appCardButton: "Записатися",
+    reviewTitle: "Відгуки",
     reviewsList: [
       ["Найкраща система бронювання", "Чудовий досвід, легко бронювати. Оплачувати процедури зручно, а нагадування допомагають не забути про запис.", "Люсі", "Лондон"],
       ["Простий пошук і запис", "Можна швидко знайти хорошого майстра поруч і вибрати зручний час без переписок.", "Ден", "Нью-Йорк"],
       ["Ідеально для барберів", "Знайшов кілька барбершопів, порівняв відгуки й записався за пару кліків.", "Дейл", "Сідней"]
     ],
-    statsTitle: "Timviz — SaaS для запису і керування розкладом",
-    statsText: "Timviz продає підписку на програмне забезпечення для майстрів і сервісного бізнесу, а не послуги третіх осіб.",
-    statsLabel: "записів оброблено через робочі інструменти Timviz",
-    partners: "бізнес-профілів",
+    statsTitle: "Найкраща платформа для запису на послуги",
+    statsText: "Одне рішення для клієнтів, майстрів і власників бізнесу.",
+    statsLabel: "записів заброньовано на Timviz",
+    partners: "компаній-партнерів",
     countries: "країн використовують Timviz",
     users: "користувачів Timviz",
     businessTitle: "Timviz для бізнесу",
@@ -201,21 +226,14 @@ const copy = {
     dashboardToday: "Сьогодні",
     dashboardTeam: "Робоча команда",
     about: "Про Timviz",
-    catalog: "Пошук профілів",
+    catalog: "Каталог",
     legal: "Юридична інформація",
     privacy: "Політика конфіденційності",
     terms: "Умови використання",
     cityIn: "у",
     nichesTitle: "Для кого Timviz",
-    nichesSubtitle: "Timviz допомагає спеціалістам вести розклад, приймати онлайн-записи та керувати клієнтами без таблиць, блокнотів і хаосу.",
-    prosFooter: "Для майстрів",
-    audienceCards: ["Перукарі та барбери", "Нігтьовий сервіс", "Косметологи", "Бровісти та візажисти", "Масажисти", "Репетитори", "Фітнес-тренери", "Інші послуги за записом"],
-    featureCards: ["Онлайн-календар записів", "Робочі години та послуги", "Самостійний запис клієнта за посиланням", "Клієнтська база", "Нагадування і сповіщення", "Аналітика для майстра", "Публічний профіль майстра", "Пошук доступних профілів Timviz"],
-    searchTitle: "Пошук відкритих профілів",
-    searchText: "Деякі майстри можуть зробити свій профіль видимим у пошуку Timviz, щоб клієнтам було простіше знайти сторінку для запису.",
-    profileDisclaimer: "Timviz не продає послуги майстрів і не приймає оплату за послуги клієнтів. Сервіс надає програмні інструменти для запису та керування розкладом.",
-    saasStatement: "Timviz is a SaaS appointment scheduling and business management platform for service professionals. We provide software tools for managing appointments, clients, working hours, online booking pages, notifications, and analytics. Timviz does not sell third-party services, does not act as a marketplace, and does not process payments between clients and service providers.",
-    footerSoftware: "Timviz is appointment scheduling software for service professionals."
+    nichesSubtitle: "Timviz підходить майстрам і салонам, які працюють за записом",
+    prosFooter: "Для майстрів"
   },
   en: {
     navAria: "Main menu",
@@ -224,25 +242,23 @@ const copy = {
     create: "Create company profile",
     menu: "Menu",
     clients: "For clients",
-    browse: "Search profiles",
+    browse: "Browse businesses",
     clientAuth: "Log in or register",
-    app: "Public profile",
-    reviews: "About",
+    app: "Download app",
+    reviews: "Reviews",
     business: "For business",
     dashboard: "Open dashboard",
     businessLogin: "Business sign in",
     features: "Business features",
-    heroTitle: "Timviz — online booking and calendar for service professionals",
-    heroText: "Manage appointments, clients, working hours and online bookings in one service. Clients can book through your link and may also find your Timviz profile.",
-    primaryCta: "Start for free",
-    secondaryCta: "Find a professional",
-    bookedToday: "appointments handled today",
-    recommended: "For professionals and service businesses",
-    seeAll: "Start for free →",
-    appKicker: "Public professional profile",
-    appTitle: "A professional profile you can send to clients",
-    appText: "Every professional can get a public page with services, schedule and an online booking button. Clients can open the profile by link, choose a convenient time and send a booking request.",
-    appButton: "Start for free",
+    heroTitle: "Book services nearby",
+    heroText: "Everyday services, all in one place.",
+    bookedToday: "bookings made today",
+    recommended: "Recommended",
+    seeAll: "See all →",
+    appKicker: "Available for clients",
+    appTitle: "Download the Timviz app",
+    appText: "Book favorite professionals, discover new places, move visits and get reminders in one simple app.",
+    appButton: "Download app",
     appSoon: "iOS and Android apps are coming soon 💜",
     appStore: "App Store",
     googlePlay: "Google Play",
@@ -250,17 +266,17 @@ const copy = {
     mobileAppsFooter: "Mobile apps coming soon",
     appCardTitle: "Trendy Studio",
     appCardMeta: "5.0 ★★★★★ · London",
-    appCardButton: "Request booking",
-    reviewTitle: "What Timviz does",
+    appCardButton: "Book now",
+    reviewTitle: "Reviews",
     reviewsList: [
       ["The best booking system", "A smooth experience and easy booking. Payments are convenient, and reminders help me never miss a visit.", "Lucy", "London"],
       ["Easy search and booking", "I can quickly find a great professional nearby and choose the right time without messaging.", "Dan", "New York"],
       ["Perfect for barbers", "I compared several barbershops, checked reviews and booked in a few clicks.", "Dale", "Sydney"]
     ],
-    statsTitle: "Timviz is SaaS for appointment scheduling",
-    statsText: "Timviz sells software subscriptions for service professionals and businesses, not third-party services.",
-    statsLabel: "appointments handled with Timviz tools",
-    partners: "business profiles",
+    statsTitle: "A better platform for appointment services",
+    statsText: "One solution for clients, professionals and business owners.",
+    statsLabel: "bookings made on Timviz",
+    partners: "partner businesses",
     countries: "countries use Timviz",
     users: "Timviz users",
     businessTitle: "Timviz for business",
@@ -271,23 +287,16 @@ const copy = {
     dashboardToday: "Today",
     dashboardTeam: "Working staff",
     about: "About Timviz",
-    catalog: "Profile search",
+    catalog: "Catalog",
     legal: "Legal",
     privacy: "Privacy policy",
     terms: "Terms of use",
     cityIn: "in",
     nichesTitle: "Who Timviz is for",
-    nichesSubtitle: "Timviz helps specialists manage schedules, online bookings and clients without spreadsheets, notebooks or operational chaos.",
-    prosFooter: "For professionals",
-    audienceCards: ["Hairdressers and barbers", "Nail services", "Cosmetologists", "Brow artists and makeup artists", "Massage therapists", "Tutors", "Fitness trainers", "Other appointment-based services"],
-    featureCards: ["Online appointment calendar", "Working hours and services", "Self-booking by client link", "Client database", "Reminders and notifications", "Analytics for professionals", "Public professional profile", "Search available Timviz profiles"],
-    searchTitle: "Search open profiles",
-    searchText: "Some professionals can make their profile visible in Timviz search so clients can more easily find the booking page.",
-    profileDisclaimer: "Timviz does not sell professionals' services and does not accept payment for client services. The service provides software tools for booking and schedule management.",
-    saasStatement: "Timviz is a SaaS appointment scheduling and business management platform for service professionals. We provide software tools for managing appointments, clients, working hours, online booking pages, notifications, and analytics. Timviz does not sell third-party services, does not act as a marketplace, and does not process payments between clients and service providers.",
-    footerSoftware: "Timviz is appointment scheduling software for service professionals."
+    nichesSubtitle: "Timviz is built for professionals and salons who work by appointment",
+    prosFooter: "For professionals"
   }
-} satisfies Record<PublicLanguage, Record<string, string | string[] | string[][]>>;
+} satisfies Record<PublicLanguage, Record<string, string | string[][]>>;
 
 const cities = [
   {
@@ -338,8 +347,9 @@ export default function PublicHome({ searchIndex, stats, initialLanguage = "ru" 
     return () => window.removeEventListener("rezervo-language-change", handleLanguageChange);
   }, [initialLanguage]);
 
-  const audienceCards = t.audienceCards as string[];
-  const featureCards = t.featureCards as string[];
+  const reviews = t.reviewsList as string[][];
+  const mobileAppsAvailable = areMobileAppsAvailable();
+
   return (
     <main className="public-home">
       <header className="public-header">
@@ -356,7 +366,7 @@ export default function PublicHome({ searchIndex, stats, initialLanguage = "ru" 
               <strong>{String(t.clients)}</strong>
               <a href={getLocalizedPath(language, "/catalog")}>{String(t.browse)}</a>
               <a href={getLocalizedPath(language, "/account")}>{String(t.clientAuth)}</a>
-              <a href="#app">{String(t.app)}</a>
+              <a href="#app">{mobileAppsAvailable ? String(t.app) : String(t.mobileAppsFooter)}</a>
               <a href="#reviews">{String(t.reviews)}</a>
               <hr />
               <strong>{String(t.business)}</strong>
@@ -374,10 +384,7 @@ export default function PublicHome({ searchIndex, stats, initialLanguage = "ru" 
         <h1>{String(t.heroTitle)}</h1>
         <p>{String(t.heroText)}</p>
 
-        <div className="public-hero-actions">
-          <a className="business-primary" href="/pro/create-account">{String(t.primaryCta)}</a>
-          <a className="business-secondary" href="#profile-search">{String(t.secondaryCta)}</a>
-        </div>
+        <PublicSearch index={searchIndex} language={language} />
 
         <div className="public-hero-count">
           <strong>{formatNumber(stats.bookedToday, language)}</strong> {String(t.bookedToday)}
@@ -387,17 +394,19 @@ export default function PublicHome({ searchIndex, stats, initialLanguage = "ru" 
       <section className="public-section public-carousel-section">
         <div className="public-section-head">
           <h2>{String(t.recommended)}</h2>
-          <a href="/pro/create-account">{String(t.seeAll)}</a>
+          <a href={getLocalizedPath(language, "/catalog")}>{String(t.seeAll)}</a>
         </div>
         <div className="public-business-grid">
-          {audienceCards.map((item, index) => (
-            <article className="public-business-card public-saas-card" key={item}>
+          {businesses.map((business) => (
+            <a className="public-business-card" href={getLocalizedPath(language, "/catalog")} key={business.name}>
+              <img src={business.image} alt={business.name} />
               <div>
-                <span className="public-rating">{String(index + 1).padStart(2, "0")}</span>
-                <h3>{item}</h3>
+                <h3>{business.name}</h3>
+                <span className="public-rating">★ {business.rating} <small>({business.reviews})</small></span>
               </div>
-              <p>{String(t.nichesSubtitle)}</p>
-            </article>
+              <p>{business.location[language]}</p>
+              <small>{business.category[language]}</small>
+            </a>
           ))}
         </div>
       </section>
@@ -407,8 +416,29 @@ export default function PublicHome({ searchIndex, stats, initialLanguage = "ru" 
           <span className="public-kicker">{String(t.appKicker)}</span>
           <h2>{String(t.appTitle)}</h2>
           <p>{String(t.appText)}</p>
-          <p className="public-saas-note">{String(t.profileDisclaimer)}</p>
-          <a className="business-primary" href="/pro/create-account">{String(t.appButton)}</a>
+          {mobileAppsAvailable ? (
+            <div className="public-app-badges" aria-label={String(t.appButton)}>
+              {mobileApps.ios.enabled && mobileApps.ios.url ? (
+                <a className="public-store-badge" href={mobileApps.ios.url} rel="noopener noreferrer" target="_blank">
+                  <span>{String(t.appStore)}</span>
+                </a>
+              ) : null}
+              {mobileApps.android.enabled && mobileApps.android.url ? (
+                <a className="public-store-badge" href={mobileApps.android.url} rel="noopener noreferrer" target="_blank">
+                  <span>{String(t.googlePlay)}</span>
+                </a>
+              ) : null}
+            </div>
+          ) : (
+            <div className="public-mobile-soon" aria-label={String(t.appSoon)}>
+              <span>{String(t.appSoon)}</span>
+              <div className="public-app-badges public-app-badges-disabled" aria-hidden="true">
+                <span className="public-store-badge public-store-badge-disabled">{String(t.appStore)}</span>
+                <span className="public-store-badge public-store-badge-disabled">{String(t.googlePlay)}</span>
+              </div>
+              <strong>{String(t.comingSoon)}</strong>
+            </div>
+          )}
         </div>
         <div className="public-phone-stack" aria-hidden="true">
           <div className="public-phone-card">
@@ -432,30 +462,26 @@ export default function PublicHome({ searchIndex, stats, initialLanguage = "ru" 
           <h2>{String(t.reviewTitle)}</h2>
         </div>
         <div className="public-review-grid">
-          {featureCards.map((feature, index) => (
-            <article className="public-review-card public-saas-feature" key={feature}>
-              <div className="public-stars">{String(index + 1).padStart(2, "0")}</div>
-              <h3>{feature}</h3>
-              <p>{index === featureCards.length - 1 ? String(t.searchText) : String(t.businessText)}</p>
+          {reviews.map((review) => (
+            <article className="public-review-card" key={review[0]}>
+              <div className="public-stars">★★★★★</div>
+              <h3>{review[0]}</h3>
+              <p>{review[1]}</p>
+              <footer>
+                <span>{review[2].slice(0, 1)}</span>
+                <div>
+                  <strong>{review[2]}</strong>
+                  <small>{review[3]}</small>
+                </div>
+              </footer>
             </article>
           ))}
         </div>
       </section>
 
-      <section className="public-section public-search-section" id="profile-search">
-        <div className="public-section-head">
-          <div>
-            <h2>{String(t.searchTitle)}</h2>
-            <p>{String(t.searchText)}</p>
-          </div>
-        </div>
-        <PublicSearch index={searchIndex} language={language} />
-      </section>
-
       <section className="public-stats-section">
         <h2>{String(t.statsTitle)}</h2>
         <p>{String(t.statsText)}</p>
-        <p className="public-saas-statement">{String(t.saasStatement)}</p>
         <strong>{formatStatsBig(stats.totalBookings, language)}</strong>
         <span>{String(t.statsLabel)}</span>
         <div className="public-stats-row">
@@ -524,12 +550,12 @@ export default function PublicHome({ searchIndex, stats, initialLanguage = "ru" 
       <footer className="public-footer">
         <div>
           <a className="public-logo" href={getLocalizedPath(language)}><BrandLogo /></a>
-          <span className="public-footer-mobile-note">{String(t.footerSoftware)}</span>
+          <span className="public-footer-mobile-note">{mobileAppsAvailable ? String(t.appButton) : String(t.mobileAppsFooter)}</span>
         </div>
         <div>
           <h3>{String(t.about)}</h3>
-          <a href="#reviews">{String(t.features)}</a>
-          <a href="#app">{String(t.app)}</a>
+          <a href="#reviews">{String(t.reviews)}</a>
+          <a href="#app">{mobileAppsAvailable ? String(t.app) : String(t.mobileAppsFooter)}</a>
           <a href={getLocalizedPath(language, "/catalog")}>{String(t.catalog)}</a>
         </div>
         <div>
@@ -554,7 +580,6 @@ export default function PublicHome({ searchIndex, stats, initialLanguage = "ru" 
           <a href={getLocalizedPath(language, "/refund-policy")}>{language === "uk" ? "Політика повернень" : language === "en" ? "Refund policy" : "Политика возвратов"}</a>
           <a href={getLocalizedPath(language, "/contact")}>{language === "uk" ? "Контакти" : language === "en" ? "Contact" : "Контакты"}</a>
           <a href="mailto:adm@timviz.com">adm@timviz.com</a>
-          <span className="public-footer-mobile-note">{String(t.footerSoftware)}</span>
         </div>
       </footer>
     </main>
