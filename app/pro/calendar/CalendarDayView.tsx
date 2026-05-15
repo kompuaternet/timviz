@@ -3780,7 +3780,10 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
   }
 
   function openMobileCreateSheet() {
+    setDrawerStage("closed");
     setActiveToolbarMenu(null);
+    setActiveMobileBookingId(null);
+    bookingLongPressTriggeredRef.current = false;
     setQuickMenu((current) => ({ ...current, visible: false, x: 0, y: 0, time: "" }));
     setIsMobileCreateSheetOpen(true);
   }
@@ -4469,6 +4472,13 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
     setActiveToolbarMenu(null);
   }
 
+  function moveMobileVisiblePeriod(direction: -1 | 1) {
+    setActiveToolbarMenu(null);
+    setIsMobileCreateSheetOpen(false);
+    setActiveMobileBookingId(null);
+    moveVisiblePeriod(direction);
+  }
+
   function renderDatePickerContent() {
     return (
       <div className={styles.calendarDatePickerCard}>
@@ -4936,6 +4946,14 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
                 {renderDatePickerContent()}
               </FloatingPopover>
               <button
+                type="button"
+                className={styles.calendarMobilePeriodButton}
+                aria-label="Предыдущий период"
+                onClick={() => moveMobileVisiblePeriod(-1)}
+              >
+                ‹
+              </button>
+              <button
                 ref={viewMenuButtonRef}
                 type="button"
                 className={styles.calendarMobileDateButton}
@@ -4983,6 +5001,14 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
                   ))}
                 </div>
               </FloatingPopover>
+              <button
+                type="button"
+                className={styles.calendarMobilePeriodButton}
+                aria-label="Следующий период"
+                onClick={() => moveMobileVisiblePeriod(1)}
+              >
+                ›
+              </button>
               <button
                 type="button"
                 className={`${styles.calendarMobileHeaderIcon} ${drawerStage === "notifications" ? styles.calendarIconButtonActive : ""}`}
