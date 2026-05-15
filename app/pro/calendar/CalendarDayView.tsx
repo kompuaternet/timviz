@@ -252,6 +252,7 @@ const CALENDAR_HOUR_HEIGHT = 96;
 const CALENDAR_MOBILE_HOUR_HEIGHT = 112;
 const CALENDAR_GRID_STEP_MINUTES = 10;
 const TIME_SELECT_STEP_MINUTES = 5;
+const MOBILE_READABLE_BOOKING_HEIGHT = 76;
 const SNAPSHOT_CACHE_LIMIT = 120;
 
 function getCalendarStorage() {
@@ -3757,6 +3758,8 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
 
   function openNewVisit(slot: string, targetProfessionalId = selectedProfessionalId) {
     setIsMobileCreateSheetOpen(false);
+    setActiveMobileBookingId(null);
+    bookingLongPressTriggeredRef.current = false;
     const targetMember = memberCalendars.find((member) => member.professionalId === targetProfessionalId) ?? null;
     const targetScheduleOverrides =
       targetMember?.memberSchedule.workScheduleMode === "flexible"
@@ -4463,6 +4466,8 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
   function openDatePickerMenu() {
     setDrawerStage("closed");
     setIsMobileCreateSheetOpen(false);
+    setActiveMobileBookingId(null);
+    bookingLongPressTriggeredRef.current = false;
     setDatePickerMonth(selectedDate);
     setActiveToolbarMenu((current) => (current === "date" ? null : "date"));
   }
@@ -5024,6 +5029,8 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
                   const shouldOpen = drawerStage !== "notifications";
                   setActiveToolbarMenu(null);
                   setIsMobileCreateSheetOpen(false);
+                  setActiveMobileBookingId(null);
+                  bookingLongPressTriggeredRef.current = false;
                   if (!shouldOpen) {
                     setDrawerStage("closed");
                     return;
@@ -5621,6 +5628,7 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
                       const laneWidth = 100 / layout.laneCount;
                       const actualHeight = Math.max(1, minuteToY(endMinutes) - minuteToY(startMinutes));
                       const height = actualHeight;
+                      const isCompactMobileBooking = isMobileViewport && actualHeight < MOBILE_READABLE_BOOKING_HEIGHT;
                       const isPastAppointment = getDateTimeValue(appointment.appointmentDate, appointment.endTime) < Date.now();
                       const isBlocked = appointment.kind === "blocked";
                       const isPendingApproval = appointment.attendance === "pending";
@@ -5630,7 +5638,7 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
                       return (
                         <article
                           key={appointmentKey}
-                          className={`${styles.bookingBlock} ${activeMobileBookingId === appointment.id ? styles.bookingBlockMobileActionsOpen : ""} ${draggingId === appointment.id ? styles.bookingDragging : ""} ${isBlocked ? styles.bookingBlocked : ""} ${isPastAppointment && !isBlocked ? styles.bookingPast : ""} ${isPendingApproval && !isBlocked ? styles.bookingPending : ""}`}
+                          className={`${styles.bookingBlock} ${isCompactMobileBooking ? styles.bookingBlockCompact : ""} ${activeMobileBookingId === appointment.id ? styles.bookingBlockMobileActionsOpen : ""} ${draggingId === appointment.id ? styles.bookingDragging : ""} ${isBlocked ? styles.bookingBlocked : ""} ${isPastAppointment && !isBlocked ? styles.bookingPast : ""} ${isPendingApproval && !isBlocked ? styles.bookingPending : ""}`}
                           style={{
                             top: `${top}px`,
                             height: `${height}px`,
@@ -5721,7 +5729,7 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
                           <strong className={styles.bookingTitle}>
                             {isBlocked ? appointment.serviceName || t.blockedTimeFallback : appointment.customerName || t.walkInClient}
                           </strong>
-                          {!isBlocked ? <span className={styles.bookingService}>{appointment.serviceName}</span> : null}
+                          {!isBlocked && !isCompactMobileBooking ? <span className={styles.bookingService}>{appointment.serviceName}</span> : null}
                           <button
                             type="button"
                             className={styles.bookingResizeHandle}

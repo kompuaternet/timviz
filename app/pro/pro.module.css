@@ -13758,6 +13758,36 @@
     padding-right: 8px;
   }
 
+  .bookingBlockCompact {
+    min-height: 0;
+    padding: 5px 8px;
+    display: grid;
+    align-content: center;
+    gap: 1px;
+  }
+
+  .bookingBlockCompact .bookingTime {
+    font-size: 0.62rem;
+    line-height: 1;
+  }
+
+  .bookingBlockCompact .bookingTitle {
+    font-size: 0.72rem;
+    line-height: 1.05;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .bookingBlockCompact .bookingService {
+    display: none;
+  }
+
+  .bookingBlockCompact.bookingBlocked {
+    padding-left: 9px;
+    border-left: 3px solid rgba(116, 125, 145, 0.46);
+  }
+
   .bookingControlRow,
   .bookingEditButton,
   .bookingDragHandle,
@@ -13783,6 +13813,21 @@
   .bookingBlockMobileActionsOpen .bookingTitle,
   .bookingBlockMobileActionsOpen .bookingService {
     padding-right: 92px;
+  }
+
+  .bookingBlockCompact.bookingBlockMobileActionsOpen {
+    padding-top: 6px;
+    padding-bottom: 6px;
+  }
+
+  .bookingBlockCompact.bookingBlockMobileActionsOpen .bookingTime,
+  .bookingBlockCompact.bookingBlockMobileActionsOpen .bookingTitle {
+    padding-right: 96px;
+  }
+
+  .bookingBlockCompact.bookingBlockMobileActionsOpen .bookingControlRow {
+    top: 50%;
+    transform: translateY(-50%) scale(1);
   }
 
   .bookingBlockMobileActionsOpen {
