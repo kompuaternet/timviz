@@ -2460,13 +2460,14 @@ export default function App() {
 
   async function register() {
     const firstName = registerForm.firstName.trim();
+    const companyName = registerForm.companyName.trim();
     const payload = {
       ...registerForm,
       email: registerForm.email.trim().toLowerCase(),
       firstName,
       lastName: registerForm.lastName.trim(),
       phone: registerForm.phone.trim(),
-      companyName: registerForm.companyName.trim() || `${firstName} Timviz`,
+      companyName,
       language,
       country: detectedCountry.country,
       currency: detectedCountry.currency,
@@ -2477,7 +2478,8 @@ export default function App() {
       !payload.firstName ||
       !payload.email ||
       !payload.password ||
-      !payload.phone
+      !payload.phone ||
+      !payload.companyName
     ) {
       Alert.alert(t.requiredTitle, t.requiredText);
       return;
@@ -3169,6 +3171,7 @@ export default function App() {
               <View style={styles.form}>
                 <Field label={t.firstName} value={registerForm.firstName} onChangeText={(value) => setRegisterForm((current) => ({ ...current, firstName: value }))} />
                 <Field label={t.email} value={registerForm.email} onChangeText={(value) => setRegisterForm((current) => ({ ...current, email: value }))} keyboardType="email-address" autoCapitalize="none" placeholder="you@email.com" />
+                <Field label={t.companyName} value={registerForm.companyName} onChangeText={(value) => setRegisterForm((current) => ({ ...current, companyName: value }))} />
                 <Field label={t.phone} value={registerForm.phone} onChangeText={(value) => setRegisterForm((current) => ({ ...current, phone: value }))} keyboardType="phone-pad" />
                 <Field label={t.password} hint={t.passwordHint} value={registerForm.password} onChangeText={(value) => setRegisterForm((current) => ({ ...current, password: value }))} secureTextEntry />
                 <Pressable style={styles.authDetailsToggle} onPress={() => setRegisterDetailsOpen((current) => !current)}>
@@ -3178,7 +3181,6 @@ export default function App() {
                 {registerDetailsOpen ? (
                   <View style={styles.authOptionalBlock}>
                     <Field label={t.lastName} value={registerForm.lastName} onChangeText={(value) => setRegisterForm((current) => ({ ...current, lastName: value }))} />
-                    <Field label={t.companyName} value={registerForm.companyName} onChangeText={(value) => setRegisterForm((current) => ({ ...current, companyName: value }))} placeholder={`${registerForm.firstName.trim() || "Timviz"} Timviz`} />
                   </View>
                 ) : null}
               </View>

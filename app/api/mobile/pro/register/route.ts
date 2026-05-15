@@ -22,7 +22,7 @@ export async function POST(request: Request) {
     const timezone = cleanText(body.timezone) || "Europe/Kyiv";
     const currency = cleanText(body.currency) || "UAH";
 
-    if (!firstName || !lastName || !email || !password || !phone || !companyName) {
+    if (!firstName || !email || !password || !phone || !companyName) {
       return NextResponse.json({ error: "Required fields are missing." }, { status: 400 });
     }
 
@@ -78,4 +78,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: message }, { status: 400 });
   }
 }
-
