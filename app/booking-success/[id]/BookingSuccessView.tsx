@@ -35,7 +35,7 @@ const bookingSuccessCopy: Record<SiteLanguage, BookingSuccessCopy> = {
     eyebrow: "Запись подтверждена",
     pendingEyebrow: "Заявка отправлена",
     heroText: "Бронь сохранена. Следом сюда можно подключить Telegram-напоминания, оплату и управление статусами визита.",
-    pendingHeroText: "Заявка сохранена и уже появилась в календаре владельца. Как только он подтвердит запись, визит станет активным.",
+    pendingHeroText: "Запись отправлена мастеру. Как только он подтвердит заявку, визит станет активным.",
     bookingNumber: "Номер брони",
     service: "Услуга",
     date: "Дата",
@@ -52,7 +52,7 @@ const bookingSuccessCopy: Record<SiteLanguage, BookingSuccessCopy> = {
     eyebrow: "Запис підтверджено",
     pendingEyebrow: "Заявку надіслано",
     heroText: "Бронювання збережено. Далі сюди можна підключити Telegram-нагадування, оплату та керування статусами візиту.",
-    pendingHeroText: "Заявку збережено й уже додано в календар власника. Щойно він підтвердить запис, візит стане активним.",
+    pendingHeroText: "Запис надіслано майстру. Щойно він підтвердить заявку, візит стане активним.",
     bookingNumber: "Номер бронювання",
     service: "Послуга",
     date: "Дата",
@@ -69,7 +69,7 @@ const bookingSuccessCopy: Record<SiteLanguage, BookingSuccessCopy> = {
     eyebrow: "Booking confirmed",
     pendingEyebrow: "Request sent",
     heroText: "Your booking has been saved. Telegram reminders, payments and visit status management can plug into this step next.",
-    pendingHeroText: "Your request has been saved and already appears in the owner's calendar. Once the owner confirms it, the visit becomes active.",
+    pendingHeroText: "Your booking request was sent to the professional. Once confirmed, the visit becomes active.",
     bookingNumber: "Booking number",
     service: "Service",
     date: "Date",
@@ -98,6 +98,7 @@ export default function BookingSuccessView({ booking, backPath, pending = false 
   return (
     <main className="booking-success-shell">
       <section className="booking-success-card">
+        <div className="booking-success-mark">✓</div>
         <p className="eyebrow">{pending ? t.pendingEyebrow : t.eyebrow}</p>
         <h1>{booking.salonName}</h1>
         <p className="hero-text">{pending ? t.pendingHeroText : t.heroText}</p>

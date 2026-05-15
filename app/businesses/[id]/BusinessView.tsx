@@ -139,6 +139,14 @@ type BusinessCopy = {
   signInAs: string;
   phoneError: string;
   photosTitle: string;
+  mobileSubtitle: string;
+  trustLine: string;
+  morning: string;
+  afternoon: string;
+  evening: string;
+  comment: string;
+  commentPlaceholder: string;
+  bookCta: string;
 };
 
 const businessCopy: Record<SiteLanguage, BusinessCopy> = {
@@ -202,7 +210,15 @@ const businessCopy: Record<SiteLanguage, BusinessCopy> = {
     website: "Сайт",
     signInAs: "Вы вошли как",
     phoneError: "Проверьте номер телефона.",
-    photosTitle: "Фотографии"
+    photosTitle: "Фотографии",
+    mobileSubtitle: "Выберите услугу и удобное свободное время",
+    trustLine: "Без звонков и переписок — вы выбираете только свободное время",
+    morning: "Утро",
+    afternoon: "День",
+    evening: "Вечер",
+    comment: "Комментарий",
+    commentPlaceholder: "Например: удобнее писать в Telegram",
+    bookCta: "Записаться"
   },
   uk: {
     breadcrumbHome: "Головна",
@@ -264,7 +280,15 @@ const businessCopy: Record<SiteLanguage, BusinessCopy> = {
     website: "Сайт",
     signInAs: "Ви увійшли як",
     phoneError: "Перевірте номер телефону.",
-    photosTitle: "Фотографії"
+    photosTitle: "Фотографії",
+    mobileSubtitle: "Оберіть послугу та зручний вільний час",
+    trustLine: "Без дзвінків і переписок — ви обираєте тільки вільний час",
+    morning: "Ранок",
+    afternoon: "День",
+    evening: "Вечір",
+    comment: "Коментар",
+    commentPlaceholder: "Наприклад: зручніше писати в Telegram",
+    bookCta: "Записатися"
   },
   en: {
     breadcrumbHome: "Home",
@@ -326,7 +350,15 @@ const businessCopy: Record<SiteLanguage, BusinessCopy> = {
     website: "Website",
     signInAs: "Signed in as",
     phoneError: "Check the phone number.",
-    photosTitle: "Photos"
+    photosTitle: "Photos",
+    mobileSubtitle: "Choose a service and a convenient free time",
+    trustLine: "No calls or messages — you only choose available time",
+    morning: "Morning",
+    afternoon: "Day",
+    evening: "Evening",
+    comment: "Comment",
+    commentPlaceholder: "For example: Telegram is easier",
+    bookCta: "Book"
   }
 };
 
@@ -433,6 +465,14 @@ function fullName(member: TeamMember) {
   return `${member.firstName} ${member.lastName}`.trim();
 }
 
+function getSlotPeriod(slot: string) {
+  const [hours = "0"] = slot.split(":");
+  const hour = Number(hours);
+  if (hour < 12) return "morning";
+  if (hour < 17) return "afternoon";
+  return "evening";
+}
+
 function getInitials(member: TeamMember) {
   return `${member.firstName.trim().slice(0, 1)}${member.lastName.trim().slice(0, 1)}`.toUpperCase();
 }
@@ -536,6 +576,7 @@ export default function BusinessView({
   const [monthPickerOpen, setMonthPickerOpen] = useState(false);
   const [phoneCountry, setPhoneCountry] = useState("Ukraine");
   const [localPhone, setLocalPhone] = useState("");
+  const [customerNotes, setCustomerNotes] = useState("");
   const [phoneError, setPhoneError] = useState("");
   const [authState, setAuthState] = useState<CustomerSessionState>({
     loading: true,
@@ -911,6 +952,20 @@ export default function BusinessView({
       };
     });
   }, [availabilityByDate, weekStart]);
+  const groupedAvailableSlots = useMemo(() => {
+    const groups = [
+      { key: "morning", label: t.morning, slots: [] as string[] },
+      { key: "afternoon", label: t.afternoon, slots: [] as string[] },
+      { key: "evening", label: t.evening, slots: [] as string[] }
+    ];
+
+    for (const slot of availableSlots) {
+      const group = groups.find((item) => item.key === getSlotPeriod(slot));
+      group?.slots.push(slot);
+    }
+
+    return groups.filter((group) => group.slots.length > 0);
+  }, [availableSlots, t.afternoon, t.evening, t.morning]);
 
   function openBookingFlow(serviceId?: string) {
     if (serviceId) {
@@ -1174,8 +1229,13 @@ export default function BusinessView({
         <section className="company-hero">
           <div className="company-hero-main">
             <div className="company-hero-copy">
+              <div className="company-mobile-hero-brand">
+                <img src={allPhotos[0]} alt={business.name} />
+                <span>{businessCategoryLabel}</span>
+              </div>
               <h1>{business.name}</h1>
-              <p>{businessCategoryLabel}</p>
+              <p>{t.mobileSubtitle}</p>
+              <small className="company-trust-line">{t.trustLine}</small>
               <div className="company-hero-meta">
                 <span>{t.openUntil} 18:00</span>
                 <span>{business.address}</span>
@@ -1410,6 +1470,7 @@ export default function BusinessView({
                               <span>
                                 {service.durationMinutes ?? 60} {t.minuteShort}
                               </span>
+                              <small>{service.price ? formatMoney(service.price, locale) : t.fromPrice}</small>
                               <small>
                                 {service.category?.trim()
                                   ? localizeCategoryName(service.category.trim(), language)
@@ -1492,7 +1553,7 @@ export default function BusinessView({
                         <button
                           key={day.dateKey}
                           type="button"
-                          className={`company-week-day ${selectedDate === day.dateKey ? "active" : ""} ${day.availability.state}`}
+                          className={`company-week-day ${selectedDate === day.dateKey ? "active" : ""} ${day.availability.state} ${day.dateKey === getTodayDateKey() ? "today" : ""}`}
                           onClick={() => {
                             setSelectedDate(day.dateKey);
                             setVisibleMonth(new Date(`${day.dateKey}T00:00:00`));
@@ -1500,6 +1561,7 @@ export default function BusinessView({
                         >
                           <strong>{new Date(`${day.dateKey}T00:00:00`).getDate()}</strong>
                           <span>{formatWeekday(day.dateKey, locale)}</span>
+                          <small>{day.availability.slots ? `${day.availability.slots}` : day.availability.state === "closed" ? t.closedDay : t.fullyBooked}</small>
                         </button>
                       ))}
                     </div>
@@ -1537,20 +1599,32 @@ export default function BusinessView({
                       </div>
                     ) : null}
 
-                    <div className="company-slot-list">
-                      {availableSlots.map((slot) => (
-                        <button
-                          key={slot}
-                          type="button"
-                          className={`company-slot-item ${selectedTime === slot ? "active" : ""}`}
-                          onClick={() => setSelectedTime(slot)}
-                        >
-                          {slot}
-                        </button>
+                    <div className="company-slot-groups">
+                      {groupedAvailableSlots.map((group) => (
+                        <section key={group.key} className="company-slot-group">
+                          <strong>{group.label}</strong>
+                          <div className="company-slot-list">
+                            {group.slots.map((slot) => (
+                              <button
+                                key={slot}
+                                type="button"
+                                className={`company-slot-item ${selectedTime === slot ? "active" : ""}`}
+                                onClick={() => setSelectedTime(slot)}
+                              >
+                                {slot}
+                              </button>
+                            ))}
+                          </div>
+                        </section>
                       ))}
                     </div>
 
-                    {!availableSlots.length ? <p className="company-empty-hint">{t.noTimeForDay}</p> : null}
+                    {!availableSlots.length ? (
+                      <div className="company-empty-hint">
+                        <strong>{t.noTimeForDay}</strong>
+                        <span>{t.noFreeDays}</span>
+                      </div>
+                    ) : null}
 
                     <button
                       type="button"
@@ -1621,7 +1695,7 @@ export default function BusinessView({
                         <input type="hidden" name="customerPhone" value={fullPhone} />
                         <input type="hidden" name="customerPhoneCountry" value={phoneCountry} />
                         <input type="hidden" name="customerPhoneLocal" value={localPhone} />
-                        <input type="hidden" name="customerNotes" value="" />
+                        <input type="hidden" name="customerNotes" value={customerNotes} />
                         <input type="hidden" name="returnPath" value={returnPath} />
 
                         <div className="company-auth-card company-auth-card-active">
@@ -1675,9 +1749,25 @@ export default function BusinessView({
 
                         {phoneError ? <p className="field-error">{phoneError}</p> : null}
 
+                        <label className="field">
+                          <span>{t.comment}</span>
+                          <textarea
+                            className="textarea company-comment-input"
+                            value={customerNotes}
+                            onChange={(event) => setCustomerNotes(event.target.value)}
+                            placeholder={t.commentPlaceholder}
+                            rows={3}
+                          />
+                        </label>
+
+                        <div className="company-mobile-confirm-summary">
+                          <strong>{selectedServices.map((service) => getLocalizedServiceNameLabel(service)).join(" + ")}</strong>
+                          <span>{selectedDate ? formatSelectedDate(selectedDate, locale) : ""}{selectedTime ? ` · ${selectedTime}` : ""}</span>
+                        </div>
+
                         <ConfirmBookingSubmitButton
                           disabled={!selectedTime || !selectedDate || !selectedServices.length}
-                          label={t.confirmBooking}
+                          label={t.bookCta}
                           loadingLabel={t.confirmBookingSubmitting}
                         />
                       </form>
