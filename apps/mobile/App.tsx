@@ -63,6 +63,7 @@ type VisitDraft = {
   startTime: string;
   serviceId: string;
   appointmentDate: string;
+  notes: string;
   targetProfessionalId?: string;
   selectedClientId?: string;
   items: VisitServiceDraft[];
@@ -116,6 +117,7 @@ type AppointmentRecord = {
   customerName: string;
   customerPhone: string;
   serviceName: string;
+  notes?: string;
   attendance: "pending" | "confirmed" | "arrived" | "no_show";
   priceAmount: number;
 };
@@ -537,6 +539,7 @@ const copy = {
     quickBookingWithoutClient: "Швидкий запис без клієнта",
     chooseClientLater: "Можна обрати клієнта пізніше",
     chooseService: "Обрати послугу",
+    comment: "Коментар",
     addAnotherService: "Додати ще послугу +",
     total: "Разом",
     payable: "До сплати",
@@ -554,7 +557,7 @@ const copy = {
     newClientFormHint: "Додайте дані, і клієнт одразу буде обраний для візиту.",
     formOpened: "Форма відкрита нижче",
     clientName: "Ім'я клієнта",
-    withoutService: "Послугу не обрано",
+    withoutService: "Без послуги",
     setupAssistant: "Помічник налаштування",
     setupAssistantText: "Пройдіть кроки, щоб профіль був готовий до онлайн-запису.",
     setupCompleteTitle: "Профіль готовий до онлайн-запису",
@@ -618,6 +621,10 @@ const copy = {
     hoursShort: "год",
     workingDay: "Робочий день",
     dayOff: "Вихідний",
+    dayOffTitle: "Вихідний день",
+    bookingUnavailable: "Запис недоступний",
+    dayOffMessage: "Сьогодні у вас вихідний.",
+    configureSchedule: "Налаштувати графік",
     bookingPage: "Картка компанії",
     bookingPageText: "Посилання для клієнтів і перемикач онлайн-запису.",
     onlineBookingOn: "Онлайн-запис увімкнено",
@@ -786,15 +793,21 @@ const copy = {
     emptyCalendarTitle: "Поки немає записів",
     emptyCalendarText: "Натисніть +, щоб додати перший візит",
     noBookingsToday: "Сьогодні записів немає",
+    noBookingsTodaySpark: "Сьогодні записів немає ✨",
+    fillFreeWindowsText: "Саме час заповнити вільні вікна.",
     noBookingsThisDay: "На цей день записів немає",
-    calendarNoServicesText: "Спочатку додайте послугу або створіть перший запис без послуги.",
+    calendarNoServicesText: "Додайте першу послугу, щоб почати приймати клієнтів.",
     calendarEmptyActionText: "Додайте перший візит або налаштуйте послуги для онлайн-запису.",
     createBooking: "Створити запис",
+    createAppointmentButton: "+ Створити запис",
     firstRunCalendarTitle: "Почніть з послуги",
     firstRunCalendarText: "Додайте послугу, щоб швидше створювати записи й відкрити онлайн-запис.",
     addFirstVisit: "Додати перший візит",
     quickVisit: "Швидкий запис",
     createVisitWithoutService: "Створити запис без послуги",
+    onboardingStartTitle: "Щоб почати роботу 👋",
+    onboardingStartText: "У вас поки немає послуг.\n\nДодайте першу послугу, щоб почати приймати записи клієнтів.",
+    firstAppointmentCreated: "🎉 Ваш перший запис створено",
     addServiceFirstTitle: "Спочатку додайте послугу",
     addServiceFirstText: "У вас поки немає послуг. Додайте першу послугу або створіть швидкий запис без послуги.",
     servicesEmptyPickerTitle: "Послуг поки немає",
@@ -862,6 +875,7 @@ const copy = {
     quickBookingWithoutClient: "Быстрая запись без клиента",
     chooseClientLater: "Можно выбрать клиента позже",
     chooseService: "Выбрать услугу",
+    comment: "Комментарий",
     addAnotherService: "Добавить еще услугу +",
     total: "Итого",
     payable: "К оплате",
@@ -879,7 +893,7 @@ const copy = {
     newClientFormHint: "Добавьте данные, и клиент сразу будет выбран для визита.",
     formOpened: "Форма открыта ниже",
     clientName: "Имя клиента",
-    withoutService: "Услуга не выбрана",
+    withoutService: "Без услуги",
     setupAssistant: "Помощник настройки",
     setupAssistantText: "Пройдите шаги, чтобы профиль был готов к онлайн-записи.",
     setupCompleteTitle: "Профиль готов к онлайн-записи",
@@ -943,6 +957,10 @@ const copy = {
     hoursShort: "ч",
     workingDay: "Рабочий день",
     dayOff: "Выходной",
+    dayOffTitle: "Выходной день",
+    bookingUnavailable: "Запись недоступна",
+    dayOffMessage: "Сегодня у вас выходной.",
+    configureSchedule: "Настроить график",
     bookingPage: "Карточка компании",
     bookingPageText: "Ссылка для клиентов и переключатель онлайн-записи.",
     onlineBookingOn: "Онлайн-запись включена",
@@ -1111,15 +1129,21 @@ const copy = {
     emptyCalendarTitle: "Пока нет записей",
     emptyCalendarText: "Нажмите +, чтобы добавить первый визит",
     noBookingsToday: "Сегодня записей нет",
+    noBookingsTodaySpark: "Сегодня записей нет ✨",
+    fillFreeWindowsText: "Самое время заполнить свободные окна.",
     noBookingsThisDay: "На этот день записей нет",
-    calendarNoServicesText: "Сначала добавьте услугу или создайте первую запись без услуги.",
+    calendarNoServicesText: "Добавьте первую услугу, чтобы начать принимать клиентов.",
     calendarEmptyActionText: "Добавьте первый визит или настройте услуги для онлайн-записи.",
     createBooking: "Создать запись",
+    createAppointmentButton: "+ Создать запись",
     firstRunCalendarTitle: "Начните с услуги",
     firstRunCalendarText: "Добавьте услугу, чтобы создавать записи быстрее и открыть онлайн-запись.",
     addFirstVisit: "Добавить первый визит",
     quickVisit: "Быстрая запись",
     createVisitWithoutService: "Создать запись без услуги",
+    onboardingStartTitle: "Чтобы начать работу 👋",
+    onboardingStartText: "У вас пока нет услуг.\n\nДобавьте первую услугу, чтобы начать принимать записи клиентов.",
+    firstAppointmentCreated: "🎉 Ваша первая запись создана",
     addServiceFirstTitle: "Сначала добавьте услугу",
     addServiceFirstText: "У вас пока нет услуг. Добавьте первую услугу или создайте быструю запись без услуги.",
     servicesEmptyPickerTitle: "Услуг пока нет",
@@ -1187,6 +1211,7 @@ const copy = {
     quickBookingWithoutClient: "Quick booking without client",
     chooseClientLater: "You can choose a client later",
     chooseService: "Choose service",
+    comment: "Comment",
     addAnotherService: "Add another service +",
     total: "Total",
     payable: "To pay",
@@ -1204,7 +1229,7 @@ const copy = {
     newClientFormHint: "Add the details and the client will be selected for this visit.",
     formOpened: "Form is open below",
     clientName: "Client name",
-    withoutService: "No service selected",
+    withoutService: "Without service",
     setupAssistant: "Setup assistant",
     setupAssistantText: "Finish the steps so your profile is ready for online booking.",
     setupCompleteTitle: "Profile is ready for online booking",
@@ -1268,6 +1293,10 @@ const copy = {
     hoursShort: "h",
     workingDay: "Working day",
     dayOff: "Day off",
+    dayOffTitle: "Day off",
+    bookingUnavailable: "Booking unavailable",
+    dayOffMessage: "Today is your day off.",
+    configureSchedule: "Configure schedule",
     bookingPage: "Company page",
     bookingPageText: "Client link and online booking switch.",
     onlineBookingOn: "Online booking is on",
@@ -1435,16 +1464,22 @@ const copy = {
     empty: "Empty for now",
     emptyCalendarTitle: "No bookings yet",
     emptyCalendarText: "Tap + to add the first visit",
-    noBookingsToday: "No bookings today",
+    noBookingsToday: "No appointments today",
+    noBookingsTodaySpark: "No appointments today ✨",
+    fillFreeWindowsText: "It is a good time to fill your open slots.",
     noBookingsThisDay: "No bookings for this day",
-    calendarNoServicesText: "Add a service first or create your first booking without a service.",
+    calendarNoServicesText: "Add your first service to start accepting clients.",
     calendarEmptyActionText: "Add your first visit or set up services for online booking.",
     createBooking: "Create booking",
+    createAppointmentButton: "+ Create appointment",
     firstRunCalendarTitle: "Start with a service",
     firstRunCalendarText: "Add a service to create bookings faster and open online booking.",
     addFirstVisit: "Add first visit",
     quickVisit: "Quick booking",
     createVisitWithoutService: "Create booking without service",
+    onboardingStartTitle: "To get started 👋",
+    onboardingStartText: "You do not have services yet.\n\nAdd your first service to start accepting client appointments.",
+    firstAppointmentCreated: "🎉 First appointment created",
     addServiceFirstTitle: "Add a service first",
     addServiceFirstText: "You do not have services yet. Add your first service or create a quick booking without a service.",
     servicesEmptyPickerTitle: "No services yet",
@@ -1722,6 +1757,7 @@ function createDefaultVisitDraft(date: string, startTime: string): VisitDraft {
     startTime,
     serviceId: "",
     appointmentDate: date,
+    notes: "",
     targetProfessionalId: undefined,
     selectedClientId: undefined,
     items: [createVisitServiceDraft(startTime)],
@@ -2523,7 +2559,7 @@ export default function App() {
     return (Array.isArray(visitDraft.items) ? visitDraft.items : []).map((item) => ({
       ...item,
       serviceId: safeText(item.serviceId),
-      serviceName: getServiceDisplayName(workspace?.services.find((service) => service.id === item.serviceId), language) || safeText(item.serviceName).trim(),
+      serviceName: getServiceDisplayName(workspace?.services.find((service) => service.id === item.serviceId), language) || safeText(item.serviceName).trim() || t.withoutService,
       startTime: safeText(item.startTime).trim(),
       endTime: safeText(item.endTime).trim(),
       priceAmount: Number(item.priceAmount || 0),
@@ -2539,8 +2575,10 @@ export default function App() {
     }
 
     const appointmentDate = visitDraft.appointmentDate || selectedDate;
+    const hadAppointmentsBefore = (calendar?.appointments || []).filter((appointment) => appointment.kind !== "blocked").length > 0;
     const customerName = safeText(visitDraft.customerName).trim();
     const customerPhone = safeText(visitDraft.customerPhone).trim();
+    const notes = safeText(visitDraft.notes).trim();
     const optimisticAppointments = items.map((item) =>
       makeOptimisticAppointment({
         appointmentDate,
@@ -2570,11 +2608,16 @@ export default function App() {
             serviceName: item.serviceName,
             priceAmount: item.priceAmount,
             attendance: "confirmed",
-            notes: "",
+            notes,
           })),
         }),
       })
-      .then(() => refreshCalendarOnly(session, appointmentDate))
+      .then(() => {
+        if (!hadAppointmentsBefore) {
+          Alert.alert("Timviz", t.firstAppointmentCreated);
+        }
+        return refreshCalendarOnly(session, appointmentDate);
+      })
       .catch((error) => {
         Alert.alert(t.addVisit, error instanceof Error ? error.message : t.addVisit);
         revalidateWorkspace(appointmentDate);
@@ -2595,6 +2638,7 @@ export default function App() {
     const appointmentDate = visitDraft.appointmentDate || editingAppointment.appointmentDate || selectedDate;
     const customerName = safeText(visitDraft.customerName).trim();
     const customerPhone = safeText(visitDraft.customerPhone).trim();
+    const notes = safeText(visitDraft.notes).trim();
     const updatedAppointment: AppointmentRecord = {
       ...editingAppointment,
       professionalId: editingAppointment.professionalId || visitDraft.targetProfessionalId,
@@ -2604,6 +2648,7 @@ export default function App() {
       startTime: primaryItem.startTime,
       endTime: primaryItem.endTime,
       serviceName: primaryItem.serviceName,
+      notes,
       priceAmount: primaryItem.priceAmount,
     };
     const optimisticExtraAppointments = extraItems.map((item) =>
@@ -2638,6 +2683,7 @@ export default function App() {
           serviceName: primaryItem.serviceName,
           priceAmount: primaryItem.priceAmount,
           attendance: editingAppointment.attendance,
+          notes,
           previousCustomerName: editingAppointment.customerName,
           previousCustomerPhone: editingAppointment.customerPhone,
           previousAppointmentTime: editingAppointment.startTime,
@@ -2658,7 +2704,7 @@ export default function App() {
               serviceName: item.serviceName,
               priceAmount: item.priceAmount,
               attendance: editingAppointment.attendance,
-              notes: "",
+              notes,
             })),
           }),
         });
@@ -2755,6 +2801,18 @@ export default function App() {
     return true;
   }
 
+  function openVisitComposerAfterService(service: ServiceRecord) {
+    const startTime = getRoundedTime(10);
+    setSelectedDate(selectedDate);
+    setActiveTab("calendar");
+    setVisitDraft({
+      ...createDefaultVisitDraft(selectedDate, startTime),
+      serviceId: service.id,
+      items: [createVisitServiceDraft(startTime, service, language)],
+    });
+    setVisitComposerOpen(true);
+  }
+
   async function createBlockedTime(date: string, startTime: string, endTime: string, label: string, targetProfessionalId?: string) {
     const optimisticBlocked = makeOptimisticAppointment({
       appointmentDate: date,
@@ -2793,6 +2851,7 @@ export default function App() {
       Alert.alert(t.requiredTitle, t.requiredText);
       return false;
     }
+    const isFirstService = !workspace?.services.length;
 
     const optimisticService: ServiceRecord = {
       id: createLocalId("service"),
@@ -2810,6 +2869,9 @@ export default function App() {
     };
     mergeWorkspaceServices((services) => [optimisticService, ...services]);
     setServiceDraft({ name: "", category: serviceDraft.category || DEFAULT_SERVICE_CATEGORY, durationMinutes: "60", price: "0", color: SERVICE_COLORS[0] });
+    if (isFirstService) {
+      openVisitComposerAfterService(optimisticService);
+    }
     void apiFetch("/api/mobile/pro/services", {
         method: "POST",
         body: JSON.stringify({
@@ -2869,6 +2931,7 @@ export default function App() {
   }
 
   async function addCatalogService(service: ServiceTemplateRecord & { category: string }) {
+    const isFirstService = !workspace?.services.length;
     const optimisticService: ServiceRecord = {
       id: createLocalId("service"),
       name: service.name,
@@ -2880,6 +2943,9 @@ export default function App() {
       source: "catalog",
     };
     mergeWorkspaceServices((services) => [optimisticService, ...services]);
+    if (isFirstService) {
+      openVisitComposerAfterService(optimisticService);
+    }
     void apiFetch("/api/mobile/pro/services", {
         method: "POST",
         body: JSON.stringify({
@@ -3028,6 +3094,7 @@ export default function App() {
             onUpdateBlockedTime={updateAppointmentTime}
             onCreateBlockedTime={createBlockedTime}
             onOpenServices={() => setActiveTab("services")}
+            onOpenSchedule={() => openSettingsSection("schedule")}
             busy={busy}
             refreshing={refreshing}
             onRefresh={() => refreshAll()}
@@ -3223,6 +3290,7 @@ function CalendarTab({
   onUpdateBlockedTime,
   onCreateBlockedTime,
   onOpenServices,
+  onOpenSchedule,
   busy,
   refreshing,
   onRefresh,
@@ -3254,6 +3322,7 @@ function CalendarTab({
   onUpdateBlockedTime: (appointment: AppointmentRecord, startTime: string, endTime: string) => Promise<boolean>;
   onCreateBlockedTime: (date: string, startTime: string, endTime: string, label: string, targetProfessionalId?: string) => Promise<void>;
   onOpenServices: () => void;
+  onOpenSchedule: () => void;
   busy: boolean;
   refreshing: boolean;
   onRefresh: () => void;
@@ -3376,6 +3445,7 @@ function CalendarTab({
   const titleText = formatCalendarTitle(viewMode, selectedDate, language);
   const selectedClient = visitDraft.selectedClientId ? clients.find((client) => client.id === visitDraft.selectedClientId) || null : null;
   const draftVisitItems = Array.isArray(visitDraft.items) && visitDraft.items.length ? visitDraft.items : [createVisitServiceDraft(visitDraft.startTime || "09:00")];
+  const manualWithoutServiceMode = draftVisitItems.some((item) => !item.serviceId && (item.serviceName === t.withoutService || !item.serviceName));
   const visitTotal = draftVisitItems.reduce((sum, item) => sum + Number(item.priceAmount || 0), 0);
   const filteredServices = services.filter((service) => getServiceSearchText(service).includes(serviceQuery.trim().toLowerCase()));
   const filteredClients = clients.filter((client) => {
@@ -3395,10 +3465,12 @@ function CalendarTab({
     0
   );
   const isSelectedDateToday = selectedDate === getTodayIso();
-  const emptyCalendarTitle = isSelectedDateToday ? t.noBookingsToday || t.emptyCalendarTitle : t.noBookingsThisDay || t.emptyCalendarTitle;
-  const emptyCalendarText = hasServices ? t.emptyCalendarText : t.calendarNoServicesText || t.firstRunCalendarText;
-  const emptyCalendarPrimaryLabel = hasServices ? t.addFirstVisit : t.addService;
-  const emptyCalendarSecondaryLabel = hasServices ? "" : t.createBooking || t.addVisit;
+  const emptyCalendarTitle = hasServices
+    ? (isSelectedDateToday ? t.noBookingsTodaySpark || t.noBookingsToday : t.noBookingsThisDay || t.emptyCalendarTitle)
+    : t.firstServiceTitle;
+  const emptyCalendarText = hasServices ? t.fillFreeWindowsText || t.emptyCalendarText : t.calendarNoServicesText || t.firstRunCalendarText;
+  const emptyCalendarPrimaryLabel = hasServices ? t.createAppointmentButton || t.addFirstVisit : `+ ${t.addService}`;
+  const emptyCalendarSecondaryLabel = "";
   const emptyCalendarTop = (() => {
     const workStart = selectedSchedule.enabled ? timeToMinutes(selectedSchedule.startTime) : 9 * 60;
     const workHourHeight = isCompact ? 72 : 88;
@@ -3416,7 +3488,7 @@ function CalendarTab({
   }
 
   function openEmptyCalendarSecondaryAction() {
-    openComposerAt(getRoundedTime(10), selectedDate, primaryMember?.id, { withoutService: true });
+    setNoServicesHelper({ date: selectedDate, time: getRoundedTime(10), targetProfessionalId: primaryMember?.id, source: "time" });
   }
 
   const mergeRangeSnapshots = useCallback((snapshots: Record<string, CalendarSnapshot>) => {
@@ -3680,6 +3752,10 @@ function CalendarTab({
   }
 
   function openComposerAt(time: string, date = selectedDate, targetProfessionalId = primaryMember?.id, options: { withoutService?: boolean } = {}) {
+    if (!hasServices && !options.withoutService) {
+      setNoServicesHelper({ date, time, targetProfessionalId, source: "time" });
+      return;
+    }
     setEditingAppointment(null);
     setSelectedDate(date);
     const nextDraft = createDefaultVisitDraft(date, time);
@@ -3705,6 +3781,7 @@ function CalendarTab({
       startTime: appointment.startTime,
       serviceId: matchedService?.id || "",
       appointmentDate: appointment.appointmentDate || selectedDate,
+      notes: appointment.notes || "",
       targetProfessionalId: appointment.professionalId || primaryMember?.id,
       selectedClientId: matchedClient?.id,
       items: [
@@ -3775,6 +3852,13 @@ function CalendarTab({
     setViewMode(nextMode);
   }
 
+  function showDayOffSchedulePrompt() {
+    Alert.alert(t.dayOffTitle, t.dayOffMessage, [
+      { text: t.cancel, style: "cancel" },
+      { text: t.configureSchedule, onPress: onOpenSchedule },
+    ]);
+  }
+
   return (
     <View style={styles.calendarScreen}>
       <View style={styles.calendarToolbar}>
@@ -3803,6 +3887,12 @@ function CalendarTab({
 
       {viewMode === "day" ? (
         <>
+          {!selectedSchedule.enabled ? (
+            <Pressable style={styles.dayOffBanner} onPress={showDayOffSchedulePrompt}>
+              <Text style={styles.dayOffBannerTitle}>{t.dayOffTitle}</Text>
+              <Text style={styles.dayOffBannerText}>{t.bookingUnavailable}</Text>
+            </Pressable>
+          ) : null}
           <View style={styles.teamCalendarBoard}>
             <ScrollView
               style={styles.calendarScroll}
@@ -3865,6 +3955,7 @@ function CalendarTab({
                               onAppointmentDelete={onDeleteAppointment}
                               onAppointmentMove={onMoveAppointment}
                               onAppointmentResize={onResizeAppointment}
+                              onClosedDayPress={showDayOffSchedulePrompt}
                             />
                           </View>
                         );
@@ -3874,7 +3965,7 @@ function CalendarTab({
                 </ScrollView>
               </View>
             </ScrollView>
-            {!visibleDayAppointmentCount ? (
+            {!visibleDayAppointmentCount && selectedSchedule.enabled ? (
               <Pressable style={[styles.calendarEmptyState, { top: emptyCalendarTop }]} onPress={openEmptyCalendarPrimaryAction}>
                 <Text style={styles.calendarEmptyTitle}>{emptyCalendarTitle}</Text>
                 <Text style={styles.calendarEmptyText}>{emptyCalendarText}</Text>
@@ -4086,6 +4177,29 @@ function CalendarTab({
                     </View>
                     <Ionicons name="add" size={18} color="#6D4AFF" />
                   </Pressable>
+                  {manualWithoutServiceMode ? (
+                    <>
+                      <Field
+                        label={t.clientName}
+                        value={visitDraft.customerName}
+                        onChangeText={(value) => setVisitDraft({ ...visitDraft, selectedClientId: undefined, customerName: value })}
+                        placeholder={t.customer}
+                      />
+                      <Field
+                        label={t.comment}
+                        value={visitDraft.notes}
+                        onChangeText={(value) => setVisitDraft({ ...visitDraft, notes: value })}
+                        placeholder={t.comment}
+                      />
+                    </>
+                  ) : (
+                    <Field
+                      label={t.comment}
+                      value={visitDraft.notes}
+                      onChangeText={(value) => setVisitDraft({ ...visitDraft, notes: value })}
+                      placeholder={t.comment}
+                    />
+                  )}
 
                   <View style={styles.visitSectionHeader}>
                     <Text style={styles.visitSectionTitle}>{t.visitTab || t.newVisit}</Text>
@@ -4245,8 +4359,8 @@ function CalendarTab({
                 <View style={styles.firstRunIcon}>
                   <Ionicons name="pricetag-outline" size={22} color="#6D4AFF" />
                 </View>
-                <Text style={styles.noServicesActionTitle}>{t.addServiceFirstTitle}</Text>
-                <Text style={styles.noServicesActionText}>{t.addServiceFirstText}</Text>
+                <Text style={styles.noServicesActionTitle}>{t.onboardingStartTitle}</Text>
+                <Text style={styles.noServicesActionText}>{t.onboardingStartText}</Text>
                 <Pressable
                   style={[styles.firstRunPrimaryButton, styles.noServicesFullButton]}
                   onPress={() => {
@@ -4324,8 +4438,8 @@ function CalendarTab({
               <View style={styles.firstRunIcon}>
                 <Ionicons name="pricetag-outline" size={22} color="#6D4AFF" />
               </View>
-              <Text style={styles.noServicesActionTitle}>{t.addServiceFirstTitle}</Text>
-              <Text style={styles.noServicesActionText}>{t.addServiceFirstText}</Text>
+              <Text style={styles.noServicesActionTitle}>{t.onboardingStartTitle}</Text>
+              <Text style={styles.noServicesActionText}>{t.onboardingStartText}</Text>
               <Pressable style={[styles.firstRunPrimaryButton, styles.noServicesFullButton]} onPress={openServicesFromCalendar}>
                 <Text style={styles.firstRunPrimaryText}>{t.addService}</Text>
               </Pressable>
@@ -4412,8 +4526,10 @@ function MemberAvatar({ member, size = 34 }: { member: CalendarMemberView; size?
 }
 
 function CalendarTimeAxis({ date, compact, schedule }: { date: string; compact: boolean; schedule: WorkDayScheduleRecord }) {
-  const startHour = 0;
-  const endHour = 23;
+  const startHour = schedule.enabled ? 0 : 8;
+  const endHour = schedule.enabled ? 23 : 22;
+  const displayStartMinutes = startHour * 60;
+  const displayEndMinutes = schedule.enabled ? (endHour + 1) * 60 : endHour * 60;
   const workStart = schedule.enabled ? timeToMinutes(schedule.startTime) : 9 * 60;
   const workEnd = schedule.enabled ? timeToMinutes(schedule.endTime) : 18 * 60;
   const workHourHeight = compact ? 72 : 88;
@@ -4447,9 +4563,9 @@ function CalendarTimeAxis({ date, compact, schedule }: { date: string; compact: 
   })();
 
   function getScaledMinuteTop(minutes: number) {
-    const safe = Math.max(0, Math.min(24 * 60, minutes));
+    const safe = Math.max(displayStartMinutes, Math.min(displayEndMinutes, minutes));
+    if (!schedule.enabled) return ((safe - displayStartMinutes) / 60) * workHourHeight;
     if (!compact) return (safe / 60) * workHourHeight;
-    if (!schedule.enabled) return (safe / 60) * offHourHeight;
     let top = 0;
     for (const segment of compactSegments) {
       if (safe >= segment.end) {
@@ -4468,10 +4584,10 @@ function CalendarTimeAxis({ date, compact, schedule }: { date: string; compact: 
     return Math.max(1, getScaledMinuteTop(end) - getScaledMinuteTop(start));
   }
 
-  const timelineHeight = getScaledMinuteTop(24 * 60);
+  const timelineHeight = getScaledMinuteTop(displayEndMinutes);
   const now = new Date();
   const nowTop = getScaledMinuteTop(now.getHours() * 60 + now.getMinutes());
-  const showCurrentTime = date === getTodayIso();
+  const showCurrentTime = schedule.enabled && date === getTodayIso();
 
   return (
     <View style={[styles.timeAxisColumn, { height: timelineHeight }]}>
@@ -4725,6 +4841,7 @@ function CalendarTimeline({
   onAppointmentDelete,
   onAppointmentMove,
   onAppointmentResize,
+  onClosedDayPress,
   formatAppointmentServiceName,
   columnWidth,
   showTimeColumn = true,
@@ -4741,13 +4858,16 @@ function CalendarTimeline({
   onAppointmentDelete: (appointment: AppointmentRecord) => void;
   onAppointmentMove: (appointment: AppointmentRecord) => void;
   onAppointmentResize: (appointment: AppointmentRecord) => void;
+  onClosedDayPress?: () => void;
   formatAppointmentServiceName?: (appointment: AppointmentRecord) => string;
   columnWidth?: number;
   showTimeColumn?: boolean;
 }) {
   const { width } = useWindowDimensions();
-  const startHour = 0;
-  const endHour = 23;
+  const startHour = schedule.enabled ? 0 : 8;
+  const endHour = schedule.enabled ? 23 : 22;
+  const displayStartMinutes = startHour * 60;
+  const displayEndMinutes = schedule.enabled ? (endHour + 1) * 60 : endHour * 60;
   const workStart = schedule.enabled ? timeToMinutes(schedule.startTime) : 9 * 60;
   const workEnd = schedule.enabled ? timeToMinutes(schedule.endTime) : 18 * 60;
   const workHourHeight = compact ? 72 : 88;
@@ -4759,7 +4879,7 @@ function CalendarTimeline({
   const laneGap = 0;
   const now = new Date();
   const nowMinutes = now.getHours() * 60 + now.getMinutes();
-  const showCurrentTime = date === getTodayIso();
+  const showCurrentTime = schedule.enabled && date === getTodayIso();
   const breaks = schedule.enabled ? schedule.breaks || [] : [];
   const compactBreaks = breaks
     .map((item) => ({
@@ -4787,7 +4907,7 @@ function CalendarTimeline({
     pushSegment(workEnd, 24 * 60, offHourHeight);
     return segments;
   })();
-  const timelineHeight = getScaledMinuteTop(24 * 60);
+  const timelineHeight = getScaledMinuteTop(displayEndMinutes);
   const nowTop = getScaledMinuteTop(nowMinutes);
   const closedRanges = schedule.enabled
     ? [
@@ -4800,7 +4920,7 @@ function CalendarTimeline({
         })),
         { start: workEnd, end: 24 * 60, label: `${schedule.endTime} - 24:00`, kind: "off" },
       ].filter((item) => item.end > item.start)
-    : [{ start: 0, end: 24 * 60, label: t.closedBySchedule, kind: "closed" }];
+    : [{ start: displayStartMinutes, end: displayEndMinutes, label: t.dayOffTitle, kind: "closed" }];
   const blockedAppointments = appointments
     .filter((appointment) => appointment.kind === "blocked")
     .map((appointment) => ({
@@ -4831,9 +4951,9 @@ function CalendarTimeline({
   });
 
   function getScaledMinuteTop(minutes: number) {
-    const safe = Math.max(0, Math.min(24 * 60, minutes));
+    const safe = Math.max(displayStartMinutes, Math.min(displayEndMinutes, minutes));
+    if (!schedule.enabled) return ((safe - displayStartMinutes) / 60) * workHourHeight;
     if (!compact) return (safe / 60) * workHourHeight;
-    if (!schedule.enabled) return (safe / 60) * offHourHeight;
     let top = 0;
     for (const segment of compactSegments) {
       if (safe >= segment.end) {
@@ -4923,6 +5043,20 @@ function CalendarTimeline({
           ]}
         />
       ))}
+
+      {!schedule.enabled ? (
+        <Pressable
+          style={[
+            styles.closedDayHitbox,
+            {
+              top: 0,
+              left: timeColumnWidth,
+              height: timelineHeight,
+            },
+          ]}
+          onPress={onClosedDayPress}
+        />
+      ) : null}
 
       {blockedAppointments.map((range) => (
         <Pressable
@@ -8578,6 +8712,28 @@ const styles = StyleSheet.create({
   teamCalendarBoard: {
     flex: 1,
   },
+  dayOffBanner: {
+    marginHorizontal: 12,
+    marginTop: 8,
+    marginBottom: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: DESIGN.radius.md,
+    borderWidth: 1,
+    borderColor: "#F1F5F9",
+    backgroundColor: "#F8FAFC",
+  },
+  dayOffBannerTitle: {
+    color: "#94A3B8",
+    fontSize: 14,
+    fontWeight: "900",
+  },
+  dayOffBannerText: {
+    marginTop: 2,
+    color: "#CBD5E1",
+    fontSize: 12,
+    fontWeight: "800",
+  },
   calendarEmptyState: {
     position: "absolute",
     left: CALENDAR_TIME_AXIS_WIDTH + 14,
@@ -8586,20 +8742,25 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: DESIGN.radius.md,
     borderWidth: 1,
-    borderColor: "rgba(216, 208, 255, 0.72)",
-    backgroundColor: "rgba(255, 255, 255, 0.94)",
+    borderColor: "#E5E7EB",
+    backgroundColor: "#FFFFFF",
+    shadowColor: "#000000",
+    shadowOpacity: 0.05,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: 8 },
   },
   calendarEmptyTitle: {
-    color: DESIGN.colors.text,
-    fontSize: 14,
-    fontWeight: "800",
+    color: "#0F172A",
+    fontSize: 20,
+    lineHeight: 24,
+    fontWeight: "700",
   },
   calendarEmptyText: {
-    marginTop: 3,
-    color: DESIGN.colors.muted,
-    fontSize: 12,
-    lineHeight: 17,
-    fontWeight: "600",
+    marginTop: 6,
+    color: "#64748B",
+    fontSize: 15,
+    lineHeight: 22,
+    fontWeight: "500",
   },
   emptyActionRow: {
     marginTop: 10,
@@ -8612,8 +8773,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 10,
-    borderRadius: DESIGN.radius.md,
-    backgroundColor: DESIGN.colors.primary,
+    borderRadius: 12,
+    backgroundColor: "#7C3AED",
   },
   emptyPrimaryActionText: {
     color: "#FFFFFF",
@@ -8627,13 +8788,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 10,
-    borderRadius: DESIGN.radius.md,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: DESIGN.colors.border,
-    backgroundColor: DESIGN.colors.surface,
+    borderColor: "#E5E7EB",
+    backgroundColor: "#FFFFFF",
   },
   emptySecondaryActionText: {
-    color: DESIGN.colors.primaryDark,
+    color: "#334155",
     fontSize: 12,
     fontWeight: "800",
     textAlign: "center",
@@ -9338,14 +9499,14 @@ const styles = StyleSheet.create({
     right: 0,
     top: 0,
     height: 1,
-    backgroundColor: "#E3EAF4",
+    backgroundColor: "#E2E8F0",
   },
   minorLine: {
     position: "absolute",
     left: 0,
     right: 0,
     height: 1,
-    backgroundColor: "#F4F7FB",
+    backgroundColor: "#F1F5F9",
   },
   closedBlock: {
     position: "absolute",
@@ -9353,8 +9514,10 @@ const styles = StyleSheet.create({
     right: 0,
     justifyContent: "center",
     paddingLeft: 12,
-    backgroundColor: DESIGN.colors.surfaceSoft,
-    opacity: 0.88,
+    borderWidth: 1,
+    borderColor: "#F1F5F9",
+    backgroundColor: "#F8FAFC",
+    opacity: 1,
     zIndex: 0,
   },
   editableClosedBlock: {
@@ -9365,15 +9528,21 @@ const styles = StyleSheet.create({
     opacity: 0.96,
   },
   closedBlockText: {
-    color: DESIGN.colors.muted,
+    color: "#CBD5E1",
     fontSize: 11,
     fontWeight: "900",
   },
   closedBlockTimeText: {
     marginTop: 2,
-    color: DESIGN.colors.faint,
+    color: "#CBD5E1",
     fontSize: 10,
     fontWeight: "800",
+  },
+  closedDayHitbox: {
+    position: "absolute",
+    right: 0,
+    zIndex: 2,
+    backgroundColor: "transparent",
   },
   timeSlotHitbox: {
     position: "absolute",
@@ -10460,8 +10629,8 @@ const styles = StyleSheet.create({
     minHeight: 48,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: DESIGN.radius.lg,
-    backgroundColor: DESIGN.colors.primary,
+    borderRadius: 12,
+    backgroundColor: "#7C3AED",
   },
   firstRunPrimaryText: {
     color: "#FFFFFF",
@@ -10472,13 +10641,13 @@ const styles = StyleSheet.create({
     minHeight: 46,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: DESIGN.radius.lg,
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#D8D0FF",
-    backgroundColor: DESIGN.colors.surface,
+    borderColor: "#E5E7EB",
+    backgroundColor: "#FFFFFF",
   },
   firstRunSecondaryText: {
-    color: DESIGN.colors.primaryDark,
+    color: "#334155",
     fontSize: 14,
     fontWeight: "800",
   },
