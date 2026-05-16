@@ -3,12 +3,13 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import * as ImagePicker from "expo-image-picker";
 import * as Localization from "expo-localization";
 import { StatusBar } from "expo-status-bar";
-import type { ComponentProps } from "react";
+import type { ComponentProps, Dispatch, SetStateAction } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
   Image,
+  Keyboard,
   KeyboardAvoidingView,
   Linking,
   Modal,
@@ -3308,7 +3309,7 @@ function CalendarTab({
   selectedDate: string;
   setSelectedDate: (date: string) => void;
   visitDraft: VisitDraft;
-  setVisitDraft: (draft: VisitDraft) => void;
+  setVisitDraft: Dispatch<SetStateAction<VisitDraft>>;
   onCreateVisit: () => Promise<boolean>;
   onUpdateVisit: () => Promise<boolean>;
   onCreateClientFromVisit: (input: { fullName: string; phone: string; email: string }) => Promise<ClientRecord | null>;
@@ -3447,7 +3448,11 @@ function CalendarTab({
   const draftVisitItems = Array.isArray(visitDraft.items) && visitDraft.items.length ? visitDraft.items : [createVisitServiceDraft(visitDraft.startTime || "09:00")];
   const manualWithoutServiceMode = draftVisitItems.some((item) => !item.serviceId && (item.serviceName === t.withoutService || !item.serviceName));
   const visitTotal = draftVisitItems.reduce((sum, item) => sum + Number(item.priceAmount || 0), 0);
-  const filteredServices = services.filter((service) => getServiceSearchText(service).includes(serviceQuery.trim().toLowerCase()));
+  const filteredServices = useMemo(() => {
+    const query = serviceQuery.trim().toLowerCase();
+    if (!query) return services;
+    return services.filter((service) => getServiceSearchText(service).includes(query));
+  }, [serviceQuery, services]);
   const filteredClients = clients.filter((client) => {
     const query = clientQuery.trim().toLowerCase();
     if (!query) return true;
@@ -3639,33 +3644,49 @@ function CalendarTab({
   }
 
   function updateVisitItem(index: number, patch: Partial<VisitServiceDraft>) {
-    const draftItems = Array.isArray(visitDraft.items) && visitDraft.items.length ? visitDraft.items : [createVisitServiceDraft(visitDraft.startTime || "09:00")];
-    setVisitDraft({
-      ...visitDraft,
-      items: draftItems.map((item, itemIndex) => {
-        if (itemIndex !== index) return item;
-        const next = { ...item, ...patch };
-        if (patch.startTime && !patch.endTime && timeToMinutes(safeText(next.endTime)) <= timeToMinutes(patch.startTime)) {
-          next.endTime = addMinutes(patch.startTime, next.durationMinutes || 15);
-        }
-        return next;
-      }),
+    setVisitDraft((currentDraft) => {
+      const draftItems = Array.isArray(currentDraft.items) && currentDraft.items.length ? currentDraft.items : [createVisitServiceDraft(currentDraft.startTime || "09:00")];
+      return {
+        ...currentDraft,
+        serviceId: index === 0 && patch.serviceId !== undefined ? patch.serviceId : currentDraft.serviceId,
+        items: draftItems.map((item, itemIndex) => {
+          if (itemIndex !== index) return item;
+          const next = { ...item, ...patch };
+          if (patch.startTime && !patch.endTime && timeToMinutes(safeText(next.endTime)) <= timeToMinutes(patch.startTime)) {
+            next.endTime = addMinutes(patch.startTime, next.durationMinutes || 15);
+          }
+          return next;
+        }),
+      };
     });
   }
 
   function selectVisitService(service: ServiceRecord) {
+    Keyboard.dismiss();
     const duration = Math.max(5, service.durationMinutes || 60);
-    const draftItems = Array.isArray(visitDraft.items) ? visitDraft.items : [];
-    const currentItem = draftItems[editingServiceIndex] || createVisitServiceDraft(visitDraft.startTime || "09:00");
-    updateVisitItem(editingServiceIndex, {
-      serviceId: service.id,
-      serviceName: getServiceDisplayName(service, language),
-      priceAmount: Number(service.price || 0),
-      durationMinutes: duration,
-      endTime: addMinutes(currentItem.startTime, duration),
-    });
-    setServiceQuery("");
+    const serviceName = getServiceDisplayName(service, language);
     setVisitPickerMode(null);
+    setServiceQuery("");
+    setVisitDraft((currentDraft) => {
+      const draftItems = Array.isArray(currentDraft.items) && currentDraft.items.length ? currentDraft.items : [createVisitServiceDraft(currentDraft.startTime || "09:00")];
+      const currentItem = draftItems[editingServiceIndex] || createVisitServiceDraft(currentDraft.startTime || "09:00");
+      const nextItems = draftItems.map((item, itemIndex) => {
+        if (itemIndex !== editingServiceIndex) return item;
+        return {
+          ...item,
+          serviceId: service.id,
+          serviceName,
+          priceAmount: Number(service.price || 0),
+          durationMinutes: duration,
+          endTime: addMinutes(currentItem.startTime, duration),
+        };
+      });
+      return {
+        ...currentDraft,
+        serviceId: editingServiceIndex === 0 ? service.id : currentDraft.serviceId,
+        items: nextItems,
+      };
+    });
   }
 
   function markVisitItemWithoutService(index = editingServiceIndex) {
@@ -4088,7 +4109,7 @@ function CalendarTab({
                     <PrimaryButton label={t.addAndSelectClient} onPress={() => void createInlineClient()} disabled={busy} />
                   </View>
                 ) : null}
-                <ScrollView style={styles.pickerList} showsVerticalScrollIndicator={false}>
+                <ScrollView style={styles.pickerList} keyboardShouldPersistTaps="always" showsVerticalScrollIndicator={false}>
                   {filteredClients.map((client) => (
                     <Pressable key={client.id} style={styles.clientOptionCard} onPress={() => setDraftClient(client)}>
                       <View style={styles.clientAvatar}>
@@ -4117,7 +4138,7 @@ function CalendarTab({
                     <View style={styles.servicePickerSearchBar}>
                       <SearchInput value={serviceQuery} onChangeText={setServiceQuery} placeholder={t.searchService} />
                     </View>
-                    <ScrollView style={styles.pickerList} showsVerticalScrollIndicator={false}>
+                    <ScrollView style={styles.pickerList} keyboardShouldPersistTaps="always" showsVerticalScrollIndicator={false}>
                       {filteredServices.length ? (
                         filteredServices.map((service) => (
                           <Pressable key={service.id} style={styles.serviceOptionCard} onPress={() => selectVisitService(service)}>
