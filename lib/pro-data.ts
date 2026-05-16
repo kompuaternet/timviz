@@ -22,7 +22,7 @@ import {
 
 export type AccountDraft = {
   firstName: string;
-  lastName: string;
+  lastName?: string;
   email: string;
   password: string;
   phone: string;
@@ -1115,7 +1115,20 @@ export async function createProfessionalSetup(input: {
   workspaceReady: boolean;
   joinRequest: CreatedJoinRequestNotification | null;
 }> {
-  const normalizedEmail = input.account.email.trim().toLowerCase();
+  const account = {
+    ...input.account,
+    firstName: String(input.account.firstName ?? "").trim(),
+    lastName: String(input.account.lastName ?? "").trim(),
+    email: String(input.account.email ?? "").trim().toLowerCase(),
+    password: String(input.account.password ?? ""),
+    phone: String(input.account.phone ?? "").trim(),
+    country: String(input.account.country ?? "").trim(),
+    timezone: String(input.account.timezone ?? "").trim(),
+    language: String(input.account.language ?? "").trim(),
+    currency: input.account.currency ? String(input.account.currency).trim() : undefined,
+    avatarUrl: input.account.avatarUrl ? String(input.account.avatarUrl).trim() : undefined
+  };
+  const normalizedEmail = account.email;
   const invitationPreview = input.invitationToken
     ? await getStaffInvitationPreviewByToken(input.invitationToken)
     : null;
@@ -1143,7 +1156,7 @@ export async function createProfessionalSetup(input: {
   }
 
   const createdAt = new Date().toISOString();
-  const requesterName = `${input.account.firstName} ${input.account.lastName}`.trim();
+  const requesterName = `${account.firstName} ${account.lastName}`.trim();
   let createdJoinRequest: CreatedJoinRequestNotification | null = null;
   const initialWorkSchedule =
     input.setup.ownerMode === "owner" && !input.setup.workSchedule
@@ -1160,16 +1173,16 @@ export async function createProfessionalSetup(input: {
 
     const professionalId = placeholderActivation && existingProfessional ? existingProfessional.id : makeId("pro");
     const professionalPayload = {
-      first_name: input.account.firstName,
-      last_name: input.account.lastName,
+      first_name: account.firstName,
+      last_name: account.lastName,
       email: normalizedEmail,
-      password_hash: hashPassword(input.account.password),
-      avatar_url: normalizeAvatarUrl(input.account.avatarUrl),
-      phone: input.account.phone,
-      country: input.account.country,
-      timezone: input.account.timezone,
-      language: input.account.language,
-      currency: input.account.currency || inferCurrencyFromCountry(input.account.country),
+      password_hash: hashPassword(account.password),
+      avatar_url: normalizeAvatarUrl(account.avatarUrl),
+      phone: account.phone,
+      country: account.country,
+      timezone: account.timezone,
+      language: account.language,
+      currency: account.currency || inferCurrencyFromCountry(account.country),
       booking_credits_total:
         existingProfessional?.bookingCreditsTotal ?? DEFAULT_BOOKING_CREDITS,
       wallet_balance: existingProfessional?.walletBalance ?? 0,
@@ -1249,8 +1262,8 @@ export async function createProfessionalSetup(input: {
           business_id: businessId,
           name: service,
           price: inferServicePrice(service, {
-            country: input.account.country,
-            currency: input.account.currency
+            country: account.country,
+            currency: account.currency
           }),
           category: input.setup.categories[0] || "Без категории",
           duration_minutes: inferServiceDuration(service),
@@ -1452,7 +1465,7 @@ export async function createProfessionalSetup(input: {
         requesterProfessionalId: professionalId,
         requesterName: requesterName || normalizedEmail,
         requesterEmail: normalizedEmail,
-        requesterPhone: input.account.phone.trim(),
+        requesterPhone: account.phone,
         role: input.setup.joinBusinessRole || "Specialist"
       };
     }
@@ -1470,16 +1483,16 @@ export async function createProfessionalSetup(input: {
 
   const professional: ProfessionalRecord = normalizeProfessionalRecord({
     id: professionalId,
-    firstName: input.account.firstName,
-    lastName: input.account.lastName,
+    firstName: account.firstName,
+    lastName: account.lastName,
     email: normalizedEmail,
-    passwordHash: hashPassword(input.account.password),
-    avatarUrl: normalizeAvatarUrl(input.account.avatarUrl),
-    phone: input.account.phone,
-    country: input.account.country,
-    timezone: input.account.timezone,
-    language: input.account.language,
-    currency: input.account.currency || inferCurrencyFromCountry(input.account.country),
+    passwordHash: hashPassword(account.password),
+    avatarUrl: normalizeAvatarUrl(account.avatarUrl),
+    phone: account.phone,
+    country: account.country,
+    timezone: account.timezone,
+    language: account.language,
+    currency: account.currency || inferCurrencyFromCountry(account.country),
     bookingCreditsTotal: existingProfessional?.bookingCreditsTotal ?? DEFAULT_BOOKING_CREDITS,
     walletBalance: existingProfessional?.walletBalance ?? 0,
     plan: existingProfessional?.plan ?? "free",
@@ -1546,8 +1559,8 @@ export async function createProfessionalSetup(input: {
         businessId,
         name: service,
         price: inferServicePrice(service, {
-          country: input.account.country,
-          currency: input.account.currency
+          country: account.country,
+          currency: account.currency
         }),
         category: input.setup.categories[0] || "Без категории",
         durationMinutes: inferServiceDuration(service),
@@ -1648,7 +1661,7 @@ export async function createProfessionalSetup(input: {
       requesterProfessionalId: professionalId,
       requesterName: requesterName || normalizedEmail,
       requesterEmail: normalizedEmail,
-      requesterPhone: input.account.phone.trim(),
+      requesterPhone: account.phone,
       role: input.setup.joinBusinessRole || "Specialist"
     };
   }
