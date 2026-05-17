@@ -107,6 +107,20 @@ type ServiceCatalogCategory = {
   popularServices?: ServiceTemplateRecord[];
 };
 
+type PendingServiceSave = {
+  key: string;
+  optimisticService: ServiceRecord;
+  payload: {
+    name: string;
+    category: string;
+    durationMinutes: number;
+    price: number;
+    color: string;
+    source: "catalog" | "custom";
+  };
+  attempts: number;
+};
+
 type AppointmentRecord = {
   id: string;
   professionalId?: string;
@@ -1591,6 +1605,23 @@ function getServiceDisplayName(service: Pick<ServiceRecord | ServiceTemplateReco
   return localizeText(service?.name, service?.localizedName, language);
 }
 
+function normalizeServiceIdentityPart(value: unknown) {
+  return safeText(value).trim().toLowerCase();
+}
+
+function getServiceIdentityKey(service: Pick<ServiceRecord | ServiceTemplateRecord, "name" | "localizedName"> | undefined) {
+  const names = [
+    service?.name,
+    service?.localizedName?.ru,
+    service?.localizedName?.uk,
+    service?.localizedName?.en,
+  ]
+    .map(normalizeServiceIdentityPart)
+    .filter(Boolean)
+    .sort();
+  return names[0] || "";
+}
+
 function getServiceCategoryDisplayName(category: string | undefined, localizedCategory: LocalizedText | undefined, language: AppLanguage, t: Record<string, string>) {
   const localized = localizeText(category, localizedCategory, language);
   return localizeCatalogCategory(localized || category, language, t);
@@ -2197,6 +2228,9 @@ export default function App() {
   const [timeAction, setTimeAction] = useState<{ date: string; time: string; targetProfessionalId?: string } | null>(null);
   const [serviceDraft, setServiceDraft] = useState<ServiceDraftState>({ name: "", category: DEFAULT_SERVICE_CATEGORY, durationMinutes: "60", price: "0", color: SERVICE_COLORS[0] });
   const [clientDraft, setClientDraft] = useState({ firstName: "", lastName: "", phone: "", email: "" });
+  const pendingServiceSavesRef = useRef<Map<string, PendingServiceSave>>(new Map());
+  const serviceSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const serviceSaveInFlightRef = useRef(false);
 
   useEffect(() => {
     Linking.getInitialURL()
@@ -2264,6 +2298,117 @@ export default function App() {
         services: updater(current.services || []),
       };
     });
+  }
+
+  function serviceMatchesPending(service: ServiceRecord, pending: PendingServiceSave) {
+    return service.id === pending.optimisticService.id || serviceNameMatches(service, pending.optimisticService.name) || getServiceIdentityKey(service) === pending.key;
+  }
+
+  function hasServiceOrPendingSave(service: Pick<ServiceRecord | ServiceTemplateRecord, "name" | "localizedName">, key = getServiceIdentityKey(service)) {
+    if (!key) return false;
+    if (pendingServiceSavesRef.current.has(key)) return true;
+    const pendingLookup: PendingServiceSave = {
+      key,
+      optimisticService: {
+        id: "",
+        name: service.name,
+        localizedName: service.localizedName,
+        price: 0,
+      },
+      payload: {
+        name: service.name,
+        category: DEFAULT_SERVICE_CATEGORY,
+        durationMinutes: 60,
+        price: 0,
+        color: SERVICE_COLORS[0],
+        source: "catalog",
+      },
+      attempts: 0,
+    };
+    return Boolean(workspace?.services.some((item) => serviceMatchesPending(item, pendingLookup)));
+  }
+
+  function withPendingServiceSaves(snapshot: WorkspaceSnapshot): WorkspaceSnapshot {
+    const pending = Array.from(pendingServiceSavesRef.current.values());
+    if (!pending.length) return snapshot;
+
+    const nextServices = [...(snapshot.services || [])];
+    pending.forEach((item) => {
+      if (!nextServices.some((service) => serviceMatchesPending(service, item))) {
+        nextServices.unshift(item.optimisticService);
+      }
+    });
+
+    return {
+      ...snapshot,
+      services: nextServices,
+    };
+  }
+
+  function replaceOptimisticServices(savedServices: ServiceRecord[], pendingItems: PendingServiceSave[]) {
+    if (!savedServices.length || !pendingItems.length) return;
+    const optimisticIds = new Set(pendingItems.map((item) => item.optimisticService.id));
+
+    setWorkspace((current) => {
+      if (!current) return current;
+      const nextServices = (current.services || []).filter((service) => !optimisticIds.has(service.id));
+
+      savedServices.forEach((savedService) => {
+        const existingIndex = nextServices.findIndex((service) => service.id === savedService.id || serviceNameMatches(service, savedService.name));
+        if (existingIndex >= 0) {
+          nextServices[existingIndex] = { ...nextServices[existingIndex], ...savedService };
+        } else {
+          nextServices.unshift(savedService);
+        }
+      });
+
+      return {
+        ...current,
+        services: nextServices,
+      };
+    });
+  }
+
+  function scheduleServiceSaveFlush(delay = 450) {
+    if (serviceSaveTimerRef.current) return;
+    serviceSaveTimerRef.current = setTimeout(() => {
+      serviceSaveTimerRef.current = null;
+      void flushPendingServiceSaves();
+    }, delay);
+  }
+
+  async function flushPendingServiceSaves() {
+    if (serviceSaveInFlightRef.current || !session) return;
+    const pendingItems = Array.from(pendingServiceSavesRef.current.values()).slice(0, 5);
+    if (!pendingItems.length) return;
+
+    serviceSaveInFlightRef.current = true;
+    try {
+      const result = await apiFetch("/api/mobile/pro/services", {
+        method: "POST",
+        body: JSON.stringify({
+          services: pendingItems.map((item) => item.payload),
+        }),
+      });
+      const savedServices: ServiceRecord[] = Array.isArray(result?.services)
+        ? result.services
+        : result?.service
+          ? [result.service]
+          : [];
+
+      pendingItems.forEach((item) => pendingServiceSavesRef.current.delete(item.key));
+      replaceOptimisticServices(savedServices, pendingItems);
+    } catch {
+      pendingItems.forEach((item) => {
+        pendingServiceSavesRef.current.set(item.key, { ...item, attempts: item.attempts + 1 });
+      });
+      scheduleServiceSaveFlush(2500);
+    } finally {
+      serviceSaveInFlightRef.current = false;
+      if (pendingServiceSavesRef.current.size) {
+        scheduleServiceSaveFlush(650);
+      }
+    }
   }
 
   function makeOptimisticAppointment(input: {
@@ -2425,14 +2570,15 @@ export default function App() {
 
       const nextClients = Array.isArray(clientsResult.clients) ? clientsResult.clients : [];
       const nextCatalog = Array.isArray(servicesResult.catalog) ? servicesResult.catalog : [];
-      setWorkspace(workspaceResult);
+      const nextWorkspace = withPendingServiceSaves(workspaceResult);
+      setWorkspace(nextWorkspace);
       setCalendar(calendarResult);
       setCalendarDate(date);
       setClients(nextClients);
       setServiceCatalog(nextCatalog);
       setStaffSnapshot(staffResult || null);
       persistWorkspaceCache(currentSession, date, {
-        workspace: workspaceResult,
+        workspace: nextWorkspace,
         calendar: calendarResult,
         clients: nextClients,
         serviceCatalog: nextCatalog,
@@ -2544,6 +2690,11 @@ export default function App() {
 
   async function signOut() {
     setBusy(true);
+    pendingServiceSavesRef.current.clear();
+    if (serviceSaveTimerRef.current) {
+      clearTimeout(serviceSaveTimerRef.current);
+      serviceSaveTimerRef.current = null;
+    }
     await AsyncStorage.removeItem(STORAGE_KEY);
     await AsyncStorage.removeItem(WORKSPACE_CACHE_KEY);
     setSession(null);
@@ -2932,6 +3083,9 @@ export default function App() {
   }
 
   async function addCatalogService(service: ServiceTemplateRecord & { category: string }) {
+    const key = getServiceIdentityKey(service);
+    if (!key) return;
+    if (hasServiceOrPendingSave(service, key)) return;
     const isFirstService = !workspace?.services.length;
     const optimisticService: ServiceRecord = {
       id: createLocalId("service"),
@@ -2940,29 +3094,28 @@ export default function App() {
       category: service.category || DEFAULT_SERVICE_CATEGORY,
       durationMinutes: Number(service.durationMinutes || 60),
       price: Number(service.price || 0),
-      color: SERVICE_COLORS[(workspace?.services.length || 0) % SERVICE_COLORS.length],
+      color: SERVICE_COLORS[((workspace?.services.length || 0) + pendingServiceSavesRef.current.size) % SERVICE_COLORS.length],
       source: "catalog",
     };
-    mergeWorkspaceServices((services) => [optimisticService, ...services]);
+    const pendingSave: PendingServiceSave = {
+      key,
+      optimisticService,
+      payload: {
+        name: optimisticService.name,
+        category: optimisticService.category || DEFAULT_SERVICE_CATEGORY,
+        durationMinutes: optimisticService.durationMinutes || 60,
+        price: optimisticService.price,
+        color: optimisticService.color || SERVICE_COLORS[0],
+        source: "catalog",
+      },
+      attempts: 0,
+    };
+    pendingServiceSavesRef.current.set(key, pendingSave);
+    mergeWorkspaceServices((services) => (services.some((item) => serviceMatchesPending(item, pendingSave)) ? services : [optimisticService, ...services]));
     if (isFirstService) {
       openVisitComposerAfterService(optimisticService);
     }
-    void apiFetch("/api/mobile/pro/services", {
-        method: "POST",
-        body: JSON.stringify({
-          name: optimisticService.name,
-          category: optimisticService.category,
-          durationMinutes: optimisticService.durationMinutes,
-          price: optimisticService.price,
-          color: optimisticService.color,
-          source: "catalog",
-        }),
-      })
-      .then(() => refreshAll(session, selectedDate, { silent: true }))
-      .catch((error) => {
-        Alert.alert(t.addFromCatalog, error instanceof Error ? error.message : t.addFromCatalog);
-        revalidateWorkspace();
-      });
+    scheduleServiceSaveFlush();
   }
 
   async function saveStaffSchedule(
