@@ -355,8 +355,7 @@ function normalizeAvatarUrl(value: unknown) {
   }
 
   if (candidate.startsWith("data:image/")) {
-    // Allow inline avatar uploads from settings while keeping payload bounded.
-    return candidate.length <= 3_000_000 ? candidate : "";
+    return "";
   }
 
   try {
@@ -520,7 +519,7 @@ export function normalizeBusinessPhotos(input: unknown): BusinessPhoto[] {
       const candidate = item as Partial<BusinessPhoto>;
       const url = typeof candidate.url === "string" ? candidate.url.trim() : "";
 
-      if (!url) {
+      if (!url || url.startsWith("data:image/")) {
         return null;
       }
 

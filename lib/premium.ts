@@ -60,6 +60,21 @@ export function getPremiumBillingFromPriceId(priceId: string | null | undefined)
   return null;
 }
 
+export function getPremiumBillingFromAppStoreProductId(productId: string | null | undefined): PremiumBilling | null {
+  const monthly =
+    process.env.NEXT_PUBLIC_REVENUECAT_MONTHLY_PRODUCT_ID?.trim() ||
+    process.env.EXPO_PUBLIC_REVENUECAT_MONTHLY_PRODUCT_ID?.trim() ||
+    "timviz_premium_monthly";
+  const yearly =
+    process.env.NEXT_PUBLIC_REVENUECAT_YEARLY_PRODUCT_ID?.trim() ||
+    process.env.EXPO_PUBLIC_REVENUECAT_YEARLY_PRODUCT_ID?.trim() ||
+    "timviz_premium_yearly";
+
+  if (productId && monthly && productId === monthly) return "monthly";
+  if (productId && yearly && productId === yearly) return "yearly";
+  return null;
+}
+
 function isFutureDate(value: string | null | undefined) {
   if (!value) return false;
   const time = new Date(value).getTime();
@@ -179,6 +194,73 @@ export async function updateProfessionalPremiumFromPaddle(input: {
 
   if (input.paddlePriceId) {
     patch.paddle_price_id = input.paddlePriceId;
+  }
+
+  if (input.premiumUntil) {
+    const existing = await getProfessionalPremiumSnapshot(input);
+    patch.premium_until = maxIsoDate(existing?.premium_until, input.premiumUntil);
+  }
+
+  if (input.professionalId) {
+    const { data, error } = await supabase
+      .from("professionals")
+      .update(patch)
+      .eq("id", input.professionalId)
+      .select("id")
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (data?.id) {
+      return { updated: true, by: "id" as const, professionalId: data.id };
+    }
+  }
+
+  const email = input.email?.trim().toLowerCase();
+  if (email) {
+    const { data, error } = await supabase
+      .from("professionals")
+      .update(patch)
+      .eq("email", email)
+      .select("id")
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (data?.id) {
+      return { updated: true, by: "email" as const, professionalId: data.id };
+    }
+  }
+
+  return { updated: false, reason: input.professionalId || email ? "professional_not_found" as const : "no_user_reference" as const };
+}
+
+export async function updateProfessionalPremiumFromAppStore(input: {
+  professionalId?: string | null;
+  email?: string | null;
+  status: PremiumStatus;
+  premiumUntil?: string | null;
+  productId?: string | null;
+  transactionId?: string | null;
+  originalTransactionId?: string | null;
+}) {
+  if (!isSupabaseConfigured()) {
+    console.info("[app-store] Supabase is not configured; skipping premium update.", {
+      professionalId: input.professionalId,
+      email: input.email,
+      status: input.status
+    });
+    return { updated: false, reason: "supabase_not_configured" as const };
+  }
+
+  const supabase = getSupabaseAdmin();
+  if (!supabase) {
+    return { updated: false, reason: "supabase_unavailable" as const };
+  }
+
+  const patch: Record<string, string | null> = {
+    plan: input.status === "inactive" ? "free" : "premium",
+    premium_status: input.status
+  };
+
+  if (input.premiumUntil !== undefined) {
+    patch.premium_until = input.premiumUntil;
   }
 
   if (input.premiumUntil) {

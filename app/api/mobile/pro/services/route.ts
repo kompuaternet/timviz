@@ -27,7 +27,12 @@ function withLocalizedCatalogTitles(catalog: CategoryTemplate[]) {
     localizedTitle: {
       ru: localizeCategoryName(category.title, "ru"),
       uk: localizeCategoryName(category.title, "uk"),
-      en: localizeCategoryName(category.title, "en")
+      en: localizeCategoryName(category.title, "en"),
+      fr: localizeCategoryName(category.title, "fr"),
+      pl: localizeCategoryName(category.title, "pl"),
+      cs: localizeCategoryName(category.title, "cs"),
+      es: localizeCategoryName(category.title, "es"),
+      de: localizeCategoryName(category.title, "de")
     }
   }));
 }

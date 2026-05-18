@@ -20,7 +20,8 @@
         "ITSAppUsesNonExemptEncryption": false,
         "NSCameraUsageDescription": "Timviz использует камеру, чтобы мастер мог добавить фото компании, услуг или работ.",
         "NSPhotoLibraryUsageDescription": "Timviz использует доступ к фото, чтобы мастер мог выбрать изображения для профиля компании, услуг или портфолио.",
-        "NSPhotoLibraryAddUsageDescription": "Timviz может сохранять изображения, связанные с профилем и услугами, если вы выберете это действие."
+        "NSPhotoLibraryAddUsageDescription": "Timviz может сохранять изображения, связанные с профилем и услугами, если вы выберете это действие.",
+        "NSFaceIDUsageDescription": "Timviz использует Face ID для быстрого и безопасного входа в аккаунт мастера."
       }
     },
     "android": {
@@ -39,7 +40,16 @@
       "appEnv": "production"
     },
     "plugins": [
-      "expo-localization"
+      "expo-localization",
+      "expo-web-browser",
+      "expo-secure-store",
+      "expo-apple-authentication",
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Timviz использует Face ID для быстрого и безопасного входа в аккаунт мастера."
+        }
+      ]
     ]
   }
 }

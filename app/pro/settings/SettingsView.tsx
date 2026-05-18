@@ -9,6 +9,7 @@ import styles from "../pro.module.css";
 import { getPostLogoutRedirectPath } from "../telegram-context";
 import { languageFromProfile, languageLabels, type ProLanguage } from "../i18n";
 import { useProLanguage } from "../useProLanguage";
+import { uploadProMediaFile } from "../media-upload";
 import { type BusinessPhoto } from "../../../lib/pro-data";
 import type { OnboardingCtaState } from "../../../lib/pro-onboarding";
 import type { WorkSchedule } from "../../../lib/work-schedule";
@@ -664,22 +665,6 @@ function normalizePhotos(photos: BusinessPhoto[] = []) {
     ...photo,
     isPrimary: primaryIndex >= 0 ? primaryIndex === index : index === 0
   }));
-}
-
-function readFileAsDataUrl(file: File, errorText: string) {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === "string") {
-        resolve(reader.result);
-        return;
-      }
-
-      reject(new Error(errorText));
-    };
-    reader.onerror = () => reject(new Error(errorText));
-    reader.readAsDataURL(file);
-  });
 }
 
 function buildSaveSnapshot(data: SettingsData): SaveSnapshot {
@@ -1403,8 +1388,12 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
     }
 
     try {
-      const avatarDataUrl = await readFileAsDataUrl(file, copy.readFileFailed);
-      updateProfessional("avatarUrl", avatarDataUrl);
+      const avatarUrl = await uploadProMediaFile({
+        file,
+        kind: "avatar",
+        fallbackError: copy.uploadPhotoFailed
+      });
+      updateProfessional("avatarUrl", avatarUrl);
       setStatus("");
     } catch (error) {
       setStatus(error instanceof Error ? error.message : copy.uploadPhotoFailed);
@@ -1437,7 +1426,11 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
       const uploaded = await Promise.all(
         filesToRead.map(async (file, index) => ({
           id: crypto.randomUUID(),
-          url: await readFileAsDataUrl(file, copy.readFileFailed),
+          url: await uploadProMediaFile({
+            file,
+            kind: "business-photo",
+            fallbackError: copy.uploadPhotoFailed
+          }),
           isPrimary: currentPhotos.length === 0 && index === 0,
           createdAt: new Date().toISOString()
         }))

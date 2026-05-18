@@ -9,6 +9,7 @@ import SupportWidget from "./SupportWidget";
 import styles from "./pro.module.css";
 import { getPostLogoutRedirectPath } from "./telegram-context";
 import { useProLanguage } from "./useProLanguage";
+import { uploadProMediaFile } from "./media-upload";
 import { profileLanguageFromCode, type ProLanguage } from "./i18n";
 import type { OnboardingCtaState, OnboardingStepId } from "../../lib/pro-onboarding";
 
@@ -211,22 +212,6 @@ function getOnboardingStepText(
   return "";
 }
 
-function readFileAsDataUrl(file: File, errorText: string) {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      if (typeof reader.result === "string") {
-        resolve(reader.result);
-        return;
-      }
-
-      reject(new Error(errorText));
-    };
-    reader.onerror = () => reject(new Error(errorText));
-    reader.readAsDataURL(file);
-  });
-}
-
 export default function ProWorkspaceHeader({
   businessName,
   viewerName,
@@ -363,13 +348,17 @@ export default function ProWorkspaceHeader({
     showToast(copy.avatarUploading, "info");
 
     try {
-      const avatarDataUrl = await readFileAsDataUrl(file, copy.avatarUploadFailed);
+      const avatarUrl = await uploadProMediaFile({
+        file,
+        kind: "avatar",
+        fallbackError: copy.avatarUploadFailed
+      });
       const response = await fetch("/api/pro/settings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           professional: {
-            avatarUrl: avatarDataUrl
+            avatarUrl
           }
         })
       });
@@ -390,7 +379,7 @@ export default function ProWorkspaceHeader({
         "workspace" in payload &&
         typeof (payload as { workspace?: { professional?: { avatarUrl?: unknown } } }).workspace?.professional?.avatarUrl === "string"
           ? ((payload as { workspace?: { professional?: { avatarUrl?: string } } }).workspace?.professional?.avatarUrl || "").trim()
-          : avatarDataUrl;
+          : avatarUrl;
 
       setMenuAvatarUrl(persistedAvatarUrl);
       showToast(copy.avatarUpdated, "success");

@@ -129,3 +129,43 @@ npm run db:upload:gdrive
 2. Бизнес
 3. Участие в бизнесе
 4. Базовые услуги бизнеса
+
+## App Store Premium
+
+Мобильная подписка подключается через RevenueCat и синхронизируется с теми же полями Premium, которые использует сайт:
+
+1. `plan`
+2. `premium_status`
+3. `premium_until`
+
+Базовые product id:
+
+1. `timviz_premium_monthly`
+2. `timviz_premium_yearly`
+
+Entitlement id в RevenueCat: `premium`.
+
+Env для мобильной сборки:
+
+```bash
+EXPO_PUBLIC_REVENUECAT_IOS_API_KEY=
+EXPO_PUBLIC_REVENUECAT_ENTITLEMENT_ID=premium
+EXPO_PUBLIC_REVENUECAT_MONTHLY_PRODUCT_ID=timviz_premium_monthly
+EXPO_PUBLIC_REVENUECAT_YEARLY_PRODUCT_ID=timviz_premium_yearly
+```
+
+Env для сайта/API на Railway:
+
+```bash
+REVENUECAT_SECRET_API_KEY=
+REVENUECAT_ENTITLEMENT_ID=premium
+REVENUECAT_WEBHOOK_SECRET=
+```
+
+Webhook RevenueCat:
+
+```text
+https://timviz.com/api/revenuecat/webhook
+```
+
+Важно: реальные покупки и восстановление подписки работают только в native build, TestFlight или App Store build. В Expo Go RevenueCat работает в preview mode, поэтому там можно проверить экран Premium, но не настоящую оплату App Store.

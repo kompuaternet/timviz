@@ -1,8 +1,13 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import * as AppleAuthentication from "expo-apple-authentication";
 import * as ImagePicker from "expo-image-picker";
+import * as LocalAuthentication from "expo-local-authentication";
 import * as Localization from "expo-localization";
+import * as SecureStore from "expo-secure-store";
 import { StatusBar } from "expo-status-bar";
+import * as WebBrowser from "expo-web-browser";
+import Purchases, { LOG_LEVEL, type CustomerInfo, type PurchasesPackage } from "react-native-purchases";
 import type { ComponentProps, Dispatch, SetStateAction } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -26,7 +31,10 @@ import {
   View,
 } from "react-native";
 
-type AppLanguage = "uk" | "ru" | "en";
+WebBrowser.maybeCompleteAuthSession();
+
+type BaseAppLanguage = "uk" | "ru" | "en";
+type AppLanguage = BaseAppLanguage | "fr" | "pl" | "cs" | "es" | "de";
 type AuthMode = "login" | "register";
 type AppTab = "calendar" | "services" | "clients" | "staff" | "settings";
 type CalendarViewMode = "day" | "threeDays" | "week" | "month";
@@ -46,6 +54,13 @@ type RegisterForm = {
   password: string;
   phone: string;
   companyName: string;
+};
+
+type PhoneCountryOption = {
+  iso: string;
+  country: string;
+  callingCode: string;
+  currency: string;
 };
 
 type VisitServiceDraft = {
@@ -183,6 +198,10 @@ type WorkspaceSnapshot = {
     timezone: string;
     country: string;
     bookingCreditsTotal?: number;
+    plan?: "free" | "premium";
+    premiumStatus?: "inactive" | "trialing" | "active" | "past_due" | "canceled";
+    premiumUntil?: string;
+    paddlePriceId?: string;
   };
   business: {
     id: string;
@@ -470,6 +489,8 @@ type TelegramBooleanSettingKey =
   | "forwardingEnabled";
 
 const STORAGE_KEY = "timviz_mobile_session_v2";
+const SECURE_SESSION_KEY = "timviz_mobile_secure_session_v1";
+const BIOMETRIC_ENABLED_KEY = "timviz_mobile_biometric_enabled_v1";
 const WORKSPACE_CACHE_KEY = "timviz_mobile_workspace_cache_v2";
 const API_BASE_URL = (process.env.EXPO_PUBLIC_API_BASE_URL || "https://timviz.com").replace(/\/+$/, "");
 const WORDMARK = require("./assets/timviz-wordmark.png");
@@ -490,6 +511,258 @@ const TIMEZONE_LABELS: Record<string, string> = {
   UTC: "UTC+0 · UTC",
 };
 const CURRENCY_OPTIONS = ["UAH", "EUR", "USD", "PLN", "GBP", "KZT", "GEL", "AED", "CAD"];
+const REVENUECAT_ENTITLEMENT_ID = process.env.EXPO_PUBLIC_REVENUECAT_ENTITLEMENT_ID || "premium";
+const REVENUECAT_IOS_API_KEY = process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY || "";
+const REVENUECAT_ANDROID_API_KEY = process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY || "";
+const REVENUECAT_MONTHLY_PRODUCT_ID = process.env.EXPO_PUBLIC_REVENUECAT_MONTHLY_PRODUCT_ID || "timviz_premium_monthly";
+const REVENUECAT_YEARLY_PRODUCT_ID = process.env.EXPO_PUBLIC_REVENUECAT_YEARLY_PRODUCT_ID || "timviz_premium_yearly";
+const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || "";
+const GOOGLE_IOS_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || "";
+const GOOGLE_ANDROID_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID || "";
+const PHONE_COUNTRIES: PhoneCountryOption[] = [
+  { iso: "AF", country: "Afghanistan", callingCode: "+93", currency: "AFN" },
+  { iso: "AL", country: "Albania", callingCode: "+355", currency: "ALL" },
+  { iso: "DZ", country: "Algeria", callingCode: "+213", currency: "DZD" },
+  { iso: "AS", country: "American Samoa", callingCode: "+1", currency: "USD" },
+  { iso: "AD", country: "Andorra", callingCode: "+376", currency: "EUR" },
+  { iso: "AO", country: "Angola", callingCode: "+244", currency: "AOA" },
+  { iso: "AI", country: "Anguilla", callingCode: "+1", currency: "XCD" },
+  { iso: "AG", country: "Antigua and Barbuda", callingCode: "+1", currency: "XCD" },
+  { iso: "AR", country: "Argentina", callingCode: "+54", currency: "ARS" },
+  { iso: "AM", country: "Armenia", callingCode: "+374", currency: "AMD" },
+  { iso: "AW", country: "Aruba", callingCode: "+297", currency: "AWG" },
+  { iso: "AU", country: "Australia", callingCode: "+61", currency: "AUD" },
+  { iso: "AT", country: "Austria", callingCode: "+43", currency: "EUR" },
+  { iso: "AZ", country: "Azerbaijan", callingCode: "+994", currency: "AZN" },
+  { iso: "BS", country: "Bahamas", callingCode: "+1", currency: "BSD" },
+  { iso: "BH", country: "Bahrain", callingCode: "+973", currency: "BHD" },
+  { iso: "BD", country: "Bangladesh", callingCode: "+880", currency: "BDT" },
+  { iso: "BB", country: "Barbados", callingCode: "+1", currency: "BBD" },
+  { iso: "BY", country: "Belarus", callingCode: "+375", currency: "BYN" },
+  { iso: "BE", country: "Belgium", callingCode: "+32", currency: "EUR" },
+  { iso: "BZ", country: "Belize", callingCode: "+501", currency: "BZD" },
+  { iso: "BJ", country: "Benin", callingCode: "+229", currency: "XOF" },
+  { iso: "BM", country: "Bermuda", callingCode: "+1", currency: "BMD" },
+  { iso: "BT", country: "Bhutan", callingCode: "+975", currency: "BTN" },
+  { iso: "BO", country: "Bolivia", callingCode: "+591", currency: "BOB" },
+  { iso: "BA", country: "Bosnia and Herzegovina", callingCode: "+387", currency: "BAM" },
+  { iso: "BW", country: "Botswana", callingCode: "+267", currency: "BWP" },
+  { iso: "BR", country: "Brazil", callingCode: "+55", currency: "BRL" },
+  { iso: "IO", country: "British Indian Ocean Territory", callingCode: "+246", currency: "USD" },
+  { iso: "VG", country: "British Virgin Islands", callingCode: "+1", currency: "USD" },
+  { iso: "BN", country: "Brunei", callingCode: "+673", currency: "BND" },
+  { iso: "BG", country: "Bulgaria", callingCode: "+359", currency: "BGN" },
+  { iso: "BF", country: "Burkina Faso", callingCode: "+226", currency: "XOF" },
+  { iso: "BI", country: "Burundi", callingCode: "+257", currency: "BIF" },
+  { iso: "KH", country: "Cambodia", callingCode: "+855", currency: "KHR" },
+  { iso: "CM", country: "Cameroon", callingCode: "+237", currency: "XAF" },
+  { iso: "CA", country: "Canada", callingCode: "+1", currency: "CAD" },
+  { iso: "CV", country: "Cape Verde", callingCode: "+238", currency: "CVE" },
+  { iso: "KY", country: "Cayman Islands", callingCode: "+1", currency: "KYD" },
+  { iso: "CF", country: "Central African Republic", callingCode: "+236", currency: "XAF" },
+  { iso: "TD", country: "Chad", callingCode: "+235", currency: "XAF" },
+  { iso: "CL", country: "Chile", callingCode: "+56", currency: "CLP" },
+  { iso: "CN", country: "China", callingCode: "+86", currency: "CNY" },
+  { iso: "CX", country: "Christmas Island", callingCode: "+61", currency: "AUD" },
+  { iso: "CC", country: "Cocos Islands", callingCode: "+61", currency: "AUD" },
+  { iso: "CO", country: "Colombia", callingCode: "+57", currency: "COP" },
+  { iso: "KM", country: "Comoros", callingCode: "+269", currency: "KMF" },
+  { iso: "CG", country: "Congo", callingCode: "+242", currency: "XAF" },
+  { iso: "CD", country: "Congo (DRC)", callingCode: "+243", currency: "CDF" },
+  { iso: "CK", country: "Cook Islands", callingCode: "+682", currency: "NZD" },
+  { iso: "CR", country: "Costa Rica", callingCode: "+506", currency: "CRC" },
+  { iso: "CI", country: "Cote d'Ivoire", callingCode: "+225", currency: "XOF" },
+  { iso: "HR", country: "Croatia", callingCode: "+385", currency: "EUR" },
+  { iso: "CU", country: "Cuba", callingCode: "+53", currency: "CUP" },
+  { iso: "CW", country: "Curacao", callingCode: "+599", currency: "ANG" },
+  { iso: "CY", country: "Cyprus", callingCode: "+357", currency: "EUR" },
+  { iso: "CZ", country: "Czechia", callingCode: "+420", currency: "CZK" },
+  { iso: "DK", country: "Denmark", callingCode: "+45", currency: "DKK" },
+  { iso: "DJ", country: "Djibouti", callingCode: "+253", currency: "DJF" },
+  { iso: "DM", country: "Dominica", callingCode: "+1", currency: "XCD" },
+  { iso: "DO", country: "Dominican Republic", callingCode: "+1", currency: "DOP" },
+  { iso: "EC", country: "Ecuador", callingCode: "+593", currency: "USD" },
+  { iso: "EG", country: "Egypt", callingCode: "+20", currency: "EGP" },
+  { iso: "SV", country: "El Salvador", callingCode: "+503", currency: "USD" },
+  { iso: "GQ", country: "Equatorial Guinea", callingCode: "+240", currency: "XAF" },
+  { iso: "ER", country: "Eritrea", callingCode: "+291", currency: "ERN" },
+  { iso: "EE", country: "Estonia", callingCode: "+372", currency: "EUR" },
+  { iso: "SZ", country: "Eswatini", callingCode: "+268", currency: "SZL" },
+  { iso: "ET", country: "Ethiopia", callingCode: "+251", currency: "ETB" },
+  { iso: "FK", country: "Falkland Islands", callingCode: "+500", currency: "FKP" },
+  { iso: "FO", country: "Faroe Islands", callingCode: "+298", currency: "DKK" },
+  { iso: "FJ", country: "Fiji", callingCode: "+679", currency: "FJD" },
+  { iso: "FI", country: "Finland", callingCode: "+358", currency: "EUR" },
+  { iso: "FR", country: "France", callingCode: "+33", currency: "EUR" },
+  { iso: "GF", country: "French Guiana", callingCode: "+594", currency: "EUR" },
+  { iso: "PF", country: "French Polynesia", callingCode: "+689", currency: "XPF" },
+  { iso: "GA", country: "Gabon", callingCode: "+241", currency: "XAF" },
+  { iso: "GM", country: "Gambia", callingCode: "+220", currency: "GMD" },
+  { iso: "GE", country: "Georgia", callingCode: "+995", currency: "GEL" },
+  { iso: "DE", country: "Germany", callingCode: "+49", currency: "EUR" },
+  { iso: "GH", country: "Ghana", callingCode: "+233", currency: "GHS" },
+  { iso: "GI", country: "Gibraltar", callingCode: "+350", currency: "GIP" },
+  { iso: "GR", country: "Greece", callingCode: "+30", currency: "EUR" },
+  { iso: "GL", country: "Greenland", callingCode: "+299", currency: "DKK" },
+  { iso: "GD", country: "Grenada", callingCode: "+1", currency: "XCD" },
+  { iso: "GP", country: "Guadeloupe", callingCode: "+590", currency: "EUR" },
+  { iso: "GU", country: "Guam", callingCode: "+1", currency: "USD" },
+  { iso: "GT", country: "Guatemala", callingCode: "+502", currency: "GTQ" },
+  { iso: "GG", country: "Guernsey", callingCode: "+44", currency: "GBP" },
+  { iso: "GN", country: "Guinea", callingCode: "+224", currency: "GNF" },
+  { iso: "GW", country: "Guinea-Bissau", callingCode: "+245", currency: "XOF" },
+  { iso: "GY", country: "Guyana", callingCode: "+592", currency: "GYD" },
+  { iso: "HT", country: "Haiti", callingCode: "+509", currency: "HTG" },
+  { iso: "HN", country: "Honduras", callingCode: "+504", currency: "HNL" },
+  { iso: "HK", country: "Hong Kong", callingCode: "+852", currency: "HKD" },
+  { iso: "HU", country: "Hungary", callingCode: "+36", currency: "HUF" },
+  { iso: "IS", country: "Iceland", callingCode: "+354", currency: "ISK" },
+  { iso: "IN", country: "India", callingCode: "+91", currency: "INR" },
+  { iso: "ID", country: "Indonesia", callingCode: "+62", currency: "IDR" },
+  { iso: "IR", country: "Iran", callingCode: "+98", currency: "IRR" },
+  { iso: "IQ", country: "Iraq", callingCode: "+964", currency: "IQD" },
+  { iso: "IE", country: "Ireland", callingCode: "+353", currency: "EUR" },
+  { iso: "IM", country: "Isle of Man", callingCode: "+44", currency: "GBP" },
+  { iso: "IL", country: "Israel", callingCode: "+972", currency: "ILS" },
+  { iso: "IT", country: "Italy", callingCode: "+39", currency: "EUR" },
+  { iso: "JM", country: "Jamaica", callingCode: "+1", currency: "JMD" },
+  { iso: "JP", country: "Japan", callingCode: "+81", currency: "JPY" },
+  { iso: "JE", country: "Jersey", callingCode: "+44", currency: "GBP" },
+  { iso: "JO", country: "Jordan", callingCode: "+962", currency: "JOD" },
+  { iso: "KZ", country: "Kazakhstan", callingCode: "+7", currency: "KZT" },
+  { iso: "KE", country: "Kenya", callingCode: "+254", currency: "KES" },
+  { iso: "KI", country: "Kiribati", callingCode: "+686", currency: "AUD" },
+  { iso: "XK", country: "Kosovo", callingCode: "+383", currency: "EUR" },
+  { iso: "KW", country: "Kuwait", callingCode: "+965", currency: "KWD" },
+  { iso: "KG", country: "Kyrgyzstan", callingCode: "+996", currency: "KGS" },
+  { iso: "LA", country: "Laos", callingCode: "+856", currency: "LAK" },
+  { iso: "LV", country: "Latvia", callingCode: "+371", currency: "EUR" },
+  { iso: "LB", country: "Lebanon", callingCode: "+961", currency: "LBP" },
+  { iso: "LS", country: "Lesotho", callingCode: "+266", currency: "LSL" },
+  { iso: "LR", country: "Liberia", callingCode: "+231", currency: "LRD" },
+  { iso: "LY", country: "Libya", callingCode: "+218", currency: "LYD" },
+  { iso: "LI", country: "Liechtenstein", callingCode: "+423", currency: "CHF" },
+  { iso: "LT", country: "Lithuania", callingCode: "+370", currency: "EUR" },
+  { iso: "LU", country: "Luxembourg", callingCode: "+352", currency: "EUR" },
+  { iso: "MO", country: "Macau", callingCode: "+853", currency: "MOP" },
+  { iso: "MG", country: "Madagascar", callingCode: "+261", currency: "MGA" },
+  { iso: "MW", country: "Malawi", callingCode: "+265", currency: "MWK" },
+  { iso: "MY", country: "Malaysia", callingCode: "+60", currency: "MYR" },
+  { iso: "MV", country: "Maldives", callingCode: "+960", currency: "MVR" },
+  { iso: "ML", country: "Mali", callingCode: "+223", currency: "XOF" },
+  { iso: "MT", country: "Malta", callingCode: "+356", currency: "EUR" },
+  { iso: "MH", country: "Marshall Islands", callingCode: "+692", currency: "USD" },
+  { iso: "MQ", country: "Martinique", callingCode: "+596", currency: "EUR" },
+  { iso: "MR", country: "Mauritania", callingCode: "+222", currency: "MRU" },
+  { iso: "MU", country: "Mauritius", callingCode: "+230", currency: "MUR" },
+  { iso: "YT", country: "Mayotte", callingCode: "+262", currency: "EUR" },
+  { iso: "MX", country: "Mexico", callingCode: "+52", currency: "MXN" },
+  { iso: "FM", country: "Micronesia", callingCode: "+691", currency: "USD" },
+  { iso: "MD", country: "Moldova", callingCode: "+373", currency: "MDL" },
+  { iso: "MC", country: "Monaco", callingCode: "+377", currency: "EUR" },
+  { iso: "MN", country: "Mongolia", callingCode: "+976", currency: "MNT" },
+  { iso: "ME", country: "Montenegro", callingCode: "+382", currency: "EUR" },
+  { iso: "MS", country: "Montserrat", callingCode: "+1", currency: "XCD" },
+  { iso: "MA", country: "Morocco", callingCode: "+212", currency: "MAD" },
+  { iso: "MZ", country: "Mozambique", callingCode: "+258", currency: "MZN" },
+  { iso: "MM", country: "Myanmar", callingCode: "+95", currency: "MMK" },
+  { iso: "NA", country: "Namibia", callingCode: "+264", currency: "NAD" },
+  { iso: "NR", country: "Nauru", callingCode: "+674", currency: "AUD" },
+  { iso: "NP", country: "Nepal", callingCode: "+977", currency: "NPR" },
+  { iso: "NL", country: "Netherlands", callingCode: "+31", currency: "EUR" },
+  { iso: "NC", country: "New Caledonia", callingCode: "+687", currency: "XPF" },
+  { iso: "NZ", country: "New Zealand", callingCode: "+64", currency: "NZD" },
+  { iso: "NI", country: "Nicaragua", callingCode: "+505", currency: "NIO" },
+  { iso: "NE", country: "Niger", callingCode: "+227", currency: "XOF" },
+  { iso: "NG", country: "Nigeria", callingCode: "+234", currency: "NGN" },
+  { iso: "NU", country: "Niue", callingCode: "+683", currency: "NZD" },
+  { iso: "NF", country: "Norfolk Island", callingCode: "+672", currency: "AUD" },
+  { iso: "KP", country: "North Korea", callingCode: "+850", currency: "KPW" },
+  { iso: "MK", country: "North Macedonia", callingCode: "+389", currency: "MKD" },
+  { iso: "MP", country: "Northern Mariana Islands", callingCode: "+1", currency: "USD" },
+  { iso: "NO", country: "Norway", callingCode: "+47", currency: "NOK" },
+  { iso: "OM", country: "Oman", callingCode: "+968", currency: "OMR" },
+  { iso: "PK", country: "Pakistan", callingCode: "+92", currency: "PKR" },
+  { iso: "PW", country: "Palau", callingCode: "+680", currency: "USD" },
+  { iso: "PS", country: "Palestine", callingCode: "+970", currency: "ILS" },
+  { iso: "PA", country: "Panama", callingCode: "+507", currency: "PAB" },
+  { iso: "PG", country: "Papua New Guinea", callingCode: "+675", currency: "PGK" },
+  { iso: "PY", country: "Paraguay", callingCode: "+595", currency: "PYG" },
+  { iso: "PE", country: "Peru", callingCode: "+51", currency: "PEN" },
+  { iso: "PH", country: "Philippines", callingCode: "+63", currency: "PHP" },
+  { iso: "PN", country: "Pitcairn Islands", callingCode: "+64", currency: "NZD" },
+  { iso: "PL", country: "Poland", callingCode: "+48", currency: "PLN" },
+  { iso: "PT", country: "Portugal", callingCode: "+351", currency: "EUR" },
+  { iso: "PR", country: "Puerto Rico", callingCode: "+1", currency: "USD" },
+  { iso: "QA", country: "Qatar", callingCode: "+974", currency: "QAR" },
+  { iso: "RE", country: "Reunion", callingCode: "+262", currency: "EUR" },
+  { iso: "RO", country: "Romania", callingCode: "+40", currency: "RON" },
+  { iso: "RU", country: "Russia", callingCode: "+7", currency: "RUB" },
+  { iso: "RW", country: "Rwanda", callingCode: "+250", currency: "RWF" },
+  { iso: "BL", country: "Saint Barthelemy", callingCode: "+590", currency: "EUR" },
+  { iso: "SH", country: "Saint Helena", callingCode: "+290", currency: "SHP" },
+  { iso: "KN", country: "Saint Kitts and Nevis", callingCode: "+1", currency: "XCD" },
+  { iso: "LC", country: "Saint Lucia", callingCode: "+1", currency: "XCD" },
+  { iso: "MF", country: "Saint Martin", callingCode: "+590", currency: "EUR" },
+  { iso: "PM", country: "Saint Pierre and Miquelon", callingCode: "+508", currency: "EUR" },
+  { iso: "VC", country: "Saint Vincent and the Grenadines", callingCode: "+1", currency: "XCD" },
+  { iso: "WS", country: "Samoa", callingCode: "+685", currency: "WST" },
+  { iso: "SM", country: "San Marino", callingCode: "+378", currency: "EUR" },
+  { iso: "ST", country: "Sao Tome and Principe", callingCode: "+239", currency: "STN" },
+  { iso: "SA", country: "Saudi Arabia", callingCode: "+966", currency: "SAR" },
+  { iso: "SN", country: "Senegal", callingCode: "+221", currency: "XOF" },
+  { iso: "RS", country: "Serbia", callingCode: "+381", currency: "RSD" },
+  { iso: "SC", country: "Seychelles", callingCode: "+248", currency: "SCR" },
+  { iso: "SL", country: "Sierra Leone", callingCode: "+232", currency: "SLL" },
+  { iso: "SG", country: "Singapore", callingCode: "+65", currency: "SGD" },
+  { iso: "SX", country: "Sint Maarten", callingCode: "+1", currency: "ANG" },
+  { iso: "SK", country: "Slovakia", callingCode: "+421", currency: "EUR" },
+  { iso: "SI", country: "Slovenia", callingCode: "+386", currency: "EUR" },
+  { iso: "SB", country: "Solomon Islands", callingCode: "+677", currency: "SBD" },
+  { iso: "SO", country: "Somalia", callingCode: "+252", currency: "SOS" },
+  { iso: "ZA", country: "South Africa", callingCode: "+27", currency: "ZAR" },
+  { iso: "KR", country: "South Korea", callingCode: "+82", currency: "KRW" },
+  { iso: "SS", country: "South Sudan", callingCode: "+211", currency: "SSP" },
+  { iso: "ES", country: "Spain", callingCode: "+34", currency: "EUR" },
+  { iso: "LK", country: "Sri Lanka", callingCode: "+94", currency: "LKR" },
+  { iso: "SD", country: "Sudan", callingCode: "+249", currency: "SDG" },
+  { iso: "SR", country: "Suriname", callingCode: "+597", currency: "SRD" },
+  { iso: "SJ", country: "Svalbard and Jan Mayen", callingCode: "+47", currency: "NOK" },
+  { iso: "SE", country: "Sweden", callingCode: "+46", currency: "SEK" },
+  { iso: "CH", country: "Switzerland", callingCode: "+41", currency: "CHF" },
+  { iso: "SY", country: "Syria", callingCode: "+963", currency: "SYP" },
+  { iso: "TW", country: "Taiwan", callingCode: "+886", currency: "TWD" },
+  { iso: "TJ", country: "Tajikistan", callingCode: "+992", currency: "TJS" },
+  { iso: "TZ", country: "Tanzania", callingCode: "+255", currency: "TZS" },
+  { iso: "TH", country: "Thailand", callingCode: "+66", currency: "THB" },
+  { iso: "TL", country: "Timor-Leste", callingCode: "+670", currency: "USD" },
+  { iso: "TG", country: "Togo", callingCode: "+228", currency: "XOF" },
+  { iso: "TK", country: "Tokelau", callingCode: "+690", currency: "NZD" },
+  { iso: "TO", country: "Tonga", callingCode: "+676", currency: "TOP" },
+  { iso: "TT", country: "Trinidad and Tobago", callingCode: "+1", currency: "TTD" },
+  { iso: "TN", country: "Tunisia", callingCode: "+216", currency: "TND" },
+  { iso: "TR", country: "Turkey", callingCode: "+90", currency: "TRY" },
+  { iso: "TM", country: "Turkmenistan", callingCode: "+993", currency: "TMT" },
+  { iso: "TC", country: "Turks and Caicos Islands", callingCode: "+1", currency: "USD" },
+  { iso: "TV", country: "Tuvalu", callingCode: "+688", currency: "AUD" },
+  { iso: "UG", country: "Uganda", callingCode: "+256", currency: "UGX" },
+  { iso: "UA", country: "Ukraine", callingCode: "+380", currency: "UAH" },
+  { iso: "AE", country: "United Arab Emirates", callingCode: "+971", currency: "AED" },
+  { iso: "GB", country: "United Kingdom", callingCode: "+44", currency: "GBP" },
+  { iso: "US", country: "United States", callingCode: "+1", currency: "USD" },
+  { iso: "UY", country: "Uruguay", callingCode: "+598", currency: "UYU" },
+  { iso: "VI", country: "U.S. Virgin Islands", callingCode: "+1", currency: "USD" },
+  { iso: "UZ", country: "Uzbekistan", callingCode: "+998", currency: "UZS" },
+  { iso: "VU", country: "Vanuatu", callingCode: "+678", currency: "VUV" },
+  { iso: "VA", country: "Vatican City", callingCode: "+39", currency: "EUR" },
+  { iso: "VE", country: "Venezuela", callingCode: "+58", currency: "VES" },
+  { iso: "VN", country: "Vietnam", callingCode: "+84", currency: "VND" },
+  { iso: "WF", country: "Wallis and Futuna", callingCode: "+681", currency: "XPF" },
+  { iso: "EH", country: "Western Sahara", callingCode: "+212", currency: "MAD" },
+  { iso: "YE", country: "Yemen", callingCode: "+967", currency: "YER" },
+  { iso: "ZM", country: "Zambia", callingCode: "+260", currency: "ZMW" },
+  { iso: "ZW", country: "Zimbabwe", callingCode: "+263", currency: "ZWL" },
+];
 const TELEGRAM_REMINDER_LEAD_OPTIONS = [15, 30, 60, 120, 180, 1440];
 const CALENDAR_MEMORY_TTL_MS = 30_000;
 const CALENDAR_BACKGROUND_SYNC_MS = 12_000;
@@ -501,13 +774,29 @@ const SERVICE_MODE_VALUES: Record<(typeof SERVICE_MODE_IDS)[number], string> = {
   travel: "Я работаю с выездом к клиенту",
   online: "Я предоставляю услуги онлайн",
 };
+const SUPPORTED_APP_LANGUAGES = ["uk", "ru", "en", "fr", "pl", "cs", "es", "de"] as const satisfies readonly AppLanguage[];
 const languageNames: Record<AppLanguage, string> = {
   uk: "UA",
   ru: "RU",
   en: "EN",
+  fr: "FR",
+  pl: "PL",
+  cs: "CZ",
+  es: "ES",
+  de: "DE",
+};
+const languageDisplayNames: Record<AppLanguage, string> = {
+  uk: "Українська",
+  ru: "Русский",
+  en: "English",
+  fr: "Français",
+  pl: "Polski",
+  cs: "Čeština",
+  es: "Español",
+  de: "Deutsch",
 };
 
-const copy = {
+const baseCopy = {
   uk: {
     login: "Увійти",
     register: "Створити акаунт",
@@ -520,6 +809,14 @@ const copy = {
     firstName: "Ім'я",
     lastName: "Прізвище",
     phone: "Телефон",
+    phoneCountry: "Країна",
+    selectCountryCode: "Код країни",
+    searchCountryOrCode: "Країна або код",
+    customPhonePrefix: "Свій код",
+    customPhonePrefixHint: "Якщо потрібен нестандартний префікс",
+    customPhonePrefixPlaceholder: "+999",
+    useCustomPrefix: "Вибрати код",
+    allCountries: "Усі країни",
     companyName: "Назва бізнесу",
     continue: "Продовжити",
     creating: "Створюємо...",
@@ -536,6 +833,19 @@ const copy = {
     loginError: "Помилка входу",
     registerError: "Помилка реєстрації",
     passwordHint: "Мінімум 6 символів",
+    continueWithGoogle: "Продовжити з Google",
+    continueWithApple: "Продовжити з Apple",
+    socialAuthDivider: "або",
+    socialAuthConfigMissing: "Потрібно налаштувати ключі входу.",
+    socialAuthFailed: "Не вдалося виконати вхід.",
+    enableBiometricTitle: "Увімкнути Face ID?",
+    enableBiometricText: "Наступного разу ви зможете швидко відкрити Timviz через Face ID або код пристрою.",
+    enableBiometricAction: "Увімкнути",
+    notNow: "Не зараз",
+    unlockWithFaceId: "Увійти через Face ID",
+    unlockWithBiometrics: "Швидкий вхід",
+    useDevicePasscode: "Код пристрою",
+    biometricUnavailable: "Face ID або Touch ID недоступні на цьому пристрої.",
     proTitle: "Timviz для майстра",
     proSubtitle: "Календар, послуги, клієнти й сповіщення в одному застосунку.",
     dashboard: "Робочий кабінет",
@@ -711,6 +1021,25 @@ const copy = {
     publicPage: "Сторінка запису",
     settingsSaved: "Зміни збережено",
     settingsSaveError: "Не вдалося зберегти налаштування.",
+    premiumSubscription: "Premium-підписка",
+    premiumSubscriptionTitle: "Timviz Premium",
+    premiumSubscriptionActive: "Premium активний",
+    premiumSubscriptionTrial: "Пробний період",
+    premiumSubscriptionFree: "Free",
+    premiumSubscriptionText: "Підписка App Store відкриває Premium у застосунку й на сайті Timviz.",
+    premiumMonthly: "Premium Monthly",
+    premiumYearly: "Premium Yearly",
+    premiumMonthlyFallback: "$3 / місяць",
+    premiumYearlyFallback: "$29 / рік",
+    premiumStartMonthly: "Підключити на місяць",
+    premiumStartYearly: "Підключити на рік",
+    premiumRestore: "Відновити покупку",
+    premiumManage: "Керувати підпискою можна в App Store.",
+    premiumReady: "Premium оновлено.",
+    premiumUnavailable: "Покупки доступні у TestFlight або App Store збірці.",
+    premiumMissingConfig: "Потрібно налаштувати RevenueCat і продукти App Store.",
+    premiumPurchaseCancelled: "Покупку скасовано.",
+    premiumSyncFailed: "Не вдалося синхронізувати підписку.",
     settingsGeneral: "Основне",
     settingsOnline: "Онлайн-запис",
     settingsServices: "Послуги",
@@ -856,6 +1185,14 @@ const copy = {
     firstName: "Имя",
     lastName: "Фамилия",
     phone: "Телефон",
+    phoneCountry: "Страна",
+    selectCountryCode: "Код страны",
+    searchCountryOrCode: "Страна или код",
+    customPhonePrefix: "Свой код",
+    customPhonePrefixHint: "Если нужен нестандартный префикс",
+    customPhonePrefixPlaceholder: "+999",
+    useCustomPrefix: "Выбрать код",
+    allCountries: "Все страны",
     companyName: "Название бизнеса",
     continue: "Продолжить",
     creating: "Создаем...",
@@ -872,6 +1209,19 @@ const copy = {
     loginError: "Ошибка входа",
     registerError: "Ошибка регистрации",
     passwordHint: "Минимум 6 символов",
+    continueWithGoogle: "Продолжить с Google",
+    continueWithApple: "Продолжить с Apple",
+    socialAuthDivider: "или",
+    socialAuthConfigMissing: "Нужно настроить ключи входа.",
+    socialAuthFailed: "Не удалось выполнить вход.",
+    enableBiometricTitle: "Включить Face ID?",
+    enableBiometricText: "В следующий раз вы сможете быстро открыть Timviz через Face ID или код устройства.",
+    enableBiometricAction: "Включить",
+    notNow: "Не сейчас",
+    unlockWithFaceId: "Войти через Face ID",
+    unlockWithBiometrics: "Быстрый вход",
+    useDevicePasscode: "Код устройства",
+    biometricUnavailable: "Face ID или Touch ID недоступны на этом устройстве.",
     proTitle: "Timviz для мастера",
     proSubtitle: "Календарь, услуги, клиенты и уведомления в одном приложении.",
     dashboard: "Рабочий кабинет",
@@ -1047,6 +1397,25 @@ const copy = {
     publicPage: "Страница записи",
     settingsSaved: "Изменения сохранены",
     settingsSaveError: "Не удалось сохранить настройки.",
+    premiumSubscription: "Premium-подписка",
+    premiumSubscriptionTitle: "Timviz Premium",
+    premiumSubscriptionActive: "Premium активен",
+    premiumSubscriptionTrial: "Пробный период",
+    premiumSubscriptionFree: "Free",
+    premiumSubscriptionText: "Подписка App Store открывает Premium в приложении и на сайте Timviz.",
+    premiumMonthly: "Premium Monthly",
+    premiumYearly: "Premium Yearly",
+    premiumMonthlyFallback: "$3 / месяц",
+    premiumYearlyFallback: "$29 / год",
+    premiumStartMonthly: "Подключить на месяц",
+    premiumStartYearly: "Подключить на год",
+    premiumRestore: "Восстановить покупку",
+    premiumManage: "Управлять подпиской можно в App Store.",
+    premiumReady: "Premium обновлен.",
+    premiumUnavailable: "Покупки доступны в TestFlight или App Store сборке.",
+    premiumMissingConfig: "Нужно настроить RevenueCat и продукты App Store.",
+    premiumPurchaseCancelled: "Покупка отменена.",
+    premiumSyncFailed: "Не удалось синхронизировать подписку.",
     settingsGeneral: "Основное",
     settingsOnline: "Онлайн-запись",
     settingsServices: "Услуги",
@@ -1192,6 +1561,14 @@ const copy = {
     firstName: "First name",
     lastName: "Last name",
     phone: "Phone",
+    phoneCountry: "Country",
+    selectCountryCode: "Country code",
+    searchCountryOrCode: "Country or code",
+    customPhonePrefix: "Custom code",
+    customPhonePrefixHint: "Use this for a non-standard prefix",
+    customPhonePrefixPlaceholder: "+999",
+    useCustomPrefix: "Use code",
+    allCountries: "All countries",
     companyName: "Business name",
     continue: "Continue",
     creating: "Creating...",
@@ -1208,6 +1585,19 @@ const copy = {
     loginError: "Sign-in error",
     registerError: "Registration error",
     passwordHint: "At least 6 characters",
+    continueWithGoogle: "Continue with Google",
+    continueWithApple: "Continue with Apple",
+    socialAuthDivider: "or",
+    socialAuthConfigMissing: "Sign-in keys need to be configured.",
+    socialAuthFailed: "Could not sign in.",
+    enableBiometricTitle: "Enable Face ID?",
+    enableBiometricText: "Next time you can open Timviz quickly with Face ID or your device passcode.",
+    enableBiometricAction: "Enable",
+    notNow: "Not now",
+    unlockWithFaceId: "Sign in with Face ID",
+    unlockWithBiometrics: "Quick sign-in",
+    useDevicePasscode: "Device passcode",
+    biometricUnavailable: "Face ID or Touch ID is unavailable on this device.",
     proTitle: "Timviz for pros",
     proSubtitle: "Calendar, services, clients and alerts in one app.",
     dashboard: "Workspace",
@@ -1383,6 +1773,25 @@ const copy = {
     publicPage: "Booking page",
     settingsSaved: "Changes saved",
     settingsSaveError: "Could not save settings.",
+    premiumSubscription: "Premium subscription",
+    premiumSubscriptionTitle: "Timviz Premium",
+    premiumSubscriptionActive: "Premium active",
+    premiumSubscriptionTrial: "Trial period",
+    premiumSubscriptionFree: "Free",
+    premiumSubscriptionText: "App Store subscription unlocks Premium in the app and on the Timviz website.",
+    premiumMonthly: "Premium Monthly",
+    premiumYearly: "Premium Yearly",
+    premiumMonthlyFallback: "$3 / month",
+    premiumYearlyFallback: "$29 / year",
+    premiumStartMonthly: "Start monthly",
+    premiumStartYearly: "Start yearly",
+    premiumRestore: "Restore purchase",
+    premiumManage: "Manage the subscription in the App Store.",
+    premiumReady: "Premium updated.",
+    premiumUnavailable: "Purchases are available in TestFlight or App Store builds.",
+    premiumMissingConfig: "RevenueCat and App Store products need to be configured.",
+    premiumPurchaseCancelled: "Purchase cancelled.",
+    premiumSyncFailed: "Could not sync subscription.",
     settingsGeneral: "General",
     settingsOnline: "Online booking",
     settingsServices: "Services",
@@ -1516,17 +1925,1966 @@ const copy = {
     setupRemaining: "{count} steps left",
     setupFirstServiceText: "Add services first - this unlocks faster bookings and online booking.",
   },
-} satisfies Record<AppLanguage, Record<string, string>>;
+} satisfies Record<BaseAppLanguage, Record<string, string>>;
+
+const generatedMobileCopy = {
+  fr: {
+    login: "Connectez-vous",
+    register: "Créer un compte",
+    registerShort: "Créer",
+    newMasterCta: "Nouveau pro ? Créer un compte",
+    registerMasterCta: "Créer un compte pro",
+    optionalDetails: "Plus de détails",
+    email: "Email",
+    password: "Mot de passe",
+    firstName: "Prénom",
+    lastName: "Nom",
+    phone: "Téléphone",
+    phoneCountry: "Pays",
+    selectCountryCode: "Indicatif du pays",
+    searchCountryOrCode: "Pays ou code",
+    customPhonePrefix: "Code personnalisé",
+    customPhonePrefixHint: "Utilisez ceci pour un préfixe non standard",
+    customPhonePrefixPlaceholder: "+999",
+    useCustomPrefix: "Utilisez le code",
+    allCountries: "Tous les pays",
+    companyName: "Business nom",
+    continue: "Continuer",
+    creating: "Création...",
+    signingIn: "Connexion...",
+    calendar: "Calendrier",
+    clients: "Clients",
+    services: "Services",
+    staff: "Équipe",
+    settings: "Paramètres",
+    moreTab: "Plus",
+    signOut: "Déconnexion",
+    requiredTitle: "Détails manquants",
+    requiredText: "Remplissez tous les champs.",
+    loginError: "Erreur de connexion",
+    registerError: "Erreur d'enregistrement",
+    passwordHint: "Au moins 6 caractères",
+    proTitle: "Timviz pour les pros",
+    proSubtitle: "Calendrier, services, clients et alertes dans une seule application.",
+    dashboard: "Espace de travail",
+    home: "Accueil",
+    today: "Aujourd'hui",
+    week: "Semaine",
+    month: "Mois",
+    newVisit: "Nouvelle visite",
+    editVisit: "Modifier rendez-vous",
+    bookTime: "Réserver une heure",
+    addBlockedTime: "Ajouter une heure indisponible",
+    reservedTime: "Heure réservée",
+    unavailableTime: "Heure indisponible",
+    chooseClient: "Choisir un client",
+    withoutClient: "Aucun client",
+    quickBookingWithoutClient: "Réservation rapide sans client",
+    chooseClientLater: "Vous pouvez choisir un client plus tard",
+    chooseService: "Choisir le service",
+    comment: "Commentaire",
+    addAnotherService: "Ajouter un autre service +",
+    total: "Total",
+    payable: "Payer",
+    saveVisit: "Enregistrer la réservation",
+    visitTab: "Visiter",
+    search: "Rechercher",
+    searchService: "Nom du service",
+    serviceSearchEmpty: "Service introuvable.",
+    clientNameOrPhone: "Nom ou téléphone",
+    addNewClient: "Ajouter un nouveau client",
+    addAndSelectClient: "Ajoutez et sélectionnez",
+    createClientFromSearch: "Créer un client",
+    noClientFound: "Aucun client trouvé. Vous pouvez en créer un nouveau.",
+    newClientFormTitle: "Nouveau client",
+    newClientFormHint: "Ajoutez les détails et le client sera sélectionné pour cette visite. Le formulaire",
+    formOpened: "est ouvert ci-dessous",
+    clientName: "Nom du client",
+    withoutService: "Sans service",
+    setupAssistant: "Assistant de configuration",
+    setupAssistantText: "Terminez les étapes pour que votre profil soit prêt pour la réservation en ligne.",
+    setupCompleteTitle: "Le profil est prêt pour la réservation en ligne",
+    setupCompleteText: "Les clients peuvent déjà réserver via votre lien.",
+    setupProgress: "Préparation",
+    setupServices: "Ajouter des services",
+    setupSchedule: "Définir le calendrier",
+    setupBooking: "Activer la réservation en ligne",
+    setupAddress: "Ajouter une adresse",
+    setupTelegram: "Connect Telegram",
+    staffSchedule: "Horaire des équipes",
+    staffScheduleHint: "Gérez les jours de travail de l'équipe comme dans l'espace de travail Web.",
+    teamMembers: "Membres de l'équipe",
+    teamMembersHint: "Ajoutez des employés, modifiez les contacts, les rôles et l'accès à l'espace de travail.",
+    allTeam: "Toute l'équipe",
+    showWholeTeam: "Afficher l'équipe complète",
+    selectedMasters: "Maîtres sélectionnés",
+    addMember: "Ajouter un employé",
+    editMember: "Modifier l'employé",
+    saveMember: "Enregistrer l'employé",
+    fullName: "Nom complet",
+    role: "Rôle",
+    workspaceAccess: "Accès",
+    invite: "Inviter",
+    resendInvite: "Renvoyer l'invitation",
+    revokeInvite: "Révoquer l'invitation",
+    sendInvite: "Envoyer une invitation par e-mail",
+    pendingInvites: "Invitations en attente",
+    monthBookings: "Réservations mensuelles",
+    upcomingBookings: "Réservations à venir",
+    scheduleMenu: "Calendrier",
+    currentWeek: "Cette semaine",
+    previousWeek: "Semaine précédente",
+    nextWeek: "Semaine prochaine",
+    chooseWeek: "Choisir la semaine",
+    repeatingSchedule: "Programme répétitif",
+    oneWeekSchedule: "Semaine civile",
+    applyToWeekdays: "Appliquer aux jours de la semaine",
+    clearWeek: "Semaine claire",
+    noWork: "Désactivé",
+    workIntervals: "Temps de travail",
+    addWorkTime: "Ajouter du temps",
+    removeWorkTime: "Supprimer l'heure",
+    monthPlanner: "Mois jours de travail",
+    selectedDays: "Jours sélectionnés",
+    applyToSelectedDays: "Appliquer à la sélection",
+    selectedDaysHint: "Sélectionnez les jours du mois et appliquez-leur les mêmes intervalles de travail.",
+    noRoomForInterval: "Pas de place pour un autre intervalle.",
+    invalidIntervalRange: "La fin doit être postérieure au début.",
+    overlappingIntervals: "Les intervalles ne peuvent pas se chevaucher.",
+    addBreak: "Ajouter une pause",
+    removeBreak: "Supprimer la pause",
+    onThisWeek: "Cette semaine",
+    saveSchedule: "Enregistrer le programme",
+    workFrom: "De",
+    workTo: "À",
+    breakFrom: "Pause de",
+    breakTo: "Pause à",
+    owner: "Propriétaire",
+    employee: "Employé",
+    hoursShort: "h",
+    workingDay: "Jour ouvrable",
+    dayOff: "Jour de congé",
+    dayOffTitle: "Jour de congé",
+    bookingUnavailable: "Réservation indisponible",
+    dayOffMessage: "Aujourd'hui, c'est votre jour de congé.",
+    configureSchedule: "Configurer le planning",
+    bookingPage: "Page Entreprise",
+    bookingPageText: "Lien client et commutateur de réservation en ligne.",
+    onlineBookingOn: "La réservation en ligne est activée",
+    onlineBookingOff: "La réservation en ligne est désactivée",
+    openPage: "Ouvrir la page",
+    sharePage: "Partager",
+    supportTitle: "Support Timviz",
+    supportGuideTitle: "Écrivez au support",
+    supportGuideText: "Décrivez ce que vous faites, où le problème est apparu et ce qui devrait arriver.",
+    supportGreeting: "Salut ! Renseignez-vous sur le site, les réservations, les paramètres ou les paiements. Nous allons vous aider.",
+    supportPlaceholder: "Écrivez votre question dans un seul message...",
+    supportSend: "Envoyer",
+    supportSent: "Message envoyé.",
+    supportFailed: "Impossible d'envoyer le message.",
+    notificationPendingBookings: "Réservations en ligne en attente",
+    notificationsNew: "Nouvelle",
+    notificationsArchive: "Archive",
+    notificationEmpty: "Il n'y a pas encore de nouvelles mises à jour.",
+    statusPending: "En attente",
+    statusConfirmed: "Confirmé",
+    statusCancelled: "Annulé",
+    myProfile: "Mon profil",
+    personalSettings: "Paramètres personnels",
+    helpSupport: "Aide et support",
+    language: "Langue",
+    compact: "Compact",
+    dayView: "Jour",
+    detailed: "Détaillé",
+    threeDays: "3 jours",
+    weekView: "Semaine",
+    monthView: "Mois",
+    selected: "Visites",
+    visits: "sélectionnées",
+    closedBySchedule: "Fermé",
+    ready: "Terminé",
+    reminders: "Alertes",
+    addVisit: "Ajouter une réservation",
+    customer: "Client",
+    service: "Service",
+    start: "Début",
+    end: "Fin",
+    save: "Enregistrer",
+    cancel: "Annuler",
+    noAppointments: "Aucune réservation pour ce jour pour l'instant.",
+    recent: "Réservations récentes",
+    addService: "Ajouter un service",
+    yourServices: "Vos services",
+    ownService: "Service personnalisé",
+    generalCatalog: "Catalogue global",
+    serviceName: "Nom du service",
+    category: "Catégorie",
+    newCategory: "Nouvelle catégorie",
+    selectedCategory: "Catégorie sélectionnée",
+    editService: "Modifier le service",
+    saveService: "Enregistrer le service",
+    addFromCatalog: "Ajouter du catalogue",
+    alreadyAdded: "Dans vos services",
+    catalogHint: "Choisissez un service prêt à l'emploi dans le catalogue global Timviz.",
+    myServicesHint: "Ces services sont disponibles sur réservation client. Tap a service to change price or duration.",
+    price: "Price",
+    duration: "Minutes",
+    delete: "Supprimer",
+    addClient: "Ajouter un client",
+    connected: "Connecté",
+    notConnected: "Non connecté",
+    telegramHint: "La connexion Telegram est gérée dans les paramètres de l'espace de travail. L'application affiche l'état actuel.",
+    onlineBooking: "Réservation en ligne",
+    address: "Adresse",
+    publicPage: "Page de réservation",
+    settingsSaved: "Modifications enregistrées",
+    settingsSaveError: "Impossible d'enregistrer les paramètres.",
+    premiumSubscription: "Abonnement Premium",
+    premiumSubscriptionTitle: "Timviz Premium",
+    premiumSubscriptionActive: "Premium actif",
+    premiumSubscriptionTrial: "Période d'essai",
+    premiumSubscriptionFree: "Free",
+    premiumSubscriptionText: "L'abonnement App Store débloque Premium dans l'application et sur le site Timviz.",
+    premiumMonthly: "Premium mensuel",
+    premiumYearly: "Premium annuel",
+    premiumMonthlyFallback: "3 $ / mois",
+    premiumYearlyFallback: "29 $ / an",
+    premiumStartMonthly: "Démarrer mensuellement",
+    premiumStartYearly: "Démarrer annuellement",
+    premiumRestore: "Restaurer l'achat",
+    premiumManage: "Gérer l'abonnement dans l'App Store.",
+    premiumReady: "Premium mis à jour.",
+    premiumUnavailable: "Les achats sont disponibles dans TestFlight ou dans la version App Store.",
+    premiumMissingConfig: "RevenueCat et les produits App Store doivent être configurés.",
+    premiumPurchaseCancelled: "Achat annulé.",
+    premiumSyncFailed: "Impossible de synchroniser l'abonnement.",
+    settingsGeneral: "Général",
+    settingsOnline: "Réservation en ligne",
+    settingsServices: "Services",
+    settingsSchedule: "Calendrier",
+    settingsTelegram: "Télégramme",
+    settingsAddress: "Adresse",
+    profileAndBusiness: "Profil et activité",
+    ownerContacts: "Contacts du propriétaire",
+    avatarLink: "Avatar principal",
+    avatarHint: "La photo apparaît dans le calendrier, la carte principale et le menu supérieur.",
+    changeAvatar: "Changer d'avatar",
+    deleteAvatar: "Supprimer l'avatar",
+    avatarPermission: "Autoriser l'accès aux photos pour modifier l'avatar.",
+    newPassword: "Nouveau mot de passe",
+    leaveBlankPassword: "laisser vide si inchangé",
+    businessFormat: "Nom et format",
+    website: "Site Web",
+    accountType: "Type de compte",
+    soloAccount: "Je travaille seul",
+    teamAccount: "Équipe",
+    serviceMode: "Format de travail",
+    categoriesText: "Catégories",
+    categoriesHint: "virgules séparées",
+    localization: "Pays, langue et devise",
+    country: "Pays",
+    timezone: "Fuseau horaire",
+    currency: "Devise",
+    saveSettings: "Enregistrer les paramètres",
+    publicLink: "Lien public",
+    copyLink: "Copier",
+    manageServices: "Gérer les services",
+    manageSchedule: "Gérer le planning",
+    joinRequests: "Demandes d'adhésion",
+    noJoinRequests: "Il n'y a pas encore de nouvelles demandes.",
+    approve: "Approuver",
+    reject: "Rejeter",
+    businessPhotos: "Photos professionnelles",
+    photosHint: "Les premières photos apparaissent sur la page de réservation en ligne.",
+    streetAddress: "Adresse",
+    addressDetails: "Détails de l'adresse",
+    mapCoordinates: "Les coordonnées sont enregistrées à partir du site Web ; l'application modifie l'adresse texte.",
+    ownerOnlyHint: "Seul le propriétaire du compte peut modifier les paramètres de l'entreprise.",
+    launchChecklist: "Liste de contrôle de lancement",
+    profileReady: "Profil prêt",
+    completedSteps: "terminé",
+    photoUrl: "Lien photo",
+    photoCaption: "Légende de la photo",
+    addPhotoUrl: "Ajouter une photo par lien",
+    addPhoto: "Ajouter une photo",
+    uploadPhoto: "Télécharger une photo",
+    makePrimary: "Rendre primaire",
+    primaryPhoto: "Photo principale",
+    addressSearch: "Trouver l'adresse sur la carte",
+    addressPlaceholder: "Commencez à saisir une adresse réelle",
+    searchingAddress: "Recherche d'adresse...",
+    selectAddress: "Choisissez l'adresse",
+    selectedAddress: "Adresse sélectionnée",
+    streetHouse: "Maison, rue",
+    city: "Ville",
+    region: "Région",
+    postcode: "Code postal",
+    openMap: "Ouvrir la carte",
+    telegramConnectButton: "Connecter le bot",
+    telegramOpenBot: "Ouvrir le bot",
+    telegramCopyLink: "Copier le lien",
+    telegramRefreshLink: "Actualiser le lien",
+    telegramTokenExpires: "Lien actif jusqu'à",
+    telegramSectionNotifications: "Notifications",
+    telegramSectionReminders: "Rappels",
+    telegramSectionSupport: "Support",
+    telegramNotificationsHint: "Choisir les événements que le bot doit envoyer au télégramme.",
+    telegramOnlineBookings: "Nouvelles réservations en ligne",
+    telegramCabinetBookings: "Nouvelles réservations d'espace de travail",
+    telegramRescheduled: "Heure de réservation modifiée",
+    telegramCancelled: "Réservation annulée",
+    telegramRemindersHint: "Les rappels vous aident à éviter de manquer les visites à venir.",
+    telegramReminders: "Rappel avant de réserver",
+    telegramToday: "Résumé du jour",
+    telegramReminderLead: "Heure de rappel",
+    telegramSupportHint: "Les questions des clients et de l'assistance peuvent arriver directement dans Telegram.",
+    telegramForwarding: "Transférer le support vers Telegram",
+    telegramSaved: "Telegram mis à jour",
+    telegramSaveFailed: "Impossible de mettre à jour Telegram.",
+    minutesBefore: "min avant",
+    hoursBefore: "h avant",
+    dayBefore: "un jour avant",
+    minutesShort: "min",
+    defaultServiceCategory: "Non classé",
+    serviceModeOnsite: "Les clients viennent chez moi",
+    serviceModeTravel: "Je me déplace chez les clients",
+    serviceModeOnline: "Je fournis des services en ligne",
+    calendarHeaderTitle: "Calendrier",
+    loadWorkspaceFailed: "Échec du chargement de l'espace de travail.",
+    empty: "Vide pour l'instant",
+    emptyCalendarTitle: "Aucune réservation pour l'instant",
+    emptyCalendarText: "Appuyez sur + pour ajouter la première visite",
+    noBookingsToday: "Pas de rendez-vous aujourd'hui",
+    noBookingsTodaySpark: "Pas de rendez-vous aujourd'hui ✨",
+    fillFreeWindowsText: "C'est le bon moment pour combler vos créneaux libres.",
+    noBookingsThisDay: "Aucune réservation pour ce jour",
+    calendarNoServicesText: "Ajoutez votre premier service pour commencer à accepter des clients.",
+    calendarEmptyActionText: "Ajoutez votre première visite ou configurez des services de réservation en ligne.",
+    createBooking: "Créer une réservation",
+    createAppointmentButton: "+ Créer un rendez-vous",
+    firstRunCalendarTitle: "Démarrer avec un service",
+    firstRunCalendarText: "Ajouter un service pour créer des réservations plus rapidement et ouvrir une réservation en ligne.",
+    addFirstVisit: "Ajouter une première visite",
+    quickVisit: "Réservation rapide",
+    createVisitWithoutService: "Créer une réservation sans service",
+    onboardingStartTitle: "Pour commencer 👋",
+    onboardingStartText: "Vous n'avez pas encore de services.\n\nAjoutez votre premier service pour commencer à accepter des rendez-vous clients.",
+    firstAppointmentCreated: "🎉 Premier rendez-vous créé",
+    addServiceFirstTitle: "Ajoutez d'abord un service",
+    addServiceFirstText: "Vous n'avez pas encore de services. Ajoutez votre premier service ou créez une réservation rapide sans service.",
+    servicesEmptyPickerTitle: "Aucun service pour l'instant",
+    servicesEmptyPickerText: "Ajoutez votre premier service ou créez une réservation sans service.",
+    createServiceAction: "Créer un service",
+    bookingWithoutService: "Réservation sans service",
+    firstServiceTitle: "Ajoutez votre premier service",
+    firstServiceText: "Les services vous aident à créer des réservations et à ouvrir des réservations en ligne pour les clients.",
+    chooseFromCatalog: "Choisissez dans le catalogue",
+    createOwnService: "Créer un service personnalisé",
+    servicesMineShort: "Mes",
+    servicesCreateShort: "Créer",
+    servicesCatalogShort: "Catalogue",
+    serviceSuggestionManicure: "Manucure",
+    serviceSuggestionHaircut: "Coupe de cheveux",
+    serviceSuggestionConsultation: "Consultation",
+    clientsEmptyTitle: "Aucun client pour l'instant",
+    clientsEmptyText: "Un client apparaît après la première réservation, ou vous pouvez en ajouter un manuellement.",
+    setupRemaining: "{count} pas restants",
+    setupFirstServiceText: "Ajoutez d'abord des services - cela débloque des réservations plus rapides et des réservations en ligne.",
+  },
+  pl: {
+    login: "Zaloguj się",
+    register: "Utwórz konto",
+    registerShort: "Utwórz",
+    newMasterCta: "Nowy profesjonalista? Utwórz konto",
+    registerMasterCta: "Utwórz konto pro",
+    optionalDetails: "Więcej szczegółów",
+    email: "E-mail",
+    password: "Hasło",
+    firstName: "Imię",
+    lastName: "Nazwisko",
+    phone: "Telefon",
+    phoneCountry: "Kraj",
+    selectCountryCode: "Kod kraju",
+    searchCountryOrCode: "Kraj lub kod",
+    customPhonePrefix: "Kod niestandardowy",
+    customPhonePrefixHint: "Użyj tego dla niestandardowego prefiksu",
+    customPhonePrefixPlaceholder: "+999",
+    useCustomPrefix: "Użyj kodu",
+    allCountries: "Wszystkie kraje",
+    companyName: "Biznes imię",
+    continue: "Kontynuuj",
+    creating: "Tworzenie...",
+    signingIn: "Logowanie...",
+    calendar: "Kalendarz",
+    clients: "Klienci",
+    services: "Usługi",
+    staff: "Zespół",
+    settings: "Ustawienia",
+    moreTab: "Więcej",
+    signOut: "Wyloguj się",
+    requiredTitle: "Brakujące szczegóły",
+    requiredText: "Wypełnij wszystkie pola.",
+    loginError: "Błąd logowania",
+    registerError: "Błąd rejestracji",
+    passwordHint: "Co najmniej 6 znaków",
+    proTitle: "Timviz dla profesjonalistów",
+    proSubtitle: "Kalendarz, usługi, klienci i alerty w jednej aplikacji.",
+    dashboard: "Przestrzeń do pracy",
+    home: "Strona główna",
+    today: "Dzisiaj",
+    week: "Tydzień",
+    month: "Miesiąc",
+    newVisit: "Nowa wizyta",
+    editVisit: "Edytuj wizytę",
+    bookTime: "Zarezerwuj czas",
+    addBlockedTime: "Dodaj niedostępny czas",
+    reservedTime: "Zarezerwowany czas",
+    unavailableTime: "Niedostępny czas",
+    chooseClient: "Wybierz klienta",
+    withoutClient: "Brak klienta",
+    quickBookingWithoutClient: "Szybka rezerwacja bez klienta",
+    chooseClientLater: "Możesz wybrać klienta później",
+    chooseService: "Wybierz usługę",
+    comment: "Skomentuj",
+    addAnotherService: "Dodaj kolejną usługę +",
+    total: "Razem",
+    payable: "Aby zapłacić",
+    saveVisit: "Zapisz rezerwację",
+    visitTab: "Odwiedź",
+    search: "Szukaj",
+    searchService: "Nazwa usługi",
+    serviceSearchEmpty: "Nie znaleziono usługi.",
+    clientNameOrPhone: "Nazwa lub telefon",
+    addNewClient: "Dodaj nowego klienta",
+    addAndSelectClient: "Dodaj i wybierz",
+    createClientFromSearch: "Utwórz klienta",
+    noClientFound: "Nie znaleziono klienta. Możesz utworzyć nowy.",
+    newClientFormTitle: "Nowy klient",
+    newClientFormHint: "Dodaj szczegóły, a klient zostanie wybrany na tę wizytę. Formularz",
+    formOpened: "jest otwarty poniżej",
+    clientName: "Nazwa klienta",
+    withoutService: "Bez usługi",
+    setupAssistant: "Asystent konfiguracji",
+    setupAssistantText: "Wykonaj te czynności, aby Twój profil był gotowy do rezerwacji online. Profil",
+    setupCompleteTitle: "jest gotowy do rezerwacji online",
+    setupCompleteText: "Klienci mogą już dokonywać rezerwacji poprzez Twój link.",
+    setupProgress: "Gotowość",
+    setupServices: "Dodaj usługi",
+    setupSchedule: "Ustaw harmonogram",
+    setupBooking: "Włącz rezerwację online",
+    setupAddress: "Dodaj adres",
+    setupTelegram: "Połącz telegram",
+    staffSchedule: "Harmonogram zmian",
+    staffScheduleHint: "Zarządzaj dniami pracy zespołu jak w internetowym obszarze roboczym.",
+    teamMembers: "Członkowie zespołu",
+    teamMembersHint: "Dodawaj pracowników, edytuj kontakty, role i dostęp do przestrzeni roboczej.",
+    allTeam: "Cały zespół",
+    showWholeTeam: "Pokaż cały zespół",
+    selectedMasters: "Wybrani mistrzowie",
+    addMember: "Dodaj pracownika",
+    editMember: "Edytuj pracownika",
+    saveMember: "Zapisz pracownika",
+    fullName: "Imię i nazwisko",
+    role: "Rola",
+    workspaceAccess: "Dostęp",
+    invite: "Zaproś",
+    resendInvite: "Wyślij ponownie zaproszenie",
+    revokeInvite: "Odwołaj zaproszenie",
+    sendInvite: "Wyślij zaproszenie e-mailem",
+    pendingInvites: "Oczekujące zaproszenia",
+    monthBookings: "Rezerwacje miesięczne",
+    upcomingBookings: "Nadchodzące rezerwacje",
+    scheduleMenu: "Harmonogram",
+    currentWeek: "W tym tygodniu",
+    previousWeek: "Poprzedni tydzień",
+    nextWeek: "Następny tydzień",
+    chooseWeek: "Wybierz tydzień",
+    repeatingSchedule: "Powtarzający się harmonogram",
+    oneWeekSchedule: "Tydzień kalendarzowy",
+    applyToWeekdays: "Zastosuj do dni powszednich",
+    clearWeek: "Wyczyść tydzień",
+    noWork: "Wył.",
+    workIntervals: "Czas pracy",
+    addWorkTime: "Dodaj czas",
+    removeWorkTime: "Usuń czas",
+    monthPlanner: "Dni robocze miesiąca",
+    selectedDays: "Wybrane dni",
+    applyToSelectedDays: "Zastosuj do wybranych",
+    selectedDaysHint: "Wybierz dni miesiąca i zastosuj do nich te same interwały robocze.",
+    noRoomForInterval: "Nie ma miejsca na kolejną przerwę.",
+    invalidIntervalRange: "Koniec musi być późniejszy niż początek.",
+    overlappingIntervals: "Przedziały nie mogą się nakładać.",
+    addBreak: "Dodaj przerwę",
+    removeBreak: "Usuń przerwę",
+    onThisWeek: "W tym tygodniu",
+    saveSchedule: "Zapisz harmonogram",
+    workFrom: "Od",
+    workTo: "Do",
+    breakFrom: "Przerwa od",
+    breakTo: "Przerwa do",
+    owner: "Właściciel",
+    employee: "Pracownik",
+    hoursShort: "h",
+    workingDay: "Dzień roboczy",
+    dayOff: "Dzień wolny",
+    dayOffTitle: "Dzień wolny",
+    bookingUnavailable: "Rezerwacja niedostępna",
+    dayOffMessage: "Dziś jest Twój dzień wolny.",
+    configureSchedule: "Skonfiguruj harmonogram",
+    bookingPage: "Strona firmowa",
+    bookingPageText: "Link do klienta i przełącznik rezerwacji online.",
+    onlineBookingOn: "Rezerwacja online jest włączona",
+    onlineBookingOff: "Rezerwacja online jest wyłączona",
+    openPage: "Otwórz stronę",
+    sharePage: "Udostępnij",
+    supportTitle: "Wsparcie Timviz",
+    supportGuideTitle: "Napisz do wsparcia",
+    supportGuideText: "Opisz, co robisz, gdzie pojawił się problem i co powinno się wydarzyć.",
+    supportGreeting: "Cześć! Zapytaj nas o stronę, rezerwacje, ustawienia lub płatności. Pomożemy.",
+    supportPlaceholder: "Napisz swoje pytanie w jednej wiadomości...",
+    supportSend: "Wyślij",
+    supportSent: "Wiadomość wysłana.",
+    supportFailed: "Nie można wysłać wiadomości.",
+    notificationPendingBookings: "Oczekujące rezerwacje online",
+    notificationsNew: "Nowe archiwum",
+    notificationsArchive: "",
+    notificationEmpty: "Nie ma jeszcze żadnych nowych aktualizacji.",
+    statusPending: "Oczekuje",
+    statusConfirmed: "Potwierdzono",
+    statusCancelled: "Anulowano",
+    myProfile: "Mój profil",
+    personalSettings: "Ustawienia osobiste",
+    helpSupport: "Pomoc i wsparcie",
+    language: "Język",
+    compact: "Kompaktowy",
+    dayView: "Dzień",
+    detailed: "Szczegółowy",
+    threeDays: "3 dni",
+    weekView: "Tydzień",
+    monthView: "Miesiąc",
+    selected: "Wybrane wizyty",
+    visits: "",
+    closedBySchedule: "Zamknięte",
+    ready: "Gotowe",
+    reminders: "Powiadomienia",
+    addVisit: "Dodaj rezerwację",
+    customer: "Klient",
+    service: "Usługa",
+    start: "Start",
+    end: "Koniec",
+    save: "Zapisz",
+    cancel: "Anuluj",
+    noAppointments: "Nie ma jeszcze rezerwacji na ten dzień.",
+    recent: "Ostatnie rezerwacje",
+    addService: "Dodaj usługę",
+    yourServices: "Twoje usługi",
+    ownService: "Usługa niestandardowa",
+    generalCatalog: "Katalog globalny",
+    serviceName: "Nazwa usługi",
+    category: "Kategoria",
+    newCategory: "Nowa kategoria",
+    selectedCategory: "Wybrana kategoria",
+    editService: "Edytuj usługę",
+    saveService: "Zapisz usługę",
+    addFromCatalog: "Dodaj z katalogu",
+    alreadyAdded: "W swoich usługach",
+    catalogHint: "Wybierz gotową usługę z globalnego katalogu Timviz.",
+    myServicesHint: "Usługi te są dostępne w przypadku rezerwacji klienta. Kliknij usługę, aby zmienić cenę lub czas trwania.",
+    price: "Cena",
+    duration: "Minuty",
+    delete: "Usuń",
+    addClient: "Dodaj klienta",
+    connected: "Połączono",
+    notConnected: "Nie połączono",
+    telegramHint: "Połączeniem telegramowym zarządza się w ustawieniach obszaru roboczego. Aplikacja pokazuje aktualny stan.",
+    onlineBooking: "Rezerwacja online",
+    address: "Adres",
+    publicPage: "Strona rezerwacji",
+    settingsSaved: "Zmiany zapisane",
+    settingsSaveError: "Nie można zapisać ustawień.",
+    premiumSubscription: "Subskrypcja premium",
+    premiumSubscriptionTitle: "Timviz Premium",
+    premiumSubscriptionActive: "Premium aktywna",
+    premiumSubscriptionTrial: "Okres próbny",
+    premiumSubscriptionFree: "Free",
+    premiumSubscriptionText: "App Store odblokowuje Premium w aplikacji i na stronie internetowej Timviz.",
+    premiumMonthly: "Premium miesięczny",
+    premiumYearly: "Premium roczny",
+    premiumMonthlyFallback: "3 USD / miesiąc",
+    premiumYearlyFallback: "29 USD / rok",
+    premiumStartMonthly: "Rozpocznij co miesiąc",
+    premiumStartYearly: "Rozpocznij co rok",
+    premiumRestore: "Przywróć zakup",
+    premiumManage: "Zarządzaj subskrypcją w App Store.",
+    premiumReady: "Premium zaktualizowano. Zakupy",
+    premiumUnavailable: "Zakupy są dostępne w TestFlight albo w wersji App Store.",
+    premiumMissingConfig: "Należy skonfigurować RevenueCat i produkty App Store.",
+    premiumPurchaseCancelled: "Zakup anulowany.",
+    premiumSyncFailed: "Nie można zsynchronizować subskrypcji.",
+    settingsGeneral: "Generał",
+    settingsOnline: "Rezerwacja online",
+    settingsServices: "Usługi",
+    settingsSchedule: "Harmonogram",
+    settingsTelegram: "Telegram",
+    settingsAddress: "Adres",
+    profileAndBusiness: "Profil i firma",
+    ownerContacts: "Kontakty właściciela",
+    avatarLink: "Główny awatar",
+    avatarHint: "Zdjęcie pojawia się w kalendarzu, karcie głównej i górnym menu.",
+    changeAvatar: "Zmień awatar",
+    deleteAvatar: "Usuń awatar",
+    avatarPermission: "Zezwól na dostęp do zdjęć, aby zmienić awatar.",
+    newPassword: "Nowe hasło",
+    leaveBlankPassword: "pozostaw puste, jeśli niezmienione",
+    businessFormat: "Nazwa i format",
+    website: "Strona internetowa",
+    accountType: "Typ konta",
+    soloAccount: "Pracuję sam",
+    teamAccount: "Zespół",
+    serviceMode: "Format pracy",
+    categoriesText: "Kategorie",
+    categoriesHint: "oddzielone przecinkami",
+    localization: "Kraj, język i waluta",
+    country: "Kraj",
+    timezone: "Strefa czasowa",
+    currency: "Waluta",
+    saveSettings: "Zapisz ustawienia",
+    publicLink: "Link publiczny",
+    copyLink: "Kopiuj",
+    manageServices: "Zarządzaj usługami",
+    manageSchedule: "Zarządzaj harmonogramem",
+    joinRequests: "Dołącz do próśb",
+    noJoinRequests: "Nie ma jeszcze żadnych nowych próśb.",
+    approve: "Zatwierdź",
+    reject: "Odrzuć",
+    businessPhotos: "Zdjęcia biznesowe",
+    photosHint: "Pierwsze zdjęcia pojawiają się na stronie rezerwacji online.",
+    streetAddress: "Adres",
+    addressDetails: "Dane adresowe",
+    mapCoordinates: "Współrzędne zapisywane są ze strony internetowej; aplikacja edytuje adres tekstowy.",
+    ownerOnlyHint: "Tylko właściciel konta może zmieniać ustawienia biznesowe.",
+    launchChecklist: "Lista kontrolna uruchomienia",
+    profileReady: "Profil gotowy",
+    completedSteps: "ukończony",
+    photoUrl: "Link do zdjęcia",
+    photoCaption: "Podpis do zdjęcia",
+    addPhotoUrl: "Dodaj zdjęcie przez link",
+    addPhoto: "Dodaj zdjęcie",
+    uploadPhoto: "Prześlij zdjęcie",
+    makePrimary: "Ustaw jako główne",
+    primaryPhoto: "Zdjęcie główne",
+    addressSearch: "Znajdź adres na mapie",
+    addressPlaceholder: "Zacznij wpisywać prawdziwy adres",
+    searchingAddress: "Wyszukiwanie adresu...",
+    selectAddress: "Wybierz adres",
+    selectedAddress: "Wybrany adres",
+    streetHouse: "Dom, ulica",
+    city: "Miasto",
+    region: "Region",
+    postcode: "Kod pocztowy",
+    openMap: "Otwórz mapę",
+    telegramConnectButton: "Połącz bota",
+    telegramOpenBot: "Otwórz bota",
+    telegramCopyLink: "Skopiuj link",
+    telegramRefreshLink: "Odśwież link",
+    telegramTokenExpires: "Link aktywny do",
+    telegramSectionNotifications: "Powiadomienia",
+    telegramSectionReminders: "Przypomnienia",
+    telegramSectionSupport: "Wsparcie",
+    telegramNotificationsHint: "Wybierz zdarzenia bot powinien wysłać do Telegramu.",
+    telegramOnlineBookings: "Nowe rezerwacje online",
+    telegramCabinetBookings: "Nowe rezerwacje przestrzeni do pracy",
+    telegramRescheduled: "Zmiana godziny rezerwacji",
+    telegramCancelled: "Rezerwacja anulowana",
+    telegramRemindersHint: "Przypomnienia pomogą Ci uniknąć przegapienia nadchodzących wizyt.",
+    telegramReminders: "Przypomnienie przed rezerwacją",
+    telegramToday: "Podsumowanie dzisiejszego dnia",
+    telegramReminderLead: "Czas przypomnienia",
+    telegramSupportHint: "Pytania klientów i wsparcia mogą przychodzić bezpośrednio do Telegramu.",
+    telegramForwarding: "Prześlij wsparcie do Telegramu",
+    telegramSaved: "Telegram zaktualizowany",
+    telegramSaveFailed: "Nie można zaktualizować telegramu.",
+    minutesBefore: "min przed",
+    hoursBefore: "h przed",
+    dayBefore: "dzień przed",
+    minutesShort: "min",
+    defaultServiceCategory: "Bez kategorii",
+    serviceModeOnsite: "Klienci przychodzą do mnie",
+    serviceModeTravel: "Dojeżdżam do klientów",
+    serviceModeOnline: "Świadczę usługi online",
+    calendarHeaderTitle: "Kalendarz",
+    loadWorkspaceFailed: "Nie udało się załadować obszaru roboczego.",
+    empty: "Na razie puste",
+    emptyCalendarTitle: "Nie ma jeszcze rezerwacji",
+    emptyCalendarText: "Naciśnij +, aby dodać pierwszą wizytę",
+    noBookingsToday: "Dzisiaj brak spotkań",
+    noBookingsTodaySpark: "Dzisiaj brak spotkań ✨",
+    fillFreeWindowsText: "To dobry moment na uzupełnienie wolnych miejsc.",
+    noBookingsThisDay: "Brak rezerwacji na ten dzień",
+    calendarNoServicesText: "Dodaj swoją pierwszą usługę, aby rozpocząć przyjmowanie klientów.",
+    calendarEmptyActionText: "Dodaj swoją pierwszą wizytę lub skonfiguruj usługi rezerwacji online.",
+    createBooking: "Utwórz rezerwację",
+    createAppointmentButton: "+ Utwórz spotkanie",
+    firstRunCalendarTitle: "Zacznij od usługi",
+    firstRunCalendarText: "Dodaj usługę, aby szybciej tworzyć rezerwacje i otwierać rezerwacje online.",
+    addFirstVisit: "Dodaj pierwszą wizytę",
+    quickVisit: "Szybka rezerwacja",
+    createVisitWithoutService: "Utwórz rezerwację bez usługi",
+    onboardingStartTitle: "Aby rozpocząć 👋",
+    onboardingStartText: "Nie masz jeszcze usług.\n\nDodaj swoją pierwszą usługę, aby rozpocząć przyjmowanie spotkań z klientami.",
+    firstAppointmentCreated: "🎉 Utworzono pierwsze spotkanie",
+    addServiceFirstTitle: "Najpierw dodaj usługę",
+    addServiceFirstText: "Nie masz jeszcze usług. Dodaj swoją pierwszą usługę lub utwórz szybką rezerwację bez usługi.",
+    servicesEmptyPickerTitle: "Brak jeszcze usług",
+    servicesEmptyPickerText: "Dodaj swoją pierwszą usługę lub utwórz rezerwację bez usługi.",
+    createServiceAction: "Utwórz usługę",
+    bookingWithoutService: "Rezerwacja bez usługi",
+    firstServiceTitle: "Dodaj swoją pierwszą usługę",
+    firstServiceText: "Usługi pomagają Ci tworzyć rezerwacje i otwierać rezerwacje online dla klientów.",
+    chooseFromCatalog: "Wybierz z katalogu",
+    createOwnService: "Utwórz usługę niestandardową",
+    servicesMineShort: "Moje",
+    servicesCreateShort: "Utwórz",
+    servicesCatalogShort: "Katalog",
+    serviceSuggestionManicure: "Manicure",
+    serviceSuggestionHaircut: "Strzyżenie",
+    serviceSuggestionConsultation: "Konsultacje",
+    clientsEmptyTitle: "Nie ma jeszcze klientów",
+    clientsEmptyText: "Klient pojawia się po pierwszej rezerwacji lub możesz dodać go ręcznie. Pozostało",
+    setupRemaining: "{count} kroków",
+    setupFirstServiceText: "Najpierw dodaj usługi – odblokowuje to szybsze rezerwacje i rezerwacje online.",
+  },
+  cs: {
+    login: "Přihlásit se",
+    register: "Vytvořit účet",
+    registerShort: "Vytvořit",
+    newMasterCta: "Nový profesionál? Vytvořit účet",
+    registerMasterCta: "Vytvořit pro účet",
+    optionalDetails: "Více podrobností",
+    email: "Email",
+    password: "Heslo",
+    firstName: "Jméno",
+    lastName: "Příjmení",
+    phone: "Telefon",
+    phoneCountry: "Země",
+    selectCountryCode: "Kód země",
+    searchCountryOrCode: "Země nebo kód",
+    customPhonePrefix: "Vlastní kód",
+    customPhonePrefixHint: "Toto použijte pro nestandardní předponu",
+    customPhonePrefixPlaceholder: "+999",
+    useCustomPrefix: "Použijte kód",
+    allCountries: "Všechny země",
+    companyName: "Obchodní název",
+    continue: "Pokračovat",
+    creating: "Vytváření...",
+    signingIn: "Přihlašování...",
+    calendar: "Kalendář",
+    clients: "Klienti",
+    services: "Služby",
+    staff: "Tým",
+    settings: "Nastavení",
+    moreTab: "Více",
+    signOut: "Více",
+    requiredTitle: "Chybějící detaily",
+    requiredText: "Vyplňte všechna pole.",
+    loginError: "Chyba přihlášení",
+    registerError: "Chyba registrace",
+    passwordHint: "Alespoň 6 znaků",
+    proTitle: "Timviz pro profesionály",
+    proSubtitle: "Kalendář, služby, klienti a upozornění v jedné aplikaci.",
+    dashboard: "Pracovní plocha",
+    home: "Domov",
+    today: "Dnes",
+    week: "Týden",
+    month: "Měsíc",
+    newVisit: "Nová návštěva",
+    editVisit: "Upravit schůzku",
+    bookTime: "Rezervujte si čas",
+    addBlockedTime: "Přidat nedostupný čas",
+    reservedTime: "Rezervovaný čas",
+    unavailableTime: "Doba nedostupnosti",
+    chooseClient: "Vyberte klienta",
+    withoutClient: "Žádný klient",
+    quickBookingWithoutClient: "Rychlá rezervace bez klienta",
+    chooseClientLater: "Klienta si můžete vybrat později",
+    chooseService: "Vyberte službu",
+    comment: "Komentář",
+    addAnotherService: "Přidat další službu +",
+    total: "Celkový",
+    payable: "platit",
+    saveVisit: "Uložit rezervaci",
+    visitTab: "Návštěva",
+    search: "Vyhledávání",
+    searchService: "Název služby",
+    serviceSearchEmpty: "Služba nenalezena.",
+    clientNameOrPhone: "Jméno nebo telefon",
+    addNewClient: "Přidat nového klienta",
+    addAndSelectClient: "Přidat a vybrat",
+    createClientFromSearch: "Vytvořit klienta",
+    noClientFound: "Nebyl nalezen žádný klient. Můžete vytvořit nový.",
+    newClientFormTitle: "Nový klient",
+    newClientFormHint: "Přidejte podrobnosti a klient bude vybrán pro tuto návštěvu.",
+    formOpened: "Formulář je otevřen níže",
+    clientName: "Jméno klienta",
+    withoutService: "Bez služby",
+    setupAssistant: "Asistent nastavení",
+    setupAssistantText: "Dokončete kroky, aby byl váš profil připraven pro online rezervaci.",
+    setupCompleteTitle: "Profil je připraven pro online rezervaci",
+    setupCompleteText: "Klienti si již mohou rezervovat přes váš odkaz.",
+    setupProgress: "Připravenost",
+    setupServices: "Přidat služby",
+    setupSchedule: "Nastavit plán",
+    setupBooking: "Povolit online rezervaci",
+    setupAddress: "Přidat adresu",
+    setupTelegram: "Připojit telegram",
+    staffSchedule: "Plán směn",
+    staffScheduleHint: "Řídit týmové pracovní dny jako ve webovém pracovním prostoru.",
+    teamMembers: "Členové týmu",
+    teamMembersHint: "Přidejte zaměstnance, upravte kontakty, role a přístup k pracovnímu prostoru.",
+    allTeam: "Celý tým",
+    showWholeTeam: "Zobrazit celý tým",
+    selectedMasters: "Vybraní mistři",
+    addMember: "Přidat zaměstnance",
+    editMember: "Upravit zaměstnance",
+    saveMember: "Uložit zaměstnance",
+    fullName: "Celé jméno",
+    role: "Role",
+    workspaceAccess: "Přístup",
+    invite: "Pozvat",
+    resendInvite: "Znovu odeslat pozvánku",
+    revokeInvite: "Zrušit pozvánku",
+    sendInvite: "Odeslat e-mailovou pozvánku",
+    pendingInvites: "Nevyřízené pozvánky",
+    monthBookings: "Měsíční rezervace",
+    upcomingBookings: "Nadcházející rezervace",
+    scheduleMenu: "Naplánovat",
+    currentWeek: "Tento týden",
+    previousWeek: "Předchozí týden",
+    nextWeek: "Příští týden",
+    chooseWeek: "Vyberte týden",
+    repeatingSchedule: "Opakující se rozvrh",
+    oneWeekSchedule: "Kalendářní týden",
+    applyToWeekdays: "Aplikujte na všední dny",
+    clearWeek: "Jasný týden",
+    noWork: "Vypnuto",
+    workIntervals: "Pracovní doba",
+    addWorkTime: "Přidejte čas",
+    removeWorkTime: "Odstraňte čas",
+    monthPlanner: "Měsíc pracovní dny",
+    selectedDays: "Vybrané dny",
+    applyToSelectedDays: "Použít na vybrané",
+    selectedDaysHint: "Vyberte měsíční dny a použijte na ně stejné pracovní intervaly.",
+    noRoomForInterval: "Není místo na další interval.",
+    invalidIntervalRange: "Konec musí být pozdější než začátek.",
+    overlappingIntervals: "Intervaly se nemohou překrývat.",
+    addBreak: "Přidat přestávku",
+    removeBreak: "Odebrat přestávku",
+    onThisWeek: "Tento týden",
+    saveSchedule: "Uložit plán",
+    workFrom: "Od",
+    workTo: "do",
+    breakFrom: "Přestávka od",
+    breakTo: "Přestávka do",
+    owner: "Vlastník",
+    employee: "Zaměstnanec",
+    hoursShort: "h",
+    workingDay: "Pracovní den",
+    dayOff: "Den volna",
+    dayOffTitle: "Den volna",
+    bookingUnavailable: "Rezervace není k dispozici",
+    dayOffMessage: "Dnes máte volno.",
+    configureSchedule: "Konfigurace plánu",
+    bookingPage: "Stránka společnosti",
+    bookingPageText: "Klientský odkaz a přepínač online rezervace.",
+    onlineBookingOn: "Online rezervace je zapnutá",
+    onlineBookingOff: "Online rezervace je vypnutá",
+    openPage: "Otevřít stránku",
+    sharePage: "Sdílet",
+    supportTitle: "Podpora Timviz",
+    supportGuideTitle: "Napište na podporu",
+    supportGuideText: "Popište, co se objevilo, děláte, kde se problém vyskytl.",
+    supportGreeting: "Ahoj! Zeptejte se nás na stránky, rezervace, nastavení nebo platby. pomůžeme.",
+    supportPlaceholder: "Napište svůj dotaz do jedné zprávy...",
+    supportSend: "Odeslat",
+    supportSent: "Zpráva odeslána.",
+    supportFailed: "Zprávu nelze odeslat.",
+    notificationPendingBookings: "Nevyřízené online rezervace",
+    notificationsNew: "Novinka",
+    notificationsArchive: "Archiv",
+    notificationEmpty: "Zatím nejsou žádné nové aktualizace.",
+    statusPending: "Nevyřízeno",
+    statusConfirmed: "Potvrzeno",
+    statusCancelled: "Zrušeno",
+    myProfile: "Můj profil",
+    personalSettings: "Osobní nastavení",
+    helpSupport: "Pomoc a podpora",
+    language: "Jazyk",
+    compact: "Kompaktní",
+    dayView: "Den",
+    detailed: "Detailní",
+    threeDays: "3 dny",
+    weekView: "Týden",
+    monthView: "Měsíc",
+    selected: "Vybrané návštěvy",
+    visits: "",
+    closedBySchedule: "Uzavřené",
+    ready: "Hotovo",
+    reminders: "Upozornění",
+    addVisit: "Přidat rezervaci",
+    customer: "Klient",
+    service: "Služba",
+    start: "Konec",
+    end: "Začátek",
+    save: "Uložit",
+    cancel: "Zrušit",
+    noAppointments: "Na tento den zatím nejsou žádné rezervace.",
+    recent: "Poslední rezervace",
+    addService: "Přidat službu",
+    yourServices: "Vaše služby",
+    ownService: "Vlastní služba",
+    generalCatalog: "Globální katalog",
+    serviceName: "Název služby",
+    category: "Kategorie",
+    newCategory: "Nová kategorie",
+    selectedCategory: "Vybraná kategorie",
+    editService: "Upravit službu",
+    saveService: "Uložit službu",
+    addFromCatalog: "Přidat z katalogu",
+    alreadyAdded: "Ve vašich službách",
+    catalogHint: "Vyberte si hotovou službu z globálního katalogu Timviz.",
+    myServicesHint: "Tyto služby jsou dostupné pro klientskou rezervaci. Klepnutím na službu změníte cenu nebo dobu trvání.",
+    price: "Cena",
+    duration: "Minuty",
+    delete: "Smazat",
+    addClient: "Přidat klienta",
+    connected: "Připojeno",
+    notConnected: "Nepřipojeno",
+    telegramHint: "Telegramové připojení je spravováno v nastavení pracovního prostoru. Aplikace zobrazuje aktuální stav.",
+    onlineBooking: "Online rezervace",
+    address: "Adresa",
+    publicPage: "Rezervační stránka",
+    settingsSaved: "Změny uloženy",
+    settingsSaveError: "Nastavení nelze uložit.",
+    premiumSubscription: "Prémiové předplatné",
+    premiumSubscriptionTitle: "Timviz Premium",
+    premiumSubscriptionActive: "Prémiové aktivní",
+    premiumSubscriptionTrial: "Zkušební období",
+    premiumSubscriptionFree: "Free",
+    premiumSubscriptionText: "Předplatné App Store odemkne Premium v ​​aplikaci a na webu Timviz.",
+    premiumMonthly: "Premium měsíčně",
+    premiumYearly: "Premium ročně",
+    premiumMonthlyFallback: "$3/měsíc",
+    premiumYearlyFallback: "$29/rok",
+    premiumStartMonthly: "Začít měsíčně",
+    premiumStartYearly: "Začít ročně",
+    premiumRestore: "Obnovit nákup",
+    premiumManage: "Spravovat předplatné v App Store.",
+    premiumReady: "Premium aktualizováno.",
+    premiumUnavailable: "Nákupy jsou dostupné v TestFlightu nebo ve verzi z App Storu.",
+    premiumMissingConfig: "Je potřeba nastavit RevenueCat a produkty App Store.",
+    premiumPurchaseCancelled: "Nákup zrušen.",
+    premiumSyncFailed: "Nelze synchronizovat předplatné.",
+    settingsGeneral: "Obecné",
+    settingsOnline: "Online rezervace",
+    settingsServices: "Služby",
+    settingsSchedule: "Naplánovat",
+    settingsTelegram: "Telegram",
+    settingsAddress: "Adresa",
+    profileAndBusiness: "Profil a podnikání",
+    ownerContacts: "Kontakty na majitele",
+    avatarLink: "Mistrovský avatar",
+    avatarHint: "Fotografie se zobrazí v kalendáři, na hlavní kartě a v horní nabídce.",
+    changeAvatar: "Změnit avatara",
+    deleteAvatar: "Smazat avatar",
+    avatarPermission: "Povolit přístup k fotografii pro změnu avatara.",
+    newPassword: "Nové heslo",
+    leaveBlankPassword: "ponechte prázdné, pokud se nezměnilo",
+    businessFormat: "Název a formát",
+    website: "Webová stránka",
+    accountType: "Typ účtu",
+    soloAccount: "Pracuji sám",
+    teamAccount: "Tým",
+    serviceMode: "",
+    categoriesText: "Kategorie",
+    categoriesHint: "oddělena čárkou",
+    localization: "Země, jazyk a měna",
+    country: "Země",
+    timezone: "Časové pásmo",
+    currency: "Měna",
+    saveSettings: "Uložte nastavení",
+    publicLink: "Veřejný odkaz",
+    copyLink: "Kopie",
+    manageServices: "Spravovat služby",
+    manageSchedule: "Správa plánu",
+    joinRequests: "Žádosti o připojení",
+    noJoinRequests: "Zatím nejsou žádné nové žádosti.",
+    approve: "Schválit",
+    reject: "Odmítnout",
+    businessPhotos: "Firemní fotografie",
+    photosHint: "První fotografie se objeví na stránce online rezervace.",
+    streetAddress: "Adresa",
+    addressDetails: "Podrobnosti adresy",
+    mapCoordinates: "Souřadnice jsou uloženy z webové stránky; aplikace upraví textovou adresu.",
+    ownerOnlyHint: "Firemní nastavení může měnit pouze vlastník účtu.",
+    launchChecklist: "Spustit kontrolní seznam",
+    profileReady: "Profil připraven",
+    completedSteps: "dokončeno",
+    photoUrl: "Odkaz na fotku",
+    photoCaption: "Popisek fotografie",
+    addPhotoUrl: "Přidejte fotku odkazem",
+    addPhoto: "Přidat fotku",
+    uploadPhoto: "Nahrajte fotografii",
+    makePrimary: "Udělat primární",
+    primaryPhoto: "Primární fotka",
+    addressSearch: "Najděte adresu na mapě",
+    addressPlaceholder: "Začněte psát skutečnou adresu",
+    searchingAddress: "Vyhledávání adresy...",
+    selectAddress: "Vyberte adresu",
+    selectedAddress: "Vybraná adresa",
+    streetHouse: "Dům, ulice",
+    city: "Město",
+    region: "Kraj",
+    postcode: "PSČ",
+    openMap: "Otevřít mapu",
+    telegramConnectButton: "Připojit robota",
+    telegramOpenBot: "Otevřít bota",
+    telegramCopyLink: "Kopírovat odkaz",
+    telegramRefreshLink: "Obnovit odkaz",
+    telegramTokenExpires: "Odkaz je aktivní do",
+    telegramSectionNotifications: "Oznámení",
+    telegramSectionReminders: "Připomenutí",
+    telegramSectionSupport: "Připomenutí",
+    telegramNotificationsHint: "bot by měl odeslat do telegramu.",
+    telegramOnlineBookings: "Nové online rezervace",
+    telegramCabinetBookings: "Nové rezervace pracovního prostoru",
+    telegramRescheduled: "Změna času rezervace",
+    telegramCancelled: "Rezervace zrušena",
+    telegramRemindersHint: "Připomenutí vám pomohou vyhnout se promeškaným nadcházejícím návštěvám.",
+    telegramReminders: "Připomenutí před rezervací",
+    telegramToday: "Dnešní souhrn",
+    telegramReminderLead: "Čas připomenutí",
+    telegramSupportHint: "Otázky klientů a podpory mohou dorazit přímo do telegramu.",
+    telegramForwarding: "Přepošlete podporu Telegramu",
+    telegramSaved: "Telegram aktualizován",
+    telegramSaveFailed: "Telegram nelze aktualizovat.",
+    minutesBefore: "min před",
+    hoursBefore: "h předtím",
+    dayBefore: "jeden den předtím",
+    minutesShort: "min",
+    defaultServiceCategory: "Nezařazené",
+    serviceModeOnsite: "Klienti přicházejí ke mně",
+    serviceModeTravel: "Jezdím za klienty",
+    serviceModeOnline: "Služby poskytuji online",
+    calendarHeaderTitle: "Kalendář",
+    loadWorkspaceFailed: "Načtení pracovního prostoru se nezdařilo.",
+    empty: "Zatím prázdný",
+    emptyCalendarTitle: "Zatím žádné rezervace",
+    emptyCalendarText: "Klepnutím na + přidáte první návštěvu",
+    noBookingsToday: "Dnes žádné schůzky",
+    noBookingsTodaySpark: "Dnes žádné schůzky ✨",
+    fillFreeWindowsText: "Je vhodná doba na zaplnění vašich volných míst.",
+    noBookingsThisDay: "Pro tento den nejsou žádné rezervace",
+    calendarNoServicesText: "Přidejte svou první službu a začněte přijímat klienty.",
+    calendarEmptyActionText: "Přidejte svou první návštěvu nebo nastavte služby pro online rezervaci.",
+    createBooking: "Vytvořit rezervaci",
+    createAppointmentButton: "+ Vytvořit schůzku",
+    firstRunCalendarTitle: "Začněte se službou",
+    firstRunCalendarText: "Přidejte službu pro rychlejší vytváření rezervací a otevření online rezervace.",
+    addFirstVisit: "Přidat první návštěvu",
+    quickVisit: "Rychlá rezervace",
+    createVisitWithoutService: "Vytvořit rezervaci bez služby",
+    onboardingStartTitle: "Začít 👋",
+    onboardingStartText: "Ještě nemáte služby.\n\nPřidejte svou první službu a začněte přijímat schůzky klientů.",
+    firstAppointmentCreated: "🎉 Vytvořena první schůzka",
+    addServiceFirstTitle: "Nejprve přidejte službu",
+    addServiceFirstText: "Ještě nemáte služby. Přidejte svou první službu nebo vytvořte rychlou rezervaci bez služby.",
+    servicesEmptyPickerTitle: "Zatím žádné služby",
+    servicesEmptyPickerText: "Přidejte svou první službu nebo vytvořte rezervaci bez služby.",
+    createServiceAction: "Vytvořit službu",
+    bookingWithoutService: "Rezervace bez služby",
+    firstServiceTitle: "Přidejte svou první službu",
+    firstServiceText: "Služby vám pomohou vytvořit rezervace a otevřít online rezervaci pro klienty.",
+    chooseFromCatalog: "Vyberte si z katalogu",
+    createOwnService: "Vytvořte vlastní službu",
+    servicesMineShort: "Moje",
+    servicesCreateShort: "Vytvořit",
+    servicesCatalogShort: "Katalog",
+    serviceSuggestionManicure: "Manikúra",
+    serviceSuggestionHaircut: "Střih",
+    serviceSuggestionConsultation: "Konzultace",
+    clientsEmptyTitle: "Zatím žádní klienti",
+    clientsEmptyText: "Klient se objeví po první rezervaci, nebo jej můžete přidat ručně.",
+    setupRemaining: "Zbývá {count} kroků",
+    setupFirstServiceText: "Nejprve přidejte služby – tím se odemknou rychlejší rezervace a online rezervace.",
+  },
+  es: {
+    login: "Iniciar sesión",
+    register: "Crear cuenta",
+    registerShort: "Crear",
+    newMasterCta: "¿Nuevo profesional? Crear cuenta",
+    registerMasterCta: "Crear cuenta profesional",
+    optionalDetails: "Más detalles",
+    email: "Correo electrónico",
+    password: "Contraseña",
+    firstName: "Nombre",
+    lastName: "Apellido",
+    phone: "Teléfono",
+    phoneCountry: "País",
+    selectCountryCode: "Código de país",
+    searchCountryOrCode: "País o código",
+    customPhonePrefix: "Código personalizado",
+    customPhonePrefixHint: "Utilice esto para un prefijo no estándar",
+    customPhonePrefixPlaceholder: "+999",
+    useCustomPrefix: "Utilice el código",
+    allCountries: "Todos los países",
+    companyName: "Negocios nombre",
+    continue: "Continuar",
+    creating: "Creando...",
+    signingIn: "Iniciando sesión...",
+    calendar: "Calendario",
+    clients: "Clientes",
+    services: "Servicios",
+    staff: "Equipo",
+    settings: "Configuración",
+    moreTab: "Más",
+    signOut: "Cerrar sesión",
+    requiredTitle: "Detalles faltantes",
+    requiredText: "Complete todos los campos.",
+    loginError: "Error de inicio de sesión",
+    registerError: "Error de registro",
+    passwordHint: "Al menos 6 caracteres",
+    proTitle: "Timviz para profesionales",
+    proSubtitle: "Calendario, servicios, clientes y alertas en una sola aplicación.",
+    dashboard: "Espacio de trabajo",
+    home: "Inicio",
+    today: "Hoy",
+    week: "Semana",
+    month: "Mes",
+    newVisit: "Nueva visita",
+    editVisit: "Editar cita",
+    bookTime: "Reservar hora",
+    addBlockedTime: "Añadir hora no disponible",
+    reservedTime: "Hora reservada",
+    unavailableTime: "Hora no disponible",
+    chooseClient: "Elegir cliente",
+    withoutClient: "Sin cliente",
+    quickBookingWithoutClient: "Reserva rápida sin cliente",
+    chooseClientLater: "Puedes elegir cliente más tarde",
+    chooseService: "Elegir servicio",
+    comment: "Comentar",
+    addAnotherService: "Añadir otro servicio +",
+    total: "Total",
+    payable: "Para pagar",
+    saveVisit: "Guardar reserva",
+    visitTab: "Visitar",
+    search: "Buscar",
+    searchService: "Nombre del servicio",
+    serviceSearchEmpty: "Servicio no encontrado.",
+    clientNameOrPhone: "Nombre o teléfono",
+    addNewClient: "Agregar nuevo cliente",
+    addAndSelectClient: "Agregar y seleccionar",
+    createClientFromSearch: "Crear cliente",
+    noClientFound: "No se encontró ningún cliente. Puedes crear uno nuevo.",
+    newClientFormTitle: "Nuevo cliente",
+    newClientFormHint: "Agregue los detalles y el cliente será seleccionado para esta visita.",
+    formOpened: "El formulario está abierto a continuación",
+    clientName: "Nombre del cliente",
+    withoutService: "Sin servicio",
+    setupAssistant: "Asistente de configuración",
+    setupAssistantText: "Finaliza los pasos para que tu perfil esté listo para la reserva online.",
+    setupCompleteTitle: "El perfil está listo para reservar en línea",
+    setupCompleteText: "Los clientes ya pueden reservar a través de su enlace.",
+    setupProgress: "Preparación",
+    setupServices: "Agregar servicios",
+    setupSchedule: "Establecer horario",
+    setupBooking: "Habilitar reserva en línea",
+    setupAddress: "Agregar dirección",
+    setupTelegram: "Conectar Telegram",
+    staffSchedule: "Horario de turnos",
+    staffScheduleHint: "Administre los días de trabajo del equipo como en el espacio de trabajo web.",
+    teamMembers: "Miembros del equipo",
+    teamMembersHint: "Agregue empleados, edite contactos, roles y acceso al espacio de trabajo.",
+    allTeam: "Equipo completo",
+    showWholeTeam: "Mostrar el equipo completo",
+    selectedMasters: "Maestros seleccionados",
+    addMember: "Agregar empleado",
+    editMember: "Editar empleado",
+    saveMember: "Guardar empleado",
+    fullName: "Nombre completo",
+    role: "Rol",
+    workspaceAccess: "Acceso",
+    invite: "Invitar",
+    resendInvite: "Reenviar invitación",
+    revokeInvite: "Revocar invitación",
+    sendInvite: "Enviar invitación por correo electrónico",
+    pendingInvites: "Invitaciones pendientes",
+    monthBookings: "Reservas del mes",
+    upcomingBookings: "Próximas reservas",
+    scheduleMenu: "Horario",
+    currentWeek: "Esta semana",
+    previousWeek: "Semana anterior",
+    nextWeek: "Semana siguiente",
+    chooseWeek: "Elige semana",
+    repeatingSchedule: "Horario repetido",
+    oneWeekSchedule: "Semana calendario",
+    applyToWeekdays: "Aplica a días laborables",
+    clearWeek: "Borrar semana",
+    noWork: "Desactivado",
+    workIntervals: "Tiempo de trabajo",
+    addWorkTime: "Agregar tiempo",
+    removeWorkTime: "Eliminar tiempo",
+    monthPlanner: "Mes días laborales",
+    selectedDays: "Días seleccionados",
+    applyToSelectedDays: "Aplicar a",
+    selectedDaysHint: "seleccionados Días del mes y aplicarles los mismos intervalos de trabajo.",
+    noRoomForInterval: "No hay lugar para otro intervalo.",
+    invalidIntervalRange: "El final debe ser posterior al inicio.",
+    overlappingIntervals: "Los intervalos no pueden superponerse.",
+    addBreak: "Agregar descanso",
+    removeBreak: "Eliminar descanso",
+    onThisWeek: "Esta semana",
+    saveSchedule: "Guardar horario",
+    workFrom: "De",
+    workTo: "A",
+    breakFrom: "Descanso de",
+    breakTo: "Descanso a",
+    owner: "Propietario",
+    employee: "Empleado",
+    hoursShort: "h",
+    workingDay: "Día laboral",
+    dayOff: "Día libre",
+    dayOffTitle: "Día libre",
+    bookingUnavailable: "Reserva no disponible",
+    dayOffMessage: "Hoy es tu día libre.",
+    configureSchedule: "Configurar horario",
+    bookingPage: "Página de empresa",
+    bookingPageText: "Enlace de cliente y cambio de reserva online.",
+    onlineBookingOn: "La reserva en línea está activada",
+    onlineBookingOff: "La reserva en línea está desactivada",
+    openPage: "Abrir página",
+    sharePage: "Compartir",
+    supportTitle: "Soporte de Timviz",
+    supportGuideTitle: "Escribe al soporte",
+    supportGuideText: "Describe lo que estás haciendo, dónde apareció el problema y qué debería suceder.",
+    supportGreeting: "¡Hola! Pregúntanos sobre el sitio, las reservas, la configuración o los pagos. Le ayudaremos.",
+    supportPlaceholder: "Escribe tu pregunta en un solo mensaje...",
+    supportSend: "Enviar",
+    supportSent: "Mensaje enviado.",
+    supportFailed: "No se pudo enviar el mensaje.",
+    notificationPendingBookings: "Reservas online pendientes",
+    notificationsNew: "Nuevo",
+    notificationsArchive: "Archivo",
+    notificationEmpty: "Aún no hay nuevas actualizaciones.",
+    statusPending: "Pendiente",
+    statusConfirmed: "Confirmado",
+    statusCancelled: "Cancelado",
+    myProfile: "Mi perfil",
+    personalSettings: "Configuración personal",
+    helpSupport: "Ayuda y soporte",
+    language: "Idioma",
+    compact: "Compacto",
+    dayView: "Día",
+    detailed: "Detallado",
+    threeDays: "3 días",
+    weekView: "Semana",
+    monthView: "Mes",
+    selected: "Visitas",
+    visits: "seleccionadas",
+    closedBySchedule: "Cerradas",
+    ready: "Realizadas",
+    reminders: "Alertas",
+    addVisit: "Añadir reserva",
+    customer: "Cliente",
+    service: "Servicio",
+    start: "Inicio",
+    end: "Fin",
+    save: "Guardar",
+    cancel: "Cancelar",
+    noAppointments: "Aún no hay reservas para este día.",
+    recent: "Reservas recientes",
+    addService: "Agregar servicio",
+    yourServices: "Tus servicios",
+    ownService: "Servicio personalizado",
+    generalCatalog: "Catálogo global",
+    serviceName: "Nombre del servicio",
+    category: "Categoría",
+    newCategory: "Nueva categoría",
+    selectedCategory: "Categoría seleccionada",
+    editService: "Editar servicio",
+    saveService: "Guardar servicio",
+    addFromCatalog: "Agregar del catálogo",
+    alreadyAdded: "En sus servicios",
+    catalogHint: "Elija un servicio listo para usar del catálogo global de Timviz.",
+    myServicesHint: "Estos servicios están disponibles para la reserva del cliente. Toca un servicio para cambiar el precio o la duración.",
+    price: "Precio",
+    duration: "Minutos",
+    delete: "Eliminar",
+    addClient: "Agregar cliente",
+    connected: "Conectado",
+    notConnected: "No conectado",
+    telegramHint: "La conexión de Telegram se administra en la configuración del espacio de trabajo. La aplicación muestra el estado actual.",
+    onlineBooking: "Reserva en línea",
+    address: "Dirección",
+    publicPage: "Página de reserva",
+    settingsSaved: "Cambios guardados",
+    settingsSaveError: "No se pudo guardar la configuración.",
+    premiumSubscription: "Suscripción Premium",
+    premiumSubscriptionTitle: "Timviz Premium",
+    premiumSubscriptionActive: "Premium activo",
+    premiumSubscriptionTrial: "Período de prueba",
+    premiumSubscriptionFree: "Free",
+    premiumSubscriptionText: "La suscripción a App Store desbloquea Premium en la aplicación y en el sitio web de Timviz.",
+    premiumMonthly: "Premium mensual",
+    premiumYearly: "Premium anual",
+    premiumMonthlyFallback: "$3 / mes",
+    premiumYearlyFallback: "$29 / año",
+    premiumStartMonthly: "Iniciar mensualmente",
+    premiumStartYearly: "Iniciar anualmente",
+    premiumRestore: "Restaurar compra",
+    premiumManage: "Administrar la suscripción en App Store.",
+    premiumReady: "Premium actualizado.",
+    premiumUnavailable: "Las compras están disponibles en TestFlight o en la versión de App Store.",
+    premiumMissingConfig: "Hay que configurar RevenueCat y los productos de App Store.",
+    premiumPurchaseCancelled: "Compra cancelada.",
+    premiumSyncFailed: "No se pudo sincronizar la suscripción.",
+    settingsGeneral: "Generalidades",
+    settingsOnline: "Reserva online",
+    settingsServices: "Servicios",
+    settingsSchedule: "Horario",
+    settingsTelegram: "Telegram",
+    settingsAddress: "Dirección",
+    profileAndBusiness: "Perfil y negocio",
+    ownerContacts: "Contactos del propietario",
+    avatarLink: "Avatar maestro",
+    avatarHint: "La foto aparece en el calendario, tarjeta maestra y menú superior.",
+    changeAvatar: "Cambiar avatar",
+    deleteAvatar: "Eliminar avatar",
+    avatarPermission: "Permitir acceso a la foto para cambiar el avatar.",
+    newPassword: "Nueva contraseña",
+    leaveBlankPassword: "dejar en blanco si no se modifica",
+    businessFormat: "Nombre y formato",
+    website: "Sitio web",
+    accountType: "Tipo de cuenta",
+    soloAccount: "Trabajo solo",
+    teamAccount: "Equipo",
+    serviceMode: "Formato de trabajo",
+    categoriesText: "Categorías",
+    categoriesHint: "separados por comas",
+    localization: "País, idioma y moneda",
+    country: "País",
+    timezone: "Zona horaria",
+    currency: "Moneda",
+    saveSettings: "Guardar configuración",
+    publicLink: "Enlace público",
+    copyLink: "Copiar",
+    manageServices: "Administrar servicios",
+    manageSchedule: "Administrar programación",
+    joinRequests: "Solicitudes de unión",
+    noJoinRequests: "Aún no hay nuevas solicitudes.",
+    approve: "Aprobar",
+    reject: "Rechazar",
+    businessPhotos: "Fotos comerciales",
+    photosHint: "Las primeras fotos aparecen en la página de reservas online.",
+    streetAddress: "Dirección",
+    addressDetails: "Detalles de la dirección",
+    mapCoordinates: "Las coordenadas se guardan desde el sitio web; la aplicación edita la dirección de texto.",
+    ownerOnlyHint: "Solo el propietario de la cuenta puede cambiar la configuración comercial.",
+    launchChecklist: "Lista de verificación de inicio",
+    profileReady: "Perfil listo",
+    completedSteps: "completado",
+    photoUrl: "Enlace de foto",
+    photoCaption: "Pie de foto",
+    addPhotoUrl: "Agregar foto por enlace",
+    addPhoto: "Agregar foto",
+    uploadPhoto: "Subir foto",
+    makePrimary: "Convertir en principal",
+    primaryPhoto: "Foto principal",
+    addressSearch: "Buscar dirección en el mapa",
+    addressPlaceholder: "Comienza a escribir una dirección real",
+    searchingAddress: "Buscando dirección...",
+    selectAddress: "Elige dirección",
+    selectedAddress: "Dirección seleccionada",
+    streetHouse: "Casa, calle",
+    city: "Ciudad",
+    region: "Región",
+    postcode: "Código postal",
+    openMap: "Abrir mapa",
+    telegramConnectButton: "Conectar bot",
+    telegramOpenBot: "Abrir bot",
+    telegramCopyLink: "Copiar enlace",
+    telegramRefreshLink: "Actualizar enlace",
+    telegramTokenExpires: "Enlace activo hasta",
+    telegramSectionNotifications: "Notificaciones",
+    telegramSectionReminders: "Recordatorios",
+    telegramSectionSupport: "Soporte",
+    telegramNotificationsHint: "Elige qué eventos debe realizar el bot enviar a Telegram.",
+    telegramOnlineBookings: "Nuevas reservas en línea",
+    telegramCabinetBookings: "Nuevas reservas de espacios de trabajo",
+    telegramRescheduled: "Hora de reserva modificada",
+    telegramCancelled: "Reserva cancelada",
+    telegramRemindersHint: "Los recordatorios le ayudan a evitar perderse próximas visitas.",
+    telegramReminders: "Recordatorio antes de reservar",
+    telegramToday: "Resumen de hoy",
+    telegramReminderLead: "Hora del recordatorio",
+    telegramSupportHint: "Las preguntas de clientes y soporte pueden llegar directamente a Telegram.",
+    telegramForwarding: "Reenviar soporte a Telegram",
+    telegramSaved: "Telegram actualizado",
+    telegramSaveFailed: "No se pudo actualizar Telegram.",
+    minutesBefore: "min antes",
+    hoursBefore: "h antes",
+    dayBefore: "un día antes",
+    minutesShort: "min",
+    defaultServiceCategory: "Sin categoría",
+    serviceModeOnsite: "Los clientes vienen a mi ubicación",
+    serviceModeTravel: "Viajo a los clientes",
+    serviceModeOnline: "Brindo servicios en línea",
+    calendarHeaderTitle: "Calendario",
+    loadWorkspaceFailed: "No se pudo cargar el espacio de trabajo.",
+    empty: "Vacío por ahora",
+    emptyCalendarTitle: "Aún no hay reservas",
+    emptyCalendarText: "Toca + para agregar la primera visita",
+    noBookingsToday: "Hoy no hay citas",
+    noBookingsTodaySpark: "Hoy no hay citas ✨",
+    fillFreeWindowsText: "Es un buen momento para llenar tus espacios abiertos.",
+    noBookingsThisDay: "No hay reservas para este día",
+    calendarNoServicesText: "Agrega tu primer servicio para comenzar a aceptar clientes.",
+    calendarEmptyActionText: "Agregue su primera visita o configure servicios para reservas en línea.",
+    createBooking: "Crear reserva",
+    createAppointmentButton: "+ Crear cita",
+    firstRunCalendarTitle: "Comience con un servicio",
+    firstRunCalendarText: "Agregue un servicio para crear reservas más rápido y abrir reservas en línea.",
+    addFirstVisit: "Agregar primera visita",
+    quickVisit: "Reserva rápida",
+    createVisitWithoutService: "Crear reserva sin servicio",
+    onboardingStartTitle: "Para comenzar 👋",
+    onboardingStartText: "Aún no tienes servicios.\n\nAgregue su primer servicio para comenzar a aceptar citas de clientes.",
+    firstAppointmentCreated: "🎉 Primera cita creada",
+    addServiceFirstTitle: "Agrega un servicio primero",
+    addServiceFirstText: "Aún no tienes servicios. Añade tu primer servicio o crea una reserva rápida sin servicio.",
+    servicesEmptyPickerTitle: "Aún no hay servicios",
+    servicesEmptyPickerText: "Añade tu primer servicio o crea una reserva sin servicio.",
+    createServiceAction: "Crear servicio",
+    bookingWithoutService: "Reserva sin servicio",
+    firstServiceTitle: "Agregue su primer servicio",
+    firstServiceText: "Los servicios lo ayudan a crear reservas y abrir reservas en línea para los clientes.",
+    chooseFromCatalog: "Elige del catálogo",
+    createOwnService: "Crear servicio personalizado",
+    servicesMineShort: "Mis",
+    servicesCreateShort: "Crear",
+    servicesCatalogShort: "Catálogo",
+    serviceSuggestionManicure: "Manicura",
+    serviceSuggestionHaircut: "Corte de pelo",
+    serviceSuggestionConsultation: "Consulta",
+    clientsEmptyTitle: "Aún no hay clientes",
+    clientsEmptyText: "Un cliente aparece después de la primera reserva, o puedes agregar uno manualmente.",
+    setupRemaining: "Faltan {count} pasos",
+    setupFirstServiceText: "Agregue servicios primero: esto desbloquea reservas más rápidas y reservas en línea.",
+  },
+  de: {
+    login: "Anmelden",
+    register: "Konto erstellen",
+    registerShort: "",
+    newMasterCta: "erstellen Neuer Profi? Konto erstellen",
+    registerMasterCta: "Pro-Konto erstellen",
+    optionalDetails: "Weitere Details",
+    email: "E-Mail",
+    password: "Passwort",
+    firstName: "Vorname",
+    lastName: "Nachname",
+    phone: "Telefon",
+    phoneCountry: "Land",
+    selectCountryCode: "Ländercode",
+    searchCountryOrCode: "Land oder Code",
+    customPhonePrefix: "Benutzerdefinierter Code",
+    customPhonePrefixHint: "Verwenden Sie dies für ein nicht standardmäßiges Präfix",
+    customPhonePrefixPlaceholder: "+999",
+    useCustomPrefix: "Verwenden Sie den Code",
+    allCountries: "Alle Länder",
+    companyName: "Business Namen",
+    continue: "Weiter",
+    creating: "Erstellen...",
+    signingIn: "Anmelden...",
+    calendar: "Kalender",
+    clients: "Kunden",
+    services: "Dienste",
+    staff: "Team",
+    settings: "Einstellungen",
+    moreTab: "Mehr",
+    signOut: "Abmelden",
+    requiredTitle: "Fehlende Angaben",
+    requiredText: "Füllen Sie alle Felder aus.",
+    loginError: "Anmeldefehler",
+    registerError: "Registrierungsfehler",
+    passwordHint: "Mindestens 6 Zeichen",
+    proTitle: "Timviz für Profis",
+    proSubtitle: "Kalender, Dienste, Kunden und Benachrichtigungen in einer App.",
+    dashboard: "Arbeitsbereich",
+    home: "Startseite",
+    today: "Heute",
+    week: "Woche",
+    month: "Monat",
+    newVisit: "Neuer Besuch",
+    editVisit: "Termin bearbeiten",
+    bookTime: "Zeit buchen",
+    addBlockedTime: "Nicht verfügbare Zeit hinzufügen",
+    reservedTime: "Reservierte Zeit",
+    unavailableTime: "Nicht verfügbare Zeit",
+    chooseClient: "Kunde auswählen",
+    withoutClient: "Kein Kunde",
+    quickBookingWithoutClient: "Schnelle Buchung ohne Kunden",
+    chooseClientLater: "Sie können später einen Kunden auswählen",
+    chooseService: "Service auswählen",
+    comment: "Kommentieren",
+    addAnotherService: "Weiteren Service hinzufügen +",
+    total: "Gesamt",
+    payable: "Bezahlen",
+    saveVisit: "Buchung speichern",
+    visitTab: "Besuchen Sie",
+    search: "Suchen",
+    searchService: "Dienstname",
+    serviceSearchEmpty: "Dienst nicht gefunden.",
+    clientNameOrPhone: "Name oder Telefon",
+    addNewClient: "Neuen Kunden hinzufügen",
+    addAndSelectClient: "Hinzufügen und auswählen",
+    createClientFromSearch: "Kunde erstellen",
+    noClientFound: "Kein Kunde gefunden. Sie können ein neues erstellen.",
+    newClientFormTitle: "Neuer Kunde",
+    newClientFormHint: "Fügen Sie die Details hinzu und der Kunde wird für diesen Besuch ausgewählt. Das",
+    formOpened: "-Formular ist unten geöffnet",
+    clientName: "Kundenname",
+    withoutService: "Ohne Service",
+    setupAssistant: "Einrichtungsassistent",
+    setupAssistantText: "Beenden Sie die Schritte, damit Ihr Profil für die Online-Buchung bereit ist.",
+    setupCompleteTitle: "Profil ist bereit für die Online-Buchung",
+    setupCompleteText: "Kunden können bereits über Ihren Link buchen.",
+    setupProgress: "Bereitschaft",
+    setupServices: "Dienste hinzufügen",
+    setupSchedule: "Zeitplan festlegen",
+    setupBooking: "Online-Buchung aktivieren",
+    setupAddress: "Adresse hinzufügen",
+    setupTelegram: "Telegram verbinden",
+    staffSchedule: "Schichtplan",
+    staffScheduleHint: "Team-Arbeitstage wie im Web-Workspace verwalten.",
+    teamMembers: "Teammitglieder",
+    teamMembersHint: "Fügen Sie Mitarbeiter hinzu, bearbeiten Sie Kontakte, Rollen und Arbeitsbereichszugriff.",
+    allTeam: "Ganzes Team",
+    showWholeTeam: "Das gesamte Team anzeigen",
+    selectedMasters: "Ausgewählte Meister",
+    addMember: "Mitarbeiter hinzufügen",
+    editMember: "Mitarbeiter bearbeiten",
+    saveMember: "Mitarbeiter speichern",
+    fullName: "Vollständiger Name",
+    role: "Rolle",
+    workspaceAccess: "Zugriff",
+    invite: "Einladen",
+    resendInvite: "Einladung erneut senden",
+    revokeInvite: "Einladung widerrufen",
+    sendInvite: "E-Mail-Einladung senden",
+    pendingInvites: "Ausstehende Einladungen",
+    monthBookings: "Monatsbuchungen",
+    upcomingBookings: "Anstehende Buchungen",
+    scheduleMenu: "Zeitplan",
+    currentWeek: "Diese Woche",
+    previousWeek: "Vorherige Woche",
+    nextWeek: "Nächste Woche",
+    chooseWeek: "Woche auswählen",
+    repeatingSchedule: "Wiederholter Zeitplan",
+    oneWeekSchedule: "Kalenderwoche",
+    applyToWeekdays: "Auf Wochentage anwenden",
+    clearWeek: "Woche löschen",
+    noWork: "Aus",
+    workIntervals: "Arbeitszeit",
+    addWorkTime: "Zeit hinzufügen",
+    removeWorkTime: "Zeit entfernen",
+    monthPlanner: "Monatsarbeitstage",
+    selectedDays: "Ausgewählte Tage",
+    applyToSelectedDays: "Auf ausgewählte anwenden",
+    selectedDaysHint: "Monatstage auswählen und die gleichen Arbeitsintervalle auf sie anwenden.",
+    noRoomForInterval: "Kein Platz für ein weiteres Intervall.",
+    invalidIntervalRange: "Das Ende muss später als der Start liegen.",
+    overlappingIntervals: "Intervalle dürfen sich nicht überschneiden.",
+    addBreak: "Pause hinzufügen",
+    removeBreak: "Pause entfernen",
+    onThisWeek: "Diese Woche",
+    saveSchedule: "Zeitplan speichern",
+    workFrom: "Von",
+    workTo: "Bis",
+    breakFrom: "Pause von",
+    breakTo: "Pause bis",
+    owner: "Inhaber",
+    employee: "Angestellter",
+    hoursShort: "h",
+    workingDay: "Arbeitstag",
+    dayOff: "Ruhetag",
+    dayOffTitle: "Ruhetag",
+    bookingUnavailable: "Buchung nicht möglich",
+    dayOffMessage: "Heute ist Ihr freier Tag.",
+    configureSchedule: "Zeitplan konfigurieren",
+    bookingPage: "Unternehmensseite",
+    bookingPageText: "Kundenlink und Online-Buchungsschalter.",
+    onlineBookingOn: "Online-Buchung ist aktiviert",
+    onlineBookingOff: "Online-Buchung ist deaktiviert",
+    openPage: "Seite öffnen",
+    sharePage: "Teilen",
+    supportTitle: "Timviz-Support",
+    supportGuideTitle: "Schreiben Sie an den Support",
+    supportGuideText: "Beschreiben Sie, was Sie tun, wo das Problem aufgetreten ist und was passieren sollte.",
+    supportGreeting: "Hallo! Fragen Sie uns nach der Website, Buchungen, Einstellungen oder Zahlungen. Wir helfen.",
+    supportPlaceholder: "Schreiben Sie Ihre Frage in einer Nachricht ...",
+    supportSend: "",
+    supportSent: "-Nachricht senden.",
+    supportFailed: "Die Nachricht konnte nicht gesendet werden.",
+    notificationPendingBookings: "Ausstehende Online-Buchungen",
+    notificationsNew: "Neu",
+    notificationsArchive: "Archiv",
+    notificationEmpty: "Es gibt noch keine neuen Updates.",
+    statusPending: "Ausstehend",
+    statusConfirmed: "Bestätigt",
+    statusCancelled: "Abgebrochen",
+    myProfile: "Mein Profil",
+    personalSettings: "Persönliche Einstellungen",
+    helpSupport: "Hilfe und Support",
+    language: "Sprache",
+    compact: "Kompakt",
+    dayView: "Tag",
+    detailed: "Detailliert",
+    threeDays: "3 Tage",
+    weekView: "Woche",
+    monthView: "Monat",
+    selected: "Ausgewählte",
+    visits: "Besuche",
+    closedBySchedule: "Geschlossen",
+    ready: "Fertig",
+    reminders: "Benachrichtigungen",
+    addVisit: "Buchung hinzufügen",
+    customer: "Kunde",
+    service: "Service",
+    start: "Start",
+    end: "Ende",
+    save: "Speichern",
+    cancel: "Abbrechen",
+    noAppointments: "Für diesen Tag liegen noch keine Buchungen vor.",
+    recent: "Letzte Buchungen",
+    addService: "Service hinzufügen",
+    yourServices: "Ihre Services",
+    ownService: "Individueller Service",
+    generalCatalog: "Globaler Katalog",
+    serviceName: "Servicename",
+    category: "Kategorie",
+    newCategory: "Neue Kategorie",
+    selectedCategory: "Ausgewählte Kategorie",
+    editService: "Dienst bearbeiten",
+    saveService: "Dienst speichern",
+    addFromCatalog: "Aus Katalog hinzufügen",
+    alreadyAdded: "In Ihren Diensten",
+    catalogHint: "Wählen Sie einen vorgefertigten Dienst aus dem globalen Timviz-Katalog.",
+    myServicesHint: "Diese Dienste stehen Kunden zur Buchung zur Verfügung. Tippen Sie auf einen Dienst, um Preis oder Dauer zu ändern.",
+    price: "Preis",
+    duration: "Minuten",
+    delete: "Löschen",
+    addClient: "Client hinzufügen",
+    connected: "Verbunden",
+    notConnected: "Nicht verbunden",
+    telegramHint: "Die Telegrammverbindung wird in den Arbeitsbereichseinstellungen verwaltet. Die App zeigt den aktuellen Status an.",
+    onlineBooking: "Online-Buchung",
+    address: "Adresse",
+    publicPage: "Buchungsseite",
+    settingsSaved: "Änderungen gespeichert",
+    settingsSaveError: "Einstellungen konnten nicht gespeichert werden.",
+    premiumSubscription: "Premium-Abonnement",
+    premiumSubscriptionTitle: "Timviz Premium",
+    premiumSubscriptionActive: "Premium aktiv",
+    premiumSubscriptionTrial: "Testzeitraum",
+    premiumSubscriptionFree: "Free",
+    premiumSubscriptionText: "Das App Store-Abonnement schaltet Premium in der App und auf der Timviz-Website frei.",
+    premiumMonthly: "Premium monatlich",
+    premiumYearly: "Premium jährlich",
+    premiumMonthlyFallback: "3 $ / Monat",
+    premiumYearlyFallback: "29 $ / Jahr",
+    premiumStartMonthly: "Monatlich starten",
+    premiumStartYearly: "Jährlich starten",
+    premiumRestore: "Kauf wiederherstellen",
+    premiumManage: "Das Abonnement im App Store verwalten.",
+    premiumReady: "Premium aktualisiert.",
+    premiumUnavailable: "Käufe sind in TestFlight oder im App-Store-Build verfügbar.",
+    premiumMissingConfig: "RevenueCat und die App-Store-Produkte müssen eingerichtet werden.",
+    premiumPurchaseCancelled: "Kauf storniert.",
+    premiumSyncFailed: "Das Abonnement konnte nicht synchronisiert werden.",
+    settingsGeneral: "Allgemein",
+    settingsOnline: "Online-Buchung",
+    settingsServices: "Dienste",
+    settingsSchedule: "Zeitplan",
+    settingsTelegram: "Telegramm",
+    settingsAddress: "Adresse",
+    profileAndBusiness: "Profil und Unternehmen",
+    ownerContacts: "Inhaberkontakte",
+    avatarLink: "Master-Avatar",
+    avatarHint: "Das Foto erscheint im Kalender, auf der Masterkarte und im oberen Menü.",
+    changeAvatar: "Avatar ändern",
+    deleteAvatar: "Avatar löschen",
+    avatarPermission: "Fotozugriff erlauben, um den Avatar zu ändern.",
+    newPassword: "Neues Passwort",
+    leaveBlankPassword: "leer lassen, wenn unverändert",
+    businessFormat: "Name und Format",
+    website: "Website",
+    accountType: "Kontotyp",
+    soloAccount: "Ich arbeite alleine",
+    teamAccount: "Team",
+    serviceMode: "Arbeitsformat",
+    categoriesText: "Kategorien",
+    categoriesHint: "Komma getrennt",
+    localization: "Land, Sprache und Währung",
+    country: "Land",
+    timezone: "Zeitzone",
+    currency: "Währung",
+    saveSettings: "Einstellungen speichern",
+    publicLink: "Öffentlicher Link",
+    copyLink: "Kopieren",
+    manageServices: "Dienste verwalten",
+    manageSchedule: "Zeitplan verwalten",
+    joinRequests: "Beitrittsanfragen",
+    noJoinRequests: "Es liegen noch keine neuen Anfragen vor.",
+    approve: "Genehmigen",
+    reject: "Ablehnen",
+    businessPhotos: "Geschäftsfotos",
+    photosHint: "Die ersten Fotos erscheinen auf der Online-Buchungsseite.",
+    streetAddress: "Adresse",
+    addressDetails: "Adressdetails",
+    mapCoordinates: "Koordinaten werden von der Website gespeichert; Die App bearbeitet die Textadresse.",
+    ownerOnlyHint: "Nur der Kontoinhaber kann die Geschäftseinstellungen ändern.",
+    launchChecklist: "Start-Checkliste",
+    profileReady: "Profil bereit",
+    completedSteps: "abgeschlossen",
+    photoUrl: "Fotolink",
+    photoCaption: "Bildunterschrift",
+    addPhotoUrl: "Foto per Link hinzufügen",
+    addPhoto: "Foto hinzufügen",
+    uploadPhoto: "Foto hochladen",
+    makePrimary: "Als primär festlegen",
+    primaryPhoto: "Hauptfoto",
+    addressSearch: "Adresse auf der Karte finden",
+    addressPlaceholder: "Beginnen Sie mit der Eingabe einer echten Adresse",
+    searchingAddress: "Adresse suchen...",
+    selectAddress: "Adresse wählen",
+    selectedAddress: "Ausgewählte Adresse",
+    streetHouse: "Haus, Straße",
+    city: "Stadt",
+    region: "Region",
+    postcode: "Postleitzahl",
+    openMap: "Karte öffnen",
+    telegramConnectButton: "Bot verbinden",
+    telegramOpenBot: "Bot öffnen",
+    telegramCopyLink: "Link kopieren",
+    telegramRefreshLink: "Link aktualisieren",
+    telegramTokenExpires: "Link aktiv bis",
+    telegramSectionNotifications: "Benachrichtigungen",
+    telegramSectionReminders: "Erinnerungen",
+    telegramSectionSupport: "Support",
+    telegramNotificationsHint: "Wählen Sie, welche Ereignisse der Bot ausführen soll an Telegram senden.",
+    telegramOnlineBookings: "Neue Online-Buchungen",
+    telegramCabinetBookings: "Neue Arbeitsplatzbuchungen",
+    telegramRescheduled: "Buchungszeit geändert",
+    telegramCancelled: "Buchung storniert",
+    telegramRemindersHint: "Erinnerungen helfen Ihnen, bevorstehende Besuche nicht zu verpassen.",
+    telegramReminders: "Erinnerung vor der Buchung",
+    telegramToday: "Heute-Zusammenfassung",
+    telegramReminderLead: "Erinnerungszeit",
+    telegramSupportHint: "Kunden- und Supportfragen können direkt in Telegram eingehen.",
+    telegramForwarding: "Leiten Sie den Support an Telegram weiter",
+    telegramSaved: "Telegramm aktualisiert",
+    telegramSaveFailed: "Telegramm konnte nicht aktualisiert werden.",
+    minutesBefore: "min vorher",
+    hoursBefore: "h vorher",
+    dayBefore: "einen Tag vorher",
+    minutesShort: "min",
+    defaultServiceCategory: "Nicht kategorisiert",
+    serviceModeOnsite: "Kunden kommen zu mir vor Ort",
+    serviceModeTravel: "Ich reise zu Kunden",
+    serviceModeOnline: "Ich biete Dienstleistungen online an",
+    calendarHeaderTitle: "Kalender",
+    loadWorkspaceFailed: "Der Arbeitsbereich konnte nicht geladen werden.",
+    empty: "Vorerst leer",
+    emptyCalendarTitle: "Noch keine Buchungen",
+    emptyCalendarText: "Tippen Sie auf +, um den ersten Besuch hinzuzufügen",
+    noBookingsToday: "Keine Termine heute",
+    noBookingsTodaySpark: "Keine Termine heute ✨",
+    fillFreeWindowsText: "Es ist ein guter Zeitpunkt, Ihre offenen Plätze zu besetzen.",
+    noBookingsThisDay: "Keine Buchungen für diesen Tag",
+    calendarNoServicesText: "Fügen Sie Ihren ersten Service hinzu, um mit der Annahme von Kunden zu beginnen.",
+    calendarEmptyActionText: "Fügen Sie Ihren ersten Besuch hinzu oder richten Sie Dienste für die Online-Buchung ein.",
+    createBooking: "Buchung erstellen",
+    createAppointmentButton: "+ Termin erstellen",
+    firstRunCalendarTitle: "Mit einem Dienst beginnen",
+    firstRunCalendarText: "Fügen Sie einen Dienst hinzu, um Buchungen schneller zu erstellen und Online-Buchungen zu öffnen.",
+    addFirstVisit: "Erstbesuch hinzufügen",
+    quickVisit: "Schnellbuchung",
+    createVisitWithoutService: "Buchung ohne Leistung erstellen",
+    onboardingStartTitle: "Zum Einstieg 👋",
+    onboardingStartText: "Sie haben noch keine Leistungen.\n\nFügen Sie Ihren ersten Service hinzu, um mit der Annahme von Kundenterminen zu beginnen.",
+    firstAppointmentCreated: "🎉 Erster Termin erstellt",
+    addServiceFirstTitle: "Zuerst einen Dienst hinzufügen",
+    addServiceFirstText: "Sie haben noch keine Dienste. Fügen Sie Ihren ersten Service hinzu oder erstellen Sie eine Schnellbuchung ohne Service.",
+    servicesEmptyPickerTitle: "Noch keine Leistungen",
+    servicesEmptyPickerText: "Fügen Sie Ihre erste Leistung hinzu oder erstellen Sie eine Buchung ohne Leistung.",
+    createServiceAction: "Dienst erstellen",
+    bookingWithoutService: "Buchen ohne Dienst",
+    firstServiceTitle: "Fügen Sie Ihren ersten Dienst hinzu",
+    firstServiceText: "Dienste helfen Ihnen beim Erstellen von Buchungen und beim Öffnen von Online-Buchungen für Kunden.",
+    chooseFromCatalog: "Wählen Sie aus dem Katalog",
+    createOwnService: "Erstellen Sie einen benutzerdefinierten Service",
+    servicesMineShort: "Meine",
+    servicesCreateShort: "Erstellen",
+    servicesCatalogShort: "Katalog",
+    serviceSuggestionManicure: "Maniküre",
+    serviceSuggestionHaircut: "Haarschnitt",
+    serviceSuggestionConsultation: "Beratung",
+    clientsEmptyTitle: "Noch keine Kunden",
+    clientsEmptyText: "Ein Kunde erscheint nach der ersten Buchung, oder Sie können manuell einen hinzufügen.",
+    setupRemaining: "{count} Schritte übrig",
+    setupFirstServiceText: "Fügen Sie zuerst Dienste hinzu – dies ermöglicht schnellere Buchungen und Online-Buchungen.",
+  },
+} satisfies Record<Exclude<AppLanguage, "uk" | "ru" | "en">, Partial<Record<keyof typeof baseCopy.en, string>> & Record<string, string>>;
+
+Object.assign(generatedMobileCopy.fr, {
+  companyName: "Nom de l'entreprise",
+  visitTab: "Visite",
+  newClientFormHint: "Ajoutez les détails et le client sera sélectionné pour cette visite.",
+  formOpened: "Le formulaire est ouvert ci-dessous",
+  continueWithGoogle: "Continuer avec Google",
+  continueWithApple: "Continuer avec Apple",
+  socialAuthDivider: "ou",
+  socialAuthConfigMissing: "Les clés de connexion doivent être configurées.",
+  socialAuthFailed: "Connexion impossible.",
+  enableBiometricTitle: "Activer Face ID ?",
+  enableBiometricText: "La prochaine fois, vous pourrez ouvrir Timviz avec Face ID ou le code de l'appareil.",
+  enableBiometricAction: "Activer",
+  notNow: "Pas maintenant",
+  unlockWithFaceId: "Se connecter avec Face ID",
+  unlockWithBiometrics: "Connexion rapide",
+  useDevicePasscode: "Code de l'appareil",
+  biometricUnavailable: "Face ID ou Touch ID n'est pas disponible sur cet appareil.",
+});
+
+Object.assign(generatedMobileCopy.pl, {
+  continueWithGoogle: "Kontynuuj z Google",
+  continueWithApple: "Kontynuuj z Apple",
+  socialAuthDivider: "lub",
+  socialAuthConfigMissing: "Trzeba skonfigurować klucze logowania.",
+  socialAuthFailed: "Nie udało się zalogować.",
+  enableBiometricTitle: "Włączyć Face ID?",
+  enableBiometricText: "Następnym razem otworzysz Timviz szybko przez Face ID lub kod urządzenia.",
+  enableBiometricAction: "Włącz",
+  notNow: "Nie teraz",
+  unlockWithFaceId: "Zaloguj przez Face ID",
+  unlockWithBiometrics: "Szybkie logowanie",
+  useDevicePasscode: "Kod urządzenia",
+  biometricUnavailable: "Face ID lub Touch ID nie jest dostępne na tym urządzeniu.",
+});
+
+Object.assign(generatedMobileCopy.cs, {
+  continueWithGoogle: "Pokračovat přes Google",
+  continueWithApple: "Pokračovat přes Apple",
+  socialAuthDivider: "nebo",
+  socialAuthConfigMissing: "Je třeba nastavit přihlašovací klíče.",
+  socialAuthFailed: "Přihlášení se nezdařilo.",
+  enableBiometricTitle: "Zapnout Face ID?",
+  enableBiometricText: "Příště můžete Timviz rychle otevřít pomocí Face ID nebo kódu zařízení.",
+  enableBiometricAction: "Zapnout",
+  notNow: "Teď ne",
+  unlockWithFaceId: "Přihlásit přes Face ID",
+  unlockWithBiometrics: "Rychlé přihlášení",
+  useDevicePasscode: "Kód zařízení",
+  biometricUnavailable: "Face ID nebo Touch ID není na tomto zařízení dostupné.",
+});
+
+Object.assign(generatedMobileCopy.es, {
+  continueWithGoogle: "Continuar con Google",
+  continueWithApple: "Continuar con Apple",
+  socialAuthDivider: "o",
+  socialAuthConfigMissing: "Hay que configurar las claves de inicio de sesión.",
+  socialAuthFailed: "No se pudo iniciar sesión.",
+  enableBiometricTitle: "¿Activar Face ID?",
+  enableBiometricText: "La próxima vez podrás abrir Timviz con Face ID o el código del dispositivo.",
+  enableBiometricAction: "Activar",
+  notNow: "Ahora no",
+  unlockWithFaceId: "Entrar con Face ID",
+  unlockWithBiometrics: "Inicio rápido",
+  useDevicePasscode: "Código del dispositivo",
+  biometricUnavailable: "Face ID o Touch ID no está disponible en este dispositivo.",
+});
+
+Object.assign(generatedMobileCopy.de, {
+  continueWithGoogle: "Mit Google fortfahren",
+  continueWithApple: "Mit Apple fortfahren",
+  socialAuthDivider: "oder",
+  socialAuthConfigMissing: "Anmeldeschlüssel müssen konfiguriert werden.",
+  socialAuthFailed: "Anmeldung fehlgeschlagen.",
+  enableBiometricTitle: "Face ID aktivieren?",
+  enableBiometricText: "Beim nächsten Mal können Sie Timviz schnell mit Face ID oder Gerätecode öffnen.",
+  enableBiometricAction: "Aktivieren",
+  notNow: "Nicht jetzt",
+  unlockWithFaceId: "Mit Face ID anmelden",
+  unlockWithBiometrics: "Schnelle Anmeldung",
+  useDevicePasscode: "Gerätecode",
+  biometricUnavailable: "Face ID oder Touch ID ist auf diesem Gerät nicht verfügbar.",
+});
+
+const copy = {
+  uk: baseCopy.uk,
+  ru: baseCopy.ru,
+  en: baseCopy.en,
+  fr: { ...baseCopy.en, ...generatedMobileCopy.fr },
+  pl: { ...baseCopy.en, ...generatedMobileCopy.pl },
+  cs: { ...baseCopy.en, ...generatedMobileCopy.cs },
+  es: { ...baseCopy.en, ...generatedMobileCopy.es },
+  de: { ...baseCopy.en, ...generatedMobileCopy.de },
+} satisfies Record<AppLanguage, Record<keyof typeof baseCopy.en, string>>;
 
 function detectLanguage(): AppLanguage {
-  const languageCode = Localization.getLocales()[0]?.languageCode?.toLowerCase();
-  if (languageCode === "ru") return "ru";
-  if (languageCode === "uk") return "uk";
+  const locale = Localization.getLocales()[0];
+  const candidates = [
+    locale?.languageCode,
+    locale?.languageTag,
+    locale?.regionCode,
+  ]
+    .filter(Boolean)
+    .map((value) => String(value).toLowerCase());
+  if (candidates.some((value) => value.startsWith("uk") || value === "ua")) return "uk";
+  if (candidates.some((value) => value.startsWith("ru"))) return "ru";
+  if (candidates.some((value) => value.startsWith("fr"))) return "fr";
+  if (candidates.some((value) => value.startsWith("pl"))) return "pl";
+  if (candidates.some((value) => value.startsWith("cs") || value.startsWith("cz"))) return "cs";
+  if (candidates.some((value) => value.startsWith("es"))) return "es";
+  if (candidates.some((value) => value.startsWith("de"))) return "de";
   return "en";
 }
 
+function normalizeAppLanguage(value: unknown): AppLanguage | null {
+  const normalized = String(value || "").trim().toLowerCase();
+  if (!normalized) return null;
+  if (normalized.startsWith("uk") || normalized.includes("ua") || normalized.includes("укра")) return "uk";
+  if (normalized.startsWith("ru") || normalized.includes("рус")) return "ru";
+  if (normalized.startsWith("fr") || normalized.includes("fran")) return "fr";
+  if (normalized.startsWith("pl") || normalized.includes("pol")) return "pl";
+  if (normalized.startsWith("cs") || normalized.startsWith("cz") || normalized.includes("czech")) return "cs";
+  if (normalized.startsWith("es") || normalized.includes("span")) return "es";
+  if (normalized.startsWith("de") || normalized.includes("german") || normalized.includes("deut")) return "de";
+  if (normalized.startsWith("en") || normalized.includes("english")) return "en";
+  return null;
+}
+
 function localeForLanguage(language: AppLanguage) {
-  return language === "en" ? "en-US" : language === "uk" ? "uk-UA" : "ru-RU";
+  const locales: Record<AppLanguage, string> = {
+    uk: "uk-UA",
+    ru: "ru-RU",
+    en: "en-US",
+    fr: "fr-FR",
+    pl: "pl-PL",
+    cs: "cs-CZ",
+    es: "es-ES",
+    de: "de-DE",
+  };
+  return locales[language];
 }
 
 const COUNTRY_LABELS: Record<AppLanguage, Record<string, string>> = {
@@ -1555,6 +3913,11 @@ const COUNTRY_LABELS: Record<AppLanguage, Record<string, string>> = {
     International: "Международный",
   },
   en: {},
+  fr: {},
+  pl: {},
+  cs: {},
+  es: {},
+  de: {},
 };
 
 const SERVICE_CATEGORY_LABELS: Record<AppLanguage, Record<string, string>> = {
@@ -1589,7 +3952,260 @@ const SERVICE_CATEGORY_LABELS: Record<AppLanguage, Record<string, string>> = {
     "Физиотерапия": "Physiotherapy",
     "Другая": "Other",
   },
+  fr: {
+    "Парикмахерская": "Salon de coiffure",
+    "Ногти": "Ongles",
+    "Брови и ресницы": "Sourcils et cils",
+    "Салон красоты": "Institut de beauté",
+    "Медспа": "Medspa",
+    "Парикмахер": "Coiffeur",
+    "Массажный салон": "Salon de massage",
+    "Спа-салон и сауна": "Spa et sauna",
+    "Салон депиляции": "Salon d'épilation",
+    "Тату и пирсинг": "Tatouage et piercing",
+    "Студия загара": "Studio de bronzage",
+    "Физиотерапия": "Kinésithérapie",
+    "Другая": "Autre",
+  },
+  pl: {
+    "Парикмахерская": "Salon fryzjerski",
+    "Ногти": "Paznokcie",
+    "Брови и ресницы": "Brwi i rzęsy",
+    "Салон красоты": "Salon beauty",
+    "Медспа": "Medspa",
+    "Парикмахер": "Fryzjer",
+    "Массажный салон": "Gabinet masażu",
+    "Спа-салон и сауна": "Spa i sauna",
+    "Салон депиляции": "Salon depilacji",
+    "Тату и пирсинг": "Tatuaż i piercing",
+    "Студия загара": "Studio opalania",
+    "Физиотерапия": "Fizjoterapia",
+    "Другая": "Inne",
+  },
+  cs: {
+    "Парикмахерская": "Kadeřnictví",
+    "Ногти": "Nehty",
+    "Брови и ресницы": "Obočí a řasy",
+    "Салон красоты": "Kosmetický salon",
+    "Медспа": "Medspa",
+    "Парикмахер": "Kadeřník",
+    "Массажный салон": "Masážní salon",
+    "Спа-салон и сауна": "Spa a sauna",
+    "Салон депиляции": "Depilační salon",
+    "Тату и пирсинг": "Tetování a piercing",
+    "Студия загара": "Solární studio",
+    "Физиотерапия": "Fyzioterapie",
+    "Другая": "Jiné",
+  },
+  es: {
+    "Парикмахерская": "Peluquería",
+    "Ногти": "Uñas",
+    "Брови и ресницы": "Cejas y pestañas",
+    "Салон красоты": "Salón de belleza",
+    "Медспа": "Medspa",
+    "Парикмахер": "Peluquero",
+    "Массажный салон": "Centro de masajes",
+    "Спа-салон и сауна": "Spa y sauna",
+    "Салон депиляции": "Centro de depilación",
+    "Тату и пирсинг": "Tatuajes y piercing",
+    "Студия загара": "Centro de bronceado",
+    "Физиотерапия": "Fisioterapia",
+    "Другая": "Otra",
+  },
+  de: {
+    "Парикмахерская": "Friseursalon",
+    "Ногти": "Nägel",
+    "Брови и ресницы": "Augenbrauen und Wimpern",
+    "Салон красоты": "Kosmetikstudio",
+    "Медспа": "Medspa",
+    "Парикмахер": "Friseur",
+    "Массажный салон": "Massagestudio",
+    "Спа-салон и сауна": "Spa und Sauna",
+    "Салон депиляции": "Haarentfernungsstudio",
+    "Тату и пирсинг": "Tattoo und Piercing",
+    "Студия загара": "Sonnenstudio",
+    "Физиотерапия": "Physiotherapie",
+    "Другая": "Andere",
+  },
 };
+
+const MOBILE_SERVICE_TRANSLATION_EXTRAS: Record<string, Partial<Record<AppLanguage, string>>> = {
+  "Женская стрижка": { fr: "Coupe femme", pl: "Strzyżenie damskie", cs: "Dámský střih", es: "Corte de mujer", de: "Damenhaarschnitt" },
+  "Мужская стрижка": { fr: "Coupe homme", pl: "Strzyżenie męskie", cs: "Pánský střih", es: "Corte de hombre", de: "Herrenhaarschnitt" },
+  "Укладка волос": { fr: "Coiffure", pl: "Stylizacja włosów", cs: "Vlasový styling", es: "Peinado", de: "Haarstyling" },
+  "Сушка феном": { fr: "Brushing", pl: "Suszenie", cs: "Vyfoukejte", es: "Blow-dry", de: "Föhnen" },
+  "Детская стрижка": { fr: "Coupe enfant", pl: "Strzyżenie dziecięce", cs: "Dětský střih", es: "Corte infantil", de: "Kinderhaarschnitt" },
+  "Окрашивание волос": { fr: "Coloration cheveux", pl: "Koloryzacja włosów", cs: "Barvení vlasů", es: "Tinte", de: "Haarfärben" },
+  "Балаяж": { fr: "Balayage", pl: "Balayage", cs: "Balayage", es: "Balayage", de: "Balayage" },
+  "Тонирование волос": { fr: "Tonification cheveux", pl: "Tonizacja włosów", cs: "Tónování vlasů", es: "Tonificación", de: "Haartonung" },
+  "Подкрашивание корней": { fr: "Retouche racines", pl: "Retusz włosów", cs: "Kořenový retuš", es: "Retoque de raíces", de: "Ansatzausbesserung" },
+  "Мытье волос": { fr: "Lavage des cheveux", pl: "Mycie włosów", cs: "Mytí vlasů", es: "Lavado de cabello", de: "Haarwäsche" },
+  "Бритье головы": { fr: "Rasage de la tête", pl: "Golenie głowy", cs: "Holení hlavy", es: "Afeitado de cabeza", de: "Kopfrasur" },
+  "Маникюр": { fr: "Manucure", pl: "Manicure", cs: "Manikúra", es: "Manicura", de: "Maniküre" },
+  "Педикюр": { fr: "Pédicure", pl: "Pedicure", cs: "Pedikúra", es: "Pedicura", de: "Pediküre" },
+  "Гелевый маникюр": { fr: "Manucure gel", pl: "Manicure żelowy", cs: "Gelová manikúra", es: "Manicura de gel", de: "Gel-Maniküre" },
+  "Русский маникюр": { fr: "Manucure russe", pl: "Manicure rosyjski", cs: "Ruská manikúra", es: "Manicura rusa", de: "Russische Maniküre" },
+  "Мужской маникюр и педикюр": { fr: "Manucure et pédicure homme", pl: "Manicure i pedicure męski", cs: "Pánská manikúra a pedikúra", es: "Manicura y pedicura masculina", de: "Herrenmaniküre und Pediküre" },
+  "Акриловые ногти": { fr: "Ongles en acrylique", pl: "Paznokcie akrylowe", cs: "Akrylové nehty", es: "Uñas acrílicas", de: "Acrylnägel" },
+  "Дизайн ногтей": { fr: "Nail art", pl: "Stylizacja paznokci", cs: "Nail art", es: "Diseño de uñas", de: "Nageldesign" },
+  "Наращивание ногтей": { fr: "Extensions d’ongles", pl: "Przedłużanie paznokci", cs: "Prodloužení nehtů", es: "Extensiones de uñas", de: "Nagelverlängerung" },
+  "Ремонт ногтей": { fr: "Réparation d’ongle", pl: "Naprawa paznokcia", cs: "Oprava nehtu", es: "Reparación de uñas", de: "Nagelreparatur" },
+  "Маникюр и педикюр": { fr: "Manucure et pédicure", pl: "Manicure i pedicure", cs: "Manikúra & pedikúra", es: "Manicura y pedicura", de: "Maniküre und Pediküre" },
+  "Парафиновый маникюр": { fr: "Manucure à la paraffine", pl: "Manicure parafinowy", cs: "Parafínová manikúra", es: "Manicura con parafina", de: "Paraffin-Maniküre" },
+  "Медицинский педикюр": { fr: "Pédicure médicale", pl: "Pedicure medyczny", cs: "Lékařská pedikúra", es: "Pedicura médica", de: "Medizinische Pediküre" },
+  "Детский маникюр и педикюр": { fr: "Manucure et pédicure pour enfants", pl: "Manicure i pedicure dziecięcy", cs: "Dětská manikúra a pedikúra", es: "Manicura y pedicura para niños", de: "Kinder-Maniküre und Pediküre" },
+  "Коррекция формы бровей": { fr: "Mise en forme des sourcils", pl: "Kształtowanie brwi", cs: "Úprava obočí", es: "Modelado de cejas", de: "Augenbrauen formen" },
+  "Окрашивание бровей": { fr: "Teinture des sourcils", pl: "Laminacja brwi", cs: "Barvení obočí", es: "Tinte de cejas", de: "Augenbrauen färben" },
+  "Ламинирование бровей": { fr: "Stratification des sourcils", pl: "Laminowanie brwi", cs: "Laminace obočí", es: "Laminación de cejas", de: "Augenbrauenlaminierung" },
+  "Наращивание ресниц": { fr: "Extensions de cils", pl: "Przedłużanie rzęs", cs: "Prodlužování řas", es: "Extensiones de pestañas", de: "Wimpernverlängerung" },
+  "Ламинирование ресниц": { fr: "Rehaussement des cils", pl: "Lifting rzęs", cs: "Lash lift", es: "Levantamiento de pestañas", de: "Wimpernlifting" },
+  "Коррекция бровей нитью": { fr: "Filage des sourcils", pl: "Nitkowanie brwi", cs: "Navlékání obočí", es: "Depilación de cejas", de: "Augenbrauen einfädeln" },
+  "Восковая эпиляция бровей": { fr: "Épilation des sourcils", pl: "Depilacja brwi", cs: "Depilace obočí", es: "Depilación de cejas", de: "Augenbrauen wachsen" },
+  "Микропигментация бровей": { fr: "Micropigmentation des sourcils", pl: "Mikropigmentacja brwi", cs: "Mikropigmentace obočí", es: "Micropigmentación de cejas", de: "Augenbrauen-Mikropigmentierung" },
+  "Перманентный макияж бровей": { fr: "Maquillage permanent des sourcils", pl: "Makijaż permanentny brwi", cs: "Permanentní make-up obočí", es: "Maquillaje permanente de cejas", de: "Permanentes Augenbrauen-Make-up" },
+  "Коррекция ресниц": { fr: "Correction des cils", pl: "Korekta rzęs", cs: "Korekce řas", es: "Corrección de pestañas", de: "Wimpernkorrektur" },
+  "Подтяжка ресниц": { fr: "Traitement lifting des cils", pl: "Zabieg liftingu rzęs", cs: "Lish lift ošetření", es: "Tratamiento de levantamiento de pestañas", de: "Wimpernlifting-Behandlung" },
+  "Удаление ресниц": { fr: "Élimination des cils", pl: "Depilacja rzęs", cs: "Odstranění řas", es: "Eliminación de pestañas", de: "Wimpernentfernung" },
+  "Окрашивание ресниц": { fr: "Teinture de cils", pl: "Laminacja rzęs", cs: "Barvení řas", es: "Tinte de pestañas", de: "Wimpern färben" },
+  "Уход за лицом": { fr: "Soin du visage", pl: "Zabieg na twarz", cs: "Ošetření obličeje", es: "Tratamiento facial", de: "Gesichtsbehandlung" },
+  "Пилинг для лица": { fr: "Peeling du visage", pl: "Peeling twarzy", cs: "Peeling na obličej", es: "Peeling facial", de: "Gesichtspeeling" },
+  "Спа-процедура для лица": { fr: "Soin spa du visage", pl: "Zabieg SPA na twarz", cs: "Lázeňské ošetření obličeje", es: "Tratamiento spa facial", de: "Gesichts-Spa-Behandlung" },
+  "Консультация по эстетической медицине": { fr: "Consultation de médecine esthétique", pl: "Konsultacja medycyny estetycznej", cs: "Konzultace estetické medicíny", es: "Consulta de medicina estética", de: "Ästhetische Medizinberatung" },
+  "Омоложение лица": { fr: "Rajeunissement du visage", pl: "Odmładzanie twarzy", cs: "Omlazení obličeje", es: "Rejuvenecimiento facial", de: "Gesichtsverjüngung" },
+  "Химический пилинг": { fr: "Peeling chimique", pl: "Peeling chemiczny", cs: "Chemický peeling", es: "Peeling químico", de: "Chemisches Peeling" },
+  "Мезотерапия": { fr: "Mésothérapie", pl: "Mezoterapia", cs: "Mezoterapie", es: "Mesoterapia", de: "Mesotherapie" },
+  "Дарсонваль": { fr: "Thérapie Darsonval", pl: "Terapia darsonvalowa", cs: "Darsonvalová terapie", es: "Terapia Darsonval", de: "Darsonval-Therapie" },
+  "Микродермабразия": { fr: "Microdermabrasion", pl: "Mikrodermabrazja", cs: "Mikrodermabraze", es: "Microdermoabrasión", de: "Mikrodermabrasion" },
+  "Безоперационная подтяжка лица": { fr: "Lifting non chirurgical", pl: "Niechirurgiczny lifting twarzy", cs: "Nechirurgický facelift", es: "Lifting facial no quirúrgico", de: "Nicht-chirurgisches Facelift" },
+  "Подтяжка лица": { fr: "Lifting", pl: "Lifting twarzy", cs: "Facelift", es: "Lifting facial", de: "Facelift" },
+  "Подтяжка шеи": { fr: "Lifting du cou", pl: "Lifting szyi", cs: "Zvednutí krku", es: "Lifting de cuello", de: "Halsstraffung" },
+  "Коррекция фигуры": { fr: "Contour du corps", pl: "Konturowanie ciała", cs: "Tvarování těla", es: "Contorno corporal", de: "Körperformung" },
+  "Ультразвуковая кавитация": { fr: "Cavitation par ultrasons", pl: "Kawitacja ultradźwiękowa", cs: "Ultrazvuková kavitace", es: "Cavitación ultrasónica", de: "Ultraschallkavitation" },
+  "Карбокситерапия": { fr: "Carboxythérapie", pl: "Karboksyterapia", cs: "Karboxyterapie", es: "Carboxiterapia", de: "Carboxytherapie" },
+  "Стрижка под машинку": { fr: "Coupe de cheveux à la tondeuse", pl: "Strzyżenie maszynką", cs: "Clipper účes", es: "Corte de pelo con maquinilla", de: "Haarschneidemaschine" },
+  "Стрижка и борода": { fr: "Coupe de cheveux et barbe", pl: "Strzyżenie i broda", cs: "Střih a vousy", es: "Corte de pelo y barba", de: "Haarschnitt und Bart" },
+  "Уход за бородой": { fr: "Entretien de la barbe", pl: "Pielęgnacja brody", cs: "Úprava vousů", es: "Aseo de barba", de: "Bartpflege" },
+  "Формирование бороды": { fr: "Mise en forme de la barbe", pl: "Kształtowanie brody", cs: "Tvarování vousů", es: "Modelado de barba", de: "Bartformung" },
+  "Бритье бороды": { fr: "Rasage de la barbe", pl: "Golenie brody", cs: "Holení vousů", es: "Afeitado de barba", de: "Bartrasur" },
+  "Бритье опасной бритвой": { fr: "Rasage au rasoir droit", pl: "Golenie brzytwą", cs: "Rovné holení břitvou", es: "Afeitado con navaja de afeitar", de: "Rasieren mit dem Rasiermesser" },
+  "Бритье головы и стрижка бороды": { fr: "Rasage de la tête et taille de la barbe", pl: "Golenie głowy i przycinanie brody", cs: "Holení hlavy a zastřihování vousů", es: "Afeitado de cabeza y corte de barba", de: "Kopfrasur und Bartschneiden" },
+  "Подстригание усов": { fr: "Taille de la moustache", pl: "Strzyżenie wąsów", cs: "Úprava kníru", es: "Recorte de bigote", de: "Schnurrbartschneiden" },
+  "Окрашивание бороды": { fr: "Coloration de la barbe", pl: "Koloryzacja brody", cs: "Barvení vousů", es: "Coloración de barba", de: "Bartfärbung" },
+  "Скин Фейд": { fr: "Décoloration de la peau", pl: "Blaknięcie skóry", cs: "Kůže vybledne", es: "Desvanecimiento de la piel", de: "Hautausbleichung" },
+  "Классический массаж": { fr: "Massage classique", pl: "Masaż klasyczny", cs: "Klasická masáž", es: "Masaje clásico", de: "Klassische Massage" },
+  "Расслабляющий массаж": { fr: "Massage relaxant", pl: "Masaż relaksacyjny", cs: "Relaxační masáž", es: "Masaje relajante", de: "Entspannungsmassage" },
+  "Массаж спины": { fr: "Massage du dos", pl: "Masaż pleców", cs: "Masáž zad", es: "Masaje de espalda", de: "Rückenmassage" },
+  "Массаж всего тела": { fr: "Massage complet du corps", pl: "Masaż całego ciała", cs: "Masáž celého těla", es: "Masaje de cuerpo completo", de: "Ganzkörpermassage" },
+  "Лечебный массаж": { fr: "Massage thérapeutique", pl: "Masaż leczniczy", cs: "Terapeutická masáž", es: "Masaje terapéutico", de: "Therapeutische Massage" },
+  "Антицеллюлитный массаж": { fr: "Massage anti-cellulite", pl: "Masaż antycellulitowy", cs: "Anticelulitidní masáž", es: "Masaje anticelulítico", de: "Anti-Cellulite-Massage" },
+  "Глубокотканный массаж": { fr: "Massage des tissus profonds", pl: "Masaż tkanek głębokich", cs: "Masáž hlubokých tkání", es: "Masaje de tejido profundo", de: "Tiefengewebsmassage" },
+  "Лимфатический массаж": { fr: "Massage lymphatique", pl: "Masaż limfatyczny", cs: "Lymfatická masáž", es: "Masaje linfático", de: "Lymphmassage" },
+  "Массаж лица": { fr: "Massage du visage", pl: "Masaż twarzy", cs: "Masáž obličeje", es: "Masaje facial", de: "Gesichtsmassage" },
+  "Массаж горячими камнями": { fr: "Massage aux pierres chaudes", pl: "Masaż gorącymi kamieniami", cs: "Masáž lávovými kameny", es: "Masaje con piedras calientes", de: "Hot-Stone-Massage" },
+  "Спортивный массаж": { fr: "Massage sportif", pl: "Masaż sportowy", cs: "Sportovní masáž", es: "Masaje deportivo", de: "Sportmassage" },
+  "Тайский массаж": { fr: "Massage thaïlandais", pl: "Masaż tajski", cs: "Thajská masáž", es: "Masaje tailandés", de: "Thai-Massage" },
+  "Сауна": { fr: "Sauna", pl: "Sauna", cs: "Sauna", es: "Sauna", de: "Sauna" },
+  "Скраб для тела": { fr: "Gommage corporel", pl: "Peeling ciała", cs: "Tělový peeling", es: "Exfoliante corporal", de: "Körperpeeling" },
+  "Спа-салон для пар": { fr: "Séance spa en couple", pl: "Sesja spa dla par", cs: "Párové lázeňské sezení", es: "Sesión de spa para parejas", de: "Spa-Sitzung für Paare" },
+  "Комната для медитации": { fr: "Salle de méditation", pl: "Pokój medytacyjny", cs: "Meditační místnost", es: "Sala de meditación", de: "Meditationsraum" },
+  "Автозагар": { fr: "Spray bronzage", pl: "Opalenizna natryskowa", cs: "Opálení ve spreji", es: "Bronceado en spray", de: "Spray Tan" },
+  "Автозагар с помощью аэрографа": { fr: "Spray bronzage à l'aérographe", pl: "Opalenizna natryskowa aerografem", cs: "Airbrush sprej opálení", es: "Bronceado en spray con aerógrafo", de: "Airbrush Spray Tan" },
+  "Солярий": { fr: "Lit de bronzage", pl: "Solarium", cs: "Solárium", es: "Cama de bronceado", de: "Solarium" },
+  "Соляная комната": { fr: "Salle de sel", pl: "Sala solna", cs: "Solná místnost", es: "Sala de sal", de: "Salzraum" },
+  "Коррекция контуров тела": { fr: "Correction du contour du corps", pl: "Korekcja konturu ciała", cs: "Korekce kontur těla", es: "Corrección del contorno corporal", de: "Körperkonturkorrektur" },
+  "Депиляция воском": { fr: "Épilation à la cire", pl: "Depilacja woskiem", cs: "Depilace voskem", es: "Depilación con cera", de: "Haarentfernung mit Wachs" },
+  "Лазерная эпиляция": { fr: "Épilation laser", pl: "Depilacja laserowa", cs: "Laserové odstranění chloupků", es: "Depilación láser", de: "Laser-Haarentfernung" },
+  "Удаление волос на лице": { fr: "Épilation du visage", pl: "Depilacja twarzy", cs: "Odstraňování chloupků na obličeji", es: "Depilación facial", de: "Gesichtshaarentfernung" },
+  "Депиляция подмышек воском": { fr: "Épilation des aisselles", pl: "Depilacja pach", cs: "Depilace podpaží", es: "Depilación de axilas", de: "Achselentfernung" },
+  "Депиляция зоны бикини": { fr: "Épilation du maillot", pl: "Depilacja okolic bikini", cs: "Depilace v oblasti bikin", es: "Depilación de bikini", de: "Bikini-Haarentfernung" },
+  "Депиляция ног воском": { fr: "Épilation des jambes", pl: "Depilacja nóg", cs: "Depilace nohou", es: "Depilación de piernas", de: "Beinentfernung" },
+  "Депиляция рук воском": { fr: "Épilation des bras", pl: "Depilacja ramion", cs: "Depilace paží", es: "Depilación de brazos", de: "Armentfernung" },
+  "Депиляция губ воском": { fr: "Épilation de la lèvre supérieure", pl: "Depilacja górnej wargi", cs: "Depilace horního rtu", es: "Depilación de labio superior", de: "Oberlippenentfernung" },
+  "Депиляция живота воском": { fr: "Épilation de l'abdomen", pl: "Depilacja brzucha", cs: "Depilace břicha", es: "Depilación de abdomen", de: "Bauchentfernung" },
+  "Депиляция спины воском": { fr: "Épilation du dos", pl: "Depilacja pleców", cs: "Depilace zad voskem", es: "Depilación de espalda", de: "Rückenentfernung" },
+  "IPL-эпиляция": { fr: "Épilation IPL", pl: "Depilacja IPL", cs: "IPL epilace", es: "Depilación IPL", de: "IPL-Haarentfernung" },
+  "Электролиз": { fr: "Électrolyse", pl: "Elektroliza", cs: "Elektrolýza", es: "Electrólisis", de: "Elektrolyse" },
+  "Резьба": { fr: "Filetage", pl: "Threading", cs: "Řezání závitů", es: "Roscado", de: "Threading" },
+  "Сеанс татуировки": { fr: "Séance de tatouage", pl: "Sesja tatuażu", cs: "Sezení tetování", es: "Sesión de tatuaje", de: "Tattoo-Sitzung" },
+  "Консультация по татуировкам": { fr: "Consultation de tatouage", pl: "Konsultacja tatuażu", cs: "Tetovací konzultace", es: "Consulta de tatuaje", de: "Tattoo-Beratung" },
+  "Пирсинг носа": { fr: "Perçage du nez", pl: "Przekłuwanie nosa", cs: "Piercing do nosu", es: "Perforación de nariz", de: "Nasenpiercing" },
+  "Прокалывание ушей": { fr: "Perçage des oreilles", pl: "Przekłuwanie uszu", cs: "Piercing do uší", es: "Perforación de oreja", de: "Ohrpiercing" },
+  "Пирсинг тела": { fr: "Perçage du corps", pl: "Przekłuwanie ciała", cs: "Body piercing", es: "Perforación corporal", de: "Körperpiercing" },
+  "Временные татуировки": { fr: "Tatouages temporaires", pl: "Tatuaże tymczasowe", cs: "Dočasná tetování", es: "Tatuajes temporales", de: "Temporäre Tattoos" },
+  "Удаление татуировок": { fr: "Détatouage", pl: "Usuwanie tatuażu", cs: "Odstranění tetování", es: "Eliminación de tatuajes", de: "Tattooentfernung" },
+  "Пирсинг пупка": { fr: "Perçage du nombril", pl: "Przekłuwanie pępka", cs: "Piercing do pupíku", es: "Perforación de ombligo", de: "Nabelpiercing" },
+  "Пирсинг языка": { fr: "Perçage de la langue", pl: "Przekłuwanie języka", cs: "Piercing do jazyka", es: "Perforación de lengua", de: "Zungenpiercing" },
+  "Пирсинг хряща": { fr: "Perçage du cartilage", pl: "Piercing chrząstki", cs: "Piercing do chrupavky", es: "Perforación de cartílago", de: "Knorpelpiercing" },
+  "Интимный пирсинг": { fr: "Piercing intime", pl: "Piercing intymny", cs: "Intimní piercing", es: "Piercing íntimo", de: "Intimpiercing" },
+  "Физиотерапия": { fr: "Physiothérapie", pl: "Fizjoterapia", cs: "Fyzioterapie", es: "Fisioterapia", de: "Physiotherapie" },
+  "Реабилитация": { fr: "Rééducation", pl: "Rehabilitacja", cs: "Rehabilitace", es: "Rehabilitación", de: "Rehabilitation" },
+  "Спортивная медицина": { fr: "Médecine du sport", pl: "Medycyna sportowa", cs: "Sportovní medicína", es: "Medicina deportiva", de: "Sportmedizin" },
+  "Магнитотерапия": { fr: "Magnétothérapie", pl: "Magnetoterapia", cs: "Magnetoterapie", es: "Magnetoterapia", de: "Magnetfeldtherapie" },
+  "Сухое иглоукалывание": { fr: "Aiguilles à sec", pl: "Suche igłowanie", cs: "Suché jehlování", es: "Punción seca", de: "Dry Needling" },
+  "Кинезитерапия": { fr: "Kinésithérapie", pl: "Kinezyterapia", cs: "Kineziterapie", es: "Cinesiterapia", de: "Kinesitherapie" },
+  "Терапия мягких тканей": { fr: "Thérapie des tissus mous", pl: "Terapia tkanek miękkich", cs: "Terapie měkkých tkání", es: "Terapia de tejidos blandos", de: "Weichteiltherapie" },
+  "Реабилитация позвоночника": { fr: "Rééducation de la colonne vertébrale", pl: "Rehabilitacja kręgosłupa", cs: "Rehabilitace páteře", es: "Rehabilitación de la columna", de: "Wirbelsäulenrehabilitation" },
+  "Лечение лимфедемы": { fr: "Traitement du lymphœdème", pl: "Leczenie obrzęku limfatycznego", cs: "Léčba lymfedému", es: "Tratamiento de linfedema", de: "Lymphödembehandlung" },
+  "Вакуумная терапия": { fr: "Thérapie sous vide", pl: "Terapia próżniowa", cs: "Vakuová terapie", es: "Terapia de vacío", de: "Vakuumtherapie" },
+  "Хиропрактика": { fr: "Soins chiropratiques", pl: "Chiropraktyka", cs: "Chiropraktická péče", es: "Atención quiropráctica", de: "Chiropraktische Pflege" },
+  "Консультация": { fr: "Consultation", pl: "Konsultacje", cs: "Konzultace", es: "Consulta", de: "Beratung" },
+  "Основная услуга": { fr: "Service de base", pl: "Usługa podstawowa", cs: "Základní služba", es: "Servicio principal", de: "Kerndienstleistung" },
+  "Повторный визит": { fr: "Visite de suivi", pl: "Wizyta kontrolna", cs: "Následná návštěva", es: "Visita de seguimiento", de: "Folgebesuch" },
+  "Пакет услуг": { fr: "Forfait services", pl: "Pakiet usług", cs: "Balíček služeb", es: "Paquete de servicios", de: "Servicepaket" },
+  "Индивидуальная услуга": { fr: "Service personnalisé", pl: "Usługa niestandardowa", cs: "Zákaznická služba", es: "Servicio personalizado", de: "Individueller Service" },
+  "Диагностика": { fr: "Diagnostic", pl: "Diagnostyka", cs: "Diagnostika", es: "Diagnóstico", de: "Diagnose" },
+};
+
+function normalizeMobileServiceLabel(value: unknown) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function hasCyrillicText(value: unknown) {
+  return /[\u0400-\u04FF]/.test(String(value || ""));
+}
+
+function isUsableServiceTranslation(value: unknown, language: AppLanguage) {
+  const text = String(value || "").trim();
+  if (!text) return false;
+  return language === "ru" || language === "uk" || !hasCyrillicText(text);
+}
+
+const MOBILE_SERVICE_TRANSLATION_INDEX = new Map<string, Partial<Record<AppLanguage, string>>>();
+
+Object.assign(MOBILE_SERVICE_TRANSLATION_EXTRAS["Коррекция формы бровей"] || {}, { pl: "Regulacja brwi" });
+Object.assign(MOBILE_SERVICE_TRANSLATION_EXTRAS["Окрашивание бровей"] || {}, { pl: "Farbowanie brwi" });
+Object.assign(MOBILE_SERVICE_TRANSLATION_EXTRAS["Ламинирование бровей"] || {}, { pl: "Laminacja brwi" });
+Object.assign(MOBILE_SERVICE_TRANSLATION_EXTRAS["Окрашивание ресниц"] || {}, { pl: "Farbowanie rzęs" });
+Object.assign(MOBILE_SERVICE_TRANSLATION_EXTRAS["Ламинирование ресниц"] || {}, { pl: "Laminacja rzęs" });
+Object.assign(MOBILE_SERVICE_TRANSLATION_EXTRAS["Скин Фейд"] || {}, {
+  fr: "Dégradé à blanc",
+  pl: "Skin fade",
+  cs: "Skin fade",
+  es: "Degradado skin fade",
+  de: "Skin Fade",
+});
+
+for (const [sourceName, translations] of Object.entries(MOBILE_SERVICE_TRANSLATION_EXTRAS)) {
+  MOBILE_SERVICE_TRANSLATION_INDEX.set(normalizeMobileServiceLabel(sourceName), translations);
+  for (const translation of Object.values(translations)) {
+    const key = normalizeMobileServiceLabel(translation);
+    if (key) MOBILE_SERVICE_TRANSLATION_INDEX.set(key, translations);
+  }
+}
+
+function getServiceFallbackTranslation(service: Pick<ServiceRecord | ServiceTemplateRecord, "name" | "localizedName"> | undefined, language: AppLanguage) {
+  const candidates = [
+    service?.name,
+    ...SUPPORTED_APP_LANGUAGES.map((item) => service?.localizedName?.[item]),
+  ]
+    .map(normalizeMobileServiceLabel)
+    .filter(Boolean);
+  for (const candidate of candidates) {
+    const translated = MOBILE_SERVICE_TRANSLATION_INDEX.get(candidate)?.[language];
+    if (typeof translated === "string" && isUsableServiceTranslation(translated, language)) return translated.trim();
+  }
+  return "";
+}
 
 function localizeCountry(country: string, language: AppLanguage) {
   return COUNTRY_LABELS[language][country] || country;
@@ -1602,6 +4218,10 @@ function localizeText(defaultValue: string | undefined, localized: LocalizedText
 }
 
 function getServiceDisplayName(service: Pick<ServiceRecord | ServiceTemplateRecord, "name" | "localizedName"> | undefined, language: AppLanguage) {
+  const direct = service?.localizedName?.[language]?.trim();
+  if (typeof direct === "string" && isUsableServiceTranslation(direct, language)) return direct;
+  const fallback = getServiceFallbackTranslation(service, language);
+  if (fallback) return fallback;
   return localizeText(service?.name, service?.localizedName, language);
 }
 
@@ -1612,9 +4232,7 @@ function normalizeServiceIdentityPart(value: unknown) {
 function getServiceIdentityKey(service: Pick<ServiceRecord | ServiceTemplateRecord, "name" | "localizedName"> | undefined) {
   const names = [
     service?.name,
-    service?.localizedName?.ru,
-    service?.localizedName?.uk,
-    service?.localizedName?.en,
+    ...SUPPORTED_APP_LANGUAGES.map((item) => service?.localizedName?.[item]),
   ]
     .map(normalizeServiceIdentityPart)
     .filter(Boolean)
@@ -1628,7 +4246,7 @@ function getServiceCategoryDisplayName(category: string | undefined, localizedCa
 }
 
 function getServiceSearchText(service: Pick<ServiceRecord | ServiceTemplateRecord, "name" | "localizedName"> | undefined) {
-  return [service?.name, service?.localizedName?.ru, service?.localizedName?.uk, service?.localizedName?.en]
+  return [service?.name, ...SUPPORTED_APP_LANGUAGES.map((item) => service?.localizedName?.[item])]
     .filter(Boolean)
     .join(" ")
     .toLowerCase();
@@ -1637,7 +4255,7 @@ function getServiceSearchText(service: Pick<ServiceRecord | ServiceTemplateRecor
 function serviceNameMatches(service: Pick<ServiceRecord | ServiceTemplateRecord, "name" | "localizedName"> | undefined, value: string) {
   const normalized = value.trim().toLowerCase();
   if (!normalized) return false;
-  return [service?.name, service?.localizedName?.ru, service?.localizedName?.uk, service?.localizedName?.en]
+  return [service?.name, ...SUPPORTED_APP_LANGUAGES.map((item) => service?.localizedName?.[item])]
     .filter(Boolean)
     .some((candidate) => String(candidate).trim().toLowerCase() === normalized);
 }
@@ -1653,6 +4271,41 @@ function localizeServiceCategory(category: string | undefined, t: Record<string,
 function localizeCatalogCategory(category: string | undefined, language: AppLanguage, t: Record<string, string>) {
   const value = localizeServiceCategory(category, t);
   return SERVICE_CATEGORY_LABELS[language][value] || value;
+}
+
+function getPhoneCountryLabel(country: PhoneCountryOption, language: AppLanguage, t?: Record<string, string>) {
+  if (country.iso === "CUSTOM") return t?.customPhonePrefix || country.country;
+  try {
+    const DisplayNames = (Intl as any).DisplayNames;
+    if (DisplayNames) {
+      const label = new DisplayNames([localeForLanguage(language)], { type: "region" }).of(country.iso);
+      if (label) return label;
+    }
+  } catch {
+    // Some Expo runtimes may not ship Intl.DisplayNames. English names are the safe fallback.
+  }
+  return COUNTRY_LABELS[language][country.country] || country.country;
+}
+
+function normalizePhonePrefix(value: string) {
+  const digits = value.replace(/\D/g, "").slice(0, 5);
+  return digits ? `+${digits}` : "";
+}
+
+function getLocalPhoneNumber(phone: string, selectedPrefix?: string) {
+  let rest = String(phone || "").trim();
+  if (!rest) return "";
+  if (selectedPrefix && rest.startsWith(selectedPrefix)) {
+    rest = rest.slice(selectedPrefix.length);
+  } else {
+    rest = rest.replace(/^\+\d{1,5}/, "");
+  }
+  return rest.replace(/^[\s-]+/, "");
+}
+
+function composePhoneWithPrefix(prefix: string, localPhone: string) {
+  const rest = getLocalPhoneNumber(localPhone, prefix);
+  return rest ? `${prefix} ${rest}` : "";
 }
 
 function formatDuration(minutes: number | undefined, t: Record<string, string>) {
@@ -1676,11 +4329,13 @@ function localizeServiceMode(value: string, t: Record<string, string>) {
 
 function getDetectedCountry() {
   const regionCode = Localization.getLocales()[0]?.regionCode?.toUpperCase();
-  if (regionCode === "UA") return { country: "Ukraine", currency: "UAH", phonePrefix: "+380" };
-  if (regionCode === "PL") return { country: "Poland", currency: "PLN", phonePrefix: "+48" };
-  if (regionCode === "US") return { country: "United States", currency: "USD", phonePrefix: "+1" };
-  if (regionCode === "GB") return { country: "United Kingdom", currency: "GBP", phonePrefix: "+44" };
-  return { country: "Ukraine", currency: "UAH", phonePrefix: "+380" };
+  const phoneCountry = PHONE_COUNTRIES.find((country) => country.iso === regionCode) || PHONE_COUNTRIES.find((country) => country.iso === "UA") || PHONE_COUNTRIES[0];
+  return {
+    country: phoneCountry.country,
+    currency: phoneCountry.currency,
+    phonePrefix: phoneCountry.callingCode,
+    phoneCountry,
+  };
 }
 
 function getDetectedTimezone() {
@@ -1695,6 +4350,64 @@ function inferCurrency(country: string) {
   if (normalized.includes("united states") || normalized.includes("сша")) return "USD";
   if (normalized.includes("germany") || normalized.includes("france") || normalized.includes("spain") || normalized.includes("italy")) return "EUR";
   return "UAH";
+}
+
+function getRevenueCatApiKey() {
+  if (Platform.OS === "ios") return REVENUECAT_IOS_API_KEY;
+  if (Platform.OS === "android") return REVENUECAT_ANDROID_API_KEY;
+  return "";
+}
+
+function isPremiumActive(input?: WorkspaceSnapshot["professional"] | null) {
+  if (input?.plan !== "premium") return false;
+  if (input.premiumStatus === "active" || input.premiumStatus === "trialing") return true;
+  if (input.premiumStatus === "canceled" && input.premiumUntil) {
+    return new Date(input.premiumUntil).getTime() > Date.now();
+  }
+  return false;
+}
+
+function getPremiumStatusLabel(input: WorkspaceSnapshot["professional"] | undefined, t: Record<string, string>) {
+  if (!input || input.plan !== "premium") return t.premiumSubscriptionFree;
+  if (input.premiumStatus === "trialing") return t.premiumSubscriptionTrial;
+  if (isPremiumActive(input)) return t.premiumSubscriptionActive;
+  return t.premiumSubscriptionFree;
+}
+
+function getPackagePriceLabel(pkg: PurchasesPackage | null, fallback: string) {
+  return pkg?.product?.priceString || fallback;
+}
+
+function findRevenueCatPackage(packages: PurchasesPackage[], billing: "monthly" | "yearly") {
+  const productId = billing === "yearly" ? REVENUECAT_YEARLY_PRODUCT_ID : REVENUECAT_MONTHLY_PRODUCT_ID;
+  const packageType = billing === "yearly" ? "ANNUAL" : "MONTHLY";
+  return (
+    packages.find((item) => item.product.identifier === productId) ||
+    packages.find((item) => String(item.packageType) === packageType) ||
+    null
+  );
+}
+
+async function configureRevenueCatForProfessional(professionalId: string) {
+  const apiKey = getRevenueCatApiKey();
+  if (!apiKey || !professionalId) {
+    throw new Error("revenuecat_not_configured");
+  }
+  await Purchases.setLogLevel(LOG_LEVEL.WARN).catch(() => undefined);
+  const configured = await Purchases.isConfigured().catch(() => false);
+  if (configured) {
+    await Purchases.logIn(professionalId).catch(() => undefined);
+  } else {
+    Purchases.configure({ apiKey, appUserID: professionalId });
+  }
+}
+
+function getCustomerInfoEntitlement(customerInfo: CustomerInfo) {
+  return (
+    customerInfo.entitlements.active[REVENUECAT_ENTITLEMENT_ID] ||
+    customerInfo.entitlements.all[REVENUECAT_ENTITLEMENT_ID] ||
+    null
+  );
 }
 
 function formatReminderLead(minutes: number, t: Record<string, string>) {
@@ -1730,6 +4443,19 @@ function normalizeApiSession(result: any, fallbackEmail: string): MobileSession 
     email: String(result.profile?.email || fallbackEmail),
     displayName: String(result.profile?.displayName || result.profile?.email || fallbackEmail),
   };
+}
+
+async function hasBiometricUnlockAvailable() {
+  if (Platform.OS === "web") return false;
+  try {
+    const [hasHardware, isEnrolled] = await Promise.all([
+      LocalAuthentication.hasHardwareAsync(),
+      LocalAuthentication.isEnrolledAsync(),
+    ]);
+    return Boolean(hasHardware && isEnrolled);
+  } catch {
+    return false;
+  }
 }
 
 function formatMoney(value: number, currency?: string) {
@@ -1927,6 +4653,11 @@ function formatWeekdayShort(date: string, language: AppLanguage) {
     uk: ["Нд", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"],
     ru: ["Вс", "Пн", "Вт", "Ср", "Чт", "Пт", "Сб"],
     en: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+    fr: ["Dim", "Lun", "Mar", "Mer", "Jeu", "Ven", "Sam"],
+    pl: ["Nd", "Pn", "Wt", "Śr", "Cz", "Pt", "Sb"],
+    cs: ["Ne", "Po", "Út", "St", "Čt", "Pá", "So"],
+    es: ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"],
+    de: ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"],
   };
   return labels[language][day] || labels.ru[day] || "";
 }
@@ -2189,6 +4920,11 @@ function insertWorkIntervalRecord(intervals: WorkIntervalRecord[], index: number
 function getClosedShortLabel(language: AppLanguage) {
   if (language === "uk") return "Вих.";
   if (language === "ru") return "Вых.";
+  if (language === "fr") return "Ferm.";
+  if (language === "pl") return "Wol.";
+  if (language === "cs") return "Vol.";
+  if (language === "es") return "Cerr.";
+  if (language === "de") return "Zu";
   return "Off";
 }
 
@@ -2208,6 +4944,11 @@ export default function App() {
   const [loadingSession, setLoadingSession] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [socialBusy, setSocialBusy] = useState<"google" | "apple" | null>(null);
+  const [appleSignInAvailable, setAppleSignInAvailable] = useState(false);
+  const [biometricAvailable, setBiometricAvailable] = useState(false);
+  const [biometricEnabled, setBiometricEnabled] = useState(false);
+  const [pendingBiometricSession, setPendingBiometricSession] = useState<MobileSession | null>(null);
   const [visitComposerOpen, setVisitComposerOpen] = useState(false);
   const [registerDetailsOpen, setRegisterDetailsOpen] = useState(false);
   const detectedCountry = useMemo(() => getDetectedCountry(), []);
@@ -2220,9 +4961,13 @@ export default function App() {
     lastName: "",
     email: "",
     password: "",
-    phone: detectedCountry.phonePrefix,
+    phone: "",
     companyName: "",
   });
+  const [registerPhoneCountry, setRegisterPhoneCountry] = useState<PhoneCountryOption>(() => detectedCountry.phoneCountry);
+  const [phoneCountryPickerOpen, setPhoneCountryPickerOpen] = useState(false);
+  const [phoneCountryQuery, setPhoneCountryQuery] = useState("");
+  const [customPhonePrefix, setCustomPhonePrefix] = useState("");
   const [visitDraft, setVisitDraft] = useState<VisitDraft>(() => createDefaultVisitDraft(selectedDate, "09:00"));
   const [editingAppointment, setEditingAppointment] = useState<AppointmentRecord | null>(null);
   const [timeAction, setTimeAction] = useState<{ date: string; time: string; targetProfessionalId?: string } | null>(null);
@@ -2231,6 +4976,12 @@ export default function App() {
   const pendingServiceSavesRef = useRef<Map<string, PendingServiceSave>>(new Map());
   const serviceSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const serviceSaveInFlightRef = useRef(false);
+  const workspaceLanguageAppliedRef = useRef(false);
+  const googleConfigured = Platform.select({
+    ios: Boolean(GOOGLE_IOS_CLIENT_ID),
+    android: Boolean(GOOGLE_ANDROID_CLIENT_ID),
+    default: Boolean(GOOGLE_WEB_CLIENT_ID),
+  });
 
   useEffect(() => {
     Linking.getInitialURL()
@@ -2240,6 +4991,15 @@ export default function App() {
         if (url.includes("pro/login")) setMode("login");
       })
       .catch(() => undefined);
+  }, []);
+
+  useEffect(() => {
+    AppleAuthentication.isAvailableAsync()
+      .then(setAppleSignInAvailable)
+      .catch(() => setAppleSignInAvailable(false));
+    hasBiometricUnlockAvailable()
+      .then(setBiometricAvailable)
+      .catch(() => setBiometricAvailable(false));
   }, []);
 
   function hasVisibleWorkspaceData() {
@@ -2253,6 +5013,13 @@ export default function App() {
     setClients(Array.isArray(cache.clients) ? cache.clients : []);
     setServiceCatalog(Array.isArray(cache.serviceCatalog) ? cache.serviceCatalog : []);
     setStaffSnapshot(cache.staffSnapshot || null);
+    if (!workspaceLanguageAppliedRef.current) {
+      const profileLanguage = normalizeAppLanguage(cache.workspace?.professional?.language);
+      if (profileLanguage) {
+        setLanguage(profileLanguage);
+        workspaceLanguageAppliedRef.current = true;
+      }
+    }
     if (cache.selectedDate) setSelectedDate(cache.selectedDate);
   }
 
@@ -2447,27 +5214,45 @@ export default function App() {
     setActiveTab("settings");
   }
 
+  function activateCachedSession(cachedSession: MobileSession) {
+    setSession(cachedSession);
+    AsyncStorage.getItem(WORKSPACE_CACHE_KEY)
+      .then((cacheRaw) => {
+        if (!cacheRaw) return;
+        const cache = JSON.parse(cacheRaw) as MobileWorkspaceCache;
+        if (cache.professionalId === cachedSession.professionalId) {
+          applyWorkspaceCache(cache);
+        }
+      })
+      .catch(() => undefined);
+  }
+
   useEffect(() => {
-    AsyncStorage.getItem(STORAGE_KEY).then((raw) => {
-      if (!raw) {
-        setLoadingSession(false);
-        return;
-      }
+    Promise.all([
+      SecureStore.getItemAsync(SECURE_SESSION_KEY).catch(() => null),
+      AsyncStorage.getItem(STORAGE_KEY).catch(() => null),
+      AsyncStorage.getItem(BIOMETRIC_ENABLED_KEY).catch(() => null),
+      hasBiometricUnlockAvailable(),
+    ]).then(([secureRaw, legacyRaw, biometricFlag, biometricReady]) => {
+      const raw = secureRaw || legacyRaw;
+      const nextBiometricEnabled = biometricFlag === "1";
+      setBiometricAvailable(biometricReady);
+      setBiometricEnabled(nextBiometricEnabled);
+      if (!raw) return;
       try {
         const cachedSession = JSON.parse(raw) as MobileSession;
-        setSession(cachedSession);
-        AsyncStorage.getItem(WORKSPACE_CACHE_KEY)
-          .then((cacheRaw) => {
-            if (!cacheRaw) return;
-            const cache = JSON.parse(cacheRaw) as MobileWorkspaceCache;
-            if (cache.professionalId === cachedSession.professionalId) {
-              applyWorkspaceCache(cache);
-            }
-          })
-          .catch(() => undefined);
+        if (!secureRaw) {
+          void SecureStore.setItemAsync(SECURE_SESSION_KEY, JSON.stringify(cachedSession)).catch(() => undefined);
+        }
+        if (nextBiometricEnabled && biometricReady) {
+          setPendingBiometricSession(cachedSession);
+          return;
+        }
+        activateCachedSession(cachedSession);
       } catch {
         setSession(null);
       }
+    }).finally(() => {
       setLoadingSession(false);
     });
   }, []);
@@ -2571,6 +5356,11 @@ export default function App() {
       const nextClients = Array.isArray(clientsResult.clients) ? clientsResult.clients : [];
       const nextCatalog = Array.isArray(servicesResult.catalog) ? servicesResult.catalog : [];
       const nextWorkspace = withPendingServiceSaves(workspaceResult);
+      if (!workspaceLanguageAppliedRef.current) {
+        const profileLanguage = normalizeAppLanguage(nextWorkspace.professional?.language);
+        if (profileLanguage) setLanguage(profileLanguage);
+        workspaceLanguageAppliedRef.current = true;
+      }
       setWorkspace(nextWorkspace);
       setCalendar(calendarResult);
       setCalendarDate(date);
@@ -2609,9 +5399,86 @@ export default function App() {
   }, [activeTab, session]);
 
   async function persistSession(nextSession: MobileSession) {
-    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(nextSession));
+    const serialized = JSON.stringify(nextSession);
+    await AsyncStorage.setItem(STORAGE_KEY, serialized);
+    await SecureStore.setItemAsync(SECURE_SESSION_KEY, serialized).catch(() => undefined);
+    setPendingBiometricSession(null);
     setSession(nextSession);
+    void maybeOfferBiometricUnlock();
     await refreshAll(nextSession, selectedDate);
+  }
+
+  async function maybeOfferBiometricUnlock() {
+    if (biometricEnabled || !biometricAvailable) return;
+    Alert.alert(t.enableBiometricTitle, t.enableBiometricText, [
+      { text: t.notNow, style: "cancel" },
+      {
+        text: t.enableBiometricAction,
+        onPress: () => {
+          setBiometricEnabled(true);
+          void AsyncStorage.setItem(BIOMETRIC_ENABLED_KEY, "1").catch(() => undefined);
+        },
+      },
+    ]);
+  }
+
+  async function unlockPendingSessionWithBiometrics() {
+    if (!pendingBiometricSession) return;
+    if (!biometricAvailable) {
+      Alert.alert("Timviz", t.biometricUnavailable);
+      return;
+    }
+    try {
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: t.unlockWithFaceId,
+        fallbackLabel: t.useDevicePasscode,
+        cancelLabel: t.cancel,
+        disableDeviceFallback: false,
+      });
+      if (!result.success) return;
+      const nextSession = pendingBiometricSession;
+      setPendingBiometricSession(null);
+      activateCachedSession(nextSession);
+    } catch (error) {
+      Alert.alert("Timviz", error instanceof Error ? error.message : t.socialAuthFailed);
+    }
+  }
+
+  async function toggleBiometricUnlock() {
+    if (!biometricAvailable) {
+      Alert.alert("Timviz", t.biometricUnavailable);
+      return;
+    }
+    const nextValue = !biometricEnabled;
+    setBiometricEnabled(nextValue);
+    await AsyncStorage.setItem(BIOMETRIC_ENABLED_KEY, nextValue ? "1" : "0").catch(() => undefined);
+  }
+
+  function closePhoneCountryPicker() {
+    setPhoneCountryPickerOpen(false);
+    setPhoneCountryQuery("");
+  }
+
+  function selectRegisterPhoneCountry(country: PhoneCountryOption) {
+    const previousPrefix = registerPhoneCountry.callingCode;
+    setRegisterPhoneCountry(country);
+    setRegisterForm((current) => ({
+      ...current,
+      phone: getLocalPhoneNumber(current.phone, previousPrefix),
+    }));
+    closePhoneCountryPicker();
+  }
+
+  function selectCustomPhonePrefix(prefix: string) {
+    const normalizedPrefix = normalizePhonePrefix(prefix);
+    if (!normalizedPrefix) return;
+    selectRegisterPhoneCountry({
+      iso: "CUSTOM",
+      country: "International",
+      callingCode: normalizedPrefix,
+      currency: detectedCountry.currency || "UAH",
+    });
+    setCustomPhonePrefix("");
   }
 
   async function signIn() {
@@ -2641,6 +5508,81 @@ export default function App() {
     }
   }
 
+  async function authenticateWithSocialProvider(
+    provider: "google" | "apple",
+    idToken: string,
+    profile: { email?: string | null; firstName?: string | null; lastName?: string | null; fullName?: string | null; avatarUrl?: string | null } = {}
+  ) {
+    if (!idToken) {
+      setSocialBusy(null);
+      Alert.alert(t.loginError, t.socialAuthFailed);
+      return;
+    }
+
+    setSocialBusy(provider);
+    setBusy(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/mobile/pro/social-auth`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          provider,
+          idToken,
+          profile,
+          language,
+          country: registerPhoneCountry.country,
+          timezone: detectedTimezone,
+          currency: registerPhoneCountry.currency || inferCurrency(registerPhoneCountry.country),
+        }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        Alert.alert(t.loginError, result?.error || t.socialAuthFailed);
+        return;
+      }
+      await persistSession(normalizeApiSession(result, String(result?.profile?.email || profile.email || "")));
+    } catch (error) {
+      Alert.alert(t.loginError, error instanceof Error ? error.message : t.socialAuthFailed);
+    } finally {
+      setSocialBusy(null);
+      setBusy(false);
+    }
+  }
+
+  async function signInWithGoogle() {
+    if (!googleConfigured) {
+      Alert.alert("Google", t.socialAuthConfigMissing);
+      return;
+    }
+    Alert.alert("Google", t.socialAuthConfigMissing);
+  }
+
+  async function signInWithApple() {
+    if (!appleSignInAvailable) {
+      Alert.alert("Apple", t.socialAuthConfigMissing);
+      return;
+    }
+    setSocialBusy("apple");
+    try {
+      const credential = await AppleAuthentication.signInAsync({
+        requestedScopes: [
+          AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+          AppleAuthentication.AppleAuthenticationScope.EMAIL,
+        ],
+      });
+      await authenticateWithSocialProvider("apple", credential.identityToken || "", {
+        email: credential.email,
+        firstName: credential.fullName?.givenName,
+        lastName: credential.fullName?.familyName,
+        fullName: [credential.fullName?.givenName, credential.fullName?.familyName].filter(Boolean).join(" "),
+      });
+    } catch (error: any) {
+      setSocialBusy(null);
+      if (error?.code === "ERR_REQUEST_CANCELED") return;
+      Alert.alert("Apple", error instanceof Error ? error.message : t.socialAuthFailed);
+    }
+  }
+
   async function register() {
     const firstName = registerForm.firstName.trim();
     const companyName = registerForm.companyName.trim();
@@ -2649,11 +5591,11 @@ export default function App() {
       email: registerForm.email.trim().toLowerCase(),
       firstName,
       lastName: registerForm.lastName.trim(),
-      phone: registerForm.phone.trim(),
+      phone: composePhoneWithPrefix(registerPhoneCountry.callingCode, registerForm.phone),
       companyName,
       language,
-      country: detectedCountry.country,
-      currency: detectedCountry.currency,
+      country: registerPhoneCountry.country,
+      currency: registerPhoneCountry.currency || inferCurrency(registerPhoneCountry.country),
       timezone: detectedTimezone,
     };
 
@@ -2691,12 +5633,15 @@ export default function App() {
   async function signOut() {
     setBusy(true);
     pendingServiceSavesRef.current.clear();
+    workspaceLanguageAppliedRef.current = false;
     if (serviceSaveTimerRef.current) {
       clearTimeout(serviceSaveTimerRef.current);
       serviceSaveTimerRef.current = null;
     }
     await AsyncStorage.removeItem(STORAGE_KEY);
+    await SecureStore.deleteItemAsync(SECURE_SESSION_KEY).catch(() => undefined);
     await AsyncStorage.removeItem(WORKSPACE_CACHE_KEY);
+    setPendingBiometricSession(null);
     setSession(null);
     setWorkspace(null);
     setCalendar(null);
@@ -3324,11 +6269,14 @@ export default function App() {
                 apiFetch={apiFetch}
                 onRefreshWorkspace={() => refreshAll(session, selectedDate)}
                 setActiveTab={setActiveTab}
-                activeSection={settingsSection}
-                setActiveSection={setSettingsSection}
-                onSignOut={signOut}
-                busy={busy}
-              />
+	                activeSection={settingsSection}
+	                setActiveSection={setSettingsSection}
+	                onSignOut={signOut}
+	                biometricAvailable={biometricAvailable}
+	                biometricEnabled={biometricEnabled}
+	                onToggleBiometric={toggleBiometricUnlock}
+	                busy={busy}
+	              />
             ) : null}
           </ScrollView>
         )}
@@ -3357,17 +6305,40 @@ export default function App() {
             <Text style={styles.authSubtitle}>{t.proSubtitle}</Text>
           </View>
 
-          <View style={styles.authCard}>
-            <View style={styles.segment}>
-              <Pressable onPress={() => setMode("login")} style={[styles.segmentButton, mode === "login" && styles.segmentButtonActive]}>
-                <Text style={[styles.segmentText, mode === "login" && styles.segmentTextActive]}>{t.login}</Text>
+	          <View style={styles.authCard}>
+	            <View style={styles.segment}>
+	              <Pressable onPress={() => setMode("login")} style={[styles.segmentButton, mode === "login" && styles.segmentButtonActive]}>
+	                <Text style={[styles.segmentText, mode === "login" && styles.segmentTextActive]}>{t.login}</Text>
               </Pressable>
               <Pressable onPress={() => setMode("register")} style={[styles.segmentButton, mode === "register" && styles.segmentButtonActive]}>
                 <Text style={[styles.segmentText, mode === "register" && styles.segmentTextActive]}>{t.registerShort || t.register}</Text>
-              </Pressable>
-            </View>
+	              </Pressable>
+	            </View>
 
-            {mode === "login" ? (
+	            {pendingBiometricSession ? (
+	              <Pressable style={styles.biometricUnlockCard} onPress={unlockPendingSessionWithBiometrics}>
+	                <View style={styles.biometricUnlockIcon}>
+	                  <Ionicons name="scan-outline" size={20} color="#6D4AFF" />
+	                </View>
+	                <View style={styles.biometricUnlockText}>
+	                  <Text style={styles.socialButtonText}>{t.unlockWithBiometrics}</Text>
+	                  <Text style={styles.socialButtonCaption}>{pendingBiometricSession.email}</Text>
+	                </View>
+	                <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
+	              </Pressable>
+	            ) : null}
+
+	            <SocialAuthButtons
+	              t={t}
+	              googleEnabled={Boolean(googleConfigured)}
+	              appleEnabled={appleSignInAvailable}
+	              busyProvider={socialBusy}
+	              disabled={busy}
+	              onGoogle={signInWithGoogle}
+	              onApple={signInWithApple}
+	            />
+
+	            {mode === "login" ? (
               <View style={styles.form}>
                 <Pressable style={styles.authInlineCta} onPress={() => setMode("register")}>
                   <Text style={styles.authInlineCtaText}>{t.newMasterCta}</Text>
@@ -3393,7 +6364,15 @@ export default function App() {
                 <Field label={t.firstName} value={registerForm.firstName} onChangeText={(value) => setRegisterForm((current) => ({ ...current, firstName: value }))} />
                 <Field label={t.email} value={registerForm.email} onChangeText={(value) => setRegisterForm((current) => ({ ...current, email: value }))} keyboardType="email-address" autoCapitalize="none" placeholder="you@email.com" />
                 <Field label={t.companyName} value={registerForm.companyName} onChangeText={(value) => setRegisterForm((current) => ({ ...current, companyName: value }))} />
-                <Field label={t.phone} value={registerForm.phone} onChangeText={(value) => setRegisterForm((current) => ({ ...current, phone: value }))} keyboardType="phone-pad" />
+                <RegisterPhoneField
+                  label={t.phone}
+                  selectedCountry={registerPhoneCountry}
+                  language={language}
+                  t={t}
+                  value={getLocalPhoneNumber(registerForm.phone, registerPhoneCountry.callingCode)}
+                  onChangeText={(value) => setRegisterForm((current) => ({ ...current, phone: getLocalPhoneNumber(value, registerPhoneCountry.callingCode) }))}
+                  onOpenPicker={() => setPhoneCountryPickerOpen(true)}
+                />
                 <Field label={t.password} hint={t.passwordHint} value={registerForm.password} onChangeText={(value) => setRegisterForm((current) => ({ ...current, password: value }))} secureTextEntry />
                 <Pressable style={styles.authDetailsToggle} onPress={() => setRegisterDetailsOpen((current) => !current)}>
                   <Text style={styles.authDetailsToggleText}>{t.optionalDetails}</Text>
@@ -3414,6 +6393,19 @@ export default function App() {
           </View>
         ) : null}
       </KeyboardAvoidingView>
+      <PhoneCountryPickerModal
+        visible={phoneCountryPickerOpen}
+        language={language}
+        t={t}
+        query={phoneCountryQuery}
+        setQuery={setPhoneCountryQuery}
+        customPrefix={customPhonePrefix}
+        setCustomPrefix={setCustomPhonePrefix}
+        selectedCountry={registerPhoneCountry}
+        onSelect={selectRegisterPhoneCountry}
+        onSelectCustom={selectCustomPhonePrefix}
+        onClose={closePhoneCountryPicker}
+      />
       <StatusBar style="dark" />
     </SafeAreaView>
   );
@@ -5431,10 +8423,8 @@ function WorkspaceHeader({
   function renderPanel() {
     if (!panel) return null;
     const close = () => setPanel(null);
-    return (
-      <Modal transparent visible animationType="slide" onRequestClose={close}>
-        <View style={styles.headerPanelBackdrop}>
-          <View style={styles.headerPanel}>
+    const panelContent = (
+      <View style={styles.headerPanel}>
             <View style={styles.sheetHandle} />
             <View style={styles.headerPanelTop}>
               <View style={styles.headerPanelTitleStack}>
@@ -5516,10 +8506,11 @@ function WorkspaceHeader({
             ) : null}
 
             {panel === "support" ? (
-              <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.headerPanelKeyboard}>
+              <View style={styles.headerPanelKeyboard}>
                 <ScrollView
                   style={styles.headerPanelScrollBody}
                   contentContainerStyle={styles.supportPanelContent}
+                  keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "none"}
                   keyboardShouldPersistTaps="handled"
                   showsVerticalScrollIndicator={false}
                 >
@@ -5543,7 +8534,7 @@ function WorkspaceHeader({
                     <Text style={styles.headerPrimaryButtonText}>{t.supportSend}</Text>
                   </Pressable>
                 </View>
-              </KeyboardAvoidingView>
+              </View>
             ) : null}
 
             {panel === "notifications" ? (
@@ -5606,20 +8597,28 @@ function WorkspaceHeader({
                   <Text style={styles.accountMenuItemText}>{t.helpSupport}</Text>
                 </Pressable>
                 <Text style={styles.accountMenuLabel}>{t.language}</Text>
-                <View style={styles.accountLanguageRow}>
-                  {(["ru", "uk", "en"] as AppLanguage[]).map((item) => (
-                    <Pressable key={item} style={[styles.accountLanguageButton, language === item && styles.accountLanguageButtonActive]} onPress={() => setLanguage(item)}>
-                      <Text style={[styles.accountLanguageText, language === item && styles.accountLanguageTextActive]}>{languageNames[item]}</Text>
-                    </Pressable>
-                  ))}
-                </View>
+                <LanguageSwitch language={language} setLanguage={setLanguage} />
                 <Pressable style={styles.accountLogout} onPress={() => { close(); void onSignOut(); }}>
                   <Text style={styles.accountLogoutText}>{t.signOut}</Text>
                 </Pressable>
               </View>
             ) : null}
           </View>
-        </View>
+    );
+
+    return (
+      <Modal transparent visible animationType="slide" onRequestClose={close}>
+        {panel === "support" ? (
+          <KeyboardAvoidingView
+            behavior={Platform.OS === "ios" ? "padding" : "height"}
+            keyboardVerticalOffset={0}
+            style={styles.headerPanelBackdrop}
+          >
+            {panelContent}
+          </KeyboardAvoidingView>
+        ) : (
+          <View style={styles.headerPanelBackdrop}>{panelContent}</View>
+        )}
       </Modal>
     );
   }
@@ -7002,6 +10001,9 @@ function SettingsTab({
   activeSection,
   setActiveSection,
   onSignOut,
+  biometricAvailable,
+  biometricEnabled,
+  onToggleBiometric,
   busy,
 }: {
   t: Record<string, string>;
@@ -7015,6 +10017,9 @@ function SettingsTab({
   activeSection: MobileSettingsSection;
   setActiveSection: (section: MobileSettingsSection) => void;
   onSignOut: () => void;
+  biometricAvailable: boolean;
+  biometricEnabled: boolean;
+  onToggleBiometric: () => void;
   busy: boolean;
 }) {
   const [draft, setDraft] = useState<SettingsDraftState>(() => makeSettingsDraft(workspace, language));
@@ -7031,15 +10036,142 @@ function SettingsTab({
   const [isTelegramLoading, setIsTelegramLoading] = useState(false);
   const [isTelegramSaving, setIsTelegramSaving] = useState(false);
   const [telegramError, setTelegramError] = useState("");
+  const [premiumPackages, setPremiumPackages] = useState<{ monthly: PurchasesPackage | null; yearly: PurchasesPackage | null }>({ monthly: null, yearly: null });
+  const [isPremiumLoading, setIsPremiumLoading] = useState(false);
+  const [premiumMessage, setPremiumMessage] = useState("");
   const isOwner = workspace?.membership?.scope !== "member";
   const publicBookingUrl = workspace?.business.publicBookingUrl || "";
   const photos = workspace?.business.photos?.filter((photo) => photo.status !== "blocked") || [];
+  const hasPremium = isPremiumActive(workspace?.professional);
+  const premiumStatusLabel = getPremiumStatusLabel(workspace?.professional, t);
+
+  async function uploadMediaDataUrl(dataUrl: string, kind: "avatar" | "business-photo") {
+    const payload = await apiFetch("/api/mobile/pro/media/upload", {
+      method: "POST",
+      body: JSON.stringify({ kind, dataUrl }),
+    });
+    const url = typeof payload?.url === "string" ? payload.url.trim() : "";
+    if (!url) {
+      throw new Error(t.settingsSaveError);
+    }
+    return url;
+  }
+
+  async function syncPremiumCustomerInfo(customerInfo: CustomerInfo) {
+    const entitlement = getCustomerInfoEntitlement(customerInfo);
+    await apiFetch("/api/mobile/pro/subscription/app-store", {
+      method: "POST",
+      body: JSON.stringify({
+        customerInfo: {
+          originalAppUserId: customerInfo.originalAppUserId,
+          activeSubscriptions: customerInfo.activeSubscriptions,
+          latestExpirationDate: customerInfo.latestExpirationDate,
+          entitlement: entitlement
+            ? {
+                identifier: entitlement.identifier,
+                isActive: entitlement.isActive,
+                productIdentifier: entitlement.productIdentifier,
+                expirationDate: entitlement.expirationDate,
+                periodType: entitlement.periodType,
+                store: entitlement.store,
+              }
+            : null,
+        },
+      }),
+    });
+    setPremiumMessage(t.premiumReady);
+    onRefreshWorkspace();
+  }
+
+  async function loadPremiumPackages(silent = false) {
+    if (!workspace?.professional.id || isPremiumLoading) return;
+    if (!silent) {
+      setIsPremiumLoading(true);
+      setPremiumMessage("");
+    }
+    try {
+      await configureRevenueCatForProfessional(workspace.professional.id);
+      const offerings = await Purchases.getOfferings();
+      const packages = offerings.current?.availablePackages || Object.values(offerings.all)[0]?.availablePackages || [];
+      setPremiumPackages({
+        monthly: offerings.current?.monthly || findRevenueCatPackage(packages, "monthly"),
+        yearly: offerings.current?.annual || findRevenueCatPackage(packages, "yearly"),
+      });
+      const customerInfo = await Purchases.getCustomerInfo();
+      if (getCustomerInfoEntitlement(customerInfo)?.isActive) {
+        await syncPremiumCustomerInfo(customerInfo);
+      }
+    } catch (error) {
+      if (!silent) {
+        const message = error instanceof Error && error.message === "revenuecat_not_configured" ? t.premiumMissingConfig : t.premiumUnavailable;
+        setPremiumMessage(message);
+      }
+    } finally {
+      if (!silent) setIsPremiumLoading(false);
+    }
+  }
+
+  async function buyPremiumPackage(billing: "monthly" | "yearly") {
+    if (!workspace?.professional.id) return;
+    setIsPremiumLoading(true);
+    setPremiumMessage("");
+    try {
+      await configureRevenueCatForProfessional(workspace.professional.id);
+      let targetPackage = premiumPackages[billing];
+      if (!targetPackage) {
+        const offerings = await Purchases.getOfferings();
+        const packages = offerings.current?.availablePackages || Object.values(offerings.all)[0]?.availablePackages || [];
+        targetPackage = (billing === "yearly" ? offerings.current?.annual : offerings.current?.monthly) || findRevenueCatPackage(packages, billing);
+      }
+      if (!targetPackage) {
+        throw new Error("missing_package");
+      }
+      const result = await Purchases.purchasePackage(targetPackage);
+      await syncPremiumCustomerInfo(result.customerInfo);
+    } catch (error: any) {
+      if (error?.userCancelled) {
+        setPremiumMessage(t.premiumPurchaseCancelled);
+      } else if (error instanceof Error && error.message === "missing_package") {
+        setPremiumMessage(t.premiumMissingConfig);
+      } else if (error instanceof Error && error.message === "revenuecat_not_configured") {
+        setPremiumMessage(t.premiumMissingConfig);
+      } else {
+        setPremiumMessage(error instanceof Error ? error.message : t.premiumSyncFailed);
+      }
+    } finally {
+      setIsPremiumLoading(false);
+    }
+  }
+
+  async function restorePremiumPurchase() {
+    if (!workspace?.professional.id) return;
+    setIsPremiumLoading(true);
+    setPremiumMessage("");
+    try {
+      await configureRevenueCatForProfessional(workspace.professional.id);
+      const customerInfo = await Purchases.restorePurchases();
+      await syncPremiumCustomerInfo(customerInfo);
+    } catch (error) {
+      if (error instanceof Error && error.message === "revenuecat_not_configured") {
+        setPremiumMessage(t.premiumMissingConfig);
+      } else {
+        setPremiumMessage(error instanceof Error ? error.message : t.premiumSyncFailed);
+      }
+    } finally {
+      setIsPremiumLoading(false);
+    }
+  }
 
   useEffect(() => {
     setDraft(makeSettingsDraft(workspace, language));
     setNewPassword("");
     setAddressSearchValue(workspace?.business.address || "");
   }, [workspace, language]);
+
+  useEffect(() => {
+    if (!workspace?.professional.id) return;
+    void loadPremiumPackages(true);
+  }, [workspace?.professional.id]);
 
   useEffect(() => {
     apiFetch("/api/mobile/pro/calendar?mode=notifications")
@@ -7118,7 +10250,7 @@ function SettingsTab({
     setSaving(true);
     setStatusText("");
     try {
-      const nextLanguage: AppLanguage = ["uk", "ru", "en"].includes(draft.language) ? draft.language : language;
+      const nextLanguage: AppLanguage = SUPPORTED_APP_LANGUAGES.includes(draft.language as AppLanguage) ? draft.language : language;
       await apiFetch("/api/mobile/pro/settings", {
         method: "PATCH",
         body: JSON.stringify({
@@ -7189,7 +10321,15 @@ function SettingsTab({
     if (result.canceled || !result.assets?.[0]) return;
     const asset = result.assets[0];
     if (!asset.base64) return;
-    updateDraft("avatarUrl", `data:${asset.mimeType || "image/jpeg"};base64,${asset.base64}`);
+    setSaving(true);
+    try {
+      const avatarUrl = await uploadMediaDataUrl(`data:${asset.mimeType || "image/jpeg"};base64,${asset.base64}`, "avatar");
+      updateDraft("avatarUrl", avatarUrl);
+    } catch (error) {
+      Alert.alert(t.avatarLink, error instanceof Error ? error.message : t.settingsSaveError);
+    } finally {
+      setSaving(false);
+    }
   }
 
   function removeAvatar() {
@@ -7265,16 +10405,27 @@ function SettingsTab({
     if (result.canceled || !result.assets?.[0]) return;
     const asset = result.assets[0];
     if (!asset.base64) return;
-    const nextPhoto: BusinessPhotoRecord = {
-      id: createLocalId("photo"),
-      url: `data:${asset.mimeType || "image/jpeg"};base64,${asset.base64}`,
-      caption: photoDraft.caption.trim(),
-      isPrimary: photos.length === 0,
-      createdAt: new Date().toISOString(),
-      status: "active",
-    };
-    setPhotoDraft({ url: "", caption: "" });
-    void saveBusinessPhotos([...photos, nextPhoto]);
+    setSaving(true);
+    try {
+      const photoUrl = await uploadMediaDataUrl(
+        `data:${asset.mimeType || "image/jpeg"};base64,${asset.base64}`,
+        "business-photo"
+      );
+      const nextPhoto: BusinessPhotoRecord = {
+        id: createLocalId("photo"),
+        url: photoUrl,
+        caption: photoDraft.caption.trim(),
+        isPrimary: photos.length === 0,
+        createdAt: new Date().toISOString(),
+        status: "active",
+      };
+      setPhotoDraft({ url: "", caption: "" });
+      await saveBusinessPhotos([...photos, nextPhoto]);
+    } catch (error) {
+      Alert.alert(t.businessPhotos, error instanceof Error ? error.message : t.settingsSaveError);
+    } finally {
+      setSaving(false);
+    }
   }
 
   function makePrimaryPhoto(photoId: string) {
@@ -7375,6 +10526,44 @@ function SettingsTab({
 
       {activeSection === "general" ? (
         <>
+          <Panel title={t.premiumSubscription}>
+            <View style={styles.premiumMobileHeader}>
+              <View>
+                <Text style={styles.settingsCardTitle}>{t.premiumSubscriptionTitle}</Text>
+                <Text style={styles.clientOptionCaption}>{t.premiumSubscriptionText}</Text>
+              </View>
+              <View style={[styles.premiumMobileBadge, hasPremium && styles.premiumMobileBadgeActive]}>
+                <Text style={[styles.premiumMobileBadgeText, hasPremium && styles.premiumMobileBadgeTextActive]}>{premiumStatusLabel}</Text>
+              </View>
+            </View>
+            <View style={styles.premiumMobilePlans}>
+              <Pressable
+                style={[styles.premiumMobilePlan, premiumPackages.monthly && styles.premiumMobilePlanReady]}
+                onPress={() => void buyPremiumPackage("monthly")}
+                disabled={isPremiumLoading}
+              >
+                <Text style={styles.premiumMobilePlanTitle}>{t.premiumMonthly}</Text>
+                <Text style={styles.premiumMobilePlanPrice}>{getPackagePriceLabel(premiumPackages.monthly, t.premiumMonthlyFallback)}</Text>
+                <Text style={styles.premiumMobilePlanAction}>{t.premiumStartMonthly}</Text>
+              </Pressable>
+              <Pressable
+                style={[styles.premiumMobilePlan, styles.premiumMobilePlanFeatured, premiumPackages.yearly && styles.premiumMobilePlanReady]}
+                onPress={() => void buyPremiumPackage("yearly")}
+                disabled={isPremiumLoading}
+              >
+                <Text style={styles.premiumMobilePlanTitle}>{t.premiumYearly}</Text>
+                <Text style={styles.premiumMobilePlanPrice}>{getPackagePriceLabel(premiumPackages.yearly, t.premiumYearlyFallback)}</Text>
+                <Text style={styles.premiumMobilePlanAction}>{t.premiumStartYearly}</Text>
+              </Pressable>
+            </View>
+            <View style={styles.settingsActionRow}>
+              <SecondaryButton label={t.premiumRestore} onPress={() => void restorePremiumPurchase()} disabled={isPremiumLoading} />
+              <SecondaryButton label={t.premiumManage} onPress={() => Linking.openURL("https://apps.apple.com/account/subscriptions").catch(() => undefined)} disabled={Platform.OS !== "ios"} />
+            </View>
+            {isPremiumLoading ? <ActivityIndicator color="#6D4AFF" /> : null}
+            {premiumMessage ? <Text style={styles.settingsMutedNotice}>{premiumMessage}</Text> : null}
+          </Panel>
+
           <Panel title={t.ownerContacts}>
             <View style={styles.settingsAvatarRow}>
               {draft.avatarUrl ? (
@@ -7395,10 +10584,12 @@ function SettingsTab({
             </View>
             <Field label={t.firstName} value={draft.firstName} onChangeText={(value) => updateDraft("firstName", value)} />
             <Field label={t.lastName} value={draft.lastName} onChangeText={(value) => updateDraft("lastName", value)} />
-            <Field label={t.email} value={draft.email} onChangeText={(value) => updateDraft("email", value)} keyboardType="email-address" autoCapitalize="none" />
-            <Field label={t.phone} value={draft.phone} onChangeText={(value) => updateDraft("phone", value)} keyboardType="phone-pad" />
-            <Field label={t.newPassword} hint={t.leaveBlankPassword} value={newPassword} onChangeText={setNewPassword} secureTextEntry />
-          </Panel>
+	            <Field label={t.email} value={draft.email} onChangeText={(value) => updateDraft("email", value)} keyboardType="email-address" autoCapitalize="none" />
+	            <Field label={t.phone} value={draft.phone} onChangeText={(value) => updateDraft("phone", value)} keyboardType="phone-pad" />
+	            <Field label={t.newPassword} hint={t.leaveBlankPassword} value={newPassword} onChangeText={setNewPassword} secureTextEntry />
+	            <SettingsToggleRow label={t.unlockWithFaceId} value={biometricEnabled} onPress={onToggleBiometric} disabled={!biometricAvailable} />
+	            {!biometricAvailable ? <Text style={styles.clientOptionCaption}>{t.biometricUnavailable}</Text> : null}
+	          </Panel>
 
           <Panel title={t.businessFormat}>
             <Field label={t.companyName} value={draft.businessName} editable={isOwner} onChangeText={(value) => updateDraft("businessName", value)} />
@@ -7728,6 +10919,67 @@ function BrandLogo({ compact = false }: { compact?: boolean }) {
   return <Image source={WORDMARK} style={[styles.wordmark, compact && styles.wordmarkCompact]} resizeMode="contain" />;
 }
 
+function SocialAuthButtons({
+  t,
+  googleEnabled,
+  appleEnabled,
+  busyProvider,
+  disabled,
+  onGoogle,
+  onApple,
+}: {
+  t: Record<string, string>;
+  googleEnabled: boolean;
+  appleEnabled: boolean;
+  busyProvider: "google" | "apple" | null;
+  disabled?: boolean;
+  onGoogle: () => void;
+  onApple: () => void;
+}) {
+  const showApple = Platform.OS === "ios";
+
+  return (
+    <View style={styles.socialAuthBlock}>
+      <Pressable
+        style={({ pressed }) => [
+          styles.socialAuthButton,
+          !googleEnabled && styles.socialAuthButtonMuted,
+          pressed && !disabled && styles.pressablePressed,
+          disabled && styles.disabled,
+        ]}
+        onPress={onGoogle}
+        disabled={disabled || Boolean(busyProvider)}
+      >
+        <View style={styles.socialProviderIcon}>
+          <Text style={styles.socialProviderLetter}>G</Text>
+        </View>
+        <Text style={styles.socialButtonText}>{busyProvider === "google" ? t.signingIn : t.continueWithGoogle}</Text>
+      </Pressable>
+      {showApple ? (
+        <Pressable
+          style={({ pressed }) => [
+            styles.socialAuthButton,
+            styles.socialAuthButtonDark,
+            !appleEnabled && styles.socialAuthButtonMuted,
+            pressed && !disabled && styles.pressablePressed,
+            disabled && styles.disabled,
+          ]}
+          onPress={onApple}
+          disabled={disabled || Boolean(busyProvider)}
+        >
+          <Ionicons name="logo-apple" size={19} color="#FFFFFF" />
+          <Text style={styles.socialButtonTextDark}>{busyProvider === "apple" ? t.signingIn : t.continueWithApple}</Text>
+        </Pressable>
+      ) : null}
+      <View style={styles.socialDivider}>
+        <View style={styles.socialDividerLine} />
+        <Text style={styles.socialDividerText}>{t.socialAuthDivider}</Text>
+        <View style={styles.socialDividerLine} />
+      </View>
+    </View>
+  );
+}
+
 function LanguageSwitch({
   language,
   setLanguage,
@@ -7735,14 +10987,207 @@ function LanguageSwitch({
   language: AppLanguage;
   setLanguage: (language: AppLanguage) => void;
 }) {
+  const [open, setOpen] = useState(false);
+  const [anchor, setAnchor] = useState({ x: 16, y: 64, width: 112, height: 40 });
+  const anchorRef = useRef<View>(null);
+  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
+  const menuWidth = Math.min(220, Math.max(168, anchor.width));
+  const menuTop = Math.min(anchor.y + anchor.height + 8, screenHeight - 390);
+  const menuRight = Math.max(12, screenWidth - anchor.x - anchor.width);
+
+  function openMenu() {
+    anchorRef.current?.measureInWindow((x, y, width, height) => {
+      setAnchor({ x, y, width, height });
+      setOpen(true);
+    });
+  }
+
+  function selectLanguage(nextLanguage: AppLanguage) {
+    setLanguage(nextLanguage);
+    setOpen(false);
+  }
+
   return (
-    <View style={styles.languageRow}>
-      {(["uk", "ru", "en"] as AppLanguage[]).map((item) => (
-        <Pressable key={item} onPress={() => setLanguage(item)} style={[styles.languageButton, language === item && styles.languageButtonActive]}>
-          <Text style={[styles.languageText, language === item && styles.languageTextActive]}>{languageNames[item]}</Text>
-        </Pressable>
-      ))}
+    <View ref={anchorRef} collapsable={false} style={styles.languageMenuAnchor}>
+      <Pressable style={[styles.languageTrigger, open && styles.languageTriggerActive]} onPress={openMenu}>
+        <Text style={styles.languageTriggerCode}>{languageNames[language]}</Text>
+        <Text style={styles.languageTriggerLabel} numberOfLines={1}>
+          {languageDisplayNames[language]}
+        </Text>
+        <Ionicons name={open ? "chevron-up" : "chevron-down"} size={15} color="#64748B" />
+      </Pressable>
+      <Modal transparent visible={open} animationType="fade" onRequestClose={() => setOpen(false)}>
+        <View style={styles.languageDropdownLayer}>
+          <Pressable style={styles.languageDropdownBackdrop} onPress={() => setOpen(false)} />
+          <View style={[styles.languageDropdownMenu, { top: menuTop, right: menuRight, width: menuWidth }]}>
+            {SUPPORTED_APP_LANGUAGES.map((item) => {
+              const active = language === item;
+              return (
+                <Pressable key={item} style={[styles.languageDropdownItem, active && styles.languageDropdownItemActive]} onPress={() => selectLanguage(item)}>
+                  <View style={styles.languageDropdownCode}>
+                    <Text style={[styles.languageDropdownCodeText, active && styles.languageDropdownTextActive]}>{languageNames[item]}</Text>
+                  </View>
+                  <Text style={[styles.languageDropdownText, active && styles.languageDropdownTextActive]} numberOfLines={1}>
+                    {languageDisplayNames[item]}
+                  </Text>
+                  {active ? <Ionicons name="checkmark" size={17} color="#6D4AFF" /> : null}
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
+      </Modal>
     </View>
+  );
+}
+
+function RegisterPhoneField({
+  label,
+  selectedCountry,
+  language,
+  t,
+  value,
+  onChangeText,
+  onOpenPicker,
+}: {
+  label: string;
+  selectedCountry: PhoneCountryOption;
+  language: AppLanguage;
+  t: Record<string, string>;
+  value: string;
+  onChangeText: (value: string) => void;
+  onOpenPicker: () => void;
+}) {
+  return (
+    <View style={styles.field}>
+      <View style={styles.fieldHeader}>
+        <Text style={styles.label}>{label}</Text>
+        <Text style={styles.hint}>{getPhoneCountryLabel(selectedCountry, language, t)}</Text>
+      </View>
+      <View style={styles.phoneInputRow}>
+        <Pressable style={styles.phoneCountryButton} onPress={onOpenPicker}>
+          <Text style={styles.phoneCountryIso}>{selectedCountry.iso === "CUSTOM" ? t.customPhonePrefix : selectedCountry.iso}</Text>
+          <Text style={styles.phoneCountryPrefix}>{selectedCountry.callingCode}</Text>
+          <Ionicons name="chevron-down" size={14} color={DESIGN.colors.muted} />
+        </Pressable>
+        <TextInput
+          value={value}
+          onChangeText={onChangeText}
+          keyboardType="phone-pad"
+          autoCorrect={false}
+          placeholder="98 999 99 55"
+          placeholderTextColor="#94A3B8"
+          style={styles.phoneNumberInput}
+        />
+      </View>
+    </View>
+  );
+}
+
+function PhoneCountryPickerModal({
+  visible,
+  language,
+  t,
+  query,
+  setQuery,
+  customPrefix,
+  setCustomPrefix,
+  selectedCountry,
+  onSelect,
+  onSelectCustom,
+  onClose,
+}: {
+  visible: boolean;
+  language: AppLanguage;
+  t: Record<string, string>;
+  query: string;
+  setQuery: (value: string) => void;
+  customPrefix: string;
+  setCustomPrefix: (value: string) => void;
+  selectedCountry: PhoneCountryOption;
+  onSelect: (country: PhoneCountryOption) => void;
+  onSelectCustom: (prefix: string) => void;
+  onClose: () => void;
+}) {
+  const normalizedCustomPrefix = normalizePhonePrefix(customPrefix);
+  const filteredCountries = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+    if (!normalizedQuery) return PHONE_COUNTRIES;
+    return PHONE_COUNTRIES.filter((country) => {
+      const localizedName = getPhoneCountryLabel(country, language, t).toLowerCase();
+      return (
+        localizedName.includes(normalizedQuery) ||
+        country.country.toLowerCase().includes(normalizedQuery) ||
+        country.iso.toLowerCase().includes(normalizedQuery) ||
+        country.callingCode.includes(normalizedQuery.replace(/\s/g, ""))
+      );
+    });
+  }, [language, query, t]);
+
+  return (
+    <Modal transparent visible={visible} animationType="slide" onRequestClose={onClose}>
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.phoneCountryBackdrop}>
+        <View style={styles.phoneCountrySheet}>
+          <View style={styles.sheetHandle} />
+          <View style={styles.phoneCountryHeader}>
+            <View style={styles.headerTitleStack}>
+              <Text style={styles.phoneCountryTitle}>{t.selectCountryCode}</Text>
+              <Text style={styles.phoneCountrySubtitle}>{t.allCountries}</Text>
+            </View>
+            <Pressable style={styles.sheetClose} onPress={onClose}>
+              <Ionicons name="close" size={21} color="#0F172A" />
+            </Pressable>
+          </View>
+          <View style={styles.phoneCountrySearchWrap}>
+            <SearchInput value={query} onChangeText={setQuery} placeholder={t.searchCountryOrCode} />
+          </View>
+          <View style={styles.customPrefixCard}>
+            <View style={styles.customPrefixTextBlock}>
+              <Text style={styles.customPrefixTitle}>{t.customPhonePrefix}</Text>
+              <Text style={styles.customPrefixHint}>{t.customPhonePrefixHint}</Text>
+            </View>
+            <View style={styles.customPrefixRow}>
+              <TextInput
+                value={customPrefix}
+                onChangeText={setCustomPrefix}
+                keyboardType="phone-pad"
+                autoCorrect={false}
+                placeholder={t.customPhonePrefixPlaceholder}
+                placeholderTextColor="#94A3B8"
+                style={styles.customPrefixInput}
+              />
+              <Pressable
+                disabled={!normalizedCustomPrefix}
+                onPress={() => onSelectCustom(normalizedCustomPrefix)}
+                style={[styles.customPrefixButton, !normalizedCustomPrefix && styles.disabled]}
+              >
+                <Text style={styles.customPrefixButtonText}>{t.useCustomPrefix}</Text>
+              </Pressable>
+            </View>
+          </View>
+          <ScrollView style={styles.phoneCountryList} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+            {filteredCountries.map((country) => {
+              const isSelected = selectedCountry.iso === country.iso && selectedCountry.callingCode === country.callingCode;
+              return (
+                <Pressable key={`${country.iso}-${country.callingCode}`} style={[styles.phoneCountryOption, isSelected && styles.phoneCountryOptionActive]} onPress={() => onSelect(country)}>
+                  <View style={styles.phoneCountryOptionCode}>
+                    <Text style={[styles.phoneCountryOptionIso, isSelected && styles.phoneCountryOptionTextActive]}>{country.iso}</Text>
+                  </View>
+                  <View style={styles.phoneCountryOptionBody}>
+                    <Text style={[styles.phoneCountryOptionName, isSelected && styles.phoneCountryOptionTextActive]} numberOfLines={1} ellipsizeMode="tail">
+                      {getPhoneCountryLabel(country, language, t)}
+                    </Text>
+                    <Text style={styles.phoneCountryOptionCaption}>{country.country}</Text>
+                  </View>
+                  <Text style={[styles.phoneCountryOptionPrefix, isSelected && styles.phoneCountryOptionTextActive]}>{country.callingCode}</Text>
+                  {isSelected ? <Ionicons name="checkmark-circle" size={20} color={DESIGN.colors.primary} /> : null}
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
   );
 }
 
@@ -7966,36 +11411,94 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     textAlign: "center",
   },
-  languageRow: {
+  languageMenuAnchor: {
+    alignSelf: "flex-start",
+    zIndex: 30,
+  },
+  languageTrigger: {
+    minWidth: 116,
+    maxWidth: 156,
     flexDirection: "row",
-    gap: 6,
-    padding: 4,
-    borderRadius: 14,
-    backgroundColor: "#EEF2F7",
-  },
-  languageButton: {
-    minWidth: 40,
-    height: 34,
     alignItems: "center",
-    justifyContent: "center",
-    borderRadius: 11,
-  },
-  languageButtonActive: {
-    backgroundColor: "#FFFFFF",
+    gap: 7,
+    minHeight: 40,
+    paddingHorizontal: 11,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: "#D9D2FF",
-    shadowColor: "#6D4AFF",
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 5 },
+    borderColor: DESIGN.colors.border,
+    backgroundColor: "rgba(255,255,255,0.92)",
+    shadowColor: "#64748B",
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 7 },
   },
-  languageText: {
-    color: "#64748B",
+  languageTriggerActive: {
+    borderColor: "#C4B5FD",
+    backgroundColor: "#FFFFFF",
+  },
+  languageTriggerCode: {
+    color: DESIGN.colors.primary,
+    fontSize: 14,
+    fontWeight: "900",
+  },
+  languageTriggerLabel: {
+    flexShrink: 1,
+    color: "#475569",
     fontSize: 13,
     fontWeight: "800",
   },
-  languageTextActive: {
-    color: "#5B4BDB",
+  languageDropdownLayer: {
+    flex: 1,
+  },
+  languageDropdownBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(15, 23, 42, 0.08)",
+  },
+  languageDropdownMenu: {
+    position: "absolute",
+    padding: 6,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: DESIGN.colors.border,
+    backgroundColor: "#FFFFFF",
+    shadowColor: "#0F172A",
+    shadowOpacity: 0.14,
+    shadowRadius: 22,
+    shadowOffset: { width: 0, height: 14 },
+    elevation: 12,
+  },
+  languageDropdownItem: {
+    minHeight: 42,
+    paddingHorizontal: 9,
+    borderRadius: 13,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 9,
+  },
+  languageDropdownItemActive: {
+    backgroundColor: DESIGN.colors.primarySoft,
+  },
+  languageDropdownCode: {
+    width: 34,
+    height: 28,
+    borderRadius: 10,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#F8FAFC",
+  },
+  languageDropdownCodeText: {
+    color: "#64748B",
+    fontSize: 12,
+    fontWeight: "900",
+  },
+  languageDropdownText: {
+    flex: 1,
+    color: "#334155",
+    fontSize: 14,
+    fontWeight: "800",
+  },
+  languageDropdownTextActive: {
+    color: DESIGN.colors.primary,
   },
   authCard: {
     width: "100%",
@@ -8041,6 +11544,100 @@ const styles = StyleSheet.create({
   },
   segmentTextActive: {
     color: "#5B4BDB",
+  },
+  socialAuthBlock: {
+    gap: 10,
+    marginBottom: 16,
+  },
+  socialAuthButton: {
+    minHeight: 50,
+    paddingHorizontal: 14,
+    borderRadius: DESIGN.radius.md,
+    borderWidth: 1,
+    borderColor: DESIGN.colors.border,
+    backgroundColor: "#FFFFFF",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+  },
+  socialAuthButtonDark: {
+    borderColor: "#111827",
+    backgroundColor: "#111827",
+  },
+  socialAuthButtonMuted: {
+    opacity: 0.78,
+  },
+  socialProviderIcon: {
+    width: 25,
+    height: 25,
+    borderRadius: 13,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#F8FAFC",
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+  },
+  socialProviderLetter: {
+    color: "#4285F4",
+    fontSize: 14,
+    fontWeight: "900",
+  },
+  socialButtonText: {
+    color: DESIGN.colors.text,
+    fontSize: 15,
+    fontWeight: "900",
+  },
+  socialButtonTextDark: {
+    color: "#FFFFFF",
+    fontSize: 15,
+    fontWeight: "900",
+  },
+  socialButtonCaption: {
+    marginTop: 2,
+    color: DESIGN.colors.muted,
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  socialDivider: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    marginTop: 2,
+  },
+  socialDividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: "#E2E8F0",
+  },
+  socialDividerText: {
+    color: DESIGN.colors.muted,
+    fontSize: 12,
+    fontWeight: "800",
+  },
+  biometricUnlockCard: {
+    minHeight: 62,
+    marginBottom: 14,
+    padding: 12,
+    borderRadius: DESIGN.radius.lg,
+    borderWidth: 1,
+    borderColor: "#DDD6FE",
+    backgroundColor: DESIGN.colors.primarySoft,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  biometricUnlockIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#FFFFFF",
+  },
+  biometricUnlockText: {
+    flex: 1,
+    minWidth: 0,
   },
   form: {
     gap: 12,
@@ -8128,6 +11725,196 @@ const styles = StyleSheet.create({
   inputDisabled: {
     backgroundColor: DESIGN.colors.surfaceSoft,
     color: DESIGN.colors.muted,
+  },
+  phoneInputRow: {
+    minHeight: 52,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  phoneCountryButton: {
+    minWidth: 116,
+    height: 52,
+    paddingHorizontal: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    borderRadius: DESIGN.radius.md,
+    borderWidth: 1,
+    borderColor: DESIGN.colors.border,
+    backgroundColor: DESIGN.colors.surfaceSoft,
+  },
+  phoneCountryIso: {
+    maxWidth: 44,
+    color: DESIGN.colors.primaryDark,
+    fontSize: 12,
+    fontWeight: "900",
+  },
+  phoneCountryPrefix: {
+    color: DESIGN.colors.text,
+    fontSize: 15,
+    fontWeight: "900",
+  },
+  phoneNumberInput: {
+    flex: 1,
+    minWidth: 0,
+    height: 52,
+    borderRadius: DESIGN.radius.md,
+    borderWidth: 1,
+    borderColor: DESIGN.colors.border,
+    backgroundColor: DESIGN.colors.surface,
+    paddingHorizontal: 14,
+    color: DESIGN.colors.text,
+    fontSize: 16,
+  },
+  phoneCountryBackdrop: {
+    flex: 1,
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(15, 23, 42, 0.32)",
+  },
+  phoneCountrySheet: {
+    maxHeight: "90%",
+    paddingHorizontal: 16,
+    paddingBottom: Platform.OS === "ios" ? 24 : 18,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    backgroundColor: DESIGN.colors.surface,
+    shadowColor: "#0F172A",
+    shadowOpacity: 0.16,
+    shadowRadius: 28,
+    shadowOffset: { width: 0, height: -10 },
+    elevation: 8,
+  },
+  phoneCountryHeader: {
+    minHeight: 50,
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 12,
+    paddingBottom: 10,
+  },
+  phoneCountryTitle: {
+    color: DESIGN.colors.text,
+    fontSize: 23,
+    lineHeight: 28,
+    fontWeight: "900",
+  },
+  phoneCountrySubtitle: {
+    marginTop: 2,
+    color: DESIGN.colors.muted,
+    fontSize: 12,
+    fontWeight: "800",
+  },
+  phoneCountrySearchWrap: {
+    marginBottom: 10,
+  },
+  customPrefixCard: {
+    gap: 10,
+    marginBottom: 10,
+    padding: 12,
+    borderRadius: DESIGN.radius.lg,
+    borderWidth: 1,
+    borderColor: "#DDD6FE",
+    backgroundColor: DESIGN.colors.primarySoft,
+  },
+  customPrefixTextBlock: {
+    gap: 3,
+  },
+  customPrefixTitle: {
+    color: DESIGN.colors.text,
+    fontSize: 14,
+    fontWeight: "900",
+  },
+  customPrefixHint: {
+    color: DESIGN.colors.muted,
+    fontSize: 12,
+    lineHeight: 17,
+    fontWeight: "600",
+  },
+  customPrefixRow: {
+    flexDirection: "row",
+    gap: 8,
+  },
+  customPrefixInput: {
+    width: 94,
+    height: 46,
+    borderRadius: DESIGN.radius.md,
+    borderWidth: 1,
+    borderColor: "#C4B5FD",
+    backgroundColor: DESIGN.colors.surface,
+    paddingHorizontal: 12,
+    color: DESIGN.colors.text,
+    fontSize: 16,
+    fontWeight: "800",
+  },
+  customPrefixButton: {
+    flex: 1,
+    minHeight: 46,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: DESIGN.radius.md,
+    backgroundColor: DESIGN.colors.primary,
+    paddingHorizontal: 12,
+  },
+  customPrefixButtonText: {
+    color: "#FFFFFF",
+    fontSize: 13,
+    fontWeight: "900",
+  },
+  phoneCountryList: {
+    maxHeight: 420,
+  },
+  phoneCountryOption: {
+    minHeight: 58,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+    borderRadius: DESIGN.radius.md,
+    borderWidth: 1,
+    borderColor: "transparent",
+  },
+  phoneCountryOptionActive: {
+    borderColor: "#C4B5FD",
+    backgroundColor: DESIGN.colors.primarySoft,
+  },
+  phoneCountryOptionCode: {
+    width: 42,
+    height: 42,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: DESIGN.radius.md,
+    backgroundColor: "#F1F5F9",
+  },
+  phoneCountryOptionIso: {
+    color: DESIGN.colors.muted,
+    fontSize: 12,
+    fontWeight: "900",
+  },
+  phoneCountryOptionBody: {
+    flex: 1,
+    minWidth: 0,
+  },
+  phoneCountryOptionName: {
+    color: DESIGN.colors.text,
+    fontSize: 15,
+    fontWeight: "800",
+  },
+  phoneCountryOptionCaption: {
+    marginTop: 2,
+    color: DESIGN.colors.muted,
+    fontSize: 11,
+    fontWeight: "600",
+  },
+  phoneCountryOptionPrefix: {
+    color: DESIGN.colors.text,
+    fontSize: 15,
+    fontWeight: "900",
+  },
+  phoneCountryOptionTextActive: {
+    color: DESIGN.colors.primaryDark,
   },
   primaryButton: {
     minHeight: 52,
@@ -8528,9 +12315,11 @@ const styles = StyleSheet.create({
   },
   headerPanelKeyboard: {
     flexShrink: 1,
+    minHeight: 0,
   },
   headerPanelScrollBody: {
     flexShrink: 1,
+    minHeight: 0,
   },
   supportPanelContent: {
     padding: 16,
@@ -8539,7 +12328,7 @@ const styles = StyleSheet.create({
   supportPanelFooter: {
     paddingHorizontal: 16,
     paddingTop: 10,
-    paddingBottom: 16,
+    paddingBottom: Platform.OS === "ios" ? 20 : 16,
     borderTopWidth: 1,
     borderTopColor: "#F1F5F9",
     backgroundColor: "#FFFFFF",
@@ -8734,10 +12523,13 @@ const styles = StyleSheet.create({
   accountLanguageRow: {
     marginTop: 8,
     flexDirection: "row",
+    flexWrap: "wrap",
     gap: 8,
   },
   accountLanguageButton: {
-    flex: 1,
+    minWidth: 74,
+    flexGrow: 1,
+    flexBasis: "22%",
     minHeight: 46,
     alignItems: "center",
     justifyContent: "center",
@@ -11396,6 +15188,66 @@ const styles = StyleSheet.create({
   settingsCardTitle: {
     color: "#0F172A",
     fontSize: 16,
+    fontWeight: "900",
+  },
+  premiumMobileHeader: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  premiumMobileBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: DESIGN.radius.pill,
+    backgroundColor: "#F1F5F9",
+  },
+  premiumMobileBadgeActive: {
+    backgroundColor: "#ECFDF5",
+  },
+  premiumMobileBadgeText: {
+    color: "#64748B",
+    fontSize: 12,
+    fontWeight: "900",
+  },
+  premiumMobileBadgeTextActive: {
+    color: "#047857",
+  },
+  premiumMobilePlans: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  premiumMobilePlan: {
+    flex: 1,
+    minHeight: 112,
+    justifyContent: "space-between",
+    padding: 12,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    backgroundColor: "#FFFFFF",
+  },
+  premiumMobilePlanReady: {
+    borderColor: "#D8D0FF",
+  },
+  premiumMobilePlanFeatured: {
+    backgroundColor: DESIGN.colors.primarySoft,
+  },
+  premiumMobilePlanTitle: {
+    color: "#0F172A",
+    fontSize: 13,
+    fontWeight: "900",
+  },
+  premiumMobilePlanPrice: {
+    marginTop: 8,
+    color: "#111827",
+    fontSize: 18,
+    fontWeight: "900",
+  },
+  premiumMobilePlanAction: {
+    marginTop: 8,
+    color: DESIGN.colors.primaryDark,
+    fontSize: 12,
     fontWeight: "900",
   },
   settingsChoiceRow: {
