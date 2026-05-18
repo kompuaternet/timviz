@@ -8,6 +8,7 @@ import {
   getPublicCalendarAppointments,
   type PublicCalendarAppointment
 } from "./pro-calendar";
+import { sendOnlineBookingPushNotification } from "./push-notifications";
 import { getSupabaseAdmin, isSupabaseConfigured } from "./supabase";
 import { sendBookingTelegramNotification } from "./telegram-bot";
 import { addMinutesToTime } from "./work-schedule";
@@ -817,7 +818,7 @@ export async function createBusinessBooking(input: PublicBusinessBookingInput) {
   }
 
   if (createdAppointment) {
-    await sendBookingTelegramNotification({
+    const notificationPayload = {
       professionalId,
       businessId: business.id,
       appointmentId: createdAppointment.id,
@@ -825,7 +826,11 @@ export async function createBusinessBooking(input: PublicBusinessBookingInput) {
       appointmentTime: createdAppointment.startTime,
       customerName: createdAppointment.customerName,
       serviceName: createdAppointment.serviceName
-    }).catch(() => undefined);
+    };
+    await Promise.allSettled([
+      sendBookingTelegramNotification(notificationPayload),
+      sendOnlineBookingPushNotification(notificationPayload)
+    ]);
   }
 
   return booking;

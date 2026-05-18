@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { processPushReminders } from "../../../../lib/push-notifications";
 import { processTelegramReminders } from "../../../../lib/telegram-bot";
 
 function isAuthorized(request: Request) {
@@ -30,8 +31,11 @@ async function runReminders(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const stats = await processTelegramReminders();
-  return NextResponse.json({ ok: true, ...stats });
+  const [telegram, push] = await Promise.all([
+    processTelegramReminders(),
+    processPushReminders()
+  ]);
+  return NextResponse.json({ ok: true, telegram, push });
 }
 
 export async function GET(request: Request) {

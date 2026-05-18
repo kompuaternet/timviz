@@ -21,3 +21,5 @@ alter table if exists public.support_tickets enable row level security;
 alter table if exists public.support_messages enable row level security;
 alter table if exists public.telegram_connections enable row level security;
 alter table if exists public.telegram_reminder_events enable row level security;
+alter table if exists public.mobile_push_tokens enable row level security;
+alter table if exists public.mobile_push_events enable row level security;

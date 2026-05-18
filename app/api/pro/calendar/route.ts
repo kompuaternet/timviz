@@ -18,6 +18,12 @@ import {
   sendCabinetBookingTelegramNotification
 } from "../../../../lib/telegram-bot";
 import {
+  resetPushReminderEventsForAppointment,
+  sendBookingCancelledPushNotification,
+  sendBookingRescheduledPushNotification,
+  sendCabinetBookingPushNotification
+} from "../../../../lib/push-notifications";
+import {
   createBlockedCalendarTime,
   createCalendarAppointment,
   createCalendarAppointmentsBatch,
@@ -484,8 +490,8 @@ export async function POST(request: Request) {
       await Promise.allSettled(
         appointments
           .filter((item) => item.kind === "appointment")
-          .map((item) =>
-            sendCabinetBookingTelegramNotification({
+          .flatMap((item) => {
+            const notificationPayload = {
               professionalId: item.professionalId,
               businessId: item.businessId,
               appointmentId: item.id,
@@ -493,8 +499,12 @@ export async function POST(request: Request) {
               appointmentTime: item.startTime,
               customerName: item.customerName,
               serviceName: item.serviceName
-            })
-          )
+            };
+            return [
+              sendCabinetBookingTelegramNotification(notificationPayload),
+              sendCabinetBookingPushNotification(notificationPayload)
+            ];
+          })
       );
 
       return NextResponse.json({ appointments });
@@ -514,7 +524,7 @@ export async function POST(request: Request) {
       attendance: body.attendance
     });
 
-    await sendCabinetBookingTelegramNotification({
+    const notificationPayload = {
       professionalId: appointment.professionalId,
       businessId: appointment.businessId,
       appointmentId: appointment.id,
@@ -522,7 +532,11 @@ export async function POST(request: Request) {
       appointmentTime: appointment.startTime,
       customerName: appointment.customerName,
       serviceName: appointment.serviceName
-    }).catch(() => undefined);
+    };
+    await Promise.allSettled([
+      sendCabinetBookingTelegramNotification(notificationPayload),
+      sendCabinetBookingPushNotification(notificationPayload)
+    ]);
 
     return NextResponse.json(appointment);
   } catch (error) {
@@ -562,8 +576,12 @@ export async function DELETE(request: Request) {
         appointmentId: deletedAppointment.id,
         professionalId: deletedAppointment.professionalId
       }).catch(() => undefined);
+      await resetPushReminderEventsForAppointment({
+        appointmentId: deletedAppointment.id,
+        professionalId: deletedAppointment.professionalId
+      }).catch(() => undefined);
 
-      await sendBookingCancelledTelegramNotification({
+      const notificationPayload = {
         professionalId: deletedAppointment.professionalId,
         businessId: deletedAppointment.businessId,
         appointmentId: deletedAppointment.id,
@@ -571,7 +589,11 @@ export async function DELETE(request: Request) {
         appointmentTime: deletedAppointment.startTime,
         customerName: deletedAppointment.customerName,
         serviceName: deletedAppointment.serviceName
-      }).catch(() => undefined);
+      };
+      await Promise.allSettled([
+        sendBookingCancelledTelegramNotification(notificationPayload),
+        sendBookingCancelledPushNotification(notificationPayload)
+      ]);
     }
 
     return NextResponse.json({ ok: true, appointmentId: deletedAppointment.id });
@@ -639,8 +661,12 @@ export async function PATCH(request: Request) {
             appointmentId: appointment.id,
             professionalId: appointment.professionalId
           }).catch(() => undefined);
+          await resetPushReminderEventsForAppointment({
+            appointmentId: appointment.id,
+            professionalId: appointment.professionalId
+          }).catch(() => undefined);
 
-          await sendBookingRescheduledTelegramNotification({
+          const notificationPayload = {
             professionalId: appointment.professionalId,
             businessId: appointment.businessId,
             appointmentId: appointment.id,
@@ -650,7 +676,11 @@ export async function PATCH(request: Request) {
             previousAppointmentTime,
             customerName: appointment.customerName,
             serviceName: appointment.serviceName
-          }).catch(() => undefined);
+          };
+          await Promise.allSettled([
+            sendBookingRescheduledTelegramNotification(notificationPayload),
+            sendBookingRescheduledPushNotification(notificationPayload)
+          ]);
         }
       }
 
@@ -692,8 +722,12 @@ export async function PATCH(request: Request) {
           appointmentId: appointment.id,
           professionalId: appointment.professionalId
         }).catch(() => undefined);
+        await resetPushReminderEventsForAppointment({
+          appointmentId: appointment.id,
+          professionalId: appointment.professionalId
+        }).catch(() => undefined);
 
-        await sendBookingRescheduledTelegramNotification({
+        const notificationPayload = {
           professionalId: appointment.professionalId,
           businessId: appointment.businessId,
           appointmentId: appointment.id,
@@ -703,7 +737,11 @@ export async function PATCH(request: Request) {
           previousAppointmentTime,
           customerName: appointment.customerName,
           serviceName: appointment.serviceName
-        }).catch(() => undefined);
+        };
+        await Promise.allSettled([
+          sendBookingRescheduledTelegramNotification(notificationPayload),
+          sendBookingRescheduledPushNotification(notificationPayload)
+        ]);
       }
     }
 

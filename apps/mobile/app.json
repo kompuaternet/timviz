@@ -43,6 +43,7 @@
     "plugins": [
       "expo-localization",
       "expo-web-browser",
+      "expo-notifications",
       "expo-secure-store",
       "expo-apple-authentication",
       [

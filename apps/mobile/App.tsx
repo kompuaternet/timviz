@@ -1,10 +1,12 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import * as AppleAuthentication from "expo-apple-authentication";
+import Constants from "expo-constants";
 import * as Google from "expo-auth-session/providers/google";
 import * as ImagePicker from "expo-image-picker";
 import * as LocalAuthentication from "expo-local-authentication";
 import * as Localization from "expo-localization";
+import * as Notifications from "expo-notifications";
 import * as SecureStore from "expo-secure-store";
 import { StatusBar } from "expo-status-bar";
 import * as WebBrowser from "expo-web-browser";
@@ -33,6 +35,15 @@ import {
 } from "react-native";
 
 WebBrowser.maybeCompleteAuthSession();
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
+  }),
+});
 
 type BaseAppLanguage = "uk" | "ru" | "en";
 type AppLanguage = BaseAppLanguage | "fr" | "pl" | "cs" | "es" | "de";
@@ -426,7 +437,7 @@ type MobileNotificationsPayload = {
   }>;
 };
 
-type MobileSettingsSection = "general" | "online" | "services" | "schedule" | "telegram" | "address";
+type MobileSettingsSection = "general" | "online" | "services" | "schedule" | "push" | "telegram" | "address";
 
 type SettingsDraftState = {
   firstName: string;
@@ -480,6 +491,20 @@ type TelegramPanelState = {
   };
 };
 
+type PushPanelState = {
+  connected: boolean;
+  tokenCount: number;
+  settings: {
+    notificationsNewBooking: boolean;
+    notificationsCabinetBooking: boolean;
+    notificationsRescheduled: boolean;
+    notificationsCancelled: boolean;
+    notificationsReminder: boolean;
+    notificationsToday: boolean;
+    reminderLeadMinutes: number;
+  };
+};
+
 type TelegramBooleanSettingKey =
   | "notificationsNewBooking"
   | "notificationsCabinetBooking"
@@ -488,6 +513,14 @@ type TelegramBooleanSettingKey =
   | "notificationsReminder"
   | "notificationsToday"
   | "forwardingEnabled";
+
+type PushBooleanSettingKey =
+  | "notificationsNewBooking"
+  | "notificationsCabinetBooking"
+  | "notificationsRescheduled"
+  | "notificationsCancelled"
+  | "notificationsReminder"
+  | "notificationsToday";
 
 const STORAGE_KEY = "timviz_mobile_session_v2";
 const SECURE_SESSION_KEY = "timviz_mobile_secure_session_v1";
@@ -498,7 +531,7 @@ const WORDMARK = require("./assets/timviz-wordmark.png");
 const DEFAULT_SERVICE_CATEGORY = "Без категории";
 const SERVICE_COLORS = ["#9AD86A", "#8ED1F2", "#FF9A84", "#F7C948", "#A78BFA", "#34D399", "#F472B6", "#60A5FA"];
 const APP_ICON = require("./assets/timviz-icon.png");
-const SETTINGS_SECTIONS: MobileSettingsSection[] = ["general", "online", "services", "schedule", "telegram", "address"];
+const SETTINGS_SECTIONS: MobileSettingsSection[] = ["general", "online", "services", "schedule", "push", "telegram", "address"];
 const COUNTRY_OPTIONS = ["Ukraine", "Russia", "Poland", "United Kingdom", "United States", "Germany", "France", "Spain", "Italy", "International"];
 const TIMEZONE_OPTIONS = ["Europe/Kiev", "Europe/Warsaw", "Europe/Berlin", "Europe/London", "America/New_York", "Europe/Moscow", "Asia/Dubai", "UTC"];
 const TIMEZONE_LABELS: Record<string, string> = {
@@ -1045,6 +1078,7 @@ const baseCopy = {
     settingsOnline: "Онлайн-запис",
     settingsServices: "Послуги",
     settingsSchedule: "Графік",
+    settingsPush: "Push",
     settingsTelegram: "Telegram",
     settingsAddress: "Адреса",
     profileAndBusiness: "Профіль і бізнес",
@@ -1124,6 +1158,16 @@ const baseCopy = {
     telegramForwarding: "Пересилати підтримку в Telegram",
     telegramSaved: "Telegram оновлено",
     telegramSaveFailed: "Не вдалося оновити Telegram.",
+    pushTitle: "Сповіщення застосунку",
+    pushHint: "Отримуйте нові заявки, зміни записів і нагадування прямо на iPhone.",
+    pushEnable: "Увімкнути сповіщення",
+    pushEnabled: "Сповіщення увімкнено",
+    pushDisabled: "Сповіщення вимкнено",
+    pushPermissionDenied: "Дозвольте сповіщення в налаштуваннях iPhone.",
+    pushSaved: "Сповіщення оновлено",
+    pushSaveFailed: "Не вдалося оновити сповіщення.",
+    pushOpenSettings: "Відкрити налаштування iPhone",
+    pushDeviceCount: "Пристроїв",
     minutesBefore: "хв до запису",
     hoursBefore: "год до запису",
     dayBefore: "за день",
@@ -1421,6 +1465,7 @@ const baseCopy = {
     settingsOnline: "Онлайн-запись",
     settingsServices: "Услуги",
     settingsSchedule: "График",
+    settingsPush: "Push",
     settingsTelegram: "Telegram",
     settingsAddress: "Адрес",
     profileAndBusiness: "Профиль и бизнес",
@@ -1500,6 +1545,16 @@ const baseCopy = {
     telegramForwarding: "Пересылать поддержку в Telegram",
     telegramSaved: "Telegram обновлен",
     telegramSaveFailed: "Не удалось обновить Telegram.",
+    pushTitle: "Уведомления приложения",
+    pushHint: "Получайте новые заявки, изменения записей и напоминания прямо на iPhone.",
+    pushEnable: "Включить уведомления",
+    pushEnabled: "Уведомления включены",
+    pushDisabled: "Уведомления выключены",
+    pushPermissionDenied: "Разрешите уведомления в настройках iPhone.",
+    pushSaved: "Уведомления обновлены",
+    pushSaveFailed: "Не удалось обновить уведомления.",
+    pushOpenSettings: "Открыть настройки iPhone",
+    pushDeviceCount: "Устройств",
     minutesBefore: "мин до записи",
     hoursBefore: "ч до записи",
     dayBefore: "за день",
@@ -1797,6 +1852,7 @@ const baseCopy = {
     settingsOnline: "Online booking",
     settingsServices: "Services",
     settingsSchedule: "Schedule",
+    settingsPush: "Push",
     settingsTelegram: "Telegram",
     settingsAddress: "Address",
     profileAndBusiness: "Profile and business",
@@ -1876,6 +1932,16 @@ const baseCopy = {
     telegramForwarding: "Forward support to Telegram",
     telegramSaved: "Telegram updated",
     telegramSaveFailed: "Could not update Telegram.",
+    pushTitle: "App notifications",
+    pushHint: "Receive new requests, appointment changes, and reminders directly on your iPhone.",
+    pushEnable: "Enable notifications",
+    pushEnabled: "Notifications enabled",
+    pushDisabled: "Notifications disabled",
+    pushPermissionDenied: "Allow notifications in iPhone settings.",
+    pushSaved: "Notifications updated",
+    pushSaveFailed: "Could not update notifications.",
+    pushOpenSettings: "Open iPhone settings",
+    pushDeviceCount: "Devices",
     minutesBefore: "min before",
     hoursBefore: "h before",
     dayBefore: "one day before",
@@ -4435,6 +4501,31 @@ function normalizeTelegramPanel(payload: any, fallback?: TelegramPanelState | nu
       reminderLeadMinutes: typeof settings.reminderLeadMinutes === "number" ? settings.reminderLeadMinutes : fallback?.settings.reminderLeadMinutes ?? 120,
     },
   };
+}
+
+function normalizePushPanel(payload: any, fallback?: PushPanelState | null): PushPanelState {
+  const settings = payload?.settings || {};
+  return {
+    connected: payload?.connected === true,
+    tokenCount: Number(payload?.tokenCount || 0),
+    settings: {
+      notificationsNewBooking: typeof settings.notificationsNewBooking === "boolean" ? settings.notificationsNewBooking : fallback?.settings.notificationsNewBooking ?? true,
+      notificationsCabinetBooking: typeof settings.notificationsCabinetBooking === "boolean" ? settings.notificationsCabinetBooking : fallback?.settings.notificationsCabinetBooking ?? true,
+      notificationsRescheduled: typeof settings.notificationsRescheduled === "boolean" ? settings.notificationsRescheduled : fallback?.settings.notificationsRescheduled ?? true,
+      notificationsCancelled: typeof settings.notificationsCancelled === "boolean" ? settings.notificationsCancelled : fallback?.settings.notificationsCancelled ?? true,
+      notificationsReminder: typeof settings.notificationsReminder === "boolean" ? settings.notificationsReminder : fallback?.settings.notificationsReminder ?? true,
+      notificationsToday: typeof settings.notificationsToday === "boolean" ? settings.notificationsToday : fallback?.settings.notificationsToday ?? true,
+      reminderLeadMinutes: typeof settings.reminderLeadMinutes === "number" ? settings.reminderLeadMinutes : fallback?.settings.reminderLeadMinutes ?? 120,
+    },
+  };
+}
+
+function getExpoProjectId() {
+  return (
+    Constants.easConfig?.projectId ||
+    (Constants.expoConfig?.extra as { eas?: { projectId?: string } } | undefined)?.eas?.projectId ||
+    ""
+  );
 }
 
 function normalizeApiSession(result: any, fallbackEmail: string): MobileSession {
@@ -9987,6 +10078,7 @@ function settingsSectionLabel(section: MobileSettingsSection, t: Record<string, 
   if (section === "online") return t.settingsOnline;
   if (section === "services") return t.settingsServices;
   if (section === "schedule") return t.settingsSchedule;
+  if (section === "push") return t.settingsPush;
   if (section === "telegram") return t.settingsTelegram;
   return t.settingsAddress;
 }
@@ -10038,6 +10130,11 @@ function SettingsTab({
   const [isTelegramLoading, setIsTelegramLoading] = useState(false);
   const [isTelegramSaving, setIsTelegramSaving] = useState(false);
   const [telegramError, setTelegramError] = useState("");
+  const [pushPanel, setPushPanel] = useState<PushPanelState | null>(null);
+  const [pushPermissionStatus, setPushPermissionStatus] = useState<Notifications.PermissionStatus | "unknown">("unknown");
+  const [isPushLoading, setIsPushLoading] = useState(false);
+  const [isPushSaving, setIsPushSaving] = useState(false);
+  const [pushError, setPushError] = useState("");
   const [premiumPackages, setPremiumPackages] = useState<{ monthly: PurchasesPackage | null; yearly: PurchasesPackage | null }>({ monthly: null, yearly: null });
   const [isPremiumLoading, setIsPremiumLoading] = useState(false);
   const [premiumMessage, setPremiumMessage] = useState("");
@@ -10185,6 +10282,17 @@ function SettingsTab({
     if (activeSection !== "telegram" || telegramPanel || isTelegramLoading) return;
     void loadTelegramPanel(true);
   }, [activeSection, telegramPanel, isTelegramLoading]);
+
+  useEffect(() => {
+    if (activeSection !== "push" || pushPanel || isPushLoading) return;
+    void loadPushPanel(true);
+  }, [activeSection, pushPanel, isPushLoading]);
+
+  useEffect(() => {
+    Notifications.getPermissionsAsync()
+      .then((permission) => setPushPermissionStatus(permission.status))
+      .catch(() => setPushPermissionStatus("unknown"));
+  }, []);
 
   useEffect(() => {
     const query = addressSearchValue.trim();
@@ -10509,6 +10617,85 @@ function SettingsTab({
     await Share.share({ message: telegramPanel.deepLink, url: telegramPanel.deepLink }).catch(() => undefined);
   }
 
+  async function loadPushPanel(silent = false) {
+    if (!silent) setIsPushLoading(true);
+    setPushError("");
+    try {
+      const payload = await apiFetch("/api/mobile/pro/push");
+      setPushPanel(normalizePushPanel(payload, pushPanel));
+    } catch (error) {
+      setPushError(error instanceof Error ? error.message : t.pushSaveFailed);
+    } finally {
+      setIsPushLoading(false);
+    }
+  }
+
+  async function registerPushNotifications() {
+    setIsPushSaving(true);
+    setPushError("");
+    try {
+      const currentPermission = await Notifications.getPermissionsAsync();
+      let finalStatus = currentPermission.status;
+      if (finalStatus !== "granted") {
+        const requested = await Notifications.requestPermissionsAsync({
+          ios: {
+            allowAlert: true,
+            allowBadge: true,
+            allowSound: true,
+          },
+        });
+        finalStatus = requested.status;
+      }
+      setPushPermissionStatus(finalStatus);
+
+      if (finalStatus !== "granted") {
+        setPushError(t.pushPermissionDenied);
+        return;
+      }
+
+      const projectId = getExpoProjectId();
+      const token = await Notifications.getExpoPushTokenAsync(projectId ? { projectId } : undefined);
+      const payload = await apiFetch("/api/mobile/pro/push", {
+        method: "POST",
+        body: JSON.stringify({
+          expoPushToken: token.data,
+          platform: Platform.OS,
+          deviceName: `${Platform.OS} ${Platform.Version}`,
+          language,
+          timezone: draft.timezone || workspace?.professional.timezone || "UTC",
+        }),
+      });
+      setPushPanel(normalizePushPanel(payload, pushPanel));
+      setStatusText(t.pushSaved);
+    } catch (error) {
+      setPushError(error instanceof Error ? error.message : t.pushSaveFailed);
+    } finally {
+      setIsPushSaving(false);
+    }
+  }
+
+  async function updatePushSettings(patch: Partial<PushPanelState["settings"]>) {
+    setIsPushSaving(true);
+    setPushError("");
+    try {
+      const payload = await apiFetch("/api/mobile/pro/push", {
+        method: "PATCH",
+        body: JSON.stringify(patch),
+      });
+      setPushPanel(normalizePushPanel(payload, pushPanel));
+      setStatusText(t.pushSaved);
+    } catch (error) {
+      setPushError(error instanceof Error ? error.message : t.pushSaveFailed);
+    } finally {
+      setIsPushSaving(false);
+    }
+  }
+
+  function togglePushSetting(key: PushBooleanSettingKey) {
+    if (!pushPanel || isPushSaving) return;
+    void updatePushSettings({ [key]: !pushPanel.settings[key] });
+  }
+
   return (
     <View style={styles.sectionStack}>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.settingsSectionRail}>
@@ -10748,6 +10935,46 @@ function SettingsTab({
           </View>
           <Text style={styles.emptyText}>{t.staffScheduleHint}</Text>
           <SecondaryButton label={t.manageSchedule} onPress={() => setActiveTab("staff")} />
+        </Panel>
+      ) : null}
+
+      {activeSection === "push" ? (
+        <Panel title={t.pushTitle}>
+          <View style={styles.telegramStatus}>
+            <View style={[styles.telegramDot, pushPanel?.connected ? styles.telegramDotConnected : styles.telegramDotDisconnected]} />
+            <View style={styles.settingsMiniInfo}>
+              <Text style={styles.settingsCardTitle}>{pushPanel?.connected ? t.pushEnabled : t.pushDisabled}</Text>
+              <Text style={styles.clientOptionCaption}>{t.pushHint}</Text>
+            </View>
+          </View>
+          {pushError ? <Text style={styles.settingsMutedNotice}>{pushError}</Text> : null}
+          {isPushLoading ? <ActivityIndicator color="#6D4AFF" /> : null}
+          <View style={styles.settingsActionRow}>
+            <SecondaryButton label={t.pushEnable} onPress={() => void registerPushNotifications()} disabled={isPushSaving} />
+            {pushPermissionStatus === "denied" ? (
+              <SecondaryButton label={t.pushOpenSettings} onPress={() => Linking.openSettings().catch(() => undefined)} />
+            ) : null}
+          </View>
+          <InfoLine label={t.pushDeviceCount} value={String(pushPanel?.tokenCount || 0)} />
+          {pushPanel ? (
+            <>
+              <Text style={styles.emptyText}>{t.telegramNotificationsHint}</Text>
+              <SettingsToggleRow label={t.telegramOnlineBookings} value={pushPanel.settings.notificationsNewBooking} onPress={() => togglePushSetting("notificationsNewBooking")} disabled={isPushSaving} />
+              <SettingsToggleRow label={t.telegramCabinetBookings} value={pushPanel.settings.notificationsCabinetBooking} onPress={() => togglePushSetting("notificationsCabinetBooking")} disabled={isPushSaving} />
+              <SettingsToggleRow label={t.telegramRescheduled} value={pushPanel.settings.notificationsRescheduled} onPress={() => togglePushSetting("notificationsRescheduled")} disabled={isPushSaving} />
+              <SettingsToggleRow label={t.telegramCancelled} value={pushPanel.settings.notificationsCancelled} onPress={() => togglePushSetting("notificationsCancelled")} disabled={isPushSaving} />
+              <Text style={styles.emptyText}>{t.telegramRemindersHint}</Text>
+              <SettingsToggleRow label={t.telegramReminders} value={pushPanel.settings.notificationsReminder} onPress={() => togglePushSetting("notificationsReminder")} disabled={isPushSaving} />
+              <SettingsToggleRow label={t.telegramToday} value={pushPanel.settings.notificationsToday} onPress={() => togglePushSetting("notificationsToday")} disabled={isPushSaving} />
+              <SettingsOptionRail
+                label={t.telegramReminderLead}
+                value={String(pushPanel.settings.reminderLeadMinutes)}
+                options={TELEGRAM_REMINDER_LEAD_OPTIONS.map(String)}
+                onSelect={(value) => void updatePushSettings({ reminderLeadMinutes: Number(value) || 120 })}
+                renderLabel={(value) => formatReminderLead(Number(value), t)}
+              />
+            </>
+          ) : null}
         </Panel>
       ) : null}
 
