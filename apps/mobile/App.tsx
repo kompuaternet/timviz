@@ -1,6 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import * as AppleAuthentication from "expo-apple-authentication";
+import * as Google from "expo-auth-session/providers/google";
 import * as ImagePicker from "expo-image-picker";
 import * as LocalAuthentication from "expo-local-authentication";
 import * as Localization from "expo-localization";
@@ -6335,6 +6336,7 @@ export default function App() {
 	              busyProvider={socialBusy}
 	              disabled={busy}
 	              onGoogle={signInWithGoogle}
+	              onGoogleToken={(idToken) => authenticateWithSocialProvider("google", idToken)}
 	              onApple={signInWithApple}
 	            />
 
@@ -10919,6 +10921,71 @@ function BrandLogo({ compact = false }: { compact?: boolean }) {
   return <Image source={WORDMARK} style={[styles.wordmark, compact && styles.wordmarkCompact]} resizeMode="contain" />;
 }
 
+function ConfiguredGoogleAuthButton({
+  t,
+  busyProvider,
+  disabled,
+  onToken,
+}: {
+  t: Record<string, string>;
+  busyProvider: "google" | "apple" | null;
+  disabled?: boolean;
+  onToken: (idToken: string) => void | Promise<void>;
+}) {
+  const [prompting, setPrompting] = useState(false);
+  const [request, response, promptAsync] = Google.useAuthRequest({
+    webClientId: GOOGLE_WEB_CLIENT_ID || undefined,
+    iosClientId: GOOGLE_IOS_CLIENT_ID || undefined,
+    androidClientId: GOOGLE_ANDROID_CLIENT_ID || undefined,
+    scopes: ["openid", "profile", "email"],
+    selectAccount: true,
+  });
+
+  useEffect(() => {
+    if (response?.type !== "success") return;
+    const idToken = response.params?.id_token || response.authentication?.idToken || "";
+    if (!idToken) {
+      Alert.alert("Google", t.socialAuthFailed);
+      return;
+    }
+    void onToken(idToken);
+  }, [onToken, response, t.socialAuthFailed]);
+
+  async function handleGooglePress() {
+    if (!request) {
+      Alert.alert("Google", t.socialAuthConfigMissing);
+      return;
+    }
+    setPrompting(true);
+    try {
+      await promptAsync();
+    } catch (error) {
+      Alert.alert("Google", error instanceof Error ? error.message : t.socialAuthFailed);
+    } finally {
+      setPrompting(false);
+    }
+  }
+
+  const isBusy = prompting || busyProvider === "google";
+
+  return (
+    <Pressable
+      style={({ pressed }) => [
+        styles.socialAuthButton,
+        pressed && !disabled && styles.pressablePressed,
+        disabled && styles.disabled,
+      ]}
+      onPress={handleGooglePress}
+      disabled={disabled || Boolean(busyProvider) || !request}
+    >
+      <View style={styles.socialProviderIcon}>
+        <Text style={styles.socialProviderLetter}>G</Text>
+      </View>
+      <Text style={styles.socialButtonText}>{isBusy ? t.signingIn : t.continueWithGoogle}</Text>
+    </Pressable>
+  );
+}
+
 function SocialAuthButtons({
   t,
   googleEnabled,
@@ -10926,6 +10993,7 @@ function SocialAuthButtons({
   busyProvider,
   disabled,
   onGoogle,
+  onGoogleToken,
   onApple,
 }: {
   t: Record<string, string>;
@@ -10934,27 +11002,32 @@ function SocialAuthButtons({
   busyProvider: "google" | "apple" | null;
   disabled?: boolean;
   onGoogle: () => void;
+  onGoogleToken: (idToken: string) => void | Promise<void>;
   onApple: () => void;
 }) {
   const showApple = Platform.OS === "ios";
 
   return (
     <View style={styles.socialAuthBlock}>
-      <Pressable
-        style={({ pressed }) => [
-          styles.socialAuthButton,
-          !googleEnabled && styles.socialAuthButtonMuted,
-          pressed && !disabled && styles.pressablePressed,
-          disabled && styles.disabled,
-        ]}
-        onPress={onGoogle}
-        disabled={disabled || Boolean(busyProvider)}
-      >
-        <View style={styles.socialProviderIcon}>
-          <Text style={styles.socialProviderLetter}>G</Text>
-        </View>
-        <Text style={styles.socialButtonText}>{busyProvider === "google" ? t.signingIn : t.continueWithGoogle}</Text>
-      </Pressable>
+      {googleEnabled ? (
+        <ConfiguredGoogleAuthButton t={t} busyProvider={busyProvider} disabled={disabled} onToken={onGoogleToken} />
+      ) : (
+        <Pressable
+          style={({ pressed }) => [
+            styles.socialAuthButton,
+            styles.socialAuthButtonMuted,
+            pressed && !disabled && styles.pressablePressed,
+            disabled && styles.disabled,
+          ]}
+          onPress={onGoogle}
+          disabled={disabled || Boolean(busyProvider)}
+        >
+          <View style={styles.socialProviderIcon}>
+            <Text style={styles.socialProviderLetter}>G</Text>
+          </View>
+          <Text style={styles.socialButtonText}>{busyProvider === "google" ? t.signingIn : t.continueWithGoogle}</Text>
+        </Pressable>
+      )}
       {showApple ? (
         <Pressable
           style={({ pressed }) => [
