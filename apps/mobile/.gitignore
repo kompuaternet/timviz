@@ -30,6 +30,7 @@ yarn-error.*
 .DS_Store
 *.pem
 apple-credentials/
+credentials.json
 build/
 
 # local env files
