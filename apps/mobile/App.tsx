@@ -9335,18 +9335,47 @@ function WorkspaceHeader({
     return () => clearInterval(intervalId);
   }, [panel, supportTicketId]);
 
+  async function loadNotifications(options: { spinner?: boolean } = {}) {
+    if (options.spinner) setLoadingNotifications(true);
+    try {
+      const payload = await apiFetch("/api/mobile/pro/calendar?mode=notifications");
+      setNotifications(payload || {});
+      return payload;
+    } catch {
+      if (options.spinner) setNotifications({});
+      return null;
+    } finally {
+      if (options.spinner) setLoadingNotifications(false);
+    }
+  }
+
+  useEffect(() => {
+    let cancelled = false;
+    const refresh = async () => {
+      if (cancelled) return;
+      await loadNotifications();
+    };
+    void refresh();
+    const intervalId = setInterval(() => void refresh(), 12000);
+    const receivedSubscription = Notifications.addNotificationReceivedListener(() => {
+      void refresh();
+    });
+    const responseSubscription = Notifications.addNotificationResponseReceivedListener(() => {
+      void refresh();
+      setPanel("notifications");
+    });
+    return () => {
+      cancelled = true;
+      clearInterval(intervalId);
+      receivedSubscription.remove();
+      responseSubscription.remove();
+    };
+  }, [session.professionalId, session.token]);
+
   async function openPanel(nextPanel: typeof panel) {
     setPanel(nextPanel);
     if (nextPanel === "notifications") {
-      setLoadingNotifications(true);
-      try {
-        const payload = await apiFetch("/api/mobile/pro/calendar?mode=notifications");
-        setNotifications(payload || {});
-      } catch {
-        setNotifications({});
-      } finally {
-        setLoadingNotifications(false);
-      }
+      await loadNotifications({ spinner: true });
     }
   }
 

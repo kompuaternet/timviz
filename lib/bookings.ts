@@ -3,6 +3,7 @@ import path from "path";
 import { getSalonBySlug } from "../data/mock-data";
 import { getPublicBookingSlots } from "./public-booking";
 import { getBusinessDirectorySnapshot, type BusinessRecord, type ServiceRecord } from "./pro-data";
+import { createAppNotifications } from "./app-notifications";
 import {
   createCalendarAppointment,
   getPublicCalendarAppointments,
@@ -827,7 +828,31 @@ export async function createBusinessBooking(input: PublicBusinessBookingInput) {
       customerName: createdAppointment.customerName,
       serviceName: createdAppointment.serviceName
     };
+    const notificationTitle = "Новая онлайн-запись";
+    const notificationBody = [
+      createdAppointment.customerName,
+      createdAppointment.serviceName,
+      `${createdAppointment.appointmentDate} ${createdAppointment.startTime}`
+    ].filter(Boolean).join(" · ");
     await Promise.allSettled([
+      createAppNotifications(
+        notificationTargets.map((targetProfessionalId) => ({
+          professionalId: targetProfessionalId,
+          businessId: business.id,
+          type: "online_booking",
+          title: notificationTitle,
+          body: notificationBody,
+          actionUrl: `/pro/calendar?date=${encodeURIComponent(createdAppointment.appointmentDate)}&panel=notifications`,
+          payload: {
+            bookingId: booking.id,
+            appointmentId: createdAppointment.id,
+            appointmentDate: createdAppointment.appointmentDate,
+            appointmentTime: createdAppointment.startTime,
+            customerName: createdAppointment.customerName,
+            serviceName: createdAppointment.serviceName
+          }
+        }))
+      ),
       sendBookingTelegramNotification({
         professionalId,
         ...baseNotificationPayload
