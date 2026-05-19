@@ -6684,7 +6684,6 @@ function CalendarTab({
   const titleText = formatCalendarTitle(viewMode, selectedDate, language);
   const selectedClient = visitDraft.selectedClientId ? clients.find((client) => client.id === visitDraft.selectedClientId) || null : null;
   const draftVisitItems = Array.isArray(visitDraft.items) && visitDraft.items.length ? visitDraft.items : [createVisitServiceDraft(visitDraft.startTime || "09:00")];
-  const manualWithoutServiceMode = draftVisitItems.some((item) => !item.serviceId && (item.serviceName === t.withoutService || !item.serviceName));
   const visitTotal = draftVisitItems.reduce((sum, item) => sum + Number(item.priceAmount || 0), 0);
   const filteredServices = useMemo(() => {
     const query = serviceQuery.trim().toLowerCase();
@@ -7436,29 +7435,6 @@ function CalendarTab({
                     </View>
                     <Ionicons name="add" size={18} color="#6D4AFF" />
                   </Pressable>
-                  {manualWithoutServiceMode ? (
-                    <>
-                      <Field
-                        label={t.clientName}
-                        value={visitDraft.customerName}
-                        onChangeText={(value) => setVisitDraft({ ...visitDraft, selectedClientId: undefined, customerName: value })}
-                        placeholder={t.customer}
-                      />
-                      <Field
-                        label={t.comment}
-                        value={visitDraft.notes}
-                        onChangeText={(value) => setVisitDraft({ ...visitDraft, notes: value })}
-                        placeholder={t.comment}
-                      />
-                    </>
-                  ) : (
-                    <Field
-                      label={t.comment}
-                      value={visitDraft.notes}
-                      onChangeText={(value) => setVisitDraft({ ...visitDraft, notes: value })}
-                      placeholder={t.comment}
-                    />
-                  )}
 
                   <View style={styles.visitSectionHeader}>
                     <Text style={styles.visitSectionTitle}>{t.visitTab || t.newVisit}</Text>
