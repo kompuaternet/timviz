@@ -8,6 +8,7 @@ import {
   getPublicCalendarAppointments,
   type PublicCalendarAppointment
 } from "./pro-calendar";
+import { isPremiumAccessActive } from "./premium";
 import { sendOnlineBookingPushNotification } from "./push-notifications";
 import { getSupabaseAdmin, isSupabaseConfigured } from "./supabase";
 import { sendBookingTelegramNotification } from "./telegram-bot";
@@ -644,6 +645,16 @@ export async function createBusinessBooking(input: PublicBusinessBookingInput) {
 
   if (business.allowOnlineBooking !== true) {
     throw new Error("Online booking is not enabled for this business.");
+  }
+
+  const ownerProfessionalId =
+    business.ownerProfessionalId ||
+    directory.memberships.find((membership) => membership.businessId === business.id && membership.scope === "owner")?.professionalId ||
+    "";
+  const ownerProfessional = directory.professionals.find((professional) => professional.id === ownerProfessionalId) || null;
+
+  if (!ownerProfessional || !isPremiumAccessActive(ownerProfessional)) {
+    throw new Error("Online booking requires an active Pro subscription.");
   }
 
   const businessServices = directory.services

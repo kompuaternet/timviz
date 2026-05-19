@@ -138,6 +138,8 @@ npm run db:upload:gdrive
 2. `premium_status`
 3. `premium_until`
 
+Новые владельцы бизнеса получают 14 дней пробного Premium: при регистрации выставляются `plan=premium`, `premium_status=trialing`, `premium_until=<created_at + 14 days>`. После истечения `premium_until` платные функции закрываются Pro-paywall, пока пользователь не оформит подписку.
+
 Базовые product id:
 
 1. `timviz_premium_monthly`

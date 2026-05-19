@@ -10,6 +10,7 @@ import {
   isTelegramBotConfigured,
   setTelegramConnectionSettings
 } from "../../../../../../lib/telegram-bot";
+import { isPremiumAccessActive } from "../../../../../../lib/premium";
 
 function telegramPayload(result: Awaited<ReturnType<typeof ensureTelegramConnectToken>>) {
   const connection = result.connection;
@@ -40,6 +41,9 @@ async function prepareTelegramConnection(professionalId: string) {
   const workspace = await getWorkspaceSnapshot(professionalId);
   if (!workspace) {
     throw new Error("Workspace not found.");
+  }
+  if (!isPremiumAccessActive(workspace.professional)) {
+    throw new Error("Telegram notifications require an active Pro subscription.");
   }
 
   await Promise.all([

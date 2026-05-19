@@ -19,6 +19,7 @@ import {
   type ServiceRecord
 } from "./pro-data";
 import { getPublicCalendarAppointments, type PublicCalendarAppointment } from "./pro-calendar";
+import { isPremiumAccessActive } from "./premium";
 import { buildPublicBusinessPathMap } from "./public-business-path";
 import { getServiceLocalizedText, localizeCategoryName } from "./service-templates";
 
@@ -372,28 +373,29 @@ function isBusinessAvailable(input: {
   professionalIds: string[];
   services: ServiceRecord[];
   appointments: PublicCalendarAppointment[];
+  premiumProfessional?: ProfessionalRecord | null;
   date?: string;
   time?: string;
   query?: string;
 }) {
-  if (!input.date || !input.time) {
-    if (input.business.allowOnlineBooking !== true) {
-      return {
-        available: false,
-        label: genericCopy.onlineBookingDisabled.ru,
-        localizedLabel: genericCopy.onlineBookingDisabled
-      };
-    }
-
-    return { available: true, label: genericCopy.chooseTime.ru, localizedLabel: genericCopy.chooseTime };
-  }
-
   if (input.business.allowOnlineBooking !== true) {
     return {
       available: false,
       label: genericCopy.onlineBookingDisabled.ru,
       localizedLabel: genericCopy.onlineBookingDisabled
     };
+  }
+
+  if (!input.premiumProfessional || !isPremiumAccessActive(input.premiumProfessional)) {
+    return {
+      available: false,
+      label: genericCopy.onlineBookingDisabled.ru,
+      localizedLabel: genericCopy.onlineBookingDisabled
+    };
+  }
+
+  if (!input.date || !input.time) {
+    return { available: true, label: genericCopy.chooseTime.ru, localizedLabel: genericCopy.chooseTime };
   }
 
   const workSchedule = normalizeWorkSchedule(input.business.workSchedule);
@@ -490,6 +492,7 @@ async function loadPublicSearchIndex(params: PublicSearchParams = {}): Promise<P
       professionalIds: memberships.map((membership) => membership.professionalId),
       services: businessServices,
       appointments: calendarAppointments,
+      premiumProfessional: primaryProfessional,
       date: params.date,
       time: params.time,
       query: params.query

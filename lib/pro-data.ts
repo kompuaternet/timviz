@@ -5,7 +5,7 @@ import { isMailerConfigured, sendMail } from "./mailer";
 import { getSupabaseAdmin, isSupabaseConfigured } from "./supabase";
 import { hashPassword, verifyPassword } from "./pro-auth";
 import { getPublicBusinessPathId } from "./public-business-path";
-import { normalizePlan, normalizePremiumStatus, type PremiumStatus, type TimvizPlan } from "./premium";
+import { getPremiumTrialUntil, isPremiumAccessActive, normalizePlan, normalizePremiumStatus, type PremiumStatus, type TimvizPlan } from "./premium";
 import { convertBaseUahPriceToCountryPrice, inferCurrencyFromCountryName, type PricingContext } from "./service-pricing";
 import { getServiceLocalizedText, getTemplateBasePriceUah, localizeCategoryName, type LocalizedServiceText } from "./service-templates";
 import {
@@ -1155,6 +1155,8 @@ export async function createProfessionalSetup(input: {
   }
 
   const createdAt = new Date().toISOString();
+  const shouldStartPremiumTrial = input.setup.ownerMode === "owner" && !existingProfessional;
+  const initialPremiumUntil = shouldStartPremiumTrial ? getPremiumTrialUntil(createdAt) : null;
   const requesterName = `${account.firstName} ${account.lastName}`.trim();
   let createdJoinRequest: CreatedJoinRequestNotification | null = null;
   const initialWorkSchedule =
@@ -1185,9 +1187,9 @@ export async function createProfessionalSetup(input: {
       booking_credits_total:
         existingProfessional?.bookingCreditsTotal ?? DEFAULT_BOOKING_CREDITS,
       wallet_balance: existingProfessional?.walletBalance ?? 0,
-      plan: existingProfessional?.plan ?? "free",
-      premium_status: existingProfessional?.premiumStatus ?? "inactive",
-      premium_until: existingProfessional?.premiumUntil ?? null,
+      plan: existingProfessional?.plan ?? (shouldStartPremiumTrial ? "premium" : "free"),
+      premium_status: existingProfessional?.premiumStatus ?? (shouldStartPremiumTrial ? "trialing" : "inactive"),
+      premium_until: existingProfessional?.premiumUntil ?? initialPremiumUntil,
       paddle_customer_id: existingProfessional?.paddleCustomerId ?? null,
       paddle_subscription_id: existingProfessional?.paddleSubscriptionId ?? null,
       paddle_price_id: existingProfessional?.paddlePriceId ?? null,
@@ -1494,9 +1496,9 @@ export async function createProfessionalSetup(input: {
     currency: account.currency || inferCurrencyFromCountry(account.country),
     bookingCreditsTotal: existingProfessional?.bookingCreditsTotal ?? DEFAULT_BOOKING_CREDITS,
     walletBalance: existingProfessional?.walletBalance ?? 0,
-    plan: existingProfessional?.plan ?? "free",
-    premiumStatus: existingProfessional?.premiumStatus ?? "inactive",
-    premiumUntil: existingProfessional?.premiumUntil,
+    plan: existingProfessional?.plan ?? (shouldStartPremiumTrial ? "premium" : "free"),
+    premiumStatus: existingProfessional?.premiumStatus ?? (shouldStartPremiumTrial ? "trialing" : "inactive"),
+    premiumUntil: existingProfessional?.premiumUntil ?? initialPremiumUntil ?? undefined,
     paddleCustomerId: existingProfessional?.paddleCustomerId,
     paddleSubscriptionId: existingProfessional?.paddleSubscriptionId,
     paddlePriceId: existingProfessional?.paddlePriceId,
@@ -3465,6 +3467,14 @@ export async function updateWorkspaceSettingsForProfessional(
 
   if (password && password.length < 6) {
     throw new Error("Password must be at least 6 characters.");
+  }
+
+  if (
+    nextBusiness.allowOnlineBooking === true &&
+    workspace.business.allowOnlineBooking !== true &&
+    !isPremiumAccessActive(workspace.professional)
+  ) {
+    throw new Error("Online booking requires an active Pro subscription.");
   }
 
   if (isSupabaseConfigured()) {

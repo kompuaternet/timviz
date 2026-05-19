@@ -6,6 +6,7 @@ export type PremiumStatus = "inactive" | "trialing" | "active" | "past_due" | "c
 export type PremiumBilling = "monthly" | "yearly";
 
 export const FREE_APPOINTMENTS_PER_MONTH = 100;
+export const PREMIUM_TRIAL_DAYS = 14;
 
 const freeLimitMessages: Record<SiteLanguage, string> = {
   ru: "Вы достигли лимита бесплатного тарифа. Перейдите на Premium, чтобы создавать записи без ограничений.",
@@ -40,15 +41,28 @@ export function isPremiumAccessActive(input: {
   }
 
   const status = normalizePremiumStatus(input.premiumStatus);
-  if (status === "active" || status === "trialing") {
+  if (status === "active") {
     return true;
   }
 
+  if (status === "trialing") {
+    return isFutureDate(input.premiumUntil);
+  }
+
   if (status === "canceled" && input.premiumUntil) {
-    return new Date(input.premiumUntil).getTime() > Date.now();
+    return isFutureDate(input.premiumUntil);
   }
 
   return false;
+}
+
+export function getPremiumTrialUntil(startDate: Date | string = new Date()) {
+  const date = startDate instanceof Date ? new Date(startDate) : new Date(startDate);
+  if (!Number.isFinite(date.getTime())) {
+    date.setTime(Date.now());
+  }
+  date.setDate(date.getDate() + PREMIUM_TRIAL_DAYS);
+  return date.toISOString();
 }
 
 export function getPremiumBillingFromPriceId(priceId: string | null | undefined): PremiumBilling | null {
@@ -108,9 +122,7 @@ export function getPremiumUntilAfterCheckout(input: {
     return date.toISOString();
   }
 
-  const trialUntil = new Date();
-  trialUntil.setDate(trialUntil.getDate() + 14);
-  return trialUntil.toISOString();
+  return getPremiumTrialUntil();
 }
 
 export async function getProfessionalPremiumSnapshot(input: {

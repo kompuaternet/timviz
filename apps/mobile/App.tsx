@@ -438,6 +438,7 @@ type MobileNotificationsPayload = {
 };
 
 type MobileSettingsSection = "general" | "online" | "services" | "schedule" | "push" | "telegram" | "address";
+type PremiumFeature = "clients" | "staff" | "online" | "schedule" | "push" | "telegram" | "address";
 
 type SettingsDraftState = {
   firstName: string;
@@ -534,6 +535,8 @@ const DEFAULT_SERVICE_CATEGORY = "Без категории";
 const SERVICE_COLORS = ["#9AD86A", "#8ED1F2", "#FF9A84", "#F7C948", "#A78BFA", "#34D399", "#F472B6", "#60A5FA"];
 const APP_ICON = require("./assets/timviz-icon.png");
 const SETTINGS_SECTIONS: MobileSettingsSection[] = ["general", "online", "services", "schedule", "push", "telegram", "address"];
+const PREMIUM_LOCKED_TABS: AppTab[] = ["clients", "staff"];
+const PREMIUM_LOCKED_SETTINGS_SECTIONS: MobileSettingsSection[] = ["online", "schedule", "push", "telegram", "address"];
 const COUNTRY_OPTIONS = ["Ukraine", "Russia", "Poland", "United Kingdom", "United States", "Germany", "France", "Spain", "Italy", "International"];
 const TIMEZONE_OPTIONS = ["Europe/Kiev", "Europe/Warsaw", "Europe/Berlin", "Europe/London", "America/New_York", "Europe/Moscow", "Asia/Dubai", "UTC"];
 const TIMEZONE_LABELS: Record<string, string> = {
@@ -555,7 +558,11 @@ const REVENUECAT_YEARLY_PRODUCT_ID = process.env.EXPO_PUBLIC_REVENUECAT_YEARLY_P
 const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || "";
 const GOOGLE_IOS_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || "";
 const GOOGLE_ANDROID_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID || "";
-const EXPO_PUBLIC_EAS_PROJECT_ID = process.env.EXPO_PUBLIC_EAS_PROJECT_ID || "";
+const EXPO_PUBLIC_EAS_PROJECT_ID =
+  process.env.EXPO_PUBLIC_EAS_PROJECT_ID ||
+  Constants.easConfig?.projectId ||
+  (Constants.expoConfig?.extra as { eas?: { projectId?: string } } | undefined)?.eas?.projectId ||
+  "";
 const PHONE_COUNTRIES: PhoneCountryOption[] = [
   { iso: "AF", country: "Afghanistan", callingCode: "+93", currency: "AFN" },
   { iso: "AL", country: "Albania", callingCode: "+355", currency: "ALL" },
@@ -1064,7 +1071,33 @@ const baseCopy = {
     premiumSubscriptionActive: "Premium активний",
     premiumSubscriptionTrial: "Пробний період",
     premiumSubscriptionFree: "Free",
-    premiumSubscriptionText: "Premium працює в застосунку і на сайті.",
+    premiumSubscriptionText: "Нові акаунти отримують 14 днів Premium безкоштовно. Після пробного періоду Pro відкриває платні інструменти без обмежень.",
+    premiumTrialIncluded: "14 днів Premium безкоштовно",
+    premiumTrialDaysLeft: "Залишилось {count} дн. Premium",
+    premiumTrialOneDayLeft: "Останній день Premium",
+    premiumTrialExpired: "Пробний Premium завершився",
+    premiumUpgradeCta: "Оформити Pro",
+    premiumLockedBadge: "Pro",
+    premiumFeatureBenefitsTitle: "У Pro відкривається",
+    premiumBenefitOnlineBooking: "онлайн-запис і публічна сторінка",
+    premiumBenefitReminders: "push і Telegram-нагадування",
+    premiumBenefitTeam: "команда, графіки і ролі",
+    premiumBenefitClients: "клієнтська база без ручних обхідних шляхів",
+    premiumYearlyNudge: "Річний тариф вигідніший, якщо ви плануєте працювати в Timviz постійно.",
+    premiumFeatureClientsTitle: "Клієнтська база доступна в Pro",
+    premiumFeatureClientsText: "Зберігайте клієнтів, швидко створюйте повторні записи і ведіть історію після пробного періоду.",
+    premiumFeatureStaffTitle: "Команда і графіки доступні в Pro",
+    premiumFeatureStaffText: "Додавайте співробітників, керуйте змінами і доступами без змішування всіх записів в одному календарі.",
+    premiumFeatureOnlineTitle: "Онлайн-запис доступний в Pro",
+    premiumFeatureOnlineText: "Після пробного періоду клієнтське посилання і самостійний запис працюють на тарифі Pro.",
+    premiumFeatureScheduleTitle: "Розширений графік доступний в Pro",
+    premiumFeatureScheduleText: "Налаштовуйте зміни, вихідні, перерви і командні графіки без обмежень.",
+    premiumFeaturePushTitle: "Push-нагадування доступні в Pro",
+    premiumFeaturePushText: "Підключайте повідомлення про нові, перенесені і скасовані записи.",
+    premiumFeatureTelegramTitle: "Telegram-сповіщення доступні в Pro",
+    premiumFeatureTelegramText: "Отримуйте записи і нагадування в Telegram після оформлення Pro.",
+    premiumFeatureAddressTitle: "Адреса і карта доступні в Pro",
+    premiumFeatureAddressText: "Покажіть клієнтам точну адресу, деталі входу і карту на сторінці запису.",
     premiumMonthly: "Premium Monthly",
     premiumYearly: "Premium Yearly",
     premiumMonthlyFallback: "$3 / місяць",
@@ -1461,7 +1494,33 @@ const baseCopy = {
     premiumSubscriptionActive: "Premium активен",
     premiumSubscriptionTrial: "Пробный период",
     premiumSubscriptionFree: "Free",
-    premiumSubscriptionText: "Premium работает в приложении и на сайте.",
+    premiumSubscriptionText: "Новые аккаунты получают 14 дней Premium бесплатно. После пробного периода Pro открывает платные инструменты без ограничений.",
+    premiumTrialIncluded: "14 дней Premium бесплатно",
+    premiumTrialDaysLeft: "Осталось {count} дн. Premium",
+    premiumTrialOneDayLeft: "Последний день Premium",
+    premiumTrialExpired: "Пробный Premium закончился",
+    premiumUpgradeCta: "Оформить Pro",
+    premiumLockedBadge: "Pro",
+    premiumFeatureBenefitsTitle: "В Pro открывается",
+    premiumBenefitOnlineBooking: "онлайн-запись и публичная страница",
+    premiumBenefitReminders: "push и Telegram-напоминания",
+    premiumBenefitTeam: "команда, графики и роли",
+    premiumBenefitClients: "клиентская база без ручных обходов",
+    premiumYearlyNudge: "Годовой тариф выгоднее, если вы планируете работать в Timviz постоянно.",
+    premiumFeatureClientsTitle: "Клиентская база доступна в Pro",
+    premiumFeatureClientsText: "Сохраняйте клиентов, быстро создавайте повторные записи и ведите историю после пробного периода.",
+    premiumFeatureStaffTitle: "Команда и графики доступны в Pro",
+    premiumFeatureStaffText: "Добавляйте сотрудников, управляйте сменами и доступами без смешивания всех записей в одном календаре.",
+    premiumFeatureOnlineTitle: "Онлайн-запись доступна в Pro",
+    premiumFeatureOnlineText: "После пробного периода клиентская ссылка и самостоятельная запись работают на тарифе Pro.",
+    premiumFeatureScheduleTitle: "Расширенный график доступен в Pro",
+    premiumFeatureScheduleText: "Настраивайте смены, выходные, перерывы и командные графики без ограничений.",
+    premiumFeaturePushTitle: "Push-напоминания доступны в Pro",
+    premiumFeaturePushText: "Подключайте уведомления о новых, перенесенных и отмененных записях.",
+    premiumFeatureTelegramTitle: "Telegram-уведомления доступны в Pro",
+    premiumFeatureTelegramText: "Получайте записи и напоминания в Telegram после оформления Pro.",
+    premiumFeatureAddressTitle: "Адрес и карта доступны в Pro",
+    premiumFeatureAddressText: "Покажите клиентам точный адрес, детали входа и карту на странице записи.",
     premiumMonthly: "Premium Monthly",
     premiumYearly: "Premium Yearly",
     premiumMonthlyFallback: "$3 / месяц",
@@ -1858,7 +1917,33 @@ const baseCopy = {
     premiumSubscriptionActive: "Premium active",
     premiumSubscriptionTrial: "Trial period",
     premiumSubscriptionFree: "Free",
-    premiumSubscriptionText: "Premium works in the app and on the website.",
+    premiumSubscriptionText: "New accounts get 14 days of Premium for free. After the trial, Pro keeps paid tools open without limits.",
+    premiumTrialIncluded: "14 days of Premium free",
+    premiumTrialDaysLeft: "{count} days of Premium left",
+    premiumTrialOneDayLeft: "Last day of Premium",
+    premiumTrialExpired: "Premium trial ended",
+    premiumUpgradeCta: "Get Pro",
+    premiumLockedBadge: "Pro",
+    premiumFeatureBenefitsTitle: "Pro unlocks",
+    premiumBenefitOnlineBooking: "online booking and a public page",
+    premiumBenefitReminders: "push and Telegram reminders",
+    premiumBenefitTeam: "team members, schedules, and roles",
+    premiumBenefitClients: "a client base without manual workarounds",
+    premiumYearlyNudge: "The yearly plan is better value when you plan to run Timviz continuously.",
+    premiumFeatureClientsTitle: "Client base is available in Pro",
+    premiumFeatureClientsText: "Save clients, create repeat bookings faster, and keep history after the trial.",
+    premiumFeatureStaffTitle: "Team and schedules are available in Pro",
+    premiumFeatureStaffText: "Add employees, manage shifts, and control access without mixing all bookings in one calendar.",
+    premiumFeatureOnlineTitle: "Online booking is available in Pro",
+    premiumFeatureOnlineText: "After the trial, client booking links and self-service booking stay active on Pro.",
+    premiumFeatureScheduleTitle: "Advanced schedule is available in Pro",
+    premiumFeatureScheduleText: "Set shifts, days off, breaks, and team schedules without limits.",
+    premiumFeaturePushTitle: "Push reminders are available in Pro",
+    premiumFeaturePushText: "Enable notifications for new, rescheduled, and cancelled bookings.",
+    premiumFeatureTelegramTitle: "Telegram notifications are available in Pro",
+    premiumFeatureTelegramText: "Receive bookings and reminders in Telegram after upgrading to Pro.",
+    premiumFeatureAddressTitle: "Address and map are available in Pro",
+    premiumFeatureAddressText: "Show clients the exact address, entrance details, and map on the booking page.",
     premiumMonthly: "Premium Monthly",
     premiumYearly: "Premium Yearly",
     premiumMonthlyFallback: "$3 / month",
@@ -3974,6 +4059,156 @@ Object.assign(generatedMobileCopy.de, {
   biometricUnavailable: "Face ID oder Touch ID ist auf diesem Gerät nicht verfügbar.",
 });
 
+Object.assign(generatedMobileCopy.fr, {
+  premiumSubscriptionText: "Les nouveaux comptes reçoivent 14 jours de Premium gratuits. Après l'essai, Pro garde les outils payants ouverts sans limites.",
+  premiumTrialIncluded: "14 jours de Premium gratuits",
+  premiumTrialDaysLeft: "{count} jours de Premium restants",
+  premiumTrialOneDayLeft: "Dernier jour de Premium",
+  premiumTrialExpired: "L'essai Premium est terminé",
+  premiumUpgradeCta: "Passer à Pro",
+  premiumLockedBadge: "Pro",
+  premiumFeatureBenefitsTitle: "Pro débloque",
+  premiumBenefitOnlineBooking: "la réservation en ligne et la page publique",
+  premiumBenefitReminders: "les rappels push et Telegram",
+  premiumBenefitTeam: "l'équipe, les plannings et les rôles",
+  premiumBenefitClients: "la base clients sans solutions manuelles",
+  premiumYearlyNudge: "L'abonnement annuel est plus avantageux si vous utilisez Timviz toute l'année.",
+  premiumFeatureClientsTitle: "La base clients est disponible avec Pro",
+  premiumFeatureClientsText: "Enregistrez les clients, créez des réservations répétées plus vite et gardez l'historique après l'essai.",
+  premiumFeatureStaffTitle: "L'équipe et les plannings sont disponibles avec Pro",
+  premiumFeatureStaffText: "Ajoutez des employés, gérez les shifts et les accès sans mélanger toutes les réservations.",
+  premiumFeatureOnlineTitle: "La réservation en ligne est disponible avec Pro",
+  premiumFeatureOnlineText: "Après l'essai, les liens de réservation client restent actifs avec Pro.",
+  premiumFeatureScheduleTitle: "Le planning avancé est disponible avec Pro",
+  premiumFeatureScheduleText: "Configurez shifts, jours libres, pauses et plannings d'équipe sans limites.",
+  premiumFeaturePushTitle: "Les rappels push sont disponibles avec Pro",
+  premiumFeaturePushText: "Activez les notifications pour les nouvelles réservations, reports et annulations.",
+  premiumFeatureTelegramTitle: "Les notifications Telegram sont disponibles avec Pro",
+  premiumFeatureTelegramText: "Recevez réservations et rappels dans Telegram après le passage à Pro.",
+  premiumFeatureAddressTitle: "L'adresse et la carte sont disponibles avec Pro",
+  premiumFeatureAddressText: "Affichez l'adresse exacte, les détails d'entrée et la carte sur la page de réservation.",
+});
+
+Object.assign(generatedMobileCopy.pl, {
+  premiumSubscriptionText: "Nowe konta otrzymują 14 dni Premium za darmo. Po okresie próbnym Pro utrzymuje płatne narzędzia bez limitów.",
+  premiumTrialIncluded: "14 dni Premium za darmo",
+  premiumTrialDaysLeft: "Pozostało {count} dni Premium",
+  premiumTrialOneDayLeft: "Ostatni dzień Premium",
+  premiumTrialExpired: "Okres próbny Premium się zakończył",
+  premiumUpgradeCta: "Wybierz Pro",
+  premiumLockedBadge: "Pro",
+  premiumFeatureBenefitsTitle: "Pro odblokowuje",
+  premiumBenefitOnlineBooking: "rezerwacje online i stronę publiczną",
+  premiumBenefitReminders: "przypomnienia push i Telegram",
+  premiumBenefitTeam: "zespół, grafiki i role",
+  premiumBenefitClients: "bazę klientów bez ręcznych obejść",
+  premiumYearlyNudge: "Plan roczny opłaca się bardziej, jeśli pracujesz w Timviz stale.",
+  premiumFeatureClientsTitle: "Baza klientów jest dostępna w Pro",
+  premiumFeatureClientsText: "Zapisuj klientów, szybciej twórz ponowne wizyty i zachowuj historię po okresie próbnym.",
+  premiumFeatureStaffTitle: "Zespół i grafiki są dostępne w Pro",
+  premiumFeatureStaffText: "Dodawaj pracowników, zarządzaj zmianami i dostępami bez mieszania wszystkich wizyt.",
+  premiumFeatureOnlineTitle: "Rezerwacje online są dostępne w Pro",
+  premiumFeatureOnlineText: "Po okresie próbnym linki do rezerwacji klientów pozostają aktywne w Pro.",
+  premiumFeatureScheduleTitle: "Zaawansowany grafik jest dostępny w Pro",
+  premiumFeatureScheduleText: "Ustawiaj zmiany, dni wolne, przerwy i grafiki zespołu bez limitów.",
+  premiumFeaturePushTitle: "Przypomnienia push są dostępne w Pro",
+  premiumFeaturePushText: "Włącz powiadomienia o nowych, przeniesionych i anulowanych wizytach.",
+  premiumFeatureTelegramTitle: "Powiadomienia Telegram są dostępne w Pro",
+  premiumFeatureTelegramText: "Otrzymuj wizyty i przypomnienia w Telegramie po przejściu na Pro.",
+  premiumFeatureAddressTitle: "Adres i mapa są dostępne w Pro",
+  premiumFeatureAddressText: "Pokaż klientom dokładny adres, wejście i mapę na stronie rezerwacji.",
+});
+
+Object.assign(generatedMobileCopy.cs, {
+  premiumSubscriptionText: "Nové účty získají 14 dní Premium zdarma. Po zkušební době Pro ponechá placené nástroje bez omezení.",
+  premiumTrialIncluded: "14 dní Premium zdarma",
+  premiumTrialDaysLeft: "Zbývá {count} dní Premium",
+  premiumTrialOneDayLeft: "Poslední den Premium",
+  premiumTrialExpired: "Zkušební Premium skončilo",
+  premiumUpgradeCta: "Přejít na Pro",
+  premiumLockedBadge: "Pro",
+  premiumFeatureBenefitsTitle: "Pro odemyká",
+  premiumBenefitOnlineBooking: "online rezervace a veřejnou stránku",
+  premiumBenefitReminders: "push a Telegram připomenutí",
+  premiumBenefitTeam: "tým, rozvrhy a role",
+  premiumBenefitClients: "klientskou databázi bez ruční práce",
+  premiumYearlyNudge: "Roční tarif je výhodnější, pokud plánujete Timviz používat dlouhodobě.",
+  premiumFeatureClientsTitle: "Klientská databáze je v Pro",
+  premiumFeatureClientsText: "Ukládejte klienty, rychleji vytvářejte opakované rezervace a držte historii po zkušební době.",
+  premiumFeatureStaffTitle: "Tým a rozvrhy jsou v Pro",
+  premiumFeatureStaffText: "Přidávejte zaměstnance, spravujte směny a přístupy bez míchání všech rezervací.",
+  premiumFeatureOnlineTitle: "Online rezervace jsou v Pro",
+  premiumFeatureOnlineText: "Po zkušební době zůstávají klientské rezervační odkazy aktivní v Pro.",
+  premiumFeatureScheduleTitle: "Pokročilý rozvrh je v Pro",
+  premiumFeatureScheduleText: "Nastavujte směny, volné dny, pauzy a týmové rozvrhy bez omezení.",
+  premiumFeaturePushTitle: "Push připomenutí jsou v Pro",
+  premiumFeaturePushText: "Zapněte upozornění na nové, přesunuté a zrušené rezervace.",
+  premiumFeatureTelegramTitle: "Telegram upozornění jsou v Pro",
+  premiumFeatureTelegramText: "Po přechodu na Pro dostávejte rezervace a připomenutí v Telegramu.",
+  premiumFeatureAddressTitle: "Adresa a mapa jsou v Pro",
+  premiumFeatureAddressText: "Ukažte klientům přesnou adresu, vstup a mapu na rezervační stránce.",
+});
+
+Object.assign(generatedMobileCopy.es, {
+  premiumSubscriptionText: "Las cuentas nuevas reciben 14 días de Premium gratis. Después de la prueba, Pro mantiene abiertas las herramientas de pago sin límites.",
+  premiumTrialIncluded: "14 días de Premium gratis",
+  premiumTrialDaysLeft: "Quedan {count} días de Premium",
+  premiumTrialOneDayLeft: "Último día de Premium",
+  premiumTrialExpired: "La prueba Premium terminó",
+  premiumUpgradeCta: "Activar Pro",
+  premiumLockedBadge: "Pro",
+  premiumFeatureBenefitsTitle: "Pro desbloquea",
+  premiumBenefitOnlineBooking: "reservas online y página pública",
+  premiumBenefitReminders: "recordatorios push y Telegram",
+  premiumBenefitTeam: "equipo, horarios y roles",
+  premiumBenefitClients: "base de clientes sin atajos manuales",
+  premiumYearlyNudge: "El plan anual conviene más si usarás Timviz de forma continua.",
+  premiumFeatureClientsTitle: "La base de clientes está disponible en Pro",
+  premiumFeatureClientsText: "Guarda clientes, crea reservas repetidas más rápido y conserva el historial después de la prueba.",
+  premiumFeatureStaffTitle: "Equipo y horarios están disponibles en Pro",
+  premiumFeatureStaffText: "Añade empleados, gestiona turnos y accesos sin mezclar todas las reservas.",
+  premiumFeatureOnlineTitle: "La reserva online está disponible en Pro",
+  premiumFeatureOnlineText: "Después de la prueba, los enlaces de reserva de clientes siguen activos en Pro.",
+  premiumFeatureScheduleTitle: "El horario avanzado está disponible en Pro",
+  premiumFeatureScheduleText: "Configura turnos, días libres, pausas y horarios del equipo sin límites.",
+  premiumFeaturePushTitle: "Los recordatorios push están disponibles en Pro",
+  premiumFeaturePushText: "Activa notificaciones para reservas nuevas, movidas y canceladas.",
+  premiumFeatureTelegramTitle: "Las notificaciones de Telegram están disponibles en Pro",
+  premiumFeatureTelegramText: "Recibe reservas y recordatorios en Telegram después de activar Pro.",
+  premiumFeatureAddressTitle: "Dirección y mapa están disponibles en Pro",
+  premiumFeatureAddressText: "Muestra a los clientes la dirección exacta, entrada y mapa en la página de reserva.",
+});
+
+Object.assign(generatedMobileCopy.de, {
+  premiumSubscriptionText: "Neue Konten erhalten 14 Tage Premium kostenlos. Danach hält Pro die kostenpflichtigen Werkzeuge ohne Limits offen.",
+  premiumTrialIncluded: "14 Tage Premium kostenlos",
+  premiumTrialDaysLeft: "Noch {count} Tage Premium",
+  premiumTrialOneDayLeft: "Letzter Premium-Tag",
+  premiumTrialExpired: "Premium-Testzeitraum beendet",
+  premiumUpgradeCta: "Pro aktivieren",
+  premiumLockedBadge: "Pro",
+  premiumFeatureBenefitsTitle: "Pro schaltet frei",
+  premiumBenefitOnlineBooking: "Online-Buchung und öffentliche Seite",
+  premiumBenefitReminders: "Push- und Telegram-Erinnerungen",
+  premiumBenefitTeam: "Team, Dienstpläne und Rollen",
+  premiumBenefitClients: "Kundendatenbank ohne manuelle Umwege",
+  premiumYearlyNudge: "Der Jahrestarif lohnt sich mehr, wenn Sie Timviz dauerhaft nutzen.",
+  premiumFeatureClientsTitle: "Die Kundendatenbank ist in Pro verfügbar",
+  premiumFeatureClientsText: "Speichern Sie Kunden, erstellen Sie Wiederholungsbuchungen schneller und behalten Sie die Historie nach der Testphase.",
+  premiumFeatureStaffTitle: "Team und Dienstpläne sind in Pro verfügbar",
+  premiumFeatureStaffText: "Fügen Sie Mitarbeiter hinzu und verwalten Sie Schichten und Zugriffe ohne vermischte Buchungen.",
+  premiumFeatureOnlineTitle: "Online-Buchung ist in Pro verfügbar",
+  premiumFeatureOnlineText: "Nach der Testphase bleiben Kunden-Buchungslinks mit Pro aktiv.",
+  premiumFeatureScheduleTitle: "Erweiterte Dienstpläne sind in Pro verfügbar",
+  premiumFeatureScheduleText: "Richten Sie Schichten, freie Tage, Pausen und Teampläne ohne Limits ein.",
+  premiumFeaturePushTitle: "Push-Erinnerungen sind in Pro verfügbar",
+  premiumFeaturePushText: "Aktivieren Sie Hinweise für neue, verschobene und stornierte Buchungen.",
+  premiumFeatureTelegramTitle: "Telegram-Benachrichtigungen sind in Pro verfügbar",
+  premiumFeatureTelegramText: "Erhalten Sie Buchungen und Erinnerungen in Telegram nach dem Upgrade auf Pro.",
+  premiumFeatureAddressTitle: "Adresse und Karte sind in Pro verfügbar",
+  premiumFeatureAddressText: "Zeigen Sie Kunden die genaue Adresse, Eingangshinweise und Karte auf der Buchungsseite.",
+});
+
 const copy = {
   uk: baseCopy.uk,
   ru: baseCopy.ru,
@@ -4505,18 +4740,47 @@ function getRevenueCatApiKey() {
 
 function isPremiumActive(input?: WorkspaceSnapshot["professional"] | null) {
   if (input?.plan !== "premium") return false;
-  if (input.premiumStatus === "active" || input.premiumStatus === "trialing") return true;
+  if (input.premiumStatus === "active") return true;
+  if (input.premiumStatus === "trialing") return isFutureIsoDate(input.premiumUntil);
   if (input.premiumStatus === "canceled" && input.premiumUntil) {
-    return new Date(input.premiumUntil).getTime() > Date.now();
+    return isFutureIsoDate(input.premiumUntil);
   }
   return false;
 }
 
 function getPremiumStatusLabel(input: WorkspaceSnapshot["professional"] | undefined, t: Record<string, string>) {
   if (!input || input.plan !== "premium") return t.premiumSubscriptionFree;
-  if (input.premiumStatus === "trialing") return t.premiumSubscriptionTrial;
+  if (input.premiumStatus === "trialing" && isPremiumActive(input)) return t.premiumSubscriptionTrial;
   if (isPremiumActive(input)) return t.premiumSubscriptionActive;
   return t.premiumSubscriptionFree;
+}
+
+function isFutureIsoDate(value?: string | null) {
+  if (!value) return false;
+  const time = new Date(value).getTime();
+  return Number.isFinite(time) && time > Date.now();
+}
+
+function getPremiumDaysRemaining(input?: WorkspaceSnapshot["professional"] | null) {
+  if (!input?.premiumUntil) return null;
+  const time = new Date(input.premiumUntil).getTime();
+  if (!Number.isFinite(time)) return null;
+  const diff = time - Date.now();
+  if (diff <= 0) return 0;
+  return Math.max(1, Math.ceil(diff / (24 * 60 * 60 * 1000)));
+}
+
+function getPremiumStatusDetail(input: WorkspaceSnapshot["professional"] | undefined, t: Record<string, string>) {
+  if (input?.premiumStatus !== "trialing") return "";
+  const daysRemaining = getPremiumDaysRemaining(input);
+  if (daysRemaining === null) return t.premiumTrialIncluded;
+  if (daysRemaining <= 0) return t.premiumTrialExpired;
+  if (daysRemaining === 1) return t.premiumTrialOneDayLeft;
+  return t.premiumTrialDaysLeft.replace("{count}", String(daysRemaining));
+}
+
+function isPremiumSettingsSection(section: MobileSettingsSection) {
+  return PREMIUM_LOCKED_SETTINGS_SECTIONS.includes(section);
 }
 
 function getPackagePriceLabel(pkg: PurchasesPackage | null, fallback: string) {
@@ -5161,6 +5425,7 @@ export default function App() {
   const detectedCountry = useMemo(() => getDetectedCountry(), []);
   const detectedTimezone = useMemo(() => getDetectedTimezone(), []);
   const t = copy[language];
+  const hasPremium = isPremiumActive(workspace?.professional);
 
   const [loginForm, setLoginForm] = useState({ email: "", password: "" });
   const [registerForm, setRegisterForm] = useState<RegisterForm>({
@@ -6491,34 +6756,42 @@ export default function App() {
               />
             ) : null}
             {activeTab === "clients" ? (
-              <ClientsTab
-                t={t}
-                clients={clients}
-                draft={clientDraft}
-                setDraft={setClientDraft}
-                onCreate={createClient}
-                onCreateVisit={() => {
-                  setActiveTab("calendar");
-                  setVisitDraft({
-                    ...createDefaultVisitDraft(selectedDate, getRoundedTime(10)),
-                    items: [{ ...createVisitServiceDraft(getRoundedTime(10)), serviceName: t.withoutService }],
-                  });
-                  setVisitComposerOpen(true);
-                }}
-                busy={busy}
-              />
+              hasPremium ? (
+                <ClientsTab
+                  t={t}
+                  clients={clients}
+                  draft={clientDraft}
+                  setDraft={setClientDraft}
+                  onCreate={createClient}
+                  onCreateVisit={() => {
+                    setActiveTab("calendar");
+                    setVisitDraft({
+                      ...createDefaultVisitDraft(selectedDate, getRoundedTime(10)),
+                      items: [{ ...createVisitServiceDraft(getRoundedTime(10)), serviceName: t.withoutService }],
+                    });
+                    setVisitComposerOpen(true);
+                  }}
+                  busy={busy}
+                />
+              ) : (
+                <PremiumFeatureGate t={t} feature="clients" professional={workspace?.professional} onUpgrade={() => openSettingsSection("general")} />
+              )
             ) : null}
             {activeTab === "staff" ? (
-              <StaffWorkspaceTab
-                t={t}
-                language={language}
-                staff={staffSnapshot}
-                workspace={workspace}
-                busy={busy}
-                apiFetch={apiFetch}
-                onRefreshWorkspace={() => refreshAll(session, selectedDate)}
-                onSaveSchedule={saveStaffSchedule}
-              />
+              hasPremium ? (
+                <StaffWorkspaceTab
+                  t={t}
+                  language={language}
+                  staff={staffSnapshot}
+                  workspace={workspace}
+                  busy={busy}
+                  apiFetch={apiFetch}
+                  onRefreshWorkspace={() => refreshAll(session, selectedDate)}
+                  onSaveSchedule={saveStaffSchedule}
+                />
+              ) : (
+                <PremiumFeatureGate t={t} feature="staff" professional={workspace?.professional} onUpgrade={() => openSettingsSection("general")} />
+              )
             ) : null}
             {activeTab === "settings" ? (
               <SettingsTab
@@ -6537,11 +6810,12 @@ export default function App() {
 	                biometricEnabled={biometricEnabled}
 	                onToggleBiometric={toggleBiometricUnlock}
 	                busy={busy}
+                  onRequestPremium={() => openSettingsSection("general")}
 	              />
             ) : null}
           </ScrollView>
         )}
-        <BottomNavigation activeTab={activeTab} setActiveTab={setActiveTab} t={t} />
+        <BottomNavigation activeTab={activeTab} setActiveTab={setActiveTab} lockedTabs={hasPremium ? [] : PREMIUM_LOCKED_TABS} t={t} />
         <StatusBar style="dark" />
       </SafeAreaView>
     );
@@ -9001,10 +9275,12 @@ function NotificationCard({
 function BottomNavigation({
   activeTab,
   setActiveTab,
+  lockedTabs = [],
   t,
 }: {
   activeTab: AppTab;
   setActiveTab: (tab: AppTab) => void;
+  lockedTabs?: AppTab[];
   t: Record<string, string>;
 }) {
   const items: Array<{ tab: AppTab; icon: ComponentProps<typeof Ionicons>["name"]; label: string }> = [
@@ -9019,13 +9295,21 @@ function BottomNavigation({
     <View style={styles.bottomNav}>
       {items.map((item) => {
         const active = activeTab === item.tab;
+        const locked = lockedTabs.includes(item.tab);
         return (
           <Pressable
             key={item.tab}
             onPress={() => setActiveTab(item.tab)}
             style={({ pressed }) => [styles.bottomNavItem, active && styles.bottomNavItemActive, pressed && styles.bottomNavItemPressed]}
           >
-            <Ionicons name={item.icon} size={19} color={active ? DESIGN.colors.primary : "#7A8599"} />
+            <View style={styles.bottomNavIconWrap}>
+              <Ionicons name={item.icon} size={19} color={active ? DESIGN.colors.primary : "#7A8599"} />
+              {locked ? (
+                <View style={styles.bottomNavLockBadge}>
+                  <Ionicons name="lock-closed" size={8} color="#7C3AED" />
+                </View>
+              ) : null}
+            </View>
             <Text style={[styles.bottomNavText, active && styles.bottomNavTextActive]} numberOfLines={1}>
               {item.label}
             </Text>
@@ -9033,6 +9317,83 @@ function BottomNavigation({
         );
       })}
     </View>
+  );
+}
+
+function getPremiumFeatureIcon(feature: PremiumFeature): ComponentProps<typeof Ionicons>["name"] {
+  if (feature === "clients") return "id-card-outline";
+  if (feature === "staff") return "people-outline";
+  if (feature === "online") return "calendar-number-outline";
+  if (feature === "schedule") return "time-outline";
+  if (feature === "push") return "notifications-outline";
+  if (feature === "telegram") return "paper-plane-outline";
+  return "location-outline";
+}
+
+function getPremiumFeatureTitle(feature: PremiumFeature, t: Record<string, string>) {
+  if (feature === "clients") return t.premiumFeatureClientsTitle;
+  if (feature === "staff") return t.premiumFeatureStaffTitle;
+  if (feature === "online") return t.premiumFeatureOnlineTitle;
+  if (feature === "schedule") return t.premiumFeatureScheduleTitle;
+  if (feature === "push") return t.premiumFeaturePushTitle;
+  if (feature === "telegram") return t.premiumFeatureTelegramTitle;
+  return t.premiumFeatureAddressTitle;
+}
+
+function getPremiumFeatureText(feature: PremiumFeature, t: Record<string, string>) {
+  if (feature === "clients") return t.premiumFeatureClientsText;
+  if (feature === "staff") return t.premiumFeatureStaffText;
+  if (feature === "online") return t.premiumFeatureOnlineText;
+  if (feature === "schedule") return t.premiumFeatureScheduleText;
+  if (feature === "push") return t.premiumFeaturePushText;
+  if (feature === "telegram") return t.premiumFeatureTelegramText;
+  return t.premiumFeatureAddressText;
+}
+
+function PremiumFeatureGate({
+  t,
+  feature,
+  professional,
+  onUpgrade,
+}: {
+  t: Record<string, string>;
+  feature: PremiumFeature;
+  professional?: WorkspaceSnapshot["professional"];
+  onUpgrade: () => void;
+}) {
+  const badgeText = getPremiumStatusDetail(professional, t) || t.premiumLockedBadge;
+  const benefits = [t.premiumBenefitOnlineBooking, t.premiumBenefitReminders, t.premiumBenefitTeam, t.premiumBenefitClients];
+
+  return (
+    <Panel title={t.premiumSubscriptionTitle}>
+      <View style={styles.premiumGate}>
+        <View style={styles.premiumGateHero}>
+          <View style={styles.premiumGateIcon}>
+            <Ionicons name={getPremiumFeatureIcon(feature)} size={24} color={DESIGN.colors.primary} />
+          </View>
+          <View style={styles.premiumGateCopy}>
+            <View style={styles.premiumGateTitleRow}>
+              <Text style={styles.premiumGateTitle}>{getPremiumFeatureTitle(feature, t)}</Text>
+              <View style={styles.premiumGateBadge}>
+                <Text style={styles.premiumGateBadgeText}>{badgeText}</Text>
+              </View>
+            </View>
+            <Text style={styles.premiumGateText}>{getPremiumFeatureText(feature, t)}</Text>
+          </View>
+        </View>
+        <View style={styles.premiumGateBenefits}>
+          <Text style={styles.premiumGateBenefitsTitle}>{t.premiumFeatureBenefitsTitle}</Text>
+          {benefits.map((benefit) => (
+            <View key={benefit} style={styles.premiumGateBenefitRow}>
+              <Ionicons name="checkmark-circle" size={16} color="#10B981" />
+              <Text style={styles.premiumGateBenefitText}>{benefit}</Text>
+            </View>
+          ))}
+        </View>
+        <PrimaryButton label={t.premiumUpgradeCta} onPress={onUpgrade} />
+        <Text style={styles.premiumGateNudge}>{t.premiumYearlyNudge}</Text>
+      </View>
+    </Panel>
   );
 }
 
@@ -10304,6 +10665,7 @@ function SettingsTab({
   biometricEnabled,
   onToggleBiometric,
   busy,
+  onRequestPremium,
 }: {
   t: Record<string, string>;
   language: AppLanguage;
@@ -10320,6 +10682,7 @@ function SettingsTab({
   biometricEnabled: boolean;
   onToggleBiometric: () => void;
   busy: boolean;
+  onRequestPremium: () => void;
 }) {
   const [draft, setDraft] = useState<SettingsDraftState>(() => makeSettingsDraft(workspace, language));
   const [newPassword, setNewPassword] = useState("");
@@ -10349,6 +10712,8 @@ function SettingsTab({
   const photos = workspace?.business.photos?.filter((photo) => photo.status !== "blocked") || [];
   const hasPremium = isPremiumActive(workspace?.professional);
   const premiumStatusLabel = getPremiumStatusLabel(workspace?.professional, t);
+  const premiumStatusDetail = getPremiumStatusDetail(workspace?.professional, t);
+  const activeSectionLocked = !hasPremium && isPremiumSettingsSection(activeSection);
 
   async function uploadMediaDataUrl(dataUrl: string, kind: "avatar" | "business-photo") {
     const payload = await apiFetch("/api/mobile/pro/media/upload", {
@@ -10485,14 +10850,14 @@ function SettingsTab({
   }, [workspace?.business.id]);
 
   useEffect(() => {
-    if (activeSection !== "telegram" || telegramPanel || isTelegramLoading) return;
+    if (!hasPremium || activeSection !== "telegram" || telegramPanel || isTelegramLoading) return;
     void loadTelegramPanel(true);
-  }, [activeSection, telegramPanel, isTelegramLoading]);
+  }, [activeSection, hasPremium, telegramPanel, isTelegramLoading]);
 
   useEffect(() => {
-    if (activeSection !== "push" || pushPanel || isPushLoading) return;
+    if (!hasPremium || activeSection !== "push" || pushPanel || isPushLoading) return;
     void loadPushPanel(true);
-  }, [activeSection, pushPanel, isPushLoading]);
+  }, [activeSection, hasPremium, pushPanel, isPushLoading]);
 
   useEffect(() => {
     Notifications.getPermissionsAsync()
@@ -11072,32 +11437,51 @@ function SettingsTab({
       </View>
 
       <View style={styles.settingsAccordionNav}>
-        {SETTINGS_SECTIONS.map((section) => (
-          <Pressable
-            key={section}
-            style={[styles.settingsAccordionHeader, activeSection === section && styles.settingsAccordionHeaderActive]}
-            onPress={() => setActiveSection(section)}
-          >
-            <Text style={[styles.settingsSectionText, activeSection === section && styles.settingsSectionTextActive]}>{settingsSectionLabel(section, t)}</Text>
-            <Ionicons name={activeSection === section ? "chevron-up" : "chevron-down"} size={16} color={activeSection === section ? "#6D4AFF" : "#94A3B8"} />
-          </Pressable>
-        ))}
+        {SETTINGS_SECTIONS.map((section) => {
+          const locked = !hasPremium && isPremiumSettingsSection(section);
+          return (
+            <Pressable
+              key={section}
+              style={[styles.settingsAccordionHeader, activeSection === section && styles.settingsAccordionHeaderActive]}
+              onPress={() => setActiveSection(section)}
+            >
+              <View style={styles.settingsSectionTitleRow}>
+                <Text style={[styles.settingsSectionText, activeSection === section && styles.settingsSectionTextActive]}>{settingsSectionLabel(section, t)}</Text>
+                {locked ? <Ionicons name="lock-closed-outline" size={14} color="#7C3AED" /> : null}
+              </View>
+              <Ionicons name={activeSection === section ? "chevron-up" : "chevron-down"} size={16} color={activeSection === section ? "#6D4AFF" : "#94A3B8"} />
+            </Pressable>
+          );
+        })}
       </View>
 
       {!isOwner ? <Text style={styles.settingsMutedNotice}>{t.ownerOnlyHint}</Text> : null}
 
       <View style={styles.settingsAccordionBody}>
-      {activeSection === "general" ? (
+      {activeSectionLocked ? (
+        <PremiumFeatureGate t={t} feature={activeSection as PremiumFeature} professional={workspace?.professional} onUpgrade={onRequestPremium} />
+      ) : null}
+
+      {!activeSectionLocked && activeSection === "general" ? (
         <>
           <Panel title={t.premiumSubscription}>
             <View style={styles.premiumMobileHeader}>
               <View>
                 <Text style={styles.settingsCardTitle}>{t.premiumSubscriptionTitle}</Text>
                 <Text style={styles.clientOptionCaption}>{t.premiumSubscriptionText}</Text>
+                {premiumStatusDetail ? <Text style={styles.premiumMobileDetail}>{premiumStatusDetail}</Text> : null}
               </View>
               <View style={[styles.premiumMobileBadge, hasPremium && styles.premiumMobileBadgeActive]}>
                 <Text style={[styles.premiumMobileBadgeText, hasPremium && styles.premiumMobileBadgeTextActive]}>{premiumStatusLabel}</Text>
               </View>
+            </View>
+            <View style={styles.premiumBenefitList}>
+              {[t.premiumBenefitOnlineBooking, t.premiumBenefitReminders, t.premiumBenefitTeam, t.premiumBenefitClients].map((benefit) => (
+                <View key={benefit} style={styles.premiumBenefitItem}>
+                  <Ionicons name="checkmark-circle" size={15} color="#10B981" />
+                  <Text style={styles.premiumBenefitText}>{benefit}</Text>
+                </View>
+              ))}
             </View>
             <View style={styles.premiumMobilePlans}>
               <Pressable
@@ -11206,7 +11590,7 @@ function SettingsTab({
         </>
       ) : null}
 
-      {activeSection === "online" ? (
+      {!activeSectionLocked && activeSection === "online" ? (
         <Panel title={t.settingsOnline}>
           <Pressable style={styles.shareToggleRow} onPress={() => updateDraft("allowOnlineBooking", !draft.allowOnlineBooking)} disabled={!isOwner}>
             <View>
@@ -11234,7 +11618,7 @@ function SettingsTab({
         </Panel>
       ) : null}
 
-      {activeSection === "services" ? (
+      {!activeSectionLocked && activeSection === "services" ? (
         <>
           <Panel title={t.businessFormat}>
             <Text style={styles.label}>{t.serviceMode}</Text>
@@ -11280,7 +11664,7 @@ function SettingsTab({
         </>
       ) : null}
 
-      {activeSection === "schedule" ? (
+      {!activeSectionLocked && activeSection === "schedule" ? (
         <Panel title={t.settingsSchedule}>
           <View style={styles.settingsSummaryGrid}>
             <View style={styles.settingsSummaryTile}>
@@ -11297,7 +11681,7 @@ function SettingsTab({
         </Panel>
       ) : null}
 
-      {activeSection === "push" ? (
+      {!activeSectionLocked && activeSection === "push" ? (
         <Panel title={t.pushTitle}>
           <View style={styles.telegramStatus}>
             <View style={[styles.telegramDot, pushPanel?.connected ? styles.telegramDotConnected : styles.telegramDotDisconnected]} />
@@ -11335,7 +11719,7 @@ function SettingsTab({
         </Panel>
       ) : null}
 
-      {activeSection === "telegram" ? (
+      {!activeSectionLocked && activeSection === "telegram" ? (
         <Panel title={t.settingsTelegram}>
           <View style={styles.telegramStatus}>
             <View style={[styles.telegramDot, telegramPanel?.connected || workspace?.telegram?.connected ? styles.telegramDotConnected : styles.telegramDotDisconnected]} />
@@ -11399,7 +11783,7 @@ function SettingsTab({
         </Panel>
       ) : null}
 
-      {activeSection === "address" ? (
+      {!activeSectionLocked && activeSection === "address" ? (
         <Panel title={t.settingsAddress}>
           <View style={styles.field}>
             <View style={styles.fieldHeader}>
@@ -14994,6 +15378,25 @@ const styles = StyleSheet.create({
     gap: 3,
     borderRadius: 23,
   },
+  bottomNavIconWrap: {
+    width: 24,
+    height: 21,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  bottomNavLockBadge: {
+    position: "absolute",
+    right: 1,
+    top: -2,
+    width: 13,
+    height: 13,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 7,
+    borderWidth: 1,
+    borderColor: "#FFFFFF",
+    backgroundColor: "#F5F3FF",
+  },
   bottomNavItemActive: {
     borderWidth: 1,
     borderColor: "rgba(115, 87, 246, 0.08)",
@@ -16139,6 +16542,13 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "800",
   },
+  settingsSectionTitleRow: {
+    minWidth: 0,
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
   settingsSectionTextActive: {
     color: DESIGN.colors.primaryDark,
   },
@@ -16213,6 +16623,31 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     gap: 12,
   },
+  premiumMobileDetail: {
+    marginTop: 6,
+    color: DESIGN.colors.primaryDark,
+    fontSize: 12,
+    fontWeight: "900",
+  },
+  premiumBenefitList: {
+    gap: 6,
+    padding: 10,
+    borderRadius: 14,
+    backgroundColor: "#F8FAFC",
+  },
+  premiumBenefitItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
+  },
+  premiumBenefitText: {
+    flex: 1,
+    minWidth: 0,
+    color: "#475569",
+    fontSize: 12,
+    fontWeight: "700",
+    lineHeight: 16,
+  },
   premiumMobileBadge: {
     paddingHorizontal: 9,
     paddingVertical: 5,
@@ -16266,6 +16701,91 @@ const styles = StyleSheet.create({
     color: DESIGN.colors.primaryDark,
     fontSize: 11,
     fontWeight: "900",
+  },
+  premiumGate: {
+    gap: 13,
+  },
+  premiumGateHero: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    gap: 12,
+  },
+  premiumGateIcon: {
+    width: 46,
+    height: 46,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 16,
+    backgroundColor: "#F4F0FF",
+  },
+  premiumGateCopy: {
+    flex: 1,
+    minWidth: 0,
+    gap: 7,
+  },
+  premiumGateTitleRow: {
+    flexDirection: "row",
+    alignItems: "flex-start",
+    flexWrap: "wrap",
+    gap: 7,
+  },
+  premiumGateTitle: {
+    flex: 1,
+    minWidth: 160,
+    color: "#0F172A",
+    fontSize: 18,
+    fontWeight: "900",
+    lineHeight: 23,
+  },
+  premiumGateText: {
+    color: "#475569",
+    fontSize: 13,
+    fontWeight: "700",
+    lineHeight: 19,
+  },
+  premiumGateBadge: {
+    paddingHorizontal: 9,
+    paddingVertical: 5,
+    borderRadius: DESIGN.radius.pill,
+    backgroundColor: "#EEF2FF",
+  },
+  premiumGateBadgeText: {
+    color: DESIGN.colors.primaryDark,
+    fontSize: 11,
+    fontWeight: "900",
+  },
+  premiumGateBenefits: {
+    gap: 7,
+    padding: 11,
+    borderRadius: 15,
+    borderWidth: 1,
+    borderColor: "rgba(226, 232, 240, 0.8)",
+    backgroundColor: "#FBFCFF",
+  },
+  premiumGateBenefitsTitle: {
+    color: "#0F172A",
+    fontSize: 12,
+    fontWeight: "900",
+  },
+  premiumGateBenefitRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  premiumGateBenefitText: {
+    flex: 1,
+    minWidth: 0,
+    color: "#475569",
+    fontSize: 12,
+    fontWeight: "700",
+    lineHeight: 16,
+  },
+  premiumGateNudge: {
+    color: "#64748B",
+    fontSize: 12,
+    fontWeight: "700",
+    lineHeight: 17,
+    textAlign: "center",
   },
   settingsChoiceRow: {
     flexDirection: "row",

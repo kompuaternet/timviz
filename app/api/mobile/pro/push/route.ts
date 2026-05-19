@@ -7,6 +7,7 @@ import {
   updateMobilePushSettings,
   upsertMobilePushToken
 } from "../../../../../lib/push-notifications";
+import { isPremiumAccessActive } from "../../../../../lib/premium";
 
 function normalizeBoolean(value: unknown) {
   return typeof value === "boolean" ? value : undefined;
@@ -32,6 +33,9 @@ export async function POST(request: Request) {
     const workspace = await getWorkspaceSnapshot(professionalId);
     if (!workspace) {
       return NextResponse.json({ error: "Workspace not found." }, { status: 404 });
+    }
+    if (!isPremiumAccessActive(workspace.professional)) {
+      return NextResponse.json({ error: "Push notifications require an active Pro subscription." }, { status: 402 });
     }
 
     const body = (await request.json().catch(() => ({}))) as {
@@ -77,6 +81,14 @@ export async function PATCH(request: Request) {
   }
 
   try {
+    const workspace = await getWorkspaceSnapshot(professionalId);
+    if (!workspace) {
+      return NextResponse.json({ error: "Workspace not found." }, { status: 404 });
+    }
+    if (!isPremiumAccessActive(workspace.professional)) {
+      return NextResponse.json({ error: "Push notifications require an active Pro subscription." }, { status: 402 });
+    }
+
     const body = (await request.json().catch(() => ({}))) as Record<string, unknown>;
     const state = await updateMobilePushSettings(professionalId, {
       notificationsNewBooking: normalizeBoolean(body.notificationsNewBooking),
