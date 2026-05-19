@@ -4681,7 +4681,7 @@ function shiftDate(date: string, days: number) {
 }
 
 function addMinutes(time: string, minutes: number) {
-  const [hours, mins] = time.split(":").map((item) => Number(item));
+  const [hours, mins] = normalizeTimeInput(time).split(":").map((item) => Number(item));
   const base = Number.isFinite(hours) && Number.isFinite(mins) ? hours * 60 + mins : 9 * 60;
   const total = base + Math.max(0, minutes || 0);
   const nextHours = Math.floor(total / 60) % 24;
@@ -4689,18 +4689,27 @@ function addMinutes(time: string, minutes: number) {
   return `${String(nextHours).padStart(2, "0")}:${String(nextMinutes).padStart(2, "0")}`;
 }
 
+function normalizeTimeInput(time: string) {
+  const match = /^(\d{1,2}):([0-5]\d)$/.exec(safeText(time).trim());
+  if (!match) return safeText(time).trim();
+  const hours = Number(match[1]);
+  if (!Number.isFinite(hours) || hours < 0 || hours > 23) return safeText(time).trim();
+  return `${String(hours).padStart(2, "0")}:${match[2]}`;
+}
+
 function createLocalId(prefix = "draft") {
   return `${prefix}-${Date.now()}-${Math.round(Math.random() * 100000)}`;
 }
 
 function createVisitServiceDraft(startTime: string, service?: ServiceRecord, language: AppLanguage = "ru"): VisitServiceDraft {
+  const normalizedStartTime = normalizeTimeInput(startTime);
   const duration = Math.max(5, service?.durationMinutes || 15);
   return {
     id: createLocalId("service"),
     serviceId: service?.id || "",
     serviceName: getServiceDisplayName(service, language) || "",
-    startTime,
-    endTime: addMinutes(startTime, duration),
+    startTime: normalizedStartTime,
+    endTime: addMinutes(normalizedStartTime, duration),
     priceAmount: Number(service?.price || 0),
     durationMinutes: duration,
   };
@@ -4721,7 +4730,7 @@ function createDefaultVisitDraft(date: string, startTime: string): VisitDraft {
 }
 
 function timeToMinutes(time: string) {
-  const [hours, mins] = time.split(":").map((item) => Number(item));
+  const [hours, mins] = normalizeTimeInput(time).split(":").map((item) => Number(item));
   if (!Number.isFinite(hours) || !Number.isFinite(mins)) return 9 * 60;
   return hours * 60 + mins;
 }
@@ -4745,7 +4754,7 @@ function minutesToTime(minutes: number) {
 }
 
 function isValidTime(time: string) {
-  const match = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(time);
+  const match = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(normalizeTimeInput(time));
   return Boolean(match);
 }
 
@@ -5903,17 +5912,28 @@ export default function App() {
       ...item,
       serviceId: safeText(item.serviceId),
       serviceName: getServiceDisplayName(workspace?.services.find((service) => service.id === item.serviceId), language) || safeText(item.serviceName).trim() || t.withoutService,
-      startTime: safeText(item.startTime).trim(),
-      endTime: safeText(item.endTime).trim(),
+      startTime: normalizeTimeInput(safeText(item.startTime)),
+      endTime: normalizeTimeInput(safeText(item.endTime)),
       priceAmount: Number(item.priceAmount || 0),
       durationMinutes: Number(item.durationMinutes || 15),
     }));
   }
 
+  function getVisitValidationMessage(items: VisitServiceDraft[]) {
+    if (!items.length) return t.chooseService;
+    const invalidItem = items.find((item) => !item.serviceName || !isValidTime(item.startTime) || !isValidTime(item.endTime) || timeToMinutes(item.endTime) <= timeToMinutes(item.startTime));
+    if (!invalidItem) return "";
+    if (!invalidItem.serviceName) return t.chooseService;
+    if (!isValidTime(invalidItem.startTime)) return `${t.start}: ${invalidItem.startTime || "09:00"}`;
+    if (!isValidTime(invalidItem.endTime)) return `${t.end}: ${invalidItem.endTime || "10:00"}`;
+    return `${t.end}: ${invalidItem.endTime} ≤ ${invalidItem.startTime}`;
+  }
+
   async function createVisit() {
     const items = getNormalizedVisitItems();
-    if (!items.length || items.some((item) => !item.serviceName || !isValidTime(item.startTime) || !isValidTime(item.endTime) || timeToMinutes(item.endTime) <= timeToMinutes(item.startTime))) {
-      Alert.alert(t.requiredTitle, t.requiredText);
+    const validationMessage = getVisitValidationMessage(items);
+    if (validationMessage) {
+      Alert.alert(t.requiredTitle, validationMessage);
       return false;
     }
 
@@ -5971,8 +5991,9 @@ export default function App() {
   async function saveEditedVisit() {
     if (!editingAppointment) return false;
     const items = getNormalizedVisitItems();
-    if (!items.length || items.some((item) => !item.serviceName || !isValidTime(item.startTime) || !isValidTime(item.endTime) || timeToMinutes(item.endTime) <= timeToMinutes(item.startTime))) {
-      Alert.alert(t.requiredTitle, t.requiredText);
+    const validationMessage = getVisitValidationMessage(items);
+    if (validationMessage) {
+      Alert.alert(t.requiredTitle, validationMessage);
       return false;
     }
 
@@ -7649,7 +7670,7 @@ function CalendarTab({
                       setEditingAppointment(null);
                     }
                   }}
-                  disabled={busy || !services.length}
+                  disabled={busy}
                 />
                 {editingAppointment ? (
                   <Pressable
