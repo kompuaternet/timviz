@@ -804,7 +804,7 @@ const TELEGRAM_REMINDER_LEAD_OPTIONS = [15, 30, 60, 120, 180, 1440];
 const CALENDAR_MEMORY_TTL_MS = 30_000;
 const CALENDAR_BACKGROUND_SYNC_MS = 12_000;
 const CALENDAR_WARM_CHUNK_SIZE = 90;
-const CALENDAR_TIME_AXIS_WIDTH = 50;
+const CALENDAR_TIME_AXIS_WIDTH = 38;
 const SERVICE_MODE_IDS = ["onsite", "travel", "online"] as const;
 const SERVICE_MODE_VALUES: Record<(typeof SERVICE_MODE_IDS)[number], string> = {
   onsite: "Клиенты приходят в мое физическое заведение",
@@ -7919,7 +7919,7 @@ function CalendarTimeAxis({ date, compact, schedule }: { date: string; compact: 
         const showLabel = height >= 18 || hour === Math.floor(workStart / 60);
         return (
           <View key={hour} pointerEvents="none" style={[styles.timeAxisHour, { top, height }]}>
-            <Text style={[styles.hourText, !showLabel && styles.hourTextHidden]}>{showLabel ? `${String(hour).padStart(2, "0")}:00` : ""}</Text>
+            <Text style={[styles.hourText, !showLabel && styles.hourTextHidden]}>{showLabel ? String(hour).padStart(2, "0") : ""}</Text>
           </View>
         );
       })}
@@ -8312,7 +8312,7 @@ function CalendarTimeline({
         return (
           <View pointerEvents="none" key={hour} style={[styles.hourRow, { top, height }]}>
             {showTimeColumn ? (
-              <Text style={[styles.hourText, !showLabel && styles.hourTextHidden]}>{showLabel ? `${String(hour).padStart(2, "0")}:00` : ""}</Text>
+              <Text style={[styles.hourText, !showLabel && styles.hourTextHidden]}>{showLabel ? String(hour).padStart(2, "0") : ""}</Text>
             ) : null}
             <View style={styles.hourGrid}>
               {(height >= 34 ? [0, 1, 2, 3, 4, 5, 6] : [0, 6]).map((part) => (
@@ -8412,7 +8412,7 @@ function CalendarTimeline({
         const visualGap = actualHeight > 8 ? 2 : 0;
         const blockTop = top + visualGap / 2;
         const height = Math.max(1, actualHeight - visualGap);
-        const color = index % 4 === 0 ? "#FFE3D8" : index % 4 === 1 ? "#FFE29A" : index % 4 === 2 ? "#AEE6EE" : "#CFF0AF";
+        const color = index % 4 === 0 ? "#FFE7DE" : index % 4 === 1 ? "#FFF0BE" : index % 4 === 2 ? "#D7F2F7" : "#DCF5C9";
         const availableWidth = gridWidth - laneGap * 2;
         const blockGap = laneCount > 1 ? 2 : 0;
         const blockWidth = laneCount > 1 ? (availableWidth - blockGap * (laneCount - 1)) / laneCount : availableWidth;
@@ -8825,7 +8825,7 @@ function AppIconButton({
   const doneIcon = icon === "checkmark";
   return (
     <Pressable onPress={onPress} style={[styles.headerIconButton, doneIcon && styles.headerIconButtonDone, active && styles.headerIconButtonActive, tone === "cyan" && styles.headerIconButtonCyan]}>
-      <Ionicons name={icon} size={18} color={active ? "#FFFFFF" : doneIcon ? "#16A34A" : tone === "cyan" ? "#0891B2" : "#432C75"} />
+      <Ionicons name={icon} size={18} color={active ? DESIGN.colors.primary : doneIcon ? "#16A34A" : tone === "cyan" ? "#0891B2" : "#432C75"} />
       {badge ? (
         <View style={[styles.headerIconBadge, badgeTone === "red" && styles.headerIconBadgeRed]}>
           <Text style={styles.headerIconBadgeText}>{badge > 9 ? "9+" : badge}</Text>
@@ -12343,20 +12343,20 @@ const styles = StyleSheet.create({
     backgroundColor: DESIGN.colors.background,
   },
   nativeHeader: {
-    minHeight: 66,
-    paddingHorizontal: 15,
-    paddingTop: 8,
-    paddingBottom: 8,
+    minHeight: 60,
+    paddingHorizontal: 14,
+    paddingTop: 6,
+    paddingBottom: 7,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(220, 228, 240, 0.88)",
-    backgroundColor: "rgba(255, 255, 255, 0.98)",
+    borderBottomColor: "rgba(226, 232, 240, 0.78)",
+    backgroundColor: "rgba(255, 255, 255, 0.96)",
     shadowColor: "#415169",
-    shadowOpacity: 0.075,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 7 },
+    shadowOpacity: 0.05,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 6 },
     elevation: 2,
   },
   headerTitleStack: {
@@ -12366,34 +12366,33 @@ const styles = StyleSheet.create({
   },
   nativeHeaderTitle: {
     color: DESIGN.colors.text,
-    fontSize: 21,
-    lineHeight: 25,
-    fontWeight: "900",
+    fontSize: 19,
+    lineHeight: 23,
+    fontWeight: "800",
   },
   headerBusinessInline: {
     marginTop: 2,
-    color: "#6F7C92",
+    color: "#7F8A9E",
     fontSize: 10,
-    fontWeight: "800",
-    textTransform: "uppercase",
+    fontWeight: "700",
   },
   nativeHeaderActions: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 7,
+    gap: 6,
   },
   headerIconButton: {
-    width: 38,
-    height: 38,
+    width: 36,
+    height: 36,
     borderRadius: DESIGN.radius.pill,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: "#DDE5F2",
-    backgroundColor: "#FFFFFF",
+    borderColor: "rgba(221, 229, 242, 0.86)",
+    backgroundColor: "rgba(255, 255, 255, 0.92)",
     shadowColor: "#415169",
-    shadowOpacity: 0.045,
-    shadowRadius: 9,
+    shadowOpacity: 0.035,
+    shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
   },
   headerIconBadge: {
@@ -12419,12 +12418,12 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
   headerIconButtonActive: {
-    borderColor: DESIGN.colors.primary,
-    backgroundColor: DESIGN.colors.primary,
+    borderColor: "#D8D0FF",
+    backgroundColor: DESIGN.colors.primarySoft,
     shadowColor: DESIGN.colors.primary,
-    shadowOpacity: 0.24,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
   },
   headerIconButtonDone: {
     borderColor: "#BBF7D0",
@@ -12435,8 +12434,8 @@ const styles = StyleSheet.create({
     backgroundColor: "#ECFEFF",
   },
   profilePill: {
-    height: 38,
-    minWidth: 58,
+    height: 36,
+    minWidth: 56,
     paddingHorizontal: 4,
     flexDirection: "row",
     alignItems: "center",
@@ -12444,16 +12443,16 @@ const styles = StyleSheet.create({
     gap: 4,
     borderRadius: DESIGN.radius.pill,
     borderWidth: 1,
-    borderColor: "#DDE5F2",
-    backgroundColor: "#FFFFFF",
+    borderColor: "rgba(221, 229, 242, 0.86)",
+    backgroundColor: "rgba(255, 255, 255, 0.92)",
     shadowColor: "#415169",
-    shadowOpacity: 0.045,
-    shadowRadius: 9,
+    shadowOpacity: 0.035,
+    shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
   },
   smallAvatar: {
-    width: 29,
-    height: 29,
+    width: 28,
+    height: 28,
     borderRadius: DESIGN.radius.pill,
     alignItems: "center",
     justifyContent: "center",
@@ -12461,8 +12460,8 @@ const styles = StyleSheet.create({
   },
   smallAvatarText: {
     color: "#FFFFFF",
-    fontSize: 13,
-    fontWeight: "900",
+    fontSize: 12,
+    fontWeight: "800",
   },
   headerPanelBackdrop: {
     flex: 1,
@@ -12933,17 +12932,17 @@ const styles = StyleSheet.create({
   },
   calendarScreen: {
     flex: 1,
-    backgroundColor: "#F7F9FE",
+    backgroundColor: "#F6F7FB",
   },
   calendarToolbar: {
-    minHeight: 56,
+    minHeight: 52,
     paddingHorizontal: 12,
     flexDirection: "row",
     alignItems: "center",
     gap: 8,
     borderBottomWidth: 1,
-    borderBottomColor: "#DDE6F2",
-    backgroundColor: "rgba(255,255,255,0.96)",
+    borderBottomColor: "rgba(226, 232, 240, 0.72)",
+    backgroundColor: "rgba(255,255,255,0.92)",
   },
   toolbarSpacer: {
     flex: 1,
@@ -12952,19 +12951,19 @@ const styles = StyleSheet.create({
     minWidth: 58,
     maxWidth: 98,
     flexShrink: 1,
-    height: 38,
+    height: 36,
     paddingHorizontal: 10,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 5,
-    borderRadius: DESIGN.radius.md,
+    borderRadius: 15,
     borderWidth: 1,
-    borderColor: "#DCE5F2",
-    backgroundColor: "#FFFFFF",
+    borderColor: "rgba(220, 229, 242, 0.86)",
+    backgroundColor: "rgba(255, 255, 255, 0.92)",
     shadowColor: "#64748B",
-    shadowOpacity: 0.045,
-    shadowRadius: 9,
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
   },
   modeButtonActive: {
@@ -12974,7 +12973,7 @@ const styles = StyleSheet.create({
   modeButtonText: {
     color: DESIGN.colors.text,
     fontSize: 13,
-    fontWeight: "800",
+    fontWeight: "700",
   },
   modeButtonTextActive: {
     color: DESIGN.colors.primaryDark,
@@ -13014,16 +13013,16 @@ const styles = StyleSheet.create({
     color: DESIGN.colors.primaryDark,
   },
   masterStrip: {
-    height: 68,
+    height: 62,
     alignItems: "center",
     justifyContent: "center",
     borderBottomWidth: 1,
-    borderBottomColor: "#DDE6F2",
-    backgroundColor: "rgba(255,255,255,0.96)",
+    borderBottomColor: "rgba(226, 232, 240, 0.72)",
+    backgroundColor: "rgba(255,255,255,0.94)",
   },
   masterAvatar: {
-    width: 38,
-    height: 38,
+    width: 34,
+    height: 34,
     borderRadius: DESIGN.radius.pill,
     alignItems: "center",
     justifyContent: "center",
@@ -13035,14 +13034,14 @@ const styles = StyleSheet.create({
   },
   masterAvatarText: {
     color: "#FFFFFF",
-    fontSize: 17,
-    fontWeight: "900",
+    fontSize: 15,
+    fontWeight: "800",
   },
   masterName: {
     marginTop: 3,
     color: "#202A3D",
     fontSize: 11,
-    fontWeight: "800",
+    fontWeight: "700",
   },
   calendarScroll: {
     flex: 1,
@@ -13149,10 +13148,10 @@ const styles = StyleSheet.create({
   },
   teamMembersHeaderRow: {
     flexDirection: "row",
-    height: 56,
+    height: 52,
     borderBottomWidth: 1,
-    borderBottomColor: "#DDE6F2",
-    backgroundColor: "rgba(255,255,255,0.98)",
+    borderBottomColor: "rgba(226, 232, 240, 0.72)",
+    backgroundColor: "rgba(255,255,255,0.94)",
   },
   teamMembersBodyRow: {
     flexDirection: "row",
@@ -13168,26 +13167,26 @@ const styles = StyleSheet.create({
   },
   teamPickerRail: {
     width: CALENDAR_TIME_AXIS_WIDTH,
-    height: 56,
+    height: 52,
     borderRightWidth: 1,
     borderBottomWidth: 1,
-    borderRightColor: "#DDE6F2",
-    borderBottomColor: "#DDE6F2",
-    backgroundColor: "rgba(255,255,255,0.98)",
+    borderRightColor: "rgba(226, 232, 240, 0.72)",
+    borderBottomColor: "rgba(226, 232, 240, 0.72)",
+    backgroundColor: "rgba(255,255,255,0.94)",
   },
   teamPickerRailBody: {
     width: CALENDAR_TIME_AXIS_WIDTH,
     alignSelf: "stretch",
     borderRightWidth: 1,
-    borderRightColor: "#DDE6F2",
-    backgroundColor: "#FAFCFF",
+    borderRightColor: "rgba(226, 232, 240, 0.66)",
+    backgroundColor: "#FDFEFF",
   },
   timeAxisColumn: {
     width: CALENDAR_TIME_AXIS_WIDTH,
     position: "relative",
     borderRightWidth: 1,
-    borderRightColor: "#DDE6F2",
-    backgroundColor: "#FAFCFF",
+    borderRightColor: "rgba(226, 232, 240, 0.66)",
+    backgroundColor: "#FDFEFF",
   },
   timeAxisHour: {
     position: "absolute",
@@ -13207,16 +13206,16 @@ const styles = StyleSheet.create({
     zIndex: 5,
   },
   teamPickerButton: {
-    width: 36,
-    height: 36,
-    marginTop: 10,
-    marginLeft: 7,
+    width: 30,
+    height: 30,
+    marginTop: 11,
+    marginLeft: 4,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 22,
     borderWidth: 1,
-    borderColor: "#DDE6F2",
-    backgroundColor: "#FFFFFF",
+    borderColor: "rgba(220, 229, 242, 0.88)",
+    backgroundColor: "rgba(255,255,255,0.94)",
   },
   teamPickerBadge: {
     position: "absolute",
@@ -13806,7 +13805,7 @@ const styles = StyleSheet.create({
   },
   timeline: {
     position: "relative",
-    backgroundColor: "#FCFDFF",
+    backgroundColor: "#FEFFFF",
   },
   hourRow: {
     position: "absolute",
@@ -13817,14 +13816,14 @@ const styles = StyleSheet.create({
   },
   hourText: {
     width: CALENDAR_TIME_AXIS_WIDTH,
-    paddingRight: 4,
+    paddingRight: 2,
     height: 16,
     lineHeight: 16,
     marginTop: -8,
     textAlign: "center",
-    color: "#7C879D",
-    fontSize: 11,
-    fontWeight: "700",
+    color: "#94A3B8",
+    fontSize: 12,
+    fontWeight: "500",
   },
   hourTextHidden: {
     opacity: 0,
@@ -13833,7 +13832,7 @@ const styles = StyleSheet.create({
     flex: 1,
     position: "relative",
     borderLeftWidth: 1,
-    borderLeftColor: "#DDE6F2",
+    borderLeftColor: "rgba(226, 232, 240, 0.62)",
   },
   majorLine: {
     position: "absolute",
@@ -13841,32 +13840,32 @@ const styles = StyleSheet.create({
     right: 0,
     top: 0,
     height: 1,
-    backgroundColor: "#DDE6F2",
+    backgroundColor: "rgba(203, 213, 225, 0.46)",
   },
   minorLine: {
     position: "absolute",
     left: 0,
     right: 0,
     height: 1,
-    backgroundColor: "#EEF3FA",
+    backgroundColor: "rgba(226, 232, 240, 0.36)",
   },
   closedBlock: {
     position: "absolute",
     left: CALENDAR_TIME_AXIS_WIDTH,
     right: 0,
     justifyContent: "center",
-    paddingLeft: 12,
+    paddingLeft: 10,
     borderWidth: 1,
-    borderColor: "#EEF3FA",
+    borderColor: "rgba(241, 245, 249, 0.86)",
     backgroundColor: "#F8FAFC",
     opacity: 1,
     zIndex: 0,
   },
   editableClosedBlock: {
     zIndex: 2,
-    borderLeftWidth: 3,
-    borderLeftColor: DESIGN.colors.primary,
-    backgroundColor: "#F4F6FB",
+    borderLeftWidth: 2,
+    borderLeftColor: "rgba(115, 87, 246, 0.48)",
+    backgroundColor: "#F6F7FB",
     opacity: 0.96,
   },
   closedBlockText: {
@@ -13897,7 +13896,7 @@ const styles = StyleSheet.create({
     left: CALENDAR_TIME_AXIS_WIDTH,
     right: 0,
     height: 1,
-    backgroundColor: "#EF476F",
+    backgroundColor: "rgba(239, 71, 111, 0.82)",
     zIndex: 2,
   },
   currentTimeDot: {
@@ -13914,17 +13913,17 @@ const styles = StyleSheet.create({
   appointmentBlock: {
     position: "absolute",
     zIndex: 3,
-    borderRadius: 17,
-    paddingVertical: 7,
-    paddingLeft: 9,
-    paddingRight: 9,
+    borderRadius: 16,
+    paddingVertical: 8,
+    paddingLeft: 10,
+    paddingRight: 10,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.72)",
-    shadowColor: "#314057",
-    shadowOpacity: 0.055,
-    shadowRadius: 9,
-    shadowOffset: { width: 0, height: 5 },
+    borderColor: "rgba(255, 255, 255, 0.82)",
+    shadowColor: "#243044",
+    shadowOpacity: 0.07,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 7 },
   },
   appointmentBlockTight: {
     borderRadius: 14,
@@ -13977,10 +13976,10 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   appointmentTime: {
-    color: "#172033",
+    color: "#1F2937",
     fontSize: 11,
     lineHeight: 14,
-    fontWeight: "800",
+    fontWeight: "700",
   },
   appointmentTimeTight: {
     fontSize: 10,
@@ -13996,7 +13995,7 @@ const styles = StyleSheet.create({
     color: "#101828",
     fontSize: 14,
     lineHeight: 16,
-    fontWeight: "900",
+    fontWeight: "800",
   },
   appointmentClientTight: {
     marginTop: 1,
@@ -14010,10 +14009,10 @@ const styles = StyleSheet.create({
   },
   appointmentService: {
     marginTop: 1,
-    color: "#1F2937",
+    color: "#475569",
     fontSize: 12,
     lineHeight: 14,
-    fontWeight: "700",
+    fontWeight: "600",
   },
   appointmentServiceTight: {
     fontSize: 11,
@@ -14046,12 +14045,14 @@ const styles = StyleSheet.create({
     borderRadius: DESIGN.radius.pill,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#7157F6",
+    borderWidth: 1,
+    borderColor: "rgba(255, 255, 255, 0.74)",
+    backgroundColor: "rgba(115, 87, 246, 0.92)",
     shadowColor: DESIGN.colors.primary,
-    shadowOpacity: 0.28,
-    shadowRadius: 22,
-    shadowOffset: { width: 0, height: 12 },
-    elevation: 6,
+    shadowOpacity: 0.24,
+    shadowRadius: 26,
+    shadowOffset: { width: 0, height: 14 },
+    elevation: 7,
   },
   fabButtonPressed: {
     opacity: 0.9,
@@ -14633,11 +14634,11 @@ const styles = StyleSheet.create({
     gap: 5,
     borderRadius: 28,
     borderWidth: 1,
-    borderColor: "rgba(226, 232, 240, 0.88)",
-    backgroundColor: "rgba(255, 255, 255, 0.94)",
+    borderColor: "rgba(226, 232, 240, 0.72)",
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
     shadowColor: "#1D2B44",
-    shadowOpacity: 0.1,
-    shadowRadius: 26,
+    shadowOpacity: 0.08,
+    shadowRadius: 28,
     shadowOffset: { width: 0, height: -8 },
     elevation: 8,
   },
@@ -14651,11 +14652,11 @@ const styles = StyleSheet.create({
   },
   bottomNavItemActive: {
     borderWidth: 1,
-    borderColor: "rgba(109, 74, 255, 0.18)",
-    backgroundColor: "rgba(109, 74, 255, 0.1)",
+    borderColor: "rgba(115, 87, 246, 0.14)",
+    backgroundColor: "rgba(115, 87, 246, 0.075)",
     shadowColor: DESIGN.colors.primary,
-    shadowOpacity: 0.12,
-    shadowRadius: 12,
+    shadowOpacity: 0.09,
+    shadowRadius: 14,
     shadowOffset: { width: 0, height: 6 },
   },
   bottomNavItemPressed: {
@@ -14863,17 +14864,17 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   dateButton: {
-    width: 39,
-    height: 39,
-    borderRadius: 15,
+    width: 36,
+    height: 36,
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: "#DCE5F2",
-    backgroundColor: "#FFFFFF",
+    borderColor: "rgba(220, 229, 242, 0.86)",
+    backgroundColor: "rgba(255,255,255,0.92)",
     shadowColor: "#64748B",
-    shadowOpacity: 0.045,
-    shadowRadius: 9,
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
   },
   dateButtonText: {
@@ -14882,29 +14883,29 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   datePill: {
-    minWidth: 134,
-    height: 42,
-    borderRadius: 16,
+    minWidth: 128,
+    height: 40,
+    borderRadius: 15,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: "#DCE5F2",
-    backgroundColor: "#FFFFFF",
+    borderColor: "rgba(220, 229, 242, 0.86)",
+    backgroundColor: "rgba(255,255,255,0.92)",
     shadowColor: "#64748B",
-    shadowOpacity: 0.045,
-    shadowRadius: 9,
+    shadowOpacity: 0.03,
+    shadowRadius: 8,
     shadowOffset: { width: 0, height: 4 },
   },
   dateText: {
     color: DESIGN.colors.text,
-    fontSize: 15,
-    fontWeight: "900",
+    fontSize: 14,
+    fontWeight: "800",
   },
   dateSubText: {
     marginTop: 1,
-    color: "#778399",
-    fontSize: 11,
-    fontWeight: "700",
+    color: "#94A3B8",
+    fontSize: 10,
+    fontWeight: "600",
   },
   statsGrid: {
     flexDirection: "row",
