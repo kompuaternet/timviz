@@ -6475,14 +6475,6 @@ export default function App() {
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => refreshAll()} tintColor="#7C3AED" />}
             showsVerticalScrollIndicator={false}
           >
-            {activeTab !== "settings" && activeTab !== "staff" ? (
-              <View style={styles.workspaceHero}>
-                <Text style={styles.workspaceEyebrow}>{t.dashboard}</Text>
-                <Text style={styles.workspaceTitle}>{t[activeTab]}</Text>
-                <Text style={styles.workspaceSubtitle}>{workspace?.business.name || session.displayName}</Text>
-              </View>
-            ) : null}
-
             {activeTab === "services" ? (
               <ServicesTab
                 t={t}
@@ -9120,6 +9112,14 @@ function ServicesTab({
     }
   }
 
+  function openServiceActions(service: ServiceRecord) {
+    Alert.alert(getServiceDisplayName(service, language), "", [
+      { text: t.cancel, style: "cancel" },
+      { text: t.editService, onPress: () => startEdit(service) },
+      { text: t.delete, style: "destructive", onPress: () => onDelete(service.id) },
+    ]);
+  }
+
   return (
     <View style={styles.sectionStack}>
       <View style={styles.servicesModeRow}>
@@ -9141,7 +9141,6 @@ function ServicesTab({
         <Panel title={t.yourServices}>
           {services.length ? (
             <>
-              <Text style={styles.emptyText}>{t.myServicesHint}</Text>
               {services.map((service) => {
                 const isEditing = editId === service.id;
                 return (
@@ -9161,22 +9160,17 @@ function ServicesTab({
                         </View>
                       </View>
                     ) : (
-                      <Pressable style={styles.serviceManageSummary} onPress={() => startEdit(service)}>
+                      <Pressable style={styles.serviceManageSummary} onPress={() => startEdit(service)} onLongPress={() => openServiceActions(service)}>
                         <View style={styles.serviceColorRow}>
                           <View style={[styles.serviceDot, { backgroundColor: service.color || "#7C3AED" }]} />
                           <View style={styles.serviceTextBlock}>
-                            <Text style={styles.listTitle}>{getServiceDisplayName(service, language)}</Text>
-                            <Text style={styles.listCaption}>{getServiceCategoryDisplayName(service.category, service.localizedCategory, language, t)} · {formatDuration(service.durationMinutes || 60, t)}</Text>
+                            <Text style={styles.listTitle} numberOfLines={1}>{getServiceDisplayName(service, language)}</Text>
+                            <Text style={styles.listCaption} numberOfLines={1}>{formatDuration(service.durationMinutes || 60, t)}</Text>
                           </View>
                         </View>
                         <View style={styles.rowRight}>
                           <Text style={styles.moneyText}>{formatMoney(service.price, currency)}</Text>
-                          <Pressable style={styles.iconGhostButton} onPress={() => startEdit(service)}>
-                            <Ionicons name="create-outline" size={18} color="#334155" />
-                          </Pressable>
-                          <Pressable style={styles.smallDanger} onPress={() => onDelete(service.id)}>
-                            <Text style={styles.smallDangerText}>×</Text>
-                          </Pressable>
+                          <Ionicons name="ellipsis-horizontal" size={17} color="#94A3B8" />
                         </View>
                       </Pressable>
                     )}
@@ -9233,7 +9227,6 @@ function ServicesTab({
 
       {mode === "catalog" ? (
         <Panel title={t.generalCatalog}>
-          <Text style={styles.emptyText}>{t.catalogHint}</Text>
           <Field label={t.search} value={catalogQuery} onChangeText={setCatalogQuery} placeholder={t.searchService} />
           <CategoryChips t={t} language={language} categories={catalog.map((item) => item.title)} selected={currentCatalogCategory} onSelect={setActiveCatalogCategory} />
           {catalogServices.length ? (
@@ -9316,25 +9309,34 @@ function ClientsTab({
   onCreateVisit: () => void;
   busy: boolean;
 }) {
+  const [clientFormOpen, setClientFormOpen] = useState(false);
+
+  function handleCreateClient() {
+    if (!draft.firstName.trim() && !draft.phone.trim()) {
+      onCreate();
+      return;
+    }
+    onCreate();
+    setClientFormOpen(false);
+  }
+
   return (
     <View style={styles.sectionStack}>
-      <Panel title={t.addClient}>
-        <View style={styles.twoColumns}>
-          <Field label={t.firstName} value={draft.firstName} onChangeText={(value) => setDraft({ ...draft, firstName: value })} />
-          <Field label={t.lastName} value={draft.lastName} onChangeText={(value) => setDraft({ ...draft, lastName: value })} />
-        </View>
-        <Field label={t.phone} value={draft.phone} onChangeText={(value) => setDraft({ ...draft, phone: value })} keyboardType="phone-pad" />
-        <Field label={t.email} value={draft.email} onChangeText={(value) => setDraft({ ...draft, email: value })} keyboardType="email-address" autoCapitalize="none" />
-        <PrimaryButton label={t.addClient} onPress={onCreate} disabled={busy} />
-      </Panel>
-
       <Panel title={t.clients}>
+        {clients.length ? (
+          <Pressable style={styles.compactAddRow} onPress={() => setClientFormOpen(true)}>
+            <View style={styles.compactAddIcon}>
+              <Ionicons name="add" size={18} color="#6D4AFF" />
+            </View>
+            <Text style={styles.compactAddText}>{t.addClient}</Text>
+          </Pressable>
+        ) : null}
         {clients.length ? (
           clients.map((client) => (
             <View key={client.id} style={styles.listItem}>
               <View>
-                <Text style={styles.listTitle}>{client.fullName || client.phone}</Text>
-                <Text style={styles.listCaption}>{client.phone || client.email}</Text>
+                <Text style={styles.listTitle} numberOfLines={1}>{client.fullName || client.phone}</Text>
+                <Text style={styles.listCaption} numberOfLines={1}>{client.phone || client.email}</Text>
               </View>
               <Text style={styles.badgeText}>{client.visitsCount}</Text>
             </View>
@@ -9347,7 +9349,7 @@ function ClientsTab({
             <Text style={styles.firstRunTitle}>{t.clientsEmptyTitle}</Text>
             <Text style={styles.firstRunText}>{t.clientsEmptyText}</Text>
             <View style={styles.firstRunActions}>
-              <Pressable style={styles.firstRunPrimaryButton} onPress={onCreate}>
+              <Pressable style={styles.firstRunPrimaryButton} onPress={() => setClientFormOpen(true)}>
                 <Text style={styles.firstRunPrimaryText}>{t.addClient}</Text>
               </Pressable>
               <Pressable style={styles.firstRunSecondaryButton} onPress={onCreateVisit}>
@@ -9357,6 +9359,31 @@ function ClientsTab({
           </View>
         )}
       </Panel>
+      <Pressable style={styles.screenFabMini} onPress={() => setClientFormOpen(true)}>
+        <Ionicons name="add" size={22} color="#FFFFFF" />
+      </Pressable>
+      <Modal transparent visible={clientFormOpen} animationType="slide" onRequestClose={() => setClientFormOpen(false)}>
+        <View style={styles.modalBackdrop}>
+          <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.clientFormSheetWrap}>
+            <View style={styles.visitSheet}>
+              <View style={styles.sheetHandle} />
+              <View style={styles.sheetHeader}>
+                <Text style={styles.sheetTitle}>{t.addClient}</Text>
+                <Pressable style={styles.sheetClose} onPress={() => setClientFormOpen(false)}>
+                  <Ionicons name="close" size={22} color="#0F172A" />
+                </Pressable>
+              </View>
+              <View style={styles.twoColumns}>
+                <Field label={t.firstName} value={draft.firstName} onChangeText={(value) => setDraft({ ...draft, firstName: value })} />
+                <Field label={t.lastName} value={draft.lastName} onChangeText={(value) => setDraft({ ...draft, lastName: value })} />
+              </View>
+              <Field label={t.phone} value={draft.phone} onChangeText={(value) => setDraft({ ...draft, phone: value })} keyboardType="phone-pad" />
+              <Field label={t.email} value={draft.email} onChangeText={(value) => setDraft({ ...draft, email: value })} keyboardType="email-address" autoCapitalize="none" />
+              <PrimaryButton label={t.addClient} onPress={handleCreateClient} disabled={busy} />
+            </View>
+          </KeyboardAvoidingView>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -9420,18 +9447,11 @@ function StaffWorkspaceTab({
   onSaveSchedule: (member: StaffMemberRecord, workSchedule: WorkScheduleRecord, customSchedule?: Record<string, WorkDayScheduleRecord>, mode?: "fixed" | "flexible") => Promise<boolean>;
 }) {
   const [section, setSection] = useState<"members" | "schedule">("members");
-  const businessName = workspace?.business.name || workspace?.professional.email || "";
 
   return (
     <View style={styles.staffScreen}>
       <View style={styles.staffScreenHeader}>
-        <Text style={styles.staffScreenKicker} numberOfLines={1}>
-          {businessName}
-        </Text>
         <Text style={styles.staffScreenTitle}>{section === "members" ? t.teamMembers : t.staffSchedule}</Text>
-        <Text style={styles.staffScreenSubtitle} numberOfLines={2}>
-          {section === "members" ? t.teamMembersHint : t.staffScheduleHint}
-        </Text>
       </View>
 
       <View style={styles.staffLocalNav}>
@@ -10987,18 +11007,14 @@ function SettingsTab({
     void updatePushSettings({ [key]: !pushPanel.settings[key] });
   }
 
-  const activeSettingsLabel = settingsSectionLabel(activeSection, t);
   const settingsBusinessName = workspace?.business.name || workspace?.professional.email || "";
 
   return (
     <View style={styles.settingsRoot}>
       <View style={styles.settingsTopPanel}>
         <View style={styles.settingsTopCopy}>
-          <Text style={styles.settingsTopKicker}>{t.dashboard}</Text>
           <Text style={styles.settingsTopTitle}>{t.settings}</Text>
-          <Text style={styles.settingsTopSubtitle} numberOfLines={1}>
-            {settingsBusinessName}
-          </Text>
+          <Text style={styles.settingsTopSubtitle} numberOfLines={1}>{settingsBusinessName}</Text>
         </View>
         {statusText ? (
           <View style={styles.settingsStatusBadge}>
@@ -11010,21 +11026,22 @@ function SettingsTab({
         ) : null}
       </View>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.settingsSectionRail}>
+      <View style={styles.settingsAccordionNav}>
         {SETTINGS_SECTIONS.map((section) => (
           <Pressable
             key={section}
-            style={[styles.settingsSectionChip, activeSection === section && styles.settingsSectionChipActive]}
+            style={[styles.settingsAccordionHeader, activeSection === section && styles.settingsAccordionHeaderActive]}
             onPress={() => setActiveSection(section)}
           >
             <Text style={[styles.settingsSectionText, activeSection === section && styles.settingsSectionTextActive]}>{settingsSectionLabel(section, t)}</Text>
+            <Ionicons name={activeSection === section ? "chevron-up" : "chevron-down"} size={16} color={activeSection === section ? "#6D4AFF" : "#94A3B8"} />
           </Pressable>
         ))}
-      </ScrollView>
+      </View>
 
-      <Text style={styles.settingsSectionHint}>{activeSettingsLabel}</Text>
       {!isOwner ? <Text style={styles.settingsMutedNotice}>{t.ownerOnlyHint}</Text> : null}
 
+      <View style={styles.settingsAccordionBody}>
       {activeSection === "general" ? (
         <>
           <Panel title={t.premiumSubscription}>
@@ -11155,10 +11172,19 @@ function SettingsTab({
               <View style={[styles.mobileSwitchThumb, draft.allowOnlineBooking && styles.mobileSwitchThumbActive]} />
             </View>
           </Pressable>
-          <InfoLine label={t.publicLink} value={publicBookingUrl || t.empty} />
-          <View style={styles.settingsActionRow}>
-            <SecondaryButton label={t.openPage} onPress={openPublicLink} disabled={!publicBookingUrl} />
-            <SecondaryButton label={t.copyLink} onPress={copyPublicLink} disabled={!publicBookingUrl} />
+          <View style={styles.bookingLinkCard}>
+            <Text style={styles.bookingLinkText} numberOfLines={1}>{publicBookingUrl || t.empty}</Text>
+            <View style={styles.bookingLinkActions}>
+              <Pressable style={styles.iconGhostButton} onPress={copyPublicLink} disabled={!publicBookingUrl}>
+                <Ionicons name="copy-outline" size={17} color="#334155" />
+              </Pressable>
+              <Pressable style={styles.iconGhostButton} onPress={openPublicLink} disabled={!publicBookingUrl}>
+                <Ionicons name="open-outline" size={17} color="#334155" />
+              </Pressable>
+              <Pressable style={styles.iconGhostButton} onPress={copyPublicLink} disabled={!publicBookingUrl}>
+                <Ionicons name="share-outline" size={17} color="#334155" />
+              </Pressable>
+            </View>
           </View>
         </Panel>
       ) : null}
@@ -11385,6 +11411,7 @@ function SettingsTab({
           </View>
         </Panel>
       ) : null}
+      </View>
 
       <Panel title={t.profileAndBusiness}>
         <PrimaryButton label={saving ? t.signingIn : t.saveSettings} onPress={saveSettings} disabled={saving || busy || !workspace} />
@@ -12823,19 +12850,41 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   shareToggleRow: {
-    marginTop: 14,
-    minHeight: 72,
-    padding: 12,
+    minHeight: 58,
+    padding: 11,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    borderRadius: 16,
-    backgroundColor: "#F8FAFC",
+    borderRadius: 18,
+    backgroundColor: "#F8FAFF",
   },
   shareToggleTitle: {
     color: "#0F172A",
-    fontSize: 15,
-    fontWeight: "900",
+    fontSize: 14,
+    fontWeight: "800",
+  },
+  bookingLinkCard: {
+    minHeight: 50,
+    paddingHorizontal: 11,
+    paddingVertical: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    borderRadius: 17,
+    borderWidth: 1,
+    borderColor: "rgba(226, 232, 240, 0.72)",
+    backgroundColor: "#FFFFFF",
+  },
+  bookingLinkText: {
+    flex: 1,
+    minWidth: 0,
+    color: "#334155",
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  bookingLinkActions: {
+    flexDirection: "row",
+    gap: 6,
   },
   mobileSwitch: {
     width: 54,
@@ -14847,21 +14896,21 @@ const styles = StyleSheet.create({
     left: 14,
     right: 14,
     bottom: Platform.OS === "ios" ? 12 : 9,
-    minHeight: 62,
-    paddingHorizontal: 6,
-    paddingTop: 6,
+    minHeight: 60,
+    paddingHorizontal: 7,
+    paddingTop: 7,
     paddingBottom: Platform.OS === "ios" ? 10 : 7,
     flexDirection: "row",
     alignItems: "stretch",
     gap: 5,
     borderRadius: 30,
     borderWidth: 1,
-    borderColor: "rgba(226, 232, 240, 0.58)",
-    backgroundColor: "rgba(255, 255, 255, 0.86)",
+    borderColor: "rgba(226, 232, 240, 0.46)",
+    backgroundColor: "rgba(255, 255, 255, 0.91)",
     shadowColor: "#1D2B44",
-    shadowOpacity: 0.07,
-    shadowRadius: 30,
-    shadowOffset: { width: 0, height: -10 },
+    shadowOpacity: 0.055,
+    shadowRadius: 26,
+    shadowOffset: { width: 0, height: -8 },
     elevation: 8,
   },
   bottomNavItem: {
@@ -14874,12 +14923,12 @@ const styles = StyleSheet.create({
   },
   bottomNavItemActive: {
     borderWidth: 1,
-    borderColor: "rgba(115, 87, 246, 0.12)",
-    backgroundColor: "rgba(115, 87, 246, 0.055)",
+    borderColor: "rgba(115, 87, 246, 0.10)",
+    backgroundColor: "rgba(115, 87, 246, 0.045)",
     shadowColor: DESIGN.colors.primary,
-    shadowOpacity: 0.075,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 7 },
+    shadowOpacity: 0.06,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 6 },
   },
   bottomNavItemPressed: {
     opacity: 0.82,
@@ -14927,7 +14976,7 @@ const styles = StyleSheet.create({
   },
   workspaceContent: {
     paddingHorizontal: DESIGN.spacing.screen,
-    paddingTop: 16,
+    paddingTop: 10,
     paddingBottom: 118,
   },
   workspaceHero: {
@@ -14983,17 +15032,17 @@ const styles = StyleSheet.create({
     color: "#4F46E5",
   },
   sectionStack: {
-    gap: 14,
+    gap: 10,
   },
   settingsRoot: {
-    gap: 12,
+    gap: 10,
   },
   settingsTopPanel: {
-    minHeight: 62,
+    minHeight: 38,
     paddingHorizontal: 2,
-    paddingBottom: 2,
+    paddingBottom: 0,
     flexDirection: "row",
-    alignItems: "flex-end",
+    alignItems: "center",
     justifyContent: "space-between",
     gap: 12,
   },
@@ -15009,16 +15058,15 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
   },
   settingsTopTitle: {
-    marginTop: 4,
     color: DESIGN.colors.text,
-    fontSize: 22,
-    lineHeight: 27,
+    fontSize: 20,
+    lineHeight: 25,
     fontWeight: "900",
   },
   settingsTopSubtitle: {
-    marginTop: 2,
+    marginTop: 1,
     color: DESIGN.colors.muted,
-    fontSize: 13,
+    fontSize: 11,
     fontWeight: "700",
   },
   settingsStatusBadge: {
@@ -15043,6 +15091,27 @@ const styles = StyleSheet.create({
     color: "#94A3B8",
     fontSize: 12,
     fontWeight: "800",
+  },
+  settingsAccordionNav: {
+    gap: 6,
+  },
+  settingsAccordionHeader: {
+    minHeight: 44,
+    paddingHorizontal: 13,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderRadius: 17,
+    borderWidth: 1,
+    borderColor: "rgba(226, 232, 240, 0.72)",
+    backgroundColor: "rgba(255,255,255,0.82)",
+  },
+  settingsAccordionHeaderActive: {
+    borderColor: "rgba(216, 208, 255, 0.92)",
+    backgroundColor: "#F7F4FF",
+  },
+  settingsAccordionBody: {
+    gap: 10,
   },
   servicesModeRow: {
     flexDirection: "row",
@@ -15160,24 +15229,24 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   panel: {
-    borderRadius: 24,
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: "rgba(226, 232, 240, 0.78)",
+    borderColor: "rgba(226, 232, 240, 0.58)",
     backgroundColor: DESIGN.colors.surface,
-    padding: 15,
+    padding: 13,
     shadowColor: "#0F172A",
-    shadowOpacity: 0.04,
-    shadowRadius: 22,
-    shadowOffset: { width: 0, height: 12 },
+    shadowOpacity: 0.028,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 8 },
   },
   panelTitle: {
     color: DESIGN.colors.text,
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: "800",
   },
   panelBody: {
-    gap: 9,
-    marginTop: 11,
+    gap: 8,
+    marginTop: 9,
   },
   servicePicker: {
     flexDirection: "row",
@@ -15212,16 +15281,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     gap: 12,
-    minHeight: 64,
-    marginTop: 8,
-    padding: 12,
-    borderRadius: DESIGN.radius.lg,
+    minHeight: 58,
+    marginTop: 7,
+    padding: 10,
+    borderRadius: 17,
     borderWidth: 1,
     borderColor: DESIGN.colors.border,
     backgroundColor: DESIGN.colors.surfaceSoft,
   },
   serviceManageCard: {
-    borderRadius: DESIGN.radius.lg,
+    borderRadius: 18,
     borderWidth: 1,
     borderColor: DESIGN.colors.border,
     backgroundColor: DESIGN.colors.surfaceSoft,
@@ -15312,8 +15381,8 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   serviceManageSummary: {
-    minHeight: 70,
-    padding: 12,
+    minHeight: 62,
+    padding: 10,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -15412,8 +15481,8 @@ const styles = StyleSheet.create({
   },
   listTitle: {
     color: "#0F172A",
-    fontSize: 16,
-    fontWeight: "900",
+    fontSize: 15,
+    fontWeight: "800",
   },
   listText: {
     marginTop: 2,
@@ -15424,7 +15493,7 @@ const styles = StyleSheet.create({
   listCaption: {
     marginTop: 2,
     color: DESIGN.colors.muted,
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: "700",
   },
   moneyText: {
@@ -15453,7 +15522,51 @@ const styles = StyleSheet.create({
   rowRight: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: 6,
+  },
+  compactAddRow: {
+    minHeight: 44,
+    marginBottom: 4,
+    paddingHorizontal: 11,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 9,
+    borderRadius: 16,
+    backgroundColor: "#F7F4FF",
+  },
+  compactAddIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#FFFFFF",
+  },
+  compactAddText: {
+    color: "#5B4BDB",
+    fontSize: 13,
+    fontWeight: "800",
+  },
+  screenFabMini: {
+    position: "absolute",
+    right: 2,
+    bottom: -74,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.82)",
+    backgroundColor: DESIGN.colors.primary,
+    shadowColor: DESIGN.colors.primary,
+    shadowOpacity: 0.16,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 10 },
+    elevation: 5,
+  },
+  clientFormSheetWrap: {
+    width: "100%",
   },
   smallDanger: {
     width: 32,
