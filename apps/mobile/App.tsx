@@ -928,6 +928,7 @@ const baseCopy = {
     setupServices: "Додайте послуги",
     setupSchedule: "Налаштуйте графік",
     setupBooking: "Увімкніть онлайн-запис",
+    setupPhoto: "Додайте фото бізнесу",
     setupAddress: "Додайте адресу",
     setupTelegram: "Підключіть Telegram",
     staffSchedule: "Графік змін",
@@ -1316,6 +1317,7 @@ const baseCopy = {
     setupServices: "Добавьте услуги",
     setupSchedule: "Настройте график",
     setupBooking: "Включите онлайн-запись",
+    setupPhoto: "Добавьте фото бизнеса",
     setupAddress: "Добавьте адрес",
     setupTelegram: "Подключите Telegram",
     staffSchedule: "График смен",
@@ -1704,6 +1706,7 @@ const baseCopy = {
     setupServices: "Add services",
     setupSchedule: "Set schedule",
     setupBooking: "Enable online booking",
+    setupPhoto: "Add business photos",
     setupAddress: "Add address",
     setupTelegram: "Connect Telegram",
     staffSchedule: "Shift schedule",
@@ -2082,6 +2085,7 @@ const generatedMobileCopy = {
     setupServices: "Ajouter des services",
     setupSchedule: "Définir le calendrier",
     setupBooking: "Activer la réservation en ligne",
+    setupPhoto: "Ajouter des photos",
     setupAddress: "Ajouter une adresse",
     setupTelegram: "Connect Telegram",
     staffSchedule: "Horaire des équipes",
@@ -2445,6 +2449,7 @@ const generatedMobileCopy = {
     setupServices: "Dodaj usługi",
     setupSchedule: "Ustaw harmonogram",
     setupBooking: "Włącz rezerwację online",
+    setupPhoto: "Dodaj zdjęcia firmy",
     setupAddress: "Dodaj adres",
     setupTelegram: "Połącz telegram",
     staffSchedule: "Harmonogram zmian",
@@ -2808,6 +2813,7 @@ const generatedMobileCopy = {
     setupServices: "Přidat služby",
     setupSchedule: "Nastavit plán",
     setupBooking: "Povolit online rezervaci",
+    setupPhoto: "Přidat firemní fotografie",
     setupAddress: "Přidat adresu",
     setupTelegram: "Připojit telegram",
     staffSchedule: "Plán směn",
@@ -3171,6 +3177,7 @@ const generatedMobileCopy = {
     setupServices: "Agregar servicios",
     setupSchedule: "Establecer horario",
     setupBooking: "Habilitar reserva en línea",
+    setupPhoto: "Agregar fotos del negocio",
     setupAddress: "Agregar dirección",
     setupTelegram: "Conectar Telegram",
     staffSchedule: "Horario de turnos",
@@ -3534,6 +3541,7 @@ const generatedMobileCopy = {
     setupServices: "Dienste hinzufügen",
     setupSchedule: "Zeitplan festlegen",
     setupBooking: "Online-Buchung aktivieren",
+    setupPhoto: "Geschäftsfotos hinzufügen",
     setupAddress: "Adresse hinzufügen",
     setupTelegram: "Telegram verbinden",
     staffSchedule: "Schichtplan",
@@ -8496,11 +8504,12 @@ function WorkspaceHeader({
   const [busy, setBusy] = useState(false);
   const publicBookingUrl = workspace?.business.publicBookingUrl || "";
   const onlineBookingEnabled = workspace?.business.allowOnlineBooking === true;
+  const businessHasPhoto = Boolean(workspace?.business.photos?.some((photo) => photo.status !== "blocked"));
   const setupItems = [
     { id: "services", title: t.setupServices, done: Boolean(workspace?.services?.length), icon: "pricetag-outline" as const },
     { id: "schedule", title: t.setupSchedule, done: Boolean(workspace?.memberSchedule?.workSchedule || workspace?.memberSchedule?.customSchedule), icon: "time-outline" as const },
     { id: "booking", title: t.setupBooking, done: onlineBookingEnabled, icon: "cloud-upload-outline" as const },
-    { id: "address", title: t.setupAddress, done: Boolean(workspace?.business.address), icon: "location-outline" as const },
+    { id: "photos", title: t.setupPhoto, done: businessHasPhoto, icon: "image-outline" as const },
     { id: "telegram", title: t.setupTelegram, done: Boolean(workspace?.telegram?.connected), icon: "chatbubble-ellipses-outline" as const },
   ];
   const setupDone = setupItems.filter((item) => item.done).length;
@@ -8618,7 +8627,7 @@ function WorkspaceHeader({
                     onPress={() => {
                       if (item.id === "services") setActiveTab("services");
                       if (item.id === "booking") onOpenSettingsSection("online");
-                      if (item.id === "address") onOpenSettingsSection("address");
+                      if (item.id === "photos") onOpenSettingsSection("general");
                       if (item.id === "telegram") onOpenSettingsSection("telegram");
                       if (item.id === "schedule") onOpenSettingsSection("schedule");
                       close();
@@ -10593,6 +10602,36 @@ function SettingsTab({
     void saveBusinessPhotos(remaining.map((photo, index) => ({ ...photo, isPrimary: hasPrimary ? photo.isPrimary : index === 0 })));
   }
 
+  function renderBusinessPhotosPanel() {
+    return (
+      <Panel title={t.businessPhotos}>
+        <Text style={styles.emptyText}>{t.photosHint}</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.settingsPhotoRail}>
+          {photos.length ? photos.map((photo) => (
+            <View key={photo.id} style={styles.settingsPhotoCard}>
+              <Image source={{ uri: photo.url }} style={styles.settingsPhoto} />
+              <View style={styles.settingsPhotoActions}>
+                <Text style={styles.settingsPhotoBadge}>{photo.isPrimary ? t.primaryPhoto : photo.caption || t.businessPhotos}</Text>
+                {!photo.isPrimary ? <SecondaryButton label={t.makePrimary} onPress={() => makePrimaryPhoto(photo.id)} disabled={!isOwner || saving} /> : null}
+                <SecondaryButton label={t.delete} onPress={() => removeBusinessPhoto(photo.id)} disabled={!isOwner || saving} />
+              </View>
+            </View>
+          )) : (
+            <View style={styles.settingsPhotoPlaceholder}>
+              <Ionicons name="image-outline" size={24} color="#94A3B8" />
+            </View>
+          )}
+        </ScrollView>
+        <Field label={t.photoUrl} value={photoDraft.url} editable={isOwner} onChangeText={(value) => setPhotoDraft((current) => ({ ...current, url: value }))} placeholder="https://..." autoCapitalize="none" />
+        <Field label={t.photoCaption} value={photoDraft.caption} editable={isOwner} onChangeText={(value) => setPhotoDraft((current) => ({ ...current, caption: value }))} />
+        <View style={styles.settingsActionRow}>
+          <SecondaryButton label={t.uploadPhoto} onPress={pickBusinessPhoto} disabled={!isOwner || saving} />
+          <SecondaryButton label={t.addPhoto} onPress={addBusinessPhoto} disabled={!isOwner || saving} />
+        </View>
+      </Panel>
+    );
+  }
+
   function applyAddressSuggestion(suggestion: AddressSuggestionRecord) {
     updateDraft("address", suggestion.label);
     updateDraft("addressDetails", suggestion.details);
@@ -10854,6 +10893,8 @@ function SettingsTab({
             </View>
           </Panel>
 
+          {renderBusinessPhotosPanel()}
+
           <Panel title={t.localization}>
             <LanguageSwitch language={draft.language} setLanguage={(value) => updateDraft("language", value)} />
             <SettingsOptionRail label={t.country} value={draft.country} options={COUNTRY_OPTIONS} onSelect={(value) => updateDraft("country", value)} renderLabel={(value) => localizeCountry(value, language)} />
@@ -10944,32 +10985,6 @@ function SettingsTab({
               </View>
             ))}
             <SecondaryButton label={t.manageServices} onPress={() => setActiveTab("services")} />
-          </Panel>
-
-          <Panel title={t.businessPhotos}>
-            <Text style={styles.emptyText}>{t.photosHint}</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.settingsPhotoRail}>
-              {photos.length ? photos.map((photo) => (
-                <View key={photo.id} style={styles.settingsPhotoCard}>
-                  <Image source={{ uri: photo.url }} style={styles.settingsPhoto} />
-                  <View style={styles.settingsPhotoActions}>
-                    <Text style={styles.settingsPhotoBadge}>{photo.isPrimary ? t.primaryPhoto : photo.caption || t.businessPhotos}</Text>
-                    {!photo.isPrimary ? <SecondaryButton label={t.makePrimary} onPress={() => makePrimaryPhoto(photo.id)} disabled={!isOwner || saving} /> : null}
-                    <SecondaryButton label={t.delete} onPress={() => removeBusinessPhoto(photo.id)} disabled={!isOwner || saving} />
-                  </View>
-                </View>
-              )) : (
-                <View style={styles.settingsPhotoPlaceholder}>
-                  <Ionicons name="image-outline" size={24} color="#94A3B8" />
-                </View>
-              )}
-            </ScrollView>
-            <Field label={t.photoUrl} value={photoDraft.url} editable={isOwner} onChangeText={(value) => setPhotoDraft((current) => ({ ...current, url: value }))} placeholder="https://..." autoCapitalize="none" />
-            <Field label={t.photoCaption} value={photoDraft.caption} editable={isOwner} onChangeText={(value) => setPhotoDraft((current) => ({ ...current, caption: value }))} />
-            <View style={styles.settingsActionRow}>
-              <SecondaryButton label={t.uploadPhoto} onPress={pickBusinessPhoto} disabled={!isOwner || saving} />
-              <SecondaryButton label={t.addPhoto} onPress={addBusinessPhoto} disabled={!isOwner || saving} />
-            </View>
           </Panel>
         </>
       ) : null}
