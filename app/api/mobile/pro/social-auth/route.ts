@@ -61,6 +61,13 @@ function getAllowedGoogleAudiences() {
     .filter(Boolean);
 }
 
+function splitEnvList(value: unknown) {
+  return cleanText(value)
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
 async function verifyGoogleIdentityToken(idToken: string): Promise<SocialProfile> {
   const response = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${encodeURIComponent(idToken)}`, {
     cache: "no-store"
@@ -135,6 +142,7 @@ async function verifyAppleIdentityToken(idToken: string, fallbackProfile: Partia
     process.env.APPLE_BUNDLE_ID,
     process.env.MOBILE_APPLE_CLIENT_ID,
     process.env.EXPO_PUBLIC_APPLE_BUNDLE_ID,
+    ...splitEnvList(process.env.APPLE_ALLOWED_AUDIENCES),
     "com.timviz.master"
   ]
     .map((item) => cleanText(item))
