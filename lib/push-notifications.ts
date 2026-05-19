@@ -57,6 +57,15 @@ type ReminderRunStats = {
 };
 
 const reminderWindowMin = Number.parseInt(process.env.PUSH_REMINDER_WINDOW_MIN || "15", 10) || 15;
+const defaultPushSettings = {
+  notificationsNewBooking: false,
+  notificationsCabinetBooking: false,
+  notificationsRescheduled: true,
+  notificationsCancelled: true,
+  notificationsReminder: true,
+  notificationsToday: false,
+  reminderLeadMinutes: 120
+};
 
 const textByLanguage: Record<PushLanguage, PushText> = {
   ru: {
@@ -183,13 +192,13 @@ function mapPushToken(row: Record<string, any>): PushTokenRecord {
     deviceName: String(row.device_name || ""),
     language: normalizeLanguage(row.language),
     timezone: String(row.timezone || "UTC"),
-    notificationsNewBooking: row.notifications_new_booking !== false,
-    notificationsCabinetBooking: row.notifications_cabinet_booking !== false,
+    notificationsNewBooking: row.notifications_new_booking === true,
+    notificationsCabinetBooking: row.notifications_cabinet_booking === true,
     notificationsRescheduled: row.notifications_rescheduled !== false,
     notificationsCancelled: row.notifications_cancelled !== false,
     notificationsReminder: row.notifications_reminder !== false,
-    notificationsToday: row.notifications_today !== false,
-    reminderLeadMinutes: normalizeReminderLeadMinutes(row.reminder_lead_minutes),
+    notificationsToday: row.notifications_today === true,
+    reminderLeadMinutes: normalizeReminderLeadMinutes(row.reminder_lead_minutes, defaultPushSettings.reminderLeadMinutes),
     active: row.active !== false,
     lastRegisteredAt: String(row.last_registered_at || ""),
     createdAt: String(row.created_at || ""),
@@ -323,6 +332,13 @@ export async function upsertMobilePushToken(input: {
         .insert({
           id: randomUUID(),
           ...base,
+          notifications_new_booking: defaultPushSettings.notificationsNewBooking,
+          notifications_cabinet_booking: defaultPushSettings.notificationsCabinetBooking,
+          notifications_rescheduled: defaultPushSettings.notificationsRescheduled,
+          notifications_cancelled: defaultPushSettings.notificationsCancelled,
+          notifications_reminder: defaultPushSettings.notificationsReminder,
+          notifications_today: defaultPushSettings.notificationsToday,
+          reminder_lead_minutes: defaultPushSettings.reminderLeadMinutes,
           created_at: now
         })
         .select("*")
@@ -355,13 +371,13 @@ export async function getMobilePushState(professionalId: string) {
     connected: Boolean(primary),
     tokenCount: tokens.length,
     settings: {
-      notificationsNewBooking: primary?.notificationsNewBooking ?? true,
-      notificationsCabinetBooking: primary?.notificationsCabinetBooking ?? true,
-      notificationsRescheduled: primary?.notificationsRescheduled ?? true,
-      notificationsCancelled: primary?.notificationsCancelled ?? true,
-      notificationsReminder: primary?.notificationsReminder ?? true,
-      notificationsToday: primary?.notificationsToday ?? true,
-      reminderLeadMinutes: primary?.reminderLeadMinutes ?? 120
+      notificationsNewBooking: primary?.notificationsNewBooking ?? defaultPushSettings.notificationsNewBooking,
+      notificationsCabinetBooking: primary?.notificationsCabinetBooking ?? defaultPushSettings.notificationsCabinetBooking,
+      notificationsRescheduled: primary?.notificationsRescheduled ?? defaultPushSettings.notificationsRescheduled,
+      notificationsCancelled: primary?.notificationsCancelled ?? defaultPushSettings.notificationsCancelled,
+      notificationsReminder: primary?.notificationsReminder ?? defaultPushSettings.notificationsReminder,
+      notificationsToday: primary?.notificationsToday ?? defaultPushSettings.notificationsToday,
+      reminderLeadMinutes: primary?.reminderLeadMinutes ?? defaultPushSettings.reminderLeadMinutes
     }
   };
 }

@@ -520,8 +520,17 @@ type PushBooleanSettingKey =
   | "notificationsCabinetBooking"
   | "notificationsRescheduled"
   | "notificationsCancelled"
-  | "notificationsReminder"
-  | "notificationsToday";
+  | "notificationsReminder";
+
+const DEFAULT_PUSH_PANEL_SETTINGS: PushPanelState["settings"] = {
+  notificationsNewBooking: false,
+  notificationsCabinetBooking: false,
+  notificationsRescheduled: true,
+  notificationsCancelled: true,
+  notificationsReminder: true,
+  notificationsToday: false,
+  reminderLeadMinutes: 120,
+};
 
 const STORAGE_KEY = "timviz_mobile_session_v2";
 const SECURE_SESSION_KEY = "timviz_mobile_secure_session_v1";
@@ -4851,13 +4860,34 @@ function normalizePushPanel(payload: any, fallback?: PushPanelState | null): Pus
     connected: payload?.connected === true,
     tokenCount: Number(payload?.tokenCount || 0),
     settings: {
-      notificationsNewBooking: typeof settings.notificationsNewBooking === "boolean" ? settings.notificationsNewBooking : fallback?.settings.notificationsNewBooking ?? true,
-      notificationsCabinetBooking: typeof settings.notificationsCabinetBooking === "boolean" ? settings.notificationsCabinetBooking : fallback?.settings.notificationsCabinetBooking ?? true,
-      notificationsRescheduled: typeof settings.notificationsRescheduled === "boolean" ? settings.notificationsRescheduled : fallback?.settings.notificationsRescheduled ?? true,
-      notificationsCancelled: typeof settings.notificationsCancelled === "boolean" ? settings.notificationsCancelled : fallback?.settings.notificationsCancelled ?? true,
-      notificationsReminder: typeof settings.notificationsReminder === "boolean" ? settings.notificationsReminder : fallback?.settings.notificationsReminder ?? true,
-      notificationsToday: typeof settings.notificationsToday === "boolean" ? settings.notificationsToday : fallback?.settings.notificationsToday ?? true,
-      reminderLeadMinutes: typeof settings.reminderLeadMinutes === "number" ? settings.reminderLeadMinutes : fallback?.settings.reminderLeadMinutes ?? 120,
+      notificationsNewBooking:
+        typeof settings.notificationsNewBooking === "boolean"
+          ? settings.notificationsNewBooking
+          : fallback?.settings.notificationsNewBooking ?? DEFAULT_PUSH_PANEL_SETTINGS.notificationsNewBooking,
+      notificationsCabinetBooking:
+        typeof settings.notificationsCabinetBooking === "boolean"
+          ? settings.notificationsCabinetBooking
+          : fallback?.settings.notificationsCabinetBooking ?? DEFAULT_PUSH_PANEL_SETTINGS.notificationsCabinetBooking,
+      notificationsRescheduled:
+        typeof settings.notificationsRescheduled === "boolean"
+          ? settings.notificationsRescheduled
+          : fallback?.settings.notificationsRescheduled ?? DEFAULT_PUSH_PANEL_SETTINGS.notificationsRescheduled,
+      notificationsCancelled:
+        typeof settings.notificationsCancelled === "boolean"
+          ? settings.notificationsCancelled
+          : fallback?.settings.notificationsCancelled ?? DEFAULT_PUSH_PANEL_SETTINGS.notificationsCancelled,
+      notificationsReminder:
+        typeof settings.notificationsReminder === "boolean"
+          ? settings.notificationsReminder
+          : fallback?.settings.notificationsReminder ?? DEFAULT_PUSH_PANEL_SETTINGS.notificationsReminder,
+      notificationsToday:
+        typeof settings.notificationsToday === "boolean"
+          ? settings.notificationsToday
+          : fallback?.settings.notificationsToday ?? DEFAULT_PUSH_PANEL_SETTINGS.notificationsToday,
+      reminderLeadMinutes:
+        typeof settings.reminderLeadMinutes === "number"
+          ? settings.reminderLeadMinutes
+          : fallback?.settings.reminderLeadMinutes ?? DEFAULT_PUSH_PANEL_SETTINGS.reminderLeadMinutes,
     },
   };
 }
@@ -11319,17 +11349,29 @@ function SettingsTab({
   }
 
   async function updateTelegramSettings(patch: Partial<TelegramPanelState["settings"]>) {
+    const previousSettings = telegramPanel?.settings;
     setIsTelegramSaving(true);
     setTelegramError("");
+    setTelegramPanel((current) => (current ? { ...current, settings: { ...current.settings, ...patch } } : current));
     try {
       const payload = await apiFetch("/api/mobile/pro/telegram/connect", {
         method: "PATCH",
         body: JSON.stringify(patch),
       });
-      setTelegramPanel(normalizeTelegramPanel(payload, telegramPanel));
+      const normalized = normalizeTelegramPanel(payload, telegramPanel);
+      setTelegramPanel((current) => ({
+        ...normalized,
+        settings: { ...normalized.settings, ...(current?.settings || {}), ...patch },
+      }));
       setStatusText(t.telegramSaved);
-      onRefreshWorkspace();
     } catch (error) {
+      if (previousSettings) {
+        const rollback: Partial<TelegramPanelState["settings"]> = {};
+        for (const key of Object.keys(patch) as Array<keyof TelegramPanelState["settings"]>) {
+          (rollback as Record<string, boolean | number>)[key] = previousSettings[key] as boolean | number;
+        }
+        setTelegramPanel((current) => (current ? { ...current, settings: { ...current.settings, ...rollback } } : current));
+      }
       setTelegramError(error instanceof Error ? error.message : t.telegramSaveFailed);
     } finally {
       setIsTelegramSaving(false);
@@ -11337,7 +11379,7 @@ function SettingsTab({
   }
 
   function toggleTelegramSetting(key: TelegramBooleanSettingKey) {
-    if (!telegramPanel || isTelegramSaving) return;
+    if (!telegramPanel) return;
     void updateTelegramSettings({ [key]: !telegramPanel.settings[key] });
   }
 
@@ -11396,16 +11438,29 @@ function SettingsTab({
   }
 
   async function updatePushSettings(patch: Partial<PushPanelState["settings"]>) {
+    const previousSettings = pushPanel?.settings;
     setIsPushSaving(true);
     setPushError("");
+    setPushPanel((current) => (current ? { ...current, settings: { ...current.settings, ...patch } } : current));
     try {
       const payload = await apiFetch("/api/mobile/pro/push", {
         method: "PATCH",
         body: JSON.stringify(patch),
       });
-      setPushPanel(normalizePushPanel(payload, pushPanel));
+      const normalized = normalizePushPanel(payload, pushPanel);
+      setPushPanel((current) => ({
+        ...normalized,
+        settings: { ...normalized.settings, ...(current?.settings || {}), ...patch },
+      }));
       setStatusText(t.pushSaved);
     } catch (error) {
+      if (previousSettings) {
+        const rollback: Partial<PushPanelState["settings"]> = {};
+        for (const key of Object.keys(patch) as Array<keyof PushPanelState["settings"]>) {
+          (rollback as Record<string, boolean | number>)[key] = previousSettings[key] as boolean | number;
+        }
+        setPushPanel((current) => (current ? { ...current, settings: { ...current.settings, ...rollback } } : current));
+      }
       setPushError(error instanceof Error ? error.message : t.pushSaveFailed);
     } finally {
       setIsPushSaving(false);
@@ -11413,7 +11468,7 @@ function SettingsTab({
   }
 
   function togglePushSetting(key: PushBooleanSettingKey) {
-    if (!pushPanel || isPushSaving) return;
+    if (!pushPanel) return;
     void updatePushSettings({ [key]: !pushPanel.settings[key] });
   }
 
@@ -11701,12 +11756,11 @@ function SettingsTab({
           <InfoLine label={t.pushDeviceCount} value={String(pushPanel?.tokenCount || 0)} />
           {pushPanel ? (
             <>
-              <SettingsToggleRow label={t.telegramOnlineBookings} value={pushPanel.settings.notificationsNewBooking} onPress={() => togglePushSetting("notificationsNewBooking")} disabled={isPushSaving} />
-              <SettingsToggleRow label={t.telegramCabinetBookings} value={pushPanel.settings.notificationsCabinetBooking} onPress={() => togglePushSetting("notificationsCabinetBooking")} disabled={isPushSaving} />
-              <SettingsToggleRow label={t.telegramRescheduled} value={pushPanel.settings.notificationsRescheduled} onPress={() => togglePushSetting("notificationsRescheduled")} disabled={isPushSaving} />
-              <SettingsToggleRow label={t.telegramCancelled} value={pushPanel.settings.notificationsCancelled} onPress={() => togglePushSetting("notificationsCancelled")} disabled={isPushSaving} />
-              <SettingsToggleRow label={t.telegramReminders} value={pushPanel.settings.notificationsReminder} onPress={() => togglePushSetting("notificationsReminder")} disabled={isPushSaving} />
-              <SettingsToggleRow label={t.telegramToday} value={pushPanel.settings.notificationsToday} onPress={() => togglePushSetting("notificationsToday")} disabled={isPushSaving} />
+              <SettingsToggleRow label={t.telegramOnlineBookings} value={pushPanel.settings.notificationsNewBooking} onPress={() => togglePushSetting("notificationsNewBooking")} />
+              <SettingsToggleRow label={t.telegramCabinetBookings} value={pushPanel.settings.notificationsCabinetBooking} onPress={() => togglePushSetting("notificationsCabinetBooking")} />
+              <SettingsToggleRow label={t.telegramRescheduled} value={pushPanel.settings.notificationsRescheduled} onPress={() => togglePushSetting("notificationsRescheduled")} />
+              <SettingsToggleRow label={t.telegramCancelled} value={pushPanel.settings.notificationsCancelled} onPress={() => togglePushSetting("notificationsCancelled")} />
+              <SettingsToggleRow label={t.telegramReminders} value={pushPanel.settings.notificationsReminder} onPress={() => togglePushSetting("notificationsReminder")} />
               <SettingsOptionRail
                 label={t.telegramReminderLead}
                 value={String(pushPanel.settings.reminderLeadMinutes)}
@@ -11751,16 +11805,16 @@ function SettingsTab({
               </View>
               {telegramSection === "notifications" ? (
                 <View>
-                  <SettingsToggleRow label={t.telegramOnlineBookings} value={telegramPanel.settings.notificationsNewBooking} onPress={() => toggleTelegramSetting("notificationsNewBooking")} disabled={isTelegramSaving} />
-                  <SettingsToggleRow label={t.telegramCabinetBookings} value={telegramPanel.settings.notificationsCabinetBooking} onPress={() => toggleTelegramSetting("notificationsCabinetBooking")} disabled={isTelegramSaving} />
-                  <SettingsToggleRow label={t.telegramRescheduled} value={telegramPanel.settings.notificationsRescheduled} onPress={() => toggleTelegramSetting("notificationsRescheduled")} disabled={isTelegramSaving} />
-                  <SettingsToggleRow label={t.telegramCancelled} value={telegramPanel.settings.notificationsCancelled} onPress={() => toggleTelegramSetting("notificationsCancelled")} disabled={isTelegramSaving} />
+                  <SettingsToggleRow label={t.telegramOnlineBookings} value={telegramPanel.settings.notificationsNewBooking} onPress={() => toggleTelegramSetting("notificationsNewBooking")} />
+                  <SettingsToggleRow label={t.telegramCabinetBookings} value={telegramPanel.settings.notificationsCabinetBooking} onPress={() => toggleTelegramSetting("notificationsCabinetBooking")} />
+                  <SettingsToggleRow label={t.telegramRescheduled} value={telegramPanel.settings.notificationsRescheduled} onPress={() => toggleTelegramSetting("notificationsRescheduled")} />
+                  <SettingsToggleRow label={t.telegramCancelled} value={telegramPanel.settings.notificationsCancelled} onPress={() => toggleTelegramSetting("notificationsCancelled")} />
                 </View>
               ) : null}
               {telegramSection === "reminders" ? (
                 <View>
-                  <SettingsToggleRow label={t.telegramReminders} value={telegramPanel.settings.notificationsReminder} onPress={() => toggleTelegramSetting("notificationsReminder")} disabled={isTelegramSaving} />
-                  <SettingsToggleRow label={t.telegramToday} value={telegramPanel.settings.notificationsToday} onPress={() => toggleTelegramSetting("notificationsToday")} disabled={isTelegramSaving} />
+                  <SettingsToggleRow label={t.telegramReminders} value={telegramPanel.settings.notificationsReminder} onPress={() => toggleTelegramSetting("notificationsReminder")} />
+                  <SettingsToggleRow label={t.telegramToday} value={telegramPanel.settings.notificationsToday} onPress={() => toggleTelegramSetting("notificationsToday")} />
                   <SettingsOptionRail
                     label={t.telegramReminderLead}
                     value={String(telegramPanel.settings.reminderLeadMinutes)}
