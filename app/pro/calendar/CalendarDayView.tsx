@@ -413,8 +413,7 @@ const CALENDAR_TEXT: Record<AppLanguage, {
   notificationsEmpty: string;
   recentBookings: string;
   accountMenu: string;
-  myProfile: string;
-  personalSettings: string;
+  companySettings: string;
   helpSupport: string;
   logout: string;
   language: string;
@@ -575,8 +574,7 @@ const CALENDAR_TEXT: Record<AppLanguage, {
     notificationsEmpty: "Пока нет новых событий.",
     recentBookings: "Недавние записи",
     accountMenu: "Меню аккаунта",
-    myProfile: "Мой профиль",
-    personalSettings: "Личные настройки",
+    companySettings: "Настройки компании",
     helpSupport: "Помощь и поддержка",
     logout: "Выйти",
     language: "Язык",
@@ -737,8 +735,7 @@ const CALENDAR_TEXT: Record<AppLanguage, {
     notificationsEmpty: "Поки немає нових подій.",
     recentBookings: "Останні записи",
     accountMenu: "Меню акаунта",
-    myProfile: "Мій профіль",
-    personalSettings: "Особисті налаштування",
+    companySettings: "Налаштування компанії",
     helpSupport: "Допомога і підтримка",
     logout: "Вийти",
     language: "Мова",
@@ -899,8 +896,7 @@ const CALENDAR_TEXT: Record<AppLanguage, {
     notificationsEmpty: "There are no new updates yet.",
     recentBookings: "Recent bookings",
     accountMenu: "Account menu",
-    myProfile: "My profile",
-    personalSettings: "Personal settings",
+    companySettings: "Company settings",
     helpSupport: "Help and support",
     logout: "Log out",
     language: "Language",
@@ -5115,16 +5111,7 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
                     router.push("/pro/settings");
                   }}
                 >
-                  {t.myProfile}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActiveToolbarMenu(null);
-                    router.push("/pro/settings");
-                  }}
-                >
-                  {t.personalSettings}
+                  {t.companySettings}
                 </button>
                 <button
                   type="button"

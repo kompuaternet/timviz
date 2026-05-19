@@ -5,6 +5,14 @@ import { getMobileProfessionalId } from "../../_auth";
 export const dynamic = "force-dynamic";
 
 const entitlementId = process.env.REVENUECAT_ENTITLEMENT_ID || process.env.EXPO_PUBLIC_REVENUECAT_ENTITLEMENT_ID || "premium";
+const monthlyProductId =
+  process.env.NEXT_PUBLIC_REVENUECAT_MONTHLY_PRODUCT_ID?.trim() ||
+  process.env.EXPO_PUBLIC_REVENUECAT_MONTHLY_PRODUCT_ID?.trim() ||
+  "timviz_premium_monthly";
+const yearlyProductId =
+  process.env.NEXT_PUBLIC_REVENUECAT_YEARLY_PRODUCT_ID?.trim() ||
+  process.env.EXPO_PUBLIC_REVENUECAT_YEARLY_PRODUCT_ID?.trim() ||
+  "timviz_premium_yearly";
 
 type NormalizedEntitlement = {
   isActive: boolean;
@@ -53,6 +61,26 @@ function normalizeCustomerInfoEntitlement(body: Record<string, unknown>): Normal
     productId,
     expirationDate,
     periodType: getString(entitlement, ["periodType", "period_type"]),
+  };
+}
+
+function normalizeStoreKitPurchase(body: Record<string, unknown>): NormalizedEntitlement | null {
+  const purchase = asRecord(body.storeKitPurchase);
+  if (!Object.keys(purchase).length) return null;
+
+  const productId = getString(purchase, ["productId", "productIdentifier", "product_identifier"]);
+  if (productId !== monthlyProductId && productId !== yearlyProductId) return null;
+
+  const transactionId = getString(purchase, ["transactionId", "orderId"]);
+  const receipt = getString(purchase, ["transactionReceipt", "receipt"]);
+  if (!transactionId && !receipt) return null;
+
+  const expirationDate = getString(purchase, ["premiumUntil", "expirationDate", "expires_date"]) || null;
+  return {
+    isActive: isFuture(expirationDate),
+    productId,
+    expirationDate,
+    periodType: getString(purchase, ["periodType", "period_type"]) || "normal",
   };
 }
 
@@ -109,7 +137,9 @@ export async function POST(request: Request) {
 
   try {
     const hasRevenueCatServerKey = Boolean(process.env.REVENUECAT_SECRET_API_KEY?.trim());
-    if (!hasRevenueCatServerKey && process.env.NODE_ENV === "production") {
+    const clientEntitlement = normalizeStoreKitPurchase(body) || normalizeCustomerInfoEntitlement(body);
+
+    if (!hasRevenueCatServerKey && process.env.NODE_ENV === "production" && !clientEntitlement) {
       return NextResponse.json({ error: "RevenueCat server key is not configured." }, { status: 500 });
     }
 
@@ -118,7 +148,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Premium entitlement is not active." }, { status: 402 });
     }
 
-    const entitlement = verifiedEntitlement || normalizeCustomerInfoEntitlement(body);
+    const entitlement = verifiedEntitlement || clientEntitlement;
     const status = getStatus(entitlement);
     const updateResult = await updateProfessionalPremiumFromAppStore({
       professionalId,

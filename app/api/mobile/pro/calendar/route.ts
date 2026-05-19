@@ -18,6 +18,7 @@ import {
   getNotificationBookingsForSalonSlug,
   syncBookingStatusFromCalendarAppointment
 } from "../../../../../lib/bookings";
+import { getAppNotificationsForProfessional } from "../../../../../lib/app-notifications";
 import { getJoinRequestsForOwner } from "../../../../../lib/pro-data";
 import {
   resetTelegramReminderEventsForAppointment,
@@ -60,10 +61,16 @@ function parseCalendarDateList(value: string | null) {
 }
 
 async function getMobileOnlineBookingNotifications(professionalId: string) {
+  const appNotificationsPromise = getAppNotificationsForProfessional(professionalId, { limit: 40 }).catch(() => []);
   const context = await getCalendarNotificationsContext({ professionalId });
   const businessId = context.businessId;
   if (!businessId) {
-    return { pendingOnlineBookings: [], archivedOnlineBookings: [], pendingJoinRequests: [] };
+    return {
+      pendingOnlineBookings: [],
+      archivedOnlineBookings: [],
+      pendingJoinRequests: [],
+      appNotifications: await appNotificationsPromise
+    };
   }
 
   const bookings = await getNotificationBookingsForSalonSlug(`business:${businessId}`);
@@ -134,13 +141,16 @@ async function getMobileOnlineBookingNotifications(professionalId: string) {
           ? `${request.professional.firstName} ${request.professional.lastName}`.trim() ||
             request.professional.email ||
             request.professional.phone
-          : ""
+          : "",
+      professionalEmail: request.professional?.email || "",
+      professionalPhone: request.professional?.phone || ""
     }));
 
   return {
     pendingOnlineBookings: notifications.filter((item) => item.status === "pending"),
     archivedOnlineBookings: notifications.filter((item) => item.status !== "pending").slice(0, 12),
-    pendingJoinRequests
+    pendingJoinRequests,
+    appNotifications: await appNotificationsPromise
   };
 }
 

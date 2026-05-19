@@ -13,6 +13,7 @@ import { uploadProMediaFile } from "../media-upload";
 import { type BusinessPhoto } from "../../../lib/pro-data";
 import type { OnboardingCtaState } from "../../../lib/pro-onboarding";
 import type { WorkSchedule } from "../../../lib/work-schedule";
+import { categoryOptions, localizeCategoryName } from "../../../lib/service-templates";
 import ProfileAvatar from "../../ProfileAvatar";
 
 const MAX_BUSINESS_PHOTOS = 5;
@@ -244,7 +245,7 @@ const settingsExtras = {
     readFileFailed: "Не удалось прочитать файл.",
     uploadPhotoFailed: "Не удалось загрузить фото.",
     saveFailed: "Не удалось сохранить настройки.",
-    categoriesPlaceholder: "Ногти, Брови и ресницы",
+    categoriesHint: "Выберите одну или несколько категорий из каталога.",
     joinRequestsTitle: "Запросы на присоединение",
     joinRequestsText: "Подтвердите сотрудников, которые запросили доступ к вашему бизнесу.",
     joinApprove: "Подтвердить",
@@ -339,7 +340,7 @@ const settingsExtras = {
     readFileFailed: "Не вдалося прочитати файл.",
     uploadPhotoFailed: "Не вдалося завантажити фото.",
     saveFailed: "Не вдалося зберегти налаштування.",
-    categoriesPlaceholder: "Нігті, Брови й вії",
+    categoriesHint: "Оберіть одну або кілька категорій з каталогу.",
     joinRequestsTitle: "Запити на приєднання",
     joinRequestsText: "Підтвердіть співробітників, які запросили доступ до вашого бізнесу.",
     joinApprove: "Підтвердити",
@@ -434,7 +435,7 @@ const settingsExtras = {
     readFileFailed: "Could not read the file.",
     uploadPhotoFailed: "Could not upload the photo.",
     saveFailed: "Could not save settings.",
-    categoriesPlaceholder: "Nails, Brows and lashes",
+    categoriesHint: "Choose one or several categories from the catalog.",
     joinRequestsTitle: "Join requests",
     joinRequestsText: "Approve specialists who requested access to your business.",
     joinApprove: "Approve",
@@ -570,7 +571,7 @@ const planCopy = {
     renewsOn: "Далі",
     yearlyRenewal: "Premium Yearly · $29/year",
     monthlyRenewal: "Premium Monthly · $3/month",
-    freeHint: "Безкоштовний тариф: до 100 записів на місяць. Premium відкриває необмежені записи, Telegram-сповіщення, статистику та пріоритет у каталозі.",
+    freeHint: "Безкоштовний тариф: до 500 записів. Premium відкриває необмежені записи, Telegram-сповіщення, статистику та пріоритет у каталозі.",
     premiumHint: "Premium активний для програмного забезпечення Timviz. Підписку можна скасувати будь-коли.",
     trialHintMonthly: "Після пробного періоду підписка продовжиться як Premium Monthly за $3/month. Скасувати можна будь-коли.",
     trialHintYearly: "Після пробного періоду підписка продовжиться як Premium Yearly за $29/year. Скасувати можна будь-коли.",
@@ -595,7 +596,7 @@ const planCopy = {
     renewsOn: "Then",
     yearlyRenewal: "Premium Yearly · $29/year",
     monthlyRenewal: "Premium Monthly · $3/month",
-    freeHint: "Free plan: up to 100 appointments per month. Premium unlocks unlimited appointments, Telegram notifications, statistics, and priority in the catalog.",
+    freeHint: "Free plan: up to 500 appointments. Premium unlocks unlimited appointments, Telegram notifications, statistics, and priority in the catalog.",
     premiumHint: "Premium is active for Timviz software. You can cancel the subscription anytime.",
     trialHintMonthly: "After the trial, your subscription continues as Premium Monthly for $3/month. You can cancel anytime.",
     trialHintYearly: "After the trial, your subscription continues as Premium Yearly for $29/year. You can cancel anytime.",
@@ -665,6 +666,22 @@ function normalizePhotos(photos: BusinessPhoto[] = []) {
     ...photo,
     isPrimary: primaryIndex >= 0 ? primaryIndex === index : index === 0
   }));
+}
+
+function normalizeCategoryList(categories: unknown[]) {
+  const seen = new Set<string>();
+  const result: string[] = [];
+
+  for (const item of categories) {
+    const value = typeof item === "string" ? item.trim() : "";
+    if (!value) continue;
+    const key = value.toLocaleLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push(value);
+  }
+
+  return result;
 }
 
 function buildSaveSnapshot(data: SettingsData): SaveSnapshot {
@@ -781,6 +798,11 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
     typeof navigator !== "undefined" && typeof navigator.share === "function";
   const [skippedOnboardingStepIds, setSkippedOnboardingStepIds] = useState<OnboardingStepId[]>([]);
   const [isPhotoTooltipDismissed, setIsPhotoTooltipDismissed] = useState(false);
+  const selectedBusinessCategories = useMemo(() => normalizeCategoryList(data.business.categories), [data.business.categories]);
+  const businessCategoryOptions = useMemo(
+    () => normalizeCategoryList([...categoryOptions, ...selectedBusinessCategories]),
+    [selectedBusinessCategories]
+  );
 
   const sectionItems = useMemo(
     () =>
@@ -1003,11 +1025,11 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
           notificationsNewBooking:
             "settings" in payload && typeof payload.settings?.notificationsNewBooking === "boolean"
               ? payload.settings.notificationsNewBooking
-              : true,
+              : false,
           notificationsCabinetBooking:
             "settings" in payload && typeof payload.settings?.notificationsCabinetBooking === "boolean"
               ? payload.settings.notificationsCabinetBooking
-              : true,
+              : false,
           notificationsRescheduled:
             "settings" in payload && typeof payload.settings?.notificationsRescheduled === "boolean"
               ? payload.settings.notificationsRescheduled
@@ -1023,7 +1045,7 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
           notificationsToday:
             "settings" in payload && typeof payload.settings?.notificationsToday === "boolean"
               ? payload.settings.notificationsToday
-              : true,
+              : false,
           forwardingEnabled:
             "settings" in payload && typeof payload.settings?.forwardingEnabled === "boolean"
               ? payload.settings.forwardingEnabled
@@ -1075,11 +1097,11 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
             notificationsNewBooking:
               typeof payload.settings?.notificationsNewBooking === "boolean"
                 ? payload.settings.notificationsNewBooking
-                : telegramPanel?.settings.notificationsNewBooking ?? true,
+                : telegramPanel?.settings.notificationsNewBooking ?? false,
             notificationsCabinetBooking:
               typeof payload.settings?.notificationsCabinetBooking === "boolean"
                 ? payload.settings.notificationsCabinetBooking
-                : telegramPanel?.settings.notificationsCabinetBooking ?? true,
+                : telegramPanel?.settings.notificationsCabinetBooking ?? false,
             notificationsRescheduled:
               typeof payload.settings?.notificationsRescheduled === "boolean"
                 ? payload.settings.notificationsRescheduled
@@ -1095,7 +1117,7 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
             notificationsToday:
               typeof payload.settings?.notificationsToday === "boolean"
                 ? payload.settings.notificationsToday
-                : telegramPanel?.settings.notificationsToday ?? true,
+                : telegramPanel?.settings.notificationsToday ?? false,
             forwardingEnabled:
               typeof payload.settings?.forwardingEnabled === "boolean"
                 ? payload.settings.forwardingEnabled
@@ -1154,6 +1176,16 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
         [field]: value
       }
     }));
+  }
+
+  function toggleBusinessCategory(category: string) {
+    const normalized = normalizeCategoryList([category])[0];
+    if (!normalized) return;
+    const isSelected = selectedBusinessCategories.some((item) => item.toLocaleLowerCase() === normalized.toLocaleLowerCase());
+    const nextCategories = isSelected
+      ? selectedBusinessCategories.filter((item) => item.toLocaleLowerCase() !== normalized.toLocaleLowerCase())
+      : [...selectedBusinessCategories, normalized];
+    updateBusiness("categories", nextCategories);
   }
 
   function handleOnlineBookingToggle() {
@@ -2014,27 +2046,29 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
                       </div>
                     </div>
                     <div className={styles.settingsAvatarPanel}>
-                      <ProfileAvatar
-                        avatarUrl={data.professional.avatarUrl}
-                        label={`${data.professional.firstName} ${data.professional.lastName}`.trim() || data.professional.email}
-                        initials={`${data.professional.firstName?.[0] ?? ""}${data.professional.lastName?.[0] ?? ""}`.toUpperCase() || "RZ"}
-                        className={styles.settingsAvatarPreview}
-                        imageClassName={styles.settingsAvatarPreviewImage}
-                        fallbackClassName={styles.settingsAvatarPreviewFallback}
-                      />
+                      <label className={styles.settingsAvatarPreviewButton} aria-label={data.professional.avatarUrl ? copy.avatarReplace : copy.avatarUpload}>
+                        <ProfileAvatar
+                          avatarUrl={data.professional.avatarUrl}
+                          label={`${data.professional.firstName} ${data.professional.lastName}`.trim() || data.professional.email}
+                          initials={`${data.professional.firstName?.[0] ?? ""}${data.professional.lastName?.[0] ?? ""}`.toUpperCase() || "RZ"}
+                          className={styles.settingsAvatarPreview}
+                          imageClassName={styles.settingsAvatarPreviewImage}
+                          fallbackClassName={styles.settingsAvatarPreviewFallback}
+                        />
+                        <span className={styles.settingsAvatarPreviewOverlay} aria-hidden="true">
+                          <span className={styles.settingsAvatarCameraGlyph} />
+                        </span>
+                        <input
+                          className={styles.settingsAvatarInput}
+                          type="file"
+                          accept="image/*"
+                          onChange={(event) => void handleProfessionalAvatarUpload(event)}
+                        />
+                      </label>
                       <div className={styles.settingsAvatarMeta}>
                         <strong>{copy.avatarTitle}</strong>
                         <p>{copy.avatarHint}</p>
                         <div className={styles.settingsPhotoButtons}>
-                          <label className={`${styles.photoActionButton} ${styles.settingsAvatarUploadLabel}`}>
-                            <span>{data.professional.avatarUrl ? copy.avatarReplace : copy.avatarUpload}</span>
-                            <input
-                              className={styles.settingsAvatarInput}
-                              type="file"
-                              accept="image/*"
-                              onChange={(event) => void handleProfessionalAvatarUpload(event)}
-                            />
-                          </label>
                           {data.professional.avatarUrl ? (
                             <button type="button" className={styles.photoActionButton} onClick={removeProfessionalAvatar}>
                               {copy.avatarRemove}
@@ -2293,15 +2327,26 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
                           ))}
                         </select>
                       </label>
-                      <label className={styles.settingsWideField}>
-                        {t.settings.categories}
-                        <input
-                          className={styles.input}
-                          value={data.business.categories.join(", ")}
-                          onChange={(event) => updateBusiness("categories", event.target.value.split(","))}
-                          placeholder={copy.categoriesPlaceholder}
-                        />
-                      </label>
+                      <div className={styles.settingsWideField}>
+                        <span className={styles.settingsFieldLabel}>{t.settings.categories}</span>
+                        <p className={styles.settingsInlineHint}>{copy.categoriesHint}</p>
+                        <div className={styles.settingsCategoryPicker}>
+                          {businessCategoryOptions.map((category) => {
+                            const selected = selectedBusinessCategories.some((item) => item.toLocaleLowerCase() === category.toLocaleLowerCase());
+                            return (
+                              <button
+                                key={category}
+                                type="button"
+                                className={`${styles.settingsCategoryChip} ${selected ? styles.settingsCategoryChipActive : ""}`}
+                                onClick={() => toggleBusinessCategory(category)}
+                              >
+                                <span aria-hidden="true">{selected ? "✓" : "+"}</span>
+                                {localizeCategoryName(category, language)}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
                     </div>
                   </section>
 

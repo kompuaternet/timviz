@@ -156,6 +156,8 @@ EXPO_PUBLIC_REVENUECAT_MONTHLY_PRODUCT_ID=timviz_premium_monthly
 EXPO_PUBLIC_REVENUECAT_YEARLY_PRODUCT_ID=timviz_premium_yearly
 ```
 
+Если `EXPO_PUBLIC_REVENUECAT_IOS_API_KEY` не задан, iOS-сборка использует прямой StoreKit fallback через App Store products с теми же product id. Это позволяет тестировать подписку в TestFlight без RevenueCat, пока RevenueCat-проект и server key ещё не подключены.
+
 Env для сайта/API на Railway:
 
 ```bash

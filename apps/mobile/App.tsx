@@ -4,6 +4,8 @@ import * as AppleAuthentication from "expo-apple-authentication";
 import Constants from "expo-constants";
 import * as Google from "expo-auth-session/providers/google";
 import * as ImagePicker from "expo-image-picker";
+import * as InAppPurchases from "expo-in-app-purchases";
+import { IAPResponseCode, InAppPurchaseState, type IAPItemDetails, type InAppPurchase } from "expo-in-app-purchases";
 import * as LocalAuthentication from "expo-local-authentication";
 import * as Localization from "expo-localization";
 import * as Notifications from "expo-notifications";
@@ -49,6 +51,7 @@ type BaseAppLanguage = "uk" | "ru" | "en";
 type AppLanguage = BaseAppLanguage | "fr" | "pl" | "cs" | "es" | "de";
 type AuthMode = "login" | "register";
 type AppTab = "calendar" | "services" | "clients" | "staff" | "settings";
+type ServiceTabMode = "mine" | "custom" | "catalog";
 type CalendarViewMode = "day" | "threeDays" | "week" | "month";
 type LocalizedText = Partial<Record<AppLanguage, string>>;
 
@@ -426,6 +429,17 @@ type MobileNotificationRecord = {
   status: "pending" | "confirmed" | "cancelled";
 };
 
+type MobileAppNotificationRecord = {
+  id: string;
+  type: "online_booking" | "team_invitation" | "team_join_request" | "admin_message";
+  title: string;
+  body: string;
+  actionUrl?: string;
+  payload?: Record<string, unknown>;
+  readAt?: string;
+  createdAt: string;
+};
+
 type MobileNotificationsPayload = {
   pendingOnlineBookings?: MobileNotificationRecord[];
   archivedOnlineBookings?: MobileNotificationRecord[];
@@ -433,8 +447,12 @@ type MobileNotificationsPayload = {
     id: string;
     createdAt: string;
     role: string;
+    professionalId?: string;
     professionalName: string;
+    professionalEmail?: string;
+    professionalPhone?: string;
   }>;
+  appNotifications?: MobileAppNotificationRecord[];
 };
 
 type MobileSettingsSection = "general" | "online" | "services" | "schedule" | "push" | "telegram" | "address";
@@ -450,7 +468,7 @@ type SettingsDraftState = {
   website: string;
   accountType: "solo" | "team";
   serviceMode: string;
-  categoriesText: string;
+  categories: string[];
   country: string;
   timezone: string;
   language: AppLanguage;
@@ -537,11 +555,11 @@ type SettingsPatchPayload = {
 };
 
 const DEFAULT_PUSH_PANEL_SETTINGS: PushPanelState["settings"] = {
-  notificationsNewBooking: false,
+  notificationsNewBooking: true,
   notificationsCabinetBooking: false,
   notificationsRescheduled: true,
   notificationsCancelled: true,
-  notificationsReminder: true,
+  notificationsReminder: false,
   notificationsToday: false,
   reminderLeadMinutes: 120,
 };
@@ -559,8 +577,8 @@ const DEFAULT_SERVICE_CATEGORY = "Без категории";
 const SERVICE_COLORS = ["#9AD86A", "#8ED1F2", "#FF9A84", "#F7C948", "#A78BFA", "#34D399", "#F472B6", "#60A5FA"];
 const APP_ICON = require("./assets/timviz-icon.png");
 const SETTINGS_SECTIONS: MobileSettingsSection[] = ["general", "online", "services", "schedule", "push", "telegram", "address"];
-const PREMIUM_LOCKED_TABS: AppTab[] = ["clients", "staff"];
-const PREMIUM_LOCKED_SETTINGS_SECTIONS: MobileSettingsSection[] = ["online", "schedule", "push", "telegram", "address"];
+const PREMIUM_LOCKED_TABS: AppTab[] = [];
+const PREMIUM_LOCKED_SETTINGS_SECTIONS: MobileSettingsSection[] = ["push", "telegram"];
 const COUNTRY_OPTIONS = ["Ukraine", "Russia", "Poland", "United Kingdom", "United States", "Germany", "France", "Spain", "Italy", "International"];
 const TIMEZONE_OPTIONS = ["Europe/Kiev", "Europe/Warsaw", "Europe/Berlin", "Europe/London", "America/New_York", "Europe/Moscow", "Asia/Dubai", "UTC"];
 const TIMEZONE_LABELS: Record<string, string> = {
@@ -579,6 +597,7 @@ const REVENUECAT_IOS_API_KEY = process.env.EXPO_PUBLIC_REVENUECAT_IOS_API_KEY ||
 const REVENUECAT_ANDROID_API_KEY = process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY || "";
 const REVENUECAT_MONTHLY_PRODUCT_ID = process.env.EXPO_PUBLIC_REVENUECAT_MONTHLY_PRODUCT_ID || "timviz_premium_monthly";
 const REVENUECAT_YEARLY_PRODUCT_ID = process.env.EXPO_PUBLIC_REVENUECAT_YEARLY_PRODUCT_ID || "timviz_premium_yearly";
+const PREMIUM_PRODUCT_IDS = [REVENUECAT_MONTHLY_PRODUCT_ID, REVENUECAT_YEARLY_PRODUCT_ID].filter(Boolean);
 const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || "";
 const GOOGLE_IOS_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || "";
 const GOOGLE_ANDROID_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID || "";
@@ -1040,8 +1059,7 @@ const baseCopy = {
     statusPending: "Очікує підтвердження",
     statusConfirmed: "Підтверджена",
     statusCancelled: "Скасована",
-    myProfile: "Мій профіль",
-    personalSettings: "Особисті налаштування",
+    companySettings: "Налаштування компанії",
     helpSupport: "Допомога і підтримка",
     language: "Мова",
     compact: "Стиснутий",
@@ -1103,25 +1121,25 @@ const baseCopy = {
     premiumUpgradeCta: "Оформити Pro",
     premiumLockedBadge: "Pro",
     premiumFeatureBenefitsTitle: "У Pro відкривається",
-    premiumBenefitOnlineBooking: "онлайн-запис і публічна сторінка",
+    premiumBenefitOnlineBooking: "необмежені записи понад Free",
     premiumBenefitReminders: "push і Telegram-нагадування",
-    premiumBenefitTeam: "команда, графіки і ролі",
-    premiumBenefitClients: "клієнтська база без ручних обхідних шляхів",
+    premiumBenefitTeam: "більше співробітників, графіки і ролі",
+    premiumBenefitClients: "розширені бізнес-інструменти для росту",
     premiumYearlyNudge: "Річний тариф вигідніший, якщо ви плануєте працювати в Timviz постійно.",
-    premiumFeatureClientsTitle: "Клієнтська база доступна в Pro",
-    premiumFeatureClientsText: "Зберігайте клієнтів, швидко створюйте повторні записи і ведіть історію після пробного періоду.",
-    premiumFeatureStaffTitle: "Команда і графіки доступні в Pro",
-    premiumFeatureStaffText: "Додавайте співробітників, керуйте змінами і доступами без змішування всіх записів в одному календарі.",
-    premiumFeatureOnlineTitle: "Онлайн-запис доступний в Pro",
-    premiumFeatureOnlineText: "Після пробного періоду клієнтське посилання і самостійний запис працюють на тарифі Pro.",
-    premiumFeatureScheduleTitle: "Розширений графік доступний в Pro",
-    premiumFeatureScheduleText: "Налаштовуйте зміни, вихідні, перерви і командні графіки без обмежень.",
+    premiumFeatureClientsTitle: "Клієнтська база входить у Free",
+    premiumFeatureClientsText: "Зберігайте клієнтів, створюйте повторні записи і ведіть базову історію без оформлення Pro.",
+    premiumFeatureStaffTitle: "Більше співробітників доступно в Pro",
+    premiumFeatureStaffText: "Free залишає власника і 1 співробітника. Pro відкриває команду ширше, ролі і графіки без ліміту Free.",
+    premiumFeatureOnlineTitle: "Онлайн-запис входить у Free",
+    premiumFeatureOnlineText: "Клієнтське посилання, календар, послуги і базовий профіль працюють безкоштовно. Pro прибирає ліміти Free.",
+    premiumFeatureScheduleTitle: "Календар і графік входять у Free",
+    premiumFeatureScheduleText: "Ведіть календар і базовий графік безкоштовно. Pro прибирає ліміти і розширює командну роботу.",
     premiumFeaturePushTitle: "Push-нагадування доступні в Pro",
     premiumFeaturePushText: "Підключайте повідомлення про нові, перенесені і скасовані записи.",
     premiumFeatureTelegramTitle: "Telegram-сповіщення доступні в Pro",
     premiumFeatureTelegramText: "Отримуйте записи і нагадування в Telegram після оформлення Pro.",
-    premiumFeatureAddressTitle: "Адреса і карта доступні в Pro",
-    premiumFeatureAddressText: "Покажіть клієнтам точну адресу, деталі входу і карту на сторінці запису.",
+    premiumFeatureAddressTitle: "Адреса і карта входять у Free",
+    premiumFeatureAddressText: "Показуйте клієнтам адресу, деталі входу і карту на сторінці запису без оформлення Pro.",
     premiumMonthly: "Premium Monthly",
     premiumYearly: "Premium Yearly",
     premiumMonthlyFallback: "$3 / місяць",
@@ -1132,10 +1150,10 @@ const baseCopy = {
     premiumManage: "Керувати підпискою можна в App Store.",
     premiumReady: "Premium оновлено.",
     premiumUnavailable: "Покупки доступні у TestFlight або App Store збірці.",
-    premiumMissingConfig: "Потрібно налаштувати RevenueCat і продукти App Store.",
+    premiumMissingConfig: "Покупка ще готується в App Store. Спробуйте ще раз після обробки продуктів.",
     premiumPurchaseCancelled: "Покупку скасовано.",
     premiumSyncFailed: "Не вдалося синхронізувати підписку.",
-    settingsGeneral: "Основне",
+    settingsGeneral: "Налаштування компанії",
     settingsOnline: "Онлайн-запис",
     settingsServices: "Послуги",
     settingsSchedule: "Графік",
@@ -1158,7 +1176,7 @@ const baseCopy = {
     teamAccount: "Команда",
     serviceMode: "Формат роботи",
     categoriesText: "Категорії",
-    categoriesHint: "через кому",
+    categoriesHint: "Оберіть одну або кілька категорій з каталогу",
     localization: "Країна, мова і валюта",
     country: "Країна",
     timezone: "Часовий пояс",
@@ -1255,26 +1273,26 @@ const baseCopy = {
     noBookingsTodaySpark: "Сьогодні записів немає ✨",
     fillFreeWindowsText: "Саме час заповнити вільні вікна.",
     noBookingsThisDay: "На цей день записів немає",
-    calendarNoServicesText: "Додайте першу послугу, щоб почати приймати клієнтів.",
+    calendarNoServicesText: "Додайте послуги й ціни, щоб перед першим записом усе було готово.",
     calendarEmptyActionText: "Додайте перший візит або налаштуйте послуги для онлайн-запису.",
     createBooking: "Створити запис",
     createAppointmentButton: "+ Створити запис",
     firstRunCalendarTitle: "Почніть з послуги",
-    firstRunCalendarText: "Додайте послугу, щоб швидше створювати записи й відкрити онлайн-запис.",
+    firstRunCalendarText: "Спочатку додайте послуги з цінами: так записи створюються швидше, а онлайн-запис зрозуміліший для клієнтів.",
     addFirstVisit: "Додати перший візит",
     quickVisit: "Швидкий запис",
     createVisitWithoutService: "Створити запис без послуги",
-    onboardingStartTitle: "Щоб почати роботу 👋",
-    onboardingStartText: "У вас поки немає послуг.\n\nДодайте першу послугу, щоб почати приймати записи клієнтів.",
+    onboardingStartTitle: "Додайте каталог послуг",
+    onboardingStartText: "Перед першим записом додайте послуги, тривалість і ціни. Після цього створювати записи буде швидше, а клієнтам буде зрозуміло, що вони бронюють.",
     firstAppointmentCreated: "🎉 Ваш перший запис створено",
     addServiceFirstTitle: "Спочатку додайте послугу",
-    addServiceFirstText: "У вас поки немає послуг. Додайте першу послугу або створіть швидкий запис без послуги.",
+    addServiceFirstText: "У вас поки немає послуг. Додайте першу послугу з тривалістю і ціною.",
     servicesEmptyPickerTitle: "Послуг поки немає",
-    servicesEmptyPickerText: "Додайте першу послугу або створіть запис без послуги.",
+    servicesEmptyPickerText: "Додайте першу послугу з тривалістю і ціною, потім створіть запис.",
     createServiceAction: "Створити послугу",
     bookingWithoutService: "Запис без послуги",
     firstServiceTitle: "Додайте першу послугу",
-    firstServiceText: "Послуги потрібні, щоб створювати записи й відкрити онлайн-запис для клієнтів.",
+    firstServiceText: "Оберіть послуги з каталогу, перевірте тривалість і проставте ціни. Після цього можна швидко створювати записи й відкривати онлайн-запис.",
     chooseFromCatalog: "Обрати з каталогу",
     createOwnService: "Створити свою послугу",
     servicesMineShort: "Мої",
@@ -1463,8 +1481,7 @@ const baseCopy = {
     statusPending: "Ожидает подтверждения",
     statusConfirmed: "Подтверждена",
     statusCancelled: "Отменена",
-    myProfile: "Мой профиль",
-    personalSettings: "Личные настройки",
+    companySettings: "Настройки компании",
     helpSupport: "Помощь и поддержка",
     language: "Язык",
     compact: "Сжатый",
@@ -1526,25 +1543,25 @@ const baseCopy = {
     premiumUpgradeCta: "Оформить Pro",
     premiumLockedBadge: "Pro",
     premiumFeatureBenefitsTitle: "В Pro открывается",
-    premiumBenefitOnlineBooking: "онлайн-запись и публичная страница",
+    premiumBenefitOnlineBooking: "неограниченные записи сверх Free",
     premiumBenefitReminders: "push и Telegram-напоминания",
-    premiumBenefitTeam: "команда, графики и роли",
-    premiumBenefitClients: "клиентская база без ручных обходов",
+    premiumBenefitTeam: "больше сотрудников, графики и роли",
+    premiumBenefitClients: "расширенные бизнес-инструменты для роста",
     premiumYearlyNudge: "Годовой тариф выгоднее, если вы планируете работать в Timviz постоянно.",
-    premiumFeatureClientsTitle: "Клиентская база доступна в Pro",
-    premiumFeatureClientsText: "Сохраняйте клиентов, быстро создавайте повторные записи и ведите историю после пробного периода.",
-    premiumFeatureStaffTitle: "Команда и графики доступны в Pro",
-    premiumFeatureStaffText: "Добавляйте сотрудников, управляйте сменами и доступами без смешивания всех записей в одном календаре.",
-    premiumFeatureOnlineTitle: "Онлайн-запись доступна в Pro",
-    premiumFeatureOnlineText: "После пробного периода клиентская ссылка и самостоятельная запись работают на тарифе Pro.",
-    premiumFeatureScheduleTitle: "Расширенный график доступен в Pro",
-    premiumFeatureScheduleText: "Настраивайте смены, выходные, перерывы и командные графики без ограничений.",
+    premiumFeatureClientsTitle: "Клиентская база входит в Free",
+    premiumFeatureClientsText: "Сохраняйте клиентов, создавайте повторные записи и ведите базовую историю без оформления Pro.",
+    premiumFeatureStaffTitle: "Больше сотрудников доступно в Pro",
+    premiumFeatureStaffText: "Free оставляет владельца и 1 сотрудника. Pro открывает команду шире, роли и графики без лимита Free.",
+    premiumFeatureOnlineTitle: "Онлайн-запись входит в Free",
+    premiumFeatureOnlineText: "Клиентская ссылка, календарь, услуги и базовый профиль работают бесплатно. Pro убирает лимиты Free.",
+    premiumFeatureScheduleTitle: "Календарь и график входят в Free",
+    premiumFeatureScheduleText: "Ведите календарь и базовый график бесплатно. Pro убирает лимиты и расширяет командную работу.",
     premiumFeaturePushTitle: "Push-напоминания доступны в Pro",
     premiumFeaturePushText: "Подключайте уведомления о новых, перенесенных и отмененных записях.",
     premiumFeatureTelegramTitle: "Telegram-уведомления доступны в Pro",
     premiumFeatureTelegramText: "Получайте записи и напоминания в Telegram после оформления Pro.",
-    premiumFeatureAddressTitle: "Адрес и карта доступны в Pro",
-    premiumFeatureAddressText: "Покажите клиентам точный адрес, детали входа и карту на странице записи.",
+    premiumFeatureAddressTitle: "Адрес и карта входят в Free",
+    premiumFeatureAddressText: "Показывайте клиентам адрес, детали входа и карту на странице записи без оформления Pro.",
     premiumMonthly: "Premium Monthly",
     premiumYearly: "Premium Yearly",
     premiumMonthlyFallback: "$3 / месяц",
@@ -1555,10 +1572,10 @@ const baseCopy = {
     premiumManage: "Управлять подпиской можно в App Store.",
     premiumReady: "Premium обновлен.",
     premiumUnavailable: "Покупки доступны в TestFlight или App Store сборке.",
-    premiumMissingConfig: "Нужно настроить RevenueCat и продукты App Store.",
+    premiumMissingConfig: "Покупка еще готовится в App Store. Попробуйте еще раз после обработки продуктов.",
     premiumPurchaseCancelled: "Покупка отменена.",
     premiumSyncFailed: "Не удалось синхронизировать подписку.",
-    settingsGeneral: "Основное",
+    settingsGeneral: "Настройки компании",
     settingsOnline: "Онлайн-запись",
     settingsServices: "Услуги",
     settingsSchedule: "График",
@@ -1581,7 +1598,7 @@ const baseCopy = {
     teamAccount: "Команда",
     serviceMode: "Формат работы",
     categoriesText: "Категории",
-    categoriesHint: "через запятую",
+    categoriesHint: "Выберите одну или несколько категорий из каталога",
     localization: "Страна, язык и валюта",
     country: "Страна",
     timezone: "Часовой пояс",
@@ -1678,26 +1695,26 @@ const baseCopy = {
     noBookingsTodaySpark: "Сегодня записей нет ✨",
     fillFreeWindowsText: "Самое время заполнить свободные окна.",
     noBookingsThisDay: "На этот день записей нет",
-    calendarNoServicesText: "Добавьте первую услугу, чтобы начать принимать клиентов.",
+    calendarNoServicesText: "Добавьте услуги и цены, чтобы перед первой записью все было готово.",
     calendarEmptyActionText: "Добавьте первый визит или настройте услуги для онлайн-записи.",
     createBooking: "Создать запись",
     createAppointmentButton: "+ Создать запись",
     firstRunCalendarTitle: "Начните с услуги",
-    firstRunCalendarText: "Добавьте услугу, чтобы создавать записи быстрее и открыть онлайн-запись.",
+    firstRunCalendarText: "Сначала добавьте услуги с ценами: так записи создаются быстрее, а онлайн-запись понятнее для клиентов.",
     addFirstVisit: "Добавить первый визит",
     quickVisit: "Быстрая запись",
     createVisitWithoutService: "Создать запись без услуги",
-    onboardingStartTitle: "Чтобы начать работу 👋",
-    onboardingStartText: "У вас пока нет услуг.\n\nДобавьте первую услугу, чтобы начать принимать записи клиентов.",
+    onboardingStartTitle: "Добавьте каталог услуг",
+    onboardingStartText: "Перед первой записью добавьте услуги, длительность и цены. Так запись создается быстрее, а клиентам понятно, что они бронируют.",
     firstAppointmentCreated: "🎉 Ваша первая запись создана",
     addServiceFirstTitle: "Сначала добавьте услугу",
-    addServiceFirstText: "У вас пока нет услуг. Добавьте первую услугу или создайте быструю запись без услуги.",
+    addServiceFirstText: "У вас пока нет услуг. Добавьте первую услугу с длительностью и ценой.",
     servicesEmptyPickerTitle: "Услуг пока нет",
-    servicesEmptyPickerText: "Добавьте первую услугу или создайте запись без услуги.",
+    servicesEmptyPickerText: "Добавьте первую услугу с длительностью и ценой, затем создайте запись.",
     createServiceAction: "Создать услугу",
     bookingWithoutService: "Запись без услуги",
     firstServiceTitle: "Добавьте первую услугу",
-    firstServiceText: "Услуги нужны, чтобы создавать записи и открыть онлайн-запись для клиентов.",
+    firstServiceText: "Выберите услуги из каталога, проверьте длительность и проставьте цены. После этого можно быстро создавать записи и включать онлайн-запись.",
     chooseFromCatalog: "Выбрать из каталога",
     createOwnService: "Создать свою услугу",
     servicesMineShort: "Мои",
@@ -1886,8 +1903,7 @@ const baseCopy = {
     statusPending: "Pending",
     statusConfirmed: "Confirmed",
     statusCancelled: "Cancelled",
-    myProfile: "My profile",
-    personalSettings: "Personal settings",
+    companySettings: "Company settings",
     helpSupport: "Help and support",
     language: "Language",
     compact: "Compact",
@@ -1949,25 +1965,25 @@ const baseCopy = {
     premiumUpgradeCta: "Get Pro",
     premiumLockedBadge: "Pro",
     premiumFeatureBenefitsTitle: "Pro unlocks",
-    premiumBenefitOnlineBooking: "online booking and a public page",
+    premiumBenefitOnlineBooking: "unlimited appointments beyond Free",
     premiumBenefitReminders: "push and Telegram reminders",
-    premiumBenefitTeam: "team members, schedules, and roles",
-    premiumBenefitClients: "a client base without manual workarounds",
+    premiumBenefitTeam: "more employees, schedules, and roles",
+    premiumBenefitClients: "advanced business tools for growth",
     premiumYearlyNudge: "The yearly plan is better value when you plan to run Timviz continuously.",
-    premiumFeatureClientsTitle: "Client base is available in Pro",
-    premiumFeatureClientsText: "Save clients, create repeat bookings faster, and keep history after the trial.",
-    premiumFeatureStaffTitle: "Team and schedules are available in Pro",
-    premiumFeatureStaffText: "Add employees, manage shifts, and control access without mixing all bookings in one calendar.",
-    premiumFeatureOnlineTitle: "Online booking is available in Pro",
-    premiumFeatureOnlineText: "After the trial, client booking links and self-service booking stay active on Pro.",
-    premiumFeatureScheduleTitle: "Advanced schedule is available in Pro",
-    premiumFeatureScheduleText: "Set shifts, days off, breaks, and team schedules without limits.",
+    premiumFeatureClientsTitle: "Client base is included in Free",
+    premiumFeatureClientsText: "Save clients, create repeat bookings, and keep basic history without Pro.",
+    premiumFeatureStaffTitle: "More employees are available in Pro",
+    premiumFeatureStaffText: "Free keeps the owner and 1 employee. Pro opens a larger team, roles, and schedules beyond the Free limit.",
+    premiumFeatureOnlineTitle: "Online booking is included in Free",
+    premiumFeatureOnlineText: "Client links, calendar, services, and the basic profile keep working for free. Pro removes Free limits.",
+    premiumFeatureScheduleTitle: "Calendar and schedule are included in Free",
+    premiumFeatureScheduleText: "Run your calendar and basic schedule for free. Pro removes limits and expands team work.",
     premiumFeaturePushTitle: "Push reminders are available in Pro",
     premiumFeaturePushText: "Enable notifications for new, rescheduled, and cancelled bookings.",
     premiumFeatureTelegramTitle: "Telegram notifications are available in Pro",
     premiumFeatureTelegramText: "Receive bookings and reminders in Telegram after upgrading to Pro.",
-    premiumFeatureAddressTitle: "Address and map are available in Pro",
-    premiumFeatureAddressText: "Show clients the exact address, entrance details, and map on the booking page.",
+    premiumFeatureAddressTitle: "Address and map are included in Free",
+    premiumFeatureAddressText: "Show clients your address, entrance details, and map on the booking page without Pro.",
     premiumMonthly: "Premium Monthly",
     premiumYearly: "Premium Yearly",
     premiumMonthlyFallback: "$3 / month",
@@ -1978,10 +1994,10 @@ const baseCopy = {
     premiumManage: "Manage the subscription in the App Store.",
     premiumReady: "Premium updated.",
     premiumUnavailable: "Purchases are available in TestFlight or App Store builds.",
-    premiumMissingConfig: "RevenueCat and App Store products need to be configured.",
+    premiumMissingConfig: "The App Store purchase is still being prepared. Try again after products finish processing.",
     premiumPurchaseCancelled: "Purchase cancelled.",
     premiumSyncFailed: "Could not sync subscription.",
-    settingsGeneral: "General",
+    settingsGeneral: "Company settings",
     settingsOnline: "Online booking",
     settingsServices: "Services",
     settingsSchedule: "Schedule",
@@ -2004,7 +2020,7 @@ const baseCopy = {
     teamAccount: "Team",
     serviceMode: "Work format",
     categoriesText: "Categories",
-    categoriesHint: "comma separated",
+    categoriesHint: "Choose one or several categories from the catalog",
     localization: "Country, language and currency",
     country: "Country",
     timezone: "Timezone",
@@ -2101,26 +2117,26 @@ const baseCopy = {
     noBookingsTodaySpark: "No appointments today ✨",
     fillFreeWindowsText: "It is a good time to fill your open slots.",
     noBookingsThisDay: "No bookings for this day",
-    calendarNoServicesText: "Add your first service to start accepting clients.",
+    calendarNoServicesText: "Add services and prices so everything is ready before the first appointment.",
     calendarEmptyActionText: "Add your first visit or set up services for online booking.",
     createBooking: "Create booking",
     createAppointmentButton: "+ Create appointment",
     firstRunCalendarTitle: "Start with a service",
-    firstRunCalendarText: "Add a service to create bookings faster and open online booking.",
+    firstRunCalendarText: "Start with priced services: bookings become faster to create and clearer for clients online.",
     addFirstVisit: "Add first visit",
     quickVisit: "Quick booking",
     createVisitWithoutService: "Create booking without service",
-    onboardingStartTitle: "To get started 👋",
-    onboardingStartText: "You do not have services yet.\n\nAdd your first service to start accepting client appointments.",
+    onboardingStartTitle: "Add your service catalog",
+    onboardingStartText: "Before the first appointment, add services, duration, and prices. Bookings will be faster to create, and clients will understand what they are booking.",
     firstAppointmentCreated: "🎉 First appointment created",
     addServiceFirstTitle: "Add a service first",
-    addServiceFirstText: "You do not have services yet. Add your first service or create a quick booking without a service.",
+    addServiceFirstText: "You do not have services yet. Add your first service with duration and price.",
     servicesEmptyPickerTitle: "No services yet",
-    servicesEmptyPickerText: "Add your first service or create a booking without a service.",
+    servicesEmptyPickerText: "Add your first service with duration and price, then create the booking.",
     createServiceAction: "Create service",
     bookingWithoutService: "Booking without service",
     firstServiceTitle: "Add your first service",
-    firstServiceText: "Services help you create bookings and open online booking for clients.",
+    firstServiceText: "Choose services from the catalog, check durations, and set prices. After that you can create bookings quickly and enable online booking.",
     chooseFromCatalog: "Choose from catalog",
     createOwnService: "Create custom service",
     servicesMineShort: "Mine",
@@ -2299,8 +2315,7 @@ const generatedMobileCopy = {
     statusPending: "En attente",
     statusConfirmed: "Confirmé",
     statusCancelled: "Annulé",
-    myProfile: "Mon profil",
-    personalSettings: "Paramètres personnels",
+    companySettings: "Paramètres de l'entreprise",
     helpSupport: "Aide et support",
     language: "Langue",
     compact: "Compact",
@@ -2365,10 +2380,10 @@ const generatedMobileCopy = {
     premiumManage: "Gérer l'abonnement dans l'App Store.",
     premiumReady: "Premium mis à jour.",
     premiumUnavailable: "Les achats sont disponibles dans TestFlight ou dans la version App Store.",
-    premiumMissingConfig: "RevenueCat et les produits App Store doivent être configurés.",
+    premiumMissingConfig: "L’achat App Store est encore en préparation. Réessayez après le traitement des produits.",
     premiumPurchaseCancelled: "Achat annulé.",
     premiumSyncFailed: "Impossible de synchroniser l'abonnement.",
-    settingsGeneral: "Général",
+    settingsGeneral: "Paramètres de l'entreprise",
     settingsOnline: "Réservation en ligne",
     settingsServices: "Services",
     settingsSchedule: "Calendrier",
@@ -2390,7 +2405,7 @@ const generatedMobileCopy = {
     teamAccount: "Équipe",
     serviceMode: "Format de travail",
     categoriesText: "Catégories",
-    categoriesHint: "virgules séparées",
+    categoriesHint: "Choisissez une ou plusieurs catégories du catalogue",
     localization: "Pays, langue et devise",
     country: "Pays",
     timezone: "Fuseau horaire",
@@ -2476,26 +2491,26 @@ const generatedMobileCopy = {
     noBookingsTodaySpark: "Pas de rendez-vous aujourd'hui ✨",
     fillFreeWindowsText: "C'est le bon moment pour combler vos créneaux libres.",
     noBookingsThisDay: "Aucune réservation pour ce jour",
-    calendarNoServicesText: "Ajoutez votre premier service pour commencer à accepter des clients.",
+    calendarNoServicesText: "Ajoutez vos services et vos prix afin que tout soit prêt avant le premier rendez-vous.",
     calendarEmptyActionText: "Ajoutez votre première visite ou configurez des services de réservation en ligne.",
     createBooking: "Créer une réservation",
     createAppointmentButton: "+ Créer un rendez-vous",
     firstRunCalendarTitle: "Démarrer avec un service",
-    firstRunCalendarText: "Ajouter un service pour créer des réservations plus rapidement et ouvrir une réservation en ligne.",
+    firstRunCalendarText: "Commencez par des services avec prix : les réservations seront plus rapides à créer et plus claires pour les clients.",
     addFirstVisit: "Ajouter une première visite",
     quickVisit: "Réservation rapide",
     createVisitWithoutService: "Créer une réservation sans service",
-    onboardingStartTitle: "Pour commencer 👋",
-    onboardingStartText: "Vous n'avez pas encore de services.\n\nAjoutez votre premier service pour commencer à accepter des rendez-vous clients.",
+    onboardingStartTitle: "Ajoutez votre catalogue de services",
+    onboardingStartText: "Avant le premier rendez-vous, ajoutez les services, les durées et les prix. Les réservations seront plus rapides à créer et plus claires pour les clients.",
     firstAppointmentCreated: "🎉 Premier rendez-vous créé",
     addServiceFirstTitle: "Ajoutez d'abord un service",
-    addServiceFirstText: "Vous n'avez pas encore de services. Ajoutez votre premier service ou créez une réservation rapide sans service.",
+    addServiceFirstText: "Vous n'avez pas encore de services. Ajoutez votre premier service avec une durée et un prix.",
     servicesEmptyPickerTitle: "Aucun service pour l'instant",
-    servicesEmptyPickerText: "Ajoutez votre premier service ou créez une réservation sans service.",
+    servicesEmptyPickerText: "Ajoutez votre premier service avec une durée et un prix, puis créez la réservation.",
     createServiceAction: "Créer un service",
     bookingWithoutService: "Réservation sans service",
     firstServiceTitle: "Ajoutez votre premier service",
-    firstServiceText: "Les services vous aident à créer des réservations et à ouvrir des réservations en ligne pour les clients.",
+    firstServiceText: "Choisissez des services dans le catalogue, vérifiez les durées et indiquez les prix. Ensuite, vous pourrez créer des réservations rapidement et activer la réservation en ligne.",
     chooseFromCatalog: "Choisissez dans le catalogue",
     createOwnService: "Créer un service personnalisé",
     servicesMineShort: "Mes",
@@ -2671,8 +2686,7 @@ const generatedMobileCopy = {
     statusPending: "Oczekuje",
     statusConfirmed: "Potwierdzono",
     statusCancelled: "Anulowano",
-    myProfile: "Mój profil",
-    personalSettings: "Ustawienia osobiste",
+    companySettings: "Ustawienia firmy",
     helpSupport: "Pomoc i wsparcie",
     language: "Język",
     compact: "Kompaktowy",
@@ -2737,10 +2751,10 @@ const generatedMobileCopy = {
     premiumManage: "Zarządzaj subskrypcją w App Store.",
     premiumReady: "Premium zaktualizowano. Zakupy",
     premiumUnavailable: "Zakupy są dostępne w TestFlight albo w wersji App Store.",
-    premiumMissingConfig: "Należy skonfigurować RevenueCat i produkty App Store.",
+    premiumMissingConfig: "Zakup w App Store jest jeszcze przygotowywany. Spróbuj ponownie po przetworzeniu produktów.",
     premiumPurchaseCancelled: "Zakup anulowany.",
     premiumSyncFailed: "Nie można zsynchronizować subskrypcji.",
-    settingsGeneral: "Generał",
+    settingsGeneral: "Ustawienia firmy",
     settingsOnline: "Rezerwacja online",
     settingsServices: "Usługi",
     settingsSchedule: "Harmonogram",
@@ -2762,7 +2776,7 @@ const generatedMobileCopy = {
     teamAccount: "Zespół",
     serviceMode: "Format pracy",
     categoriesText: "Kategorie",
-    categoriesHint: "oddzielone przecinkami",
+    categoriesHint: "Wybierz jedną lub kilka kategorii z katalogu",
     localization: "Kraj, język i waluta",
     country: "Kraj",
     timezone: "Strefa czasowa",
@@ -2848,26 +2862,26 @@ const generatedMobileCopy = {
     noBookingsTodaySpark: "Dzisiaj brak spotkań ✨",
     fillFreeWindowsText: "To dobry moment na uzupełnienie wolnych miejsc.",
     noBookingsThisDay: "Brak rezerwacji na ten dzień",
-    calendarNoServicesText: "Dodaj swoją pierwszą usługę, aby rozpocząć przyjmowanie klientów.",
+    calendarNoServicesText: "Dodaj usługi i ceny, aby wszystko było gotowe przed pierwszą wizytą.",
     calendarEmptyActionText: "Dodaj swoją pierwszą wizytę lub skonfiguruj usługi rezerwacji online.",
     createBooking: "Utwórz rezerwację",
     createAppointmentButton: "+ Utwórz spotkanie",
     firstRunCalendarTitle: "Zacznij od usługi",
-    firstRunCalendarText: "Dodaj usługę, aby szybciej tworzyć rezerwacje i otwierać rezerwacje online.",
+    firstRunCalendarText: "Zacznij od usług z cenami: rezerwacje będą szybsze do tworzenia i czytelniejsze dla klientów online.",
     addFirstVisit: "Dodaj pierwszą wizytę",
     quickVisit: "Szybka rezerwacja",
     createVisitWithoutService: "Utwórz rezerwację bez usługi",
-    onboardingStartTitle: "Aby rozpocząć 👋",
-    onboardingStartText: "Nie masz jeszcze usług.\n\nDodaj swoją pierwszą usługę, aby rozpocząć przyjmowanie spotkań z klientami.",
+    onboardingStartTitle: "Dodaj katalog usług",
+    onboardingStartText: "Przed pierwszą wizytą dodaj usługi, czas trwania i ceny. Rezerwacje będą szybsze do tworzenia, a klienci zrozumieją, co rezerwują.",
     firstAppointmentCreated: "🎉 Utworzono pierwsze spotkanie",
     addServiceFirstTitle: "Najpierw dodaj usługę",
-    addServiceFirstText: "Nie masz jeszcze usług. Dodaj swoją pierwszą usługę lub utwórz szybką rezerwację bez usługi.",
+    addServiceFirstText: "Nie masz jeszcze usług. Dodaj pierwszą usługę z czasem trwania i ceną.",
     servicesEmptyPickerTitle: "Brak jeszcze usług",
-    servicesEmptyPickerText: "Dodaj swoją pierwszą usługę lub utwórz rezerwację bez usługi.",
+    servicesEmptyPickerText: "Dodaj pierwszą usługę z czasem trwania i ceną, a potem utwórz rezerwację.",
     createServiceAction: "Utwórz usługę",
     bookingWithoutService: "Rezerwacja bez usługi",
     firstServiceTitle: "Dodaj swoją pierwszą usługę",
-    firstServiceText: "Usługi pomagają Ci tworzyć rezerwacje i otwierać rezerwacje online dla klientów.",
+    firstServiceText: "Wybierz usługi z katalogu, sprawdź czas trwania i ustaw ceny. Potem możesz szybko tworzyć rezerwacje i włączyć rezerwację online.",
     chooseFromCatalog: "Wybierz z katalogu",
     createOwnService: "Utwórz usługę niestandardową",
     servicesMineShort: "Moje",
@@ -3043,8 +3057,7 @@ const generatedMobileCopy = {
     statusPending: "Nevyřízeno",
     statusConfirmed: "Potvrzeno",
     statusCancelled: "Zrušeno",
-    myProfile: "Můj profil",
-    personalSettings: "Osobní nastavení",
+    companySettings: "Nastavení společnosti",
     helpSupport: "Pomoc a podpora",
     language: "Jazyk",
     compact: "Kompaktní",
@@ -3109,10 +3122,10 @@ const generatedMobileCopy = {
     premiumManage: "Spravovat předplatné v App Store.",
     premiumReady: "Premium aktualizováno.",
     premiumUnavailable: "Nákupy jsou dostupné v TestFlightu nebo ve verzi z App Storu.",
-    premiumMissingConfig: "Je potřeba nastavit RevenueCat a produkty App Store.",
+    premiumMissingConfig: "Nákup v App Storu se ještě připravuje. Zkuste to znovu po zpracování produktů.",
     premiumPurchaseCancelled: "Nákup zrušen.",
     premiumSyncFailed: "Nelze synchronizovat předplatné.",
-    settingsGeneral: "Obecné",
+    settingsGeneral: "Nastavení společnosti",
     settingsOnline: "Online rezervace",
     settingsServices: "Služby",
     settingsSchedule: "Naplánovat",
@@ -3134,7 +3147,7 @@ const generatedMobileCopy = {
     teamAccount: "Tým",
     serviceMode: "",
     categoriesText: "Kategorie",
-    categoriesHint: "oddělena čárkou",
+    categoriesHint: "Vyberte jednu nebo více kategorií z katalogu",
     localization: "Země, jazyk a měna",
     country: "Země",
     timezone: "Časové pásmo",
@@ -3220,26 +3233,26 @@ const generatedMobileCopy = {
     noBookingsTodaySpark: "Dnes žádné schůzky ✨",
     fillFreeWindowsText: "Je vhodná doba na zaplnění vašich volných míst.",
     noBookingsThisDay: "Pro tento den nejsou žádné rezervace",
-    calendarNoServicesText: "Přidejte svou první službu a začněte přijímat klienty.",
+    calendarNoServicesText: "Přidejte služby a ceny, aby bylo vše připravené před první rezervací.",
     calendarEmptyActionText: "Přidejte svou první návštěvu nebo nastavte služby pro online rezervaci.",
     createBooking: "Vytvořit rezervaci",
     createAppointmentButton: "+ Vytvořit schůzku",
     firstRunCalendarTitle: "Začněte se službou",
-    firstRunCalendarText: "Přidejte službu pro rychlejší vytváření rezervací a otevření online rezervace.",
+    firstRunCalendarText: "Začněte službami s cenami: rezervace se budou vytvářet rychleji a klientům budou jasnější.",
     addFirstVisit: "Přidat první návštěvu",
     quickVisit: "Rychlá rezervace",
     createVisitWithoutService: "Vytvořit rezervaci bez služby",
-    onboardingStartTitle: "Začít 👋",
-    onboardingStartText: "Ještě nemáte služby.\n\nPřidejte svou první službu a začněte přijímat schůzky klientů.",
+    onboardingStartTitle: "Přidejte katalog služeb",
+    onboardingStartText: "Před první rezervací přidejte služby, délku trvání a ceny. Rezervace se budou vytvářet rychleji a klienti pochopí, co si rezervují.",
     firstAppointmentCreated: "🎉 Vytvořena první schůzka",
     addServiceFirstTitle: "Nejprve přidejte službu",
-    addServiceFirstText: "Ještě nemáte služby. Přidejte svou první službu nebo vytvořte rychlou rezervaci bez služby.",
+    addServiceFirstText: "Ještě nemáte služby. Přidejte první službu s délkou trvání a cenou.",
     servicesEmptyPickerTitle: "Zatím žádné služby",
-    servicesEmptyPickerText: "Přidejte svou první službu nebo vytvořte rezervaci bez služby.",
+    servicesEmptyPickerText: "Přidejte první službu s délkou trvání a cenou a potom vytvořte rezervaci.",
     createServiceAction: "Vytvořit službu",
     bookingWithoutService: "Rezervace bez služby",
     firstServiceTitle: "Přidejte svou první službu",
-    firstServiceText: "Služby vám pomohou vytvořit rezervace a otevřít online rezervaci pro klienty.",
+    firstServiceText: "Vyberte služby z katalogu, zkontrolujte délky trvání a nastavte ceny. Potom můžete rychle vytvářet rezervace a zapnout online rezervace.",
     chooseFromCatalog: "Vyberte si z katalogu",
     createOwnService: "Vytvořte vlastní službu",
     servicesMineShort: "Moje",
@@ -3415,8 +3428,7 @@ const generatedMobileCopy = {
     statusPending: "Pendiente",
     statusConfirmed: "Confirmado",
     statusCancelled: "Cancelado",
-    myProfile: "Mi perfil",
-    personalSettings: "Configuración personal",
+    companySettings: "Ajustes de empresa",
     helpSupport: "Ayuda y soporte",
     language: "Idioma",
     compact: "Compacto",
@@ -3481,10 +3493,10 @@ const generatedMobileCopy = {
     premiumManage: "Administrar la suscripción en App Store.",
     premiumReady: "Premium actualizado.",
     premiumUnavailable: "Las compras están disponibles en TestFlight o en la versión de App Store.",
-    premiumMissingConfig: "Hay que configurar RevenueCat y los productos de App Store.",
+    premiumMissingConfig: "La compra de App Store aún se está preparando. Inténtalo de nuevo cuando los productos terminen de procesarse.",
     premiumPurchaseCancelled: "Compra cancelada.",
     premiumSyncFailed: "No se pudo sincronizar la suscripción.",
-    settingsGeneral: "Generalidades",
+    settingsGeneral: "Ajustes de empresa",
     settingsOnline: "Reserva online",
     settingsServices: "Servicios",
     settingsSchedule: "Horario",
@@ -3506,7 +3518,7 @@ const generatedMobileCopy = {
     teamAccount: "Equipo",
     serviceMode: "Formato de trabajo",
     categoriesText: "Categorías",
-    categoriesHint: "separados por comas",
+    categoriesHint: "Elige una o varias categorías del catálogo",
     localization: "País, idioma y moneda",
     country: "País",
     timezone: "Zona horaria",
@@ -3592,26 +3604,26 @@ const generatedMobileCopy = {
     noBookingsTodaySpark: "Hoy no hay citas ✨",
     fillFreeWindowsText: "Es un buen momento para llenar tus espacios abiertos.",
     noBookingsThisDay: "No hay reservas para este día",
-    calendarNoServicesText: "Agrega tu primer servicio para comenzar a aceptar clientes.",
+    calendarNoServicesText: "Agrega servicios y precios para que todo esté listo antes de la primera cita.",
     calendarEmptyActionText: "Agregue su primera visita o configure servicios para reservas en línea.",
     createBooking: "Crear reserva",
     createAppointmentButton: "+ Crear cita",
     firstRunCalendarTitle: "Comience con un servicio",
-    firstRunCalendarText: "Agregue un servicio para crear reservas más rápido y abrir reservas en línea.",
+    firstRunCalendarText: "Empieza con servicios con precio: las reservas serán más rápidas de crear y más claras para los clientes.",
     addFirstVisit: "Agregar primera visita",
     quickVisit: "Reserva rápida",
     createVisitWithoutService: "Crear reserva sin servicio",
-    onboardingStartTitle: "Para comenzar 👋",
-    onboardingStartText: "Aún no tienes servicios.\n\nAgregue su primer servicio para comenzar a aceptar citas de clientes.",
+    onboardingStartTitle: "Agrega tu catálogo de servicios",
+    onboardingStartText: "Antes de la primera cita, agrega servicios, duración y precios. Las reservas serán más rápidas de crear y los clientes entenderán qué reservan.",
     firstAppointmentCreated: "🎉 Primera cita creada",
     addServiceFirstTitle: "Agrega un servicio primero",
-    addServiceFirstText: "Aún no tienes servicios. Añade tu primer servicio o crea una reserva rápida sin servicio.",
+    addServiceFirstText: "Aún no tienes servicios. Añade tu primer servicio con duración y precio.",
     servicesEmptyPickerTitle: "Aún no hay servicios",
-    servicesEmptyPickerText: "Añade tu primer servicio o crea una reserva sin servicio.",
+    servicesEmptyPickerText: "Añade tu primer servicio con duración y precio, luego crea la reserva.",
     createServiceAction: "Crear servicio",
     bookingWithoutService: "Reserva sin servicio",
     firstServiceTitle: "Agregue su primer servicio",
-    firstServiceText: "Los servicios lo ayudan a crear reservas y abrir reservas en línea para los clientes.",
+    firstServiceText: "Elige servicios del catálogo, revisa la duración y fija los precios. Después podrás crear reservas rápidamente y activar la reserva online.",
     chooseFromCatalog: "Elige del catálogo",
     createOwnService: "Crear servicio personalizado",
     servicesMineShort: "Mis",
@@ -3787,8 +3799,7 @@ const generatedMobileCopy = {
     statusPending: "Ausstehend",
     statusConfirmed: "Bestätigt",
     statusCancelled: "Abgebrochen",
-    myProfile: "Mein Profil",
-    personalSettings: "Persönliche Einstellungen",
+    companySettings: "Firmeneinstellungen",
     helpSupport: "Hilfe und Support",
     language: "Sprache",
     compact: "Kompakt",
@@ -3853,10 +3864,10 @@ const generatedMobileCopy = {
     premiumManage: "Das Abonnement im App Store verwalten.",
     premiumReady: "Premium aktualisiert.",
     premiumUnavailable: "Käufe sind in TestFlight oder im App-Store-Build verfügbar.",
-    premiumMissingConfig: "RevenueCat und die App-Store-Produkte müssen eingerichtet werden.",
+    premiumMissingConfig: "Der App-Store-Kauf wird noch vorbereitet. Versuche es erneut, wenn die Produkte verarbeitet wurden.",
     premiumPurchaseCancelled: "Kauf storniert.",
     premiumSyncFailed: "Das Abonnement konnte nicht synchronisiert werden.",
-    settingsGeneral: "Allgemein",
+    settingsGeneral: "Firmeneinstellungen",
     settingsOnline: "Online-Buchung",
     settingsServices: "Dienste",
     settingsSchedule: "Zeitplan",
@@ -3878,7 +3889,7 @@ const generatedMobileCopy = {
     teamAccount: "Team",
     serviceMode: "Arbeitsformat",
     categoriesText: "Kategorien",
-    categoriesHint: "Komma getrennt",
+    categoriesHint: "Wählen Sie eine oder mehrere Kategorien aus dem Katalog",
     localization: "Land, Sprache und Währung",
     country: "Land",
     timezone: "Zeitzone",
@@ -3964,26 +3975,26 @@ const generatedMobileCopy = {
     noBookingsTodaySpark: "Keine Termine heute ✨",
     fillFreeWindowsText: "Es ist ein guter Zeitpunkt, Ihre offenen Plätze zu besetzen.",
     noBookingsThisDay: "Keine Buchungen für diesen Tag",
-    calendarNoServicesText: "Fügen Sie Ihren ersten Service hinzu, um mit der Annahme von Kunden zu beginnen.",
+    calendarNoServicesText: "Fügen Sie Leistungen und Preise hinzu, damit vor dem ersten Termin alles bereit ist.",
     calendarEmptyActionText: "Fügen Sie Ihren ersten Besuch hinzu oder richten Sie Dienste für die Online-Buchung ein.",
     createBooking: "Buchung erstellen",
     createAppointmentButton: "+ Termin erstellen",
     firstRunCalendarTitle: "Mit einem Dienst beginnen",
-    firstRunCalendarText: "Fügen Sie einen Dienst hinzu, um Buchungen schneller zu erstellen und Online-Buchungen zu öffnen.",
+    firstRunCalendarText: "Beginnen Sie mit Leistungen und Preisen: Buchungen lassen sich schneller erstellen und sind für Kunden klarer.",
     addFirstVisit: "Erstbesuch hinzufügen",
     quickVisit: "Schnellbuchung",
     createVisitWithoutService: "Buchung ohne Leistung erstellen",
-    onboardingStartTitle: "Zum Einstieg 👋",
-    onboardingStartText: "Sie haben noch keine Leistungen.\n\nFügen Sie Ihren ersten Service hinzu, um mit der Annahme von Kundenterminen zu beginnen.",
+    onboardingStartTitle: "Leistungskatalog hinzufügen",
+    onboardingStartText: "Fügen Sie vor dem ersten Termin Leistungen, Dauer und Preise hinzu. Buchungen lassen sich schneller erstellen und Kunden verstehen, was sie buchen.",
     firstAppointmentCreated: "🎉 Erster Termin erstellt",
     addServiceFirstTitle: "Zuerst einen Dienst hinzufügen",
-    addServiceFirstText: "Sie haben noch keine Dienste. Fügen Sie Ihren ersten Service hinzu oder erstellen Sie eine Schnellbuchung ohne Service.",
+    addServiceFirstText: "Sie haben noch keine Leistungen. Fügen Sie die erste Leistung mit Dauer und Preis hinzu.",
     servicesEmptyPickerTitle: "Noch keine Leistungen",
-    servicesEmptyPickerText: "Fügen Sie Ihre erste Leistung hinzu oder erstellen Sie eine Buchung ohne Leistung.",
+    servicesEmptyPickerText: "Fügen Sie die erste Leistung mit Dauer und Preis hinzu und erstellen Sie danach die Buchung.",
     createServiceAction: "Dienst erstellen",
     bookingWithoutService: "Buchen ohne Dienst",
     firstServiceTitle: "Fügen Sie Ihren ersten Dienst hinzu",
-    firstServiceText: "Dienste helfen Ihnen beim Erstellen von Buchungen und beim Öffnen von Online-Buchungen für Kunden.",
+    firstServiceText: "Wählen Sie Leistungen aus dem Katalog, prüfen Sie die Dauer und legen Sie Preise fest. Danach können Sie Buchungen schnell erstellen und Online-Buchungen aktivieren.",
     chooseFromCatalog: "Wählen Sie aus dem Katalog",
     createOwnService: "Erstellen Sie einen benutzerdefinierten Service",
     servicesMineShort: "Meine",
@@ -4092,25 +4103,25 @@ Object.assign(generatedMobileCopy.fr, {
   premiumUpgradeCta: "Passer à Pro",
   premiumLockedBadge: "Pro",
   premiumFeatureBenefitsTitle: "Pro débloque",
-  premiumBenefitOnlineBooking: "la réservation en ligne et la page publique",
+  premiumBenefitOnlineBooking: "les réservations illimitées au-delà de Free",
   premiumBenefitReminders: "les rappels push et Telegram",
-  premiumBenefitTeam: "l'équipe, les plannings et les rôles",
-  premiumBenefitClients: "la base clients sans solutions manuelles",
+  premiumBenefitTeam: "plus d'employés, plannings et rôles",
+  premiumBenefitClients: "des outils business avancés pour grandir",
   premiumYearlyNudge: "L'abonnement annuel est plus avantageux si vous utilisez Timviz toute l'année.",
-  premiumFeatureClientsTitle: "La base clients est disponible avec Pro",
-  premiumFeatureClientsText: "Enregistrez les clients, créez des réservations répétées plus vite et gardez l'historique après l'essai.",
-  premiumFeatureStaffTitle: "L'équipe et les plannings sont disponibles avec Pro",
-  premiumFeatureStaffText: "Ajoutez des employés, gérez les shifts et les accès sans mélanger toutes les réservations.",
-  premiumFeatureOnlineTitle: "La réservation en ligne est disponible avec Pro",
-  premiumFeatureOnlineText: "Après l'essai, les liens de réservation client restent actifs avec Pro.",
-  premiumFeatureScheduleTitle: "Le planning avancé est disponible avec Pro",
-  premiumFeatureScheduleText: "Configurez shifts, jours libres, pauses et plannings d'équipe sans limites.",
+  premiumFeatureClientsTitle: "La base clients est incluse dans Free",
+  premiumFeatureClientsText: "Enregistrez les clients, créez des réservations répétées et gardez l'historique de base sans Pro.",
+  premiumFeatureStaffTitle: "Plus d'employés sont disponibles avec Pro",
+  premiumFeatureStaffText: "Free garde le propriétaire et 1 employé. Pro ouvre une équipe plus large, les rôles et les plannings au-delà de la limite Free.",
+  premiumFeatureOnlineTitle: "La réservation en ligne est incluse dans Free",
+  premiumFeatureOnlineText: "Les liens clients, le calendrier, les services et le profil de base restent gratuits. Pro retire les limites Free.",
+  premiumFeatureScheduleTitle: "Le calendrier et le planning sont inclus dans Free",
+  premiumFeatureScheduleText: "Gérez le calendrier et le planning de base gratuitement. Pro retire les limites et élargit le travail en équipe.",
   premiumFeaturePushTitle: "Les rappels push sont disponibles avec Pro",
   premiumFeaturePushText: "Activez les notifications pour les nouvelles réservations, reports et annulations.",
   premiumFeatureTelegramTitle: "Les notifications Telegram sont disponibles avec Pro",
   premiumFeatureTelegramText: "Recevez réservations et rappels dans Telegram après le passage à Pro.",
-  premiumFeatureAddressTitle: "L'adresse et la carte sont disponibles avec Pro",
-  premiumFeatureAddressText: "Affichez l'adresse exacte, les détails d'entrée et la carte sur la page de réservation.",
+  premiumFeatureAddressTitle: "L'adresse et la carte sont incluses dans Free",
+  premiumFeatureAddressText: "Affichez l'adresse, les détails d'entrée et la carte sur la page de réservation sans Pro.",
 });
 
 Object.assign(generatedMobileCopy.pl, {
@@ -4122,25 +4133,25 @@ Object.assign(generatedMobileCopy.pl, {
   premiumUpgradeCta: "Wybierz Pro",
   premiumLockedBadge: "Pro",
   premiumFeatureBenefitsTitle: "Pro odblokowuje",
-  premiumBenefitOnlineBooking: "rezerwacje online i stronę publiczną",
+  premiumBenefitOnlineBooking: "nielimitowane wizyty ponad Free",
   premiumBenefitReminders: "przypomnienia push i Telegram",
-  premiumBenefitTeam: "zespół, grafiki i role",
-  premiumBenefitClients: "bazę klientów bez ręcznych obejść",
+  premiumBenefitTeam: "więcej pracowników, grafiki i role",
+  premiumBenefitClients: "zaawansowane narzędzia biznesowe do wzrostu",
   premiumYearlyNudge: "Plan roczny opłaca się bardziej, jeśli pracujesz w Timviz stale.",
-  premiumFeatureClientsTitle: "Baza klientów jest dostępna w Pro",
-  premiumFeatureClientsText: "Zapisuj klientów, szybciej twórz ponowne wizyty i zachowuj historię po okresie próbnym.",
-  premiumFeatureStaffTitle: "Zespół i grafiki są dostępne w Pro",
-  premiumFeatureStaffText: "Dodawaj pracowników, zarządzaj zmianami i dostępami bez mieszania wszystkich wizyt.",
-  premiumFeatureOnlineTitle: "Rezerwacje online są dostępne w Pro",
-  premiumFeatureOnlineText: "Po okresie próbnym linki do rezerwacji klientów pozostają aktywne w Pro.",
-  premiumFeatureScheduleTitle: "Zaawansowany grafik jest dostępny w Pro",
-  premiumFeatureScheduleText: "Ustawiaj zmiany, dni wolne, przerwy i grafiki zespołu bez limitów.",
+  premiumFeatureClientsTitle: "Baza klientów jest w Free",
+  premiumFeatureClientsText: "Zapisuj klientów, twórz ponowne wizyty i zachowuj podstawową historię bez Pro.",
+  premiumFeatureStaffTitle: "Więcej pracowników jest dostępne w Pro",
+  premiumFeatureStaffText: "Free zostawia właściciela i 1 pracownika. Pro otwiera większy zespół, role i grafiki ponad limit Free.",
+  premiumFeatureOnlineTitle: "Rezerwacje online są w Free",
+  premiumFeatureOnlineText: "Linki dla klientów, kalendarz, usługi i podstawowy profil działają za darmo. Pro usuwa limity Free.",
+  premiumFeatureScheduleTitle: "Kalendarz i grafik są w Free",
+  premiumFeatureScheduleText: "Prowadź kalendarz i podstawowy grafik za darmo. Pro usuwa limity i rozszerza pracę zespołu.",
   premiumFeaturePushTitle: "Przypomnienia push są dostępne w Pro",
   premiumFeaturePushText: "Włącz powiadomienia o nowych, przeniesionych i anulowanych wizytach.",
   premiumFeatureTelegramTitle: "Powiadomienia Telegram są dostępne w Pro",
   premiumFeatureTelegramText: "Otrzymuj wizyty i przypomnienia w Telegramie po przejściu na Pro.",
-  premiumFeatureAddressTitle: "Adres i mapa są dostępne w Pro",
-  premiumFeatureAddressText: "Pokaż klientom dokładny adres, wejście i mapę na stronie rezerwacji.",
+  premiumFeatureAddressTitle: "Adres i mapa są w Free",
+  premiumFeatureAddressText: "Pokazuj klientom adres, wejście i mapę na stronie rezerwacji bez Pro.",
 });
 
 Object.assign(generatedMobileCopy.cs, {
@@ -4152,25 +4163,25 @@ Object.assign(generatedMobileCopy.cs, {
   premiumUpgradeCta: "Přejít na Pro",
   premiumLockedBadge: "Pro",
   premiumFeatureBenefitsTitle: "Pro odemyká",
-  premiumBenefitOnlineBooking: "online rezervace a veřejnou stránku",
+  premiumBenefitOnlineBooking: "neomezené rezervace nad rámec Free",
   premiumBenefitReminders: "push a Telegram připomenutí",
-  premiumBenefitTeam: "tým, rozvrhy a role",
-  premiumBenefitClients: "klientskou databázi bez ruční práce",
+  premiumBenefitTeam: "více zaměstnanců, rozvrhy a role",
+  premiumBenefitClients: "pokročilé firemní nástroje pro růst",
   premiumYearlyNudge: "Roční tarif je výhodnější, pokud plánujete Timviz používat dlouhodobě.",
-  premiumFeatureClientsTitle: "Klientská databáze je v Pro",
-  premiumFeatureClientsText: "Ukládejte klienty, rychleji vytvářejte opakované rezervace a držte historii po zkušební době.",
-  premiumFeatureStaffTitle: "Tým a rozvrhy jsou v Pro",
-  premiumFeatureStaffText: "Přidávejte zaměstnance, spravujte směny a přístupy bez míchání všech rezervací.",
-  premiumFeatureOnlineTitle: "Online rezervace jsou v Pro",
-  premiumFeatureOnlineText: "Po zkušební době zůstávají klientské rezervační odkazy aktivní v Pro.",
-  premiumFeatureScheduleTitle: "Pokročilý rozvrh je v Pro",
-  premiumFeatureScheduleText: "Nastavujte směny, volné dny, pauzy a týmové rozvrhy bez omezení.",
+  premiumFeatureClientsTitle: "Klientská databáze je ve Free",
+  premiumFeatureClientsText: "Ukládejte klienty, vytvářejte opakované rezervace a držte základní historii bez Pro.",
+  premiumFeatureStaffTitle: "Více zaměstnanců je v Pro",
+  premiumFeatureStaffText: "Free ponechá vlastníka a 1 zaměstnance. Pro otevírá širší tým, role a rozvrhy nad limit Free.",
+  premiumFeatureOnlineTitle: "Online rezervace jsou ve Free",
+  premiumFeatureOnlineText: "Klientské odkazy, kalendář, služby a základní profil fungují zdarma. Pro ruší limity Free.",
+  premiumFeatureScheduleTitle: "Kalendář a rozvrh jsou ve Free",
+  premiumFeatureScheduleText: "Veďte kalendář a základní rozvrh zdarma. Pro ruší limity a rozšiřuje týmovou práci.",
   premiumFeaturePushTitle: "Push připomenutí jsou v Pro",
   premiumFeaturePushText: "Zapněte upozornění na nové, přesunuté a zrušené rezervace.",
   premiumFeatureTelegramTitle: "Telegram upozornění jsou v Pro",
   premiumFeatureTelegramText: "Po přechodu na Pro dostávejte rezervace a připomenutí v Telegramu.",
-  premiumFeatureAddressTitle: "Adresa a mapa jsou v Pro",
-  premiumFeatureAddressText: "Ukažte klientům přesnou adresu, vstup a mapu na rezervační stránce.",
+  premiumFeatureAddressTitle: "Adresa a mapa jsou ve Free",
+  premiumFeatureAddressText: "Ukažte klientům adresu, vstup a mapu na rezervační stránce bez Pro.",
 });
 
 Object.assign(generatedMobileCopy.es, {
@@ -4182,25 +4193,25 @@ Object.assign(generatedMobileCopy.es, {
   premiumUpgradeCta: "Activar Pro",
   premiumLockedBadge: "Pro",
   premiumFeatureBenefitsTitle: "Pro desbloquea",
-  premiumBenefitOnlineBooking: "reservas online y página pública",
+  premiumBenefitOnlineBooking: "reservas ilimitadas más allá de Free",
   premiumBenefitReminders: "recordatorios push y Telegram",
-  premiumBenefitTeam: "equipo, horarios y roles",
-  premiumBenefitClients: "base de clientes sin atajos manuales",
+  premiumBenefitTeam: "más empleados, horarios y roles",
+  premiumBenefitClients: "herramientas avanzadas de negocio para crecer",
   premiumYearlyNudge: "El plan anual conviene más si usarás Timviz de forma continua.",
-  premiumFeatureClientsTitle: "La base de clientes está disponible en Pro",
-  premiumFeatureClientsText: "Guarda clientes, crea reservas repetidas más rápido y conserva el historial después de la prueba.",
-  premiumFeatureStaffTitle: "Equipo y horarios están disponibles en Pro",
-  premiumFeatureStaffText: "Añade empleados, gestiona turnos y accesos sin mezclar todas las reservas.",
-  premiumFeatureOnlineTitle: "La reserva online está disponible en Pro",
-  premiumFeatureOnlineText: "Después de la prueba, los enlaces de reserva de clientes siguen activos en Pro.",
-  premiumFeatureScheduleTitle: "El horario avanzado está disponible en Pro",
-  premiumFeatureScheduleText: "Configura turnos, días libres, pausas y horarios del equipo sin límites.",
+  premiumFeatureClientsTitle: "La base de clientes está incluida en Free",
+  premiumFeatureClientsText: "Guarda clientes, crea reservas repetidas y conserva el historial básico sin Pro.",
+  premiumFeatureStaffTitle: "Más empleados están disponibles en Pro",
+  premiumFeatureStaffText: "Free mantiene al propietario y 1 empleado. Pro abre un equipo más amplio, roles y horarios sin el límite Free.",
+  premiumFeatureOnlineTitle: "La reserva online está incluida en Free",
+  premiumFeatureOnlineText: "Los enlaces de clientes, calendario, servicios y perfil básico funcionan gratis. Pro elimina los límites Free.",
+  premiumFeatureScheduleTitle: "Calendario y horario están incluidos en Free",
+  premiumFeatureScheduleText: "Gestiona el calendario y horario básico gratis. Pro elimina límites y amplía el trabajo en equipo.",
   premiumFeaturePushTitle: "Los recordatorios push están disponibles en Pro",
   premiumFeaturePushText: "Activa notificaciones para reservas nuevas, movidas y canceladas.",
   premiumFeatureTelegramTitle: "Las notificaciones de Telegram están disponibles en Pro",
   premiumFeatureTelegramText: "Recibe reservas y recordatorios en Telegram después de activar Pro.",
-  premiumFeatureAddressTitle: "Dirección y mapa están disponibles en Pro",
-  premiumFeatureAddressText: "Muestra a los clientes la dirección exacta, entrada y mapa en la página de reserva.",
+  premiumFeatureAddressTitle: "Dirección y mapa están incluidos en Free",
+  premiumFeatureAddressText: "Muestra a los clientes la dirección, entrada y mapa en la página de reserva sin Pro.",
 });
 
 Object.assign(generatedMobileCopy.de, {
@@ -4212,25 +4223,25 @@ Object.assign(generatedMobileCopy.de, {
   premiumUpgradeCta: "Pro aktivieren",
   premiumLockedBadge: "Pro",
   premiumFeatureBenefitsTitle: "Pro schaltet frei",
-  premiumBenefitOnlineBooking: "Online-Buchung und öffentliche Seite",
+  premiumBenefitOnlineBooking: "unbegrenzte Termine über Free hinaus",
   premiumBenefitReminders: "Push- und Telegram-Erinnerungen",
-  premiumBenefitTeam: "Team, Dienstpläne und Rollen",
-  premiumBenefitClients: "Kundendatenbank ohne manuelle Umwege",
+  premiumBenefitTeam: "mehr Mitarbeiter, Dienstpläne und Rollen",
+  premiumBenefitClients: "erweiterte Business-Werkzeuge für Wachstum",
   premiumYearlyNudge: "Der Jahrestarif lohnt sich mehr, wenn Sie Timviz dauerhaft nutzen.",
-  premiumFeatureClientsTitle: "Die Kundendatenbank ist in Pro verfügbar",
-  premiumFeatureClientsText: "Speichern Sie Kunden, erstellen Sie Wiederholungsbuchungen schneller und behalten Sie die Historie nach der Testphase.",
-  premiumFeatureStaffTitle: "Team und Dienstpläne sind in Pro verfügbar",
-  premiumFeatureStaffText: "Fügen Sie Mitarbeiter hinzu und verwalten Sie Schichten und Zugriffe ohne vermischte Buchungen.",
-  premiumFeatureOnlineTitle: "Online-Buchung ist in Pro verfügbar",
-  premiumFeatureOnlineText: "Nach der Testphase bleiben Kunden-Buchungslinks mit Pro aktiv.",
-  premiumFeatureScheduleTitle: "Erweiterte Dienstpläne sind in Pro verfügbar",
-  premiumFeatureScheduleText: "Richten Sie Schichten, freie Tage, Pausen und Teampläne ohne Limits ein.",
+  premiumFeatureClientsTitle: "Die Kundendatenbank ist in Free enthalten",
+  premiumFeatureClientsText: "Speichern Sie Kunden, erstellen Sie Wiederholungsbuchungen und behalten Sie die Basis-Historie ohne Pro.",
+  premiumFeatureStaffTitle: "Mehr Mitarbeiter sind in Pro verfügbar",
+  premiumFeatureStaffText: "Free behält Inhaber und 1 Mitarbeiter. Pro öffnet ein größeres Team, Rollen und Dienstpläne über das Free-Limit hinaus.",
+  premiumFeatureOnlineTitle: "Online-Buchung ist in Free enthalten",
+  premiumFeatureOnlineText: "Kundenlinks, Kalender, Services und Basisprofil funktionieren kostenlos. Pro entfernt Free-Limits.",
+  premiumFeatureScheduleTitle: "Kalender und Dienstplan sind in Free enthalten",
+  premiumFeatureScheduleText: "Nutzen Sie Kalender und Basis-Dienstplan kostenlos. Pro entfernt Limits und erweitert Teamarbeit.",
   premiumFeaturePushTitle: "Push-Erinnerungen sind in Pro verfügbar",
   premiumFeaturePushText: "Aktivieren Sie Hinweise für neue, verschobene und stornierte Buchungen.",
   premiumFeatureTelegramTitle: "Telegram-Benachrichtigungen sind in Pro verfügbar",
   premiumFeatureTelegramText: "Erhalten Sie Buchungen und Erinnerungen in Telegram nach dem Upgrade auf Pro.",
-  premiumFeatureAddressTitle: "Adresse und Karte sind in Pro verfügbar",
-  premiumFeatureAddressText: "Zeigen Sie Kunden die genaue Adresse, Eingangshinweise und Karte auf der Buchungsseite.",
+  premiumFeatureAddressTitle: "Adresse und Karte sind in Free enthalten",
+  premiumFeatureAddressText: "Zeigen Sie Kunden Adresse, Eingangshinweise und Karte auf der Buchungsseite ohne Pro.",
 });
 
 const copy = {
@@ -4807,18 +4818,27 @@ function isPremiumSettingsSection(section: MobileSettingsSection) {
   return PREMIUM_LOCKED_SETTINGS_SECTIONS.includes(section);
 }
 
-function getPackagePriceLabel(pkg: PurchasesPackage | null, fallback: string) {
-  return pkg?.product?.priceString || fallback;
+function getPackagePriceLabel(pkg: PurchasesPackage | null, storeKitProduct: IAPItemDetails | null, fallback: string) {
+  return pkg?.product?.priceString || storeKitProduct?.price || fallback;
+}
+
+function getPremiumProductId(billing: "monthly" | "yearly") {
+  return billing === "yearly" ? REVENUECAT_YEARLY_PRODUCT_ID : REVENUECAT_MONTHLY_PRODUCT_ID;
 }
 
 function findRevenueCatPackage(packages: PurchasesPackage[], billing: "monthly" | "yearly") {
-  const productId = billing === "yearly" ? REVENUECAT_YEARLY_PRODUCT_ID : REVENUECAT_MONTHLY_PRODUCT_ID;
+  const productId = getPremiumProductId(billing);
   const packageType = billing === "yearly" ? "ANNUAL" : "MONTHLY";
   return (
     packages.find((item) => item.product.identifier === productId) ||
     packages.find((item) => String(item.packageType) === packageType) ||
     null
   );
+}
+
+function findStoreKitProduct(products: IAPItemDetails[], billing: "monthly" | "yearly") {
+  const productId = getPremiumProductId(billing);
+  return products.find((item) => item.productId === productId) || null;
 }
 
 async function configureRevenueCatForProfessional(professionalId: string) {
@@ -4843,6 +4863,82 @@ function getCustomerInfoEntitlement(customerInfo: CustomerInfo) {
   );
 }
 
+let storeKitConnectionPromise: Promise<void> | null = null;
+
+async function ensureStoreKitConnection() {
+  if (Platform.OS !== "ios" && Platform.OS !== "android") {
+    throw new Error("storekit_not_available");
+  }
+  if (!storeKitConnectionPromise) {
+    storeKitConnectionPromise = InAppPurchases.connectAsync().catch((error) => {
+      const message = error instanceof Error ? error.message : "";
+      if (message.toLowerCase().includes("already connected")) return;
+      storeKitConnectionPromise = null;
+      throw error;
+    });
+  }
+  await storeKitConnectionPromise;
+}
+
+async function fetchStoreKitProducts() {
+  await ensureStoreKitConnection();
+  const response = await InAppPurchases.getProductsAsync(PREMIUM_PRODUCT_IDS);
+  if (response.responseCode !== IAPResponseCode.OK) {
+    throw new Error("storekit_unavailable");
+  }
+  const products = response.results || [];
+  return {
+    monthly: findStoreKitProduct(products, "monthly"),
+    yearly: findStoreKitProduct(products, "yearly"),
+  };
+}
+
+async function waitForStoreKitPurchase(productId: string) {
+  await ensureStoreKitConnection();
+  return await new Promise<InAppPurchase>((resolve, reject) => {
+    let settled = false;
+    const settle = (callback: () => void) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timeout);
+      callback();
+    };
+    const timeout = setTimeout(() => settle(() => reject(new Error("purchase_timeout"))), 120000);
+
+    InAppPurchases.setPurchaseListener((result) => {
+      if (result.responseCode === IAPResponseCode.OK) {
+        const purchase = (result.results || []).find(
+          (item) =>
+            item.productId === productId &&
+            (item.purchaseState === InAppPurchaseState.PURCHASED || item.purchaseState === InAppPurchaseState.RESTORED)
+        );
+        if (purchase) {
+          settle(() => resolve(purchase));
+        }
+        return;
+      }
+      if (result.responseCode === IAPResponseCode.USER_CANCELED) {
+        settle(() => reject(new Error("purchase_cancelled")));
+        return;
+      }
+      if (result.responseCode === IAPResponseCode.DEFERRED) {
+        settle(() => reject(new Error("purchase_deferred")));
+        return;
+      }
+      settle(() => reject(new Error(`storekit_error:${result.errorCode ?? "unknown"}`)));
+    });
+
+    InAppPurchases.purchaseItemAsync(productId).catch((error) => settle(() => reject(error)));
+  });
+}
+
+function getStoreKitPremiumUntil(purchase: InAppPurchase, billing: "monthly" | "yearly") {
+  const purchasedAt = purchase.purchaseTime ? new Date(purchase.purchaseTime) : new Date();
+  const premiumUntil = Number.isFinite(purchasedAt.getTime()) ? purchasedAt : new Date();
+  premiumUntil.setDate(premiumUntil.getDate() + (billing === "yearly" ? 366 : 32));
+  return premiumUntil.toISOString();
+}
+
 function formatReminderLead(minutes: number, t: Record<string, string>) {
   if (minutes >= 1440) return t.dayBefore;
   if (minutes >= 60 && minutes % 60 === 0) return `${minutes / 60} ${t.hoursBefore}`;
@@ -4857,12 +4953,12 @@ function normalizeTelegramPanel(payload: any, fallback?: TelegramPanelState | nu
     connected: payload?.connected === true,
     chatId: typeof payload?.chatId === "string" ? payload.chatId : null,
     settings: {
-      notificationsNewBooking: typeof settings.notificationsNewBooking === "boolean" ? settings.notificationsNewBooking : fallback?.settings.notificationsNewBooking ?? true,
-      notificationsCabinetBooking: typeof settings.notificationsCabinetBooking === "boolean" ? settings.notificationsCabinetBooking : fallback?.settings.notificationsCabinetBooking ?? true,
+      notificationsNewBooking: typeof settings.notificationsNewBooking === "boolean" ? settings.notificationsNewBooking : fallback?.settings.notificationsNewBooking ?? false,
+      notificationsCabinetBooking: typeof settings.notificationsCabinetBooking === "boolean" ? settings.notificationsCabinetBooking : fallback?.settings.notificationsCabinetBooking ?? false,
       notificationsRescheduled: typeof settings.notificationsRescheduled === "boolean" ? settings.notificationsRescheduled : fallback?.settings.notificationsRescheduled ?? true,
       notificationsCancelled: typeof settings.notificationsCancelled === "boolean" ? settings.notificationsCancelled : fallback?.settings.notificationsCancelled ?? true,
       notificationsReminder: typeof settings.notificationsReminder === "boolean" ? settings.notificationsReminder : fallback?.settings.notificationsReminder ?? true,
-      notificationsToday: typeof settings.notificationsToday === "boolean" ? settings.notificationsToday : fallback?.settings.notificationsToday ?? true,
+      notificationsToday: typeof settings.notificationsToday === "boolean" ? settings.notificationsToday : fallback?.settings.notificationsToday ?? false,
       forwardingEnabled: typeof settings.forwardingEnabled === "boolean" ? settings.forwardingEnabled : fallback?.settings.forwardingEnabled ?? true,
       reminderLeadMinutes: typeof settings.reminderLeadMinutes === "number" ? settings.reminderLeadMinutes : fallback?.settings.reminderLeadMinutes ?? 120,
     },
@@ -5455,6 +5551,7 @@ export default function App() {
   const [serviceCatalog, setServiceCatalog] = useState<ServiceCatalogCategory[]>([]);
   const [staffSnapshot, setStaffSnapshot] = useState<StaffSnapshot | null>(null);
   const [activeTab, setActiveTab] = useState<AppTab>("calendar");
+  const [servicesModeRequest, setServicesModeRequest] = useState<{ mode: ServiceTabMode; id: number } | null>(null);
   const [settingsSection, setSettingsSection] = useState<MobileSettingsSection>("general");
   const [selectedDate, setSelectedDate] = useState(getTodayIso());
   const [loadingSession, setLoadingSession] = useState(true);
@@ -5467,6 +5564,8 @@ export default function App() {
   const [pendingBiometricSession, setPendingBiometricSession] = useState<MobileSession | null>(null);
   const [visitComposerOpen, setVisitComposerOpen] = useState(false);
   const [registerDetailsOpen, setRegisterDetailsOpen] = useState(false);
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const handleServicesModeRequestHandled = useCallback(() => setServicesModeRequest(null), []);
   const detectedCountry = useMemo(() => getDetectedCountry(), []);
   const detectedTimezone = useMemo(() => getDetectedTimezone(), []);
   const t = copy[language];
@@ -5493,6 +5592,8 @@ export default function App() {
   const pendingServiceSavesRef = useRef<Map<string, PendingServiceSave>>(new Map());
   const serviceSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const serviceSaveInFlightRef = useRef(false);
+  const serviceSaveFlushPromiseRef = useRef<Promise<void> | null>(null);
+  const serviceCreatePromiseRef = useRef<Promise<void> | null>(null);
   const workspaceLanguageAppliedRef = useRef(false);
   const autoPushRegisteringRef = useRef(false);
   const googleConfigured = Platform.select({
@@ -5518,6 +5619,17 @@ export default function App() {
     hasBiometricUnlockAvailable()
       .then(setBiometricAvailable)
       .catch(() => setBiometricAvailable(false));
+  }, []);
+
+  useEffect(() => {
+    const showEvent = Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
+    const hideEvent = Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
+    const showSubscription = Keyboard.addListener(showEvent, () => setKeyboardVisible(true));
+    const hideSubscription = Keyboard.addListener(hideEvent, () => setKeyboardVisible(false));
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
   }, []);
 
   function hasVisibleWorkspaceData() {
@@ -5663,37 +5775,44 @@ export default function App() {
   }
 
   async function flushPendingServiceSaves() {
-    if (serviceSaveInFlightRef.current || !session) return;
+    if (!session) return;
+    if (serviceSaveFlushPromiseRef.current) return serviceSaveFlushPromiseRef.current;
     const pendingItems = Array.from(pendingServiceSavesRef.current.values()).slice(0, 5);
     if (!pendingItems.length) return;
 
-    serviceSaveInFlightRef.current = true;
-    try {
-      const result = await apiFetch("/api/mobile/pro/services", {
-        method: "POST",
-        body: JSON.stringify({
-          services: pendingItems.map((item) => item.payload),
-        }),
-      });
-      const savedServices: ServiceRecord[] = Array.isArray(result?.services)
-        ? result.services
-        : result?.service
-          ? [result.service]
-          : [];
+    const flushPromise = (async () => {
+      serviceSaveInFlightRef.current = true;
+      try {
+        const result = await apiFetch("/api/mobile/pro/services", {
+          method: "POST",
+          body: JSON.stringify({
+            services: pendingItems.map((item) => item.payload),
+          }),
+        });
+        const savedServices: ServiceRecord[] = Array.isArray(result?.services)
+          ? result.services
+          : result?.service
+            ? [result.service]
+            : [];
 
-      pendingItems.forEach((item) => pendingServiceSavesRef.current.delete(item.key));
-      replaceOptimisticServices(savedServices, pendingItems);
-    } catch {
-      pendingItems.forEach((item) => {
-        pendingServiceSavesRef.current.set(item.key, { ...item, attempts: item.attempts + 1 });
-      });
-      scheduleServiceSaveFlush(2500);
-    } finally {
-      serviceSaveInFlightRef.current = false;
-      if (pendingServiceSavesRef.current.size) {
-        scheduleServiceSaveFlush(650);
+        pendingItems.forEach((item) => pendingServiceSavesRef.current.delete(item.key));
+        replaceOptimisticServices(savedServices, pendingItems);
+      } catch {
+        pendingItems.forEach((item) => {
+          pendingServiceSavesRef.current.set(item.key, { ...item, attempts: item.attempts + 1 });
+        });
+        scheduleServiceSaveFlush(2500);
+      } finally {
+        serviceSaveInFlightRef.current = false;
+        serviceSaveFlushPromiseRef.current = null;
+        if (pendingServiceSavesRef.current.size) {
+          scheduleServiceSaveFlush(650);
+        }
       }
-    }
+    })();
+
+    serviceSaveFlushPromiseRef.current = flushPromise;
+    return flushPromise;
   }
 
   function makeOptimisticAppointment(input: {
@@ -5725,6 +5844,15 @@ export default function App() {
   function revalidateWorkspace(date = selectedDate, silent = true) {
     if (!session) return;
     void refreshAll(session, date, { silent });
+  }
+
+  function openServicesCatalog() {
+    setServicesModeRequest({ mode: "catalog", id: Date.now() });
+    setActiveTab("services");
+  }
+
+  function patchWorkspaceBusiness(patch: Partial<WorkspaceSnapshot["business"]>) {
+    setWorkspace((current) => current ? { ...current, business: { ...current.business, ...patch } } : current);
   }
 
   function openSettingsSection(section: MobileSettingsSection = "general") {
@@ -6198,6 +6326,7 @@ export default function App() {
   async function signOut() {
     setBusy(true);
     pendingServiceSavesRef.current.clear();
+    serviceCreatePromiseRef.current = null;
     workspaceLanguageAppliedRef.current = false;
     if (serviceSaveTimerRef.current) {
       clearTimeout(serviceSaveTimerRef.current);
@@ -6240,6 +6369,19 @@ export default function App() {
   }
 
   async function createVisit() {
+    const draftHasSelectedService = (Array.isArray(visitDraft.items) ? visitDraft.items : []).some((item) => {
+      const serviceName = safeText(item.serviceName).trim();
+      return Boolean(item.serviceId || (serviceName && serviceName !== t.withoutService));
+    });
+
+    if (!workspace?.services.length && !pendingServiceSavesRef.current.size && !serviceCreatePromiseRef.current && !draftHasSelectedService) {
+      Alert.alert(t.onboardingStartTitle, t.onboardingStartText, [
+        { text: t.cancel, style: "cancel" },
+        { text: t.chooseFromCatalog || t.addService, onPress: openServicesCatalog },
+      ]);
+      return false;
+    }
+
     const items = getNormalizedVisitItems();
     const validationMessage = getVisitValidationMessage(items);
     if (validationMessage) {
@@ -6267,8 +6409,11 @@ export default function App() {
     mergeCalendarAppointments(appointmentDate, (appointments) =>
       [...appointments, ...optimisticAppointments].sort((left, right) => left.startTime.localeCompare(right.startTime))
     );
-    setVisitDraft(createDefaultVisitDraft(appointmentDate, items[0]?.startTime || "09:00"));
-    void apiFetch("/api/mobile/pro/calendar", {
+    setBusy(true);
+    try {
+      await serviceCreatePromiseRef.current;
+      await flushPendingServiceSaves();
+      await apiFetch("/api/mobile/pro/calendar", {
         method: "POST",
         body: JSON.stringify({
           targetProfessionalId: visitDraft.targetProfessionalId,
@@ -6284,18 +6429,20 @@ export default function App() {
             notes,
           })),
         }),
-      })
-      .then(() => {
-        if (!hadAppointmentsBefore) {
-          Alert.alert("Timviz", t.firstAppointmentCreated);
-        }
-        return refreshCalendarOnly(session, appointmentDate);
-      })
-      .catch((error) => {
-        Alert.alert(t.addVisit, error instanceof Error ? error.message : t.addVisit);
-        revalidateWorkspace(appointmentDate);
       });
-    return true;
+      setVisitDraft(createDefaultVisitDraft(appointmentDate, items[0]?.startTime || "09:00"));
+      if (!hadAppointmentsBefore) {
+        Alert.alert("Timviz", t.firstAppointmentCreated);
+      }
+      await refreshCalendarOnly(session, appointmentDate);
+      return true;
+    } catch (error) {
+      Alert.alert(t.addVisit, error instanceof Error ? error.message : t.addVisit);
+      revalidateWorkspace(appointmentDate);
+      return false;
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function saveEditedVisit() {
@@ -6546,7 +6693,7 @@ export default function App() {
     if (isFirstService) {
       openVisitComposerAfterService(optimisticService);
     }
-    void apiFetch("/api/mobile/pro/services", {
+    const savePromise = apiFetch("/api/mobile/pro/services", {
         method: "POST",
         body: JSON.stringify({
           name: optimisticService.name,
@@ -6561,7 +6708,14 @@ export default function App() {
       .catch((error) => {
         Alert.alert(t.addService, error instanceof Error ? error.message : t.addService);
         revalidateWorkspace();
+      })
+      .finally(() => {
+        if (serviceCreatePromiseRef.current === savePromise) {
+          serviceCreatePromiseRef.current = null;
+        }
       });
+    serviceCreatePromiseRef.current = savePromise;
+    void savePromise;
     return true;
   }
 
@@ -6739,6 +6893,7 @@ export default function App() {
           setActiveTab={setActiveTab}
           apiFetch={apiFetch}
           onRefreshWorkspace={() => refreshAll()}
+          onPatchBusiness={patchWorkspaceBusiness}
           onOpenNotification={(item) => {
             setActiveTab("calendar");
             setSelectedDate(item.appointmentDate);
@@ -6772,7 +6927,7 @@ export default function App() {
             onResizeAppointment={(appointment) => updateAppointmentTime(appointment, appointment.startTime, addMinutes(appointment.endTime, 10))}
             onUpdateBlockedTime={updateAppointmentTime}
             onCreateBlockedTime={createBlockedTime}
-            onOpenServices={() => setActiveTab("services")}
+            onOpenServices={openServicesCatalog}
             onOpenSchedule={() => openSettingsSection("schedule")}
             busy={busy}
             refreshing={refreshing}
@@ -6782,11 +6937,14 @@ export default function App() {
             loadCalendarDays={loadCalendarDays}
           />
         ) : (
+          <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.workspaceKeyboard}>
           <ScrollView
             style={styles.workspaceScroll}
-            contentContainerStyle={styles.workspaceContent}
+            contentContainerStyle={[styles.workspaceContent, keyboardVisible && styles.workspaceContentKeyboardOpen]}
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => refreshAll()} tintColor="#7C3AED" />}
             showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
           >
             {activeTab === "services" ? (
               <ServicesTab
@@ -6801,45 +6959,46 @@ export default function App() {
                 onAddCatalog={addCatalogService}
                 onDelete={removeService}
                 busy={busy}
+                modeRequest={servicesModeRequest}
+                onModeRequestHandled={handleServicesModeRequestHandled}
               />
             ) : null}
             {activeTab === "clients" ? (
-              hasPremium ? (
-                <ClientsTab
-                  t={t}
-                  clients={clients}
-                  draft={clientDraft}
-                  setDraft={setClientDraft}
-                  onCreate={createClient}
-                  onCreateVisit={() => {
-                    setActiveTab("calendar");
-                    setVisitDraft({
-                      ...createDefaultVisitDraft(selectedDate, getRoundedTime(10)),
-                      items: [{ ...createVisitServiceDraft(getRoundedTime(10)), serviceName: t.withoutService }],
-                    });
-                    setVisitComposerOpen(true);
-                  }}
-                  busy={busy}
-                />
-              ) : (
-                <PremiumFeatureGate t={t} feature="clients" professional={workspace?.professional} onUpgrade={() => openSettingsSection("general")} />
-              )
+              <ClientsTab
+                t={t}
+                clients={clients}
+                draft={clientDraft}
+                setDraft={setClientDraft}
+                onCreate={createClient}
+                onCreateVisit={() => {
+                  if (!workspace?.services.length) {
+                    openServicesCatalog();
+                    return;
+                  }
+                  const startTime = getRoundedTime(10);
+                  const firstService = workspace.services[0];
+                  setActiveTab("calendar");
+                  setVisitDraft({
+                    ...createDefaultVisitDraft(selectedDate, startTime),
+                    serviceId: firstService.id,
+                    items: [createVisitServiceDraft(startTime, firstService, language)],
+                  });
+                  setVisitComposerOpen(true);
+                }}
+                busy={busy}
+              />
             ) : null}
             {activeTab === "staff" ? (
-              hasPremium ? (
-                <StaffWorkspaceTab
-                  t={t}
-                  language={language}
-                  staff={staffSnapshot}
-                  workspace={workspace}
-                  busy={busy}
-                  apiFetch={apiFetch}
-                  onRefreshWorkspace={() => refreshAll(session, selectedDate)}
-                  onSaveSchedule={saveStaffSchedule}
-                />
-              ) : (
-                <PremiumFeatureGate t={t} feature="staff" professional={workspace?.professional} onUpgrade={() => openSettingsSection("general")} />
-              )
+              <StaffWorkspaceTab
+                t={t}
+                language={language}
+                staff={staffSnapshot}
+                workspace={workspace}
+                busy={busy}
+                apiFetch={apiFetch}
+                onRefreshWorkspace={() => refreshAll(session, selectedDate)}
+                onSaveSchedule={saveStaffSchedule}
+              />
             ) : null}
             {activeTab === "settings" ? (
               <SettingsTab
@@ -6848,6 +7007,7 @@ export default function App() {
                 setLanguage={setLanguage}
                 workspace={workspace}
                 staff={staffSnapshot}
+                catalog={serviceCatalog}
                 apiFetch={apiFetch}
                 onRefreshWorkspace={() => refreshAll(session, selectedDate)}
                 onWorkspaceUpdated={(nextWorkspace) => setWorkspace(withPendingServiceSaves(nextWorkspace))}
@@ -6863,8 +7023,9 @@ export default function App() {
 	              />
             ) : null}
           </ScrollView>
+          </KeyboardAvoidingView>
         )}
-        <BottomNavigation activeTab={activeTab} setActiveTab={setActiveTab} lockedTabs={hasPremium ? [] : PREMIUM_LOCKED_TABS} t={t} />
+        {!keyboardVisible ? <BottomNavigation activeTab={activeTab} setActiveTab={setActiveTab} lockedTabs={hasPremium ? [] : PREMIUM_LOCKED_TABS} t={t} /> : null}
         <StatusBar style="dark" />
       </SafeAreaView>
     );
@@ -7074,6 +7235,7 @@ function CalendarTab({
   const [blockedTimeDraft, setBlockedTimeDraft] = useState<BlockedTimeDraft | null>(null);
   const [visitPickerMode, setVisitPickerMode] = useState<"client" | "service" | null>(null);
   const [noServicesHelper, setNoServicesHelper] = useState<{ date: string; time: string; targetProfessionalId?: string; source: "time" | "visit" } | null>(null);
+  const [noServicesIntroDismissed, setNoServicesIntroDismissed] = useState(false);
   const [editingServiceIndex, setEditingServiceIndex] = useState(0);
   const [serviceQuery, setServiceQuery] = useState("");
   const [clientQuery, setClientQuery] = useState("");
@@ -7203,7 +7365,7 @@ function CalendarTab({
     ? (isSelectedDateToday ? t.noBookingsTodaySpark || t.noBookingsToday : t.noBookingsThisDay || t.emptyCalendarTitle)
     : t.firstServiceTitle;
   const emptyCalendarText = hasServices ? t.fillFreeWindowsText || t.emptyCalendarText : t.calendarNoServicesText || t.firstRunCalendarText;
-  const emptyCalendarPrimaryLabel = hasServices ? t.createAppointmentButton || t.addFirstVisit : `+ ${t.addService}`;
+  const emptyCalendarPrimaryLabel = hasServices ? t.createAppointmentButton || t.addFirstVisit : t.chooseFromCatalog || t.addService;
   const emptyCalendarSecondaryLabel = "";
   const emptyCalendarTop = (() => {
     const workStart = selectedSchedule.enabled ? timeToMinutes(selectedSchedule.startTime) : 9 * 60;
@@ -7298,6 +7460,32 @@ function CalendarTab({
     }, CALENDAR_BACKGROUND_SYNC_MS);
     return () => clearInterval(interval);
   }, [loadCalendarSnapshotDates, preloadDatesKey, viewMode, visibleDatesKey]);
+
+  useEffect(() => {
+    if (!workspace?.professional.id || hasServices || noServicesIntroDismissed) return;
+    if (composerOpen || blockedTimeDraft || timeAction || noServicesHelper || memberPickerOpen || viewMenuOpen) return;
+    const timer = setTimeout(() => {
+      setNoServicesHelper({
+        date: selectedDate,
+        time: getRoundedTime(10),
+        targetProfessionalId: primaryMember?.id,
+        source: "time",
+      });
+    }, 450);
+    return () => clearTimeout(timer);
+  }, [
+    workspace?.professional.id,
+    hasServices,
+    noServicesIntroDismissed,
+    composerOpen,
+    blockedTimeDraft,
+    timeAction,
+    noServicesHelper,
+    memberPickerOpen,
+    viewMenuOpen,
+    selectedDate,
+    primaryMember?.id,
+  ]);
 
   function getAppointmentsForDate(date: string) {
     return appointmentsByDate.get(date) || [];
@@ -7418,24 +7606,6 @@ function CalendarTab({
     });
   }
 
-  function markVisitItemWithoutService(index = editingServiceIndex) {
-    const draftItems = Array.isArray(visitDraft.items) && visitDraft.items.length ? visitDraft.items : [createVisitServiceDraft(visitDraft.startTime || "09:00")];
-    const currentItem = draftItems[index] || draftItems[0] || createVisitServiceDraft(visitDraft.startTime || "09:00");
-    const startTime = safeText(currentItem.startTime) || visitDraft.startTime || getRoundedTime(10);
-    const fallbackEndTime = addMinutes(startTime, Math.max(5, currentItem.durationMinutes || 15));
-    const endTime = isValidTime(safeText(currentItem.endTime)) && timeToMinutes(currentItem.endTime) > timeToMinutes(startTime) ? currentItem.endTime : fallbackEndTime;
-    updateVisitItem(index, {
-      serviceId: "",
-      serviceName: t.withoutService,
-      startTime,
-      endTime,
-      durationMinutes: Math.max(5, timeToMinutes(endTime) - timeToMinutes(startTime)),
-      priceAmount: Number(currentItem.priceAmount || 0),
-    });
-    setServiceQuery("");
-    setVisitPickerMode(null);
-  }
-
   function openVisitServicePicker(index: number, item: VisitServiceDraft) {
     setEditingServiceIndex(index);
     if (!hasServices) {
@@ -7450,27 +7620,19 @@ function CalendarTab({
     setVisitPickerMode("service");
   }
 
+  function closeNoServicesHelper() {
+    setNoServicesIntroDismissed(true);
+    setNoServicesHelper(null);
+  }
+
   function openServicesFromCalendar() {
+    setNoServicesIntroDismissed(true);
     setNoServicesHelper(null);
     setTimeAction(null);
     setVisitPickerMode(null);
     setComposerOpen(false);
     setEditingAppointment(null);
     onOpenServices();
-  }
-
-  function continueWithoutServiceFromHelper() {
-    const helper = noServicesHelper;
-    setNoServicesHelper(null);
-    if (helper?.source === "visit") {
-      markVisitItemWithoutService(editingServiceIndex);
-      return;
-    }
-    const action = helper || timeAction;
-    setTimeAction(null);
-    if (action) {
-      openComposerAt(action.time, action.date, action.targetProfessionalId, { withoutService: true });
-    }
   }
 
   function addAnotherService() {
@@ -7501,17 +7663,14 @@ function CalendarTab({
     });
   }
 
-  function openComposerAt(time: string, date = selectedDate, targetProfessionalId = primaryMember?.id, options: { withoutService?: boolean } = {}) {
-    if (!hasServices && !options.withoutService) {
+  function openComposerAt(time: string, date = selectedDate, targetProfessionalId = primaryMember?.id) {
+    if (!hasServices) {
       setNoServicesHelper({ date, time, targetProfessionalId, source: "time" });
       return;
     }
     setEditingAppointment(null);
     setSelectedDate(date);
     const nextDraft = createDefaultVisitDraft(date, time);
-    if (options.withoutService) {
-      nextDraft.items = [{ ...createVisitServiceDraft(time), serviceName: t.withoutService }];
-    }
     setVisitDraft({ ...nextDraft, targetProfessionalId });
     setComposerOpen(true);
   }
@@ -7794,7 +7953,7 @@ function CalendarTab({
       ) : null}
 
       <Modal transparent visible={composerOpen} animationType="slide" onRequestClose={() => setComposerOpen(false)}>
-        <View style={styles.modalBackdrop}>
+        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.modalBackdrop}>
           <View style={[styles.visitSheet, styles.visitEditorSheet]}>
             <View style={styles.sheetHandle} />
             <View style={styles.sheetHeader}>
@@ -7915,10 +8074,7 @@ function CalendarTab({
                           <Text style={styles.firstRunText}>{t.servicesEmptyPickerText}</Text>
                           <View style={styles.firstRunActions}>
                             <Pressable style={styles.firstRunPrimaryButton} onPress={openServicesFromCalendar}>
-                              <Text style={styles.firstRunPrimaryText}>{t.createServiceAction}</Text>
-                            </Pressable>
-                            <Pressable style={styles.firstRunSecondaryButton} onPress={() => markVisitItemWithoutService(editingServiceIndex)}>
-                              <Text style={styles.firstRunSecondaryText}>{t.bookingWithoutService}</Text>
+                              <Text style={styles.firstRunPrimaryText}>{t.chooseFromCatalog}</Text>
                             </Pressable>
                           </View>
                         </View>
@@ -7934,10 +8090,7 @@ function CalendarTab({
                     <Text style={styles.firstRunText}>{t.servicesEmptyPickerText}</Text>
                     <View style={styles.firstRunActions}>
                       <Pressable style={styles.firstRunPrimaryButton} onPress={openServicesFromCalendar}>
-                        <Text style={styles.firstRunPrimaryText}>{t.createServiceAction}</Text>
-                      </Pressable>
-                      <Pressable style={styles.firstRunSecondaryButton} onPress={() => markVisitItemWithoutService(editingServiceIndex)}>
-                        <Text style={styles.firstRunSecondaryText}>{t.bookingWithoutService}</Text>
+                        <Text style={styles.firstRunPrimaryText}>{t.chooseFromCatalog}</Text>
                       </Pressable>
                     </View>
                   </View>
@@ -8050,7 +8203,7 @@ function CalendarTab({
               </>
             )}
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
 
       <Modal transparent visible={memberPickerOpen} animationType="fade" onRequestClose={() => setMemberPickerOpen(false)}>
@@ -8138,23 +8291,9 @@ function CalendarTab({
                 <Text style={styles.noServicesActionText}>{t.onboardingStartText}</Text>
                 <Pressable
                   style={[styles.firstRunPrimaryButton, styles.noServicesFullButton]}
-                  onPress={() => {
-                    setTimeAction(null);
-                    onOpenServices();
-                  }}
+                  onPress={openServicesFromCalendar}
                 >
-                  <Text style={styles.firstRunPrimaryText}>{t.addService}</Text>
-                </Pressable>
-                <Pressable
-                  style={[styles.firstRunSecondaryButton, styles.noServicesFullButton]}
-                  onPress={() => {
-                    if (!timeAction) return;
-                    const action = timeAction;
-                    setTimeAction(null);
-                    openComposerAt(action.time, action.date, action.targetProfessionalId, { withoutService: true });
-                  }}
-                >
-                  <Text style={styles.firstRunSecondaryText}>{t.createVisitWithoutService}</Text>
+                  <Text style={styles.firstRunPrimaryText}>{t.chooseFromCatalog}</Text>
                 </Pressable>
                 <Pressable style={styles.noServicesCancelButton} onPress={() => setTimeAction(null)}>
                   <Text style={styles.noServicesCancelText}>{t.cancel}</Text>
@@ -8205,8 +8344,8 @@ function CalendarTab({
         </Pressable>
       </Modal>
 
-      <Modal transparent visible={Boolean(noServicesHelper)} animationType="fade" onRequestClose={() => setNoServicesHelper(null)}>
-        <Pressable style={styles.timeActionBackdrop} onPress={() => setNoServicesHelper(null)}>
+      <Modal transparent visible={Boolean(noServicesHelper)} animationType="fade" onRequestClose={closeNoServicesHelper}>
+        <Pressable style={styles.timeActionBackdrop} onPress={closeNoServicesHelper}>
           <View style={styles.timeActionMenu}>
             <View style={styles.noServicesActionSheet}>
               <View style={styles.sheetHandle} />
@@ -8216,12 +8355,9 @@ function CalendarTab({
               <Text style={styles.noServicesActionTitle}>{t.onboardingStartTitle}</Text>
               <Text style={styles.noServicesActionText}>{t.onboardingStartText}</Text>
               <Pressable style={[styles.firstRunPrimaryButton, styles.noServicesFullButton]} onPress={openServicesFromCalendar}>
-                <Text style={styles.firstRunPrimaryText}>{t.addService}</Text>
+                <Text style={styles.firstRunPrimaryText}>{t.chooseFromCatalog}</Text>
               </Pressable>
-              <Pressable style={[styles.firstRunSecondaryButton, styles.noServicesFullButton]} onPress={continueWithoutServiceFromHelper}>
-                <Text style={styles.firstRunSecondaryText}>{t.createVisitWithoutService}</Text>
-              </Pressable>
-              <Pressable style={styles.noServicesCancelButton} onPress={() => setNoServicesHelper(null)}>
+              <Pressable style={styles.noServicesCancelButton} onPress={closeNoServicesHelper}>
                 <Text style={styles.noServicesCancelText}>{t.cancel}</Text>
               </Pressable>
             </View>
@@ -8230,7 +8366,7 @@ function CalendarTab({
       </Modal>
 
       <Modal transparent visible={Boolean(blockedTimeDraft)} animationType="slide" onRequestClose={() => setBlockedTimeDraft(null)}>
-        <View style={styles.modalBackdrop}>
+        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.modalBackdrop}>
           <View style={styles.visitSheet}>
             <View style={styles.sheetHandle} />
             <View style={styles.sheetHeader}>
@@ -8276,7 +8412,7 @@ function CalendarTab({
               </Pressable>
             ) : null}
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );
@@ -8925,6 +9061,7 @@ function WorkspaceHeader({
   setActiveTab,
   apiFetch,
   onRefreshWorkspace,
+  onPatchBusiness,
   onOpenNotification,
   onOpenSettingsSection,
   onSignOut,
@@ -8938,6 +9075,7 @@ function WorkspaceHeader({
   setActiveTab: (tab: AppTab) => void;
   apiFetch: (path: string, options?: RequestInit) => Promise<any>;
   onRefreshWorkspace: () => void;
+  onPatchBusiness: (patch: Partial<WorkspaceSnapshot["business"]>) => void;
   onOpenNotification: (item: MobileNotificationRecord) => void;
   onOpenSettingsSection: (section?: MobileSettingsSection) => void;
   onSignOut: () => void;
@@ -8955,6 +9093,7 @@ function WorkspaceHeader({
   const [notifications, setNotifications] = useState<MobileNotificationsPayload>({});
   const [loadingNotifications, setLoadingNotifications] = useState(false);
   const [busy, setBusy] = useState(false);
+  const bookingToggleRequestRef = useRef(0);
   const publicBookingUrl = workspace?.business.publicBookingUrl || "";
   const onlineBookingEnabled = workspace?.business.allowOnlineBooking === true;
   const businessHasPhoto = Boolean(workspace?.business.photos?.some((photo) => photo.status !== "blocked"));
@@ -8973,7 +9112,12 @@ function WorkspaceHeader({
     : !workspace?.services?.length
       ? t.setupFirstServiceText
       : (t.setupRemaining || t.setupAssistantText).replace("{count}", String(setupMissingCount));
-  const pendingCount = (notifications.pendingOnlineBookings?.length || 0) + (notifications.pendingJoinRequests?.length || 0);
+  const visibleAppNotifications = (notifications.appNotifications || []).filter((item) => item.type !== "online_booking");
+  const unreadAppNotificationCount = visibleAppNotifications.filter((item) => !item.readAt).length;
+  const pendingCount =
+    (notifications.pendingOnlineBookings?.length || 0) +
+    (notifications.pendingJoinRequests?.length || 0) +
+    unreadAppNotificationCount;
 
   function mergeSupportMessages(current: SupportChatMessage[], incoming: SupportChatMessage[]) {
     const seen = new Set(current.map((message) => message.id));
@@ -9069,17 +9213,30 @@ function WorkspaceHeader({
   }
 
   async function togglePublicBooking() {
+    const previousValue = onlineBookingEnabled;
+    const nextValue = !previousValue;
+    const requestId = bookingToggleRequestRef.current + 1;
+    bookingToggleRequestRef.current = requestId;
+    onPatchBusiness({ allowOnlineBooking: nextValue });
     setBusy(true);
     try {
-      await apiFetch("/api/mobile/pro/settings", {
+      const payload = await apiFetch("/api/mobile/pro/settings", {
         method: "PATCH",
-        body: JSON.stringify({ business: { allowOnlineBooking: !onlineBookingEnabled } }),
+        body: JSON.stringify({ business: { allowOnlineBooking: nextValue } }),
       });
-      onRefreshWorkspace();
+      if (bookingToggleRequestRef.current !== requestId) return;
+      if (typeof payload?.workspace?.business?.allowOnlineBooking === "boolean") {
+        onPatchBusiness({ allowOnlineBooking: payload.workspace.business.allowOnlineBooking });
+      }
+      void onRefreshWorkspace();
     } catch (error) {
+      if (bookingToggleRequestRef.current !== requestId) return;
+      onPatchBusiness({ allowOnlineBooking: previousValue });
       Alert.alert(t.bookingPage, error instanceof Error ? error.message : t.supportFailed);
     } finally {
-      setBusy(false);
+      if (bookingToggleRequestRef.current === requestId) {
+        setBusy(false);
+      }
     }
   }
 
@@ -9143,6 +9300,33 @@ function WorkspaceHeader({
     } finally {
       setBusy(false);
     }
+  }
+
+  function openAppNotification(item: MobileAppNotificationRecord) {
+    if (!item.readAt) {
+      const readAt = new Date().toISOString();
+      setNotifications((current) => ({
+        ...current,
+        appNotifications: (current.appNotifications || []).map((notification) =>
+          notification.id === item.id ? { ...notification, readAt } : notification
+        )
+      }));
+      apiFetch("/api/mobile/pro/notifications", {
+        method: "PATCH",
+        body: JSON.stringify({ ids: [item.id] })
+      }).catch(() => undefined);
+    }
+
+    if (item.type === "team_join_request") {
+      openJoinRequestsFromNotification();
+    }
+  }
+
+  function openJoinRequestsFromNotification() {
+    setNotifications((current) => ({ ...current, pendingJoinRequests: [] }));
+    apiFetch("/api/mobile/pro/join-requests", { method: "PATCH" }).catch(() => undefined);
+    setActiveTab("settings");
+    onOpenSettingsSection("general");
   }
 
   function renderPanel() {
@@ -9209,7 +9393,7 @@ function WorkspaceHeader({
             {panel === "share" ? (
               <View style={styles.headerPanelBody}>
                 <Text style={styles.panelHint}>{t.bookingPageText}</Text>
-                <Pressable style={styles.shareToggleRow} onPress={togglePublicBooking} disabled={busy}>
+                <Pressable style={styles.shareToggleRow} onPress={togglePublicBooking} disabled={!workspace}>
                   <View>
                     <Text style={styles.shareToggleTitle}>{onlineBookingEnabled ? t.onlineBookingOn : t.onlineBookingOff}</Text>
                     <Text style={styles.clientOptionCaption}>{workspace?.business.name || "Timviz"}</Text>
@@ -9282,15 +9466,38 @@ function WorkspaceHeader({
                     <Text style={styles.notificationHeadingText}>{t.notificationsNew}</Text>
                     <Text style={styles.notificationHeadingCaption}>{t.notificationPendingBookings}</Text>
                   </View>
-                  <Text style={styles.notificationBadgeText}>{notifications.pendingOnlineBookings?.length || 0}</Text>
+                  <Text style={styles.notificationBadgeText}>{pendingCount}</Text>
                 </View>
                 {loadingNotifications ? <ActivityIndicator color="#6D4AFF" /> : null}
-                {!loadingNotifications && !(notifications.pendingOnlineBookings?.length || notifications.pendingJoinRequests?.length) ? (
+                {!loadingNotifications && !(notifications.pendingOnlineBookings?.length || notifications.pendingJoinRequests?.length || visibleAppNotifications.length) ? (
                   <View style={styles.notificationEmptyCard}>
                     <Text style={styles.notificationCardTitle}>{t.reminders}</Text>
                     <Text style={styles.clientOptionCaption}>{t.notificationEmpty}</Text>
                   </View>
                 ) : null}
+                {visibleAppNotifications.map((item) => (
+                  <AppNotificationCard
+                    key={item.id}
+                    item={item}
+                    language={language}
+                    onPress={() => {
+                      close();
+                      openAppNotification(item);
+                    }}
+                  />
+                ))}
+                {(notifications.pendingJoinRequests || []).map((item) => (
+                  <JoinRequestNotificationCard
+                    key={item.id}
+                    item={item}
+                    t={t}
+                    language={language}
+                    onPress={() => {
+                      close();
+                      openJoinRequestsFromNotification();
+                    }}
+                  />
+                ))}
                 {(notifications.pendingOnlineBookings || []).map((item) => (
                   <NotificationCard
                     key={item.id}
@@ -9326,10 +9533,7 @@ function WorkspaceHeader({
                   </View>
                 </View>
                 <Pressable style={styles.accountMenuItem} onPress={() => { close(); onOpenSettingsSection("general"); }}>
-                  <Text style={styles.accountMenuItemText}>{t.myProfile}</Text>
-                </Pressable>
-                <Pressable style={styles.accountMenuItem} onPress={() => { close(); onOpenSettingsSection("general"); }}>
-                  <Text style={styles.accountMenuItemText}>{t.personalSettings}</Text>
+                  <Text style={styles.accountMenuItemText}>{t.companySettings || t.settingsGeneral}</Text>
                 </Pressable>
                 <Pressable style={styles.accountMenuItem} onPress={() => setPanel("support")}>
                   <Text style={styles.accountMenuItemText}>{t.helpSupport}</Text>
@@ -9413,6 +9617,69 @@ function AppIconButton({
           <Text style={styles.headerIconBadgeText}>{badge > 9 ? "9+" : badge}</Text>
         </View>
       ) : null}
+    </Pressable>
+  );
+}
+
+function getAppNotificationIcon(type: MobileAppNotificationRecord["type"]): ComponentProps<typeof Ionicons>["name"] {
+  if (type === "team_invitation") return "people-outline";
+  if (type === "team_join_request") return "person-add-outline";
+  if (type === "online_booking") return "calendar-outline";
+  return "megaphone-outline";
+}
+
+function AppNotificationCard({
+  item,
+  language,
+  onPress,
+}: {
+  item: MobileAppNotificationRecord;
+  language: AppLanguage;
+  onPress?: () => void;
+}) {
+  const createdDate = item.createdAt?.slice(0, 10) || new Date().toISOString().slice(0, 10);
+  return (
+    <Pressable style={[styles.notificationCard, !item.readAt && styles.notificationCardUnread]} onPress={onPress} disabled={!onPress}>
+      <View style={styles.notificationCardHeader}>
+        <View style={styles.notificationTitleRow}>
+          <Ionicons name={getAppNotificationIcon(item.type)} size={17} color="#6D4AFF" />
+          <Text style={styles.notificationCardTitle}>{item.title}</Text>
+        </View>
+        <Text style={styles.clientOptionCaption}>{formatShortDate(createdDate, language)}</Text>
+      </View>
+      {item.body ? <Text style={styles.notificationService}>{item.body}</Text> : null}
+    </Pressable>
+  );
+}
+
+function JoinRequestNotificationCard({
+  item,
+  t,
+  language,
+  onPress,
+}: {
+  item: NonNullable<MobileNotificationsPayload["pendingJoinRequests"]>[number];
+  t: Record<string, string>;
+  language: AppLanguage;
+  onPress?: () => void;
+}) {
+  const createdDate = item.createdAt?.slice(0, 10) || new Date().toISOString().slice(0, 10);
+  return (
+    <Pressable style={styles.notificationCard} onPress={onPress} disabled={!onPress}>
+      <View style={styles.notificationCardHeader}>
+        <View style={styles.notificationTitleRow}>
+          <Ionicons name="person-add-outline" size={17} color="#6D4AFF" />
+          <Text style={styles.notificationCardTitle}>{t.joinRequests || "Заявки в команду"}</Text>
+        </View>
+        <Text style={styles.clientOptionCaption}>{formatShortDate(createdDate, language)}</Text>
+      </View>
+      <Text style={styles.notificationService}>{item.professionalName || item.professionalEmail || item.professionalPhone || t.customer} · {item.role}</Text>
+      {item.professionalEmail || item.professionalPhone ? (
+        <Text style={styles.clientOptionCaption}>{item.professionalEmail || item.professionalPhone}</Text>
+      ) : null}
+      <View style={styles.notificationStatusPill}>
+        <Text style={styles.notificationStatusText}>{t.statusPending}</Text>
+      </View>
     </Pressable>
   );
 }
@@ -9586,6 +9853,8 @@ function ServicesTab({
   onAddCatalog,
   onDelete,
   busy,
+  modeRequest,
+  onModeRequestHandled,
 }: {
   t: Record<string, string>;
   language: AppLanguage;
@@ -9598,15 +9867,23 @@ function ServicesTab({
   onAddCatalog: (service: ServiceTemplateRecord & { category: string }) => void;
   onDelete: (serviceId: string) => void;
   busy: boolean;
+  modeRequest?: { mode: ServiceTabMode; id: number } | null;
+  onModeRequestHandled?: () => void;
 }) {
   const services = workspace?.services || [];
   const currency = workspace?.professional.currency;
-  const [mode, setMode] = useState<"mine" | "custom" | "catalog">("mine");
+  const [mode, setMode] = useState<ServiceTabMode>("mine");
   const [editId, setEditId] = useState("");
   const [editDraft, setEditDraft] = useState<ServiceDraftState>({ name: "", category: DEFAULT_SERVICE_CATEGORY, durationMinutes: "60", price: "0", color: SERVICE_COLORS[0] });
   const [customCategory, setCustomCategory] = useState("");
   const [catalogQuery, setCatalogQuery] = useState("");
   const [activeCatalogCategory, setActiveCatalogCategory] = useState("");
+
+  useEffect(() => {
+    if (!modeRequest) return;
+    setMode(modeRequest.mode);
+    onModeRequestHandled?.();
+  }, [modeRequest, onModeRequestHandled]);
 
   const categories = useMemo(() => {
     const names = [
@@ -9713,7 +9990,7 @@ function ServicesTab({
         ].map((item) => {
           const active = mode === item.id;
           return (
-            <Pressable key={item.id} style={[styles.servicesModeButton, active && styles.servicesModeButtonActive]} onPress={() => setMode(item.id as "mine" | "custom" | "catalog")}>
+            <Pressable key={item.id} style={[styles.servicesModeButton, active && styles.servicesModeButtonActive]} onPress={() => setMode(item.id as ServiceTabMode)}>
               <Text style={[styles.servicesModeText, active && styles.servicesModeTextActive]}>{item.label}</Text>
             </Pressable>
           );
@@ -9865,6 +10142,44 @@ function CategoryChips({
         );
       })}
     </ScrollView>
+  );
+}
+
+function MultiCategoryPicker({
+  t,
+  language,
+  categories,
+  selected,
+  onToggle,
+  disabled,
+}: {
+  t: Record<string, string>;
+  language: AppLanguage;
+  categories: string[];
+  selected: string[];
+  onToggle: (category: string) => void;
+  disabled?: boolean;
+}) {
+  const safeCategories = categories.length ? categories : [DEFAULT_SERVICE_CATEGORY];
+  const selectedKeys = new Set(selected.map((item) => item.toLocaleLowerCase()));
+
+  return (
+    <View style={styles.businessCategoryPicker}>
+      {safeCategories.map((category) => {
+        const active = selectedKeys.has(category.toLocaleLowerCase());
+        return (
+          <Pressable
+            key={category}
+            style={[styles.businessCategoryChip, active && styles.businessCategoryChipActive, disabled && styles.businessCategoryChipDisabled]}
+            onPress={() => onToggle(category)}
+            disabled={disabled}
+          >
+            <Ionicons name={active ? "checkmark-circle" : "ellipse-outline"} size={16} color={active ? "#6D4AFF" : "#94A3B8"} />
+            <Text style={[styles.businessCategoryText, active && styles.businessCategoryTextActive]}>{localizeCatalogCategory(category, language, t)}</Text>
+          </Pressable>
+        );
+      })}
+    </View>
   );
 }
 
@@ -10863,6 +11178,22 @@ function StaffTimeInput({
   );
 }
 
+function normalizeCategoryList(categories: unknown[]) {
+  const seen = new Set<string>();
+  const result: string[] = [];
+
+  for (const item of categories) {
+    const value = safeText(item).trim();
+    if (!value) continue;
+    const key = value.toLocaleLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push(value);
+  }
+
+  return result;
+}
+
 function makeSettingsDraft(workspace: WorkspaceSnapshot | null, language: AppLanguage): SettingsDraftState {
   return {
     firstName: workspace?.professional.firstName || "",
@@ -10874,7 +11205,7 @@ function makeSettingsDraft(workspace: WorkspaceSnapshot | null, language: AppLan
     website: workspace?.business.website || "",
     accountType: workspace?.business.accountType || "solo",
     serviceMode: workspace?.business.serviceMode || SERVICE_MODE_VALUES.onsite,
-    categoriesText: (workspace?.business.categories || []).join(", "),
+    categories: normalizeCategoryList(workspace?.business.categories || []),
     country: workspace?.professional.country || "Ukraine",
     timezone: workspace?.professional.timezone || "Europe/Kiev",
     language,
@@ -10903,6 +11234,7 @@ function SettingsTab({
   setLanguage,
   workspace,
   staff,
+  catalog,
   apiFetch,
   onRefreshWorkspace,
   onWorkspaceUpdated,
@@ -10921,6 +11253,7 @@ function SettingsTab({
   setLanguage: (language: AppLanguage) => void;
   workspace: WorkspaceSnapshot | null;
   staff: StaffSnapshot | null;
+  catalog: ServiceCatalogCategory[];
   apiFetch: (path: string, options?: RequestInit) => Promise<any>;
   onRefreshWorkspace: () => void;
   onWorkspaceUpdated: (workspace: WorkspaceSnapshot) => void;
@@ -10937,6 +11270,7 @@ function SettingsTab({
   const [draft, setDraft] = useState<SettingsDraftState>(() => makeSettingsDraft(workspace, language));
   const [newPassword, setNewPassword] = useState("");
   const [saving, setSaving] = useState(false);
+  const [isAvatarUploading, setIsAvatarUploading] = useState(false);
   const [statusText, setStatusText] = useState("");
   const [pendingJoinRequests, setPendingJoinRequests] = useState<NonNullable<MobileNotificationsPayload["pendingJoinRequests"]>>([]);
   const [photoSourceOpen, setPhotoSourceOpen] = useState(false);
@@ -10957,6 +11291,7 @@ function SettingsTab({
   const [isPushSaving, setIsPushSaving] = useState(false);
   const [pushError, setPushError] = useState("");
   const [premiumPackages, setPremiumPackages] = useState<{ monthly: PurchasesPackage | null; yearly: PurchasesPackage | null }>({ monthly: null, yearly: null });
+  const [storeKitProducts, setStoreKitProducts] = useState<{ monthly: IAPItemDetails | null; yearly: IAPItemDetails | null }>({ monthly: null, yearly: null });
   const [isPremiumLoading, setIsPremiumLoading] = useState(false);
   const [premiumMessage, setPremiumMessage] = useState("");
   const [isAutoSavingSettings, setIsAutoSavingSettings] = useState(false);
@@ -10970,6 +11305,11 @@ function SettingsTab({
   const premiumStatusLabel = getPremiumStatusLabel(workspace?.professional, t);
   const premiumStatusDetail = getPremiumStatusDetail(workspace?.professional, t);
   const activeSectionLocked = !hasPremium && isPremiumSettingsSection(activeSection);
+  const selectedBusinessCategories = useMemo(() => normalizeCategoryList(draft.categories), [draft.categories]);
+  const businessCategoryOptions = useMemo(
+    () => normalizeCategoryList([...catalog.map((item) => item.title), ...(workspace?.business.categories || []), ...selectedBusinessCategories]),
+    [catalog, selectedBusinessCategories, workspace?.business.categories]
+  );
 
   function applySettingsPayload(payload: any) {
     if (payload?.workspace?.professional?.id) {
@@ -11044,6 +11384,17 @@ function SettingsTab({
     queueSettingsPatch(patch, delay);
   }
 
+  function toggleBusinessCategory(category: string) {
+    if (!isOwner) return;
+    const normalized = normalizeCategoryList([category])[0];
+    if (!normalized) return;
+    const isSelected = selectedBusinessCategories.some((item) => item.toLocaleLowerCase() === normalized.toLocaleLowerCase());
+    const nextCategories = isSelected
+      ? selectedBusinessCategories.filter((item) => item.toLocaleLowerCase() !== normalized.toLocaleLowerCase())
+      : [...selectedBusinessCategories, normalized];
+    updateDraftAndQueue("categories", nextCategories, { business: { categories: nextCategories } }, 80);
+  }
+
   async function uploadMediaDataUrl(dataUrl: string, kind: "avatar" | "business-photo") {
     const payload = await apiFetch("/api/mobile/pro/media/upload", {
       method: "POST",
@@ -11101,6 +11452,28 @@ function SettingsTab({
     onRefreshWorkspace();
   }
 
+  async function syncStoreKitPurchase(purchase: InAppPurchase, billing: "monthly" | "yearly") {
+    const premiumUntil = getStoreKitPremiumUntil(purchase, billing);
+    await apiFetch("/api/mobile/pro/subscription/app-store", {
+      method: "POST",
+      body: JSON.stringify({
+        storeKitPurchase: {
+          productId: purchase.productId,
+          transactionId: purchase.orderId,
+          originalTransactionId: purchase.originalOrderId || purchase.orderId,
+          transactionReceipt: purchase.transactionReceipt || "",
+          purchaseTime: purchase.purchaseTime,
+          premiumUntil,
+          billing,
+          platform: Platform.OS,
+        },
+      }),
+    });
+    await InAppPurchases.finishTransactionAsync(purchase, false).catch(() => undefined);
+    setPremiumMessage(t.premiumReady);
+    onRefreshWorkspace();
+  }
+
   async function loadPremiumPackages(silent = false) {
     if (!workspace?.professional.id || isPremiumLoading) return;
     if (!silent) {
@@ -11108,20 +11481,27 @@ function SettingsTab({
       setPremiumMessage("");
     }
     try {
-      await configureRevenueCatForProfessional(workspace.professional.id);
-      const offerings = await Purchases.getOfferings();
-      const packages = offerings.current?.availablePackages || Object.values(offerings.all)[0]?.availablePackages || [];
-      setPremiumPackages({
-        monthly: offerings.current?.monthly || findRevenueCatPackage(packages, "monthly"),
-        yearly: offerings.current?.annual || findRevenueCatPackage(packages, "yearly"),
-      });
-      const customerInfo = await Purchases.getCustomerInfo();
-      if (getCustomerInfoEntitlement(customerInfo)?.isActive) {
-        await syncPremiumCustomerInfo(customerInfo);
+      if (getRevenueCatApiKey()) {
+        await configureRevenueCatForProfessional(workspace.professional.id);
+        const offerings = await Purchases.getOfferings();
+        const packages = offerings.current?.availablePackages || Object.values(offerings.all)[0]?.availablePackages || [];
+        setPremiumPackages({
+          monthly: offerings.current?.monthly || findRevenueCatPackage(packages, "monthly"),
+          yearly: offerings.current?.annual || findRevenueCatPackage(packages, "yearly"),
+        });
+        const customerInfo = await Purchases.getCustomerInfo();
+        if (getCustomerInfoEntitlement(customerInfo)?.isActive) {
+          await syncPremiumCustomerInfo(customerInfo);
+        }
+      } else {
+        setStoreKitProducts(await fetchStoreKitProducts());
       }
     } catch (error) {
       if (!silent) {
-        const message = error instanceof Error && error.message === "revenuecat_not_configured" ? t.premiumMissingConfig : t.premiumUnavailable;
+        const message =
+          error instanceof Error && (error.message === "revenuecat_not_configured" || error.message === "storekit_unavailable")
+            ? t.premiumMissingConfig
+            : t.premiumUnavailable;
         setPremiumMessage(message);
       }
     } finally {
@@ -11134,21 +11514,37 @@ function SettingsTab({
     setIsPremiumLoading(true);
     setPremiumMessage("");
     try {
-      await configureRevenueCatForProfessional(workspace.professional.id);
-      let targetPackage = premiumPackages[billing];
-      if (!targetPackage) {
-        const offerings = await Purchases.getOfferings();
-        const packages = offerings.current?.availablePackages || Object.values(offerings.all)[0]?.availablePackages || [];
-        targetPackage = (billing === "yearly" ? offerings.current?.annual : offerings.current?.monthly) || findRevenueCatPackage(packages, billing);
+      if (getRevenueCatApiKey()) {
+        await configureRevenueCatForProfessional(workspace.professional.id);
+        let targetPackage = premiumPackages[billing];
+        if (!targetPackage) {
+          const offerings = await Purchases.getOfferings();
+          const packages = offerings.current?.availablePackages || Object.values(offerings.all)[0]?.availablePackages || [];
+          targetPackage = (billing === "yearly" ? offerings.current?.annual : offerings.current?.monthly) || findRevenueCatPackage(packages, billing);
+        }
+        if (!targetPackage) {
+          throw new Error("missing_package");
+        }
+        const result = await Purchases.purchasePackage(targetPackage);
+        await syncPremiumCustomerInfo(result.customerInfo);
+      } else {
+        let product = storeKitProducts[billing];
+        if (!product) {
+          const products = await fetchStoreKitProducts();
+          setStoreKitProducts(products);
+          product = products[billing];
+        }
+        if (!product) {
+          throw new Error("missing_package");
+        }
+        const purchase = await waitForStoreKitPurchase(product.productId);
+        await syncStoreKitPurchase(purchase, billing);
       }
-      if (!targetPackage) {
-        throw new Error("missing_package");
-      }
-      const result = await Purchases.purchasePackage(targetPackage);
-      await syncPremiumCustomerInfo(result.customerInfo);
     } catch (error: any) {
-      if (error?.userCancelled) {
+      if (error?.userCancelled || (error instanceof Error && error.message === "purchase_cancelled")) {
         setPremiumMessage(t.premiumPurchaseCancelled);
+      } else if (error instanceof Error && error.message === "purchase_deferred") {
+        setPremiumMessage(t.premiumUnavailable);
       } else if (error instanceof Error && error.message === "missing_package") {
         setPremiumMessage(t.premiumMissingConfig);
       } else if (error instanceof Error && error.message === "revenuecat_not_configured") {
@@ -11166,11 +11562,26 @@ function SettingsTab({
     setIsPremiumLoading(true);
     setPremiumMessage("");
     try {
-      await configureRevenueCatForProfessional(workspace.professional.id);
-      const customerInfo = await Purchases.restorePurchases();
-      await syncPremiumCustomerInfo(customerInfo);
+      if (getRevenueCatApiKey()) {
+        await configureRevenueCatForProfessional(workspace.professional.id);
+        const customerInfo = await Purchases.restorePurchases();
+        await syncPremiumCustomerInfo(customerInfo);
+      } else {
+        await ensureStoreKitConnection();
+        const history = await InAppPurchases.getPurchaseHistoryAsync({ useGooglePlayCache: false });
+        const purchase = (history.results || [])
+          .filter((item) => PREMIUM_PRODUCT_IDS.includes(item.productId))
+          .sort((left, right) => (right.purchaseTime || 0) - (left.purchaseTime || 0))[0];
+        if (!purchase) {
+          throw new Error("missing_package");
+        }
+        const billing = purchase.productId === REVENUECAT_YEARLY_PRODUCT_ID ? "yearly" : "monthly";
+        await syncStoreKitPurchase(purchase, billing);
+      }
     } catch (error) {
       if (error instanceof Error && error.message === "revenuecat_not_configured") {
+        setPremiumMessage(t.premiumMissingConfig);
+      } else if (error instanceof Error && error.message === "missing_package") {
         setPremiumMessage(t.premiumMissingConfig);
       } else {
         setPremiumMessage(error instanceof Error ? error.message : t.premiumSyncFailed);
@@ -11201,10 +11612,30 @@ function SettingsTab({
   }, [workspace?.professional.id]);
 
   useEffect(() => {
+    if (staff?.joinRequests) {
+      setPendingJoinRequests(
+        staff.joinRequests.map((request) => ({
+          id: request.id,
+          createdAt: request.createdAt,
+          role: request.role,
+          professionalId: request.professional?.id || "",
+          professionalName:
+            request.professional
+              ? `${request.professional.firstName} ${request.professional.lastName}`.trim() ||
+                request.professional.email ||
+                request.professional.phone
+              : "",
+          professionalEmail: request.professional?.email || "",
+          professionalPhone: request.professional?.phone || "",
+        }))
+      );
+      return;
+    }
+
     apiFetch("/api/mobile/pro/calendar?mode=notifications")
       .then((payload) => setPendingJoinRequests(payload?.pendingJoinRequests || []))
       .catch(() => setPendingJoinRequests([]));
-  }, [workspace?.business.id]);
+  }, [staff?.joinRequests, workspace?.business.id]);
 
   useEffect(() => {
     if (!hasPremium || activeSection !== "telegram" || telegramPanel || isTelegramLoading) return;
@@ -11314,7 +11745,7 @@ function SettingsTab({
                 website: draft.website,
                 accountType: draft.accountType,
                 serviceMode: draft.serviceMode,
-                categories: draft.categoriesText.split(",").map((item) => item.trim()).filter(Boolean),
+                categories: normalizeCategoryList(draft.categories),
                 allowOnlineBooking: draft.allowOnlineBooking,
                 address: draft.address,
                 addressDetails: draft.addressDetails,
@@ -11347,6 +11778,7 @@ function SettingsTab({
   }
 
   async function pickAvatar() {
+    if (isAvatarUploading || busy) return;
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
       Alert.alert(t.avatarLink, t.avatarPermission);
@@ -11363,7 +11795,7 @@ function SettingsTab({
 
     if (result.canceled || !result.assets?.[0]) return;
     const asset = result.assets[0];
-    setSaving(true);
+    setIsAvatarUploading(true);
     try {
       const avatarUrl = await uploadMediaDataUrl(await imageAssetToDataUrl(asset), "avatar");
       updateDraft("avatarUrl", avatarUrl);
@@ -11371,11 +11803,12 @@ function SettingsTab({
     } catch (error) {
       Alert.alert(t.avatarLink, error instanceof Error ? error.message : t.settingsSaveError);
     } finally {
-      setSaving(false);
+      setIsAvatarUploading(false);
     }
   }
 
   function removeAvatar() {
+    if (isAvatarUploading || busy || !draft.avatarUrl) return;
     updateDraft("avatarUrl", "");
     queueSettingsPatch({ professional: { avatarUrl: "" } }, 80);
   }
@@ -11889,13 +12322,15 @@ function SettingsTab({
         <>
           <Panel title={t.premiumSubscription}>
             <View style={styles.premiumMobileHeader}>
-              <View>
-                <Text style={styles.settingsCardTitle}>{t.premiumSubscriptionTitle}</Text>
+              <View style={styles.premiumMobileHeaderCopy}>
+                <Text style={styles.settingsCardTitle} numberOfLines={2}>{t.premiumSubscriptionTitle}</Text>
                 <Text style={styles.clientOptionCaption}>{t.premiumSubscriptionText}</Text>
                 {premiumStatusDetail ? <Text style={styles.premiumMobileDetail}>{premiumStatusDetail}</Text> : null}
               </View>
               <View style={[styles.premiumMobileBadge, hasPremium && styles.premiumMobileBadgeActive]}>
-                <Text style={[styles.premiumMobileBadgeText, hasPremium && styles.premiumMobileBadgeTextActive]}>{premiumStatusLabel}</Text>
+                <Text style={[styles.premiumMobileBadgeText, hasPremium && styles.premiumMobileBadgeTextActive]} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72}>
+                  {premiumStatusLabel}
+                </Text>
               </View>
             </View>
             <View style={styles.premiumBenefitList}>
@@ -11908,21 +12343,21 @@ function SettingsTab({
             </View>
             <View style={styles.premiumMobilePlans}>
               <Pressable
-                style={[styles.premiumMobilePlan, premiumPackages.monthly && styles.premiumMobilePlanReady]}
+                style={[styles.premiumMobilePlan, (premiumPackages.monthly || storeKitProducts.monthly) && styles.premiumMobilePlanReady]}
                 onPress={() => void buyPremiumPackage("monthly")}
                 disabled={isPremiumLoading}
               >
                 <Text style={styles.premiumMobilePlanTitle}>{t.premiumMonthly}</Text>
-                <Text style={styles.premiumMobilePlanPrice}>{getPackagePriceLabel(premiumPackages.monthly, t.premiumMonthlyFallback)}</Text>
+                <Text style={styles.premiumMobilePlanPrice}>{getPackagePriceLabel(premiumPackages.monthly, storeKitProducts.monthly, t.premiumMonthlyFallback)}</Text>
                 <Text style={styles.premiumMobilePlanAction}>{t.premiumStartMonthly}</Text>
               </Pressable>
               <Pressable
-                style={[styles.premiumMobilePlan, styles.premiumMobilePlanFeatured, premiumPackages.yearly && styles.premiumMobilePlanReady]}
+                style={[styles.premiumMobilePlan, styles.premiumMobilePlanFeatured, (premiumPackages.yearly || storeKitProducts.yearly) && styles.premiumMobilePlanReady]}
                 onPress={() => void buyPremiumPackage("yearly")}
                 disabled={isPremiumLoading}
               >
                 <Text style={styles.premiumMobilePlanTitle}>{t.premiumYearly}</Text>
-                <Text style={styles.premiumMobilePlanPrice}>{getPackagePriceLabel(premiumPackages.yearly, t.premiumYearlyFallback)}</Text>
+                <Text style={styles.premiumMobilePlanPrice}>{getPackagePriceLabel(premiumPackages.yearly, storeKitProducts.yearly, t.premiumYearlyFallback)}</Text>
                 <Text style={styles.premiumMobilePlanAction}>{t.premiumStartYearly}</Text>
               </Pressable>
             </View>
@@ -11936,20 +12371,40 @@ function SettingsTab({
 
           <Panel title={t.ownerContacts}>
             <View style={styles.settingsAvatarRow}>
-              {draft.avatarUrl ? (
-                <Image source={{ uri: draft.avatarUrl }} style={styles.settingsAvatarImage} />
-              ) : (
-                <View style={styles.settingsAvatar}>
-                  <Text style={styles.settingsAvatarText}>{(draft.firstName || draft.email || "T").slice(0, 1).toUpperCase()}</Text>
+              <Pressable
+                style={styles.settingsAvatarButton}
+                onPress={pickAvatar}
+                disabled={isAvatarUploading || busy}
+                accessibilityRole="button"
+                accessibilityLabel={t.changeAvatar}
+              >
+                {draft.avatarUrl ? (
+                  <Image source={{ uri: draft.avatarUrl }} style={styles.settingsAvatarImage} />
+                ) : (
+                  <View style={styles.settingsAvatar}>
+                    <Text style={styles.settingsAvatarText}>{(draft.firstName || draft.email || "T").slice(0, 1).toUpperCase()}</Text>
+                  </View>
+                )}
+                <View style={styles.settingsAvatarCameraBadge}>
+                  {isAvatarUploading ? <ActivityIndicator size="small" color="#FFFFFF" /> : <Ionicons name="camera" size={16} color="#FFFFFF" />}
                 </View>
-              )}
+              </Pressable>
               <View style={styles.settingsAvatarInfo}>
-                <Text style={styles.settingsCardTitle}>{t.avatarLink}</Text>
-                <Text style={styles.clientOptionCaption}>{t.avatarHint}</Text>
-                <View style={styles.settingsAvatarActions}>
-                  <SecondaryButton label={t.changeAvatar} onPress={pickAvatar} disabled={saving || busy} />
-                  <SecondaryButton label={t.deleteAvatar} onPress={removeAvatar} disabled={saving || busy || !draft.avatarUrl} />
+                <View style={styles.settingsAvatarTitleRow}>
+                  <Text style={styles.settingsCardTitle}>{t.avatarLink}</Text>
+                  {draft.avatarUrl ? (
+                    <Pressable
+                      style={styles.settingsAvatarDeleteButton}
+                      onPress={removeAvatar}
+                      disabled={isAvatarUploading || busy}
+                      accessibilityRole="button"
+                      accessibilityLabel={t.deleteAvatar}
+                    >
+                      <Ionicons name="trash-outline" size={16} color="#DC2626" />
+                    </Pressable>
+                  ) : null}
                 </View>
+                <Text style={styles.clientOptionCaption}>{t.avatarHint}</Text>
               </View>
             </View>
             <Field label={t.firstName} value={draft.firstName} onChangeText={(value) => updateDraft("firstName", value)} onBlur={() => queueSettingsPatch({ professional: { firstName: draft.firstName } })} />
@@ -12007,8 +12462,10 @@ function SettingsTab({
             {pendingJoinRequests.map((request) => (
               <View key={request.id} style={styles.joinRequestCard}>
                 <View>
-                  <Text style={styles.settingsMiniTitle}>{request.professionalName}</Text>
-                  <Text style={styles.clientOptionCaption}>{request.role}</Text>
+                  <Text style={styles.settingsMiniTitle}>{request.professionalName || request.professionalEmail || request.professionalPhone || t.empty}</Text>
+                  <Text style={styles.clientOptionCaption}>
+                    {[request.professionalEmail || request.professionalPhone, request.role].filter(Boolean).join(" · ")}
+                  </Text>
                 </View>
                 <View style={styles.joinRequestActions}>
                   <Pressable style={styles.joinApproveButton} onPress={() => resolveJoinRequest(request.id, "approve")} disabled={saving}>
@@ -12068,7 +12525,16 @@ function SettingsTab({
                 </Pressable>
               ))}
             </View>
-	            <Field label={t.categoriesText} hint={t.categoriesHint} value={draft.categoriesText} editable={isOwner} onChangeText={(value) => updateDraft("categoriesText", value)} onBlur={() => queueSettingsPatch({ business: { categories: draft.categoriesText.split(",").map((item) => item.trim()).filter(Boolean) } })} />
+            <Text style={styles.label}>{t.categoriesText}</Text>
+            <Text style={styles.compactHelperText}>{t.categoriesHint}</Text>
+            <MultiCategoryPicker
+              t={t}
+              language={language}
+              categories={businessCategoryOptions}
+              selected={selectedBusinessCategories}
+              onToggle={toggleBusinessCategory}
+              disabled={!isOwner}
+            />
           </Panel>
 
           <Panel title={t.settingsServices}>
@@ -12078,7 +12544,7 @@ function SettingsTab({
                 <Text style={styles.statLabel}>{t.yourServices}</Text>
               </View>
               <View style={styles.settingsSummaryTile}>
-                <Text style={styles.statValue}>{workspace?.business.categories?.length || 0}</Text>
+                <Text style={styles.statValue}>{selectedBusinessCategories.length}</Text>
                 <Text style={styles.statLabel}>{t.categoriesText}</Text>
               </View>
             </View>
@@ -13948,10 +14414,21 @@ const styles = StyleSheet.create({
     borderColor: "#D8E2F1",
     backgroundColor: "#FFFFFF",
   },
+  notificationCardUnread: {
+    borderColor: "#B7C6FF",
+    backgroundColor: "#F8FAFF",
+  },
   notificationCardHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     gap: 8,
+  },
+  notificationTitleRow: {
+    flex: 1,
+    minWidth: 0,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
   },
   notificationCardTitle: {
     flex: 1,
@@ -15897,10 +16374,16 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: DESIGN.colors.background,
   },
+  workspaceKeyboard: {
+    flex: 1,
+  },
   workspaceContent: {
     paddingHorizontal: DESIGN.spacing.screen,
     paddingTop: 10,
     paddingBottom: 132,
+  },
+  workspaceContentKeyboardOpen: {
+    paddingBottom: 430,
   },
   workspaceHero: {
     marginBottom: 16,
@@ -16197,6 +16680,40 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   choiceTextActive: {
+    color: DESIGN.colors.primaryDark,
+  },
+  businessCategoryPicker: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  businessCategoryChip: {
+    minHeight: 36,
+    maxWidth: "100%",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 11,
+    paddingVertical: 7,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "rgba(226, 232, 240, 0.72)",
+    backgroundColor: DESIGN.colors.surface,
+  },
+  businessCategoryChipActive: {
+    borderColor: "#D8D0FF",
+    backgroundColor: DESIGN.colors.primarySoft,
+  },
+  businessCategoryChipDisabled: {
+    opacity: 0.56,
+  },
+  businessCategoryText: {
+    flexShrink: 1,
+    color: DESIGN.colors.muted,
+    fontSize: 12,
+    fontWeight: "800",
+  },
+  businessCategoryTextActive: {
     color: DESIGN.colors.primaryDark,
   },
   listItem: {
@@ -17030,10 +17547,22 @@ const styles = StyleSheet.create({
     borderColor: "rgba(226, 232, 240, 0.78)",
     backgroundColor: "#FBFCFF",
   },
+  settingsAvatarButton: {
+    width: 66,
+    height: 66,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#F8FAFC",
+    shadowColor: "#0F172A",
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
+  },
   settingsAvatar: {
-    width: 54,
-    height: 54,
-    borderRadius: 17,
+    width: 66,
+    height: 66,
+    borderRadius: 22,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#EC4899",
@@ -17044,20 +17573,43 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
   settingsAvatarImage: {
-    width: 54,
-    height: 54,
-    borderRadius: 17,
+    width: 66,
+    height: 66,
+    borderRadius: 22,
     backgroundColor: "#E2E8F0",
+  },
+  settingsAvatarCameraBadge: {
+    position: "absolute",
+    right: -1,
+    bottom: -1,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: "#FFFFFF",
+    backgroundColor: "#6D4AFF",
   },
   settingsAvatarInfo: {
     flex: 1,
     minWidth: 0,
   },
-  settingsAvatarActions: {
-    marginTop: 10,
+  settingsAvatarTitleRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
+    alignItems: "center",
+    justifyContent: "space-between",
     gap: 8,
+  },
+  settingsAvatarDeleteButton: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#FEE2E2",
+    backgroundColor: "#FFF7F7",
   },
   settingsCardTitle: {
     color: "#0F172A",
@@ -17069,6 +17621,10 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     justifyContent: "space-between",
     gap: 12,
+  },
+  premiumMobileHeaderCopy: {
+    flex: 1,
+    minWidth: 0,
   },
   premiumMobileDetail: {
     marginTop: 6,
@@ -17096,6 +17652,8 @@ const styles = StyleSheet.create({
     lineHeight: 16,
   },
   premiumMobileBadge: {
+    maxWidth: 104,
+    flexShrink: 1,
     paddingHorizontal: 9,
     paddingVertical: 5,
     borderRadius: DESIGN.radius.pill,
@@ -17108,6 +17666,7 @@ const styles = StyleSheet.create({
     color: "#64748B",
     fontSize: 11,
     fontWeight: "900",
+    textAlign: "center",
   },
   premiumMobileBadgeTextActive: {
     color: "#047857",

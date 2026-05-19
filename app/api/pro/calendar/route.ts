@@ -339,7 +339,9 @@ async function getOnlineBookingNotifications(input: {
           ? `${request.professional.firstName} ${request.professional.lastName}`.trim() ||
             request.professional.email ||
             request.professional.phone
-          : ""
+          : "",
+      professionalEmail: request.professional?.email || "",
+      professionalPhone: request.professional?.phone || ""
     }));
 
   return {

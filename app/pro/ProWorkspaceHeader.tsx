@@ -53,8 +53,7 @@ const headerCopy = {
     publicLinkEnabled: "Онлайн-запись включена",
     notifications: "Уведомления",
     accountMenu: "Меню аккаунта",
-    myProfile: "Мой профиль",
-    personalSettings: "Личные настройки",
+    companySettings: "Настройки компании",
     helpSupport: "Помощь и поддержка",
     uploadAvatar: "Загрузить аватар",
     avatarUploading: "Загружаем аватар…",
@@ -91,8 +90,7 @@ const headerCopy = {
     publicLinkEnabled: "Онлайн-запис увімкнено",
     notifications: "Сповіщення",
     accountMenu: "Меню акаунта",
-    myProfile: "Мій профіль",
-    personalSettings: "Особисті налаштування",
+    companySettings: "Налаштування компанії",
     helpSupport: "Допомога і підтримка",
     uploadAvatar: "Завантажити аватар",
     avatarUploading: "Завантажуємо аватар…",
@@ -129,8 +127,7 @@ const headerCopy = {
     publicLinkEnabled: "Online booking is on",
     notifications: "Notifications",
     accountMenu: "Account menu",
-    myProfile: "My profile",
-    personalSettings: "Personal settings",
+    companySettings: "Company settings",
     helpSupport: "Help and support",
     uploadAvatar: "Upload avatar",
     avatarUploading: "Uploading avatar…",
@@ -675,16 +672,7 @@ export default function ProWorkspaceHeader({
                 router.push("/pro/settings");
               }}
             >
-              {copy.myProfile}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setActiveMenu(null);
-                router.push("/pro/settings");
-              }}
-            >
-              {copy.personalSettings}
+              {copy.companySettings}
             </button>
             <button
               type="button"

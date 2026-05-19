@@ -121,27 +121,30 @@ export async function POST(request: Request) {
   ].join("\n");
 
   const { token, chatId } = getTelegramConfig();
+  let delivery: "sent" | "not_configured" | "failed" = "sent";
+
   if (!token || !chatId) {
-    return NextResponse.json({ ok: false, error: "Telegram support bot is not configured." }, { status: 503 });
-  }
+    delivery = "not_configured";
+  } else {
+    const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ chat_id: chatId, text: supportText, disable_web_page_preview: true })
+    });
 
-  const response = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ chat_id: chatId, text: supportText, disable_web_page_preview: true })
-  });
-
-  if (!response.ok) {
-    return NextResponse.json({ ok: false, error: "Telegram delivery failed." }, { status: 502 });
-  }
-
-  const telegramPayload = await response.json() as { result?: { message_id?: number } };
-  if (typeof telegramPayload.result?.message_id === "number") {
-    await attachTelegramMessageId(supportMessage.id, telegramPayload.result.message_id);
+    if (response.ok) {
+      const telegramPayload = await response.json() as { result?: { message_id?: number } };
+      if (typeof telegramPayload.result?.message_id === "number") {
+        await attachTelegramMessageId(supportMessage.id, telegramPayload.result.message_id);
+      }
+    } else {
+      delivery = "failed";
+    }
   }
 
   return NextResponse.json({
     ok: true,
+    delivery,
     ticketId: ticket.id,
     message: {
       id: supportMessage.id,

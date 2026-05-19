@@ -1,4 +1,6 @@
 import { randomUUID } from "crypto";
+import fs from "fs/promises";
+import path from "path";
 import { getAppointmentsForBusiness, type CalendarAppointment } from "./pro-calendar";
 import { getSupabaseAdmin, isSupabaseConfigured } from "./supabase";
 
@@ -58,13 +60,28 @@ type ReminderRunStats = {
 
 const reminderWindowMin = Number.parseInt(process.env.PUSH_REMINDER_WINDOW_MIN || "15", 10) || 15;
 const defaultPushSettings = {
-  notificationsNewBooking: false,
+  notificationsNewBooking: true,
   notificationsCabinetBooking: false,
   notificationsRescheduled: true,
   notificationsCancelled: true,
-  notificationsReminder: true,
+  notificationsReminder: false,
   notificationsToday: false,
   reminderLeadMinutes: 120
+};
+const localPushStorePath = path.join(process.cwd(), "data", "mobile-push-store.json");
+
+type LocalPushEventRecord = {
+  id: string;
+  appointmentId: string;
+  professionalId: string;
+  businessId: string;
+  eventType: string;
+  sentAt: string;
+};
+
+type LocalPushStore = {
+  tokens: PushTokenRecord[];
+  events: LocalPushEventRecord[];
 };
 
 const textByLanguage: Record<PushLanguage, PushText> = {
@@ -182,6 +199,81 @@ function normalizeReminderLeadMinutes(value: unknown, fallback = 120) {
   return [15, 30, 60, 120, 180, 1440].includes(minutes) ? minutes : fallback;
 }
 
+function isMissingPushStorageError(error: unknown) {
+  const candidate = error as { code?: string; message?: string; details?: string } | null;
+  const code = candidate?.code || "";
+  const message = `${candidate?.message || ""} ${candidate?.details || ""}`;
+  return (
+    code === "PGRST205" ||
+    code === "42P01" ||
+    (message.includes("mobile_push_tokens") && (message.includes("schema cache") || message.includes("does not exist"))) ||
+    (message.includes("mobile_push_events") && (message.includes("schema cache") || message.includes("does not exist")))
+  );
+}
+
+async function ensureLocalPushStore() {
+  await fs.mkdir(path.dirname(localPushStorePath), { recursive: true });
+  try {
+    await fs.access(localPushStorePath);
+  } catch {
+    const initial: LocalPushStore = { tokens: [], events: [] };
+    await fs.writeFile(localPushStorePath, JSON.stringify(initial, null, 2) + "\n", "utf8");
+  }
+}
+
+async function readLocalPushStore(): Promise<LocalPushStore> {
+  await ensureLocalPushStore();
+  const raw = await fs.readFile(localPushStorePath, "utf8");
+  const parsed = JSON.parse(raw) as Partial<LocalPushStore>;
+  return {
+    tokens: Array.isArray(parsed.tokens) ? parsed.tokens.map(normalizeLocalPushToken).filter((item): item is PushTokenRecord => Boolean(item)) : [],
+    events: Array.isArray(parsed.events) ? parsed.events.map(normalizeLocalPushEvent).filter((item): item is LocalPushEventRecord => Boolean(item)) : []
+  };
+}
+
+async function writeLocalPushStore(store: LocalPushStore) {
+  await fs.mkdir(path.dirname(localPushStorePath), { recursive: true });
+  await fs.writeFile(localPushStorePath, JSON.stringify(store, null, 2) + "\n", "utf8");
+}
+
+function normalizeLocalPushToken(record: Partial<PushTokenRecord> | null | undefined) {
+  if (!record?.id || !record.professionalId || !record.expoPushToken) return null;
+  const now = new Date().toISOString();
+  return {
+    id: String(record.id),
+    professionalId: String(record.professionalId),
+    businessId: String(record.businessId || ""),
+    expoPushToken: String(record.expoPushToken),
+    platform: String(record.platform || ""),
+    deviceName: String(record.deviceName || ""),
+    language: normalizeLanguage(record.language),
+    timezone: String(record.timezone || "UTC"),
+    notificationsNewBooking: record.notificationsNewBooking !== false,
+    notificationsCabinetBooking: record.notificationsCabinetBooking === true,
+    notificationsRescheduled: record.notificationsRescheduled !== false,
+    notificationsCancelled: record.notificationsCancelled !== false,
+    notificationsReminder: record.notificationsReminder === true,
+    notificationsToday: record.notificationsToday === true,
+    reminderLeadMinutes: normalizeReminderLeadMinutes(record.reminderLeadMinutes, defaultPushSettings.reminderLeadMinutes),
+    active: record.active !== false,
+    lastRegisteredAt: String(record.lastRegisteredAt || now),
+    createdAt: String(record.createdAt || now),
+    updatedAt: String(record.updatedAt || now)
+  };
+}
+
+function normalizeLocalPushEvent(record: Partial<LocalPushEventRecord> | null | undefined) {
+  if (!record?.id || !record.appointmentId || !record.professionalId || !record.eventType) return null;
+  return {
+    id: String(record.id),
+    appointmentId: String(record.appointmentId),
+    professionalId: String(record.professionalId),
+    businessId: String(record.businessId || ""),
+    eventType: String(record.eventType),
+    sentAt: String(record.sentAt || new Date().toISOString())
+  };
+}
+
 function mapPushToken(row: Record<string, any>): PushTokenRecord {
   return {
     id: String(row.id || ""),
@@ -192,11 +284,11 @@ function mapPushToken(row: Record<string, any>): PushTokenRecord {
     deviceName: String(row.device_name || ""),
     language: normalizeLanguage(row.language),
     timezone: String(row.timezone || "UTC"),
-    notificationsNewBooking: row.notifications_new_booking === true,
+    notificationsNewBooking: row.notifications_new_booking !== false,
     notificationsCabinetBooking: row.notifications_cabinet_booking === true,
     notificationsRescheduled: row.notifications_rescheduled !== false,
     notificationsCancelled: row.notifications_cancelled !== false,
-    notificationsReminder: row.notifications_reminder !== false,
+    notificationsReminder: row.notifications_reminder === true,
     notificationsToday: row.notifications_today === true,
     reminderLeadMinutes: normalizeReminderLeadMinutes(row.reminder_lead_minutes, defaultPushSettings.reminderLeadMinutes),
     active: row.active !== false,
@@ -281,13 +373,110 @@ async function sendExpoPushMessages(messages: Array<Record<string, unknown>>) {
 }
 
 async function deactivatePushTokens(tokens: string[]) {
-  if (!tokens.length || !isSupabaseConfigured()) return;
+  if (!tokens.length) return;
+  if (!isSupabaseConfigured()) {
+    await deactivateLocalPushTokens(tokens);
+    return;
+  }
   const supabase = getSupabaseAdmin();
-  if (!supabase) return;
-  await supabase
+  if (!supabase) {
+    await deactivateLocalPushTokens(tokens);
+    return;
+  }
+  const { error } = await supabase
     .from("mobile_push_tokens")
     .update({ active: false, updated_at: new Date().toISOString() })
     .in("expo_push_token", tokens);
+  if (isMissingPushStorageError(error)) {
+    await deactivateLocalPushTokens(tokens);
+  }
+}
+
+async function deactivateLocalPushTokens(tokens: string[]) {
+  const tokenSet = new Set(tokens);
+  const store = await readLocalPushStore();
+  const now = new Date().toISOString();
+  store.tokens = store.tokens.map((record) =>
+    tokenSet.has(record.expoPushToken) ? { ...record, active: false, updatedAt: now } : record
+  );
+  await writeLocalPushStore(store);
+}
+
+async function upsertLocalMobilePushToken(input: {
+  professionalId: string;
+  businessId: string;
+  expoPushToken: string;
+  platform: string;
+  deviceName: string;
+  language: string;
+  timezone: string;
+}) {
+  const store = await readLocalPushStore();
+  const now = new Date().toISOString();
+  const existingIndex = store.tokens.findIndex((record) => record.expoPushToken === input.expoPushToken);
+  const existing = existingIndex >= 0 ? store.tokens[existingIndex] : null;
+  const token: PushTokenRecord = {
+    id: existing?.id || randomUUID(),
+    professionalId: input.professionalId,
+    businessId: input.businessId,
+    expoPushToken: input.expoPushToken,
+    platform: input.platform,
+    deviceName: input.deviceName,
+    language: normalizeLanguage(input.language),
+    timezone: input.timezone || "UTC",
+    notificationsNewBooking: existing?.notificationsNewBooking ?? defaultPushSettings.notificationsNewBooking,
+    notificationsCabinetBooking: existing?.notificationsCabinetBooking ?? defaultPushSettings.notificationsCabinetBooking,
+    notificationsRescheduled: existing?.notificationsRescheduled ?? defaultPushSettings.notificationsRescheduled,
+    notificationsCancelled: existing?.notificationsCancelled ?? defaultPushSettings.notificationsCancelled,
+    notificationsReminder: existing?.notificationsReminder ?? defaultPushSettings.notificationsReminder,
+    notificationsToday: existing?.notificationsToday ?? defaultPushSettings.notificationsToday,
+    reminderLeadMinutes: existing?.reminderLeadMinutes ?? defaultPushSettings.reminderLeadMinutes,
+    active: true,
+    lastRegisteredAt: now,
+    createdAt: existing?.createdAt || now,
+    updatedAt: now
+  };
+  if (existingIndex >= 0) {
+    store.tokens[existingIndex] = token;
+  } else {
+    store.tokens.unshift(token);
+  }
+  await writeLocalPushStore(store);
+  return token;
+}
+
+async function getLocalMobilePushTokensForProfessional(professionalId: string) {
+  const store = await readLocalPushStore();
+  return store.tokens
+    .filter((record) => record.professionalId === professionalId && record.active !== false)
+    .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt));
+}
+
+async function updateLocalMobilePushSettings(
+  professionalId: string,
+  settings: Partial<Record<PushSettingKey, boolean>> & { reminderLeadMinutes?: number }
+) {
+  const store = await readLocalPushStore();
+  const now = new Date().toISOString();
+  store.tokens = store.tokens.map((record) => {
+    if (record.professionalId !== professionalId || record.active === false) return record;
+    return {
+      ...record,
+      notificationsNewBooking: settings.notificationsNewBooking ?? record.notificationsNewBooking,
+      notificationsCabinetBooking: settings.notificationsCabinetBooking ?? record.notificationsCabinetBooking,
+      notificationsRescheduled: settings.notificationsRescheduled ?? record.notificationsRescheduled,
+      notificationsCancelled: settings.notificationsCancelled ?? record.notificationsCancelled,
+      notificationsReminder: settings.notificationsReminder ?? record.notificationsReminder,
+      notificationsToday: settings.notificationsToday ?? record.notificationsToday,
+      reminderLeadMinutes:
+        typeof settings.reminderLeadMinutes === "number"
+          ? normalizeReminderLeadMinutes(settings.reminderLeadMinutes, record.reminderLeadMinutes)
+          : record.reminderLeadMinutes,
+      updatedAt: now
+    };
+  });
+  await writeLocalPushStore(store);
+  return getMobilePushState(professionalId);
 }
 
 export async function upsertMobilePushToken(input: {
@@ -300,17 +489,22 @@ export async function upsertMobilePushToken(input: {
   timezone: string;
 }) {
   if (!isSupabaseConfigured()) {
-    throw new Error("Supabase is not configured.");
+    return upsertLocalMobilePushToken(input);
   }
   const supabase = getSupabaseAdmin();
-  if (!supabase) throw new Error("Supabase is not configured.");
+  if (!supabase) return upsertLocalMobilePushToken(input);
 
   const now = new Date().toISOString();
-  const { data: existing } = await supabase
+  const { data: existing, error: lookupError } = await supabase
     .from("mobile_push_tokens")
     .select("*")
     .eq("expo_push_token", input.expoPushToken)
     .maybeSingle();
+
+  if (isMissingPushStorageError(lookupError)) {
+    return upsertLocalMobilePushToken(input);
+  }
+  if (lookupError) throw new Error(lookupError.message);
 
   const base = {
     professional_id: input.professionalId,
@@ -344,14 +538,17 @@ export async function upsertMobilePushToken(input: {
         .select("*")
         .single();
 
+  if (isMissingPushStorageError(error)) {
+    return upsertLocalMobilePushToken(input);
+  }
   if (error) throw new Error(error.message);
   return mapPushToken(data);
 }
 
 export async function getMobilePushTokensForProfessional(professionalId: string) {
-  if (!isSupabaseConfigured()) return [] as PushTokenRecord[];
+  if (!isSupabaseConfigured()) return getLocalMobilePushTokensForProfessional(professionalId);
   const supabase = getSupabaseAdmin();
-  if (!supabase) return [] as PushTokenRecord[];
+  if (!supabase) return getLocalMobilePushTokensForProfessional(professionalId);
 
   const { data, error } = await supabase
     .from("mobile_push_tokens")
@@ -360,6 +557,7 @@ export async function getMobilePushTokensForProfessional(professionalId: string)
     .eq("active", true)
     .order("updated_at", { ascending: false });
 
+  if (isMissingPushStorageError(error)) return getLocalMobilePushTokensForProfessional(professionalId);
   if (error) return [];
   return (data || []).map(mapPushToken);
 }
@@ -386,9 +584,9 @@ export async function updateMobilePushSettings(
   professionalId: string,
   settings: Partial<Record<PushSettingKey, boolean>> & { reminderLeadMinutes?: number }
 ) {
-  if (!isSupabaseConfigured()) throw new Error("Supabase is not configured.");
+  if (!isSupabaseConfigured()) return updateLocalMobilePushSettings(professionalId, settings);
   const supabase = getSupabaseAdmin();
-  if (!supabase) throw new Error("Supabase is not configured.");
+  if (!supabase) return updateLocalMobilePushSettings(professionalId, settings);
 
   const patch: Record<string, unknown> = { updated_at: new Date().toISOString() };
   if (typeof settings.notificationsNewBooking === "boolean") patch.notifications_new_booking = settings.notificationsNewBooking;
@@ -405,19 +603,29 @@ export async function updateMobilePushSettings(
     .eq("professional_id", professionalId)
     .eq("active", true);
 
+  if (isMissingPushStorageError(error)) return updateLocalMobilePushSettings(professionalId, settings);
   if (error) throw new Error(error.message);
   return getMobilePushState(professionalId);
 }
 
 export async function unregisterMobilePushToken(professionalId: string, expoPushToken: string) {
-  if (!isSupabaseConfigured()) return;
+  if (!isSupabaseConfigured()) {
+    await deactivateLocalPushTokens([expoPushToken]);
+    return;
+  }
   const supabase = getSupabaseAdmin();
-  if (!supabase || !expoPushToken) return;
-  await supabase
+  if (!supabase || !expoPushToken) {
+    await deactivateLocalPushTokens([expoPushToken]);
+    return;
+  }
+  const { error } = await supabase
     .from("mobile_push_tokens")
     .update({ active: false, updated_at: new Date().toISOString() })
     .eq("professional_id", professionalId)
     .eq("expo_push_token", expoPushToken);
+  if (isMissingPushStorageError(error)) {
+    await deactivateLocalPushTokens([expoPushToken]);
+  }
 }
 
 export async function sendBookingPushNotification(input: {
@@ -450,6 +658,26 @@ export async function sendBookingPushNotification(input: {
       }
     };
   });
+
+  const result = await sendExpoPushMessages(messages);
+  await deactivatePushTokens(result.invalidTokens);
+  return { sent: result.sent };
+}
+
+export async function sendDirectPushNotification(input: {
+  professionalId: string;
+  title: string;
+  body: string;
+  data?: Record<string, unknown>;
+}) {
+  const records = await getMobilePushTokensForProfessional(input.professionalId);
+  const messages = records.map((record) => ({
+    to: record.expoPushToken,
+    sound: "default",
+    title: input.title,
+    body: input.body,
+    data: input.data || {}
+  }));
 
   const result = await sendExpoPushMessages(messages);
   await deactivatePushTokens(result.invalidTokens);
@@ -490,16 +718,33 @@ async function isPushReminderAlreadySent(input: {
   professionalId: string;
   reminderType: string;
 }) {
-  if (!isSupabaseConfigured()) return false;
+  if (!isSupabaseConfigured()) {
+    const store = await readLocalPushStore();
+    return store.events.some(
+      (event) =>
+        event.appointmentId === input.appointmentId &&
+        event.professionalId === input.professionalId &&
+        event.eventType === input.reminderType
+    );
+  }
   const supabase = getSupabaseAdmin();
   if (!supabase) return false;
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from("mobile_push_events")
     .select("id")
     .eq("appointment_id", input.appointmentId)
     .eq("professional_id", input.professionalId)
     .eq("event_type", input.reminderType)
     .maybeSingle();
+  if (isMissingPushStorageError(error)) {
+    const store = await readLocalPushStore();
+    return store.events.some(
+      (event) =>
+        event.appointmentId === input.appointmentId &&
+        event.professionalId === input.professionalId &&
+        event.eventType === input.reminderType
+    );
+  }
   return Boolean(data?.id);
 }
 
@@ -509,37 +754,75 @@ async function markPushReminderSent(input: {
   businessId: string;
   eventType: string;
 }) {
-  if (!isSupabaseConfigured()) return;
+  if (!isSupabaseConfigured()) {
+    const store = await readLocalPushStore();
+    store.events.push({
+      id: randomUUID(),
+      appointmentId: input.appointmentId,
+      professionalId: input.professionalId,
+      businessId: input.businessId,
+      eventType: input.eventType,
+      sentAt: new Date().toISOString()
+    });
+    await writeLocalPushStore(store);
+    return;
+  }
   const supabase = getSupabaseAdmin();
   if (!supabase) return;
-  await supabase.from("mobile_push_events").insert({
+  const { error } = await supabase.from("mobile_push_events").insert({
     id: randomUUID(),
     appointment_id: input.appointmentId,
     professional_id: input.professionalId,
     business_id: input.businessId,
     event_type: input.eventType
   });
+  if (isMissingPushStorageError(error)) {
+    const store = await readLocalPushStore();
+    store.events.push({
+      id: randomUUID(),
+      appointmentId: input.appointmentId,
+      professionalId: input.professionalId,
+      businessId: input.businessId,
+      eventType: input.eventType,
+      sentAt: new Date().toISOString()
+    });
+    await writeLocalPushStore(store);
+  }
 }
 
 export async function resetPushReminderEventsForAppointment(input: {
   appointmentId: string;
   professionalId: string;
 }) {
-  if (!isSupabaseConfigured()) return;
+  if (!isSupabaseConfigured()) {
+    const store = await readLocalPushStore();
+    store.events = store.events.filter(
+      (event) => !(event.appointmentId === input.appointmentId && event.professionalId === input.professionalId)
+    );
+    await writeLocalPushStore(store);
+    return;
+  }
   const supabase = getSupabaseAdmin();
   if (!supabase) return;
-  await supabase
+  const { error } = await supabase
     .from("mobile_push_events")
     .delete()
     .eq("appointment_id", input.appointmentId)
     .eq("professional_id", input.professionalId);
+  if (isMissingPushStorageError(error)) {
+    const store = await readLocalPushStore();
+    store.events = store.events.filter(
+      (event) => !(event.appointmentId === input.appointmentId && event.professionalId === input.professionalId)
+    );
+    await writeLocalPushStore(store);
+  }
 }
 
 export async function processPushReminders() {
   const stats: ReminderRunStats = { processed: 0, sent: 0, skipped: 0, errors: 0 };
-  if (!isSupabaseConfigured()) return stats;
+  if (!isSupabaseConfigured()) return processPushRemindersForRecords(await getAllLocalMobilePushTokens(), stats);
   const supabase = getSupabaseAdmin();
-  if (!supabase) return stats;
+  if (!supabase) return processPushRemindersForRecords(await getAllLocalMobilePushTokens(), stats);
 
   const { data, error } = await supabase
     .from("mobile_push_tokens")
@@ -548,12 +831,24 @@ export async function processPushReminders() {
     .eq("notifications_reminder", true);
 
   if (error) {
+    if (isMissingPushStorageError(error)) {
+      return processPushRemindersForRecords(await getAllLocalMobilePushTokens(), stats);
+    }
     stats.errors += 1;
     return stats;
   }
 
+  return processPushRemindersForRecords((data || []).map(mapPushToken), stats);
+}
+
+async function getAllLocalMobilePushTokens() {
+  const store = await readLocalPushStore();
+  return store.tokens.filter((record) => record.active !== false);
+}
+
+async function processPushRemindersForRecords(recordsInput: PushTokenRecord[], stats: ReminderRunStats) {
   const grouped = new Map<string, PushTokenRecord[]>();
-  (data || []).map(mapPushToken).forEach((record) => {
+  recordsInput.filter((record) => record.notificationsReminder).forEach((record) => {
     const current = grouped.get(record.professionalId) || [];
     current.push(record);
     grouped.set(record.professionalId, current);

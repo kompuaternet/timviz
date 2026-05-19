@@ -146,6 +146,19 @@ create table if not exists public.business_staff_invitations (
   revoked_at timestamptz
 );
 
+create table if not exists public.app_notifications (
+  id text primary key,
+  professional_id text not null references public.professionals(id) on delete cascade,
+  business_id text references public.businesses(id) on delete cascade,
+  type text not null,
+  title text not null,
+  body text not null default '',
+  action_url text not null default '',
+  payload jsonb not null default '{}'::jsonb,
+  read_at timestamptz,
+  created_at timestamptz not null default timezone('utc', now())
+);
+
 create table if not exists public.calendar_appointments (
   id text primary key,
   business_id text not null references public.businesses(id) on delete cascade,
@@ -249,11 +262,11 @@ create table if not exists public.mobile_push_tokens (
   device_name text not null default '',
   language text not null default 'en',
   timezone text not null default 'UTC',
-  notifications_new_booking boolean not null default false,
+  notifications_new_booking boolean not null default true,
   notifications_cabinet_booking boolean not null default false,
   notifications_rescheduled boolean not null default true,
   notifications_cancelled boolean not null default true,
-  notifications_reminder boolean not null default true,
+  notifications_reminder boolean not null default false,
   notifications_today boolean not null default false,
   reminder_lead_minutes integer not null default 120,
   active boolean not null default true,
@@ -325,14 +338,15 @@ alter table public.mobile_push_tokens add column if not exists platform text not
 alter table public.mobile_push_tokens add column if not exists device_name text not null default '';
 alter table public.mobile_push_tokens add column if not exists language text not null default 'en';
 alter table public.mobile_push_tokens add column if not exists timezone text not null default 'UTC';
-alter table public.mobile_push_tokens add column if not exists notifications_new_booking boolean not null default false;
+alter table public.mobile_push_tokens add column if not exists notifications_new_booking boolean not null default true;
 alter table public.mobile_push_tokens add column if not exists notifications_cabinet_booking boolean not null default false;
 alter table public.mobile_push_tokens add column if not exists notifications_rescheduled boolean not null default true;
 alter table public.mobile_push_tokens add column if not exists notifications_cancelled boolean not null default true;
-alter table public.mobile_push_tokens add column if not exists notifications_reminder boolean not null default true;
+alter table public.mobile_push_tokens add column if not exists notifications_reminder boolean not null default false;
 alter table public.mobile_push_tokens add column if not exists notifications_today boolean not null default false;
-alter table public.mobile_push_tokens alter column notifications_new_booking set default false;
+alter table public.mobile_push_tokens alter column notifications_new_booking set default true;
 alter table public.mobile_push_tokens alter column notifications_cabinet_booking set default false;
+alter table public.mobile_push_tokens alter column notifications_reminder set default false;
 alter table public.mobile_push_tokens alter column notifications_today set default false;
 alter table public.mobile_push_tokens add column if not exists reminder_lead_minutes integer not null default 120;
 alter table public.mobile_push_tokens add column if not exists active boolean not null default true;
@@ -354,6 +368,8 @@ create index if not exists business_services_source_idx on public.business_servi
 create index if not exists business_staff_invitations_business_idx on public.business_staff_invitations (business_id, created_at desc);
 create index if not exists business_staff_invitations_business_status_email_idx on public.business_staff_invitations (business_id, status, email);
 create unique index if not exists business_staff_invitations_token_uidx on public.business_staff_invitations (token);
+create index if not exists app_notifications_professional_unread_idx on public.app_notifications (professional_id, read_at, created_at desc);
+create index if not exists app_notifications_business_idx on public.app_notifications (business_id, created_at desc);
 create index if not exists calendar_appointments_professional_day_idx on public.calendar_appointments (professional_id, appointment_date, start_time);
 create index if not exists calendar_appointments_professional_kind_date_idx on public.calendar_appointments (professional_id, kind, appointment_date);
 create index if not exists calendar_appointments_professional_kind_created_idx on public.calendar_appointments (professional_id, kind, created_at desc);
@@ -397,6 +413,7 @@ alter table if exists public.global_service_catalog enable row level security;
 alter table if exists public.business_memberships enable row level security;
 alter table if exists public.business_join_requests enable row level security;
 alter table if exists public.business_staff_invitations enable row level security;
+alter table if exists public.app_notifications enable row level security;
 alter table if exists public.calendar_appointments enable row level security;
 alter table if exists public.pro_clients enable row level security;
 alter table if exists public.support_tickets enable row level security;

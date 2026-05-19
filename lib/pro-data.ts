@@ -1,5 +1,6 @@
 import { promises as fs } from "fs";
 import path from "path";
+import { createAppNotification, createAppNotifications } from "./app-notifications";
 import { getPublicAppUrl } from "./app-url";
 import { isMailerConfigured, sendMail } from "./mailer";
 import { getSupabaseAdmin, isSupabaseConfigured } from "./supabase";
@@ -260,6 +261,7 @@ const defaultServiceColors = [
 ];
 
 export const DEFAULT_BOOKING_CREDITS = 500;
+const FREE_ACTIVE_EMPLOYEE_LIMIT = 1;
 
 let activeDirectorySnapshotPromise: Promise<BusinessDirectorySnapshot> | null = null;
 let cachedDirectorySnapshot: BusinessDirectorySnapshot | null = null;
@@ -314,6 +316,74 @@ function normalizeProfessionalAccountStatus(value: unknown): ProfessionalAccount
 
 function buildPlaceholderProfessionalEmail(professionalId: string) {
   return `staff+${professionalId}@${placeholderEmailDomain}`;
+}
+
+function countActiveBusinessEmployees(directory: BusinessDirectorySnapshot, businessId: string) {
+  return directory.memberships.filter(
+    (membership) =>
+      membership.businessId === businessId &&
+      membership.scope !== "owner" &&
+      membership.scope !== "pending"
+  ).length;
+}
+
+function countPendingBusinessEmployees(
+  directory: BusinessDirectorySnapshot,
+  businessId: string,
+  options: { exceptInvitationEmail?: string; exceptJoinRequestId?: string } = {}
+) {
+  const pendingInvitations = directory.staffInvitations.filter(
+    (invitation) =>
+      invitation.businessId === businessId &&
+      invitation.status === "pending" &&
+      invitation.email !== options.exceptInvitationEmail
+  ).length;
+  const pendingJoinRequests = directory.joinRequests.filter(
+    (request) =>
+      request.businessId === businessId &&
+      request.status === "pending" &&
+      request.id !== options.exceptJoinRequestId
+  ).length;
+
+  return pendingInvitations + pendingJoinRequests;
+}
+
+function assertCanAddFreeEmployee(input: {
+  owner: ProfessionalRecord;
+  directory: BusinessDirectorySnapshot;
+  businessId: string;
+  includePending?: boolean;
+  exceptInvitationEmail?: string;
+  exceptJoinRequestId?: string;
+}) {
+  if (isPremiumAccessActive(input.owner)) {
+    return;
+  }
+
+  const activeEmployees = countActiveBusinessEmployees(input.directory, input.businessId);
+  const pendingEmployees = input.includePending
+    ? countPendingBusinessEmployees(input.directory, input.businessId, {
+        exceptInvitationEmail: input.exceptInvitationEmail,
+        exceptJoinRequestId: input.exceptJoinRequestId
+      })
+    : 0;
+
+  if (activeEmployees + pendingEmployees >= FREE_ACTIVE_EMPLOYEE_LIMIT) {
+    throw new Error("На Free можно работать с владельцем и 1 сотрудником. Чтобы добавить больше сотрудников, оформите Pro.");
+  }
+}
+
+function getBusinessOwnerProfessional(
+  directory: BusinessDirectorySnapshot,
+  business: Pick<BusinessRecord, "id" | "ownerProfessionalId">
+) {
+  const ownerProfessionalId =
+    business.ownerProfessionalId ||
+    directory.memberships.find((membership) => membership.businessId === business.id && membership.scope === "owner")
+      ?.professionalId ||
+    "";
+
+  return directory.professionals.find((professional) => professional.id === ownerProfessionalId) || null;
 }
 
 export function isPlaceholderProfessionalEmail(email: string) {
@@ -909,6 +979,116 @@ function makeId(prefix: string) {
   return `${prefix}_${crypto.randomUUID()}`;
 }
 
+function getProfessionalDisplayName(professional?: Pick<ProfessionalRecord, "firstName" | "lastName" | "email" | "phone"> | null) {
+  if (!professional) return "";
+  return `${professional.firstName} ${professional.lastName}`.trim() || professional.email || professional.phone;
+}
+
+async function sendDirectPushBestEffort(input: {
+  professionalId: string;
+  title: string;
+  body: string;
+  data?: Record<string, unknown>;
+}) {
+  try {
+    const { sendDirectPushNotification } = await import("./push-notifications");
+    await sendDirectPushNotification(input);
+  } catch {
+    // In-app notifications stay available even if Expo push is not ready yet.
+  }
+}
+
+async function notifyInvitedProfessionalAboutInvitation(input: {
+  invitedProfessionalId?: string;
+  businessId: string;
+  businessName: string;
+  ownerName: string;
+  invitationId: string;
+  inviteUrl: string;
+  role: string;
+}) {
+  if (!input.invitedProfessionalId) return;
+
+  const title = "Приглашение в команду";
+  const body = `${input.ownerName} приглашает вас в ${input.businessName} как ${input.role}.`;
+  await createAppNotification({
+    professionalId: input.invitedProfessionalId,
+    businessId: input.businessId,
+    type: "team_invitation",
+    title,
+    body,
+    actionUrl: input.inviteUrl,
+    payload: {
+      invitationId: input.invitationId,
+      businessId: input.businessId,
+      role: input.role
+    }
+  }).catch(() => undefined);
+  await sendDirectPushBestEffort({
+    professionalId: input.invitedProfessionalId,
+    title,
+    body,
+    data: {
+      type: "team_invitation",
+      invitationId: input.invitationId,
+      businessId: input.businessId
+    }
+  });
+}
+
+async function notifyBusinessOwnersAboutJoinRequest(request: CreatedJoinRequestNotification | null) {
+  if (!request) return;
+
+  const directory = await getBusinessDirectorySnapshot();
+  const business = directory.businesses.find((item) => item.id === request.businessId);
+  const businessName = business?.name || "Timviz";
+  const ownerIds = Array.from(
+    new Set(
+      directory.memberships
+        .filter((membership) => membership.businessId === request.businessId && membership.scope === "owner")
+        .map((membership) => membership.professionalId)
+        .filter((professionalId) => professionalId !== request.requesterProfessionalId)
+    )
+  );
+
+  if (!ownerIds.length) return;
+
+  const requesterName = request.requesterName || request.requesterEmail || "Новый сотрудник";
+  const title = "Новая заявка в команду";
+  const body = `${requesterName} хочет присоединиться к ${businessName} как ${request.role}.`;
+  await createAppNotifications(
+    ownerIds.map((ownerId) => ({
+      professionalId: ownerId,
+      businessId: request.businessId,
+      type: "team_join_request" as const,
+      title,
+      body,
+      actionUrl: "/pro/staff",
+      payload: {
+        requestId: request.requestId,
+        requesterProfessionalId: request.requesterProfessionalId,
+        requesterEmail: request.requesterEmail,
+        role: request.role
+      }
+    }))
+  ).catch(() => undefined);
+
+  await Promise.allSettled(
+    ownerIds.map((ownerId) =>
+      sendDirectPushBestEffort({
+        professionalId: ownerId,
+        title,
+        body,
+        data: {
+          type: "team_join_request",
+          requestId: request.requestId,
+          businessId: request.businessId
+        }
+      })
+    )
+  );
+}
+
 async function readStore() {
   const file = await fs.readFile(storePath, "utf8");
   const parsed = JSON.parse(file) as ProDataStore;
@@ -1472,6 +1652,7 @@ export async function createProfessionalSetup(input: {
     }
 
     invalidateBusinessDirectoryCache();
+    await notifyBusinessOwnersAboutJoinRequest(createdJoinRequest).catch(() => undefined);
     return {
       professionalId,
       workspaceReady: input.setup.ownerMode === "owner" || Boolean(invitationPreview),
@@ -1668,6 +1849,7 @@ export async function createProfessionalSetup(input: {
   }
 
   await writeStore(store);
+  await notifyBusinessOwnersAboutJoinRequest(createdJoinRequest).catch(() => undefined);
   return {
     professionalId,
     workspaceReady: input.setup.ownerMode === "owner" || Boolean(invitationPreview),
@@ -1864,6 +2046,15 @@ export async function createManualStaffMember(input: {
 
   if (existingMembershipOutsideBusiness) {
     throw new Error("Этот email уже привязан к другому бизнес-аккаунту.");
+  }
+
+  if (!existingMembership) {
+    assertCanAddFreeEmployee({
+      owner: workspace.professional,
+      directory,
+      businessId: workspace.business.id,
+      includePending: true
+    });
   }
 
   const createdAt = new Date().toISOString();
@@ -2332,6 +2523,16 @@ export async function createStaffInvitation(input: {
 
   const invitationId = existingPending?.id || makeId("invite");
 
+  if (!explicitMembership) {
+    assertCanAddFreeEmployee({
+      owner: workspace.professional,
+      directory,
+      businessId: workspace.business.id,
+      includePending: true,
+      exceptInvitationEmail: normalizedEmail
+    });
+  }
+
   if (isSupabaseConfigured()) {
     const supabase = getSupabaseAdmin();
     if (!supabase) {
@@ -2454,6 +2655,16 @@ export async function createStaffInvitation(input: {
     text: `${copy.headline}\n\n${copy.body}\n\n${inviteUrl}\n\n${copy.footnote}`
   });
 
+  await notifyInvitedProfessionalAboutInvitation({
+    invitedProfessionalId: invitedProfessional?.id,
+    businessId: workspace.business.id,
+    businessName: business.name,
+    ownerName,
+    invitationId,
+    inviteUrl,
+    role
+  });
+
   return {
     id: invitationId,
     email: normalizedEmail,
@@ -2564,6 +2775,19 @@ export async function acceptStaffInvitation(input: {
 
   if (activeMembership && activeMembership.businessId !== invitationPreview.business.id) {
     throw new Error("Этот аккаунт уже привязан к другому бизнесу.");
+  }
+
+  if (!activeMembership) {
+    const ownerProfessional = targetBusiness ? getBusinessOwnerProfessional(directory, targetBusiness) : null;
+    if (ownerProfessional) {
+      assertCanAddFreeEmployee({
+        owner: ownerProfessional,
+        directory,
+        businessId: invitationPreview.business.id,
+        includePending: true,
+        exceptInvitationEmail: invitationPreview.email
+      });
+    }
   }
 
   const memberSchedule = targetBusiness
@@ -2925,6 +3149,7 @@ export async function resolveJoinRequestForOwner(input: {
 
   const resolvedAt = new Date().toISOString();
   const memberSchedule = buildMembershipScheduleFromBusiness(workspace.business);
+  const directory = await getBusinessDirectorySnapshot();
 
   if (isSupabaseConfigured()) {
     const supabase = getSupabaseAdmin();
@@ -2963,6 +3188,14 @@ export async function resolveJoinRequestForOwner(input: {
       }
 
       if (input.action === "approve") {
+        assertCanAddFreeEmployee({
+          owner: workspace.professional,
+          directory,
+          businessId: workspace.business.id,
+          includePending: true,
+          exceptJoinRequestId: input.requestId
+        });
+
         const { error: membershipUpdateError } = await supabase
           .from("business_memberships")
           .update({
@@ -2991,22 +3224,50 @@ export async function resolveJoinRequestForOwner(input: {
       return { ok: true };
     }
 
+    const existingMembership = directory.memberships.find(
+      (item) => item.businessId === workspace.business.id && item.professionalId === request.professional_id
+    );
+
     if (input.action === "approve") {
+      assertCanAddFreeEmployee({
+        owner: workspace.professional,
+        directory,
+        businessId: workspace.business.id,
+        includePending: true,
+        exceptJoinRequestId: input.requestId
+      });
+
       const membershipPayload = {
-        id: makeId("membership"),
-        business_id: request.business_id,
-        professional_id: request.professional_id,
         role: request.role,
         scope: "member",
         work_schedule_mode: memberSchedule.workScheduleMode,
         work_schedule: memberSchedule.workSchedule,
-        custom_schedule: memberSchedule.customSchedule,
-        created_at: resolvedAt
+        custom_schedule: memberSchedule.customSchedule
       };
 
-      const { error: membershipError } = await supabase.from("business_memberships").insert(membershipPayload);
+      const { error: membershipError } = existingMembership
+        ? await supabase
+            .from("business_memberships")
+            .update(membershipPayload)
+            .eq("id", existingMembership.id)
+        : await supabase.from("business_memberships").insert({
+            id: makeId("membership"),
+            business_id: request.business_id,
+            professional_id: request.professional_id,
+            ...membershipPayload,
+            created_at: resolvedAt
+          });
       if (membershipError && !/duplicate/i.test(membershipError.message)) {
         throw new Error(membershipError.message);
+      }
+    } else if (existingMembership?.scope === "pending") {
+      const { error: membershipDeleteError } = await supabase
+        .from("business_memberships")
+        .delete()
+        .eq("id", existingMembership.id);
+
+      if (membershipDeleteError) {
+        throw new Error(membershipDeleteError.message);
       }
     }
 
@@ -3047,6 +3308,14 @@ export async function resolveJoinRequestForOwner(input: {
   }
 
   if (input.action === "approve") {
+    assertCanAddFreeEmployee({
+      owner: workspace.professional,
+      directory,
+      businessId: workspace.business.id,
+      includePending: true,
+      exceptJoinRequestId: input.requestId
+    });
+
     const existingMembership = store.memberships.find(
       (item) => item.businessId === request.businessId && item.professionalId === request.professionalId
     );
@@ -3467,14 +3736,6 @@ export async function updateWorkspaceSettingsForProfessional(
 
   if (password && password.length < 6) {
     throw new Error("Password must be at least 6 characters.");
-  }
-
-  if (
-    nextBusiness.allowOnlineBooking === true &&
-    workspace.business.allowOnlineBooking !== true &&
-    !isPremiumAccessActive(workspace.professional)
-  ) {
-    throw new Error("Online booking requires an active Pro subscription.");
   }
 
   if (isSupabaseConfigured()) {

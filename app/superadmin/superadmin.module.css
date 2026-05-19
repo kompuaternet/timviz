@@ -464,7 +464,8 @@
 
 .input,
 .searchInput,
-.select {
+.select,
+.textarea {
   width: 100%;
   min-height: 50px;
   padding: 12px 14px;
@@ -481,10 +482,16 @@
 
 .input:focus,
 .searchInput:focus,
-.select:focus {
+.select:focus,
+.textarea:focus {
   outline: none;
   border-color: #7058ff;
   box-shadow: 0 0 0 4px rgba(112, 88, 255, 0.12);
+}
+
+.textarea {
+  min-height: 120px;
+  resize: vertical;
 }
 
 .primaryButton,

@@ -125,6 +125,9 @@ export default function SuperadminView({
   const [status, setStatus] = useState("");
   const [isBusy, setIsBusy] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState(initialUsers[0]?.professionalId || "");
+  const [notificationTarget, setNotificationTarget] = useState<"selected" | "all">("selected");
+  const [notificationTitle, setNotificationTitle] = useState("Сообщение от Timviz");
+  const [notificationBody, setNotificationBody] = useState("");
   const [balanceDrafts, setBalanceDrafts] = useState<Record<string, { bookingCreditsTotal: string; walletBalance: string }>>(
     () =>
       Object.fromEntries(
@@ -314,6 +317,39 @@ export default function SuperadminView({
         return next;
       });
     }, `Пользователь ${user.fullName} удалён.`);
+  }
+
+  async function sendAdminNotification() {
+    const targetName =
+      notificationTarget === "all"
+        ? "всем пользователям"
+        : selectedUser?.fullName || "выбранному пользователю";
+    setIsBusy(true);
+    setStatus("");
+    try {
+      const response = await fetch("/api/superadmin/notifications", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          target: notificationTarget,
+          professionalId: selectedUserId,
+          title: notificationTitle,
+          body: notificationBody
+        })
+      });
+      const payload = await readJson(response);
+      if (!response.ok) {
+        throw new Error(payload.error || "Не удалось отправить уведомление.");
+      }
+      const recipients = Number(payload.recipients || 0);
+      const pushSent = Number(payload.pushSent || 0);
+      setNotificationBody("");
+      setStatus(`Уведомление отправлено ${targetName}: ${recipients} получателей, пушей ${pushSent}.`);
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : "Не удалось отправить уведомление.");
+    } finally {
+      setIsBusy(false);
+    }
   }
 
   async function toggleServiceBlocked(service: SuperadminServiceRecord, nextBlocked: boolean) {
@@ -677,6 +713,59 @@ export default function SuperadminView({
       </section>
 
       {status ? <div className={styles.statusBar}>{status}</div> : null}
+
+      <section className={styles.section}>
+        <div className={styles.sectionHeader}>
+          <div>
+            <h2>Уведомления в приложение</h2>
+            <p>Отправка появится в колокольчике пользователя и продублируется пушем на подключенные устройства.</p>
+          </div>
+        </div>
+        <div className={styles.balanceRow}>
+          <label className={styles.field}>
+            <span>Кому отправить</span>
+            <select
+              className={styles.select}
+              value={notificationTarget}
+              onChange={(event) => setNotificationTarget(event.target.value === "all" ? "all" : "selected")}
+            >
+              <option value="selected">Выбранному пользователю</option>
+              <option value="all">Всем пользователям</option>
+            </select>
+          </label>
+          <label className={styles.field}>
+            <span>Заголовок</span>
+            <input
+              className={styles.input}
+              value={notificationTitle}
+              onChange={(event) => setNotificationTitle(event.target.value)}
+              placeholder="Например: Важное обновление"
+            />
+          </label>
+        </div>
+        <label className={styles.field}>
+          <span>Текст уведомления</span>
+          <textarea
+            className={styles.textarea}
+            value={notificationBody}
+            onChange={(event) => setNotificationBody(event.target.value)}
+            placeholder="Коротко и понятно: что произошло и что человеку нужно сделать."
+          />
+        </label>
+        <div className={styles.rowActions}>
+          <button
+            type="button"
+            className={styles.primaryButton}
+            onClick={() => void sendAdminNotification()}
+            disabled={isBusy || !notificationTitle.trim() || !notificationBody.trim() || (notificationTarget === "selected" && !selectedUserId)}
+          >
+            Отправить уведомление
+          </button>
+          <span className={styles.rowMeta}>
+            {notificationTarget === "all" ? "Получат все активные аккаунты" : selectedUser ? `Получит ${selectedUser.fullName}` : "Выбери пользователя ниже"}
+          </span>
+        </div>
+      </section>
 
       <section className={styles.section}>
         <div className={styles.sectionHeader}>

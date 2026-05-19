@@ -5,7 +5,7 @@ export type TimvizPlan = "free" | "premium";
 export type PremiumStatus = "inactive" | "trialing" | "active" | "past_due" | "canceled";
 export type PremiumBilling = "monthly" | "yearly";
 
-export const FREE_APPOINTMENTS_PER_MONTH = 100;
+export const FREE_APPOINTMENTS_PER_MONTH = 500;
 export const PREMIUM_TRIAL_DAYS = 14;
 
 const freeLimitMessages: Record<SiteLanguage, string> = {
