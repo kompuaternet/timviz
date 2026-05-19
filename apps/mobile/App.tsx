@@ -1117,6 +1117,14 @@ const baseCopy = {
     reject: "Відхилити",
     businessPhotos: "Фото бізнесу",
     photosHint: "Перші фото відображаються на сторінці онлайн-запису.",
+    businessPhotoUploadTitle: "Додати фото бізнесу",
+    businessPhotoUploadSubtitle: "Профілі з фото отримують більше клієнтів",
+    businessPhotoSourceTitle: "Звідки додати фото",
+    businessPhotoFromCamera: "Зробити фото",
+    businessPhotoFromGallery: "Обрати з галереї",
+    businessPhotoDropHint: "На комп'ютері можна перетягнути фото сюди",
+    addMorePhoto: "Додати ще фото",
+    businessPhotoActionsTitle: "Дії з фото",
     streetAddress: "Адреса",
     addressDetails: "Деталі адреси",
     mapCoordinates: "Координати зберігаються з сайту; у застосунку редагується текстова адреса.",
@@ -1506,6 +1514,14 @@ const baseCopy = {
     reject: "Отклонить",
     businessPhotos: "Фото бизнеса",
     photosHint: "Первые фото отображаются на странице онлайн-записи.",
+    businessPhotoUploadTitle: "Добавить фото бизнеса",
+    businessPhotoUploadSubtitle: "Профили с фото получают больше клиентов",
+    businessPhotoSourceTitle: "Откуда добавить фото",
+    businessPhotoFromCamera: "Сделать фото",
+    businessPhotoFromGallery: "Выбрать из галереи",
+    businessPhotoDropHint: "На компьютере можно перетащить фото сюда",
+    addMorePhoto: "Добавить еще фото",
+    businessPhotoActionsTitle: "Действия с фото",
     streetAddress: "Адрес",
     addressDetails: "Детали адреса",
     mapCoordinates: "Координаты сохраняются с сайта; в приложении редактируется текстовый адрес.",
@@ -1895,6 +1911,14 @@ const baseCopy = {
     reject: "Reject",
     businessPhotos: "Business photos",
     photosHint: "The first photos appear on the online booking page.",
+    businessPhotoUploadTitle: "Add business photo",
+    businessPhotoUploadSubtitle: "Profiles with photos get more clients",
+    businessPhotoSourceTitle: "Add photo from",
+    businessPhotoFromCamera: "Take a photo",
+    businessPhotoFromGallery: "Choose from gallery",
+    businessPhotoDropHint: "On desktop you can drop a photo here",
+    addMorePhoto: "Add another photo",
+    businessPhotoActionsTitle: "Photo actions",
     streetAddress: "Address",
     addressDetails: "Address details",
     mapCoordinates: "Coordinates are saved from the website; the app edits the text address.",
@@ -2273,6 +2297,14 @@ const generatedMobileCopy = {
     reject: "Rejeter",
     businessPhotos: "Photos professionnelles",
     photosHint: "Les premières photos apparaissent sur la page de réservation en ligne.",
+    businessPhotoUploadTitle: "Ajouter une photo",
+    businessPhotoUploadSubtitle: "Les profils avec photos attirent plus de clients",
+    businessPhotoSourceTitle: "Ajouter une photo depuis",
+    businessPhotoFromCamera: "Prendre une photo",
+    businessPhotoFromGallery: "Choisir dans la galerie",
+    businessPhotoDropHint: "Sur ordinateur, vous pouvez déposer une photo ici",
+    addMorePhoto: "Ajouter une autre photo",
+    businessPhotoActionsTitle: "Actions photo",
     streetAddress: "Adresse",
     addressDetails: "Détails de l'adresse",
     mapCoordinates: "Les coordonnées sont enregistrées à partir du site Web ; l'application modifie l'adresse texte.",
@@ -2637,6 +2669,14 @@ const generatedMobileCopy = {
     reject: "Odrzuć",
     businessPhotos: "Zdjęcia biznesowe",
     photosHint: "Pierwsze zdjęcia pojawiają się na stronie rezerwacji online.",
+    businessPhotoUploadTitle: "Dodaj zdjęcie firmy",
+    businessPhotoUploadSubtitle: "Profile ze zdjęciami zdobywają więcej klientów",
+    businessPhotoSourceTitle: "Dodaj zdjęcie z",
+    businessPhotoFromCamera: "Zrób zdjęcie",
+    businessPhotoFromGallery: "Wybierz z galerii",
+    businessPhotoDropHint: "Na komputerze możesz przeciągnąć zdjęcie tutaj",
+    addMorePhoto: "Dodaj kolejne zdjęcie",
+    businessPhotoActionsTitle: "Akcje zdjęcia",
     streetAddress: "Adres",
     addressDetails: "Dane adresowe",
     mapCoordinates: "Współrzędne zapisywane są ze strony internetowej; aplikacja edytuje adres tekstowy.",
@@ -3001,6 +3041,14 @@ const generatedMobileCopy = {
     reject: "Odmítnout",
     businessPhotos: "Firemní fotografie",
     photosHint: "První fotografie se objeví na stránce online rezervace.",
+    businessPhotoUploadTitle: "Přidat firemní fotografii",
+    businessPhotoUploadSubtitle: "Profily s fotkami získávají více klientů",
+    businessPhotoSourceTitle: "Přidat fotku z",
+    businessPhotoFromCamera: "Vyfotit",
+    businessPhotoFromGallery: "Vybrat z galerie",
+    businessPhotoDropHint: "Na počítači sem můžete fotku přetáhnout",
+    addMorePhoto: "Přidat další fotku",
+    businessPhotoActionsTitle: "Akce s fotkou",
     streetAddress: "Adresa",
     addressDetails: "Podrobnosti adresy",
     mapCoordinates: "Souřadnice jsou uloženy z webové stránky; aplikace upraví textovou adresu.",
@@ -3365,6 +3413,14 @@ const generatedMobileCopy = {
     reject: "Rechazar",
     businessPhotos: "Fotos comerciales",
     photosHint: "Las primeras fotos aparecen en la página de reservas online.",
+    businessPhotoUploadTitle: "Agregar foto del negocio",
+    businessPhotoUploadSubtitle: "Los perfiles con fotos consiguen más clientes",
+    businessPhotoSourceTitle: "Agregar foto desde",
+    businessPhotoFromCamera: "Tomar foto",
+    businessPhotoFromGallery: "Elegir de la galería",
+    businessPhotoDropHint: "En escritorio puedes arrastrar una foto aquí",
+    addMorePhoto: "Agregar otra foto",
+    businessPhotoActionsTitle: "Acciones de foto",
     streetAddress: "Dirección",
     addressDetails: "Detalles de la dirección",
     mapCoordinates: "Las coordenadas se guardan desde el sitio web; la aplicación edita la dirección de texto.",
@@ -3729,6 +3785,14 @@ const generatedMobileCopy = {
     reject: "Ablehnen",
     businessPhotos: "Geschäftsfotos",
     photosHint: "Die ersten Fotos erscheinen auf der Online-Buchungsseite.",
+    businessPhotoUploadTitle: "Geschäftsfoto hinzufügen",
+    businessPhotoUploadSubtitle: "Profile mit Fotos gewinnen mehr Kunden",
+    businessPhotoSourceTitle: "Foto hinzufügen aus",
+    businessPhotoFromCamera: "Foto aufnehmen",
+    businessPhotoFromGallery: "Aus Galerie wählen",
+    businessPhotoDropHint: "Am Desktop können Sie ein Foto hier ablegen",
+    addMorePhoto: "Weiteres Foto hinzufügen",
+    businessPhotoActionsTitle: "Fotoaktionen",
     streetAddress: "Adresse",
     addressDetails: "Adressdetails",
     mapCoordinates: "Koordinaten werden von der Website gespeichert; Die App bearbeitet die Textadresse.",
@@ -10175,7 +10239,8 @@ function SettingsTab({
   const [saving, setSaving] = useState(false);
   const [statusText, setStatusText] = useState("");
   const [pendingJoinRequests, setPendingJoinRequests] = useState<NonNullable<MobileNotificationsPayload["pendingJoinRequests"]>>([]);
-  const [photoDraft, setPhotoDraft] = useState({ url: "", caption: "" });
+  const [photoSourceOpen, setPhotoSourceOpen] = useState(false);
+  const [photoActionPhoto, setPhotoActionPhoto] = useState<BusinessPhotoRecord | null>(null);
   const [addressSearchValue, setAddressSearchValue] = useState("");
   const [addressSuggestions, setAddressSuggestions] = useState<AddressSuggestionRecord[]>([]);
   const [isSearchingAddress, setIsSearchingAddress] = useState(false);
@@ -10534,57 +10599,67 @@ function SettingsTab({
     }
   }
 
-  function addBusinessPhoto() {
-    const url = photoDraft.url.trim();
-    if (!url) {
-      Alert.alert(t.businessPhotos, t.requiredText);
-      return;
-    }
+  async function addBusinessPhotoFromDataUrl(dataUrl: string) {
     const nextPhoto: BusinessPhotoRecord = {
       id: createLocalId("photo"),
-      url,
-      caption: photoDraft.caption.trim(),
+      url: await uploadMediaDataUrl(dataUrl, "business-photo"),
+      caption: "",
       isPrimary: photos.length === 0,
       createdAt: new Date().toISOString(),
       status: "active",
     };
-    setPhotoDraft({ url: "", caption: "" });
-    void saveBusinessPhotos([...photos, nextPhoto]);
+    await saveBusinessPhotos([...photos, nextPhoto]);
   }
 
-  async function pickBusinessPhoto() {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+  async function pickBusinessPhoto(source: "camera" | "gallery") {
+    setPhotoSourceOpen(false);
+    const permission = source === "camera"
+      ? await ImagePicker.requestCameraPermissionsAsync()
+      : await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
       Alert.alert(t.businessPhotos, t.avatarPermission);
       return;
     }
 
-    const result = await ImagePicker.launchImageLibraryAsync({
+    const pickerOptions: ImagePicker.ImagePickerOptions = {
       mediaTypes: "images",
       allowsEditing: true,
       quality: 0.5,
       base64: true,
-    });
+    };
+    const result = source === "camera"
+      ? await ImagePicker.launchCameraAsync(pickerOptions)
+      : await ImagePicker.launchImageLibraryAsync(pickerOptions);
 
     if (result.canceled || !result.assets?.[0]) return;
     const asset = result.assets[0];
     if (!asset.base64) return;
     setSaving(true);
     try {
-      const photoUrl = await uploadMediaDataUrl(
-        `data:${asset.mimeType || "image/jpeg"};base64,${asset.base64}`,
-        "business-photo"
-      );
-      const nextPhoto: BusinessPhotoRecord = {
-        id: createLocalId("photo"),
-        url: photoUrl,
-        caption: photoDraft.caption.trim(),
-        isPrimary: photos.length === 0,
-        createdAt: new Date().toISOString(),
-        status: "active",
-      };
-      setPhotoDraft({ url: "", caption: "" });
-      await saveBusinessPhotos([...photos, nextPhoto]);
+      await addBusinessPhotoFromDataUrl(`data:${asset.mimeType || "image/jpeg"};base64,${asset.base64}`);
+    } catch (error) {
+      Alert.alert(t.businessPhotos, error instanceof Error ? error.message : t.settingsSaveError);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function uploadDroppedBusinessPhoto(event: any) {
+    event?.preventDefault?.();
+    const file = event?.dataTransfer?.files?.[0];
+    if (!file) return;
+    setPhotoSourceOpen(false);
+    setSaving(true);
+    try {
+      const dataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(String(reader.result || ""));
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+      if (dataUrl) {
+        await addBusinessPhotoFromDataUrl(dataUrl);
+      }
     } catch (error) {
       Alert.alert(t.businessPhotos, error instanceof Error ? error.message : t.settingsSaveError);
     } finally {
@@ -10603,32 +10678,156 @@ function SettingsTab({
   }
 
   function renderBusinessPhotosPanel() {
+    const dropHandlers = Platform.OS === "web"
+      ? ({
+          onDragOver: (event: any) => event?.preventDefault?.(),
+          onDrop: uploadDroppedBusinessPhoto,
+        } as any)
+      : {};
+
     return (
       <Panel title={t.businessPhotos}>
         <Text style={styles.emptyText}>{t.photosHint}</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.settingsPhotoRail}>
-          {photos.length ? photos.map((photo) => (
-            <View key={photo.id} style={styles.settingsPhotoCard}>
-              <Image source={{ uri: photo.url }} style={styles.settingsPhoto} />
-              <View style={styles.settingsPhotoActions}>
-                <Text style={styles.settingsPhotoBadge}>{photo.isPrimary ? t.primaryPhoto : photo.caption || t.businessPhotos}</Text>
-                {!photo.isPrimary ? <SecondaryButton label={t.makePrimary} onPress={() => makePrimaryPhoto(photo.id)} disabled={!isOwner || saving} /> : null}
-                <SecondaryButton label={t.delete} onPress={() => removeBusinessPhoto(photo.id)} disabled={!isOwner || saving} />
-              </View>
+        {!photos.length ? (
+          <Pressable
+            {...dropHandlers}
+            style={({ pressed }) => [styles.businessPhotoUploadCard, pressed && !saving && styles.pressablePressed, (!isOwner || saving) && styles.disabled]}
+            onPress={() => setPhotoSourceOpen(true)}
+            disabled={!isOwner || saving}
+          >
+            <View style={styles.businessPhotoUploadIcon}>
+              <Ionicons name="camera" size={26} color="#6D4AFF" />
             </View>
-          )) : (
-            <View style={styles.settingsPhotoPlaceholder}>
-              <Ionicons name="image-outline" size={24} color="#94A3B8" />
+            <Text style={styles.businessPhotoUploadTitle}>{t.businessPhotoUploadTitle}</Text>
+            <Text style={styles.businessPhotoUploadSubtitle}>{t.businessPhotoUploadSubtitle}</Text>
+            <View style={styles.businessPhotoExampleRow}>
+              {["storefront-outline", "sparkles-outline", "image-outline"].map((icon) => (
+                <View key={icon} style={styles.businessPhotoExamplePill}>
+                  <Ionicons name={icon as ComponentProps<typeof Ionicons>["name"]} size={15} color="#6D4AFF" />
+                </View>
+              ))}
             </View>
-          )}
-        </ScrollView>
-        <Field label={t.photoUrl} value={photoDraft.url} editable={isOwner} onChangeText={(value) => setPhotoDraft((current) => ({ ...current, url: value }))} placeholder="https://..." autoCapitalize="none" />
-        <Field label={t.photoCaption} value={photoDraft.caption} editable={isOwner} onChangeText={(value) => setPhotoDraft((current) => ({ ...current, caption: value }))} />
-        <View style={styles.settingsActionRow}>
-          <SecondaryButton label={t.uploadPhoto} onPress={pickBusinessPhoto} disabled={!isOwner || saving} />
-          <SecondaryButton label={t.addPhoto} onPress={addBusinessPhoto} disabled={!isOwner || saving} />
-        </View>
+            {Platform.OS === "web" ? <Text style={styles.businessPhotoDropHint}>{t.businessPhotoDropHint}</Text> : null}
+          </Pressable>
+        ) : (
+          <View style={styles.businessPhotoGrid}>
+            {photos.map((photo) => (
+              <Pressable
+                key={photo.id}
+                style={({ pressed }) => [styles.businessPhotoTile, pressed && styles.pressablePressed]}
+                onPress={() => setPhotoActionPhoto(photo)}
+                onLongPress={() => setPhotoActionPhoto(photo)}
+              >
+                <Image source={{ uri: photo.url }} style={styles.businessPhotoGridImage} />
+                {photo.isPrimary ? (
+                  <View style={styles.businessPhotoPrimaryBadge}>
+                    <Ionicons name="star" size={11} color="#FFFFFF" />
+                    <Text style={styles.businessPhotoPrimaryText}>{t.primaryPhoto}</Text>
+                  </View>
+                ) : null}
+                <View style={styles.businessPhotoTileAction}>
+                  <Ionicons name="ellipsis-horizontal" size={15} color="#0F172A" />
+                </View>
+              </Pressable>
+            ))}
+            <Pressable
+              {...dropHandlers}
+              style={({ pressed }) => [styles.businessPhotoAddTile, pressed && !saving && styles.pressablePressed, (!isOwner || saving) && styles.disabled]}
+              onPress={() => setPhotoSourceOpen(true)}
+              disabled={!isOwner || saving}
+            >
+              <Ionicons name="add" size={24} color="#6D4AFF" />
+              <Text style={styles.businessPhotoAddText}>{t.addMorePhoto}</Text>
+            </Pressable>
+          </View>
+        )}
       </Panel>
+    );
+  }
+
+  function renderBusinessPhotoSourceSheet() {
+    return (
+      <Modal transparent visible={photoSourceOpen} animationType="slide" onRequestClose={() => setPhotoSourceOpen(false)}>
+        <View style={styles.modalBackdrop}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => setPhotoSourceOpen(false)} />
+          <View style={styles.mediaActionSheet}>
+            <View style={styles.sheetHandle} />
+            <View style={styles.mediaSheetHeader}>
+              <Text style={styles.mediaSheetTitle}>{t.businessPhotoSourceTitle}</Text>
+              <Pressable style={styles.mediaSheetClose} onPress={() => setPhotoSourceOpen(false)}>
+                <Ionicons name="close" size={20} color="#0F172A" />
+              </Pressable>
+            </View>
+            <Pressable style={styles.mediaActionRow} onPress={() => void pickBusinessPhoto("camera")} disabled={saving}>
+              <View style={styles.mediaActionIcon}>
+                <Ionicons name="camera-outline" size={20} color="#6D4AFF" />
+              </View>
+              <Text style={styles.mediaActionText}>{t.businessPhotoFromCamera}</Text>
+            </Pressable>
+            <Pressable style={styles.mediaActionRow} onPress={() => void pickBusinessPhoto("gallery")} disabled={saving}>
+              <View style={styles.mediaActionIcon}>
+                <Ionicons name="images-outline" size={20} color="#6D4AFF" />
+              </View>
+              <Text style={styles.mediaActionText}>{t.businessPhotoFromGallery}</Text>
+            </Pressable>
+            {Platform.OS === "web" ? <Text style={styles.mediaSheetHint}>{t.businessPhotoDropHint}</Text> : null}
+          </View>
+        </View>
+      </Modal>
+    );
+  }
+
+  function renderBusinessPhotoActionsSheet() {
+    const photo = photoActionPhoto;
+    return (
+      <Modal transparent visible={Boolean(photo)} animationType="slide" onRequestClose={() => setPhotoActionPhoto(null)}>
+        <View style={styles.modalBackdrop}>
+          <Pressable style={StyleSheet.absoluteFill} onPress={() => setPhotoActionPhoto(null)} />
+          <View style={styles.mediaActionSheet}>
+            <View style={styles.sheetHandle} />
+            <View style={styles.mediaSheetHeader}>
+              <Text style={styles.mediaSheetTitle}>{t.businessPhotoActionsTitle}</Text>
+              <Pressable style={styles.mediaSheetClose} onPress={() => setPhotoActionPhoto(null)}>
+                <Ionicons name="close" size={20} color="#0F172A" />
+              </Pressable>
+            </View>
+            {photo ? <Image source={{ uri: photo.url }} style={styles.mediaPhotoPreview} /> : null}
+            {photo && !photo.isPrimary ? (
+              <Pressable
+                style={styles.mediaActionRow}
+                onPress={() => {
+                  setPhotoActionPhoto(null);
+                  makePrimaryPhoto(photo.id);
+                }}
+                disabled={saving}
+              >
+                <View style={styles.mediaActionIcon}>
+                  <Ionicons name="star-outline" size={20} color="#6D4AFF" />
+                </View>
+                <Text style={styles.mediaActionText}>{t.makePrimary}</Text>
+              </Pressable>
+            ) : null}
+            {photo ? (
+              <Pressable
+                style={[styles.mediaActionRow, styles.mediaDangerActionRow]}
+                onPress={() => {
+                  setPhotoActionPhoto(null);
+                  removeBusinessPhoto(photo.id);
+                }}
+                disabled={saving}
+              >
+                <View style={[styles.mediaActionIcon, styles.mediaDangerActionIcon]}>
+                  <Ionicons name="trash-outline" size={20} color="#E11D48" />
+                </View>
+                <Text style={styles.mediaDangerActionText}>{t.delete}</Text>
+              </Pressable>
+            ) : null}
+            <Pressable style={styles.mediaCancelButton} onPress={() => setPhotoActionPhoto(null)}>
+              <Text style={styles.mediaCancelText}>{t.cancel}</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     );
   }
 
@@ -11170,6 +11369,8 @@ function SettingsTab({
         <PrimaryButton label={saving ? t.signingIn : t.saveSettings} onPress={saveSettings} disabled={saving || busy || !workspace} />
         <SecondaryButton label={t.signOut} onPress={onSignOut} disabled={busy || saving} />
       </Panel>
+      {renderBusinessPhotoSourceSheet()}
+      {renderBusinessPhotoActionsSheet()}
     </View>
   );
 }
@@ -16063,6 +16264,230 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#CBD5E1",
     backgroundColor: "#FFFFFF",
+  },
+  businessPhotoUploadCard: {
+    minHeight: 196,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    padding: 18,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: "rgba(196, 181, 253, 0.72)",
+    backgroundColor: "#FBFAFF",
+    shadowColor: "#6D4AFF",
+    shadowOpacity: 0.08,
+    shadowRadius: 22,
+    shadowOffset: { width: 0, height: 10 },
+  },
+  businessPhotoUploadIcon: {
+    width: 62,
+    height: 62,
+    borderRadius: 22,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#F1EEFF",
+  },
+  businessPhotoUploadTitle: {
+    marginTop: 4,
+    color: "#111827",
+    fontSize: 18,
+    lineHeight: 23,
+    fontWeight: "900",
+    textAlign: "center",
+  },
+  businessPhotoUploadSubtitle: {
+    maxWidth: 260,
+    color: "#64748B",
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: "700",
+    textAlign: "center",
+  },
+  businessPhotoDropHint: {
+    color: "#8B7CF6",
+    fontSize: 12,
+    fontWeight: "800",
+    textAlign: "center",
+  },
+  businessPhotoExampleRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 4,
+  },
+  businessPhotoExamplePill: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#E6E0FF",
+  },
+  businessPhotoGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+  },
+  businessPhotoTile: {
+    width: "48%",
+    aspectRatio: 1,
+    overflow: "hidden",
+    borderRadius: 22,
+    backgroundColor: "#EEF2FF",
+    shadowColor: "#142033",
+    shadowOpacity: 0.08,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 8 },
+  },
+  businessPhotoGridImage: {
+    width: "100%",
+    height: "100%",
+    backgroundColor: "#E2E8F0",
+  },
+  businessPhotoPrimaryBadge: {
+    position: "absolute",
+    left: 8,
+    top: 8,
+    maxWidth: "82%",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+    borderRadius: 999,
+    backgroundColor: "rgba(109, 74, 255, 0.92)",
+  },
+  businessPhotoPrimaryText: {
+    color: "#FFFFFF",
+    fontSize: 10,
+    fontWeight: "900",
+  },
+  businessPhotoTileAction: {
+    position: "absolute",
+    right: 8,
+    bottom: 8,
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+  },
+  businessPhotoAddTile: {
+    width: "48%",
+    aspectRatio: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: "rgba(196, 181, 253, 0.82)",
+    borderStyle: "dashed",
+    backgroundColor: "#FBFAFF",
+  },
+  businessPhotoAddText: {
+    maxWidth: 112,
+    color: "#5B4BDB",
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: "900",
+    textAlign: "center",
+  },
+  mediaActionSheet: {
+    gap: 10,
+    marginTop: "auto",
+    paddingHorizontal: 18,
+    paddingTop: 8,
+    paddingBottom: 28,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    backgroundColor: "#FFFFFF",
+    shadowColor: "#142033",
+    shadowOpacity: 0.16,
+    shadowRadius: 30,
+    shadowOffset: { width: 0, height: -10 },
+  },
+  mediaSheetHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  mediaSheetTitle: {
+    flex: 1,
+    color: "#111827",
+    fontSize: 19,
+    lineHeight: 24,
+    fontWeight: "900",
+  },
+  mediaSheetClose: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#F8FAFF",
+    borderWidth: 1,
+    borderColor: "#E5EAF3",
+  },
+  mediaActionRow: {
+    minHeight: 58,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    paddingHorizontal: 12,
+    borderRadius: 18,
+    backgroundColor: "#F8FAFF",
+  },
+  mediaActionIcon: {
+    width: 38,
+    height: 38,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#F1EEFF",
+  },
+  mediaActionText: {
+    color: "#111827",
+    fontSize: 15,
+    fontWeight: "900",
+  },
+  mediaSheetHint: {
+    color: "#64748B",
+    fontSize: 12,
+    lineHeight: 17,
+    fontWeight: "700",
+    textAlign: "center",
+  },
+  mediaPhotoPreview: {
+    width: "100%",
+    height: 190,
+    borderRadius: 22,
+    backgroundColor: "#E2E8F0",
+  },
+  mediaDangerActionRow: {
+    backgroundColor: "#FFF1F2",
+  },
+  mediaDangerActionIcon: {
+    backgroundColor: "#FFE4E6",
+  },
+  mediaDangerActionText: {
+    color: "#E11D48",
+    fontSize: 15,
+    fontWeight: "900",
+  },
+  mediaCancelButton: {
+    minHeight: 48,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 18,
+  },
+  mediaCancelText: {
+    color: "#64748B",
+    fontSize: 14,
+    fontWeight: "900",
   },
   telegramStatus: {
     flexDirection: "row",
