@@ -917,6 +917,13 @@ const baseCopy = {
     signOut: "Вийти",
     requiredTitle: "Потрібні дані",
     requiredText: "Заповніть усі поля.",
+    registerFirstNameRequired: "Введіть ім'я.",
+    registerEmailRequired: "Введіть email.",
+    registerEmailInvalid: "Введіть коректний email.",
+    registerPasswordRequired: "Введіть пароль.",
+    registerPasswordTooShort: "Пароль має містити щонайменше 6 символів.",
+    registerPhoneRequired: "Введіть телефон.",
+    registerCompanyRequired: "Введіть назву бізнесу.",
     loginError: "Помилка входу",
     registerError: "Помилка реєстрації",
     passwordHint: "Мінімум 6 символів",
@@ -1256,6 +1263,7 @@ const baseCopy = {
     pushOpenSettings: "Відкрити налаштування iPhone",
     pushDeviceCount: "Пристроїв",
     pushProjectMissing: "Не налаштовано Expo projectId для push-сповіщень. Додайте EXPO_PUBLIC_EAS_PROJECT_ID у конфігурацію застосунку.",
+    pushIosCapabilityMissing: "Для push-сповіщень потрібна нова TestFlight-збірка з увімкненими Push Notifications в Apple Developer.",
     minutesBefore: "хв до запису",
     hoursBefore: "год до запису",
     dayBefore: "за день",
@@ -1339,6 +1347,13 @@ const baseCopy = {
     signOut: "Выйти",
     requiredTitle: "Нужны данные",
     requiredText: "Заполните все поля.",
+    registerFirstNameRequired: "Введите имя.",
+    registerEmailRequired: "Введите email.",
+    registerEmailInvalid: "Введите корректный email.",
+    registerPasswordRequired: "Введите пароль.",
+    registerPasswordTooShort: "Пароль должен быть минимум 6 символов.",
+    registerPhoneRequired: "Введите телефон.",
+    registerCompanyRequired: "Введите название бизнеса.",
     loginError: "Ошибка входа",
     registerError: "Ошибка регистрации",
     passwordHint: "Минимум 6 символов",
@@ -1678,6 +1693,7 @@ const baseCopy = {
     pushOpenSettings: "Открыть настройки iPhone",
     pushDeviceCount: "Устройств",
     pushProjectMissing: "Не настроен Expo projectId для push-уведомлений. Добавьте EXPO_PUBLIC_EAS_PROJECT_ID в конфигурацию приложения.",
+    pushIosCapabilityMissing: "Для push-уведомлений нужна новая TestFlight-сборка с включенными Push Notifications в Apple Developer.",
     minutesBefore: "мин до записи",
     hoursBefore: "ч до записи",
     dayBefore: "за день",
@@ -1761,6 +1777,13 @@ const baseCopy = {
     signOut: "Sign out",
     requiredTitle: "Missing details",
     requiredText: "Fill in all fields.",
+    registerFirstNameRequired: "Enter your first name.",
+    registerEmailRequired: "Enter your email.",
+    registerEmailInvalid: "Enter a valid email.",
+    registerPasswordRequired: "Enter your password.",
+    registerPasswordTooShort: "Password must be at least 6 characters.",
+    registerPhoneRequired: "Enter your phone number.",
+    registerCompanyRequired: "Enter your business name.",
     loginError: "Sign-in error",
     registerError: "Registration error",
     passwordHint: "At least 6 characters",
@@ -2100,6 +2123,7 @@ const baseCopy = {
     pushOpenSettings: "Open iPhone settings",
     pushDeviceCount: "Devices",
     pushProjectMissing: "Expo projectId is not configured for push notifications. Add EXPO_PUBLIC_EAS_PROJECT_ID to the app configuration.",
+    pushIosCapabilityMissing: "Push notifications need a new TestFlight build with Push Notifications enabled in Apple Developer.",
     minutesBefore: "min before",
     hoursBefore: "h before",
     dayBefore: "one day before",
@@ -5590,6 +5614,12 @@ export default function App() {
   const [serviceDraft, setServiceDraft] = useState<ServiceDraftState>({ name: "", category: DEFAULT_SERVICE_CATEGORY, durationMinutes: "60", price: "0", color: SERVICE_COLORS[0] });
   const [clientDraft, setClientDraft] = useState({ firstName: "", lastName: "", phone: "", email: "" });
   const pendingServiceSavesRef = useRef<Map<string, PendingServiceSave>>(new Map());
+  const pendingServiceDeletesRef = useRef<Set<string>>(new Set());
+  const pendingServicePatchesRef = useRef<Map<string, Partial<ServiceRecord>>>(new Map());
+  const pendingAppointmentCreatesRef = useRef<Map<string, AppointmentRecord>>(new Map());
+  const pendingAppointmentDeletesRef = useRef<Set<string>>(new Set());
+  const pendingAppointmentPatchesRef = useRef<Map<string, Partial<AppointmentRecord>>>(new Map());
+  const pendingClientCreatesRef = useRef<Map<string, ClientRecord>>(new Map());
   const serviceSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const serviceSaveInFlightRef = useRef(false);
   const serviceSaveFlushPromiseRef = useRef<Promise<void> | null>(null);
@@ -5687,6 +5717,50 @@ export default function App() {
     });
   }
 
+  function applyPendingAppointmentStateToList(appointments: AppointmentRecord[], date: string) {
+    const pendingCreates = Array.from(pendingAppointmentCreatesRef.current.values()).filter((item) => (item.appointmentDate || date) === date);
+    const nextAppointments = appointments
+      .filter((appointment) => !pendingAppointmentDeletesRef.current.has(appointment.id))
+      .map((appointment) => ({ ...appointment, ...(pendingAppointmentPatchesRef.current.get(appointment.id) || {}) }));
+
+    pendingCreates.forEach((appointment) => {
+      if (!nextAppointments.some((item) => item.id === appointment.id)) {
+        nextAppointments.push(appointment);
+      }
+    });
+
+    return nextAppointments.sort((left, right) => left.startTime.localeCompare(right.startTime));
+  }
+
+  function withPendingCalendarState(snapshot: CalendarSnapshot, date: string): CalendarSnapshot {
+    const appointments = applyPendingAppointmentStateToList(snapshot.appointments || [], date);
+    return {
+      ...snapshot,
+      appointments,
+      memberCalendars: snapshot.memberCalendars?.map((member) => ({
+        ...member,
+        appointments: applyPendingAppointmentStateToList(member.appointments || [], date).filter((appointment) => (appointment.professionalId || member.professionalId) === member.professionalId),
+      })),
+      stats: {
+        ...snapshot.stats,
+        day: {
+          ...snapshot.stats.day,
+          visitsCount: appointments.filter((item) => item.kind === "appointment" && (item.appointmentDate || date) === date).length,
+        },
+      },
+    };
+  }
+
+  function withPendingClientCreates(nextClients: ClientRecord[]) {
+    const pendingClients = Array.from(pendingClientCreatesRef.current.values());
+    if (!pendingClients.length) return nextClients;
+    const existingIds = new Set(nextClients.map((client) => client.id));
+    return [
+      ...pendingClients.filter((client) => !existingIds.has(client.id)),
+      ...nextClients,
+    ];
+  }
+
   function mergeWorkspaceServices(updater: (services: ServiceRecord[]) => ServiceRecord[]) {
     setWorkspace((current) => {
       if (!current) return current;
@@ -5725,11 +5799,18 @@ export default function App() {
     return Boolean(workspace?.services.some((item) => serviceMatchesPending(item, pendingLookup)));
   }
 
+  function serviceIsPendingDelete(service: ServiceRecord) {
+    return pendingServiceDeletesRef.current.has(service.id);
+  }
+
   function withPendingServiceSaves(snapshot: WorkspaceSnapshot): WorkspaceSnapshot {
     const pending = Array.from(pendingServiceSavesRef.current.values());
-    if (!pending.length) return snapshot;
+    const hasPendingDeletes = pendingServiceDeletesRef.current.size > 0;
+    if (!pending.length && !hasPendingDeletes) return snapshot;
 
-    const nextServices = [...(snapshot.services || [])];
+    const nextServices = (snapshot.services || [])
+      .filter((service) => !serviceIsPendingDelete(service))
+      .map((service) => ({ ...service, ...(pendingServicePatchesRef.current.get(service.id) || {}) }));
     pending.forEach((item) => {
       if (!nextServices.some((service) => serviceMatchesPending(service, item))) {
         nextServices.unshift(item.optimisticService);
@@ -6010,7 +6091,7 @@ export default function App() {
       const response = await fetch(`${API_BASE_URL}/api/mobile/pro/calendar?date=${encodeURIComponent(date)}`, { headers });
       const result = await response.json().catch(() => ({}));
       if (!response.ok || result?.error) return;
-      setCalendar(result as CalendarSnapshot);
+      setCalendar(withPendingCalendarState(result as CalendarSnapshot, date));
       setCalendarDate(date);
     } catch {
       // Background calendar refresh should never block navigation.
@@ -6046,7 +6127,7 @@ export default function App() {
       if (servicesResult?.error) throw new Error(servicesResult.error);
       if (staffResult?.error) throw new Error(staffResult.error);
 
-      const nextClients = Array.isArray(clientsResult.clients) ? clientsResult.clients : [];
+      const nextClients = withPendingClientCreates(Array.isArray(clientsResult.clients) ? clientsResult.clients : []);
       const nextCatalog = Array.isArray(servicesResult.catalog) ? servicesResult.catalog : [];
       const nextWorkspace = withPendingServiceSaves(workspaceResult);
       if (!workspaceLanguageAppliedRef.current) {
@@ -6055,7 +6136,7 @@ export default function App() {
         workspaceLanguageAppliedRef.current = true;
       }
       setWorkspace(nextWorkspace);
-      setCalendar(calendarResult);
+      setCalendar(withPendingCalendarState(calendarResult, date));
       setCalendarDate(date);
       setClients(nextClients);
       setServiceCatalog(nextCatalog);
@@ -6172,6 +6253,23 @@ export default function App() {
       currency: detectedCountry.currency || "UAH",
     });
     setCustomPhonePrefix("");
+  }
+
+  function getRegisterValidationMessage(payload: {
+    firstName: string;
+    email: string;
+    password: string;
+    phone: string;
+    companyName: string;
+  }) {
+    if (!payload.firstName) return t.registerFirstNameRequired;
+    if (!payload.email) return t.registerEmailRequired;
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(payload.email)) return t.registerEmailInvalid;
+    if (!payload.password) return t.registerPasswordRequired;
+    if (payload.password.length < 6) return t.registerPasswordTooShort;
+    if (!payload.phone) return t.registerPhoneRequired;
+    if (!payload.companyName) return t.registerCompanyRequired;
+    return "";
   }
 
   async function signIn() {
@@ -6292,14 +6390,9 @@ export default function App() {
       timezone: detectedTimezone,
     };
 
-    if (
-      !payload.firstName ||
-      !payload.email ||
-      !payload.password ||
-      !payload.phone ||
-      !payload.companyName
-    ) {
-      Alert.alert(t.requiredTitle, t.requiredText);
+    const validationMessage = getRegisterValidationMessage(payload);
+    if (validationMessage) {
+      Alert.alert(t.requiredTitle, validationMessage);
       return;
     }
 
@@ -6343,6 +6436,13 @@ export default function App() {
     setClients([]);
     setServiceCatalog([]);
     setStaffSnapshot(null);
+    pendingServiceSavesRef.current.clear();
+    pendingServiceDeletesRef.current.clear();
+    pendingServicePatchesRef.current.clear();
+    pendingAppointmentCreatesRef.current.clear();
+    pendingAppointmentDeletesRef.current.clear();
+    pendingAppointmentPatchesRef.current.clear();
+    pendingClientCreatesRef.current.clear();
     setBusy(false);
   }
 
@@ -6406,6 +6506,7 @@ export default function App() {
         targetProfessionalId: visitDraft.targetProfessionalId,
       })
     );
+    optimisticAppointments.forEach((appointment) => pendingAppointmentCreatesRef.current.set(appointment.id, appointment));
     mergeCalendarAppointments(appointmentDate, (appointments) =>
       [...appointments, ...optimisticAppointments].sort((left, right) => left.startTime.localeCompare(right.startTime))
     );
@@ -6430,6 +6531,7 @@ export default function App() {
           })),
         }),
       });
+      optimisticAppointments.forEach((appointment) => pendingAppointmentCreatesRef.current.delete(appointment.id));
       setVisitDraft(createDefaultVisitDraft(appointmentDate, items[0]?.startTime || "09:00"));
       if (!hadAppointmentsBefore) {
         Alert.alert("Timviz", t.firstAppointmentCreated);
@@ -6437,6 +6539,7 @@ export default function App() {
       await refreshCalendarOnly(session, appointmentDate);
       return true;
     } catch (error) {
+      optimisticAppointments.forEach((appointment) => pendingAppointmentCreatesRef.current.delete(appointment.id));
       Alert.alert(t.addVisit, error instanceof Error ? error.message : t.addVisit);
       revalidateWorkspace(appointmentDate);
       return false;
@@ -6484,6 +6587,8 @@ export default function App() {
         targetProfessionalId: editingAppointment.professionalId || visitDraft.targetProfessionalId,
       })
     );
+    pendingAppointmentPatchesRef.current.set(editingAppointment.id, updatedAppointment);
+    optimisticExtraAppointments.forEach((appointment) => pendingAppointmentCreatesRef.current.set(appointment.id, appointment));
     mergeCalendarAppointments(appointmentDate, (appointments) =>
       [
         ...appointments.map((appointment) => (appointment.id === editingAppointment.id ? updatedAppointment : appointment)),
@@ -6530,8 +6635,14 @@ export default function App() {
           }),
         });
       })
-      .then(() => refreshCalendarOnly(session, appointmentDate))
+      .then(async () => {
+        pendingAppointmentPatchesRef.current.delete(editingAppointment.id);
+        optimisticExtraAppointments.forEach((appointment) => pendingAppointmentCreatesRef.current.delete(appointment.id));
+        await refreshCalendarOnly(session, appointmentDate);
+      })
       .catch((error) => {
+        pendingAppointmentPatchesRef.current.delete(editingAppointment.id);
+        optimisticExtraAppointments.forEach((appointment) => pendingAppointmentCreatesRef.current.delete(appointment.id));
         Alert.alert(t.editVisit, error instanceof Error ? error.message : t.editVisit);
         revalidateWorkspace(appointmentDate);
       });
@@ -6555,6 +6666,7 @@ export default function App() {
       visitsCount: 0,
       totalSales: 0,
     };
+    pendingClientCreatesRef.current.set(optimisticClient.id, optimisticClient);
     setClients((current) => [optimisticClient, ...current]);
     void apiFetch("/api/mobile/pro/clients", {
         method: "POST",
@@ -6567,8 +6679,13 @@ export default function App() {
           marketingTelegram: false,
         }),
       })
-      .then(() => refreshAll(session, selectedDate, { silent: true }))
+      .then(async () => {
+        pendingClientCreatesRef.current.delete(optimisticClient.id);
+        await refreshAll(session, selectedDate, { silent: true });
+      })
       .catch((error) => {
+        pendingClientCreatesRef.current.delete(optimisticClient.id);
+        setClients((current) => current.filter((client) => client.id !== optimisticClient.id));
         Alert.alert(t.addClient, error instanceof Error ? error.message : t.addClient);
         revalidateWorkspace();
       });
@@ -6583,11 +6700,15 @@ export default function App() {
         style: "destructive",
         onPress: async () => {
           const appointmentDate = appointment.appointmentDate || selectedDate;
+          pendingAppointmentDeletesRef.current.add(appointment.id);
+          pendingAppointmentCreatesRef.current.delete(appointment.id);
+          pendingAppointmentPatchesRef.current.delete(appointment.id);
           mergeCalendarAppointments(appointmentDate, (appointments) => appointments.filter((item) => item.id !== appointment.id));
           const target = appointment.professionalId ? `&targetProfessionalId=${encodeURIComponent(appointment.professionalId)}` : "";
           void apiFetch(`/api/mobile/pro/calendar?appointmentId=${encodeURIComponent(appointment.id)}${target}`, { method: "DELETE" })
             .then(() => refreshCalendarOnly(session, appointmentDate))
             .catch((error) => {
+              pendingAppointmentDeletesRef.current.delete(appointment.id);
               Alert.alert(t.delete, error instanceof Error ? error.message : t.delete);
               revalidateWorkspace(appointmentDate);
             });
@@ -6598,6 +6719,7 @@ export default function App() {
 
   async function updateAppointmentTime(appointment: AppointmentRecord, startTime: string, endTime: string) {
     const appointmentDate = appointment.appointmentDate || selectedDate;
+    pendingAppointmentPatchesRef.current.set(appointment.id, { startTime, endTime });
     mergeCalendarAppointments(appointmentDate, (appointments) =>
       appointments
         .map((item) => (item.id === appointment.id ? { ...item, startTime, endTime } : item))
@@ -6614,24 +6736,16 @@ export default function App() {
           previousAppointmentDate: appointment.appointmentDate,
         }),
       })
-      .then(() => refreshCalendarOnly(session, appointmentDate))
+      .then(async () => {
+        pendingAppointmentPatchesRef.current.delete(appointment.id);
+        await refreshCalendarOnly(session, appointmentDate);
+      })
       .catch((error) => {
+        pendingAppointmentPatchesRef.current.delete(appointment.id);
         Alert.alert(t.editVisit, error instanceof Error ? error.message : t.editVisit);
         revalidateWorkspace(appointmentDate);
       });
     return true;
-  }
-
-  function openVisitComposerAfterService(service: ServiceRecord) {
-    const startTime = getRoundedTime(10);
-    setSelectedDate(selectedDate);
-    setActiveTab("calendar");
-    setVisitDraft({
-      ...createDefaultVisitDraft(selectedDate, startTime),
-      serviceId: service.id,
-      items: [createVisitServiceDraft(startTime, service, language)],
-    });
-    setVisitComposerOpen(true);
   }
 
   async function createBlockedTime(date: string, startTime: string, endTime: string, label: string, targetProfessionalId?: string) {
@@ -6649,6 +6763,7 @@ export default function App() {
     mergeCalendarAppointments(date, (appointments) =>
       [...appointments, optimisticBlocked].sort((left, right) => left.startTime.localeCompare(right.startTime))
     );
+    pendingAppointmentCreatesRef.current.set(optimisticBlocked.id, optimisticBlocked);
     void apiFetch("/api/mobile/pro/calendar", {
         method: "POST",
         body: JSON.stringify({
@@ -6660,8 +6775,12 @@ export default function App() {
           serviceName: label,
         }),
       })
-      .then(() => refreshCalendarOnly(session, date))
+      .then(async () => {
+        pendingAppointmentCreatesRef.current.delete(optimisticBlocked.id);
+        await refreshCalendarOnly(session, date);
+      })
       .catch((error) => {
+        pendingAppointmentCreatesRef.current.delete(optimisticBlocked.id);
         Alert.alert(label, error instanceof Error ? error.message : label);
         revalidateWorkspace(date);
       });
@@ -6672,8 +6791,6 @@ export default function App() {
       Alert.alert(t.requiredTitle, t.requiredText);
       return false;
     }
-    const isFirstService = !workspace?.services.length;
-
     const optimisticService: ServiceRecord = {
       id: createLocalId("service"),
       name: serviceDraft.name.trim(),
@@ -6690,22 +6807,24 @@ export default function App() {
     };
     mergeWorkspaceServices((services) => [optimisticService, ...services]);
     setServiceDraft({ name: "", category: serviceDraft.category || DEFAULT_SERVICE_CATEGORY, durationMinutes: "60", price: "0", color: SERVICE_COLORS[0] });
-    if (isFirstService) {
-      openVisitComposerAfterService(optimisticService);
-    }
-    const savePromise = apiFetch("/api/mobile/pro/services", {
-        method: "POST",
-        body: JSON.stringify({
-          name: optimisticService.name,
-          category: optimisticService.category,
-          durationMinutes: optimisticService.durationMinutes,
-          price: optimisticService.price,
-          color: optimisticService.color,
-          source: "custom",
-        }),
-      })
-      .then(() => refreshAll(session, selectedDate, { silent: true }))
+    const key = getServiceIdentityKey(optimisticService) || optimisticService.id;
+    pendingServiceSavesRef.current.set(key, {
+      key,
+      optimisticService,
+      payload: {
+        name: optimisticService.name,
+        category: optimisticService.category || DEFAULT_SERVICE_CATEGORY,
+        durationMinutes: optimisticService.durationMinutes || 60,
+        price: optimisticService.price || 0,
+        color: optimisticService.color || SERVICE_COLORS[0],
+        source: "custom",
+      },
+      attempts: 0,
+    });
+    const savePromise = flushPendingServiceSaves()
+      ?.then(() => refreshAll(session, selectedDate, { silent: true }))
       .catch((error) => {
+        pendingServiceSavesRef.current.delete(key);
         Alert.alert(t.addService, error instanceof Error ? error.message : t.addService);
         revalidateWorkspace();
       })
@@ -6713,9 +6832,9 @@ export default function App() {
         if (serviceCreatePromiseRef.current === savePromise) {
           serviceCreatePromiseRef.current = null;
         }
-      });
+      }) || null;
     serviceCreatePromiseRef.current = savePromise;
-    void savePromise;
+    if (savePromise) void savePromise;
     return true;
   }
 
@@ -6738,6 +6857,7 @@ export default function App() {
       price: Number(draft.price || 0),
       color: draft.color || SERVICE_COLORS[0],
     };
+    pendingServicePatchesRef.current.set(serviceId, updatedService);
     mergeWorkspaceServices((services) => services.map((service) => (service.id === serviceId ? { ...service, ...updatedService } : service)));
     void apiFetch("/api/mobile/pro/services", {
         method: "PATCH",
@@ -6750,8 +6870,12 @@ export default function App() {
           color: updatedService.color,
         }),
       })
-      .then(() => refreshAll(session, selectedDate, { silent: true }))
+      .then(async () => {
+        pendingServicePatchesRef.current.delete(serviceId);
+        await refreshAll(session, selectedDate, { silent: true });
+      })
       .catch((error) => {
+        pendingServicePatchesRef.current.delete(serviceId);
         Alert.alert(t.editService, error instanceof Error ? error.message : t.editService);
         revalidateWorkspace();
       });
@@ -6762,7 +6886,6 @@ export default function App() {
     const key = getServiceIdentityKey(service);
     if (!key) return;
     if (hasServiceOrPendingSave(service, key)) return;
-    const isFirstService = !workspace?.services.length;
     const optimisticService: ServiceRecord = {
       id: createLocalId("service"),
       name: service.name,
@@ -6788,9 +6911,6 @@ export default function App() {
     };
     pendingServiceSavesRef.current.set(key, pendingSave);
     mergeWorkspaceServices((services) => (services.some((item) => serviceMatchesPending(item, pendingSave)) ? services : [optimisticService, ...services]));
-    if (isFirstService) {
-      openVisitComposerAfterService(optimisticService);
-    }
     scheduleServiceSaveFlush();
   }
 
@@ -6826,10 +6946,22 @@ export default function App() {
   }
 
   async function removeService(serviceId: string) {
+    const serviceToDelete = workspace?.services.find((service) => service.id === serviceId);
+    if (serviceToDelete) {
+      const pendingKey = getServiceIdentityKey(serviceToDelete);
+      if (pendingKey) pendingServiceSavesRef.current.delete(pendingKey);
+    }
+    pendingServiceDeletesRef.current.add(serviceId);
     mergeWorkspaceServices((services) => services.filter((service) => service.id !== serviceId));
+
+    if (serviceId.startsWith("service-")) {
+      return;
+    }
+
     void apiFetch(`/api/mobile/pro/services?serviceId=${encodeURIComponent(serviceId)}`, { method: "DELETE" })
       .then(() => refreshAll(session, selectedDate, { silent: true }))
       .catch((error) => {
+        pendingServiceDeletesRef.current.delete(serviceId);
         Alert.alert(t.delete, error instanceof Error ? error.message : t.delete);
         revalidateWorkspace();
       });
@@ -6851,6 +6983,7 @@ export default function App() {
       visitsCount: 0,
       totalSales: 0,
     };
+    pendingClientCreatesRef.current.set(optimisticClient.id, optimisticClient);
     setClients((current) => [optimisticClient, ...current]);
     setClientDraft({ firstName: "", lastName: "", phone: "", email: "" });
     void apiFetch("/api/mobile/pro/clients", {
@@ -6864,8 +6997,13 @@ export default function App() {
           marketingTelegram: false,
         }),
       })
-      .then(() => refreshAll(session, selectedDate, { silent: true }))
+      .then(async () => {
+        pendingClientCreatesRef.current.delete(optimisticClient.id);
+        await refreshAll(session, selectedDate, { silent: true });
+      })
       .catch((error) => {
+        pendingClientCreatesRef.current.delete(optimisticClient.id);
+        setClients((current) => current.filter((client) => client.id !== optimisticClient.id));
         Alert.alert(t.addClient, error instanceof Error ? error.message : t.addClient);
         revalidateWorkspace();
       });
@@ -10132,7 +10270,7 @@ function CategoryChips({
 }) {
   const safeCategories = categories.length ? categories : [DEFAULT_SERVICE_CATEGORY];
   return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.servicePicker}>
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="always" contentContainerStyle={styles.servicePicker}>
       {safeCategories.map((category) => {
         const active = category === selected;
         return (
@@ -10407,6 +10545,7 @@ function StaffMembersTab({
   onOpenSchedule: () => void;
 }) {
   const members = makeStaffMembers(staff, workspace, t);
+  const [resolvedJoinRequestIds, setResolvedJoinRequestIds] = useState<Set<string>>(() => new Set());
   const [addOpen, setAddOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editId, setEditId] = useState("");
@@ -10497,7 +10636,15 @@ function StaffMembersTab({
   }
 
   async function resolveJoinRequest(requestId: string, requestAction: "approve" | "reject") {
-    await staffAction({ action: "resolveJoinRequest", requestId, requestAction });
+    setResolvedJoinRequestIds((current) => new Set([...current, requestId]));
+    const ok = await staffAction({ action: "resolveJoinRequest", requestId, requestAction });
+    if (!ok) {
+      setResolvedJoinRequestIds((current) => {
+        const next = new Set(current);
+        next.delete(requestId);
+        return next;
+      });
+    }
   }
 
   return (
@@ -10583,8 +10730,8 @@ function StaffMembersTab({
       })}
 
       <Panel title={t.joinRequests}>
-        {staff?.joinRequests?.length ? (
-          staff.joinRequests.map((request) => (
+        {staff?.joinRequests?.filter((request) => !resolvedJoinRequestIds.has(request.id)).length ? (
+          staff.joinRequests.filter((request) => !resolvedJoinRequestIds.has(request.id)).map((request) => (
             <View key={request.id} style={styles.joinRequestCard}>
               <View>
                 <Text style={styles.settingsMiniTitle}>{request.professional ? `${request.professional.firstName} ${request.professional.lastName}`.trim() || request.professional.email : t.empty}</Text>
@@ -11273,6 +11420,7 @@ function SettingsTab({
   const [isAvatarUploading, setIsAvatarUploading] = useState(false);
   const [statusText, setStatusText] = useState("");
   const [pendingJoinRequests, setPendingJoinRequests] = useState<NonNullable<MobileNotificationsPayload["pendingJoinRequests"]>>([]);
+  const pendingJoinRequestResolvesRef = useRef<Set<string>>(new Set());
   const [photoSourceOpen, setPhotoSourceOpen] = useState(false);
   const [photoActionPhoto, setPhotoActionPhoto] = useState<BusinessPhotoRecord | null>(null);
   const [photosDraft, setPhotosDraft] = useState<BusinessPhotoRecord[]>(() => workspace?.business.photos?.filter((photo) => photo.status !== "blocked") || []);
@@ -11296,6 +11444,7 @@ function SettingsTab({
   const [premiumMessage, setPremiumMessage] = useState("");
   const [isAutoSavingSettings, setIsAutoSavingSettings] = useState(false);
   const pendingSettingsPatchRef = useRef<SettingsPatchPayload>({});
+  const pendingPhotoDeletesRef = useRef<Set<string>>(new Set());
   const settingsPatchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const settingsPatchInFlightRef = useRef(false);
   const isOwner = workspace?.membership?.scope !== "member";
@@ -11310,6 +11459,10 @@ function SettingsTab({
     () => normalizeCategoryList([...catalog.map((item) => item.title), ...(workspace?.business.categories || []), ...selectedBusinessCategories]),
     [catalog, selectedBusinessCategories, workspace?.business.categories]
   );
+
+  function filterPendingPhotoDeletes(nextPhotos: BusinessPhotoRecord[]) {
+    return nextPhotos.filter((photo) => !pendingPhotoDeletesRef.current.has(photo.id) && photo.status !== "blocked");
+  }
 
   function applySettingsPayload(payload: any) {
     if (payload?.workspace?.professional?.id) {
@@ -11592,10 +11745,13 @@ function SettingsTab({
   }
 
   useEffect(() => {
+    if (settingsPatchInFlightRef.current || hasSettingsPatch(pendingSettingsPatchRef.current)) {
+      return;
+    }
     setDraft(makeSettingsDraft(workspace, language));
     setNewPassword("");
     setAddressSearchValue(workspace?.business.address || "");
-    setPhotosDraft(workspace?.business.photos?.filter((photo) => photo.status !== "blocked") || []);
+    setPhotosDraft(filterPendingPhotoDeletes(workspace?.business.photos || []));
   }, [workspace, language]);
 
   useEffect(() => {
@@ -11627,13 +11783,13 @@ function SettingsTab({
               : "",
           professionalEmail: request.professional?.email || "",
           professionalPhone: request.professional?.phone || "",
-        }))
+        })).filter((request) => !pendingJoinRequestResolvesRef.current.has(request.id))
       );
       return;
     }
 
     apiFetch("/api/mobile/pro/calendar?mode=notifications")
-      .then((payload) => setPendingJoinRequests(payload?.pendingJoinRequests || []))
+      .then((payload) => setPendingJoinRequests((payload?.pendingJoinRequests || []).filter((request: NonNullable<MobileNotificationsPayload["pendingJoinRequests"]>[number]) => !pendingJoinRequestResolvesRef.current.has(request.id))))
       .catch(() => setPendingJoinRequests([]));
   }, [staff?.joinRequests, workspace?.business.id]);
 
@@ -11814,22 +11970,26 @@ function SettingsTab({
   }
 
   async function resolveJoinRequest(requestId: string, action: "approve" | "reject") {
+    const previousRequests = pendingJoinRequests;
+    pendingJoinRequestResolvesRef.current.add(requestId);
+    setPendingJoinRequests((items) => items.filter((item) => item.id !== requestId));
     setSaving(true);
     try {
       await apiFetch("/api/mobile/pro/join-requests", {
         method: "POST",
         body: JSON.stringify({ requestId, action }),
       });
-      setPendingJoinRequests((items) => items.filter((item) => item.id !== requestId));
       onRefreshWorkspace();
     } catch (error) {
+      pendingJoinRequestResolvesRef.current.delete(requestId);
+      setPendingJoinRequests(previousRequests);
       Alert.alert(t.joinRequests, error instanceof Error ? error.message : t.settingsSaveError);
     } finally {
       setSaving(false);
     }
   }
 
-  async function saveBusinessPhotos(nextPhotos: BusinessPhotoRecord[]) {
+  async function saveBusinessPhotos(nextPhotos: BusinessPhotoRecord[], options: { deletedPhotoId?: string } = {}) {
     if (!workspace || !isOwner) return;
     const previousPhotos = photosDraft;
     const normalizedPhotos = nextPhotos.slice(0, 5).map((photo, index) => ({
@@ -11845,11 +12005,13 @@ function SettingsTab({
         body: JSON.stringify({ business: { photos: normalizedPhotos } }),
       });
       if (payload?.workspace?.business?.photos) {
-        setPhotosDraft(payload.workspace.business.photos.filter((photo: BusinessPhotoRecord) => photo.status !== "blocked"));
+        setPhotosDraft(filterPendingPhotoDeletes(payload.workspace.business.photos));
       }
+      if (options.deletedPhotoId) pendingPhotoDeletesRef.current.delete(options.deletedPhotoId);
       applySettingsPayload(payload);
       setStatusText(t.settingsSaved);
     } catch (error) {
+      if (options.deletedPhotoId) pendingPhotoDeletesRef.current.delete(options.deletedPhotoId);
       setPhotosDraft(previousPhotos);
       Alert.alert(t.businessPhotos, error instanceof Error ? error.message : t.settingsSaveError);
     } finally {
@@ -11936,9 +12098,10 @@ function SettingsTab({
   }
 
   function removeBusinessPhoto(photoId: string) {
+    pendingPhotoDeletesRef.current.add(photoId);
     const remaining = photos.filter((photo) => photo.id !== photoId);
     const hasPrimary = remaining.some((photo) => photo.isPrimary);
-    void saveBusinessPhotos(remaining.map((photo, index) => ({ ...photo, isPrimary: hasPrimary ? photo.isPrimary : index === 0 })));
+    void saveBusinessPhotos(remaining.map((photo, index) => ({ ...photo, isPrimary: hasPrimary ? photo.isPrimary : index === 0 })), { deletedPhotoId: photoId });
   }
 
   function renderBusinessPhotosPanel() {
@@ -12232,7 +12395,14 @@ function SettingsTab({
       setPushPanel(normalizePushPanel(payload, pushPanel));
       setStatusText(t.pushSaved);
     } catch (error) {
-      setPushError(error instanceof Error && error.message === PUSH_PROJECT_ID_ERROR ? t.pushProjectMissing || t.pushSaveFailed : error instanceof Error ? error.message : t.pushSaveFailed);
+      const message = error instanceof Error ? error.message : "";
+      setPushError(
+        message === PUSH_PROJECT_ID_ERROR
+          ? t.pushProjectMissing || t.pushSaveFailed
+          : message.includes("aps-environment")
+            ? t.pushIosCapabilityMissing || t.pushSaveFailed
+            : message || t.pushSaveFailed
+      );
     } finally {
       setIsPushSaving(false);
     }
