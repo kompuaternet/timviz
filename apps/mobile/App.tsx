@@ -6382,7 +6382,7 @@ export default function App() {
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => refreshAll()} tintColor="#7C3AED" />}
             showsVerticalScrollIndicator={false}
           >
-            {activeTab !== "settings" ? (
+            {activeTab !== "settings" && activeTab !== "staff" ? (
               <View style={styles.workspaceHero}>
                 <Text style={styles.workspaceEyebrow}>{t.dashboard}</Text>
                 <Text style={styles.workspaceTitle}>{t[activeTab]}</Text>
@@ -9326,16 +9326,27 @@ function StaffWorkspaceTab({
   onSaveSchedule: (member: StaffMemberRecord, workSchedule: WorkScheduleRecord, customSchedule?: Record<string, WorkDayScheduleRecord>, mode?: "fixed" | "flexible") => Promise<boolean>;
 }) {
   const [section, setSection] = useState<"members" | "schedule">("members");
+  const businessName = workspace?.business.name || workspace?.professional.email || "";
 
   return (
-    <View style={styles.sectionStack}>
+    <View style={styles.staffScreen}>
+      <View style={styles.staffScreenHeader}>
+        <Text style={styles.staffScreenKicker} numberOfLines={1}>
+          {businessName}
+        </Text>
+        <Text style={styles.staffScreenTitle}>{section === "members" ? t.teamMembers : t.staffSchedule}</Text>
+        <Text style={styles.staffScreenSubtitle} numberOfLines={2}>
+          {section === "members" ? t.teamMembersHint : t.staffScheduleHint}
+        </Text>
+      </View>
+
       <View style={styles.staffLocalNav}>
         <Pressable style={[styles.staffLocalNavItem, section === "members" && styles.staffLocalNavItemActive]} onPress={() => setSection("members")}>
-          <Ionicons name="people-outline" size={18} color={section === "members" ? "#6D4AFF" : "#64748B"} />
+          <Ionicons name="people-outline" size={16} color={section === "members" ? "#6D4AFF" : "#64748B"} />
           <Text style={[styles.staffLocalNavText, section === "members" && styles.staffLocalNavTextActive]}>{t.teamMembers}</Text>
         </Pressable>
         <Pressable style={[styles.staffLocalNavItem, section === "schedule" && styles.staffLocalNavItemActive]} onPress={() => setSection("schedule")}>
-          <Ionicons name="calendar-outline" size={18} color={section === "schedule" ? "#6D4AFF" : "#64748B"} />
+          <Ionicons name="calendar-outline" size={16} color={section === "schedule" ? "#6D4AFF" : "#64748B"} />
           <Text style={[styles.staffLocalNavText, section === "schedule" && styles.staffLocalNavTextActive]}>{t.staffSchedule}</Text>
         </Pressable>
       </View>
@@ -9479,17 +9490,6 @@ function StaffMembersTab({
   return (
     <View style={styles.sectionStack}>
       <Panel title={t.teamMembers}>
-        <Text style={styles.emptyText}>{t.teamMembersHint}</Text>
-        <View style={styles.staffSummaryRow}>
-          <View style={styles.staffSummaryTile}>
-            <Text style={styles.statValue}>{staff?.summary?.totalPeople || members.length}</Text>
-            <Text style={styles.statLabel}>{t.staff}</Text>
-          </View>
-          <View style={styles.staffSummaryTile}>
-            <Text style={styles.statValue}>{staff?.summary?.pendingInvitations || 0}</Text>
-            <Text style={styles.statLabel}>{t.pendingInvites}</Text>
-          </View>
-        </View>
         <View style={styles.settingsActionRow}>
           <SecondaryButton label={t.staffSchedule} onPress={onOpenSchedule} />
           <PrimaryButton label={addOpen ? t.cancel : t.addMember} onPress={() => setAddOpen(!addOpen)} disabled={busy || saving} />
@@ -9518,7 +9518,7 @@ function StaffMembersTab({
         const isOwner = member.membership.scope === "owner";
         const access = member.workspaceAccess === "owner" ? t.owner : member.workspaceAccess === "active" ? t.connected : member.workspaceAccess === "invited" ? t.pendingInvites : t.notConnected;
         return (
-          <Panel key={member.professional.id} title={name}>
+          <View key={member.professional.id} style={styles.staffMemberCard}>
             {editing ? (
               <View style={styles.sectionStack}>
                 <Field label={t.fullName} value={editDraft.fullName} onChangeText={(value) => setEditDraft({ ...editDraft, fullName: value })} />
@@ -9545,14 +9545,14 @@ function StaffMembersTab({
                     <Ionicons name="create-outline" size={18} color="#334155" />
                   </Pressable>
                 </View>
-                <View style={styles.settingsSummaryGrid}>
-                  <View style={styles.settingsSummaryTile}>
-                    <Text style={styles.statValue}>{member.stats?.monthBookings || 0}</Text>
-                    <Text style={styles.statLabel}>{t.monthBookings}</Text>
+                <View style={styles.staffMemberStatsRow}>
+                  <View style={styles.staffMemberStatPill}>
+                    <Text style={styles.staffMemberStatValue}>{member.stats?.monthBookings || 0}</Text>
+                    <Text style={styles.staffMemberStatLabel} numberOfLines={1}>{t.monthBookings}</Text>
                   </View>
-                  <View style={styles.settingsSummaryTile}>
-                    <Text style={styles.statValue}>{member.stats?.upcomingBookings || 0}</Text>
-                    <Text style={styles.statLabel}>{t.upcomingBookings}</Text>
+                  <View style={styles.staffMemberStatPill}>
+                    <Text style={styles.staffMemberStatValue}>{member.stats?.upcomingBookings || 0}</Text>
+                    <Text style={styles.staffMemberStatLabel} numberOfLines={1}>{t.upcomingBookings}</Text>
                   </View>
                 </View>
                 <View style={styles.settingsActionRow}>
@@ -9565,7 +9565,7 @@ function StaffMembersTab({
                 </View>
               </>
             )}
-          </Panel>
+          </View>
         );
       })}
 
@@ -9639,12 +9639,6 @@ function StaffScheduleTab({
     setCustomDraft({ ...(selectedMember.membership.customSchedule || {}) });
     setScheduleMode(selectedMember.membership.workScheduleMode || "fixed");
   }, [selectedMember?.professional.id, weekStart]);
-
-  const weeklyMinutes = weekDates.reduce((sum, date, index) => {
-    const day = getDraftDay(staffWeekKeys[index], date);
-    if (!day.enabled) return sum;
-    return sum + getIntervalsDurationMinutes(getDayIntervalsRecord(day));
-  }, 0);
 
   function getDraftDay(key: string, date: string) {
     if (scheduleMode === "flexible") {
@@ -9844,17 +9838,13 @@ function StaffScheduleTab({
 
   return (
     <View style={styles.sectionStack}>
-      <Panel title={t.staffSchedule}>
-        <Text style={styles.emptyText}>{t.staffScheduleHint}</Text>
-        <View style={styles.staffSummaryRow}>
-          <View style={styles.staffSummaryTile}>
-            <Text style={styles.statValue}>{members.length}</Text>
-            <Text style={styles.statLabel}>{t.staff}</Text>
+      <View style={styles.staffSelectorCard}>
+        <View style={styles.staffSelectorHeader}>
+          <View style={styles.staffMemberCardInfo}>
+            <Text style={styles.settingsCardTitle}>{makeStaffMemberName(selectedMember, t.employee)}</Text>
+            <Text style={styles.clientOptionCaption}>{selectedMember.membership.scope === "owner" ? t.owner : selectedMember.membership.role || t.employee}</Text>
           </View>
-          <View style={styles.staffSummaryTile}>
-            <Text style={styles.statValue}>{Math.round(weeklyMinutes / 60)}</Text>
-            <Text style={styles.statLabel}>{t.hoursShort}</Text>
-          </View>
+          <SecondaryButton label={t.teamMembers} onPress={onOpenMembers} />
         </View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.staffMemberRail}>
           {members.map((member) => {
@@ -9873,13 +9863,9 @@ function StaffScheduleTab({
             );
           })}
         </ScrollView>
-      </Panel>
+      </View>
 
-      <Panel title={t.chooseWeek}>
-        <View style={styles.staffWeekHeader}>
-          <Text style={styles.listTitle}>{weekTitle}</Text>
-          <Text style={styles.listCaption}>{makeStaffMemberName(selectedMember, t.employee)}</Text>
-        </View>
+      <View style={styles.staffWeekCard}>
         <View style={styles.staffCalendarControls}>
           <Pressable style={styles.dateButton} onPress={() => setWeekStart(shiftDate(weekStart, -7))}>
             <Ionicons name="chevron-back" size={22} color="#0F172A" />
@@ -9893,7 +9879,6 @@ function StaffScheduleTab({
         </View>
         <View style={styles.settingsActionRow}>
           <SecondaryButton label={t.currentWeek} onPress={() => setWeekStart(getWeekDates(getTodayIso())[0])} />
-          <SecondaryButton label={t.teamMembers} onPress={onOpenMembers} />
         </View>
         {calendarOpen ? (
           <View style={styles.staffCalendarBox}>
@@ -9926,18 +9911,18 @@ function StaffScheduleTab({
             </View>
           </View>
         ) : null}
-      </Panel>
+      </View>
 
       <Panel title={t.scheduleMenu}>
-        <View style={styles.servicesModeRow}>
+        <View style={styles.staffScheduleModeRow}>
           {[
             { id: "fixed", label: t.repeatingSchedule },
-            { id: "flexible", label: t.oneWeekSchedule },
+            { id: "flexible", label: t.calendar },
           ].map((item) => {
             const active = scheduleMode === item.id;
             return (
-              <Pressable key={item.id} style={[styles.servicesModeButton, active && styles.servicesModeButtonActive]} onPress={() => setScheduleMode(item.id as "fixed" | "flexible")}>
-                <Text style={[styles.servicesModeText, active && styles.servicesModeTextActive]}>{item.label}</Text>
+              <Pressable key={item.id} style={[styles.staffScheduleModeButton, active && styles.staffScheduleModeButtonActive]} onPress={() => setScheduleMode(item.id as "fixed" | "flexible")}>
+                <Text style={[styles.staffScheduleModeText, active && styles.staffScheduleModeTextActive]}>{item.label}</Text>
               </Pressable>
             );
           })}
@@ -15256,34 +15241,67 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     backgroundColor: "#F3E8FF",
   },
+  staffScreen: {
+    gap: 12,
+  },
+  staffScreenHeader: {
+    paddingHorizontal: 2,
+    paddingTop: 2,
+    paddingBottom: 2,
+  },
+  staffScreenKicker: {
+    color: "#94A3B8",
+    fontSize: 11,
+    fontWeight: "800",
+    letterSpacing: 0.9,
+    textTransform: "uppercase",
+  },
+  staffScreenTitle: {
+    marginTop: 4,
+    color: DESIGN.colors.text,
+    fontSize: 22,
+    lineHeight: 27,
+    fontWeight: "800",
+  },
+  staffScreenSubtitle: {
+    marginTop: 3,
+    color: DESIGN.colors.muted,
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: "600",
+  },
   staffLocalNav: {
     flexDirection: "row",
-    gap: 8,
+    gap: 4,
     padding: 4,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: "#E6ECF5",
+    borderColor: "rgba(226, 232, 240, 0.7)",
     backgroundColor: "#EEF2F7",
   },
   staffLocalNavItem: {
     flex: 1,
-    minHeight: 46,
+    minHeight: 38,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    gap: 7,
+    gap: 6,
     borderRadius: 14,
     backgroundColor: "transparent",
   },
   staffLocalNavItemActive: {
     borderWidth: 1,
-    borderColor: "#D9D2FF",
+    borderColor: "rgba(216, 208, 255, 0.9)",
     backgroundColor: "#FFFFFF",
+    shadowColor: DESIGN.colors.primary,
+    shadowOpacity: 0.07,
+    shadowRadius: 9,
+    shadowOffset: { width: 0, height: 5 },
   },
   staffLocalNavText: {
     color: "#64748B",
     fontSize: 12,
-    fontWeight: "900",
+    fontWeight: "800",
     textAlign: "center",
   },
   staffLocalNavTextActive: {
@@ -15303,76 +15321,143 @@ const styles = StyleSheet.create({
     backgroundColor: "#F8FAFF",
   },
   staffMemberRail: {
-    gap: 10,
+    gap: 8,
     paddingVertical: 2,
   },
   staffMemberChip: {
-    minWidth: 190,
-    padding: 10,
+    minWidth: 174,
+    padding: 9,
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
+    gap: 9,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: "#E6ECF5",
+    borderColor: "rgba(226, 232, 240, 0.74)",
     backgroundColor: "#FFFFFF",
   },
   staffMemberChipActive: {
-    borderColor: "#6D4AFF",
-    backgroundColor: "#F5F3FF",
+    borderColor: "rgba(115, 87, 246, 0.24)",
+    backgroundColor: "#F7F4FF",
   },
   staffAvatar: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#EDE9FE",
   },
   staffAvatarText: {
     color: "#6D4AFF",
-    fontSize: 16,
-    fontWeight: "900",
+    fontSize: 15,
+    fontWeight: "800",
   },
   staffMemberName: {
     color: "#0F172A",
-    fontSize: 14,
-    fontWeight: "900",
+    fontSize: 13,
+    fontWeight: "800",
   },
   staffMemberNameActive: {
-    color: "#4C1D95",
+    color: DESIGN.colors.primaryDark,
   },
   staffMemberRole: {
     marginTop: 2,
     color: "#64748B",
-    fontSize: 12,
-    fontWeight: "800",
+    fontSize: 11,
+    fontWeight: "700",
+  },
+  staffMemberCard: {
+    gap: 10,
+    padding: 14,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: "rgba(226, 232, 240, 0.72)",
+    backgroundColor: "rgba(255, 255, 255, 0.96)",
+    shadowColor: "#172033",
+    shadowOpacity: 0.04,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 9 },
   },
   staffMemberCardTop: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: 11,
   },
   staffMemberCardInfo: {
     flex: 1,
     minWidth: 0,
   },
+  staffMemberStatsRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  staffMemberStatPill: {
+    minHeight: 32,
+    paddingHorizontal: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    borderRadius: DESIGN.radius.pill,
+    backgroundColor: "#F8FAFC",
+  },
+  staffMemberStatValue: {
+    color: DESIGN.colors.text,
+    fontSize: 13,
+    fontWeight: "800",
+  },
+  staffMemberStatLabel: {
+    maxWidth: 118,
+    color: DESIGN.colors.muted,
+    fontSize: 11,
+    fontWeight: "700",
+  },
   staffToggleRow: {
-    minHeight: 56,
-    padding: 12,
+    minHeight: 52,
+    padding: 11,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     gap: 12,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: "#E6ECF5",
+    borderColor: "rgba(226, 232, 240, 0.78)",
     backgroundColor: "#F8FAFF",
+  },
+  staffSelectorCard: {
+    gap: 10,
+    padding: 13,
+    borderRadius: 24,
+    borderWidth: 1,
+    borderColor: "rgba(226, 232, 240, 0.72)",
+    backgroundColor: "rgba(255, 255, 255, 0.96)",
+    shadowColor: "#172033",
+    shadowOpacity: 0.035,
+    shadowRadius: 16,
+    shadowOffset: { width: 0, height: 8 },
+  },
+  staffSelectorHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 10,
   },
   staffWeekHeader: {
     paddingBottom: 8,
     borderBottomWidth: 1,
     borderBottomColor: "#E2E8F0",
+  },
+  staffWeekCard: {
+    gap: 9,
+    padding: 12,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: "rgba(226, 232, 240, 0.72)",
+    backgroundColor: "rgba(255, 255, 255, 0.94)",
+    shadowColor: "#172033",
+    shadowOpacity: 0.03,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 7 },
   },
   staffCalendarControls: {
     flexDirection: "row",
@@ -15381,27 +15466,27 @@ const styles = StyleSheet.create({
   },
   staffWeekPickerButton: {
     flex: 1,
-    minHeight: 44,
+    minHeight: 38,
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 10,
-    borderRadius: 14,
+    borderRadius: 15,
     borderWidth: 1,
-    borderColor: "#D8E2F1",
-    backgroundColor: "#FFFFFF",
+    borderColor: "rgba(216, 226, 241, 0.82)",
+    backgroundColor: "#FBFCFF",
   },
   staffWeekPickerText: {
     color: "#0F172A",
-    fontSize: 14,
-    fontWeight: "900",
+    fontSize: 13,
+    fontWeight: "800",
     textAlign: "center",
   },
   staffCalendarBox: {
-    gap: 12,
-    padding: 12,
+    gap: 10,
+    padding: 10,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: "#E6ECF5",
+    borderColor: "rgba(226, 232, 240, 0.72)",
     backgroundColor: "#F8FAFF",
   },
   staffCalendarGrid: {
@@ -15410,36 +15495,36 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   staffCalendarDay: {
-    width: 38,
-    height: 38,
+    width: 36,
+    height: 36,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 13,
-    backgroundColor: "#EEF2FF",
+    backgroundColor: "#F1F5F9",
   },
   staffCalendarDayMuted: {
     opacity: 0.35,
   },
   staffCalendarDayActive: {
-    backgroundColor: "#6D4AFF",
+    backgroundColor: "#7357F6",
   },
   staffCalendarDayWork: {
     backgroundColor: "#DCFCE7",
   },
   staffCalendarDayText: {
     color: "#0F172A",
-    fontSize: 13,
-    fontWeight: "900",
+    fontSize: 12,
+    fontWeight: "800",
   },
   staffCalendarDayTextActive: {
     color: "#FFFFFF",
   },
   staffMonthPlanner: {
-    gap: 12,
-    padding: 12,
-    borderRadius: 18,
+    gap: 10,
+    padding: 11,
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: "#E6ECF5",
+    borderColor: "rgba(226, 232, 240, 0.72)",
     backgroundColor: "#F8FAFF",
   },
   staffSelectedDaysStack: {
@@ -15447,16 +15532,16 @@ const styles = StyleSheet.create({
   },
   staffSelectedDayCard: {
     gap: 8,
-    padding: 12,
+    padding: 11,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: "#E6ECF5",
+    borderColor: "rgba(226, 232, 240, 0.78)",
     backgroundColor: "#FFFFFF",
   },
   staffDayCard: {
-    paddingVertical: 12,
+    paddingVertical: 11,
     borderBottomWidth: 1,
-    borderBottomColor: "#E2E8F0",
+    borderBottomColor: "rgba(226, 232, 240, 0.78)",
   },
   staffDayHeader: {
     flexDirection: "row",
@@ -15466,8 +15551,8 @@ const styles = StyleSheet.create({
   },
   staffDayTitle: {
     color: "#0F172A",
-    fontSize: 15,
-    fontWeight: "900",
+    fontSize: 14,
+    fontWeight: "800",
     textTransform: "capitalize",
   },
   staffTimeGrid: {
@@ -15479,6 +15564,11 @@ const styles = StyleSheet.create({
   staffIntervalsBox: {
     marginTop: 10,
     gap: 8,
+    padding: 10,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "rgba(226, 232, 240, 0.74)",
+    backgroundColor: "#F8FAFC",
   },
   staffIntervalsStack: {
     gap: 10,
@@ -15495,12 +15585,12 @@ const styles = StyleSheet.create({
     paddingBottom: 1,
   },
   staffIntervalIconButton: {
-    width: 34,
-    height: 44,
+    width: 32,
+    height: 40,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 14,
-    backgroundColor: "#EEF2FF",
+    backgroundColor: "#F1F5F9",
   },
   staffTimeField: {
     flex: 1,
@@ -15510,18 +15600,53 @@ const styles = StyleSheet.create({
   staffTimeLabel: {
     color: "#64748B",
     fontSize: 11,
-    fontWeight: "900",
+    fontWeight: "800",
   },
   staffTimeInput: {
-    height: 44,
+    height: 42,
     paddingHorizontal: 10,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#D8E2F1",
+    borderColor: "rgba(216, 226, 241, 0.82)",
     color: "#0F172A",
-    fontSize: 15,
-    fontWeight: "800",
+    fontSize: 14,
+    fontWeight: "700",
     backgroundColor: "#FFFFFF",
+  },
+  staffScheduleModeRow: {
+    flexDirection: "row",
+    gap: 4,
+    padding: 4,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "rgba(226, 232, 240, 0.7)",
+    backgroundColor: "#EEF2F7",
+  },
+  staffScheduleModeButton: {
+    flex: 1,
+    minHeight: 36,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 8,
+    borderRadius: 14,
+  },
+  staffScheduleModeButtonActive: {
+    borderWidth: 1,
+    borderColor: "rgba(216, 208, 255, 0.9)",
+    backgroundColor: "#FFFFFF",
+    shadowColor: DESIGN.colors.primary,
+    shadowOpacity: 0.07,
+    shadowRadius: 9,
+    shadowOffset: { width: 0, height: 5 },
+  },
+  staffScheduleModeText: {
+    color: "#64748B",
+    fontSize: 12,
+    fontWeight: "800",
+    textAlign: "center",
+  },
+  staffScheduleModeTextActive: {
+    color: DESIGN.colors.primaryDark,
   },
   settingsHero: {
     padding: 18,
