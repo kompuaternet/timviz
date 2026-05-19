@@ -39,6 +39,7 @@ import {
   getAppointmentsForBusiness,
   updateCalendarAppointmentMeta
 } from "../../../../lib/pro-calendar";
+import { addTelegramSupportReplies } from "../../../../lib/pro-support";
 
 type TelegramUpdate = {
   update_id?: number;
@@ -57,6 +58,7 @@ type TelegramUpdate = {
     forward_origin?: unknown;
     forward_from?: unknown;
     forward_from_chat?: unknown;
+    reply_to_message?: { message_id?: number };
   };
   callback_query?: {
     id?: string;
@@ -143,6 +145,30 @@ function parseSupportPrefix(text: string) {
   }
 
   return "";
+}
+
+function getSupportChatId() {
+  return process.env.TELEGRAM_SUPPORT_CHAT_ID || process.env.SUPPORT_TELEGRAM_CHAT_ID || "";
+}
+
+async function maybeStoreSupportReply(update: TelegramUpdate, chatId: string, text: string) {
+  const supportChatId = getSupportChatId();
+  const message = update.message;
+  const replyToMessageId = Number(message?.reply_to_message?.message_id ?? 0) || undefined;
+  const messageId = Number(message?.message_id ?? 0);
+  const updateId = Number(update.update_id ?? 0);
+
+  if (!supportChatId || String(chatId) !== String(supportChatId) || !replyToMessageId || !messageId || !text) {
+    return false;
+  }
+
+  await addTelegramSupportReplies([{
+    updateId,
+    messageId,
+    text,
+    replyToMessageId
+  }]);
+  return true;
 }
 
 function isForwardedMessage(message: TelegramUpdate["message"]) {
@@ -682,6 +708,10 @@ async function handleMessage(update: TelegramUpdate) {
   const text = normalizeText(message.text || message.caption);
   const preferredLanguage = message.from?.language_code;
   const command = parseCommand(text);
+
+  if (await maybeStoreSupportReply(update, chatId, text)) {
+    return;
+  }
 
   if (command?.command === "/start") {
     await handleStartCommand({

@@ -24,45 +24,42 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const ticketId = sanitize(searchParams.get("ticketId"));
   const after = sanitize(searchParams.get("after"));
+  const includeUserMessages = searchParams.get("includeUser") === "1";
   const { token, chatId } = getTelegramConfig();
 
   if (!ticketId) {
     return NextResponse.json({ ok: true, messages: [] });
   }
 
-  if (!token || !chatId) {
-    return NextResponse.json({ ok: false, messages: [] }, { status: 503 });
-  }
-
-  const response = await fetch(`https://api.telegram.org/bot${token}/getUpdates`, { cache: "no-store" });
-  if (!response.ok) {
-    return NextResponse.json({ ok: false, messages: [] }, { status: 502 });
-  }
-
-  const payload = await response.json() as {
-    result?: Array<{
-      update_id: number;
-      message?: {
-        message_id?: number;
-        text?: string;
-        chat?: { id?: number | string };
-        reply_to_message?: { message_id?: number };
+  if (token && chatId) {
+    const response = await fetch(`https://api.telegram.org/bot${token}/getUpdates`, { cache: "no-store" });
+    if (response.ok) {
+      const payload = await response.json() as {
+        result?: Array<{
+          update_id: number;
+          message?: {
+            message_id?: number;
+            text?: string;
+            chat?: { id?: number | string };
+            reply_to_message?: { message_id?: number };
+          };
+        }>;
       };
-    }>;
-  };
 
-  const updates = (payload.result ?? [])
-    .filter((item) => String(item.message?.chat?.id ?? "") === String(chatId))
-    .map((item) => ({
-      updateId: item.update_id,
-      messageId: Number(item.message?.message_id ?? 0),
-      text: sanitize(item.message?.text),
-      replyToMessageId: Number(item.message?.reply_to_message?.message_id ?? 0) || undefined
-    }))
-    .filter((item) => item.messageId > 0 && item.text);
+      const updates = (payload.result ?? [])
+        .filter((item) => String(item.message?.chat?.id ?? "") === String(chatId))
+        .map((item) => ({
+          updateId: item.update_id,
+          messageId: Number(item.message?.message_id ?? 0),
+          text: sanitize(item.message?.text),
+          replyToMessageId: Number(item.message?.reply_to_message?.message_id ?? 0) || undefined
+        }))
+        .filter((item) => item.messageId > 0 && item.text);
 
-  await addTelegramSupportReplies(updates);
-  const messages = (await getSupportMessagesForTicket(ticketId, after)).filter((message) => message.source === "support");
+      await addTelegramSupportReplies(updates);
+    }
+  }
+  const messages = (await getSupportMessagesForTicket(ticketId, after)).filter((message) => includeUserMessages || message.source === "support");
 
   return NextResponse.json({
     ok: true,
@@ -143,5 +140,14 @@ export async function POST(request: Request) {
     await attachTelegramMessageId(supportMessage.id, telegramPayload.result.message_id);
   }
 
-  return NextResponse.json({ ok: true, ticketId: ticket.id });
+  return NextResponse.json({
+    ok: true,
+    ticketId: ticket.id,
+    message: {
+      id: supportMessage.id,
+      role: "user",
+      text: supportMessage.text,
+      createdAt: supportMessage.createdAt
+    }
+  });
 }

@@ -522,6 +522,20 @@ type PushBooleanSettingKey =
   | "notificationsCancelled"
   | "notificationsReminder";
 
+type SupportChatMessage = {
+  id: string;
+  role: "bot" | "user";
+  text: string;
+  createdAt?: string;
+  status?: "sending" | "failed";
+};
+
+type SettingsPatchPayload = {
+  professional?: Record<string, unknown>;
+  business?: Record<string, unknown>;
+  newPassword?: string;
+};
+
 const DEFAULT_PUSH_PANEL_SETTINGS: PushPanelState["settings"] = {
   notificationsNewBooking: false,
   notificationsCabinetBooking: false,
@@ -536,6 +550,7 @@ const STORAGE_KEY = "timviz_mobile_session_v2";
 const SECURE_SESSION_KEY = "timviz_mobile_secure_session_v1";
 const BIOMETRIC_ENABLED_KEY = "timviz_mobile_biometric_enabled_v1";
 const PUSH_AUTO_REGISTER_KEY_PREFIX = "timviz_mobile_push_auto_register_v1:";
+const SUPPORT_TICKET_KEY_PREFIX = "timviz_mobile_support_ticket_v1:";
 const PUSH_PROJECT_ID_ERROR = "push_project_id_missing";
 const WORKSPACE_CACHE_KEY = "timviz_mobile_workspace_cache_v2";
 const API_BASE_URL = (process.env.EXPO_PUBLIC_API_BASE_URL || "https://timviz.com").replace(/\/+$/, "");
@@ -6629,9 +6644,10 @@ export default function App() {
     member: StaffMemberRecord,
     workSchedule: WorkScheduleRecord,
     customSchedule: Record<string, WorkDayScheduleRecord> = member.membership.customSchedule || {},
-    workScheduleMode: "fixed" | "flexible" = member.membership.workScheduleMode || "fixed"
+    workScheduleMode: "fixed" | "flexible" = member.membership.workScheduleMode || "fixed",
+    options: { silent?: boolean } = {}
   ) {
-    setBusy(true);
+    if (!options.silent) setBusy(true);
     try {
       await apiFetch("/api/mobile/pro/staff", {
         method: "POST",
@@ -6643,13 +6659,15 @@ export default function App() {
           customSchedule,
         }),
       });
-      await refreshAll();
+      await refreshAll(session, selectedDate, { silent: options.silent === true });
       return true;
     } catch (error) {
-      Alert.alert(t.staffSchedule, error instanceof Error ? error.message : t.staffSchedule);
+      if (!options.silent) {
+        Alert.alert(t.staffSchedule, error instanceof Error ? error.message : t.staffSchedule);
+      }
       return false;
     } finally {
-      setBusy(false);
+      if (!options.silent) setBusy(false);
     }
   }
 
@@ -6832,6 +6850,7 @@ export default function App() {
                 staff={staffSnapshot}
                 apiFetch={apiFetch}
                 onRefreshWorkspace={() => refreshAll(session, selectedDate)}
+                onWorkspaceUpdated={(nextWorkspace) => setWorkspace(withPendingServiceSaves(nextWorkspace))}
                 setActiveTab={setActiveTab}
 	                activeSection={settingsSection}
 	                setActiveSection={setSettingsSection}
@@ -8928,6 +8947,11 @@ function WorkspaceHeader({
   const [supportMessage, setSupportMessage] = useState("");
   const [supportTicketId, setSupportTicketId] = useState("");
   const [supportStatus, setSupportStatus] = useState("");
+  const [supportMessages, setSupportMessages] = useState<SupportChatMessage[]>([
+    { id: "hello", role: "bot", text: t.supportGreeting },
+  ]);
+  const supportLastMessageCreatedAtRef = useRef("");
+  const supportPollingRef = useRef(false);
   const [notifications, setNotifications] = useState<MobileNotificationsPayload>({});
   const [loadingNotifications, setLoadingNotifications] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -8950,6 +8974,84 @@ function WorkspaceHeader({
       ? t.setupFirstServiceText
       : (t.setupRemaining || t.setupAssistantText).replace("{count}", String(setupMissingCount));
   const pendingCount = (notifications.pendingOnlineBookings?.length || 0) + (notifications.pendingJoinRequests?.length || 0);
+
+  function mergeSupportMessages(current: SupportChatMessage[], incoming: SupportChatMessage[]) {
+    const seen = new Set(current.map((message) => message.id));
+    const merged = [...current];
+    incoming.forEach((message) => {
+      if (!message.text.trim() || seen.has(message.id)) return;
+      seen.add(message.id);
+      merged.push(message);
+    });
+    return merged.sort((left, right) => {
+      const leftTime = left.createdAt ? new Date(left.createdAt).getTime() : 0;
+      const rightTime = right.createdAt ? new Date(right.createdAt).getTime() : 0;
+      return leftTime - rightTime;
+    });
+  }
+
+  async function loadSupportMessages(ticketId = supportTicketId, options: { replace?: boolean } = {}) {
+    if (!ticketId || supportPollingRef.current) return;
+    supportPollingRef.current = true;
+    try {
+      const params = new URLSearchParams({ ticketId, includeUser: "1" });
+      if (!options.replace && supportLastMessageCreatedAtRef.current) {
+        params.set("after", supportLastMessageCreatedAtRef.current);
+      }
+      const payload = await apiFetch(`/api/mobile/pro/support?${params.toString()}`);
+      const incoming = (Array.isArray(payload?.messages) ? payload.messages : [])
+        .map((item: any): SupportChatMessage => ({
+          id: String(item.id || createLocalId("support")),
+          role: item.role === "user" ? "user" : "bot",
+          text: String(item.text || ""),
+          createdAt: typeof item.createdAt === "string" ? item.createdAt : undefined,
+        }))
+        .filter((item: SupportChatMessage) => item.text.trim());
+
+      if (incoming.length) {
+        const sortedCreatedAt = incoming
+          .map((item: SupportChatMessage) => item.createdAt || "")
+          .filter(Boolean)
+          .sort();
+        const latest = sortedCreatedAt[sortedCreatedAt.length - 1];
+        if (latest) supportLastMessageCreatedAtRef.current = latest;
+        setSupportMessages((current) => mergeSupportMessages(options.replace ? [{ id: "hello", role: "bot", text: t.supportGreeting }] : current, incoming));
+      } else if (options.replace) {
+        setSupportMessages([{ id: "hello", role: "bot", text: t.supportGreeting }]);
+      }
+    } catch {
+      // Support polling is best-effort and should never interrupt the workspace.
+    } finally {
+      supportPollingRef.current = false;
+    }
+  }
+
+  useEffect(() => {
+    let cancelled = false;
+    supportLastMessageCreatedAtRef.current = "";
+    setSupportMessages([{ id: "hello", role: "bot", text: t.supportGreeting }]);
+    AsyncStorage.getItem(`${SUPPORT_TICKET_KEY_PREFIX}${session.professionalId}`)
+      .then((storedTicketId) => {
+        if (cancelled) return;
+        const nextTicketId = storedTicketId || "";
+        setSupportTicketId(nextTicketId);
+        if (nextTicketId) {
+          void loadSupportMessages(nextTicketId, { replace: true });
+        }
+      })
+      .catch(() => undefined);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [session.professionalId, t.supportGreeting]);
+
+  useEffect(() => {
+    if (panel !== "support" || !supportTicketId) return;
+    void loadSupportMessages(supportTicketId);
+    const intervalId = setInterval(() => void loadSupportMessages(supportTicketId), 8000);
+    return () => clearInterval(intervalId);
+  }, [panel, supportTicketId]);
 
   async function openPanel(nextPanel: typeof panel) {
     setPanel(nextPanel);
@@ -8994,17 +9096,49 @@ function WorkspaceHeader({
   async function sendSupportMessage() {
     const message = supportMessage.trim();
     if (!message) return;
+    const optimisticId = createLocalId("support-user");
     setBusy(true);
     setSupportStatus("");
+    setSupportMessage("");
+    setSupportMessages((current) => [
+      ...current,
+      { id: optimisticId, role: "user", text: message, createdAt: new Date().toISOString(), status: "sending" },
+    ]);
     try {
       const payload = await apiFetch("/api/mobile/pro/support", {
         method: "POST",
         body: JSON.stringify({ message, ticketId: supportTicketId, language, page: "mobile-app" }),
       });
-      setSupportTicketId(payload?.ticketId || supportTicketId);
-      setSupportMessage("");
+      const nextTicketId = String(payload?.ticketId || supportTicketId || "");
+      if (nextTicketId) {
+        setSupportTicketId(nextTicketId);
+        await AsyncStorage.setItem(`${SUPPORT_TICKET_KEY_PREFIX}${session.professionalId}`, nextTicketId).catch(() => undefined);
+      }
+      const savedMessage = payload?.message;
+      if (savedMessage?.id) {
+        const nextCreatedAt = typeof savedMessage.createdAt === "string" ? savedMessage.createdAt : new Date().toISOString();
+        supportLastMessageCreatedAtRef.current = nextCreatedAt;
+        setSupportMessages((current) =>
+          current.map((item) =>
+            item.id === optimisticId
+              ? {
+                  id: String(savedMessage.id),
+                  role: "user",
+                  text: String(savedMessage.text || message),
+                  createdAt: nextCreatedAt,
+                }
+              : item
+          )
+        );
+      } else {
+        setSupportMessages((current) => current.map((item) => (item.id === optimisticId ? { ...item, status: undefined } : item)));
+      }
       setSupportStatus(t.supportSent);
+      if (nextTicketId) {
+        void loadSupportMessages(nextTicketId);
+      }
     } catch {
+      setSupportMessages((current) => current.map((item) => (item.id === optimisticId ? { ...item, status: "failed" } : item)));
       setSupportStatus(t.supportFailed);
     } finally {
       setBusy(false);
@@ -9110,7 +9244,20 @@ function WorkspaceHeader({
                     <Text style={styles.panelHint}>{t.supportGuideText}</Text>
                     {supportTicketId ? <Text style={styles.supportTicket}>{supportTicketId}</Text> : null}
                   </View>
-                  <Text style={styles.supportBubble}>{t.supportGreeting}</Text>
+                  <View style={styles.supportMessagesStack}>
+                    {supportMessages.map((item) => (
+                      <Text
+                        key={item.id}
+                        style={[
+                          styles.supportBubble,
+                          item.role === "user" && styles.supportBubbleUser,
+                          item.status === "failed" && styles.supportBubbleFailed,
+                        ]}
+                      >
+                        {item.text}
+                      </Text>
+                    ))}
+                  </View>
                   <TextInput
                     value={supportMessage}
                     onChangeText={setSupportMessage}
@@ -9881,7 +10028,7 @@ function StaffWorkspaceTab({
   busy: boolean;
   apiFetch: (path: string, options?: RequestInit) => Promise<any>;
   onRefreshWorkspace: () => void;
-  onSaveSchedule: (member: StaffMemberRecord, workSchedule: WorkScheduleRecord, customSchedule?: Record<string, WorkDayScheduleRecord>, mode?: "fixed" | "flexible") => Promise<boolean>;
+  onSaveSchedule: (member: StaffMemberRecord, workSchedule: WorkScheduleRecord, customSchedule?: Record<string, WorkDayScheduleRecord>, mode?: "fixed" | "flexible", options?: { silent?: boolean }) => Promise<boolean>;
 }) {
   const [section, setSection] = useState<"members" | "schedule">("members");
 
@@ -10160,7 +10307,7 @@ function StaffScheduleTab({
   staff: StaffSnapshot | null;
   workspace: WorkspaceSnapshot | null;
   busy: boolean;
-  onSaveSchedule: (member: StaffMemberRecord, workSchedule: WorkScheduleRecord, customSchedule?: Record<string, WorkDayScheduleRecord>, mode?: "fixed" | "flexible") => Promise<boolean>;
+  onSaveSchedule: (member: StaffMemberRecord, workSchedule: WorkScheduleRecord, customSchedule?: Record<string, WorkDayScheduleRecord>, mode?: "fixed" | "flexible", options?: { silent?: boolean }) => Promise<boolean>;
   onOpenMembers: () => void;
 }) {
   const members = makeStaffMembers(staff, workspace, t);
@@ -10173,6 +10320,10 @@ function StaffScheduleTab({
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [pickerMonth, setPickerMonth] = useState(getTodayIso().slice(0, 7) + "-01");
   const [selectedMonthDates, setSelectedMonthDates] = useState<string[]>([]);
+  const [scheduleAutoStatus, setScheduleAutoStatus] = useState("");
+  const scheduleSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scheduleSaveInFlightRef = useRef(false);
+  const latestScheduleDraftRef = useRef({ workDraft, customDraft, scheduleMode });
   const weekDates = getWeekDates(weekStart);
   const weekTitle = formatCalendarTitle("week", weekDates[0], language);
   const monthDates = getMonthGridDates(pickerMonth);
@@ -10189,7 +10340,52 @@ function StaffScheduleTab({
     setWorkDraft(copyWorkSchedule(selectedMember.membership.workSchedule, weekDates[0]));
     setCustomDraft({ ...(selectedMember.membership.customSchedule || {}) });
     setScheduleMode(selectedMember.membership.workScheduleMode || "fixed");
+    setScheduleAutoStatus("");
   }, [selectedMember?.professional.id, weekStart]);
+
+  useEffect(() => {
+    latestScheduleDraftRef.current = { workDraft, customDraft, scheduleMode };
+  }, [workDraft, customDraft, scheduleMode]);
+
+  useEffect(() => {
+    return () => {
+      if (scheduleSaveTimerRef.current) {
+        clearTimeout(scheduleSaveTimerRef.current);
+      }
+    };
+  }, []);
+
+  function queueScheduleAutosave(delay = 700) {
+    if (!selectedMember) return;
+    setScheduleAutoStatus("");
+    if (scheduleSaveTimerRef.current) {
+      clearTimeout(scheduleSaveTimerRef.current);
+    }
+    scheduleSaveTimerRef.current = setTimeout(() => {
+      scheduleSaveTimerRef.current = null;
+      void flushScheduleAutosave();
+    }, delay);
+  }
+
+  async function flushScheduleAutosave() {
+    if (!selectedMember || scheduleSaveInFlightRef.current) return;
+    const latest = latestScheduleDraftRef.current;
+    if (!validateScheduleBeforeSave(false, latest.workDraft, latest.customDraft, latest.scheduleMode)) {
+      setScheduleAutoStatus(t.invalidIntervalRange);
+      return;
+    }
+    scheduleSaveInFlightRef.current = true;
+    setScheduleAutoStatus(t.settingsSaving || "Saving...");
+    const ok = await onSaveSchedule(selectedMember, latest.workDraft, latest.customDraft, latest.scheduleMode, { silent: true });
+    setScheduleAutoStatus(ok ? t.settingsSaved : t.settingsSaveError);
+    scheduleSaveInFlightRef.current = false;
+  }
+
+  function updateScheduleMode(mode: "fixed" | "flexible") {
+    setScheduleMode(mode);
+    latestScheduleDraftRef.current = { workDraft, customDraft, scheduleMode: mode };
+    queueScheduleAutosave(120);
+  }
 
   function getDraftDay(key: string, date: string) {
     if (scheduleMode === "flexible") {
@@ -10200,10 +10396,16 @@ function StaffScheduleTab({
 
   function setDaySchedule(key: string, date: string, next: WorkDayScheduleRecord) {
     if (scheduleMode === "flexible") {
-      setCustomDraft({ ...customDraft, [date]: next });
+      const nextCustomDraft = { ...customDraft, [date]: next };
+      setCustomDraft(nextCustomDraft);
+      latestScheduleDraftRef.current = { workDraft, customDraft: nextCustomDraft, scheduleMode };
+      queueScheduleAutosave();
       return;
     }
-    setWorkDraft({ ...workDraft, [key]: next });
+    const nextWorkDraft = { ...workDraft, [key]: next };
+    setWorkDraft(nextWorkDraft);
+    latestScheduleDraftRef.current = { workDraft: nextWorkDraft, customDraft, scheduleMode };
+    queueScheduleAutosave();
   }
 
   function updateDayEnabled(key: string, date: string, enabled: boolean) {
@@ -10242,6 +10444,8 @@ function StaffScheduleTab({
         next[date] = { ...monday };
       });
       setCustomDraft(next);
+      latestScheduleDraftRef.current = { workDraft, customDraft: next, scheduleMode };
+      queueScheduleAutosave(120);
       return;
     }
     const next = { ...workDraft };
@@ -10249,6 +10453,8 @@ function StaffScheduleTab({
       next[key] = { ...monday };
     });
     setWorkDraft(next);
+    latestScheduleDraftRef.current = { workDraft: next, customDraft, scheduleMode };
+    queueScheduleAutosave(120);
   }
 
   function clearWeek() {
@@ -10259,6 +10465,8 @@ function StaffScheduleTab({
         next[date] = serializeIntervalsToDay(false, getDayIntervalsRecord(current), current);
       });
       setCustomDraft(next);
+      latestScheduleDraftRef.current = { workDraft, customDraft: next, scheduleMode };
+      queueScheduleAutosave(120);
       return;
     }
     const next = { ...workDraft };
@@ -10267,6 +10475,8 @@ function StaffScheduleTab({
       next[key] = serializeIntervalsToDay(false, getDayIntervalsRecord(current), current);
     });
     setWorkDraft(next);
+    latestScheduleDraftRef.current = { workDraft: next, customDraft, scheduleMode };
+    queueScheduleAutosave(120);
   }
 
   function toggleMonthDate(date: string) {
@@ -10294,7 +10504,10 @@ function StaffScheduleTab({
   }
 
   function setMonthDateSchedule(date: string, next: WorkDayScheduleRecord) {
-    setCustomDraft((current) => ({ ...current, [date]: next }));
+    const nextCustomDraft = { ...customDraft, [date]: next };
+    setCustomDraft(nextCustomDraft);
+    latestScheduleDraftRef.current = { workDraft, customDraft: nextCustomDraft, scheduleMode };
+    queueScheduleAutosave();
   }
 
   function updateMonthDateEnabled(date: string, enabled: boolean) {
@@ -10324,13 +10537,15 @@ function StaffScheduleTab({
     setMonthDateSchedule(date, serializeIntervalsToDay(nextIntervals.length > 0, nextIntervals, current));
   }
 
-  function validateMonthSelectionBeforeSave() {
+  function validateMonthSelectionBeforeSave(showAlert = true, customSchedule = customDraft) {
     for (const date of selectedMonthDates) {
-      const day = getMonthDraftDay(date);
+      const day = normalizeScheduleDay(customSchedule[date] || selectedMember?.membership.customSchedule?.[date], date);
       if (!day.enabled) continue;
       const validation = validateWorkIntervals(getDayIntervalsRecord(day));
       if (!validation.ok) {
-        Alert.alert(t.staffSchedule, validation.reason === "overlap" ? t.overlappingIntervals : t.invalidIntervalRange);
+        if (showAlert) {
+          Alert.alert(t.staffSchedule, validation.reason === "overlap" ? t.overlappingIntervals : t.invalidIntervalRange);
+        }
         return false;
       }
     }
@@ -10350,20 +10565,22 @@ function StaffScheduleTab({
     setWeekStart(nextWeek);
     setCalendarOpen(false);
   }
-  function validateScheduleBeforeSave() {
-    if (!validateMonthSelectionBeforeSave()) {
+  function validateScheduleBeforeSave(showAlert = true, workSchedule = workDraft, customSchedule = customDraft, mode = scheduleMode) {
+    if (!validateMonthSelectionBeforeSave(showAlert, customSchedule)) {
       return false;
     }
 
-    const daysToCheck = scheduleMode === "flexible"
-      ? weekDates.map((date, index) => getDraftDay(staffWeekKeys[index], date))
-      : staffWeekKeys.map((key, index) => getDraftDay(key, weekDates[index]));
+    const daysToCheck = mode === "flexible"
+      ? weekDates.map((date) => normalizeScheduleDay(customSchedule[date] || selectedMember?.membership.customSchedule?.[date], date))
+      : staffWeekKeys.map((key, index) => normalizeScheduleDay(workSchedule[key], weekDates[index]));
 
     for (const day of daysToCheck) {
       if (!day.enabled) continue;
       const validation = validateWorkIntervals(getDayIntervalsRecord(day));
       if (!validation.ok) {
-        Alert.alert(t.staffSchedule, validation.reason === "overlap" ? t.overlappingIntervals : t.invalidIntervalRange);
+        if (showAlert) {
+          Alert.alert(t.staffSchedule, validation.reason === "overlap" ? t.overlappingIntervals : t.invalidIntervalRange);
+        }
         return false;
       }
     }
@@ -10472,7 +10689,7 @@ function StaffScheduleTab({
           ].map((item) => {
             const active = scheduleMode === item.id;
             return (
-              <Pressable key={item.id} style={[styles.staffScheduleModeButton, active && styles.staffScheduleModeButtonActive]} onPress={() => setScheduleMode(item.id as "fixed" | "flexible")}>
+	              <Pressable key={item.id} style={[styles.staffScheduleModeButton, active && styles.staffScheduleModeButtonActive]} onPress={() => updateScheduleMode(item.id as "fixed" | "flexible")}>
                 <Text style={[styles.staffScheduleModeText, active && styles.staffScheduleModeTextActive]}>{item.label}</Text>
               </Pressable>
             );
@@ -10579,6 +10796,7 @@ function StaffScheduleTab({
             </View>
           );
         })}
+        {scheduleAutoStatus ? <Text style={styles.settingsMutedNotice}>{scheduleAutoStatus}</Text> : null}
         <PrimaryButton label={t.saveSchedule} onPress={() => { if (validateScheduleBeforeSave()) void onSaveSchedule(selectedMember, workDraft, customDraft, scheduleMode); }} disabled={busy} />
       </Panel>
     </View>
@@ -10687,6 +10905,7 @@ function SettingsTab({
   staff,
   apiFetch,
   onRefreshWorkspace,
+  onWorkspaceUpdated,
   setActiveTab,
   activeSection,
   setActiveSection,
@@ -10704,6 +10923,7 @@ function SettingsTab({
   staff: StaffSnapshot | null;
   apiFetch: (path: string, options?: RequestInit) => Promise<any>;
   onRefreshWorkspace: () => void;
+  onWorkspaceUpdated: (workspace: WorkspaceSnapshot) => void;
   setActiveTab: (tab: AppTab) => void;
   activeSection: MobileSettingsSection;
   setActiveSection: (section: MobileSettingsSection) => void;
@@ -10721,6 +10941,8 @@ function SettingsTab({
   const [pendingJoinRequests, setPendingJoinRequests] = useState<NonNullable<MobileNotificationsPayload["pendingJoinRequests"]>>([]);
   const [photoSourceOpen, setPhotoSourceOpen] = useState(false);
   const [photoActionPhoto, setPhotoActionPhoto] = useState<BusinessPhotoRecord | null>(null);
+  const [photosDraft, setPhotosDraft] = useState<BusinessPhotoRecord[]>(() => workspace?.business.photos?.filter((photo) => photo.status !== "blocked") || []);
+  const [photoUploadStatus, setPhotoUploadStatus] = useState("");
   const [addressSearchValue, setAddressSearchValue] = useState("");
   const [addressSuggestions, setAddressSuggestions] = useState<AddressSuggestionRecord[]>([]);
   const [isSearchingAddress, setIsSearchingAddress] = useState(false);
@@ -10737,13 +10959,90 @@ function SettingsTab({
   const [premiumPackages, setPremiumPackages] = useState<{ monthly: PurchasesPackage | null; yearly: PurchasesPackage | null }>({ monthly: null, yearly: null });
   const [isPremiumLoading, setIsPremiumLoading] = useState(false);
   const [premiumMessage, setPremiumMessage] = useState("");
+  const [isAutoSavingSettings, setIsAutoSavingSettings] = useState(false);
+  const pendingSettingsPatchRef = useRef<SettingsPatchPayload>({});
+  const settingsPatchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const settingsPatchInFlightRef = useRef(false);
   const isOwner = workspace?.membership?.scope !== "member";
   const publicBookingUrl = workspace?.business.publicBookingUrl || "";
-  const photos = workspace?.business.photos?.filter((photo) => photo.status !== "blocked") || [];
+  const photos = photosDraft.filter((photo) => photo.status !== "blocked");
   const hasPremium = isPremiumActive(workspace?.professional);
   const premiumStatusLabel = getPremiumStatusLabel(workspace?.professional, t);
   const premiumStatusDetail = getPremiumStatusDetail(workspace?.professional, t);
   const activeSectionLocked = !hasPremium && isPremiumSettingsSection(activeSection);
+
+  function applySettingsPayload(payload: any) {
+    if (payload?.workspace?.professional?.id) {
+      onWorkspaceUpdated(payload.workspace as WorkspaceSnapshot);
+    }
+  }
+
+  function hasSettingsPatch(patch: SettingsPatchPayload) {
+    return Boolean(
+      (patch.professional && Object.keys(patch.professional).length > 0) ||
+      (patch.business && Object.keys(patch.business).length > 0) ||
+      typeof patch.newPassword === "string"
+    );
+  }
+
+  function mergeSettingsPatch(target: SettingsPatchPayload, patch: SettingsPatchPayload) {
+    if (patch.professional) {
+      target.professional = { ...(target.professional || {}), ...patch.professional };
+    }
+    if (patch.business) {
+      target.business = { ...(target.business || {}), ...patch.business };
+    }
+    if (typeof patch.newPassword === "string") {
+      target.newPassword = patch.newPassword;
+    }
+  }
+
+  function scheduleSettingsPatchFlush(delay = 350) {
+    if (settingsPatchTimerRef.current) {
+      clearTimeout(settingsPatchTimerRef.current);
+    }
+    settingsPatchTimerRef.current = setTimeout(() => {
+      settingsPatchTimerRef.current = null;
+      void flushSettingsPatch();
+    }, delay);
+  }
+
+  function queueSettingsPatch(patch: SettingsPatchPayload, delay = 350) {
+    mergeSettingsPatch(pendingSettingsPatchRef.current, patch);
+    setStatusText("");
+    scheduleSettingsPatchFlush(delay);
+  }
+
+  async function flushSettingsPatch() {
+    if (settingsPatchInFlightRef.current) return;
+    const patch = pendingSettingsPatchRef.current;
+    if (!hasSettingsPatch(patch)) return;
+
+    pendingSettingsPatchRef.current = {};
+    settingsPatchInFlightRef.current = true;
+    setIsAutoSavingSettings(true);
+    try {
+      const payload = await apiFetch("/api/mobile/pro/settings", {
+        method: "PATCH",
+        body: JSON.stringify(patch),
+      });
+      applySettingsPayload(payload);
+      setStatusText(t.settingsSaved);
+    } catch {
+      setStatusText(t.settingsSaveError);
+    } finally {
+      settingsPatchInFlightRef.current = false;
+      setIsAutoSavingSettings(false);
+      if (hasSettingsPatch(pendingSettingsPatchRef.current)) {
+        scheduleSettingsPatchFlush(80);
+      }
+    }
+  }
+
+  function updateDraftAndQueue<K extends keyof SettingsDraftState>(key: K, value: SettingsDraftState[K], patch: SettingsPatchPayload, delay = 350) {
+    updateDraft(key, value);
+    queueSettingsPatch(patch, delay);
+  }
 
   async function uploadMediaDataUrl(dataUrl: string, kind: "avatar" | "business-photo") {
     const payload = await apiFetch("/api/mobile/pro/media/upload", {
@@ -10755,6 +11054,25 @@ function SettingsTab({
       throw new Error(t.settingsSaveError);
     }
     return url;
+  }
+
+  async function imageAssetToDataUrl(asset: ImagePicker.ImagePickerAsset) {
+    if (asset.base64) {
+      return `data:${asset.mimeType || "image/jpeg"};base64,${asset.base64}`;
+    }
+
+    if (!asset.uri) {
+      throw new Error(t.settingsSaveError);
+    }
+
+    const response = await fetch(asset.uri);
+    const blob = await response.blob();
+    return await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ""));
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
   }
 
   async function syncPremiumCustomerInfo(customerInfo: CustomerInfo) {
@@ -10866,7 +11184,16 @@ function SettingsTab({
     setDraft(makeSettingsDraft(workspace, language));
     setNewPassword("");
     setAddressSearchValue(workspace?.business.address || "");
+    setPhotosDraft(workspace?.business.photos?.filter((photo) => photo.status !== "blocked") || []);
   }, [workspace, language]);
+
+  useEffect(() => {
+    return () => {
+      if (settingsPatchTimerRef.current) {
+        clearTimeout(settingsPatchTimerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     if (!workspace?.professional.id) return;
@@ -10958,11 +11285,16 @@ function SettingsTab({
 
   async function saveSettings() {
     if (!workspace) return;
+    if (settingsPatchTimerRef.current) {
+      clearTimeout(settingsPatchTimerRef.current);
+      settingsPatchTimerRef.current = null;
+    }
+    pendingSettingsPatchRef.current = {};
     setSaving(true);
     setStatusText("");
     try {
       const nextLanguage: AppLanguage = SUPPORTED_APP_LANGUAGES.includes(draft.language as AppLanguage) ? draft.language : language;
-      await apiFetch("/api/mobile/pro/settings", {
+      const payload = await apiFetch("/api/mobile/pro/settings", {
         method: "PATCH",
         body: JSON.stringify({
           professional: {
@@ -10995,8 +11327,8 @@ function SettingsTab({
       });
       setLanguage(nextLanguage);
       setNewPassword("");
+      applySettingsPayload(payload);
       setStatusText(t.settingsSaved);
-      onRefreshWorkspace();
     } catch (error) {
       Alert.alert(t.settings, error instanceof Error ? error.message : t.settingsSaveError);
     } finally {
@@ -11031,11 +11363,11 @@ function SettingsTab({
 
     if (result.canceled || !result.assets?.[0]) return;
     const asset = result.assets[0];
-    if (!asset.base64) return;
     setSaving(true);
     try {
-      const avatarUrl = await uploadMediaDataUrl(`data:${asset.mimeType || "image/jpeg"};base64,${asset.base64}`, "avatar");
+      const avatarUrl = await uploadMediaDataUrl(await imageAssetToDataUrl(asset), "avatar");
       updateDraft("avatarUrl", avatarUrl);
+      queueSettingsPatch({ professional: { avatarUrl } }, 80);
     } catch (error) {
       Alert.alert(t.avatarLink, error instanceof Error ? error.message : t.settingsSaveError);
     } finally {
@@ -11045,6 +11377,7 @@ function SettingsTab({
 
   function removeAvatar() {
     updateDraft("avatarUrl", "");
+    queueSettingsPatch({ professional: { avatarUrl: "" } }, 80);
   }
 
   async function resolveJoinRequest(requestId: string, action: "approve" | "reject") {
@@ -11065,16 +11398,26 @@ function SettingsTab({
 
   async function saveBusinessPhotos(nextPhotos: BusinessPhotoRecord[]) {
     if (!workspace || !isOwner) return;
+    const previousPhotos = photosDraft;
+    const normalizedPhotos = nextPhotos.slice(0, 5).map((photo, index) => ({
+      ...photo,
+      isPrimary: nextPhotos.some((item) => item.isPrimary) ? photo.isPrimary : index === 0,
+    }));
+    setPhotosDraft(normalizedPhotos);
     setSaving(true);
     setStatusText("");
     try {
-      await apiFetch("/api/mobile/pro/settings", {
+      const payload = await apiFetch("/api/mobile/pro/settings", {
         method: "PATCH",
-        body: JSON.stringify({ business: { photos: nextPhotos } }),
+        body: JSON.stringify({ business: { photos: normalizedPhotos } }),
       });
+      if (payload?.workspace?.business?.photos) {
+        setPhotosDraft(payload.workspace.business.photos.filter((photo: BusinessPhotoRecord) => photo.status !== "blocked"));
+      }
+      applySettingsPayload(payload);
       setStatusText(t.settingsSaved);
-      onRefreshWorkspace();
     } catch (error) {
+      setPhotosDraft(previousPhotos);
       Alert.alert(t.businessPhotos, error instanceof Error ? error.message : t.settingsSaveError);
     } finally {
       setSaving(false);
@@ -11082,6 +11425,9 @@ function SettingsTab({
   }
 
   async function addBusinessPhotoFromDataUrl(dataUrl: string) {
+    if (photos.length >= 5) {
+      throw new Error("Maximum 5 photos.");
+    }
     const nextPhoto: BusinessPhotoRecord = {
       id: createLocalId("photo"),
       url: await uploadMediaDataUrl(dataUrl, "business-photo"),
@@ -11106,7 +11452,7 @@ function SettingsTab({
     const pickerOptions: ImagePicker.ImagePickerOptions = {
       mediaTypes: "images",
       allowsEditing: true,
-      quality: 0.5,
+      quality: 0.28,
       base64: true,
     };
     const result = source === "camera"
@@ -11115,13 +11461,14 @@ function SettingsTab({
 
     if (result.canceled || !result.assets?.[0]) return;
     const asset = result.assets[0];
-    if (!asset.base64) return;
     setSaving(true);
+      setPhotoUploadStatus(t.photoUploading || "Uploading photo...");
     try {
-      await addBusinessPhotoFromDataUrl(`data:${asset.mimeType || "image/jpeg"};base64,${asset.base64}`);
+      await addBusinessPhotoFromDataUrl(await imageAssetToDataUrl(asset));
     } catch (error) {
       Alert.alert(t.businessPhotos, error instanceof Error ? error.message : t.settingsSaveError);
     } finally {
+      setPhotoUploadStatus("");
       setSaving(false);
     }
   }
@@ -11132,6 +11479,7 @@ function SettingsTab({
     if (!file) return;
     setPhotoSourceOpen(false);
     setSaving(true);
+    setPhotoUploadStatus(t.photoUploading || "Uploading photo...");
     try {
       const dataUrl = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();
@@ -11145,6 +11493,7 @@ function SettingsTab({
     } catch (error) {
       Alert.alert(t.businessPhotos, error instanceof Error ? error.message : t.settingsSaveError);
     } finally {
+      setPhotoUploadStatus("");
       setSaving(false);
     }
   }
@@ -11169,6 +11518,12 @@ function SettingsTab({
 
     return (
       <Panel title={t.businessPhotos}>
+        {photoUploadStatus ? (
+          <View style={styles.businessPhotoStatusRow}>
+            <ActivityIndicator size="small" color="#6D4AFF" />
+            <Text style={styles.businessPhotoStatusText}>{photoUploadStatus}</Text>
+          </View>
+        ) : null}
         {!photos.length ? (
           <Pressable
             {...dropHandlers}
@@ -11313,16 +11668,29 @@ function SettingsTab({
   }
 
   function applyAddressSuggestion(suggestion: AddressSuggestionRecord) {
+    const nextCurrency = suggestion.country ? inferCurrency(suggestion.country) : draft.currency;
     updateDraft("address", suggestion.label);
     updateDraft("addressDetails", suggestion.details);
     updateDraft("addressLat", Number.isFinite(suggestion.lat) ? suggestion.lat : null);
     updateDraft("addressLon", Number.isFinite(suggestion.lon) ? suggestion.lon : null);
     if (suggestion.country) {
       updateDraft("country", suggestion.country);
-      updateDraft("currency", inferCurrency(suggestion.country));
+      updateDraft("currency", nextCurrency);
     }
     setAddressSearchValue(suggestion.label);
     setAddressSuggestions([]);
+    const patch: SettingsPatchPayload = {
+      business: {
+        address: suggestion.label,
+        addressDetails: suggestion.details,
+        addressLat: Number.isFinite(suggestion.lat) ? suggestion.lat : null,
+        addressLon: Number.isFinite(suggestion.lon) ? suggestion.lon : null,
+      },
+    };
+    if (suggestion.country) {
+      patch.professional = { country: suggestion.country, currency: nextCurrency };
+    }
+    queueSettingsPatch(patch, 80);
   }
 
   async function openMap() {
@@ -11481,11 +11849,11 @@ function SettingsTab({
           <Text style={styles.settingsTopTitle}>{t.settings}</Text>
           <Text style={styles.settingsTopSubtitle} numberOfLines={1}>{settingsBusinessName}</Text>
         </View>
-        {statusText ? (
+        {statusText || isAutoSavingSettings ? (
           <View style={styles.settingsStatusBadge}>
-            <Ionicons name="checkmark" size={13} color="#047857" />
+            {isAutoSavingSettings && !statusText ? <ActivityIndicator size="small" color="#047857" /> : <Ionicons name="checkmark" size={13} color="#047857" />}
             <Text style={styles.settingsStatusBadgeText} numberOfLines={1}>
-              {statusText}
+              {statusText || t.settingsSaving || "Saving..."}
             </Text>
           </View>
         ) : null}
@@ -11584,18 +11952,18 @@ function SettingsTab({
                 </View>
               </View>
             </View>
-            <Field label={t.firstName} value={draft.firstName} onChangeText={(value) => updateDraft("firstName", value)} />
-            <Field label={t.lastName} value={draft.lastName} onChangeText={(value) => updateDraft("lastName", value)} />
-	            <Field label={t.email} value={draft.email} onChangeText={(value) => updateDraft("email", value)} keyboardType="email-address" autoCapitalize="none" />
-	            <Field label={t.phone} value={draft.phone} onChangeText={(value) => updateDraft("phone", value)} keyboardType="phone-pad" />
+            <Field label={t.firstName} value={draft.firstName} onChangeText={(value) => updateDraft("firstName", value)} onBlur={() => queueSettingsPatch({ professional: { firstName: draft.firstName } })} />
+            <Field label={t.lastName} value={draft.lastName} onChangeText={(value) => updateDraft("lastName", value)} onBlur={() => queueSettingsPatch({ professional: { lastName: draft.lastName } })} />
+		            <Field label={t.email} value={draft.email} onChangeText={(value) => updateDraft("email", value)} onBlur={() => queueSettingsPatch({ professional: { email: draft.email } })} keyboardType="email-address" autoCapitalize="none" />
+		            <Field label={t.phone} value={draft.phone} onChangeText={(value) => updateDraft("phone", value)} onBlur={() => queueSettingsPatch({ professional: { phone: draft.phone } })} keyboardType="phone-pad" />
 	            <Field label={t.newPassword} hint={t.leaveBlankPassword} value={newPassword} onChangeText={setNewPassword} secureTextEntry />
 	            <SettingsToggleRow label={t.unlockWithFaceId} value={biometricEnabled} onPress={onToggleBiometric} disabled={!biometricAvailable} />
 	            {!biometricAvailable ? <Text style={styles.clientOptionCaption}>{t.biometricUnavailable}</Text> : null}
 	          </Panel>
 
           <Panel title={t.businessFormat}>
-            <Field label={t.companyName} value={draft.businessName} editable={isOwner} onChangeText={(value) => updateDraft("businessName", value)} />
-            <Field label={t.website} value={draft.website} editable={isOwner} onChangeText={(value) => updateDraft("website", value)} placeholder="www.yoursite.com" autoCapitalize="none" />
+            <Field label={t.companyName} value={draft.businessName} editable={isOwner} onChangeText={(value) => updateDraft("businessName", value)} onBlur={() => queueSettingsPatch({ business: { name: draft.businessName } })} />
+            <Field label={t.website} value={draft.website} editable={isOwner} onChangeText={(value) => updateDraft("website", value)} onBlur={() => queueSettingsPatch({ business: { website: draft.website } })} placeholder="www.yoursite.com" autoCapitalize="none" />
             <Text style={styles.label}>{t.accountType}</Text>
             <View style={styles.settingsChoiceRow}>
               {[
@@ -11606,7 +11974,7 @@ function SettingsTab({
                   key={item.value}
                   disabled={!isOwner}
                   style={[styles.settingsChoice, draft.accountType === item.value && styles.settingsChoiceActive]}
-                  onPress={() => updateDraft("accountType", item.value)}
+	                  onPress={() => updateDraftAndQueue("accountType", item.value, { business: { accountType: item.value } }, 80)}
                 >
                   <Text style={[styles.settingsChoiceText, draft.accountType === item.value && styles.settingsChoiceTextActive]}>{item.label}</Text>
                 </Pressable>
@@ -11617,10 +11985,21 @@ function SettingsTab({
           {renderBusinessPhotosPanel()}
 
           <Panel title={t.localization}>
-            <LanguageSwitch language={draft.language} setLanguage={(value) => updateDraft("language", value)} />
-            <SettingsOptionRail label={t.country} value={draft.country} options={COUNTRY_OPTIONS} onSelect={(value) => updateDraft("country", value)} renderLabel={(value) => localizeCountry(value, language)} />
-            <SettingsOptionRail label={t.timezone} value={draft.timezone} options={TIMEZONE_OPTIONS} onSelect={(value) => updateDraft("timezone", value)} renderLabel={(value) => TIMEZONE_LABELS[value] || value} />
-            <SettingsOptionRail label={t.currency} value={draft.currency} options={CURRENCY_OPTIONS} onSelect={(value) => updateDraft("currency", value)} />
+	            <LanguageSwitch language={draft.language} setLanguage={(value) => { setLanguage(value); updateDraftAndQueue("language", value, { professional: { language: value } }, 80); }} />
+	            <SettingsOptionRail
+	              label={t.country}
+	              value={draft.country}
+	              options={COUNTRY_OPTIONS}
+	              onSelect={(value) => {
+	                const nextCurrency = inferCurrency(value);
+	                updateDraft("country", value);
+	                updateDraft("currency", nextCurrency);
+	                queueSettingsPatch({ professional: { country: value, currency: nextCurrency } }, 80);
+	              }}
+	              renderLabel={(value) => localizeCountry(value, language)}
+	            />
+	            <SettingsOptionRail label={t.timezone} value={draft.timezone} options={TIMEZONE_OPTIONS} onSelect={(value) => updateDraftAndQueue("timezone", value, { professional: { timezone: value } }, 80)} renderLabel={(value) => TIMEZONE_LABELS[value] || value} />
+	            <SettingsOptionRail label={t.currency} value={draft.currency} options={CURRENCY_OPTIONS} onSelect={(value) => updateDraftAndQueue("currency", value, { professional: { currency: value } }, 80)} />
           </Panel>
 
           <Panel title={t.joinRequests}>
@@ -11647,7 +12026,7 @@ function SettingsTab({
 
       {!activeSectionLocked && activeSection === "online" ? (
         <Panel title={t.settingsOnline}>
-          <Pressable style={styles.shareToggleRow} onPress={() => updateDraft("allowOnlineBooking", !draft.allowOnlineBooking)} disabled={!isOwner}>
+	          <Pressable style={styles.shareToggleRow} onPress={() => updateDraftAndQueue("allowOnlineBooking", !draft.allowOnlineBooking, { business: { allowOnlineBooking: !draft.allowOnlineBooking } }, 80)} disabled={!isOwner}>
             <View>
               <Text style={styles.shareToggleTitle}>{draft.allowOnlineBooking ? t.onlineBookingOn : t.onlineBookingOff}</Text>
               <Text style={styles.clientOptionCaption}>{workspace?.business.name || t.companyName}</Text>
@@ -11683,13 +12062,13 @@ function SettingsTab({
                   key={item}
                   disabled={!isOwner}
                   style={[styles.settingsLongChoice, getServiceModeId(draft.serviceMode) === item && styles.settingsChoiceActive]}
-                  onPress={() => updateDraft("serviceMode", SERVICE_MODE_VALUES[item])}
+	                  onPress={() => updateDraftAndQueue("serviceMode", SERVICE_MODE_VALUES[item], { business: { serviceMode: SERVICE_MODE_VALUES[item] } }, 80)}
                 >
                   <Text style={[styles.settingsChoiceText, getServiceModeId(draft.serviceMode) === item && styles.settingsChoiceTextActive]}>{localizeServiceMode(SERVICE_MODE_VALUES[item], t)}</Text>
                 </Pressable>
               ))}
             </View>
-            <Field label={t.categoriesText} hint={t.categoriesHint} value={draft.categoriesText} editable={isOwner} onChangeText={(value) => updateDraft("categoriesText", value)} />
+	            <Field label={t.categoriesText} hint={t.categoriesHint} value={draft.categoriesText} editable={isOwner} onChangeText={(value) => updateDraft("categoriesText", value)} onBlur={() => queueSettingsPatch({ business: { categories: draft.categoriesText.split(",").map((item) => item.trim()).filter(Boolean) } })} />
           </Panel>
 
           <Panel title={t.settingsServices}>
@@ -11861,13 +12240,14 @@ function SettingsTab({
               <Text style={styles.addressSuggestionAction}>{t.selectAddress}</Text>
             </Pressable>
           ))}
-          <Field label={t.streetAddress} value={draft.address} editable={isOwner} onChangeText={(value) => updateDraft("address", value)} />
+	          <Field label={t.streetAddress} value={draft.address} editable={isOwner} onChangeText={(value) => updateDraft("address", value)} onBlur={() => queueSettingsPatch({ business: { address: draft.address } })} />
           <View style={styles.field}>
             <Text style={styles.label}>{t.addressDetails}</Text>
             <TextInput
-              value={draft.addressDetails}
-              editable={isOwner}
-              onChangeText={(value) => updateDraft("addressDetails", value)}
+	              value={draft.addressDetails}
+	              editable={isOwner}
+	              onChangeText={(value) => updateDraft("addressDetails", value)}
+	              onBlur={() => queueSettingsPatch({ business: { addressDetails: draft.addressDetails } })}
               multiline
               textAlignVertical="top"
               placeholderTextColor="#94A3B8"
@@ -13478,8 +13858,12 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     backgroundColor: "#5B4BDB",
   },
+  supportMessagesStack: {
+    marginTop: 10,
+    gap: 8,
+  },
   supportBubble: {
-    marginTop: 14,
+    alignSelf: "flex-start",
     maxWidth: "86%",
     padding: 12,
     borderRadius: 14,
@@ -13488,6 +13872,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
     backgroundColor: "#F1F2F4",
+  },
+  supportBubbleUser: {
+    alignSelf: "flex-end",
+    color: "#FFFFFF",
+    backgroundColor: "#5B4BDB",
+  },
+  supportBubbleFailed: {
+    backgroundColor: "#FEE2E2",
+    color: "#991B1B",
   },
   supportInput: {
     minHeight: 92,
@@ -17116,6 +17509,22 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     borderWidth: 1,
     borderColor: "#E6E0FF",
+  },
+  businessPhotoStatusRow: {
+    minHeight: 38,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 14,
+    backgroundColor: "#F8FAFF",
+  },
+  businessPhotoStatusText: {
+    flex: 1,
+    color: "#5B4BDB",
+    fontSize: 12,
+    fontWeight: "900",
   },
   businessPhotoGrid: {
     flexDirection: "row",
