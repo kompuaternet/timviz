@@ -1043,10 +1043,10 @@ const baseCopy = {
     selectedCategory: "Обрана категорія",
     editService: "Редагувати послугу",
     saveService: "Зберегти послугу",
-    addFromCatalog: "Додати з каталогу",
-    alreadyAdded: "У ваших послугах",
-    catalogHint: "Оберіть готову послугу з загального каталогу Timviz.",
-    myServicesHint: "Тут послуги, які доступні для запису клієнтів. Натисніть на послугу, щоб змінити ціну або час.",
+    addFromCatalog: "Додати",
+    alreadyAdded: "Додано",
+    catalogHint: "Оберіть готову послугу.",
+    myServicesHint: "Редагуйте ціну, тривалість і доступність.",
     price: "Ціна",
     duration: "Хвилини",
     delete: "Видалити",
@@ -1064,7 +1064,7 @@ const baseCopy = {
     premiumSubscriptionActive: "Premium активний",
     premiumSubscriptionTrial: "Пробний період",
     premiumSubscriptionFree: "Free",
-    premiumSubscriptionText: "Підписка App Store відкриває Premium у застосунку й на сайті Timviz.",
+    premiumSubscriptionText: "Premium працює в застосунку і на сайті.",
     premiumMonthly: "Premium Monthly",
     premiumYearly: "Premium Yearly",
     premiumMonthlyFallback: "$3 / місяць",
@@ -1118,7 +1118,7 @@ const baseCopy = {
     businessPhotos: "Фото бізнесу",
     photosHint: "Перші фото відображаються на сторінці онлайн-запису.",
     businessPhotoUploadTitle: "Додати фото бізнесу",
-    businessPhotoUploadSubtitle: "Профілі з фото отримують більше клієнтів",
+    businessPhotoUploadSubtitle: "Профілі з фото виглядають професійніше",
     businessPhotoSourceTitle: "Звідки додати фото",
     businessPhotoFromCamera: "Зробити фото",
     businessPhotoFromGallery: "Обрати з галереї",
@@ -1157,12 +1157,12 @@ const baseCopy = {
     telegramSectionNotifications: "Сповіщення",
     telegramSectionReminders: "Нагадування",
     telegramSectionSupport: "Підтримка",
-    telegramNotificationsHint: "Виберіть, які події бот має надсилати в Telegram.",
+    telegramNotificationsHint: "Події для Telegram.",
     telegramOnlineBookings: "Нові онлайн-записи",
     telegramCabinetBookings: "Нові записи з кабінету",
     telegramRescheduled: "Зміна часу запису",
     telegramCancelled: "Скасування запису",
-    telegramRemindersHint: "Нагадування допомагають не пропустити майбутні візити.",
+    telegramRemindersHint: "Нагадування про візити.",
     telegramReminders: "Нагадування перед записом",
     telegramToday: "Зведення на сьогодні",
     telegramReminderLead: "Коли нагадувати",
@@ -1171,7 +1171,7 @@ const baseCopy = {
     telegramSaved: "Telegram оновлено",
     telegramSaveFailed: "Не вдалося оновити Telegram.",
     pushTitle: "Сповіщення застосунку",
-    pushHint: "Отримуйте нові заявки, зміни записів і нагадування прямо на iPhone.",
+    pushHint: "Нові записи та зміни прямо на iPhone.",
     pushEnable: "Увімкнути сповіщення",
     pushEnabled: "Сповіщення увімкнено",
     pushDisabled: "Сповіщення вимкнено",
@@ -1440,10 +1440,10 @@ const baseCopy = {
     selectedCategory: "Выбранная категория",
     editService: "Редактировать услугу",
     saveService: "Сохранить услугу",
-    addFromCatalog: "Добавить из каталога",
-    alreadyAdded: "В ваших услугах",
-    catalogHint: "Выберите готовую услугу из общего каталога Timviz.",
-    myServicesHint: "Тут услуги, которые доступны для записи клиентов. Нажмите на услугу, чтобы изменить цену или время.",
+    addFromCatalog: "Добавить",
+    alreadyAdded: "Добавлено",
+    catalogHint: "Выберите готовую услугу.",
+    myServicesHint: "Редактируйте цену, длительность и доступность.",
     price: "Цена",
     duration: "Минуты",
     delete: "Удалить",
@@ -1461,7 +1461,7 @@ const baseCopy = {
     premiumSubscriptionActive: "Premium активен",
     premiumSubscriptionTrial: "Пробный период",
     premiumSubscriptionFree: "Free",
-    premiumSubscriptionText: "Подписка App Store открывает Premium в приложении и на сайте Timviz.",
+    premiumSubscriptionText: "Premium работает в приложении и на сайте.",
     premiumMonthly: "Premium Monthly",
     premiumYearly: "Premium Yearly",
     premiumMonthlyFallback: "$3 / месяц",
@@ -1515,7 +1515,7 @@ const baseCopy = {
     businessPhotos: "Фото бизнеса",
     photosHint: "Первые фото отображаются на странице онлайн-записи.",
     businessPhotoUploadTitle: "Добавить фото бизнеса",
-    businessPhotoUploadSubtitle: "Профили с фото получают больше клиентов",
+    businessPhotoUploadSubtitle: "Профили с фото выглядят профессиональнее",
     businessPhotoSourceTitle: "Откуда добавить фото",
     businessPhotoFromCamera: "Сделать фото",
     businessPhotoFromGallery: "Выбрать из галереи",
@@ -1554,12 +1554,12 @@ const baseCopy = {
     telegramSectionNotifications: "Уведомления",
     telegramSectionReminders: "Напоминания",
     telegramSectionSupport: "Поддержка",
-    telegramNotificationsHint: "Выберите, какие события бот должен отправлять в Telegram.",
+    telegramNotificationsHint: "События для Telegram.",
     telegramOnlineBookings: "Новые онлайн-записи",
     telegramCabinetBookings: "Новые записи из кабинета",
     telegramRescheduled: "Изменение времени записи",
     telegramCancelled: "Отмена записи",
-    telegramRemindersHint: "Напоминания помогают не пропустить будущие визиты.",
+    telegramRemindersHint: "Напоминания о визитах.",
     telegramReminders: "Напоминание перед записью",
     telegramToday: "Сводка на сегодня",
     telegramReminderLead: "Когда напоминать",
@@ -1568,7 +1568,7 @@ const baseCopy = {
     telegramSaved: "Telegram обновлен",
     telegramSaveFailed: "Не удалось обновить Telegram.",
     pushTitle: "Уведомления приложения",
-    pushHint: "Получайте новые заявки, изменения записей и напоминания прямо на iPhone.",
+    pushHint: "Новые записи и изменения прямо на iPhone.",
     pushEnable: "Включить уведомления",
     pushEnabled: "Уведомления включены",
     pushDisabled: "Уведомления выключены",
@@ -1837,10 +1837,10 @@ const baseCopy = {
     selectedCategory: "Selected category",
     editService: "Edit service",
     saveService: "Save service",
-    addFromCatalog: "Add from catalog",
-    alreadyAdded: "In your services",
-    catalogHint: "Choose a ready-made service from the Timviz global catalog.",
-    myServicesHint: "These services are available for client booking. Tap a service to change price or duration.",
+    addFromCatalog: "Add",
+    alreadyAdded: "Added",
+    catalogHint: "Choose a ready-made service.",
+    myServicesHint: "Edit price, duration, and availability.",
     price: "Price",
     duration: "Minutes",
     delete: "Delete",
@@ -1858,7 +1858,7 @@ const baseCopy = {
     premiumSubscriptionActive: "Premium active",
     premiumSubscriptionTrial: "Trial period",
     premiumSubscriptionFree: "Free",
-    premiumSubscriptionText: "App Store subscription unlocks Premium in the app and on the Timviz website.",
+    premiumSubscriptionText: "Premium works in the app and on the website.",
     premiumMonthly: "Premium Monthly",
     premiumYearly: "Premium Yearly",
     premiumMonthlyFallback: "$3 / month",
@@ -1912,7 +1912,7 @@ const baseCopy = {
     businessPhotos: "Business photos",
     photosHint: "The first photos appear on the online booking page.",
     businessPhotoUploadTitle: "Add business photo",
-    businessPhotoUploadSubtitle: "Profiles with photos get more clients",
+    businessPhotoUploadSubtitle: "Profiles with photos look more professional",
     businessPhotoSourceTitle: "Add photo from",
     businessPhotoFromCamera: "Take a photo",
     businessPhotoFromGallery: "Choose from gallery",
@@ -1951,12 +1951,12 @@ const baseCopy = {
     telegramSectionNotifications: "Notifications",
     telegramSectionReminders: "Reminders",
     telegramSectionSupport: "Support",
-    telegramNotificationsHint: "Choose which events the bot should send to Telegram.",
+    telegramNotificationsHint: "Telegram events.",
     telegramOnlineBookings: "New online bookings",
     telegramCabinetBookings: "New workspace bookings",
     telegramRescheduled: "Booking time changed",
     telegramCancelled: "Booking cancelled",
-    telegramRemindersHint: "Reminders help you avoid missing upcoming visits.",
+    telegramRemindersHint: "Appointment reminders.",
     telegramReminders: "Reminder before booking",
     telegramToday: "Today summary",
     telegramReminderLead: "Reminder time",
@@ -1965,7 +1965,7 @@ const baseCopy = {
     telegramSaved: "Telegram updated",
     telegramSaveFailed: "Could not update Telegram.",
     pushTitle: "App notifications",
-    pushHint: "Receive new requests, appointment changes, and reminders directly on your iPhone.",
+    pushHint: "New bookings and changes on your iPhone.",
     pushEnable: "Enable notifications",
     pushEnabled: "Notifications enabled",
     pushDisabled: "Notifications disabled",
@@ -2224,10 +2224,10 @@ const generatedMobileCopy = {
     selectedCategory: "Catégorie sélectionnée",
     editService: "Modifier le service",
     saveService: "Enregistrer le service",
-    addFromCatalog: "Ajouter du catalogue",
-    alreadyAdded: "Dans vos services",
-    catalogHint: "Choisissez un service prêt à l'emploi dans le catalogue global Timviz.",
-    myServicesHint: "Ces services sont disponibles sur réservation client. Tap a service to change price or duration.",
+    addFromCatalog: "Ajouter",
+    alreadyAdded: "Ajouté",
+    catalogHint: "Choisissez un service prêt.",
+    myServicesHint: "Modifiez le prix, la durée et la disponibilité.",
     price: "Price",
     duration: "Minutes",
     delete: "Supprimer",
@@ -2245,7 +2245,7 @@ const generatedMobileCopy = {
     premiumSubscriptionActive: "Premium actif",
     premiumSubscriptionTrial: "Période d'essai",
     premiumSubscriptionFree: "Free",
-    premiumSubscriptionText: "L'abonnement App Store débloque Premium dans l'application et sur le site Timviz.",
+    premiumSubscriptionText: "Premium fonctionne dans l'application et sur le site.",
     premiumMonthly: "Premium mensuel",
     premiumYearly: "Premium annuel",
     premiumMonthlyFallback: "3 $ / mois",
@@ -2596,10 +2596,10 @@ const generatedMobileCopy = {
     selectedCategory: "Wybrana kategoria",
     editService: "Edytuj usługę",
     saveService: "Zapisz usługę",
-    addFromCatalog: "Dodaj z katalogu",
-    alreadyAdded: "W swoich usługach",
-    catalogHint: "Wybierz gotową usługę z globalnego katalogu Timviz.",
-    myServicesHint: "Usługi te są dostępne w przypadku rezerwacji klienta. Kliknij usługę, aby zmienić cenę lub czas trwania.",
+    addFromCatalog: "Dodaj",
+    alreadyAdded: "Dodano",
+    catalogHint: "Wybierz gotową usługę.",
+    myServicesHint: "Edytuj cenę, czas i dostępność.",
     price: "Cena",
     duration: "Minuty",
     delete: "Usuń",
@@ -2617,7 +2617,7 @@ const generatedMobileCopy = {
     premiumSubscriptionActive: "Premium aktywna",
     premiumSubscriptionTrial: "Okres próbny",
     premiumSubscriptionFree: "Free",
-    premiumSubscriptionText: "App Store odblokowuje Premium w aplikacji i na stronie internetowej Timviz.",
+    premiumSubscriptionText: "Premium działa w aplikacji i na stronie.",
     premiumMonthly: "Premium miesięczny",
     premiumYearly: "Premium roczny",
     premiumMonthlyFallback: "3 USD / miesiąc",
@@ -2968,10 +2968,10 @@ const generatedMobileCopy = {
     selectedCategory: "Vybraná kategorie",
     editService: "Upravit službu",
     saveService: "Uložit službu",
-    addFromCatalog: "Přidat z katalogu",
-    alreadyAdded: "Ve vašich službách",
-    catalogHint: "Vyberte si hotovou službu z globálního katalogu Timviz.",
-    myServicesHint: "Tyto služby jsou dostupné pro klientskou rezervaci. Klepnutím na službu změníte cenu nebo dobu trvání.",
+    addFromCatalog: "Přidat",
+    alreadyAdded: "Přidáno",
+    catalogHint: "Vyberte hotovou službu.",
+    myServicesHint: "Upravte cenu, délku a dostupnost.",
     price: "Cena",
     duration: "Minuty",
     delete: "Smazat",
@@ -2989,7 +2989,7 @@ const generatedMobileCopy = {
     premiumSubscriptionActive: "Prémiové aktivní",
     premiumSubscriptionTrial: "Zkušební období",
     premiumSubscriptionFree: "Free",
-    premiumSubscriptionText: "Předplatné App Store odemkne Premium v ​​aplikaci a na webu Timviz.",
+    premiumSubscriptionText: "Premium funguje v aplikaci i na webu.",
     premiumMonthly: "Premium měsíčně",
     premiumYearly: "Premium ročně",
     premiumMonthlyFallback: "$3/měsíc",
@@ -3340,10 +3340,10 @@ const generatedMobileCopy = {
     selectedCategory: "Categoría seleccionada",
     editService: "Editar servicio",
     saveService: "Guardar servicio",
-    addFromCatalog: "Agregar del catálogo",
-    alreadyAdded: "En sus servicios",
-    catalogHint: "Elija un servicio listo para usar del catálogo global de Timviz.",
-    myServicesHint: "Estos servicios están disponibles para la reserva del cliente. Toca un servicio para cambiar el precio o la duración.",
+    addFromCatalog: "Agregar",
+    alreadyAdded: "Agregado",
+    catalogHint: "Elija un servicio listo.",
+    myServicesHint: "Edita precio, duración y disponibilidad.",
     price: "Precio",
     duration: "Minutos",
     delete: "Eliminar",
@@ -3361,7 +3361,7 @@ const generatedMobileCopy = {
     premiumSubscriptionActive: "Premium activo",
     premiumSubscriptionTrial: "Período de prueba",
     premiumSubscriptionFree: "Free",
-    premiumSubscriptionText: "La suscripción a App Store desbloquea Premium en la aplicación y en el sitio web de Timviz.",
+    premiumSubscriptionText: "Premium funciona en la app y en el sitio.",
     premiumMonthly: "Premium mensual",
     premiumYearly: "Premium anual",
     premiumMonthlyFallback: "$3 / mes",
@@ -3712,10 +3712,10 @@ const generatedMobileCopy = {
     selectedCategory: "Ausgewählte Kategorie",
     editService: "Dienst bearbeiten",
     saveService: "Dienst speichern",
-    addFromCatalog: "Aus Katalog hinzufügen",
-    alreadyAdded: "In Ihren Diensten",
-    catalogHint: "Wählen Sie einen vorgefertigten Dienst aus dem globalen Timviz-Katalog.",
-    myServicesHint: "Diese Dienste stehen Kunden zur Buchung zur Verfügung. Tippen Sie auf einen Dienst, um Preis oder Dauer zu ändern.",
+    addFromCatalog: "Hinzufügen",
+    alreadyAdded: "Hinzugefügt",
+    catalogHint: "Wählen Sie einen fertigen Service.",
+    myServicesHint: "Preis, Dauer und Verfügbarkeit bearbeiten.",
     price: "Preis",
     duration: "Minuten",
     delete: "Löschen",
@@ -3733,7 +3733,7 @@ const generatedMobileCopy = {
     premiumSubscriptionActive: "Premium aktiv",
     premiumSubscriptionTrial: "Testzeitraum",
     premiumSubscriptionFree: "Free",
-    premiumSubscriptionText: "Das App Store-Abonnement schaltet Premium in der App und auf der Timviz-Website frei.",
+    premiumSubscriptionText: "Premium funktioniert in App und Website.",
     premiumMonthly: "Premium monatlich",
     premiumYearly: "Premium jährlich",
     premiumMonthlyFallback: "3 $ / Monat",
@@ -7226,6 +7226,36 @@ function CalendarTab({
     setComposerOpen(true);
   }
 
+  function normalizeContactPhone(value: string) {
+    const phone = safeText(value).replace(/[^\d+]/g, "");
+    if (!phone) return "";
+    if (phone.startsWith("+")) return phone;
+    return `+${phone}`;
+  }
+
+  async function openContactAction(kind: "phone" | "telegram" | "viber" | "whatsapp") {
+    const phone = normalizeContactPhone(visitDraft.customerPhone || selectedClient?.phone || "");
+    if (!phone) {
+      Alert.alert(t.customer, t.clientNameOrPhone || t.phone);
+      return;
+    }
+    const encodedPhone = encodeURIComponent(phone);
+    const plainPhone = phone.replace(/[^\d]/g, "");
+    const urls =
+      kind === "phone"
+        ? [`tel:${phone}`]
+        : kind === "whatsapp"
+          ? [`whatsapp://send?phone=${plainPhone}`, `https://wa.me/${plainPhone}`]
+          : kind === "viber"
+            ? [`viber://chat?number=${encodedPhone}`]
+            : [`tg://resolve?phone=${plainPhone}`, `https://t.me/+${plainPhone}`];
+
+    for (const url of urls) {
+      const opened = await Linking.openURL(url).then(() => true).catch(() => false);
+      if (opened) return;
+    }
+  }
+
   function openBlockedTimeComposer(action: { date: string; time: string; targetProfessionalId?: string }, label: string, title: string) {
     setBlockedTimeDraft({
       date: action.date,
@@ -7593,17 +7623,35 @@ function CalendarTab({
             ) : (
               <>
                 <ScrollView style={styles.visitEditorScroll} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
-                  <Pressable style={styles.visitClientCard} onPress={() => setVisitPickerMode("client")}>
-                    <View style={styles.clientAvatarLarge}>
-                      <Text style={styles.clientAvatarLargeText}>{selectedClient ? (selectedClient.fullName || "C").slice(0, 1).toUpperCase() : "○"}</Text>
-                    </View>
-                    <View style={styles.clientOptionText}>
-                      <Text style={styles.visitCardEyebrow}>{t.customer}</Text>
-                      <Text style={styles.visitClientTitle}>{selectedClient ? selectedClient.fullName : visitDraft.customerName || t.quickBookingWithoutClient}</Text>
-                      <Text style={styles.clientOptionCaption}>{visitDraft.customerPhone || t.chooseClientLater}</Text>
-                    </View>
-                    <Ionicons name="add" size={18} color="#6D4AFF" />
-                  </Pressable>
+                  <View style={styles.visitClientCard}>
+                    <Pressable style={styles.visitClientCardMain} onPress={() => setVisitPickerMode("client")}>
+                      <View style={styles.clientAvatarLarge}>
+                        <Text style={styles.clientAvatarLargeText}>{selectedClient ? (selectedClient.fullName || "C").slice(0, 1).toUpperCase() : "○"}</Text>
+                      </View>
+                      <View style={styles.clientOptionText}>
+                        <Text style={styles.visitCardEyebrow}>{t.customer}</Text>
+                        <Text style={styles.visitClientTitle}>{selectedClient ? selectedClient.fullName : visitDraft.customerName || t.quickBookingWithoutClient}</Text>
+                        <Text style={styles.clientOptionCaption}>{visitDraft.customerPhone || t.chooseClientLater}</Text>
+                      </View>
+                      <Ionicons name="add" size={18} color="#6D4AFF" />
+                    </Pressable>
+                    {editingAppointment ? (
+                      <View style={styles.visitContactActions}>
+                        <Pressable style={[styles.visitContactActionButton, styles.visitContactActionPhone]} onPress={() => void openContactAction("phone")}>
+                          <Ionicons name="call" size={17} color="#2563EB" />
+                        </Pressable>
+                        <Pressable style={[styles.visitContactActionButton, styles.visitContactActionWhatsApp]} onPress={() => void openContactAction("whatsapp")}>
+                          <Ionicons name="logo-whatsapp" size={17} color="#16A34A" />
+                        </Pressable>
+                        <Pressable style={[styles.visitContactActionButton, styles.visitContactActionTelegram]} onPress={() => void openContactAction("telegram")}>
+                          <Ionicons name="paper-plane" size={17} color="#0284C7" />
+                        </Pressable>
+                        <Pressable style={[styles.visitContactActionButton, styles.visitContactActionViber]} onPress={() => void openContactAction("viber")}>
+                          <Ionicons name="chatbubble-ellipses" size={17} color="#6D4AFF" />
+                        </Pressable>
+                      </View>
+                    ) : null}
+                  </View>
 
                   <View style={styles.visitSectionHeader}>
                     <Text style={styles.visitSectionTitle}>{t.visitTab || t.newVisit}</Text>
@@ -9138,6 +9186,7 @@ function ServicesTab({
         <Panel title={t.yourServices}>
           {services.length ? (
             <>
+              <Text style={styles.compactHelperText}>{t.myServicesHint}</Text>
               {services.map((service) => {
                 const isEditing = editId === service.id;
                 return (
@@ -9162,7 +9211,9 @@ function ServicesTab({
                           <View style={[styles.serviceDot, { backgroundColor: service.color || "#7C3AED" }]} />
                           <View style={styles.serviceTextBlock}>
                             <Text style={styles.listTitle} numberOfLines={1}>{getServiceDisplayName(service, language)}</Text>
-                            <Text style={styles.listCaption} numberOfLines={1}>{formatDuration(service.durationMinutes || 60, t)}</Text>
+                            <Text style={styles.listCaption} numberOfLines={1}>
+                              {getServiceCategoryDisplayName(service.category, service.localizedCategory, language, t)} · {formatDuration(service.durationMinutes || 60, t)}
+                            </Text>
                           </View>
                         </View>
                         <View style={styles.rowRight}>
@@ -9238,7 +9289,7 @@ function ServicesTab({
                   <View style={[styles.catalogAddBadge, exists && styles.catalogAddBadgeDone]}>
                     <Ionicons name={exists ? "checkmark" : "add"} size={20} color={exists ? "#166534" : "#FFFFFF"} />
                   </View>
-                  <Text style={[styles.catalogStateText, exists && styles.catalogStateTextDone]}>{exists ? t.alreadyAdded : t.addFromCatalog}</Text>
+                  {exists ? <Text style={[styles.catalogStateText, styles.catalogStateTextDone]}>{t.alreadyAdded}</Text> : null}
                 </Pressable>
               );
             })
@@ -9370,10 +9421,8 @@ function ClientsTab({
                   <Ionicons name="close" size={22} color="#0F172A" />
                 </Pressable>
               </View>
-              <View style={styles.twoColumns}>
-                <Field label={t.firstName} value={draft.firstName} onChangeText={(value) => setDraft({ ...draft, firstName: value })} />
-                <Field label={t.lastName} value={draft.lastName} onChangeText={(value) => setDraft({ ...draft, lastName: value })} />
-              </View>
+              <Field label={t.firstName} value={draft.firstName} onChangeText={(value) => setDraft({ ...draft, firstName: value })} />
+              <Field label={t.lastName} value={draft.lastName} onChangeText={(value) => setDraft({ ...draft, lastName: value })} />
               <Field label={t.phone} value={draft.phone} onChangeText={(value) => setDraft({ ...draft, phone: value })} keyboardType="phone-pad" />
               <Field label={t.email} value={draft.email} onChangeText={(value) => setDraft({ ...draft, email: value })} keyboardType="email-address" autoCapitalize="none" />
               <PrimaryButton label={t.addClient} onPress={handleCreateClient} disabled={busy} />
@@ -10725,7 +10774,6 @@ function SettingsTab({
 
     return (
       <Panel title={t.businessPhotos}>
-        <Text style={styles.emptyText}>{t.photosHint}</Text>
         {!photos.length ? (
           <Pressable
             {...dropHandlers}
@@ -11216,7 +11264,7 @@ function SettingsTab({
                 <Text style={styles.statLabel}>{t.categoriesText}</Text>
               </View>
             </View>
-            <Text style={styles.emptyText}>{t.myServicesHint}</Text>
+            <Text style={styles.compactHelperText}>{t.myServicesHint}</Text>
             {(workspace?.services || []).slice(0, 4).map((service) => (
               <View key={service.id} style={styles.settingsMiniRow}>
                 <View style={[styles.serviceDot, { backgroundColor: service.color || "#8ED1F2" }]} />
@@ -11255,7 +11303,7 @@ function SettingsTab({
             <View style={[styles.telegramDot, pushPanel?.connected ? styles.telegramDotConnected : styles.telegramDotDisconnected]} />
             <View style={styles.settingsMiniInfo}>
               <Text style={styles.settingsCardTitle}>{pushPanel?.connected ? t.pushEnabled : t.pushDisabled}</Text>
-              <Text style={styles.clientOptionCaption}>{t.pushHint}</Text>
+              <Text style={styles.clientOptionCaption} numberOfLines={2}>{t.pushHint}</Text>
             </View>
           </View>
           {pushError ? <Text style={styles.settingsMutedNotice}>{pushError}</Text> : null}
@@ -11269,12 +11317,10 @@ function SettingsTab({
           <InfoLine label={t.pushDeviceCount} value={String(pushPanel?.tokenCount || 0)} />
           {pushPanel ? (
             <>
-              <Text style={styles.emptyText}>{t.telegramNotificationsHint}</Text>
               <SettingsToggleRow label={t.telegramOnlineBookings} value={pushPanel.settings.notificationsNewBooking} onPress={() => togglePushSetting("notificationsNewBooking")} disabled={isPushSaving} />
               <SettingsToggleRow label={t.telegramCabinetBookings} value={pushPanel.settings.notificationsCabinetBooking} onPress={() => togglePushSetting("notificationsCabinetBooking")} disabled={isPushSaving} />
               <SettingsToggleRow label={t.telegramRescheduled} value={pushPanel.settings.notificationsRescheduled} onPress={() => togglePushSetting("notificationsRescheduled")} disabled={isPushSaving} />
               <SettingsToggleRow label={t.telegramCancelled} value={pushPanel.settings.notificationsCancelled} onPress={() => togglePushSetting("notificationsCancelled")} disabled={isPushSaving} />
-              <Text style={styles.emptyText}>{t.telegramRemindersHint}</Text>
               <SettingsToggleRow label={t.telegramReminders} value={pushPanel.settings.notificationsReminder} onPress={() => togglePushSetting("notificationsReminder")} disabled={isPushSaving} />
               <SettingsToggleRow label={t.telegramToday} value={pushPanel.settings.notificationsToday} onPress={() => togglePushSetting("notificationsToday")} disabled={isPushSaving} />
               <SettingsOptionRail
@@ -11321,7 +11367,6 @@ function SettingsTab({
               </View>
               {telegramSection === "notifications" ? (
                 <View>
-                  <Text style={styles.emptyText}>{t.telegramNotificationsHint}</Text>
                   <SettingsToggleRow label={t.telegramOnlineBookings} value={telegramPanel.settings.notificationsNewBooking} onPress={() => toggleTelegramSetting("notificationsNewBooking")} disabled={isTelegramSaving} />
                   <SettingsToggleRow label={t.telegramCabinetBookings} value={telegramPanel.settings.notificationsCabinetBooking} onPress={() => toggleTelegramSetting("notificationsCabinetBooking")} disabled={isTelegramSaving} />
                   <SettingsToggleRow label={t.telegramRescheduled} value={telegramPanel.settings.notificationsRescheduled} onPress={() => toggleTelegramSetting("notificationsRescheduled")} disabled={isTelegramSaving} />
@@ -11330,7 +11375,6 @@ function SettingsTab({
               ) : null}
               {telegramSection === "reminders" ? (
                 <View>
-                  <Text style={styles.emptyText}>{t.telegramRemindersHint}</Text>
                   <SettingsToggleRow label={t.telegramReminders} value={telegramPanel.settings.notificationsReminder} onPress={() => toggleTelegramSetting("notificationsReminder")} disabled={isTelegramSaving} />
                   <SettingsToggleRow label={t.telegramToday} value={telegramPanel.settings.notificationsToday} onPress={() => toggleTelegramSetting("notificationsToday")} disabled={isTelegramSaving} />
                   <SettingsOptionRail
@@ -12317,7 +12361,7 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     color: DESIGN.colors.text,
     fontSize: 13,
-    fontWeight: "800",
+    fontWeight: "600",
   },
   hint: {
     flexShrink: 1,
@@ -14526,13 +14570,45 @@ const styles = StyleSheet.create({
   visitClientCard: {
     minHeight: 78,
     padding: 13,
-    flexDirection: "row",
-    alignItems: "center",
     gap: 12,
     borderRadius: 22,
     borderWidth: 1,
     borderColor: "#DCD6FF",
     backgroundColor: "#F4F0FF",
+  },
+  visitClientCardMain: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  visitContactActions: {
+    flexDirection: "row",
+    gap: 9,
+    paddingTop: 11,
+    borderTopWidth: 1,
+    borderTopColor: "rgba(216, 208, 255, 0.64)",
+  },
+  visitContactActionButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 16,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "rgba(226, 232, 240, 0.82)",
+    backgroundColor: "#FFFFFF",
+  },
+  visitContactActionPhone: {
+    backgroundColor: "#EFF6FF",
+  },
+  visitContactActionWhatsApp: {
+    backgroundColor: "#ECFDF5",
+  },
+  visitContactActionTelegram: {
+    backgroundColor: "#E0F2FE",
+  },
+  visitContactActionViber: {
+    backgroundColor: "#F1EEFF",
   },
   clientAvatarLarge: {
     width: 46,
@@ -15056,9 +15132,9 @@ const styles = StyleSheet.create({
   },
   settingsTopTitle: {
     color: DESIGN.colors.text,
-    fontSize: 20,
-    lineHeight: 25,
-    fontWeight: "900",
+    fontSize: 19,
+    lineHeight: 24,
+    fontWeight: "800",
   },
   settingsTopSubtitle: {
     marginTop: 1,
@@ -15093,14 +15169,14 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   settingsAccordionHeader: {
-    minHeight: 44,
+    minHeight: 52,
     paddingHorizontal: 13,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     borderRadius: 17,
     borderWidth: 1,
-    borderColor: "rgba(226, 232, 240, 0.72)",
+    borderColor: "rgba(226, 232, 240, 0.58)",
     backgroundColor: "rgba(255,255,255,0.82)",
   },
   settingsAccordionHeaderActive: {
@@ -15230,16 +15306,16 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(226, 232, 240, 0.58)",
     backgroundColor: DESIGN.colors.surface,
-    padding: 13,
+    padding: 12,
     shadowColor: "#0F172A",
-    shadowOpacity: 0.028,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.022,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 7 },
   },
   panelTitle: {
     color: DESIGN.colors.text,
     fontSize: 15,
-    fontWeight: "800",
+    fontWeight: "700",
   },
   panelBody: {
     gap: 8,
@@ -15252,13 +15328,13 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   choiceChip: {
-    paddingHorizontal: 14,
-    height: 40,
-    borderRadius: DESIGN.radius.md,
+    paddingHorizontal: 11,
+    height: 34,
+    borderRadius: 14,
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
-    borderColor: DESIGN.colors.border,
+    borderColor: "rgba(226, 232, 240, 0.68)",
     backgroundColor: DESIGN.colors.surface,
   },
   choiceChipActive: {
@@ -15267,8 +15343,8 @@ const styles = StyleSheet.create({
   },
   choiceText: {
     color: DESIGN.colors.muted,
-    fontSize: 13,
-    fontWeight: "800",
+    fontSize: 12,
+    fontWeight: "700",
   },
   choiceTextActive: {
     color: DESIGN.colors.primaryDark,
@@ -15278,12 +15354,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     gap: 12,
-    minHeight: 58,
-    marginTop: 7,
-    padding: 10,
-    borderRadius: 17,
+    minHeight: 54,
+    marginTop: 6,
+    padding: 9,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: DESIGN.colors.border,
+    borderColor: "rgba(226, 232, 240, 0.74)",
     backgroundColor: DESIGN.colors.surfaceSoft,
   },
   serviceManageCard: {
@@ -15293,7 +15369,7 @@ const styles = StyleSheet.create({
     backgroundColor: DESIGN.colors.surfaceSoft,
   },
   firstRunCard: {
-    padding: 16,
+    padding: 13,
     alignItems: "center",
     borderRadius: DESIGN.radius.xl,
     borderWidth: 1,
@@ -15301,19 +15377,19 @@ const styles = StyleSheet.create({
     backgroundColor: "#FBFAFF",
   },
   firstRunIcon: {
-    width: 46,
-    height: 46,
-    borderRadius: 23,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: DESIGN.colors.primarySoft,
   },
   firstRunTitle: {
-    marginTop: 12,
+    marginTop: 9,
     color: DESIGN.colors.text,
-    fontSize: 18,
-    lineHeight: 23,
-    fontWeight: "800",
+    fontSize: 16,
+    lineHeight: 21,
+    fontWeight: "700",
     textAlign: "center",
   },
   firstRunText: {
@@ -15326,7 +15402,7 @@ const styles = StyleSheet.create({
   },
   firstRunActions: {
     width: "100%",
-    marginTop: 14,
+    marginTop: 11,
     gap: 8,
   },
   firstRunPrimaryButton: {
@@ -15378,8 +15454,8 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   serviceManageSummary: {
-    minHeight: 62,
-    padding: 10,
+    minHeight: 58,
+    padding: 9,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -15435,14 +15511,14 @@ const styles = StyleSheet.create({
     backgroundColor: "#6D4AFF",
   },
   catalogServiceCard: {
-    minHeight: 72,
-    padding: 12,
+    minHeight: 66,
+    padding: 10,
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    borderRadius: 18,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: "#D8E2F1",
+    borderColor: "rgba(216, 226, 241, 0.78)",
     backgroundColor: "#F8FAFF",
   },
   catalogServiceCardActive: {
@@ -15450,9 +15526,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#F0FDF4",
   },
   catalogAddBadge: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#6D4AFF",
@@ -15461,12 +15537,17 @@ const styles = StyleSheet.create({
     backgroundColor: "#DCFCE7",
   },
   catalogStateText: {
-    width: 74,
-    color: "#432C75",
-    fontSize: 11,
-    lineHeight: 14,
-    fontWeight: "900",
+    width: 68,
+    paddingHorizontal: 7,
+    paddingVertical: 4,
+    borderRadius: 999,
+    overflow: "hidden",
+    color: "#166534",
+    fontSize: 10,
+    lineHeight: 12,
+    fontWeight: "800",
     textAlign: "center",
+    backgroundColor: "#DCFCE7",
   },
   catalogStateTextDone: {
     color: "#166534",
@@ -15478,8 +15559,8 @@ const styles = StyleSheet.create({
   },
   listTitle: {
     color: "#0F172A",
-    fontSize: 15,
-    fontWeight: "800",
+    fontSize: 14,
+    fontWeight: "700",
   },
   listText: {
     marginTop: 2,
@@ -15495,15 +15576,21 @@ const styles = StyleSheet.create({
   },
   moneyText: {
     color: DESIGN.colors.text,
-    fontSize: 14,
-    fontWeight: "900",
+    fontSize: 13,
+    fontWeight: "800",
   },
   emptyText: {
     color: DESIGN.colors.muted,
-    fontSize: 15,
-    lineHeight: 22,
-    fontWeight: "700",
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: "600",
     paddingVertical: 4,
+  },
+  compactHelperText: {
+    color: DESIGN.colors.muted,
+    fontSize: 12,
+    lineHeight: 17,
+    fontWeight: "600",
   },
   serviceColorRow: {
     flex: 1,
@@ -15579,12 +15666,12 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
   badgeText: {
-    minWidth: 34,
+    minWidth: 30,
     textAlign: "center",
     color: "#5B21B6",
-    fontSize: 14,
-    fontWeight: "900",
-    paddingVertical: 6,
+    fontSize: 12,
+    fontWeight: "800",
+    paddingVertical: 5,
     borderRadius: 8,
     backgroundColor: "#F3E8FF",
   },
@@ -15606,8 +15693,8 @@ const styles = StyleSheet.create({
   staffScreenTitle: {
     marginTop: 4,
     color: DESIGN.colors.text,
-    fontSize: 22,
-    lineHeight: 27,
+    fontSize: 20,
+    lineHeight: 25,
     fontWeight: "800",
   },
   staffScreenSubtitle: {
@@ -15714,16 +15801,16 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   staffMemberCard: {
-    gap: 10,
-    padding: 14,
-    borderRadius: 24,
+    gap: 9,
+    padding: 11,
+    borderRadius: 20,
     borderWidth: 1,
     borderColor: "rgba(226, 232, 240, 0.72)",
     backgroundColor: "rgba(255, 255, 255, 0.96)",
     shadowColor: "#172033",
-    shadowOpacity: 0.04,
-    shadowRadius: 18,
-    shadowOffset: { width: 0, height: 9 },
+    shadowOpacity: 0.025,
+    shadowRadius: 14,
+    shadowOffset: { width: 0, height: 7 },
   },
   staffMemberCardTop: {
     flexDirection: "row",
@@ -15740,8 +15827,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   staffMemberStatPill: {
-    minHeight: 32,
-    paddingHorizontal: 10,
+    minHeight: 28,
+    paddingHorizontal: 9,
     flexDirection: "row",
     alignItems: "center",
     gap: 6,
@@ -15750,7 +15837,7 @@ const styles = StyleSheet.create({
   },
   staffMemberStatValue: {
     color: DESIGN.colors.text,
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: "800",
   },
   staffMemberStatLabel: {
@@ -15760,8 +15847,8 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   staffToggleRow: {
-    minHeight: 52,
-    padding: 11,
+    minHeight: 48,
+    padding: 10,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
@@ -16149,10 +16236,10 @@ const styles = StyleSheet.create({
   },
   premiumMobilePlan: {
     flex: 1,
-    minHeight: 86,
+    minHeight: 72,
     justifyContent: "space-between",
-    padding: 11,
-    borderRadius: 18,
+    padding: 10,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: "rgba(226, 232, 240, 0.82)",
     backgroundColor: "#FBFCFF",
@@ -16165,14 +16252,14 @@ const styles = StyleSheet.create({
   },
   premiumMobilePlanTitle: {
     color: "#0F172A",
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "800",
   },
   premiumMobilePlanPrice: {
-    marginTop: 5,
+    marginTop: 4,
     color: "#111827",
-    fontSize: 16,
-    fontWeight: "900",
+    fontSize: 15,
+    fontWeight: "800",
   },
   premiumMobilePlanAction: {
     marginTop: 5,
@@ -16239,19 +16326,19 @@ const styles = StyleSheet.create({
   },
   settingsSummaryTile: {
     flex: 1,
-    minHeight: 70,
-    padding: 11,
-    borderRadius: 18,
+    minHeight: 58,
+    padding: 9,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: "rgba(226, 232, 240, 0.78)",
     backgroundColor: "#F8FAFF",
   },
   settingsMiniRow: {
-    minHeight: 54,
+    minHeight: 48,
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    paddingVertical: 8,
+    paddingVertical: 7,
     borderBottomWidth: 1,
     borderBottomColor: "rgba(226, 232, 240, 0.82)",
   },
@@ -16302,15 +16389,15 @@ const styles = StyleSheet.create({
     backgroundColor: "#FEE2E2",
   },
   settingsToggleRow: {
-    minHeight: 54,
-    marginTop: 8,
+    minHeight: 48,
+    marginTop: 6,
     paddingHorizontal: 12,
-    paddingVertical: 9,
+    paddingVertical: 7,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     gap: 12,
-    borderRadius: 17,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: "rgba(226, 232, 240, 0.78)",
     backgroundColor: "#F8FAFF",
@@ -16320,7 +16407,7 @@ const styles = StyleSheet.create({
     color: "#0F172A",
     fontSize: 13,
     lineHeight: 17,
-    fontWeight: "800",
+    fontWeight: "700",
   },
   addressSuggestionCard: {
     minHeight: 62,
@@ -16397,24 +16484,24 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
   },
   businessPhotoUploadCard: {
-    minHeight: 196,
+    minHeight: 158,
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    padding: 18,
-    borderRadius: 24,
+    padding: 16,
+    borderRadius: 22,
     borderWidth: 1,
     borderColor: "rgba(196, 181, 253, 0.72)",
     backgroundColor: "#FBFAFF",
     shadowColor: "#6D4AFF",
-    shadowOpacity: 0.08,
-    shadowRadius: 22,
-    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.055,
+    shadowRadius: 18,
+    shadowOffset: { width: 0, height: 8 },
   },
   businessPhotoUploadIcon: {
-    width: 62,
-    height: 62,
-    borderRadius: 22,
+    width: 52,
+    height: 52,
+    borderRadius: 19,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#F1EEFF",
@@ -16422,9 +16509,9 @@ const styles = StyleSheet.create({
   businessPhotoUploadTitle: {
     marginTop: 4,
     color: "#111827",
-    fontSize: 18,
-    lineHeight: 23,
-    fontWeight: "900",
+    fontSize: 16,
+    lineHeight: 21,
+    fontWeight: "800",
     textAlign: "center",
   },
   businessPhotoUploadSubtitle: {
@@ -16465,12 +16552,12 @@ const styles = StyleSheet.create({
     width: "48%",
     aspectRatio: 1,
     overflow: "hidden",
-    borderRadius: 22,
+    borderRadius: 18,
     backgroundColor: "#EEF2FF",
     shadowColor: "#142033",
-    shadowOpacity: 0.08,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.055,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
   },
   businessPhotoGridImage: {
     width: "100%",
@@ -16512,7 +16599,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    borderRadius: 22,
+    borderRadius: 18,
     borderWidth: 1,
     borderColor: "rgba(196, 181, 253, 0.82)",
     borderStyle: "dashed",
