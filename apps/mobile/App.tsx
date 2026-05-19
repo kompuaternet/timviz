@@ -6382,11 +6382,13 @@ export default function App() {
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => refreshAll()} tintColor="#7C3AED" />}
             showsVerticalScrollIndicator={false}
           >
-            <View style={styles.workspaceHero}>
-              <Text style={styles.workspaceEyebrow}>{t.dashboard}</Text>
-              <Text style={styles.workspaceTitle}>{t[activeTab]}</Text>
-              <Text style={styles.workspaceSubtitle}>{workspace?.business.name || session.displayName}</Text>
-            </View>
+            {activeTab !== "settings" ? (
+              <View style={styles.workspaceHero}>
+                <Text style={styles.workspaceEyebrow}>{t.dashboard}</Text>
+                <Text style={styles.workspaceTitle}>{t[activeTab]}</Text>
+                <Text style={styles.workspaceSubtitle}>{workspace?.business.name || session.displayName}</Text>
+              </View>
+            ) : null}
 
             {activeTab === "services" ? (
               <ServicesTab
@@ -8892,7 +8894,7 @@ function BottomNavigation({
             onPress={() => setActiveTab(item.tab)}
             style={({ pressed }) => [styles.bottomNavItem, active && styles.bottomNavItemActive, pressed && styles.bottomNavItemPressed]}
           >
-            <Ionicons name={item.icon} size={19} color={active ? "#FFFFFF" : "#7A8599"} />
+            <Ionicons name={item.icon} size={19} color={active ? DESIGN.colors.primary : "#7A8599"} />
             <Text style={[styles.bottomNavText, active && styles.bottomNavTextActive]} numberOfLines={1}>
               {item.label}
             </Text>
@@ -10741,8 +10743,29 @@ function SettingsTab({
     void updatePushSettings({ [key]: !pushPanel.settings[key] });
   }
 
+  const activeSettingsLabel = settingsSectionLabel(activeSection, t);
+  const settingsBusinessName = workspace?.business.name || workspace?.professional.email || "";
+
   return (
-    <View style={styles.sectionStack}>
+    <View style={styles.settingsRoot}>
+      <View style={styles.settingsTopPanel}>
+        <View style={styles.settingsTopCopy}>
+          <Text style={styles.settingsTopKicker}>{t.dashboard}</Text>
+          <Text style={styles.settingsTopTitle}>{t.settings}</Text>
+          <Text style={styles.settingsTopSubtitle} numberOfLines={1}>
+            {settingsBusinessName}
+          </Text>
+        </View>
+        {statusText ? (
+          <View style={styles.settingsStatusBadge}>
+            <Ionicons name="checkmark" size={13} color="#047857" />
+            <Text style={styles.settingsStatusBadgeText} numberOfLines={1}>
+              {statusText}
+            </Text>
+          </View>
+        ) : null}
+      </View>
+
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.settingsSectionRail}>
         {SETTINGS_SECTIONS.map((section) => (
           <Pressable
@@ -10755,7 +10778,7 @@ function SettingsTab({
         ))}
       </ScrollView>
 
-      {statusText ? <Text style={styles.settingsStatusText}>{statusText}</Text> : null}
+      <Text style={styles.settingsSectionHint}>{activeSettingsLabel}</Text>
       {!isOwner ? <Text style={styles.settingsMutedNotice}>{t.ownerOnlyHint}</Text> : null}
 
       {activeSection === "general" ? (
@@ -12035,7 +12058,7 @@ const styles = StyleSheet.create({
   },
   field: {
     flex: 1,
-    gap: 8,
+    gap: 7,
   },
   fieldHeader: {
     minHeight: 18,
@@ -12058,14 +12081,18 @@ const styles = StyleSheet.create({
     textAlign: "right",
   },
   input: {
-    height: 52,
-    borderRadius: DESIGN.radius.md,
+    height: 50,
+    borderRadius: 17,
     borderWidth: 1,
-    borderColor: DESIGN.colors.border,
-    backgroundColor: DESIGN.colors.surface,
-    paddingHorizontal: 16,
+    borderColor: "rgba(214, 224, 239, 0.78)",
+    backgroundColor: "#FBFCFF",
+    paddingHorizontal: 15,
     color: DESIGN.colors.text,
-    fontSize: 16,
+    fontSize: 15,
+    shadowColor: "#64748B",
+    shadowOpacity: 0.025,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 5 },
   },
   inputDisabled: {
     backgroundColor: DESIGN.colors.surfaceSoft,
@@ -12262,16 +12289,16 @@ const styles = StyleSheet.create({
     color: DESIGN.colors.primaryDark,
   },
   primaryButton: {
-    minHeight: 52,
+    minHeight: 50,
     marginTop: 6,
-    borderRadius: DESIGN.radius.lg,
+    borderRadius: 17,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: DESIGN.colors.primary,
+    backgroundColor: "#6D4AFF",
     paddingHorizontal: 18,
     shadowColor: DESIGN.colors.primary,
-    shadowOpacity: 0.2,
-    shadowRadius: 14,
+    shadowOpacity: 0.18,
+    shadowRadius: 16,
     shadowOffset: { width: 0, height: 8 },
     elevation: 2,
   },
@@ -12281,18 +12308,18 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   secondaryButton: {
-    minHeight: 52,
+    minHeight: 48,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: DESIGN.radius.lg,
+    borderRadius: 16,
     borderWidth: 1,
-    borderColor: DESIGN.colors.border,
-    backgroundColor: DESIGN.colors.surface,
-    paddingHorizontal: 18,
+    borderColor: "rgba(214, 224, 239, 0.9)",
+    backgroundColor: "#FFFFFF",
+    paddingHorizontal: 16,
   },
   secondaryButtonText: {
     color: DESIGN.colors.text,
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: "800",
   },
   dangerButton: {
@@ -14594,24 +14621,24 @@ const styles = StyleSheet.create({
   },
   bottomNav: {
     position: "absolute",
-    left: 12,
-    right: 12,
-    bottom: Platform.OS === "ios" ? 10 : 8,
-    minHeight: 66,
-    paddingHorizontal: 5,
-    paddingTop: 5,
-    paddingBottom: Platform.OS === "ios" ? 10 : 6,
+    left: 14,
+    right: 14,
+    bottom: Platform.OS === "ios" ? 12 : 9,
+    minHeight: 64,
+    paddingHorizontal: 6,
+    paddingTop: 6,
+    paddingBottom: Platform.OS === "ios" ? 10 : 7,
     flexDirection: "row",
     alignItems: "stretch",
-    gap: 4,
-    borderRadius: 26,
+    gap: 5,
+    borderRadius: 28,
     borderWidth: 1,
-    borderColor: "rgba(222, 230, 242, 0.96)",
-    backgroundColor: "rgba(255, 255, 255, 0.98)",
+    borderColor: "rgba(226, 232, 240, 0.88)",
+    backgroundColor: "rgba(255, 255, 255, 0.94)",
     shadowColor: "#1D2B44",
-    shadowOpacity: 0.12,
-    shadowRadius: 24,
-    shadowOffset: { width: 0, height: -9 },
+    shadowOpacity: 0.1,
+    shadowRadius: 26,
+    shadowOffset: { width: 0, height: -8 },
     elevation: 8,
   },
   bottomNavItem: {
@@ -14620,16 +14647,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 3,
-    borderRadius: 19,
+    borderRadius: 21,
   },
   bottomNavItemActive: {
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.14)",
-    backgroundColor: DESIGN.colors.primaryDark,
-    shadowColor: DESIGN.colors.primaryDark,
-    shadowOpacity: 0.2,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: 7 },
+    borderColor: "rgba(109, 74, 255, 0.18)",
+    backgroundColor: "rgba(109, 74, 255, 0.1)",
+    shadowColor: DESIGN.colors.primary,
+    shadowOpacity: 0.12,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 6 },
   },
   bottomNavItemPressed: {
     opacity: 0.82,
@@ -14641,7 +14668,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   bottomNavTextActive: {
-    color: "#FFFFFF",
+    color: DESIGN.colors.primaryDark,
   },
   appHeader: {
     height: 62,
@@ -14734,6 +14761,65 @@ const styles = StyleSheet.create({
   },
   sectionStack: {
     gap: 14,
+  },
+  settingsRoot: {
+    gap: 12,
+  },
+  settingsTopPanel: {
+    minHeight: 62,
+    paddingHorizontal: 2,
+    paddingBottom: 2,
+    flexDirection: "row",
+    alignItems: "flex-end",
+    justifyContent: "space-between",
+    gap: 12,
+  },
+  settingsTopCopy: {
+    flex: 1,
+    minWidth: 0,
+  },
+  settingsTopKicker: {
+    color: "#94A3B8",
+    fontSize: 11,
+    fontWeight: "900",
+    letterSpacing: 1.1,
+    textTransform: "uppercase",
+  },
+  settingsTopTitle: {
+    marginTop: 4,
+    color: DESIGN.colors.text,
+    fontSize: 22,
+    lineHeight: 27,
+    fontWeight: "900",
+  },
+  settingsTopSubtitle: {
+    marginTop: 2,
+    color: DESIGN.colors.muted,
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  settingsStatusBadge: {
+    maxWidth: 132,
+    minHeight: 30,
+    paddingHorizontal: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 5,
+    borderRadius: DESIGN.radius.pill,
+    backgroundColor: "#ECFDF5",
+  },
+  settingsStatusBadgeText: {
+    color: "#047857",
+    fontSize: 11,
+    fontWeight: "900",
+  },
+  settingsSectionHint: {
+    marginTop: -3,
+    paddingHorizontal: 2,
+    color: "#94A3B8",
+    fontSize: 12,
+    fontWeight: "800",
   },
   servicesModeRow: {
     flexDirection: "row",
@@ -14851,24 +14937,24 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   panel: {
-    borderRadius: DESIGN.radius.xl,
+    borderRadius: 24,
     borderWidth: 1,
-    borderColor: DESIGN.colors.border,
+    borderColor: "rgba(226, 232, 240, 0.78)",
     backgroundColor: DESIGN.colors.surface,
-    padding: DESIGN.spacing.card,
+    padding: 15,
     shadowColor: "#0F172A",
-    shadowOpacity: 0.05,
-    shadowRadius: 20,
-    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.04,
+    shadowRadius: 22,
+    shadowOffset: { width: 0, height: 12 },
   },
   panelTitle: {
     color: DESIGN.colors.text,
-    fontSize: 17,
-    fontWeight: "900",
+    fontSize: 16,
+    fontWeight: "800",
   },
   panelBody: {
-    gap: 10,
-    marginTop: 12,
+    gap: 9,
+    marginTop: 11,
   },
   servicePicker: {
     flexDirection: "row",
@@ -15464,30 +15550,37 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   settingsSectionRail: {
-    gap: 8,
+    gap: 4,
+    padding: 4,
     paddingRight: 8,
+    borderRadius: 18,
+    backgroundColor: "#EEF2F7",
   },
   settingsSectionChip: {
-    minHeight: 38,
-    paddingHorizontal: 13,
+    minHeight: 34,
+    paddingHorizontal: 12,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#D8E2EF",
-    backgroundColor: "#FFFFFF",
+    borderColor: "transparent",
+    backgroundColor: "transparent",
   },
   settingsSectionChipActive: {
-    borderColor: "#C7D2FE",
-    backgroundColor: "#EEF2FF",
+    borderColor: "rgba(216, 208, 255, 0.9)",
+    backgroundColor: "#FFFFFF",
+    shadowColor: DESIGN.colors.primary,
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 5 },
   },
   settingsSectionText: {
-    color: "#475569",
-    fontSize: 13,
-    fontWeight: "900",
+    color: "#64748B",
+    fontSize: 12,
+    fontWeight: "800",
   },
   settingsSectionTextActive: {
-    color: "#4F46E5",
+    color: DESIGN.colors.primaryDark,
   },
   settingsStatusText: {
     paddingHorizontal: 12,
@@ -15502,40 +15595,41 @@ const styles = StyleSheet.create({
   settingsMutedNotice: {
     paddingHorizontal: 12,
     paddingVertical: 9,
-    borderRadius: 14,
+    borderRadius: 16,
     overflow: "hidden",
     color: "#92400E",
-    fontSize: 13,
-    fontWeight: "800",
-    backgroundColor: "#FEF3C7",
+    fontSize: 12,
+    lineHeight: 17,
+    fontWeight: "700",
+    backgroundColor: "#FFF7D6",
   },
   settingsAvatarRow: {
     flexDirection: "row",
     alignItems: "flex-start",
     gap: 12,
-    padding: 12,
-    borderRadius: 18,
+    padding: 11,
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: "#E6ECF5",
-    backgroundColor: "#FFFFFF",
+    borderColor: "rgba(226, 232, 240, 0.78)",
+    backgroundColor: "#FBFCFF",
   },
   settingsAvatar: {
-    width: 58,
-    height: 58,
-    borderRadius: 18,
+    width: 54,
+    height: 54,
+    borderRadius: 17,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#EC4899",
   },
   settingsAvatarText: {
     color: "#FFFFFF",
-    fontSize: 28,
+    fontSize: 25,
     fontWeight: "900",
   },
   settingsAvatarImage: {
-    width: 58,
-    height: 58,
-    borderRadius: 18,
+    width: 54,
+    height: 54,
+    borderRadius: 17,
     backgroundColor: "#E2E8F0",
   },
   settingsAvatarInfo: {
@@ -15550,8 +15644,8 @@ const styles = StyleSheet.create({
   },
   settingsCardTitle: {
     color: "#0F172A",
-    fontSize: 16,
-    fontWeight: "900",
+    fontSize: 15,
+    fontWeight: "800",
   },
   premiumMobileHeader: {
     flexDirection: "row",
@@ -15560,8 +15654,8 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   premiumMobileBadge: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
+    paddingHorizontal: 9,
+    paddingVertical: 5,
     borderRadius: DESIGN.radius.pill,
     backgroundColor: "#F1F5F9",
   },
@@ -15570,7 +15664,7 @@ const styles = StyleSheet.create({
   },
   premiumMobileBadgeText: {
     color: "#64748B",
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "900",
   },
   premiumMobileBadgeTextActive: {
@@ -15578,17 +15672,17 @@ const styles = StyleSheet.create({
   },
   premiumMobilePlans: {
     flexDirection: "row",
-    gap: 10,
+    gap: 8,
   },
   premiumMobilePlan: {
     flex: 1,
-    minHeight: 112,
+    minHeight: 86,
     justifyContent: "space-between",
-    padding: 12,
+    padding: 11,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: "#E2E8F0",
-    backgroundColor: "#FFFFFF",
+    borderColor: "rgba(226, 232, 240, 0.82)",
+    backgroundColor: "#FBFCFF",
   },
   premiumMobilePlanReady: {
     borderColor: "#D8D0FF",
@@ -15598,19 +15692,19 @@ const styles = StyleSheet.create({
   },
   premiumMobilePlanTitle: {
     color: "#0F172A",
-    fontSize: 13,
-    fontWeight: "900",
+    fontSize: 12,
+    fontWeight: "800",
   },
   premiumMobilePlanPrice: {
-    marginTop: 8,
+    marginTop: 5,
     color: "#111827",
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: "900",
   },
   premiumMobilePlanAction: {
-    marginTop: 8,
+    marginTop: 5,
     color: DESIGN.colors.primaryDark,
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: "900",
   },
   settingsChoiceRow: {
@@ -15619,24 +15713,24 @@ const styles = StyleSheet.create({
   },
   settingsChoice: {
     flex: 1,
-    minHeight: 46,
+    minHeight: 42,
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 10,
-    borderRadius: 14,
+    borderRadius: 15,
     borderWidth: 1,
-    borderColor: "#D8E2EF",
-    backgroundColor: "#FFFFFF",
+    borderColor: "rgba(216, 226, 239, 0.78)",
+    backgroundColor: "#FBFCFF",
   },
   settingsChoiceActive: {
-    borderColor: "#C7D2FE",
-    backgroundColor: "#EEF2FF",
+    borderColor: "#D8D0FF",
+    backgroundColor: DESIGN.colors.primarySoft,
   },
   settingsChoiceText: {
     color: "#475569",
-    fontSize: 13,
+    fontSize: 12,
     lineHeight: 17,
-    fontWeight: "900",
+    fontWeight: "800",
     textAlign: "center",
   },
   settingsChoiceTextActive: {
@@ -15646,13 +15740,13 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   settingsLongChoice: {
-    minHeight: 46,
+    minHeight: 42,
     justifyContent: "center",
     paddingHorizontal: 12,
-    borderRadius: 14,
+    borderRadius: 15,
     borderWidth: 1,
-    borderColor: "#D8E2EF",
-    backgroundColor: "#FFFFFF",
+    borderColor: "rgba(216, 226, 239, 0.78)",
+    backgroundColor: "#FBFCFF",
   },
   settingsOptionBlock: {
     gap: 8,
@@ -15664,29 +15758,29 @@ const styles = StyleSheet.create({
   settingsActionRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 10,
+    gap: 8,
   },
   settingsSummaryGrid: {
     flexDirection: "row",
-    gap: 10,
+    gap: 8,
   },
   settingsSummaryTile: {
     flex: 1,
-    minHeight: 78,
-    padding: 12,
+    minHeight: 70,
+    padding: 11,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: "#E6ECF5",
+    borderColor: "rgba(226, 232, 240, 0.78)",
     backgroundColor: "#F8FAFF",
   },
   settingsMiniRow: {
-    minHeight: 58,
+    minHeight: 54,
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
-    paddingVertical: 9,
+    paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: "#E2E8F0",
+    borderBottomColor: "rgba(226, 232, 240, 0.82)",
   },
   settingsMiniInfo: {
     flex: 1,
@@ -15694,8 +15788,8 @@ const styles = StyleSheet.create({
   },
   settingsMiniTitle: {
     color: "#0F172A",
-    fontSize: 15,
-    fontWeight: "900",
+    fontSize: 14,
+    fontWeight: "800",
   },
   settingsMiniPrice: {
     color: "#334155",
@@ -15703,7 +15797,7 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
   joinRequestCard: {
-    minHeight: 66,
+    minHeight: 62,
     padding: 10,
     flexDirection: "row",
     alignItems: "center",
@@ -15711,8 +15805,8 @@ const styles = StyleSheet.create({
     gap: 12,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: "#E6ECF5",
-    backgroundColor: "#FFFFFF",
+    borderColor: "rgba(226, 232, 240, 0.78)",
+    backgroundColor: "#FBFCFF",
   },
   joinRequestActions: {
     flexDirection: "row",
@@ -15735,27 +15829,28 @@ const styles = StyleSheet.create({
     backgroundColor: "#FEE2E2",
   },
   settingsToggleRow: {
-    minHeight: 58,
-    marginTop: 10,
+    minHeight: 54,
+    marginTop: 8,
     paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingVertical: 9,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     gap: 12,
-    borderRadius: 16,
+    borderRadius: 17,
     borderWidth: 1,
-    borderColor: "#E6ECF5",
+    borderColor: "rgba(226, 232, 240, 0.78)",
     backgroundColor: "#F8FAFF",
   },
   settingsToggleText: {
     flex: 1,
     color: "#0F172A",
-    fontSize: 14,
-    fontWeight: "900",
+    fontSize: 13,
+    lineHeight: 17,
+    fontWeight: "800",
   },
   addressSuggestionCard: {
-    minHeight: 66,
+    minHeight: 62,
     padding: 12,
     flexDirection: "row",
     alignItems: "center",
@@ -15763,8 +15858,8 @@ const styles = StyleSheet.create({
     gap: 12,
     borderRadius: 18,
     borderWidth: 1,
-    borderColor: "#D9D2FF",
-    backgroundColor: "#F8FAFF",
+    borderColor: "rgba(216, 208, 255, 0.82)",
+    backgroundColor: "#FBFAFF",
   },
   addressSuggestionAction: {
     color: "#5B4BDB",
