@@ -525,6 +525,8 @@ type PushBooleanSettingKey =
 const STORAGE_KEY = "timviz_mobile_session_v2";
 const SECURE_SESSION_KEY = "timviz_mobile_secure_session_v1";
 const BIOMETRIC_ENABLED_KEY = "timviz_mobile_biometric_enabled_v1";
+const PUSH_AUTO_REGISTER_KEY_PREFIX = "timviz_mobile_push_auto_register_v1:";
+const PUSH_PROJECT_ID_ERROR = "push_project_id_missing";
 const WORKSPACE_CACHE_KEY = "timviz_mobile_workspace_cache_v2";
 const API_BASE_URL = (process.env.EXPO_PUBLIC_API_BASE_URL || "https://timviz.com").replace(/\/+$/, "");
 const WORDMARK = require("./assets/timviz-wordmark.png");
@@ -553,6 +555,7 @@ const REVENUECAT_YEARLY_PRODUCT_ID = process.env.EXPO_PUBLIC_REVENUECAT_YEARLY_P
 const GOOGLE_WEB_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || "";
 const GOOGLE_IOS_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID || "";
 const GOOGLE_ANDROID_CLIENT_ID = process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID || "";
+const EXPO_PUBLIC_EAS_PROJECT_ID = process.env.EXPO_PUBLIC_EAS_PROJECT_ID || "";
 const PHONE_COUNTRIES: PhoneCountryOption[] = [
   { iso: "AF", country: "Afghanistan", callingCode: "+93", currency: "AFN" },
   { iso: "AL", country: "Albania", callingCode: "+355", currency: "ALL" },
@@ -1168,6 +1171,7 @@ const baseCopy = {
     pushSaveFailed: "Не вдалося оновити сповіщення.",
     pushOpenSettings: "Відкрити налаштування iPhone",
     pushDeviceCount: "Пристроїв",
+    pushProjectMissing: "Не налаштовано Expo projectId для push-сповіщень. Додайте EXPO_PUBLIC_EAS_PROJECT_ID у конфігурацію застосунку.",
     minutesBefore: "хв до запису",
     hoursBefore: "год до запису",
     dayBefore: "за день",
@@ -1555,6 +1559,7 @@ const baseCopy = {
     pushSaveFailed: "Не удалось обновить уведомления.",
     pushOpenSettings: "Открыть настройки iPhone",
     pushDeviceCount: "Устройств",
+    pushProjectMissing: "Не настроен Expo projectId для push-уведомлений. Добавьте EXPO_PUBLIC_EAS_PROJECT_ID в конфигурацию приложения.",
     minutesBefore: "мин до записи",
     hoursBefore: "ч до записи",
     dayBefore: "за день",
@@ -1942,6 +1947,7 @@ const baseCopy = {
     pushSaveFailed: "Could not update notifications.",
     pushOpenSettings: "Open iPhone settings",
     pushDeviceCount: "Devices",
+    pushProjectMissing: "Expo projectId is not configured for push notifications. Add EXPO_PUBLIC_EAS_PROJECT_ID to the app configuration.",
     minutesBefore: "min before",
     hoursBefore: "h before",
     dayBefore: "one day before",
@@ -4522,10 +4528,38 @@ function normalizePushPanel(payload: any, fallback?: PushPanelState | null): Pus
 
 function getExpoProjectId() {
   return (
+    EXPO_PUBLIC_EAS_PROJECT_ID ||
     Constants.easConfig?.projectId ||
     (Constants.expoConfig?.extra as { eas?: { projectId?: string } } | undefined)?.eas?.projectId ||
     ""
   );
+}
+
+async function requestExpoPushToken() {
+  const currentPermission = await Notifications.getPermissionsAsync();
+  let finalStatus = currentPermission.status;
+  if (finalStatus !== "granted") {
+    const requested = await Notifications.requestPermissionsAsync({
+      ios: {
+        allowAlert: true,
+        allowBadge: true,
+        allowSound: true,
+      },
+    });
+    finalStatus = requested.status;
+  }
+
+  if (finalStatus !== "granted") {
+    return { status: finalStatus, expoPushToken: "" };
+  }
+
+  const projectId = getExpoProjectId();
+  if (!projectId) {
+    throw new Error(PUSH_PROJECT_ID_ERROR);
+  }
+
+  const token = await Notifications.getExpoPushTokenAsync({ projectId });
+  return { status: finalStatus, expoPushToken: token.data };
 }
 
 function normalizeApiSession(result: any, fallbackEmail: string): MobileSession {
@@ -5069,6 +5103,7 @@ export default function App() {
   const serviceSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const serviceSaveInFlightRef = useRef(false);
   const workspaceLanguageAppliedRef = useRef(false);
+  const autoPushRegisteringRef = useRef(false);
   const googleConfigured = Platform.select({
     ios: Boolean(GOOGLE_IOS_CLIENT_ID),
     android: Boolean(GOOGLE_ANDROID_CLIENT_ID),
@@ -5355,6 +5390,21 @@ export default function App() {
     }
   }, [session]);
 
+  useEffect(() => {
+    if (!session || autoPushRegisteringRef.current) return;
+    const storageKey = `${PUSH_AUTO_REGISTER_KEY_PREFIX}${session.professionalId}`;
+    autoPushRegisteringRef.current = true;
+    AsyncStorage.getItem(storageKey)
+      .then(async (alreadyPrompted) => {
+        if (alreadyPrompted === "1") return;
+        await registerPushForSession(session, { markPrompted: true });
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        autoPushRegisteringRef.current = false;
+      });
+  }, [session?.professionalId, session?.token]);
+
   async function apiFetch(path: string, options: RequestInit = {}) {
     const response = await fetch(`${API_BASE_URL}${path}`, {
       ...options,
@@ -5369,6 +5419,38 @@ export default function App() {
       throw new Error(result?.error || `HTTP ${response.status}`);
     }
     return result;
+  }
+
+  async function registerPushForSession(currentSession: MobileSession, options: { markPrompted?: boolean } = {}) {
+    if (Platform.OS === "web") return false;
+    const pushResult = await requestExpoPushToken();
+    if (pushResult.status !== "granted" || !pushResult.expoPushToken) {
+      if (options.markPrompted) {
+        await AsyncStorage.setItem(`${PUSH_AUTO_REGISTER_KEY_PREFIX}${currentSession.professionalId}`, "1").catch(() => undefined);
+      }
+      return false;
+    }
+
+    const response = await fetch(`${API_BASE_URL}/api/mobile/pro/push`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${currentSession.token}`,
+      },
+      body: JSON.stringify({
+        expoPushToken: pushResult.expoPushToken,
+        platform: Platform.OS,
+        deviceName: `${Platform.OS} ${Platform.Version}`,
+        language,
+        timezone: workspace?.professional.timezone || detectedTimezone || "UTC",
+      }),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(payload?.error || `HTTP ${response.status}`);
+    }
+    await AsyncStorage.setItem(`${PUSH_AUTO_REGISTER_KEY_PREFIX}${currentSession.professionalId}`, "1").catch(() => undefined);
+    return true;
   }
 
   const loadCalendarDays = useCallback(async (dates: string[]) => {
@@ -10610,31 +10692,18 @@ function SettingsTab({
     setIsPushSaving(true);
     setPushError("");
     try {
-      const currentPermission = await Notifications.getPermissionsAsync();
-      let finalStatus = currentPermission.status;
-      if (finalStatus !== "granted") {
-        const requested = await Notifications.requestPermissionsAsync({
-          ios: {
-            allowAlert: true,
-            allowBadge: true,
-            allowSound: true,
-          },
-        });
-        finalStatus = requested.status;
-      }
-      setPushPermissionStatus(finalStatus);
+      const pushResult = await requestExpoPushToken();
+      setPushPermissionStatus(pushResult.status);
 
-      if (finalStatus !== "granted") {
+      if (pushResult.status !== "granted") {
         setPushError(t.pushPermissionDenied);
         return;
       }
 
-      const projectId = getExpoProjectId();
-      const token = await Notifications.getExpoPushTokenAsync(projectId ? { projectId } : undefined);
       const payload = await apiFetch("/api/mobile/pro/push", {
         method: "POST",
         body: JSON.stringify({
-          expoPushToken: token.data,
+          expoPushToken: pushResult.expoPushToken,
           platform: Platform.OS,
           deviceName: `${Platform.OS} ${Platform.Version}`,
           language,
@@ -10644,7 +10713,7 @@ function SettingsTab({
       setPushPanel(normalizePushPanel(payload, pushPanel));
       setStatusText(t.pushSaved);
     } catch (error) {
-      setPushError(error instanceof Error ? error.message : t.pushSaveFailed);
+      setPushError(error instanceof Error && error.message === PUSH_PROJECT_ID_ERROR ? t.pushProjectMissing || t.pushSaveFailed : error instanceof Error ? error.message : t.pushSaveFailed);
     } finally {
       setIsPushSaving(false);
     }
