@@ -1,7 +1,13 @@
 import { NextResponse } from "next/server";
 import { getClientIp, verifyCaptchaToken } from "../../../../../lib/auth-security";
 import { signSessionValue } from "../../../../../lib/pro-auth";
-import { createProfessionalSetup, getProfessionalProfileById } from "../../../../../lib/pro-data";
+import {
+  activateProfessionalEmailByEmail,
+  createProfessionalSetup,
+  getProfessionalProfileByEmail,
+  getProfessionalProfileById,
+  updateProfessionalPasswordByEmail
+} from "../../../../../lib/pro-data";
 
 const defaultServiceMode = "Клиенты приходят в мое физическое заведение";
 
@@ -36,12 +42,35 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Complete the security check." }, { status: 400 });
     }
 
+    const existingProfile = await getProfessionalProfileByEmail(email);
+    if (existingProfile?.id && existingProfile.accountStatus === "pending_email") {
+      await updateProfessionalPasswordByEmail(email, password);
+      await activateProfessionalEmailByEmail(email);
+      const profile = await getProfessionalProfileById(existingProfile.id);
+      const displayName =
+        `${profile?.firstName || firstName} ${profile?.lastName || lastName}`.trim() || email;
+
+      return NextResponse.json({
+        professionalId: existingProfile.id,
+        workspaceReady: true,
+        joinRequest: null,
+        token: signSessionValue(existingProfile.id),
+        profile: {
+          id: existingProfile.id,
+          email: profile?.email || email,
+          displayName
+        }
+      });
+    }
+
     const result = await createProfessionalSetup({
       account: {
         firstName,
         lastName,
         email,
         password,
+        authProvider: "email",
+        emailConfirmed: true,
         phone,
         country,
         timezone,

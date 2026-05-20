@@ -7704,14 +7704,20 @@ export default function App() {
                 <Ionicons name="close" size={22} color="#334155" />
               </Pressable>
             </View>
-            <Field
-              label={t.email}
-              value={forgotPasswordEmail}
-              onChangeText={setForgotPasswordEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              placeholder="you@email.com"
-            />
+            <View style={styles.forgotPasswordField}>
+              <Text style={styles.label}>{t.email}</Text>
+              <TextInput
+                value={forgotPasswordEmail}
+                onChangeText={setForgotPasswordEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+                autoFocus
+                placeholder="you@email.com"
+                placeholderTextColor="#94A3B8"
+                style={[styles.input, styles.forgotPasswordInput]}
+              />
+            </View>
             <PrimaryButton
               label={forgotPasswordBusy ? t.forgotPasswordSending : t.forgotPasswordSubmit}
               onPress={() => void sendForgotPasswordEmail()}
@@ -14695,6 +14701,7 @@ const styles = StyleSheet.create({
   },
   forgotPasswordSheet: {
     gap: 14,
+    minHeight: 330,
     paddingHorizontal: 18,
     paddingTop: 9,
     paddingBottom: Platform.OS === "ios" ? 24 : 18,
@@ -14705,6 +14712,16 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.13,
     shadowRadius: 34,
     shadowOffset: { width: 0, height: -12 },
+  },
+  forgotPasswordField: {
+    gap: 8,
+    marginTop: 2,
+    marginBottom: 4,
+  },
+  forgotPasswordInput: {
+    height: 56,
+    fontSize: 16,
+    fontWeight: "800",
   },
   twoColumns: {
     flexDirection: "row",

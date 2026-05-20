@@ -2,6 +2,7 @@ import { createPublicKey, createVerify, randomUUID } from "crypto";
 import { NextResponse } from "next/server";
 import { signSessionValue } from "../../../../../lib/pro-auth";
 import {
+  activateProfessionalEmailByEmail,
   createProfessionalSetup,
   getProfessionalProfileByEmail,
   getProfessionalProfileById,
@@ -218,6 +219,14 @@ async function getOrCreateSocialProfessional(input: {
     return existing.id;
   }
 
+  if (existing?.id && existing.accountStatus === "pending_email") {
+    await activateProfessionalEmailByEmail(input.profile.email);
+    if (input.profile.avatarUrl) {
+      await updateProfessionalAvatar(existing.id, input.profile.avatarUrl).catch(() => undefined);
+    }
+    return existing.id;
+  }
+
   const firstName = input.profile.givenName || input.profile.fullName || getEmailName(input.profile.email);
   const result = await createProfessionalSetup({
     account: {
@@ -225,6 +234,8 @@ async function getOrCreateSocialProfessional(input: {
       lastName: input.profile.familyName,
       email: input.profile.email,
       password: `social-${input.provider}-${randomUUID()}`,
+      authProvider: input.provider,
+      emailConfirmed: true,
       phone: "",
       country: input.country,
       timezone: input.timezone,
