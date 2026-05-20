@@ -14,14 +14,12 @@ import { getJoinRequestsForOwner } from "../../../../lib/pro-data";
 import {
   resetTelegramReminderEventsForAppointment,
   sendBookingCancelledTelegramNotification,
-  sendBookingRescheduledTelegramNotification,
-  sendCabinetBookingTelegramNotification
+  sendBookingRescheduledTelegramNotification
 } from "../../../../lib/telegram-bot";
 import {
   resetPushReminderEventsForAppointment,
   sendBookingCancelledPushNotification,
-  sendBookingRescheduledPushNotification,
-  sendCabinetBookingPushNotification
+  sendBookingRescheduledPushNotification
 } from "../../../../lib/push-notifications";
 import {
   createBlockedCalendarTime,
@@ -489,26 +487,6 @@ export async function POST(request: Request) {
         }))
       });
 
-      await Promise.allSettled(
-        appointments
-          .filter((item) => item.kind === "appointment")
-          .flatMap((item) => {
-            const notificationPayload = {
-              professionalId: item.professionalId,
-              businessId: item.businessId,
-              appointmentId: item.id,
-              appointmentDate: item.appointmentDate,
-              appointmentTime: item.startTime,
-              customerName: item.customerName,
-              serviceName: item.serviceName
-            };
-            return [
-              sendCabinetBookingTelegramNotification(notificationPayload),
-              sendCabinetBookingPushNotification(notificationPayload)
-            ];
-          })
-      );
-
       return NextResponse.json({ appointments });
     }
 
@@ -525,20 +503,6 @@ export async function POST(request: Request) {
       priceAmount: typeof body.priceAmount === "number" ? body.priceAmount : undefined,
       attendance: body.attendance
     });
-
-    const notificationPayload = {
-      professionalId: appointment.professionalId,
-      businessId: appointment.businessId,
-      appointmentId: appointment.id,
-      appointmentDate: appointment.appointmentDate,
-      appointmentTime: appointment.startTime,
-      customerName: appointment.customerName,
-      serviceName: appointment.serviceName
-    };
-    await Promise.allSettled([
-      sendCabinetBookingTelegramNotification(notificationPayload),
-      sendCabinetBookingPushNotification(notificationPayload)
-    ]);
 
     return NextResponse.json(appointment);
   } catch (error) {

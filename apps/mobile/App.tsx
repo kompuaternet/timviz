@@ -2563,6 +2563,11 @@ const generatedMobileCopy = {
     ownService: "Service personnalisé",
     generalCatalog: "Catalogue global",
     serviceName: "Nom du service",
+    serviceCategory: "Catégorie du service",
+    cantFindCategory: "Je ne trouve pas la catégorie",
+    customCategory: "Catégorie personnalisée",
+    enterCategoryName: "Saisissez le nom de la catégorie",
+    customCategoryHint: "Créez une catégorie personnalisée seulement si elle n'existe pas dans la liste.",
     category: "Catégorie",
     newCategory: "Nouvelle catégorie",
     selectedCategory: "Catégorie sélectionnée",
@@ -2936,6 +2941,11 @@ const generatedMobileCopy = {
     ownService: "Usługa niestandardowa",
     generalCatalog: "Katalog globalny",
     serviceName: "Nazwa usługi",
+    serviceCategory: "Kategoria usługi",
+    cantFindCategory: "Nie widzę kategorii",
+    customCategory: "Własna kategoria",
+    enterCategoryName: "Wpisz nazwę kategorii",
+    customCategoryHint: "Utwórz własną kategorię tylko wtedy, gdy nie ma jej na liście.",
     category: "Kategoria",
     newCategory: "Nowa kategoria",
     selectedCategory: "Wybrana kategoria",
@@ -3309,6 +3319,11 @@ const generatedMobileCopy = {
     ownService: "Vlastní služba",
     generalCatalog: "Globální katalog",
     serviceName: "Název služby",
+    serviceCategory: "Kategorie služby",
+    cantFindCategory: "Nemohu najít kategorii",
+    customCategory: "Vlastní kategorie",
+    enterCategoryName: "Zadejte název kategorie",
+    customCategoryHint: "Vlastní kategorii vytvořte pouze tehdy, když není v seznamu.",
     category: "Kategorie",
     newCategory: "Nová kategorie",
     selectedCategory: "Vybraná kategorie",
@@ -3682,6 +3697,11 @@ const generatedMobileCopy = {
     ownService: "Servicio personalizado",
     generalCatalog: "Catálogo global",
     serviceName: "Nombre del servicio",
+    serviceCategory: "Categoría del servicio",
+    cantFindCategory: "No encuentro la categoría",
+    customCategory: "Categoría propia",
+    enterCategoryName: "Introduce el nombre de la categoría",
+    customCategoryHint: "Crea una categoría propia solo si no está en la lista.",
     category: "Categoría",
     newCategory: "Nueva categoría",
     selectedCategory: "Categoría seleccionada",
@@ -4055,6 +4075,11 @@ const generatedMobileCopy = {
     ownService: "Individueller Service",
     generalCatalog: "Globaler Katalog",
     serviceName: "Servicename",
+    serviceCategory: "Servicekategorie",
+    cantFindCategory: "Kategorie nicht gefunden",
+    customCategory: "Eigene Kategorie",
+    enterCategoryName: "Kategoriename eingeben",
+    customCategoryHint: "Erstellen Sie eine eigene Kategorie nur, wenn sie nicht in der Liste vorhanden ist.",
     category: "Kategorie",
     newCategory: "Neue Kategorie",
     selectedCategory: "Ausgewählte Kategorie",
@@ -4621,8 +4646,20 @@ const SERVICE_CATEGORY_LABELS: Record<AppLanguage, Record<string, string>> = {
   },
   fr: {
     "Парикмахерская": "Salon de coiffure",
+    "Массаж": "Massage",
+    "Волосы": "Cheveux",
     "Ногти": "Ongles",
     "Брови и ресницы": "Sourcils et cils",
+    "Ресницы": "Cils",
+    "Лицо": "Visage",
+    "Косметология": "Cosmétologie",
+    "Депиляция": "Épilation",
+    "Тело": "Corps",
+    "Макияж": "Maquillage",
+    "Тату / Перманент": "Tatouage / Permanent",
+    "Обучение": "Formation",
+    "Ремонт": "Réparation",
+    "Другое": "Autre",
     "Салон красоты": "Institut de beauté",
     "Медспа": "Medspa",
     "Парикмахер": "Coiffeur",
@@ -4636,8 +4673,20 @@ const SERVICE_CATEGORY_LABELS: Record<AppLanguage, Record<string, string>> = {
   },
   pl: {
     "Парикмахерская": "Salon fryzjerski",
+    "Массаж": "Masaż",
+    "Волосы": "Włosy",
     "Ногти": "Paznokcie",
     "Брови и ресницы": "Brwi i rzęsy",
+    "Ресницы": "Rzęsy",
+    "Лицо": "Twarz",
+    "Косметология": "Kosmetologia",
+    "Депиляция": "Depilacja",
+    "Тело": "Ciało",
+    "Макияж": "Makijaż",
+    "Тату / Перманент": "Tatuaż / Permanentny",
+    "Обучение": "Szkolenia",
+    "Ремонт": "Naprawa",
+    "Другое": "Inne",
     "Салон красоты": "Salon beauty",
     "Медспа": "Medspa",
     "Парикмахер": "Fryzjer",
@@ -4651,8 +4700,20 @@ const SERVICE_CATEGORY_LABELS: Record<AppLanguage, Record<string, string>> = {
   },
   cs: {
     "Парикмахерская": "Kadeřnictví",
+    "Массаж": "Masáž",
+    "Волосы": "Vlasy",
     "Ногти": "Nehty",
     "Брови и ресницы": "Obočí a řasy",
+    "Ресницы": "Řasy",
+    "Лицо": "Obličej",
+    "Косметология": "Kosmetologie",
+    "Депиляция": "Depilace",
+    "Тело": "Tělo",
+    "Макияж": "Make-up",
+    "Тату / Перманент": "Tetování / Permanentní",
+    "Обучение": "Školení",
+    "Ремонт": "Opravy",
+    "Другое": "Jiné",
     "Салон красоты": "Kosmetický salon",
     "Медспа": "Medspa",
     "Парикмахер": "Kadeřník",
@@ -4666,8 +4727,20 @@ const SERVICE_CATEGORY_LABELS: Record<AppLanguage, Record<string, string>> = {
   },
   es: {
     "Парикмахерская": "Peluquería",
+    "Массаж": "Masaje",
+    "Волосы": "Cabello",
     "Ногти": "Uñas",
     "Брови и ресницы": "Cejas y pestañas",
+    "Ресницы": "Pestañas",
+    "Лицо": "Rostro",
+    "Косметология": "Cosmetología",
+    "Депиляция": "Depilación",
+    "Тело": "Cuerpo",
+    "Макияж": "Maquillaje",
+    "Тату / Перманент": "Tatuaje / Permanente",
+    "Обучение": "Formación",
+    "Ремонт": "Reparación",
+    "Другое": "Otro",
     "Салон красоты": "Salón de belleza",
     "Медспа": "Medspa",
     "Парикмахер": "Peluquero",
@@ -4681,8 +4754,20 @@ const SERVICE_CATEGORY_LABELS: Record<AppLanguage, Record<string, string>> = {
   },
   de: {
     "Парикмахерская": "Friseursalon",
+    "Массаж": "Massage",
+    "Волосы": "Haare",
     "Ногти": "Nägel",
     "Брови и ресницы": "Augenbrauen und Wimpern",
+    "Ресницы": "Wimpern",
+    "Лицо": "Gesicht",
+    "Косметология": "Kosmetologie",
+    "Депиляция": "Haarentfernung",
+    "Тело": "Körper",
+    "Макияж": "Make-up",
+    "Тату / Перманент": "Tattoo / Permanent",
+    "Обучение": "Schulung",
+    "Ремонт": "Reparatur",
+    "Другое": "Andere",
     "Салон красоты": "Kosmetikstudio",
     "Медспа": "Medspa",
     "Парикмахер": "Friseur",
@@ -4912,6 +4997,49 @@ function getServiceCategoryDisplayName(category: string | undefined, localizedCa
   return localizeCatalogCategory(localized || category, language, t);
 }
 
+function getCanonicalServiceCategory(category: string | undefined) {
+  const value = safeText(category).trim();
+  const normalized = normalizeSmartSearchText(value);
+  if (!normalized) return DEFAULT_SERVICE_CATEGORY;
+  const defaultLabels = [
+    DEFAULT_SERVICE_CATEGORY,
+    "Без категорії",
+    "Uncategorized",
+    "Non classé",
+    "Bez kategorii",
+    "Nezařazené",
+    "Sin categoría",
+    "Nicht kategorisiert",
+  ].map(normalizeSmartSearchText);
+  if (defaultLabels.includes(normalized)) return DEFAULT_SERVICE_CATEGORY;
+
+  for (const systemCategory of SYSTEM_SERVICE_CATEGORIES) {
+    if (normalizeSmartSearchText(systemCategory) === normalized) return systemCategory;
+    for (const labels of Object.values(SERVICE_CATEGORY_LABELS)) {
+      const translated = labels[systemCategory];
+      if (translated && normalizeSmartSearchText(translated) === normalized) {
+        return systemCategory;
+      }
+    }
+  }
+
+  return value;
+}
+
+function uniqueServiceCategoryOptions(categories: string[], includeDefault = false) {
+  const seen = new Set<string>();
+  const options: string[] = [];
+  categories.forEach((category) => {
+    const canonical = getCanonicalServiceCategory(category);
+    if (!includeDefault && canonical === DEFAULT_SERVICE_CATEGORY) return;
+    const key = normalizeSmartSearchText(canonical);
+    if (!key || seen.has(key)) return;
+    seen.add(key);
+    options.push(canonical);
+  });
+  return options;
+}
+
 function getServiceSearchText(service: Pick<ServiceRecord | ServiceTemplateRecord, "name" | "localizedName"> | undefined) {
   return [service?.name, ...SUPPORTED_APP_LANGUAGES.map((item) => service?.localizedName?.[item])]
     .filter(Boolean)
@@ -4975,7 +5103,7 @@ function inferSystemServiceCategory(value: string) {
   if (!text) return "";
   const rules: Array<[string, RegExp]> = [
     ["Массаж", /массаж|спина|шея|воротников|релакс|тайск|лимфат|тело/],
-    ["Волосы", /стрижк|волос|окраш|фарб|уклад|hair|cut|fade|барбер|перукар/],
+    ["Волосы", /стрижк|стриг|волос|окраш|фарб|уклад|hair|cut|fade|barber|барбер|перукар|kader|strih|strzyz/],
     ["Ногти", /маникюр|манікюр|ногт|нигт|nail|педикюр/],
     ["Брови и ресницы", /бров|brow/],
     ["Ресницы", /ресниц|вии|lash/],
@@ -5035,8 +5163,8 @@ function mixHexWithWhite(value: string, whiteRatio = 0.62) {
 }
 
 function localizeServiceCategory(category: string | undefined, t: Record<string, string>) {
-  const value = safeText(category).trim();
-  if (!value || value === DEFAULT_SERVICE_CATEGORY || value === "Без категорії" || value === "Uncategorized") {
+  const value = getCanonicalServiceCategory(category);
+  if (!value || value === DEFAULT_SERVICE_CATEGORY) {
     return t.defaultServiceCategory;
   }
   return value;
@@ -5961,6 +6089,7 @@ export default function App() {
   const pendingAppointmentCreatesRef = useRef<Map<string, AppointmentRecord>>(new Map());
   const pendingAppointmentDeletesRef = useRef<Set<string>>(new Set());
   const pendingAppointmentPatchesRef = useRef<Map<string, Partial<AppointmentRecord>>>(new Map());
+  const appointmentDeleteFlushTimersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
   const pendingClientCreatesRef = useRef<Map<string, ClientRecord>>(new Map());
   const serviceSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const serviceSaveInFlightRef = useRef(false);
@@ -6911,6 +7040,8 @@ export default function App() {
       clearTimeout(serviceSaveTimerRef.current);
       serviceSaveTimerRef.current = null;
     }
+    appointmentDeleteFlushTimersRef.current.forEach((timer) => clearTimeout(timer));
+    appointmentDeleteFlushTimersRef.current.clear();
     await AsyncStorage.removeItem(STORAGE_KEY);
     await SecureStore.deleteItemAsync(SECURE_SESSION_KEY).catch(() => undefined);
     await AsyncStorage.removeItem(WORKSPACE_CACHE_KEY);
@@ -7174,6 +7305,31 @@ export default function App() {
     return optimisticClient;
   }
 
+  function scheduleAppointmentDeleteFlush(
+    appointment: AppointmentRecord,
+    appointmentDate: string,
+    target: string,
+    attempt = 0
+  ) {
+    if (appointmentDeleteFlushTimersRef.current.has(appointment.id)) return;
+    const delay = attempt === 0 ? 80 : Math.min(30000, 1200 * 2 ** Math.min(attempt, 5));
+    const timer = setTimeout(() => {
+      appointmentDeleteFlushTimersRef.current.delete(appointment.id);
+      if (!pendingAppointmentDeletesRef.current.has(appointment.id)) return;
+      void apiFetch(`/api/mobile/pro/calendar?appointmentId=${encodeURIComponent(appointment.id)}${target}`, { method: "DELETE" })
+        .then(async () => {
+          pendingAppointmentDeletesRef.current.delete(appointment.id);
+          await refreshCalendarOnly(session, appointmentDate);
+        })
+        .catch(() => {
+          if (pendingAppointmentDeletesRef.current.has(appointment.id)) {
+            scheduleAppointmentDeleteFlush(appointment, appointmentDate, target, attempt + 1);
+          }
+        });
+    }, delay);
+    appointmentDeleteFlushTimersRef.current.set(appointment.id, timer);
+  }
+
   async function deleteAppointment(appointment: AppointmentRecord) {
     Alert.alert(t.delete, appointment.serviceName || t.newVisit, [
       { text: t.cancel || "Cancel", style: "cancel" },
@@ -7187,13 +7343,7 @@ export default function App() {
           pendingAppointmentPatchesRef.current.delete(appointment.id);
           mergeCalendarAppointments(appointmentDate, (appointments) => appointments.filter((item) => item.id !== appointment.id));
           const target = appointment.professionalId ? `&targetProfessionalId=${encodeURIComponent(appointment.professionalId)}` : "";
-          void apiFetch(`/api/mobile/pro/calendar?appointmentId=${encodeURIComponent(appointment.id)}${target}`, { method: "DELETE" })
-            .then(() => refreshCalendarOnly(session, appointmentDate))
-            .catch((error) => {
-              pendingAppointmentDeletesRef.current.delete(appointment.id);
-              Alert.alert(t.delete, error instanceof Error ? error.message : t.delete);
-              revalidateWorkspace(appointmentDate);
-            });
+          scheduleAppointmentDeleteFlush(appointment, appointmentDate, target);
         },
       },
     ]);
@@ -7287,15 +7437,16 @@ export default function App() {
       color: serviceDraft.color || SERVICE_COLORS[0],
       source: "custom",
     };
+    optimisticService.category = getCanonicalServiceCategory(optimisticService.category);
     mergeWorkspaceServices((services) => [optimisticService, ...services]);
-    setServiceDraft({ name: "", category: serviceDraft.category || DEFAULT_SERVICE_CATEGORY, durationMinutes: "60", price: "0", color: SERVICE_COLORS[0] });
+    setServiceDraft({ name: "", category: getCanonicalServiceCategory(serviceDraft.category), durationMinutes: "60", price: "0", color: SERVICE_COLORS[0] });
     const key = getServiceIdentityKey(optimisticService) || optimisticService.id;
     pendingServiceSavesRef.current.set(key, {
       key,
       optimisticService,
       payload: {
         name: optimisticService.name,
-        category: optimisticService.category || DEFAULT_SERVICE_CATEGORY,
+        category: getCanonicalServiceCategory(optimisticService.category),
         durationMinutes: optimisticService.durationMinutes || 60,
         price: optimisticService.price || 0,
         color: optimisticService.color || SERVICE_COLORS[0],
@@ -7321,7 +7472,7 @@ export default function App() {
         uk: draft.name.trim(),
         en: draft.name.trim(),
       },
-      category: draft.category.trim() || DEFAULT_SERVICE_CATEGORY,
+      category: getCanonicalServiceCategory(draft.category),
       durationMinutes: Number(draft.durationMinutes || 60),
       price: Number(draft.price || 0),
       color: draft.color || SERVICE_COLORS[0],
@@ -7359,7 +7510,7 @@ export default function App() {
       id: createLocalId("service"),
       name: service.name,
       localizedName: service.localizedName,
-      category: service.category || DEFAULT_SERVICE_CATEGORY,
+      category: getCanonicalServiceCategory(service.category),
       durationMinutes: Number(service.durationMinutes || 60),
       price: Number(service.price || 0),
       color: SERVICE_COLORS[((workspace?.services.length || 0) + pendingServiceSavesRef.current.size) % SERVICE_COLORS.length],
@@ -7370,7 +7521,7 @@ export default function App() {
       optimisticService,
       payload: {
         name: optimisticService.name,
-        category: optimisticService.category || DEFAULT_SERVICE_CATEGORY,
+        category: getCanonicalServiceCategory(optimisticService.category),
         durationMinutes: optimisticService.durationMinutes || 60,
         price: optimisticService.price,
         color: optimisticService.color || SERVICE_COLORS[0],
@@ -10734,19 +10885,7 @@ function ServicesTab({
     onModeRequestHandled?.();
   }, [modeRequest, onModeRequestHandled]);
 
-  const categories = useMemo(() => {
-    const names = [
-      ...SYSTEM_SERVICE_CATEGORIES,
-      ...services.map((service) => service.category || ""),
-      ...catalog.map((item) => item.title),
-      draft.category,
-      customCategory,
-      DEFAULT_SERVICE_CATEGORY,
-    ]
-      .map((item) => item.trim())
-      .filter(Boolean);
-    return Array.from(new Set(names));
-  }, [catalog, customCategory, draft.category, services]);
+  const categories = useMemo(() => uniqueServiceCategoryOptions(SYSTEM_SERVICE_CATEGORIES), []);
 
   const recommendedCategory = useMemo(() => inferSystemServiceCategory(draft.name), [draft.name]);
 
@@ -10761,7 +10900,7 @@ function ServicesTab({
   }, [draft.name]);
 
   useEffect(() => {
-    if (recommendedCategory && (!draft.category || draft.category === DEFAULT_SERVICE_CATEGORY)) {
+    if (recommendedCategory && (!draft.category || getCanonicalServiceCategory(draft.category) === DEFAULT_SERVICE_CATEGORY)) {
       setDraft({ ...draft, category: recommendedCategory });
     }
   }, [draft.category, draft.name, recommendedCategory, setDraft]);
@@ -10796,7 +10935,7 @@ function ServicesTab({
     setDraft({
       ...draft,
       name: item?.name || draft.name,
-      category: item?.category || draft.category || DEFAULT_SERVICE_CATEGORY,
+      category: getCanonicalServiceCategory(item?.category || draft.category || DEFAULT_SERVICE_CATEGORY),
       durationMinutes: item?.durationMinutes || draft.durationMinutes || "60",
       price: item?.price || draft.price || "0",
     });
@@ -10807,7 +10946,7 @@ function ServicesTab({
     setEditId(service.id);
     setEditDraft({
       name: service.name,
-      category: service.category || DEFAULT_SERVICE_CATEGORY,
+      category: getCanonicalServiceCategory(service.category),
       durationMinutes: String(service.durationMinutes || 60),
       price: String(service.price || 0),
       color: service.color || SERVICE_COLORS[0],
@@ -10824,8 +10963,9 @@ function ServicesTab({
   function addCustomCategory() {
     const value = customCategory.trim();
     if (!value) return;
-    setDraft({ ...draft, category: value });
-    setActiveCatalogCategory(value);
+    const canonical = getCanonicalServiceCategory(value);
+    setDraft({ ...draft, category: canonical });
+    setActiveCatalogCategory(canonical);
     setCustomCategory("");
   }
 
@@ -10849,6 +10989,7 @@ function ServicesTab({
       category: string,
       source: "user" | "catalog"
     ) => {
+      const canonicalCategory = getCanonicalServiceCategory(category);
       const display = getServiceDisplayName(service, language);
       const smart = getServiceSmartSearchText(service);
       if (!smart || (!smart.includes(query) && !query.includes(smart) && !areServiceNamesSimilar(service, debouncedServiceName))) return;
@@ -10858,7 +10999,7 @@ function ServicesTab({
       items.push({
         key: `${source}-${key}`,
         service,
-        category,
+        category: canonicalCategory,
         source,
         alreadyAdded: source === "user" || services.some((item) => areServiceNamesSimilar(item, display || service.name || "")),
       });
@@ -10896,7 +11037,7 @@ function ServicesTab({
     setDraft({
       ...draft,
       name,
-      category: item.category || draft.category || DEFAULT_SERVICE_CATEGORY,
+      category: getCanonicalServiceCategory(item.category || draft.category || DEFAULT_SERVICE_CATEGORY),
       durationMinutes: String(item.service.durationMinutes || 60),
       price: String(Number("price" in item.service ? item.service.price || 0 : 0)),
       color: "color" in item.service ? item.service.color || draft.color || SERVICE_COLORS[0] : draft.color || SERVICE_COLORS[0],
@@ -10915,7 +11056,7 @@ function ServicesTab({
 
   async function saveCustomService() {
     const hasName = draft.name.trim().length > 0;
-    const hasCategory = Boolean(draft.category.trim() && draft.category !== DEFAULT_SERVICE_CATEGORY);
+    const hasCategory = Boolean(draft.category.trim() && getCanonicalServiceCategory(draft.category) !== DEFAULT_SERVICE_CATEGORY);
     const hasDuration = Number(draft.durationMinutes) > 0;
     if (!hasName) {
       setCustomServiceError(t.serviceNameRequired || t.serviceName);
@@ -11154,7 +11295,7 @@ function ServicesTab({
               <PrimaryButton
                 label={t.addService}
                 onPress={() => void saveCustomService()}
-                disabled={busy || !draft.name.trim() || !draft.category.trim() || draft.category === DEFAULT_SERVICE_CATEGORY || !Number(draft.durationMinutes || 0)}
+                disabled={busy || !draft.name.trim() || !draft.category.trim() || getCanonicalServiceCategory(draft.category) === DEFAULT_SERVICE_CATEGORY || !Number(draft.durationMinutes || 0)}
               />
             </View>
           </View>
@@ -11205,12 +11346,13 @@ function CategoryChips({
   recommended?: string;
   onSelect: (category: string) => void;
 }) {
-  const safeCategories = categories.length ? categories : [DEFAULT_SERVICE_CATEGORY];
+  const safeCategories = uniqueServiceCategoryOptions(categories.length ? categories : SYSTEM_SERVICE_CATEGORIES);
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="always" contentContainerStyle={styles.servicePicker}>
       {safeCategories.map((category) => {
-        const active = category === selected;
-        const isRecommended = Boolean(recommended && category === recommended && !active);
+        const selectedCategory = getCanonicalServiceCategory(selected);
+        const active = category === selectedCategory;
+        const isRecommended = Boolean(recommended && category === getCanonicalServiceCategory(recommended) && !active);
         return (
           <Pressable key={category} style={[styles.choiceChip, isRecommended && styles.choiceChipRecommended, active && styles.choiceChipActive]} onPress={() => onSelect(category)}>
             <Text style={[styles.choiceText, isRecommended && styles.choiceTextRecommended, active && styles.choiceTextActive]}>{localizeCatalogCategory(category, language, t)}</Text>
@@ -14049,9 +14191,15 @@ function LanguageSwitch({
   const [anchor, setAnchor] = useState({ x: 16, y: 64, width: 112, height: 40 });
   const anchorRef = useRef<View>(null);
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
-  const menuWidth = Math.min(220, Math.max(168, anchor.width));
-  const menuTop = Math.min(anchor.y + anchor.height + 8, screenHeight - 390);
-  const menuRight = Math.max(12, screenWidth - anchor.x - anchor.width);
+  const viewportPadding = 12;
+  const menuWidth = Math.min(220, Math.max(168, Math.min(anchor.width, screenWidth - viewportPadding * 2)));
+  const menuMaxHeight = Math.min(360, Math.max(220, screenHeight - viewportPadding * 2));
+  const maxMenuLeft = Math.max(viewportPadding, screenWidth - menuWidth - viewportPadding);
+  const preferredMenuLeft = anchor.x + anchor.width - menuWidth;
+  const menuLeft = Math.min(Math.max(preferredMenuLeft, viewportPadding), maxMenuLeft);
+  const maxMenuTop = Math.max(viewportPadding, screenHeight - menuMaxHeight - viewportPadding);
+  const preferredMenuTop = anchor.y + anchor.height + 8;
+  const menuTop = Math.min(Math.max(preferredMenuTop, viewportPadding), maxMenuTop);
 
   function openMenu() {
     anchorRef.current?.measureInWindow((x, y, width, height) => {
@@ -14077,21 +14225,23 @@ function LanguageSwitch({
       <Modal transparent visible={open} animationType="fade" onRequestClose={() => setOpen(false)}>
         <View style={styles.languageDropdownLayer}>
           <Pressable style={styles.languageDropdownBackdrop} onPress={() => setOpen(false)} />
-          <View style={[styles.languageDropdownMenu, { top: menuTop, right: menuRight, width: menuWidth }]}>
-            {SUPPORTED_APP_LANGUAGES.map((item) => {
-              const active = language === item;
-              return (
-                <Pressable key={item} style={[styles.languageDropdownItem, active && styles.languageDropdownItemActive]} onPress={() => selectLanguage(item)}>
-                  <View style={styles.languageDropdownCode}>
-                    <Text style={[styles.languageDropdownCodeText, active && styles.languageDropdownTextActive]}>{languageNames[item]}</Text>
-                  </View>
-                  <Text style={[styles.languageDropdownText, active && styles.languageDropdownTextActive]} numberOfLines={1}>
-                    {languageDisplayNames[item]}
-                  </Text>
-                  {active ? <Ionicons name="checkmark" size={17} color="#6D4AFF" /> : null}
-                </Pressable>
-              );
-            })}
+          <View style={[styles.languageDropdownMenu, { top: menuTop, left: menuLeft, width: menuWidth, maxHeight: menuMaxHeight }]}>
+            <ScrollView bounces={false} showsVerticalScrollIndicator={false}>
+              {SUPPORTED_APP_LANGUAGES.map((item) => {
+                const active = language === item;
+                return (
+                  <Pressable key={item} style={[styles.languageDropdownItem, active && styles.languageDropdownItemActive]} onPress={() => selectLanguage(item)}>
+                    <View style={styles.languageDropdownCode}>
+                      <Text style={[styles.languageDropdownCodeText, active && styles.languageDropdownTextActive]}>{languageNames[item]}</Text>
+                    </View>
+                    <Text style={[styles.languageDropdownText, active && styles.languageDropdownTextActive]} numberOfLines={1}>
+                      {languageDisplayNames[item]}
+                    </Text>
+                    {active ? <Ionicons name="checkmark" size={17} color="#6D4AFF" /> : null}
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -16150,9 +16300,9 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.94)",
   },
   teamPickerMenu: {
-    width: "82%",
+    width: "100%",
+    maxWidth: 420,
     maxHeight: "72%",
-    marginLeft: 48,
     marginTop: 132,
     padding: 12,
     borderRadius: 18,
@@ -16968,7 +17118,7 @@ const styles = StyleSheet.create({
     alignItems: "flex-end",
     justifyContent: "flex-start",
     paddingTop: 108,
-    paddingRight: 12,
+    paddingHorizontal: 12,
     backgroundColor: "rgba(15, 23, 42, 0.18)",
   },
   timeActionBackdrop: {
