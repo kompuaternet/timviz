@@ -912,6 +912,15 @@ const baseCopy = {
     optionalDetails: "Додатково",
     email: "Email",
     password: "Пароль",
+    forgotPassword: "Забули пароль?",
+    forgotPasswordTitle: "Відновлення пароля",
+    forgotPasswordText: "Введіть email, і ми надішлемо посилання для створення нового пароля.",
+    forgotPasswordSubmit: "Надіслати посилання",
+    forgotPasswordSending: "Надсилаємо...",
+    forgotPasswordSentTitle: "Перевірте пошту",
+    forgotPasswordSentText: "Якщо акаунт з таким email існує, ми надіслали посилання для відновлення пароля.",
+    forgotPasswordEmailRequired: "Введіть email для відновлення.",
+    forgotPasswordFailed: "Не вдалося надіслати лист. Спробуйте ще раз.",
     firstName: "Ім'я",
     lastName: "Прізвище",
     phone: "Телефон",
@@ -949,6 +958,8 @@ const baseCopy = {
     captchaTitle: "Перевірка безпеки",
     captchaText: "Підтвердіть, що акаунт створює реальний майстер. Це займає кілька секунд.",
     captchaCancel: "Закрити",
+    captchaOpenBrowser: "Відкрити перевірку в браузері",
+    captchaBrowserHint: "Якщо перевірка не з'явилась, відкрийте її в браузері. Після проходження ми повернемо вас у застосунок.",
     captchaCanceled: "Перевірку скасовано. Пройдіть її, щоб створити акаунт.",
     captchaFailed: "Не вдалося пройти перевірку. Спробуйте ще раз.",
     continueWithGoogle: "Продовжити з Google",
@@ -1365,6 +1376,15 @@ const baseCopy = {
     optionalDetails: "Дополнительно",
     email: "Email",
     password: "Пароль",
+    forgotPassword: "Забыли пароль?",
+    forgotPasswordTitle: "Восстановление пароля",
+    forgotPasswordText: "Введите email, и мы отправим ссылку для создания нового пароля.",
+    forgotPasswordSubmit: "Отправить ссылку",
+    forgotPasswordSending: "Отправляем...",
+    forgotPasswordSentTitle: "Проверьте почту",
+    forgotPasswordSentText: "Если аккаунт с таким email существует, мы отправили ссылку для восстановления пароля.",
+    forgotPasswordEmailRequired: "Введите email для восстановления.",
+    forgotPasswordFailed: "Не удалось отправить письмо. Попробуйте ещё раз.",
     firstName: "Имя",
     lastName: "Фамилия",
     phone: "Телефон",
@@ -1402,6 +1422,8 @@ const baseCopy = {
     captchaTitle: "Проверка безопасности",
     captchaText: "Подтвердите, что аккаунт создаёт реальный мастер. Это займёт несколько секунд.",
     captchaCancel: "Закрыть",
+    captchaOpenBrowser: "Открыть проверку в браузере",
+    captchaBrowserHint: "Если проверка не появилась, откройте её в браузере. После прохождения мы вернём вас в приложение.",
     captchaCanceled: "Проверка отменена. Пройдите её, чтобы создать аккаунт.",
     captchaFailed: "Не удалось пройти проверку. Попробуйте ещё раз.",
     continueWithGoogle: "Продолжить с Google",
@@ -1818,6 +1840,15 @@ const baseCopy = {
     optionalDetails: "More details",
     email: "Email",
     password: "Password",
+    forgotPassword: "Forgot password?",
+    forgotPasswordTitle: "Reset password",
+    forgotPasswordText: "Enter your email and we will send a link to create a new password.",
+    forgotPasswordSubmit: "Send link",
+    forgotPasswordSending: "Sending...",
+    forgotPasswordSentTitle: "Check your email",
+    forgotPasswordSentText: "If an account with this email exists, we sent a password reset link.",
+    forgotPasswordEmailRequired: "Enter the email to reset.",
+    forgotPasswordFailed: "Could not send the email. Please try again.",
     firstName: "First name",
     lastName: "Last name",
     phone: "Phone",
@@ -1855,6 +1886,8 @@ const baseCopy = {
     captchaTitle: "Security check",
     captchaText: "Confirm that a real professional is creating this account. It only takes a few seconds.",
     captchaCancel: "Close",
+    captchaOpenBrowser: "Open check in browser",
+    captchaBrowserHint: "If the check does not appear, open it in the browser. After completion we will return you to the app.",
     captchaCanceled: "The check was canceled. Complete it to create an account.",
     captchaFailed: "Could not complete the check. Please try again.",
     continueWithGoogle: "Continue with Google",
@@ -5813,6 +5846,9 @@ export default function App() {
     phone: "",
     companyName: "",
   });
+  const [forgotPasswordVisible, setForgotPasswordVisible] = useState(false);
+  const [forgotPasswordEmail, setForgotPasswordEmail] = useState("");
+  const [forgotPasswordBusy, setForgotPasswordBusy] = useState(false);
   const [registerPhoneCountry, setRegisterPhoneCountry] = useState<PhoneCountryOption>(() => detectedCountry.phoneCountry);
   const [phoneCountryPickerOpen, setPhoneCountryPickerOpen] = useState(false);
   const [phoneCountryQuery, setPhoneCountryQuery] = useState("");
@@ -5845,13 +5881,34 @@ export default function App() {
   });
 
   useEffect(() => {
+    const handleIncomingUrl = (url: string) => {
+      if (!url) return;
+      if (url.includes("timviz-master://captcha")) {
+        try {
+          const parsed = new URL(url);
+          const token = parsed.searchParams.get("token") || "";
+          if (token) {
+            void WebBrowser.dismissBrowser();
+            closeCaptcha(token);
+          }
+        } catch {
+          // Ignore malformed deep links.
+        }
+        return;
+      }
+      if (url.includes("create-account")) setMode("register");
+      if (url.includes("pro/login")) setMode("login");
+    };
+
     Linking.getInitialURL()
       .then((url) => {
         if (!url) return;
-        if (url.includes("create-account")) setMode("register");
-        if (url.includes("pro/login")) setMode("login");
+        handleIncomingUrl(url);
       })
       .catch(() => undefined);
+
+    const subscription = Linking.addEventListener("url", ({ url }) => handleIncomingUrl(url));
+    return () => subscription.remove();
   }, []);
 
   useEffect(() => {
@@ -6481,9 +6538,22 @@ export default function App() {
       const params = new URLSearchParams();
       params.set("embedded", "1");
       params.set("language", language);
+      params.set("return_to", "timviz-master://captcha");
       setCaptchaUrl(`${API_BASE_URL}/mobile-captcha?${params.toString()}`);
       setCaptchaVisible(true);
     });
+  }
+
+  async function openCaptchaInBrowser() {
+    if (!captchaUrl) return;
+    try {
+      await WebBrowser.openBrowserAsync(captchaUrl, {
+        presentationStyle: WebBrowser.WebBrowserPresentationStyle.PAGE_SHEET,
+        controlsColor: DESIGN.colors.primary,
+      });
+    } catch {
+      await Linking.openURL(captchaUrl).catch(() => undefined);
+    }
   }
 
   function handleCaptchaMessage(message: string) {
@@ -6538,6 +6608,55 @@ export default function App() {
       Alert.alert(t.loginError, error instanceof Error ? error.message : t.loginError);
     } finally {
       setBusy(false);
+    }
+  }
+
+  function openForgotPassword() {
+    setForgotPasswordEmail(loginForm.email.trim().toLowerCase());
+    setForgotPasswordVisible(true);
+  }
+
+  async function sendForgotPasswordEmail() {
+    const email = forgotPasswordEmail.trim().toLowerCase();
+    if (!email) {
+      Alert.alert(t.requiredTitle, t.forgotPasswordEmailRequired);
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      Alert.alert(t.requiredTitle, t.registerEmailInvalid);
+      return;
+    }
+
+    setForgotPasswordVisible(false);
+    const captchaToken = await requestCaptchaToken();
+    if (!captchaToken) {
+      setForgotPasswordVisible(true);
+      Alert.alert(t.forgotPasswordTitle, t.captchaCanceled);
+      return;
+    }
+
+    setForgotPasswordBusy(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/pro/password/forgot`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email,
+          language,
+          captchaToken,
+        }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        Alert.alert(t.forgotPasswordTitle, result?.error || t.forgotPasswordFailed);
+        return;
+      }
+      setLoginForm((current) => ({ ...current, email }));
+      Alert.alert(t.forgotPasswordSentTitle, t.forgotPasswordSentText);
+    } catch (error) {
+      Alert.alert(t.forgotPasswordTitle, error instanceof Error ? error.message : t.forgotPasswordFailed);
+    } finally {
+      setForgotPasswordBusy(false);
     }
   }
 
@@ -7489,6 +7608,9 @@ export default function App() {
                   onChangeText={(value) => setLoginForm((current) => ({ ...current, password: value }))}
                   secureTextEntry
                 />
+                <Pressable style={styles.forgotPasswordLink} onPress={openForgotPassword}>
+                  <Text style={styles.forgotPasswordLinkText}>{t.forgotPassword}</Text>
+                </Pressable>
                 <PrimaryButton label={busy ? t.signingIn : t.login} onPress={signIn} disabled={busy} />
               </View>
             ) : (
@@ -7558,11 +7680,45 @@ export default function App() {
                 <ActivityIndicator color={DESIGN.colors.primary} />
               </View>
             )}
+            <Text style={styles.captchaBrowserHint}>{t.captchaBrowserHint}</Text>
+            <Pressable style={styles.captchaBrowserButton} onPress={() => void openCaptchaInBrowser()}>
+              <Ionicons name="open-outline" size={18} color={DESIGN.colors.primaryDark} />
+              <Text style={styles.captchaBrowserButtonText}>{t.captchaOpenBrowser}</Text>
+            </Pressable>
             <Pressable style={styles.captchaCancelButton} onPress={() => closeCaptcha("")}>
               <Text style={styles.captchaCancelText}>{t.captchaCancel}</Text>
             </Pressable>
           </View>
         </View>
+      </Modal>
+      <Modal transparent visible={forgotPasswordVisible} animationType="slide" onRequestClose={() => setForgotPasswordVisible(false)}>
+        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.modalBackdrop}>
+          <View style={styles.forgotPasswordSheet}>
+            <View style={styles.sheetHandle} />
+            <View style={styles.sheetHeader}>
+              <View style={styles.captchaTitleWrap}>
+                <Text style={styles.sheetTitle}>{t.forgotPasswordTitle}</Text>
+                <Text style={styles.captchaSubtitle}>{t.forgotPasswordText}</Text>
+              </View>
+              <Pressable style={styles.sheetClose} onPress={() => setForgotPasswordVisible(false)}>
+                <Ionicons name="close" size={22} color="#334155" />
+              </Pressable>
+            </View>
+            <Field
+              label={t.email}
+              value={forgotPasswordEmail}
+              onChangeText={setForgotPasswordEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              placeholder="you@email.com"
+            />
+            <PrimaryButton
+              label={forgotPasswordBusy ? t.forgotPasswordSending : t.forgotPasswordSubmit}
+              onPress={() => void sendForgotPasswordEmail()}
+              disabled={forgotPasswordBusy}
+            />
+          </View>
+        </KeyboardAvoidingView>
       </Modal>
       <PhoneCountryPickerModal
         visible={phoneCountryPickerOpen}
@@ -14421,6 +14577,18 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: "800",
   },
+  forgotPasswordLink: {
+    minHeight: 36,
+    alignSelf: "flex-start",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 2,
+  },
+  forgotPasswordLinkText: {
+    color: DESIGN.colors.primaryDark,
+    fontSize: 14,
+    fontWeight: "900",
+  },
   authDetailsToggle: {
     minHeight: 46,
     paddingHorizontal: 14,
@@ -14477,17 +14645,39 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   captchaWebView: {
-    height: 310,
+    height: 250,
     overflow: "hidden",
     borderRadius: 22,
     backgroundColor: "#F8FAFC",
   },
   captchaLoading: {
-    height: 310,
+    height: 250,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 22,
     backgroundColor: "#F8FAFC",
+  },
+  captchaBrowserHint: {
+    color: DESIGN.colors.muted,
+    fontSize: 12,
+    lineHeight: 17,
+    fontWeight: "700",
+  },
+  captchaBrowserButton: {
+    minHeight: 46,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    borderRadius: DESIGN.radius.md,
+    borderWidth: 1,
+    borderColor: "#DDD6FE",
+    backgroundColor: DESIGN.colors.primarySoft,
+  },
+  captchaBrowserButtonText: {
+    color: DESIGN.colors.primaryDark,
+    fontSize: 14,
+    fontWeight: "900",
   },
   captchaCancelButton: {
     minHeight: 46,
@@ -14502,6 +14692,19 @@ const styles = StyleSheet.create({
     color: DESIGN.colors.muted,
     fontSize: 14,
     fontWeight: "900",
+  },
+  forgotPasswordSheet: {
+    gap: 14,
+    paddingHorizontal: 18,
+    paddingTop: 9,
+    paddingBottom: Platform.OS === "ios" ? 24 : 18,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    backgroundColor: "#FFFFFF",
+    shadowColor: "#142033",
+    shadowOpacity: 0.13,
+    shadowRadius: 34,
+    shadowOffset: { width: 0, height: -12 },
   },
   twoColumns: {
     flexDirection: "row",
