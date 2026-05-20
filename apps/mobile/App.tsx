@@ -6996,11 +6996,12 @@ export default function App() {
     mergeCalendarAppointments(appointmentDate, (appointments) =>
       [...appointments, ...optimisticAppointments].sort((left, right) => left.startTime.localeCompare(right.startTime))
     );
-    setBusy(true);
-    try {
-      await serviceCreatePromiseRef.current;
-      await flushPendingServiceSaves();
-      await apiFetch("/api/mobile/pro/calendar", {
+    setVisitDraft(createDefaultVisitDraft(appointmentDate, items[0]?.startTime || "09:00"));
+    if (!hadAppointmentsBefore) {
+      Alert.alert("Timviz", t.firstAppointmentCreated);
+    }
+    scheduleServiceSaveFlush(120);
+    void apiFetch("/api/mobile/pro/calendar", {
         method: "POST",
         body: JSON.stringify({
           targetProfessionalId: visitDraft.targetProfessionalId,
@@ -7016,22 +7017,17 @@ export default function App() {
             notes,
           })),
         }),
-      });
+      })
+      .then(async () => {
       optimisticAppointments.forEach((appointment) => pendingAppointmentCreatesRef.current.delete(appointment.id));
-      setVisitDraft(createDefaultVisitDraft(appointmentDate, items[0]?.startTime || "09:00"));
-      if (!hadAppointmentsBefore) {
-        Alert.alert("Timviz", t.firstAppointmentCreated);
-      }
       await refreshCalendarOnly(session, appointmentDate);
-      return true;
-    } catch (error) {
-      optimisticAppointments.forEach((appointment) => pendingAppointmentCreatesRef.current.delete(appointment.id));
-      Alert.alert(t.addVisit, error instanceof Error ? error.message : t.addVisit);
-      revalidateWorkspace(appointmentDate);
-      return false;
-    } finally {
-      setBusy(false);
-    }
+      })
+      .catch((error) => {
+        optimisticAppointments.forEach((appointment) => pendingAppointmentCreatesRef.current.delete(appointment.id));
+        Alert.alert(t.addVisit, error instanceof Error ? error.message : t.addVisit);
+        revalidateWorkspace(appointmentDate);
+      });
+    return true;
   }
 
   async function saveEditedVisit() {
