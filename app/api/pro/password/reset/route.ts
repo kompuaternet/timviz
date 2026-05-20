@@ -1,5 +1,7 @@
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { isStrongEnoughPassword } from "../../../../../lib/auth-security";
+import { getSessionCookieName, signSessionValue } from "../../../../../lib/pro-auth";
 import { verifyPasswordResetToken } from "../../../../../lib/pro-password-reset";
 import {
   getProfessionalPasswordResetProfile,
@@ -43,7 +45,16 @@ export async function POST(request: Request) {
     }
 
     await updateProfessionalPasswordByEmail(professional.email, password);
-    return NextResponse.json({ ok: true });
+    const cookieStore = await cookies();
+    cookieStore.set(getSessionCookieName(), signSessionValue(professional.id), {
+      httpOnly: true,
+      sameSite: "lax",
+      path: "/",
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 60 * 60 * 24 * 7
+    });
+
+    return NextResponse.json({ ok: true, professionalId: professional.id });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Could not reset password.";
     return NextResponse.json({ error: message }, { status: 400 });

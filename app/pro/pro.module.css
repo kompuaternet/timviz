@@ -476,6 +476,51 @@
   color: #b74242;
 }
 
+.fieldSuccess {
+  display: block;
+  color: #166534;
+  font-size: 0.88rem;
+  font-weight: 850;
+  line-height: 1.4;
+}
+
+.passwordChecklist {
+  display: grid;
+  gap: 8px;
+  padding: 12px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #f8fafc;
+}
+
+.passwordChecklist span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #64748b;
+  font-size: 0.88rem;
+  font-weight: 850;
+  line-height: 1.35;
+}
+
+.passwordChecklist span::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: #cbd5e1;
+}
+
+.passwordRuleOk {
+  color: #166534 !important;
+}
+
+.passwordRuleOk::before {
+  background: #22c55e !important;
+  box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.12);
+}
+
 .successNotice,
 .existingAccountNotice {
   padding: 16px 18px;
@@ -545,6 +590,18 @@
   outline: none;
   border-color: #7058ff;
   box-shadow: 0 0 0 4px rgba(112, 88, 255, 0.12);
+}
+
+.inputInvalid {
+  border-color: #fca5a5 !important;
+  background: #fff7f7 !important;
+  box-shadow: 0 0 0 4px rgba(248, 113, 113, 0.12) !important;
+}
+
+.inputValid {
+  border-color: #86efac !important;
+  background: #f7fff9 !important;
+  box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.1) !important;
 }
 
 .textarea {
