@@ -4,8 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build && npm run copy:standalone",
+    "build": "next build && npm run copy:standalone && npm run clean:build-cache",
     "copy:standalone": "mkdir -p .next/standalone/.next && cp -r .next/static .next/standalone/.next/static && ([ -d public ] && cp -r public .next/standalone/public || true)",
+    "clean:build-cache": "rm -rf .next/cache",
     "start": "next start",
     "start:railway": "HOSTNAME=0.0.0.0 PORT=${PORT:-8080} node .next/standalone/server.js",
     "mobile:start": "cd apps/mobile && npm run start",
