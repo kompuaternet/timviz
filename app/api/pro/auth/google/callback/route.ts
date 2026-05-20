@@ -7,6 +7,7 @@ import { getTelegramStartAppLinkSync } from "../../../../../../lib/telegram-bot"
 import { encodeTelegramGoogleSignupStartParam } from "../../../../../../lib/telegram-startapp";
 import {
   acceptStaffInvitation,
+  activateProfessionalEmailByEmail,
   getProfessionalProfileByEmail,
   updateProfessionalAvatar
 } from "../../../../../../lib/pro-data";
@@ -159,19 +160,28 @@ export async function GET(request: Request) {
 
     clearOAuthCookies(cookieStore, isSecure);
 
-    if (professional && professional.accountStatus === "active") {
+    if (professional?.accountStatus === "pending_email") {
+      await activateProfessionalEmailByEmail(profile.email);
+    }
+
+    const activeProfessional =
+      professional?.accountStatus === "pending_email"
+        ? await getProfessionalProfileByEmail(profile.email)
+        : professional;
+
+    if (activeProfessional && activeProfessional.accountStatus === "active") {
       if (profile.avatarUrl) {
-        await updateProfessionalAvatar(professional.id, profile.avatarUrl).catch(() => undefined);
+        await updateProfessionalAvatar(activeProfessional.id, profile.avatarUrl).catch(() => undefined);
       }
 
       if (inviteToken) {
         await acceptStaffInvitation({
-          professionalId: professional.id,
+          professionalId: activeProfessional.id,
           invitationToken: inviteToken
         }).catch(() => undefined);
       }
 
-      cookieStore.set(getSessionCookieName(), signSessionValue(professional.id), {
+      cookieStore.set(getSessionCookieName(), signSessionValue(activeProfessional.id), {
         httpOnly: true,
         sameSite: "lax",
         path: "/",

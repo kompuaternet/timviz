@@ -1,4 +1,12 @@
 import { NextResponse } from "next/server";
+import {
+  checkRateLimit,
+  getClientIp,
+  hasHoneypotValue,
+  isDisposableEmail,
+  isValidBusinessEmail,
+  verifyCaptchaToken
+} from "../../../../../lib/auth-security";
 import { getPublicAppUrl } from "../../../../../lib/app-url";
 import { isMailerConfigured, sendMail } from "../../../../../lib/mailer";
 import { createPasswordResetToken } from "../../../../../lib/pro-password-reset";
@@ -14,9 +22,24 @@ export async function POST(request: Request) {
     const body = await request.json();
     const email = String(body.email ?? "").trim().toLowerCase();
     const language = String(body.language ?? "ru").trim().toLowerCase();
+    const ip = getClientIp(request);
 
-    if (!email) {
+    if (hasHoneypotValue(body.website) || hasHoneypotValue(body.company)) {
       return NextResponse.json(responseMessage);
+    }
+
+    if (!email || !isValidBusinessEmail(email) || isDisposableEmail(email)) {
+      return NextResponse.json(responseMessage);
+    }
+
+    const limit = checkRateLimit(`forgot:${ip}:${email}`, { limit: 3, windowMs: 10 * 60 * 1000 });
+    if (!limit.ok) {
+      return NextResponse.json({ error: "Забагато запитів. Спробуйте трохи пізніше.", retryAfter: limit.remainingSeconds }, { status: 429 });
+    }
+
+    const captchaOk = await verifyCaptchaToken(body.captchaToken, ip);
+    if (!captchaOk) {
+      return NextResponse.json({ error: "Підтвердіть, що ви не робот." }, { status: 400 });
     }
 
     if (!isMailerConfigured()) {
@@ -79,7 +102,8 @@ export async function POST(request: Request) {
       to: professional.email,
       subject: copy.subject,
       html,
-      text: `${copy.headline}\n\n${copy.body}\n\n${resetUrl}\n\n${copy.footnote}`
+      text: `${copy.headline}\n\n${copy.body}\n\n${resetUrl}\n\n${copy.footnote}`,
+      from: process.env.PASSWORD_RESET_SMTP_FROM || "Timviz <no-reply@timviz.com>"
     });
 
     console.info(`[pro-password-forgot] Reset email sent to ${professional.email}`);

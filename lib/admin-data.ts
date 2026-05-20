@@ -36,6 +36,9 @@ export type SuperadminUserRecord = {
   currency: string;
   bookingCreditsTotal: number;
   walletBalance: number;
+  accountStatus: string;
+  emailConfirmed: boolean;
+  provider: string;
   servicesCount: number;
   photosCount: number;
   createdAt: string;
@@ -262,6 +265,9 @@ export async function getSuperadminUsers(search = ""): Promise<SuperadminUserRec
         currency: professional.currency || "USD",
         bookingCreditsTotal: professional.bookingCreditsTotal ?? DEFAULT_BOOKING_CREDITS,
         walletBalance: walletBalances.get(professional.id) ?? professional.walletBalance ?? 0,
+        accountStatus: professional.accountStatus || "active",
+        emailConfirmed: professional.accountStatus !== "pending_email",
+        provider: "email",
         servicesCount: servicesByBusiness.get(business.id) ?? 0,
         photosCount: normalizeBusinessPhotos(business.photos).filter((photo) => photo.status !== "blocked").length,
         createdAt: professional.createdAt
@@ -289,6 +295,9 @@ export async function getSuperadminUsers(search = ""): Promise<SuperadminUserRec
       currency: professional.currency || "USD",
       bookingCreditsTotal: professional.bookingCreditsTotal ?? DEFAULT_BOOKING_CREDITS,
       walletBalance: walletBalances.get(professional.id) ?? professional.walletBalance ?? 0,
+      accountStatus: professional.accountStatus || "active",
+      emailConfirmed: professional.accountStatus !== "pending_email",
+      provider: "email",
       servicesCount: 0,
       photosCount: 0,
       createdAt: professional.createdAt

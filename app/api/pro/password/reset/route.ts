@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { isStrongEnoughPassword } from "../../../../../lib/auth-security";
 import { verifyPasswordResetToken } from "../../../../../lib/pro-password-reset";
 import {
   getProfessionalPasswordResetProfile,
@@ -15,8 +16,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Токен отсутствует." }, { status: 400 });
     }
 
-    if (password.trim().length < 6) {
-      return NextResponse.json({ error: "Пароль должен быть не короче 6 символов." }, { status: 400 });
+    if (!isStrongEnoughPassword(password)) {
+      return NextResponse.json({ error: "Пароль: минимум 8 символов, буква и цифра." }, { status: 400 });
     }
 
     const rawPayload = token.split(".")[0];

@@ -12,7 +12,7 @@ const copy = {
     subtitle: "Придумайте новый пароль для бизнес-кабинета. После сохранения можно будет сразу войти.",
     password: "Новый пароль",
     confirm: "Повторите пароль",
-    placeholder: "Минимум 6 символов",
+    placeholder: "Минимум 8 символов, буква и цифра",
     submit: "Сохранить пароль",
     loading: "Сохраняем...",
     success: "Пароль обновлён. Теперь можно войти в кабинет.",
@@ -25,7 +25,7 @@ const copy = {
     subtitle: "Придумайте новий пароль для бізнес-кабінету. Після збереження можна буде одразу увійти.",
     password: "Новий пароль",
     confirm: "Повторіть пароль",
-    placeholder: "Мінімум 6 символів",
+    placeholder: "Мінімум 8 символів, літера і цифра",
     submit: "Зберегти пароль",
     loading: "Зберігаємо...",
     success: "Пароль оновлено. Тепер можна увійти в кабінет.",
@@ -38,7 +38,7 @@ const copy = {
     subtitle: "Set a new password for your business account. After saving, you can sign in right away.",
     password: "New password",
     confirm: "Repeat password",
-    placeholder: "At least 6 characters",
+    placeholder: "At least 8 characters, one letter and one digit",
     submit: "Save password",
     loading: "Saving...",
     success: "Password updated. You can now sign in.",
@@ -46,6 +46,10 @@ const copy = {
     mismatch: "Passwords do not match."
   }
 } as const;
+
+function isStrongEnoughPassword(password: string) {
+  return password.length >= 8 && /[a-zа-яіїєґ]/i.test(password) && /\d/.test(password);
+}
 
 export default function ResetPasswordForm() {
   const { language } = useProLanguage();
@@ -126,7 +130,7 @@ export default function ResetPasswordForm() {
       <button
         type="button"
         className={styles.primaryButton}
-        disabled={!token || password.trim().length < 6 || confirmPassword.trim().length < 6 || isLoading}
+        disabled={!token || !isStrongEnoughPassword(password) || !isStrongEnoughPassword(confirmPassword) || isLoading}
         onClick={() => void handleSubmit()}
       >
         {isLoading ? t.loading : t.submit}

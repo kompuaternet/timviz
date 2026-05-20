@@ -1,7 +1,8 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { checkRateLimit, getClientIp } from "../../../../lib/auth-security";
 import { getSessionCookieName, signSessionValue } from "../../../../lib/pro-auth";
-import { acceptStaffInvitation, authenticateProfessional } from "../../../../lib/pro-data";
+import { acceptStaffInvitation, authenticateProfessional, getProfessionalProfileByEmail } from "../../../../lib/pro-data";
 
 export async function POST(request: Request) {
   try {
@@ -9,10 +10,32 @@ export async function POST(request: Request) {
     const email = String(body.email ?? "").trim();
     const password = String(body.password ?? "");
     const inviteToken = String(body.inviteToken ?? "").trim();
+    const ip = getClientIp(request);
+
+    const limit = checkRateLimit(`login:${ip}:${email}`, { limit: 8, windowMs: 10 * 60 * 1000 });
+    if (!limit.ok) {
+      return NextResponse.json(
+        { error: "Забагато спроб входу. Спробуйте трохи пізніше.", retryAfter: limit.remainingSeconds, captchaRequired: true },
+        { status: 429 }
+      );
+    }
 
     const professionalId = await authenticateProfessional(email, password);
 
     if (!professionalId) {
+      const profile = await getProfessionalProfileByEmail(email);
+      if (profile?.accountStatus === "pending_email") {
+        return NextResponse.json(
+          { error: "Підтвердіть email, щоб увійти в кабінет.", errorCode: "email_not_confirmed", email: profile.email },
+          { status: 403 }
+        );
+      }
+      if (profile?.accountStatus === "blocked") {
+        return NextResponse.json(
+          { error: "Акаунт заблоковано.", errorCode: "account_blocked" },
+          { status: 403 }
+        );
+      }
       return NextResponse.json(
         { error: "Неверный email или пароль." },
         { status: 401 }

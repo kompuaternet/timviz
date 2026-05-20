@@ -33,6 +33,7 @@ export type BookingRecord = {
 };
 
 type BookingMatchInput = {
+  bookingId?: string;
   appointmentDate: string;
   appointmentTime: string;
   previousAppointmentTime?: string;
@@ -448,6 +449,75 @@ async function syncMatchedBookingFromCalendarAppointment(
       : item
   );
   await writeLocalBookings(nextBookings);
+}
+
+async function syncBookingFromCalendarAppointmentById(
+  bookingId: string,
+  input: BookingMatchInput,
+  nextStatus: BookingStatus
+) {
+  const normalizedBookingId = bookingId.trim();
+  if (!normalizedBookingId) {
+    return false;
+  }
+
+  const normalizedPhone = input.customerPhone.trim();
+  const normalizedNotes = input.customerNotes?.trim() ?? "";
+  const payload = {
+    status: nextStatus,
+    customer_name: input.customerName.trim(),
+    customer_phone: normalizedPhone,
+    customer_notes: normalizedNotes,
+    appointment_date: input.appointmentDate,
+    appointment_time: input.appointmentTime,
+    service_name: input.serviceName.trim()
+  };
+
+  if (isSupabaseConfigured()) {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      return false;
+    }
+
+    const { data, error } = await supabase
+      .from("bookings")
+      .update(payload)
+      .eq("id", normalizedBookingId)
+      .select("id")
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return Boolean(data);
+  }
+
+  const bookings = await readLocalBookings();
+  let updated = false;
+  const nextBookings = bookings.map((booking) => {
+    if (booking.id !== normalizedBookingId) {
+      return booking;
+    }
+
+    updated = true;
+    return {
+      ...booking,
+      status: nextStatus,
+      customerName: input.customerName.trim(),
+      customerPhone: normalizedPhone,
+      customerNotes: normalizedNotes,
+      appointmentDate: input.appointmentDate,
+      appointmentTime: input.appointmentTime,
+      serviceName: input.serviceName.trim()
+    };
+  });
+
+  if (updated) {
+    await writeLocalBookings(nextBookings);
+  }
+
+  return updated;
 }
 
 async function validateBookingInput(input: BookingInput) {
@@ -1035,6 +1105,7 @@ function mapAttendanceToBookingStatus(attendance: string): BookingStatus {
 }
 
 export async function syncBookingStatusFromCalendarAppointment(input: {
+  bookingId?: string;
   businessId: string;
   appointmentDate: string;
   appointmentTime: string;
@@ -1047,14 +1118,23 @@ export async function syncBookingStatusFromCalendarAppointment(input: {
   serviceName: string;
   attendance: string;
 }) {
+  const nextStatus = mapAttendanceToBookingStatus(input.attendance);
+  if (input.bookingId) {
+    const syncedById = await syncBookingFromCalendarAppointmentById(input.bookingId, input, nextStatus);
+    if (syncedById) {
+      return;
+    }
+  }
+
   await syncMatchedBookingFromCalendarAppointment(
     input.businessId,
     input,
-    mapAttendanceToBookingStatus(input.attendance)
+    nextStatus
   );
 }
 
 export async function cancelBookingFromCalendarAppointment(input: {
+  bookingId?: string;
   businessId: string;
   appointmentDate: string;
   appointmentTime: string;
@@ -1066,5 +1146,12 @@ export async function cancelBookingFromCalendarAppointment(input: {
   previousCustomerPhone?: string;
   serviceName: string;
 }) {
+  if (input.bookingId) {
+    const syncedById = await syncBookingFromCalendarAppointmentById(input.bookingId, input, "cancelled");
+    if (syncedById) {
+      return;
+    }
+  }
+
   await syncMatchedBookingFromCalendarAppointment(input.businessId, input, "cancelled");
 }

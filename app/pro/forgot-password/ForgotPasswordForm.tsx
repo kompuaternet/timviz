@@ -2,6 +2,7 @@
 
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import TurnstileWidget from "../TurnstileWidget";
 import { useProLanguage } from "../useProLanguage";
 import styles from "../pro.module.css";
 
@@ -52,6 +53,10 @@ export default function ForgotPasswordForm() {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
+  const [captchaToken, setCaptchaToken] = useState("");
+  const turnstileEnabled = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
+  const captchaReady = !turnstileEnabled || Boolean(captchaToken);
 
   useEffect(() => {
     const prefilledEmail = searchParams.get("email")?.trim() || "";
@@ -59,6 +64,12 @@ export default function ForgotPasswordForm() {
       setEmail(prefilledEmail);
     }
   }, [searchParams]);
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const timer = window.setTimeout(() => setCooldown((value) => Math.max(0, value - 1)), 1000);
+    return () => window.clearTimeout(timer);
+  }, [cooldown]);
 
   async function handleSubmit() {
     setIsLoading(true);
@@ -72,7 +83,7 @@ export default function ForgotPasswordForm() {
       const response = await fetch("/api/pro/password/forgot", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, language }),
+        body: JSON.stringify({ email, language, captchaToken }),
         signal: controller.signal
       });
 
@@ -80,10 +91,14 @@ export default function ForgotPasswordForm() {
 
       if (!response.ok) {
         setError(result.error || "Request failed.");
+        if (result.retryAfter) {
+          setCooldown(Number(result.retryAfter));
+        }
         return;
       }
 
       setMessage(result.message || t.success);
+      setCooldown(60);
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") {
         setError(t.timeout);
@@ -118,16 +133,18 @@ export default function ForgotPasswordForm() {
         </div>
       </div>
 
+      <TurnstileWidget onToken={setCaptchaToken} />
+
       {error ? <div className={styles.addressWarning}>{error}</div> : null}
       {message ? <div className={styles.successNotice}>{message}</div> : null}
 
       <button
         type="button"
         className={styles.primaryButton}
-        disabled={!email.trim() || isLoading}
+        disabled={!email.trim() || isLoading || cooldown > 0 || !captchaReady}
         onClick={() => void handleSubmit()}
       >
-        {isLoading ? t.loading : t.submit}
+        {isLoading ? t.loading : cooldown > 0 ? `${t.submit} · ${cooldown}` : t.submit}
       </button>
 
       <div className={styles.helperBlock}>

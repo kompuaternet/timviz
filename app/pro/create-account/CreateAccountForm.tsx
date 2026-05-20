@@ -13,6 +13,7 @@ import {
   onlyPhoneDigits,
   phoneCountries
 } from "../../../lib/phone-format";
+import TurnstileWidget from "../TurnstileWidget";
 import { languageLabels, type ProLanguage } from "../i18n";
 import styles from "../pro.module.css";
 
@@ -236,14 +237,29 @@ type SetupAccountDraft = {
   currency?: string;
 };
 
-type FieldErrors = Partial<Record<"firstName" | "email" | "password" | "phone" | "terms", string>>;
+type FieldErrors = Partial<Record<"firstName" | "email" | "password" | "confirmPassword" | "phone" | "terms", string>>;
 
-function readStoredJson<T>(storage: Storage, key: string) {
+function readStoredJson<T>(storage: Storage | undefined, key: string) {
+  if (!storage) return null;
+
   try {
     const raw = storage.getItem(key);
     return raw ? (JSON.parse(raw) as T) : null;
   } catch {
     return null;
+  }
+}
+
+function getSafeLocalStorage() {
+  if (typeof window === "undefined") return undefined;
+
+  try {
+    const storage = window.localStorage;
+    return typeof storage?.getItem === "function" && typeof storage?.setItem === "function"
+      ? storage
+      : undefined;
+  } catch {
+    return undefined;
   }
 }
 
@@ -268,6 +284,10 @@ function makeGeneratedPassword() {
   return `G-${randomPart}-timviz`;
 }
 
+function isStrongEnoughPassword(password: string) {
+  return password.length >= 8 && /[a-zа-яіїєґ]/i.test(password) && /\d/.test(password);
+}
+
 function logFunnelStep(step: string, payload?: unknown) {
   if (process.env.NODE_ENV !== "development") {
     return;
@@ -284,6 +304,7 @@ const formCopy = {
     introContinue: "Продолжить регистрацию",
     introOr: "или",
     introGoogle: "Войти через Google",
+    introApple: "Продолжить с Apple",
     introChecking: "Проверяем...",
     introHelper: "Вы клиент и хотите открыть профиль мастера?",
     introHelperLink: "Перейти к поиску профилей",
@@ -295,6 +316,8 @@ const formCopy = {
     lastNamePlaceholder: "Введите свою фамилию",
     password: "Пароль",
     passwordPlaceholder: "Создайте пароль",
+    confirmPassword: "Повторите пароль",
+    passwordHint: "Минимум 8 символов, буква и цифра",
     email: "Email",
     phone: "Номер мобильного",
     phonePlaceholder: "Например: 67 123 45 67",
@@ -320,6 +343,13 @@ const formCopy = {
     emailRequired: "Введите email",
     passwordRequired: "Создайте пароль",
     termsRequired: "Примите условия, чтобы продолжить"
+    ,
+    passwordWeak: "Пароль: минимум 8 символов, буква и цифра",
+    passwordMismatch: "Пароли не совпадают.",
+    checkEmailTitle: "Проверьте email",
+    checkEmailText: "Мы отправили ссылку для подтверждения. Перейдите по ссылке, чтобы активировать аккаунт.",
+    resend: "Отправить ещё раз",
+    resendWait: "Отправить ещё раз можно через 60 секунд."
   },
   uk: {
     introEyebrow: "Timviz для професіоналів",
@@ -329,6 +359,7 @@ const formCopy = {
     introContinue: "Продовжити реєстрацію",
     introOr: "або",
     introGoogle: "Увійти через Google",
+    introApple: "Продовжити з Apple",
     introChecking: "Перевіряємо...",
     introHelper: "Ви клієнт і хочете відкрити профіль майстра?",
     introHelperLink: "Перейти до пошуку профілів",
@@ -340,6 +371,8 @@ const formCopy = {
     lastNamePlaceholder: "Введіть своє прізвище",
     password: "Пароль",
     passwordPlaceholder: "Створіть пароль",
+    confirmPassword: "Повторіть пароль",
+    passwordHint: "Мінімум 8 символів, літера і цифра",
     email: "Email",
     phone: "Номер мобільного",
     phonePlaceholder: "Наприклад: 67 123 45 67",
@@ -365,6 +398,13 @@ const formCopy = {
     emailRequired: "Введіть email",
     passwordRequired: "Створіть пароль",
     termsRequired: "Прийміть умови, щоб продовжити"
+    ,
+    passwordWeak: "Пароль: мінімум 8 символів, літера і цифра",
+    passwordMismatch: "Паролі не збігаються.",
+    checkEmailTitle: "Перевірте email",
+    checkEmailText: "Ми надіслали посилання для підтвердження. Перейдіть за посиланням, щоб активувати акаунт.",
+    resend: "Надіслати ще раз",
+    resendWait: "Надіслати ще раз можна через 60 секунд."
   },
   en: {
     introEyebrow: "Timviz for professionals",
@@ -374,6 +414,7 @@ const formCopy = {
     introContinue: "Continue registration",
     introOr: "or",
     introGoogle: "Continue with Google",
+    introApple: "Continue with Apple",
     introChecking: "Checking...",
     introHelper: "Are you a client looking to book a service?",
     introHelperLink: "Go to the client catalog",
@@ -385,6 +426,8 @@ const formCopy = {
     lastNamePlaceholder: "Enter your last name",
     password: "Password",
     passwordPlaceholder: "Create a password",
+    confirmPassword: "Repeat password",
+    passwordHint: "At least 8 characters, one letter and one digit",
     email: "Email",
     phone: "Mobile number",
     phonePlaceholder: "For example: 67 123 45 67",
@@ -410,6 +453,13 @@ const formCopy = {
     emailRequired: "Enter your email",
     passwordRequired: "Create a password",
     termsRequired: "Accept the terms to continue"
+    ,
+    passwordWeak: "Password: at least 8 characters, one letter and one digit",
+    passwordMismatch: "Passwords do not match.",
+    checkEmailTitle: "Check your email",
+    checkEmailText: "We sent a confirmation link. Open it to activate your account.",
+    resend: "Send again",
+    resendWait: "You can send again in 60 seconds."
   }
 } satisfies Record<ProLanguage, Record<string, string>>;
 
@@ -417,11 +467,12 @@ export default function CreateAccountForm() {
   const router = useRouter();
   const prefixMenuRef = useRef<HTMLDivElement | null>(null);
   const hasHydratedDraftRef = useRef(false);
-  const [termsAccepted, setTermsAccepted] = useState(true);
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
   const [phone, setPhone] = useState("");
   const [country, setCountry] = useState("Ukraine");
@@ -441,16 +492,27 @@ export default function CreateAccountForm() {
   const [step, setStep] = useState<"entry" | "details">("entry");
   const [isTelegramSource, setIsTelegramSource] = useState(false);
   const [telegramStartParam, setTelegramStartParam] = useState("setup");
+  const [emailConfirmationSent, setEmailConfirmationSent] = useState("");
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [captchaToken, setCaptchaToken] = useState("");
+  const [authProviderMode, setAuthProviderMode] = useState<"email" | "google" | "apple">("email");
 
   const phoneRule = getPhoneRule(phoneCountry);
   const phoneIsValid = isPhoneValid(phoneCountry, phone);
   const t = formCopy[language];
   const phonePlaceholder = phoneCountry === "Ukraine" ? t.phonePlaceholder : phoneRule.placeholder;
+  const turnstileEnabled = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
+  const captchaRequired = authProviderMode === "email" && turnstileEnabled;
+  const captchaReady = !captchaRequired || Boolean(captchaToken);
 
   function applyLanguage(nextLanguage: ProLanguage) {
     setLanguage(nextLanguage);
     if (typeof window !== "undefined") {
-      window.localStorage.setItem("rezervo-pro-language", nextLanguage);
+      try {
+        getSafeLocalStorage()?.setItem("rezervo-pro-language", nextLanguage);
+      } catch {
+        // Language switching should keep working even when storage is unavailable.
+      }
       document.documentElement.lang = nextLanguage;
       window.dispatchEvent(new CustomEvent("rezervo-language-change", { detail: nextLanguage }));
     }
@@ -527,9 +589,15 @@ export default function CreateAccountForm() {
     window.location.assign(absolute);
   }
 
+  function handleAppleRegister() {
+    if (typeof window === "undefined") return;
+    window.location.assign("/api/pro/auth/apple/start");
+  }
+
   useEffect(() => {
     logFunnelStep("visited_create_account");
-    const savedLanguage = window.localStorage.getItem("rezervo-pro-language");
+    const localStorage = getSafeLocalStorage();
+    const savedLanguage = localStorage?.getItem("rezervo-pro-language") ?? null;
     const initialLanguage = languages.includes(savedLanguage as ProLanguage)
       ? (savedLanguage as ProLanguage)
       : getBrowserLanguage();
@@ -569,8 +637,9 @@ export default function CreateAccountForm() {
     const inviteFromQuery = params.get("invite")?.trim() || "";
     const emailFromQuery = params.get("email")?.trim() || "";
     const avatarFromQuery = params.get("avatarUrl")?.trim() || "";
+    const providerFromQuery = params.get("google") === "1" ? "google" : params.get("apple") === "1" ? "apple" : "email";
     const liveDraft = readStoredJson<CreateAccountLiveDraft>(window.sessionStorage, liveDraftKey);
-    const setupDraft = readStoredJson<SetupAccountDraft>(window.localStorage, setupDraftKey);
+    const setupDraft = readStoredJson<SetupAccountDraft>(localStorage, setupDraftKey);
     const draftCountry = isKnownCountry(liveDraft?.country)
       ? liveDraft.country
       : isKnownCountry(setupDraft?.country)
@@ -617,9 +686,14 @@ export default function CreateAccountForm() {
     setTermsAccepted(liveDraft?.termsAccepted ?? true);
     setStep(liveDraft?.step === "details" || setupDraft?.email ? "details" : "entry");
     setInviteToken(inviteFromQuery);
+    setAuthProviderMode(providerFromQuery);
     setIsTelegramSource(sourceFromQuery === "telegram" || isTelegramRuntime);
     setTelegramStartParam(queryStartParam || runtimeStartParam || "setup");
-    window.localStorage.setItem("rezervo-pro-language", initialLanguage);
+    try {
+      localStorage?.setItem("rezervo-pro-language", initialLanguage);
+    } catch {
+      // The form can keep using the in-memory language when storage is unavailable.
+    }
     document.documentElement.lang = initialLanguage;
     window.dispatchEvent(new CustomEvent("rezervo-language-change", { detail: initialLanguage }));
     hasHydratedDraftRef.current = true;
@@ -643,7 +717,11 @@ export default function CreateAccountForm() {
     if (firstNameFromGoogle) setFirstName(firstNameFromGoogle);
     if (lastNameFromGoogle) setLastName(lastNameFromGoogle);
     if (avatarFromGoogle) setAvatarUrl(avatarFromGoogle);
-    setPassword((current) => current || makeGeneratedPassword());
+    setPassword((current) => {
+      const nextPassword = current || makeGeneratedPassword();
+      setConfirmPassword(nextPassword);
+      return nextPassword;
+    });
     setTermsAccepted(true);
     setStep("details");
 
@@ -698,6 +776,12 @@ export default function CreateAccountForm() {
       } satisfies CreateAccountLiveDraft)
     );
   }, [avatarUrl, country, currency, email, firstName, lastName, password, phone, phoneCountry, step, termsAccepted, timezone]);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = window.setTimeout(() => setResendCooldown((value) => Math.max(0, value - 1)), 1000);
+    return () => window.clearTimeout(timer);
+  }, [resendCooldown]);
 
   useEffect(() => {
     setExistingAccountEmail("");
@@ -776,6 +860,11 @@ export default function CreateAccountForm() {
     }
     if (!password.trim()) {
       errors.password = t.passwordRequired;
+    } else if (!isStrongEnoughPassword(password)) {
+      errors.password = t.passwordWeak;
+    }
+    if (password !== confirmPassword) {
+      errors.confirmPassword = t.passwordMismatch;
     }
     if (!termsAccepted) {
       errors.terms = t.termsRequired;
@@ -813,6 +902,8 @@ export default function CreateAccountForm() {
       lastName: lastName.trim(),
       email: email.trim(),
       password,
+      authProvider: authProviderMode,
+      emailConfirmed: authProviderMode !== "email",
       avatarUrl,
       phone: buildInternationalPhone(phoneCountry, phone),
       country,
@@ -821,7 +912,11 @@ export default function CreateAccountForm() {
       currency
     };
 
-    window.localStorage.setItem(setupDraftKey, JSON.stringify(account));
+    try {
+      getSafeLocalStorage()?.setItem(setupDraftKey, JSON.stringify(account));
+    } catch {
+      // Registration still proceeds even if draft persistence is unavailable.
+    }
 
     logFunnelStep("details_step_completed");
 
@@ -844,6 +939,8 @@ export default function CreateAccountForm() {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
+        website: "",
+        captchaToken,
         account,
         setup: {
           ownerMode: "owner",
@@ -873,10 +970,54 @@ export default function CreateAccountForm() {
       return;
     }
 
+    if (result.emailConfirmationRequired) {
+      window.sessionStorage.removeItem(liveDraftKey);
+      setEmailConfirmationSent(result.email || email.trim());
+      setIsCheckingEmail(false);
+      return;
+    }
+
     logFunnelStep("setup_completed");
     window.sessionStorage.removeItem(liveDraftKey);
     router.push("/pro/calendar");
     router.refresh();
+  }
+
+  async function resendConfirmation() {
+    if (!emailConfirmationSent || resendCooldown > 0) return;
+    setIsCheckingEmail(true);
+    const response = await fetch("/api/pro/email/resend", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: emailConfirmationSent, language, captchaToken })
+    });
+    const result = await response.json().catch(() => ({}));
+    setIsCheckingEmail(false);
+    if (!response.ok) {
+      setFieldErrors({ email: result.error || t.resendWait });
+      setResendCooldown(Number(result.retryAfter || 60));
+      return;
+    }
+    setResendCooldown(60);
+  }
+
+  if (emailConfirmationSent) {
+    return (
+      <div className={`${styles.panel} ${styles.authStartPanel}`}>
+        <div>
+          <p className={styles.eyebrow}>Timviz</p>
+          <h1 className={styles.heroTitle}>{t.checkEmailTitle}</h1>
+          <p className={styles.heroSubtitle}>{t.checkEmailText}</p>
+        </div>
+        <div className={styles.confirmEmailBox}>{emailConfirmationSent}</div>
+        <TurnstileWidget onToken={setCaptchaToken} />
+        {fieldErrors.email ? <div className={styles.addressWarning}>{fieldErrors.email}</div> : null}
+        <button type="button" className={styles.primaryButton} disabled={isCheckingEmail || resendCooldown > 0 || !captchaReady} onClick={() => void resendConfirmation()}>
+          {resendCooldown > 0 ? `${t.resend} · ${resendCooldown}` : t.resend}
+        </button>
+        <a className={styles.ghostButton} href={loginHref}>{t.loginLink}</a>
+      </div>
+    );
   }
 
   if (step === "entry") {
@@ -944,6 +1085,14 @@ export default function CreateAccountForm() {
           >
             <span className={`${styles.socialIcon} ${styles.google}`}>G</span>
             <span>{t.introGoogle}</span>
+          </button>
+          <button
+            type="button"
+            className={`${styles.socialButton} ${styles.appleButton}`}
+            onClick={handleAppleRegister}
+          >
+            <span className={styles.appleGlyph}>●</span>
+            <span>{t.introApple}</span>
           </button>
         </div>
 
@@ -1077,7 +1226,23 @@ export default function CreateAccountForm() {
               setFieldErrors((current) => ({ ...current, password: "" }));
             }}
           />
+          <span className={styles.fieldHint}>{t.passwordHint}</span>
           {fieldErrors.password ? <span className={styles.fieldError}>{fieldErrors.password}</span> : null}
+        </div>
+        <div className={styles.field}>
+          <label htmlFor="confirmPassword">{t.confirmPassword}</label>
+          <input
+            id="confirmPassword"
+            type="password"
+            className={styles.input}
+            placeholder={t.confirmPassword}
+            value={confirmPassword}
+            onChange={(event) => {
+              setConfirmPassword(event.target.value);
+              setFieldErrors((current) => ({ ...current, confirmPassword: "" }));
+            }}
+          />
+          {fieldErrors.confirmPassword ? <span className={styles.fieldError}>{fieldErrors.confirmPassword}</span> : null}
         </div>
       </div>
 
@@ -1143,12 +1308,13 @@ export default function CreateAccountForm() {
         <span>{t.terms}</span>
       </label>
       {fieldErrors.terms ? <span className={styles.fieldError}>{fieldErrors.terms}</span> : null}
+      {captchaRequired ? <TurnstileWidget onToken={setCaptchaToken} /> : null}
 
       <div className={styles.createAccountActions}>
         <button
           type="button"
           className={styles.primaryButton}
-          disabled={isCheckingEmail}
+          disabled={isCheckingEmail || !captchaReady}
           onClick={() => void createMasterAccount()}
         >
           {isCheckingEmail ? t.introChecking : t.submit}
@@ -1162,7 +1328,7 @@ export default function CreateAccountForm() {
       </div>
 
       <div className={styles.createMobileStickyCta}>
-        <button type="button" className={styles.primaryButton} disabled={isCheckingEmail} onClick={() => void createMasterAccount()}>
+        <button type="button" className={styles.primaryButton} disabled={isCheckingEmail || !captchaReady} onClick={() => void createMasterAccount()}>
           {isCheckingEmail ? t.introChecking : t.submit}
         </button>
         <a className={styles.mutedLink} href={loginHref}>{t.loginLink}</a>

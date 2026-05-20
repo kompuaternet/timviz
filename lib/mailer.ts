@@ -44,6 +44,7 @@ async function sendViaZohoApi(input: {
   subject: string;
   html: string;
   text?: string;
+  from?: string;
 }) {
   const config = readZohoApiConfig();
   if (!config) {
@@ -80,7 +81,7 @@ async function sendViaZohoApi(input: {
       Authorization: `Zoho-oauthtoken ${tokenPayload.access_token}`
     },
     body: JSON.stringify({
-      fromAddress: config.from,
+      fromAddress: input.from || config.from,
       toAddress: input.to,
       subject: input.subject,
       content: input.html,
@@ -106,6 +107,7 @@ export async function sendMail(input: {
   subject: string;
   html: string;
   text?: string;
+  from?: string;
 }) {
   if (isZohoMailApiConfigured()) {
     await sendViaZohoApi(input);
@@ -180,7 +182,7 @@ export async function sendMail(input: {
       } as Parameters<typeof nodemailer.createTransport>[0]);
 
       await transporter.sendMail({
-        from: config.from,
+        from: input.from || config.from,
         to: input.to,
         subject: input.subject,
         html: input.html,

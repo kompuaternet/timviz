@@ -13,6 +13,7 @@ import * as SecureStore from "expo-secure-store";
 import { StatusBar } from "expo-status-bar";
 import * as WebBrowser from "expo-web-browser";
 import Purchases, { LOG_LEVEL, type CustomerInfo, type PurchasesPackage } from "react-native-purchases";
+import { WebView } from "react-native-webview";
 import type { ComponentProps, Dispatch, SetStateAction } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -416,6 +417,7 @@ type CalendarMemberView = {
 
 type MobileNotificationRecord = {
   id: string;
+  bookingId?: string;
   appointmentId?: string;
   appointmentDate: string;
   startTime: string;
@@ -944,6 +946,11 @@ const baseCopy = {
     loginError: "Помилка входу",
     registerError: "Помилка реєстрації",
     passwordHint: "Мінімум 6 символів",
+    captchaTitle: "Перевірка безпеки",
+    captchaText: "Підтвердіть, що акаунт створює реальний майстер. Це займає кілька секунд.",
+    captchaCancel: "Закрити",
+    captchaCanceled: "Перевірку скасовано. Пройдіть її, щоб створити акаунт.",
+    captchaFailed: "Не вдалося пройти перевірку. Спробуйте ще раз.",
     continueWithGoogle: "Продовжити з Google",
     continueWithApple: "Продовжити з Apple",
     socialAuthDivider: "або",
@@ -1392,6 +1399,11 @@ const baseCopy = {
     loginError: "Ошибка входа",
     registerError: "Ошибка регистрации",
     passwordHint: "Минимум 6 символов",
+    captchaTitle: "Проверка безопасности",
+    captchaText: "Подтвердите, что аккаунт создаёт реальный мастер. Это займёт несколько секунд.",
+    captchaCancel: "Закрыть",
+    captchaCanceled: "Проверка отменена. Пройдите её, чтобы создать аккаунт.",
+    captchaFailed: "Не удалось пройти проверку. Попробуйте ещё раз.",
     continueWithGoogle: "Продолжить с Google",
     continueWithApple: "Продолжить с Apple",
     socialAuthDivider: "или",
@@ -1840,6 +1852,11 @@ const baseCopy = {
     loginError: "Sign-in error",
     registerError: "Registration error",
     passwordHint: "At least 6 characters",
+    captchaTitle: "Security check",
+    captchaText: "Confirm that a real professional is creating this account. It only takes a few seconds.",
+    captchaCancel: "Close",
+    captchaCanceled: "The check was canceled. Complete it to create an account.",
+    captchaFailed: "Could not complete the check. Please try again.",
     continueWithGoogle: "Continue with Google",
     continueWithApple: "Continue with Apple",
     socialAuthDivider: "or",
@@ -5800,6 +5817,9 @@ export default function App() {
   const [phoneCountryPickerOpen, setPhoneCountryPickerOpen] = useState(false);
   const [phoneCountryQuery, setPhoneCountryQuery] = useState("");
   const [customPhonePrefix, setCustomPhonePrefix] = useState("");
+  const [captchaVisible, setCaptchaVisible] = useState(false);
+  const [captchaUrl, setCaptchaUrl] = useState("");
+  const captchaResolverRef = useRef<((token: string) => void) | null>(null);
   const [visitDraft, setVisitDraft] = useState<VisitDraft>(() => createDefaultVisitDraft(selectedDate, "09:00"));
   const [editingAppointment, setEditingAppointment] = useState<AppointmentRecord | null>(null);
   const [timeAction, setTimeAction] = useState<{ date: string; time: string; targetProfessionalId?: string } | null>(null);
@@ -6447,6 +6467,36 @@ export default function App() {
     setCustomPhonePrefix("");
   }
 
+  function closeCaptcha(token = "") {
+    const resolver = captchaResolverRef.current;
+    captchaResolverRef.current = null;
+    setCaptchaVisible(false);
+    setCaptchaUrl("");
+    resolver?.(token);
+  }
+
+  function requestCaptchaToken() {
+    return new Promise<string>((resolve) => {
+      captchaResolverRef.current = resolve;
+      const params = new URLSearchParams();
+      params.set("embedded", "1");
+      params.set("language", language);
+      setCaptchaUrl(`${API_BASE_URL}/mobile-captcha?${params.toString()}`);
+      setCaptchaVisible(true);
+    });
+  }
+
+  function handleCaptchaMessage(message: string) {
+    try {
+      const parsed = JSON.parse(message) as { type?: string; token?: string };
+      if (parsed.type === "turnstile-token" && parsed.token) {
+        closeCaptcha(parsed.token);
+      }
+    } catch {
+      // Ignore messages that do not belong to the captcha bridge.
+    }
+  }
+
   function getRegisterValidationMessage(payload: {
     firstName: string;
     email: string;
@@ -6588,12 +6638,18 @@ export default function App() {
       return;
     }
 
+    const captchaToken = await requestCaptchaToken();
+    if (!captchaToken) {
+      Alert.alert(t.registerError, t.captchaCanceled);
+      return;
+    }
+
     setBusy(true);
     try {
       const response = await fetch(`${API_BASE_URL}/api/mobile/pro/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({ ...payload, captchaToken }),
       });
       const result = await response.json();
       if (!response.ok) {
@@ -7469,6 +7525,45 @@ export default function App() {
           </View>
         ) : null}
       </KeyboardAvoidingView>
+      <Modal visible={captchaVisible} transparent animationType="slide" onRequestClose={() => closeCaptcha("")}>
+        <View style={styles.modalBackdrop}>
+          <View style={styles.captchaSheet}>
+            <View style={styles.sheetHandle} />
+            <View style={styles.sheetHeader}>
+              <View style={styles.captchaTitleWrap}>
+                <Text style={styles.sheetTitle}>{t.captchaTitle}</Text>
+                <Text style={styles.captchaSubtitle}>{t.captchaText}</Text>
+              </View>
+              <Pressable style={styles.sheetClose} onPress={() => closeCaptcha("")}>
+                <Ionicons name="close" size={22} color="#334155" />
+              </Pressable>
+            </View>
+            {captchaUrl ? (
+              <WebView
+                source={{ uri: captchaUrl }}
+                originWhitelist={["https://*", "http://*"]}
+                javaScriptEnabled
+                domStorageEnabled
+                sharedCookiesEnabled
+                thirdPartyCookiesEnabled
+                onMessage={(event) => handleCaptchaMessage(event.nativeEvent.data)}
+                onError={() => {
+                  Alert.alert(t.registerError, t.captchaFailed);
+                  closeCaptcha("");
+                }}
+                style={styles.captchaWebView}
+              />
+            ) : (
+              <View style={styles.captchaLoading}>
+                <ActivityIndicator color={DESIGN.colors.primary} />
+              </View>
+            )}
+            <Pressable style={styles.captchaCancelButton} onPress={() => closeCaptcha("")}>
+              <Text style={styles.captchaCancelText}>{t.captchaCancel}</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
       <PhoneCountryPickerModal
         visible={phoneCountryPickerOpen}
         language={language}
@@ -9729,13 +9824,15 @@ function WorkspaceHeader({
           body: JSON.stringify({
             mode: "meta",
             appointmentId,
+            bookingId: item.bookingId,
             targetProfessionalId: item.professionalId,
             attendance: "confirmed",
           }),
         });
       } else {
         const target = item.professionalId ? `&targetProfessionalId=${encodeURIComponent(item.professionalId)}` : "";
-        await apiFetch(`/api/mobile/pro/calendar?appointmentId=${encodeURIComponent(appointmentId)}${target}`, { method: "DELETE" });
+        const booking = item.bookingId ? `&bookingId=${encodeURIComponent(item.bookingId)}` : "";
+        await apiFetch(`/api/mobile/pro/calendar?appointmentId=${encodeURIComponent(appointmentId)}${target}${booking}`, { method: "DELETE" });
       }
 
       await loadNotifications();
@@ -14353,6 +14450,58 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: DESIGN.colors.border,
     backgroundColor: "rgba(255,255,255,0.98)",
+  },
+  captchaSheet: {
+    maxHeight: "86%",
+    gap: 12,
+    paddingHorizontal: 18,
+    paddingTop: 9,
+    paddingBottom: Platform.OS === "ios" ? 24 : 18,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    backgroundColor: "#FFFFFF",
+    shadowColor: "#142033",
+    shadowOpacity: 0.13,
+    shadowRadius: 34,
+    shadowOffset: { width: 0, height: -12 },
+  },
+  captchaTitleWrap: {
+    flex: 1,
+    minWidth: 0,
+    gap: 5,
+  },
+  captchaSubtitle: {
+    color: DESIGN.colors.muted,
+    fontSize: 13,
+    lineHeight: 19,
+    fontWeight: "700",
+  },
+  captchaWebView: {
+    height: 310,
+    overflow: "hidden",
+    borderRadius: 22,
+    backgroundColor: "#F8FAFC",
+  },
+  captchaLoading: {
+    height: 310,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 22,
+    backgroundColor: "#F8FAFC",
+  },
+  captchaCancelButton: {
+    minHeight: 46,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: DESIGN.radius.md,
+    borderWidth: 1,
+    borderColor: DESIGN.colors.border,
+    backgroundColor: "#FFFFFF",
+  },
+  captchaCancelText: {
+    color: DESIGN.colors.muted,
+    fontSize: 14,
+    fontWeight: "900",
   },
   twoColumns: {
     flexDirection: "row",

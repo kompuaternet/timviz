@@ -27,6 +27,19 @@ const serviceModes = [
 
 type ServiceMode = (typeof serviceModes)[number];
 
+function getSafeLocalStorage() {
+  if (typeof window === "undefined") return undefined;
+
+  try {
+    const storage = window.localStorage;
+    return typeof storage?.getItem === "function" && typeof storage?.setItem === "function"
+      ? storage
+      : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 function CategoryScissorsIcon(props: SVGProps<SVGSVGElement>) {
   return (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" {...props}>
@@ -596,7 +609,7 @@ const setupText = {
 function getInitialSetupLanguage(): ProLanguage {
   if (typeof window === "undefined") return "ru";
 
-  const savedLanguage = window.localStorage.getItem("rezervo-pro-language");
+  const savedLanguage = getSafeLocalStorage()?.getItem("rezervo-pro-language") ?? null;
   if (isProLanguage(savedLanguage)) return savedLanguage;
 
   const candidates = [navigator.language, ...(navigator.languages ?? [])]
@@ -982,7 +995,7 @@ export default function ProSetupFlow({
     const activeDraft = overrideDraft ?? draft;
     setIsSaving(true);
 
-    const accountDraftRaw = window.localStorage.getItem("rezervo-pro-account-draft");
+    const accountDraftRaw = getSafeLocalStorage()?.getItem("rezervo-pro-account-draft") ?? null;
     const accountDraft: AccountDraft = accountDraftRaw
       ? JSON.parse(accountDraftRaw)
           : {

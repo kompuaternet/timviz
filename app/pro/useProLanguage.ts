@@ -4,11 +4,17 @@ import { useEffect, useState } from "react";
 import { isProLanguage, proText, type ProLanguage } from "./i18n";
 
 function getStoredProLanguage() {
-  if (typeof window === "undefined" || typeof window.localStorage?.getItem !== "function") {
+  if (typeof window === "undefined") {
     return null;
   }
 
-  return window.localStorage.getItem("rezervo-pro-language");
+  try {
+    return typeof window.localStorage?.getItem === "function"
+      ? window.localStorage.getItem("rezervo-pro-language")
+      : null;
+  } catch {
+    return null;
+  }
 }
 
 export function useProLanguage(defaultLanguage: ProLanguage = "ru") {

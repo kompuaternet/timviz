@@ -66,7 +66,15 @@ function formatStatsBig(totalBookings: number, language: PublicLanguage) {
 
 function getInitialLanguage(): PublicLanguage {
   if (typeof window === "undefined") return "ru";
-  const saved = window.localStorage.getItem("rezervo-pro-language");
+  let saved: string | null = null;
+  try {
+    saved =
+      typeof window.localStorage?.getItem === "function"
+        ? window.localStorage.getItem("rezervo-pro-language")
+        : null;
+  } catch {
+    saved = null;
+  }
   if (isSiteLanguage(saved)) return saved;
 
   const candidates = [navigator.language, ...(navigator.languages ?? [])]
@@ -336,7 +344,13 @@ export default function PublicHome({ searchIndex, stats, initialLanguage = "ru" 
 
   useEffect(() => {
     setLanguage(initialLanguage || getInitialLanguage());
-    window.localStorage.setItem("rezervo-pro-language", initialLanguage);
+    try {
+      if (typeof window.localStorage?.setItem === "function") {
+        window.localStorage.setItem("rezervo-pro-language", initialLanguage);
+      }
+    } catch {
+      // Public landing should render even when storage is unavailable.
+    }
     const handleLanguageChange = (event: Event) => {
       const nextLanguage = (event as CustomEvent<PublicLanguage>).detail;
       if (isSiteLanguage(nextLanguage)) {

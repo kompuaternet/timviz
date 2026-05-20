@@ -408,7 +408,15 @@ const screenAssets: Record<LandingLanguage, string[]> = {
 
 function getInitialLanguage(): LandingLanguage {
   if (typeof window === "undefined") return "ru";
-  const saved = window.localStorage.getItem("rezervo-pro-language");
+  let saved: string | null = null;
+  try {
+    saved =
+      typeof window.localStorage?.getItem === "function"
+        ? window.localStorage.getItem("rezervo-pro-language")
+        : null;
+  } catch {
+    saved = null;
+  }
   if (saved === "uk" || saved === "en" || saved === "ru") return saved;
   const browserLanguage = window.navigator.language.toLowerCase();
   if (browserLanguage.startsWith("uk") || browserLanguage.startsWith("ua")) return "uk";
@@ -443,7 +451,13 @@ export default function BusinessLanding({ initialLanguage = "ru" }: BusinessLand
 
   useEffect(() => {
     setLanguage(initialLanguage || getInitialLanguage());
-    window.localStorage.setItem("rezervo-pro-language", initialLanguage);
+    try {
+      if (typeof window.localStorage?.setItem === "function") {
+        window.localStorage.setItem("rezervo-pro-language", initialLanguage);
+      }
+    } catch {
+      // Landing should render even when storage is unavailable.
+    }
     const onLanguageChange = (event: Event) => {
       const next = (event as CustomEvent<LandingLanguage>).detail;
       if (next === "ru" || next === "uk" || next === "en") setLanguage(next);

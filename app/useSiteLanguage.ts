@@ -8,7 +8,15 @@ function detectSiteLanguage(defaultLanguage: SiteLanguage) {
     return defaultLanguage;
   }
 
-  const storedLanguage = window.localStorage.getItem("rezervo-pro-language");
+  let storedLanguage: string | null = null;
+  try {
+    storedLanguage =
+      typeof window.localStorage?.getItem === "function"
+        ? window.localStorage.getItem("rezervo-pro-language")
+        : null;
+  } catch {
+    storedLanguage = null;
+  }
   if (isSiteLanguage(storedLanguage)) {
     return storedLanguage;
   }
@@ -34,7 +42,13 @@ export function useSiteLanguage(defaultLanguage: SiteLanguage = "ru", lockToDefa
   useEffect(() => {
     const nextLanguage = lockToDefault ? defaultLanguage : detectSiteLanguage(defaultLanguage);
     setLanguage(nextLanguage);
-    window.localStorage.setItem("rezervo-pro-language", nextLanguage);
+    try {
+      if (typeof window.localStorage?.setItem === "function") {
+        window.localStorage.setItem("rezervo-pro-language", nextLanguage);
+      }
+    } catch {
+      // Keep UI language changes working even when browser storage is unavailable.
+    }
     document.documentElement.lang = nextLanguage;
 
     const handleLanguageChange = (event: Event) => {

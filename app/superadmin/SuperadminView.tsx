@@ -832,6 +832,9 @@ export default function SuperadminView({
                   <span>Телефон: {selectedUser.phone || "—"}</span>
                   <span>Роль: {selectedUser.role}</span>
                   <span>Статус: {getScopeLabel(selectedUser.scope)}</span>
+                  <span>Аккаунт: {selectedUser.accountStatus}</span>
+                  <span>Email: {selectedUser.emailConfirmed ? "подтверждён" : "ждёт подтверждения"}</span>
+                  <span>Provider: {selectedUser.provider}</span>
                   <span>Язык: {selectedUser.language}</span>
                   <span>Валюта: {selectedUser.currency}</span>
                   <span>Услуг: {selectedUser.servicesCount}</span>

@@ -19,10 +19,15 @@ const switcherLabels: Record<SiteLanguage, string> = {
 function getBrowserLanguage(): SiteLanguage {
   if (typeof window === "undefined") return "ru";
 
-  const savedLanguage =
-    typeof window.localStorage?.getItem === "function"
-      ? window.localStorage.getItem("rezervo-pro-language")
-      : null;
+  let savedLanguage: string | null = null;
+  try {
+    savedLanguage =
+      typeof window.localStorage?.getItem === "function"
+        ? window.localStorage.getItem("rezervo-pro-language")
+        : null;
+  } catch {
+    savedLanguage = null;
+  }
   if (isSiteLanguage(savedLanguage)) return savedLanguage;
 
   const candidates = [navigator.language, ...(navigator.languages ?? [])]
@@ -49,8 +54,12 @@ export default function GlobalLanguageSwitcher({ mode = "fixed" }: GlobalLanguag
   useEffect(() => {
     const initialLanguage = routeLanguage ?? getBrowserLanguage();
     setLanguage(initialLanguage);
-    if (typeof window.localStorage?.setItem === "function") {
-      window.localStorage.setItem("rezervo-pro-language", initialLanguage);
+    try {
+      if (typeof window.localStorage?.setItem === "function") {
+        window.localStorage.setItem("rezervo-pro-language", initialLanguage);
+      }
+    } catch {
+      // Language switching should not depend on browser storage availability.
     }
     document.documentElement.lang = initialLanguage;
     window.dispatchEvent(new CustomEvent("rezervo-language-change", { detail: initialLanguage }));
@@ -81,8 +90,12 @@ export default function GlobalLanguageSwitcher({ mode = "fixed" }: GlobalLanguag
   function changeLanguage(nextLanguage: SiteLanguage) {
     setLanguage(nextLanguage);
     setIsOpen(false);
-    if (typeof window.localStorage?.setItem === "function") {
-      window.localStorage.setItem("rezervo-pro-language", nextLanguage);
+    try {
+      if (typeof window.localStorage?.setItem === "function") {
+        window.localStorage.setItem("rezervo-pro-language", nextLanguage);
+      }
+    } catch {
+      // Language switching should not depend on browser storage availability.
     }
     document.documentElement.lang = nextLanguage;
     window.dispatchEvent(new CustomEvent("rezervo-language-change", { detail: nextLanguage }));

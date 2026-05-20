@@ -1,0 +1,231 @@
+"use client";
+
+import { type CSSProperties, useEffect, useMemo, useRef, useState } from "react";
+
+declare global {
+  interface Window {
+    ReactNativeWebView?: {
+      postMessage: (message: string) => void;
+    };
+    turnstile?: {
+      render: (
+        container: HTMLElement,
+        options: {
+          sitekey: string;
+          callback: (token: string) => void;
+          "expired-callback": () => void;
+          "error-callback": () => void;
+          appearance?: "always" | "execute" | "interaction-only";
+          size?: "normal" | "compact" | "flexible";
+          theme?: "light" | "dark" | "auto";
+        }
+      ) => string;
+      remove: (widgetId: string) => void;
+    };
+  }
+}
+
+const turnstileScriptSrc = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+
+const copy = {
+  ru: {
+    title: "Проверка безопасности",
+    text: "Подтвердите, что аккаунт создаёт реальный мастер. Это помогает защитить Timviz от спама.",
+    loading: "Загружаем проверку...",
+    error: "Проверка не загрузилась. Закройте окно и попробуйте ещё раз.",
+    done: "Готово, возвращаемся в приложение..."
+  },
+  uk: {
+    title: "Перевірка безпеки",
+    text: "Підтвердіть, що акаунт створює реальний майстер. Це допомагає захистити Timviz від спаму.",
+    loading: "Завантажуємо перевірку...",
+    error: "Перевірка не завантажилась. Закрийте вікно і спробуйте ще раз.",
+    done: "Готово, повертаємось у застосунок..."
+  },
+  en: {
+    title: "Security check",
+    text: "Confirm that a real professional is creating this account. This helps protect Timviz from spam.",
+    loading: "Loading check...",
+    error: "The check could not load. Close this window and try again.",
+    done: "Done, returning to the app..."
+  }
+} as const;
+type CaptchaLanguage = keyof typeof copy;
+
+function loadTurnstileScript() {
+  if (typeof window === "undefined") return Promise.resolve(false);
+  if (window.turnstile) return Promise.resolve(true);
+
+  return new Promise<boolean>((resolve) => {
+    const existingScript = document.querySelector<HTMLScriptElement>(`script[src="${turnstileScriptSrc}"]`);
+    if (existingScript) {
+      existingScript.addEventListener("load", () => resolve(true), { once: true });
+      existingScript.addEventListener("error", () => resolve(false), { once: true });
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src = turnstileScriptSrc;
+    script.async = true;
+    script.defer = true;
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.head.appendChild(script);
+  });
+}
+
+function getSafeReturnTo(raw: string | null) {
+  if (!raw) return "";
+  try {
+    const url = new URL(raw);
+    return url.protocol === "timviz-master:" && url.hostname === "captcha" ? raw : "";
+  } catch {
+    return "";
+  }
+}
+
+export default function MobileCaptchaPage() {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const widgetIdRef = useRef<string | null>(null);
+  const [status, setStatus] = useState<"loading" | "ready" | "done" | "error">("loading");
+  const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "";
+
+  const params = useMemo(() => {
+    if (typeof window === "undefined") return new URLSearchParams();
+    return new URLSearchParams(window.location.search);
+  }, []);
+  const requestedLanguage = params.get("language");
+  const language: CaptchaLanguage = requestedLanguage === "uk" || requestedLanguage === "en" ? requestedLanguage : "ru";
+  const returnTo = getSafeReturnTo(params.get("return_to"));
+  const t = copy[language];
+
+  useEffect(() => {
+    if (!siteKey || !containerRef.current) {
+      setStatus("error");
+      return;
+    }
+
+    let cancelled = false;
+
+    loadTurnstileScript().then((loaded) => {
+      if (cancelled || !loaded || !window.turnstile || !containerRef.current) {
+        if (!cancelled) setStatus("error");
+        return;
+      }
+
+      widgetIdRef.current = window.turnstile.render(containerRef.current, {
+        sitekey: siteKey,
+        appearance: "always",
+        size: "normal",
+        theme: "light",
+        callback: (token) => {
+          setStatus("done");
+          if (window.ReactNativeWebView) {
+            window.ReactNativeWebView.postMessage(JSON.stringify({ type: "turnstile-token", token }));
+            return;
+          }
+          if (returnTo) {
+            const target = new URL(returnTo);
+            target.searchParams.set("token", token);
+            window.location.href = target.toString();
+          }
+        },
+        "expired-callback": () => setStatus("ready"),
+        "error-callback": () => setStatus("error")
+      });
+      setStatus("ready");
+    });
+
+    return () => {
+      cancelled = true;
+      if (widgetIdRef.current && window.turnstile) {
+        window.turnstile.remove(widgetIdRef.current);
+      }
+      widgetIdRef.current = null;
+    };
+  }, [returnTo, siteKey]);
+
+  return (
+    <main style={styles.shell}>
+      <section style={styles.card}>
+        <div style={styles.logo}>Timviz</div>
+        <h1 style={styles.title}>{t.title}</h1>
+        <p style={styles.text}>{t.text}</p>
+        <div style={styles.widget}>
+          <div ref={containerRef} />
+        </div>
+        {status === "loading" ? <p style={styles.muted}>{t.loading}</p> : null}
+        {status === "done" ? <p style={styles.success}>{t.done}</p> : null}
+        {status === "error" ? <p style={styles.error}>{t.error}</p> : null}
+      </section>
+    </main>
+  );
+}
+
+const styles: Record<string, CSSProperties> = {
+  shell: {
+    minHeight: "100dvh",
+    display: "grid",
+    placeItems: "center",
+    padding: "24px 18px",
+    background: "#f8fafc",
+    fontFamily: "Inter, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif"
+  },
+  card: {
+    width: "100%",
+    maxWidth: 420,
+    display: "flex",
+    flexDirection: "column",
+    gap: 14,
+    padding: 24,
+    border: "1px solid #e2e8f0",
+    borderRadius: 24,
+    background: "#ffffff",
+    boxShadow: "0 18px 50px rgba(15, 23, 42, 0.10)"
+  },
+  logo: {
+    color: "#6d4aff",
+    fontSize: 18,
+    fontWeight: 900
+  },
+  title: {
+    margin: 0,
+    color: "#0f172a",
+    fontSize: 30,
+    lineHeight: 1.05,
+    fontWeight: 900
+  },
+  text: {
+    margin: 0,
+    color: "#64748b",
+    fontSize: 16,
+    lineHeight: 1.45,
+    fontWeight: 650
+  },
+  widget: {
+    minHeight: 70,
+    display: "flex",
+    alignItems: "center"
+  },
+  muted: {
+    margin: 0,
+    color: "#64748b",
+    fontSize: 14,
+    fontWeight: 700
+  },
+  success: {
+    margin: 0,
+    color: "#166534",
+    fontSize: 14,
+    fontWeight: 800
+  },
+  error: {
+    margin: 0,
+    padding: 12,
+    borderRadius: 14,
+    background: "#fff7ed",
+    color: "#9a3412",
+    fontSize: 14,
+    fontWeight: 800
+  }
+};

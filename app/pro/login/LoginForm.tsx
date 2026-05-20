@@ -2,21 +2,30 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
+import TurnstileWidget from "../TurnstileWidget";
 import { useProLanguage } from "../useProLanguage";
 import styles from "../pro.module.css";
 
 const loginText = {
   ru: {
     googleConfigError: "Google вход временно недоступен: не настроены ключи.",
+    appleConfigError: "Apple вход временно недоступен: не настроены ключи.",
     googleLoginError: "Не удалось выполнить вход через Google. Повторите попытку.",
     loginFailed: "Не удалось войти.",
-    eyebrow: "Вход для профессионалов",
-    title: "Войдите в свой бизнес-аккаунт",
-    subtitle: "Для владельца бизнеса, администратора или мастера, который уже зарегистрирован в системе.",
+    eyebrow: "Timviz",
+    title: "Timviz для мастера",
+    subtitle: "Календарь, услуги, клиенты и онлайн-запись в одном месте.",
     password: "Пароль",
     passwordPlaceholder: "Введите пароль",
-    google: "Войти через Google",
+    google: "Продолжить с Google",
+    apple: "Продолжить с Apple",
+    divider: "или",
     forgotPassword: "Забыли пароль?",
+    confirmTitle: "Подтвердите email",
+    confirmText: "Чтобы защитить сервис от спама, подтвердите вашу email-адресу.",
+    resend: "Отправить ещё раз",
+    resendWait: "Отправить ещё раз можно через 60 секунд.",
+    changeEmail: "Изменить email",
     loading: "Входим...",
     submit: "Войти",
     noAccount: "Нет аккаунта?",
@@ -26,15 +35,23 @@ const loginText = {
   },
   uk: {
     googleConfigError: "Google вхід тимчасово недоступний: ключі не налаштовані.",
+    appleConfigError: "Apple вхід тимчасово недоступний: ключі не налаштовані.",
     googleLoginError: "Не вдалося виконати вхід через Google. Спробуйте ще раз.",
     loginFailed: "Не вдалося увійти.",
-    eyebrow: "Вхід для професіоналів",
-    title: "Увійдіть у свій бізнес-акаунт",
-    subtitle: "Для власника бізнесу, адміністратора або майстра, який уже зареєстрований у системі.",
+    eyebrow: "Timviz",
+    title: "Timviz для майстра",
+    subtitle: "Календар, послуги, клієнти й онлайн-запис в одному місці.",
     password: "Пароль",
     passwordPlaceholder: "Введіть пароль",
-    google: "Увійти через Google",
+    google: "Продовжити з Google",
+    apple: "Продовжити з Apple",
+    divider: "або",
     forgotPassword: "Забули пароль?",
+    confirmTitle: "Підтвердіть email",
+    confirmText: "Щоб захистити сервіс від спаму, підтвердіть вашу email-адресу.",
+    resend: "Надіслати ще раз",
+    resendWait: "Надіслати ще раз можна через 60 секунд.",
+    changeEmail: "Змінити email",
     loading: "Входимо...",
     submit: "Увійти",
     noAccount: "Немає акаунта?",
@@ -44,15 +61,23 @@ const loginText = {
   },
   en: {
     googleConfigError: "Google sign-in is temporarily unavailable: keys are not configured.",
+    appleConfigError: "Apple sign-in is temporarily unavailable: keys are not configured.",
     googleLoginError: "Could not sign in with Google. Please try again.",
     loginFailed: "Could not sign in.",
-    eyebrow: "Professional sign in",
-    title: "Sign in to your business account",
-    subtitle: "For the business owner, administrator or specialist who is already registered in the system.",
+    eyebrow: "Timviz",
+    title: "Timviz for masters",
+    subtitle: "Calendar, services, clients, and online booking in one place.",
     password: "Password",
     passwordPlaceholder: "Enter your password",
     google: "Continue with Google",
+    apple: "Continue with Apple",
+    divider: "or",
     forgotPassword: "Forgot password?",
+    confirmTitle: "Confirm your email",
+    confirmText: "To protect Timviz from spam, confirm your email address.",
+    resend: "Send again",
+    resendWait: "You can send again in 60 seconds.",
+    changeEmail: "Change email",
     loading: "Signing in...",
     submit: "Sign in",
     noAccount: "No account yet?",
@@ -81,11 +106,17 @@ export default function LoginForm({ staleSession = false, returnTo = "" }: Login
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [oauthErrorText, setOauthErrorText] = useState("");
+  const [confirmEmail, setConfirmEmail] = useState("");
+  const [resendCooldown, setResendCooldown] = useState(0);
+  const [resendMessage, setResendMessage] = useState("");
   const [inviteToken, setInviteToken] = useState("");
   const [staleSessionMessage, setStaleSessionMessage] = useState("");
   const [isTelegramSource, setIsTelegramSource] = useState(false);
   const [telegramStartParam, setTelegramStartParam] = useState("calendar");
   const [returnToPath, setReturnToPath] = useState(returnTo);
+  const [captchaToken, setCaptchaToken] = useState("");
+  const turnstileEnabled = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
+  const captchaReady = !turnstileEnabled || Boolean(captchaToken);
 
   useEffect(() => {
     let isCancelled = false;
@@ -120,6 +151,8 @@ export default function LoginForm({ staleSession = false, returnTo = "" }: Login
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const googleError = params.get("google_error");
+    const appleError = params.get("apple_error");
+    const confirmEmailFromQuery = params.get("confirm_email")?.trim() || "";
     const prefilledEmail = params.get("email")?.trim() || "";
     const inviteFromQuery = params.get("invite")?.trim() || "";
     const returnToFromQuery = params.get("return_to")?.trim() || "";
@@ -155,11 +188,17 @@ export default function LoginForm({ staleSession = false, returnTo = "" }: Login
     const nextText =
       googleError === "config"
         ? copy.googleConfigError
+        : appleError === "config"
+          ? copy.appleConfigError
         : googleError
           ? copy.googleLoginError
           : "";
     if (prefilledEmail) {
       setEmail(prefilledEmail);
+    }
+    if (confirmEmailFromQuery) {
+      setConfirmEmail(confirmEmailFromQuery);
+      setEmail(confirmEmailFromQuery);
     }
     setIsTelegramSource(source === "telegram" || hasTelegramRuntime);
     setTelegramStartParam(startParam || "calendar");
@@ -168,7 +207,13 @@ export default function LoginForm({ staleSession = false, returnTo = "" }: Login
       setReturnToPath(returnToFromQuery);
     }
     setOauthErrorText(nextText);
-  }, [copy.googleConfigError, copy.googleLoginError]);
+  }, [copy.appleConfigError, copy.googleConfigError, copy.googleLoginError]);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = window.setTimeout(() => setResendCooldown((value) => Math.max(0, value - 1)), 1000);
+    return () => window.clearTimeout(timer);
+  }, [resendCooldown]);
 
   const googleAuthHref = useMemo(() => {
     const query = new URLSearchParams();
@@ -226,6 +271,34 @@ export default function LoginForm({ staleSession = false, returnTo = "" }: Login
     window.location.assign(absolute);
   }
 
+  function handleAppleSignIn() {
+    if (typeof window === "undefined") return;
+    const query = new URLSearchParams();
+    if (returnToPath) query.set("return_to", returnToPath);
+    window.location.assign(`/api/pro/auth/apple/start?${query.toString()}`);
+  }
+
+  async function resendConfirmation() {
+    if (!confirmEmail || resendCooldown > 0 || isLoading) return;
+    setIsLoading(true);
+    setError("");
+    setResendMessage("");
+    const response = await fetch("/api/pro/email/resend", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: confirmEmail, language, captchaToken })
+    });
+    const result = await response.json().catch(() => ({}));
+    setIsLoading(false);
+    if (!response.ok) {
+      setError(result.error || copy.resendWait);
+      setResendCooldown(Number(result.retryAfter || 60));
+      return;
+    }
+    setResendMessage(result.message || copy.resend);
+    setResendCooldown(60);
+  }
+
   async function handleLogin() {
     setIsLoading(true);
     setError("");
@@ -241,6 +314,9 @@ export default function LoginForm({ staleSession = false, returnTo = "" }: Login
     const result = await response.json();
 
     if (!response.ok) {
+      if (result.errorCode === "email_not_confirmed") {
+        setConfirmEmail(result.email || email.trim());
+      }
       setError(result.error || copy.loginFailed);
       setIsLoading(false);
       return;
@@ -261,8 +337,30 @@ export default function LoginForm({ staleSession = false, returnTo = "" }: Login
     router.refresh();
   }
 
+  if (confirmEmail) {
+    return (
+      <div className={`${styles.panel} ${styles.authStartPanel}`}>
+        <div>
+          <p className={styles.eyebrow}>{copy.eyebrow}</p>
+          <h1 className={styles.heroTitle}>{copy.confirmTitle}</h1>
+          <p className={styles.heroSubtitle}>{copy.confirmText}</p>
+        </div>
+        <div className={styles.confirmEmailBox}>{confirmEmail}</div>
+        <TurnstileWidget onToken={setCaptchaToken} />
+        {error ? <div className={styles.addressWarning}>{error}</div> : null}
+        {resendMessage ? <div className={styles.successNotice}>{resendMessage}</div> : null}
+        <button type="button" className={styles.primaryButton} disabled={isLoading || resendCooldown > 0 || !captchaReady} onClick={() => void resendConfirmation()}>
+          {resendCooldown > 0 ? `${copy.resend} · ${resendCooldown}` : copy.resend}
+        </button>
+        <button type="button" className={styles.ghostButton} onClick={() => setConfirmEmail("")}>
+          {copy.changeEmail}
+        </button>
+      </div>
+    );
+  }
+
   return (
-    <div className={styles.panel}>
+    <div className={`${styles.panel} ${styles.authStartPanel}`}>
       <div>
         <p className={styles.eyebrow}>{copy.eyebrow}</p>
         <h1 className={styles.heroTitle}>{copy.title}</h1>
@@ -271,10 +369,18 @@ export default function LoginForm({ staleSession = false, returnTo = "" }: Login
         </p>
       </div>
 
-      <a href={createAccountHref} className={styles.loginCreateMasterCta}>
-        <strong>{copy.createMaster}</strong>
-        <span>{copy.createMasterSubtitle}</span>
-      </a>
+      <div className={styles.socialStack}>
+        <button type="button" className={styles.socialButton} onClick={handleGoogleSignIn}>
+          <span className={`${styles.socialIcon} ${styles.google}`}>G</span>
+          <span>{copy.google}</span>
+        </button>
+        <button type="button" className={`${styles.socialButton} ${styles.appleButton}`} onClick={handleAppleSignIn}>
+          <span className={styles.appleGlyph}>●</span>
+          <span>{copy.apple}</span>
+        </button>
+      </div>
+
+      <div className={styles.socialDivider}>{copy.divider}</div>
 
       <div className={styles.fieldStack}>
         <div className={styles.field}>
@@ -310,14 +416,6 @@ export default function LoginForm({ staleSession = false, returnTo = "" }: Login
       {error ? <div className={styles.addressWarning}>{error}</div> : null}
       {!error && staleSessionMessage ? <div className={styles.addressWarning}>{staleSessionMessage}</div> : null}
       {!error && !staleSessionMessage && oauthErrorText ? <div className={styles.addressWarning}>{oauthErrorText}</div> : null}
-
-      <button
-        type="button"
-        className={styles.ghostButton}
-        onClick={handleGoogleSignIn}
-      >
-        {copy.google}
-      </button>
 
       <button
         type="button"

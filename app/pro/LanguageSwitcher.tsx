@@ -22,7 +22,15 @@ export default function LanguageSwitcher() {
   const switcherRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    const storedLanguage = window.localStorage.getItem("rezervo-pro-language");
+    let storedLanguage: string | null = null;
+    try {
+      storedLanguage =
+        typeof window.localStorage?.getItem === "function"
+          ? window.localStorage.getItem("rezervo-pro-language")
+          : null;
+    } catch {
+      storedLanguage = null;
+    }
     const nextLanguage = isLanguageCode(storedLanguage) ? storedLanguage : "ru";
     setActiveLanguage(nextLanguage);
     document.documentElement.lang = nextLanguage;
@@ -43,7 +51,13 @@ export default function LanguageSwitcher() {
   async function changeLanguage(language: LanguageCode) {
     setActiveLanguage(language);
     setIsOpen(false);
-    window.localStorage.setItem("rezervo-pro-language", language);
+    try {
+      if (typeof window.localStorage?.setItem === "function") {
+        window.localStorage.setItem("rezervo-pro-language", language);
+      }
+    } catch {
+      // Local switch should keep working even when storage is unavailable.
+    }
     document.documentElement.lang = language;
     window.dispatchEvent(new CustomEvent("rezervo-language-change", { detail: language }));
 

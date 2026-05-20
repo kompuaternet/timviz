@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getSessionCookieName, verifySessionValue } from "../../../lib/pro-auth";
 import { getPendingJoinRequestForProfessional, getWorkspaceSnapshot } from "../../../lib/pro-data";
+import GlobalLanguageSwitcher from "../../GlobalLanguageSwitcher";
 import LoginForm from "./LoginForm";
 import styles from "../pro.module.css";
 
@@ -80,6 +81,9 @@ export default async function ProLoginPage({ searchParams }: ProLoginPageProps) 
   return (
     <main className={styles.splitShell}>
       <section className={styles.formSide}>
+        <div className={styles.createTopLanguage}>
+          <GlobalLanguageSwitcher mode="inline" />
+        </div>
         <LoginForm staleSession={Boolean(professionalId)} returnTo={returnTo} />
       </section>
       <aside className={styles.visualSide}>

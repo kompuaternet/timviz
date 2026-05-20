@@ -26,6 +26,8 @@ export type AccountDraft = {
   lastName?: string;
   email: string;
   password: string;
+  authProvider?: "email" | "google" | "apple";
+  emailConfirmed?: boolean;
   phone: string;
   country: string;
   timezone: string;
@@ -87,7 +89,7 @@ export type BusinessRecord = {
   createdAt: string;
 };
 
-export type ProfessionalAccountStatus = "active" | "placeholder";
+export type ProfessionalAccountStatus = "pending_email" | "active" | "blocked" | "deleted" | "placeholder";
 
 export type ProfessionalRecord = {
   id: string;
@@ -311,7 +313,9 @@ function normalizeServiceSource(value: unknown): "catalog" | "custom" {
 }
 
 function normalizeProfessionalAccountStatus(value: unknown): ProfessionalAccountStatus {
-  return value === "placeholder" ? "placeholder" : "active";
+  return value === "pending_email" || value === "blocked" || value === "deleted" || value === "placeholder"
+    ? value
+    : "active";
 }
 
 function buildPlaceholderProfessionalEmail(professionalId: string) {
@@ -1300,6 +1304,8 @@ export async function createProfessionalSetup(input: {
     lastName: String(input.account.lastName ?? "").trim(),
     email: String(input.account.email ?? "").trim().toLowerCase(),
     password: String(input.account.password ?? ""),
+    authProvider: input.account.authProvider === "google" || input.account.authProvider === "apple" ? input.account.authProvider : "email",
+    emailConfirmed: input.account.emailConfirmed === true,
     phone: String(input.account.phone ?? "").trim(),
     country: String(input.account.country ?? "").trim(),
     timezone: String(input.account.timezone ?? "").trim(),
@@ -1335,6 +1341,8 @@ export async function createProfessionalSetup(input: {
   }
 
   const createdAt = new Date().toISOString();
+  const accountStatus: ProfessionalAccountStatus =
+    account.authProvider === "email" && !account.emailConfirmed ? "pending_email" : "active";
   const shouldStartPremiumTrial = input.setup.ownerMode === "owner" && !existingProfessional;
   const initialPremiumUntil = shouldStartPremiumTrial ? getPremiumTrialUntil(createdAt) : null;
   const requesterName = `${account.firstName} ${account.lastName}`.trim();
@@ -1374,7 +1382,7 @@ export async function createProfessionalSetup(input: {
       paddle_subscription_id: existingProfessional?.paddleSubscriptionId ?? null,
       paddle_price_id: existingProfessional?.paddlePriceId ?? null,
       owner_mode: input.setup.ownerMode,
-      account_status: "active",
+      account_status: accountStatus,
       created_at: existingProfessional?.createdAt ?? createdAt
     };
 
@@ -1684,7 +1692,7 @@ export async function createProfessionalSetup(input: {
     paddleSubscriptionId: existingProfessional?.paddleSubscriptionId,
     paddlePriceId: existingProfessional?.paddlePriceId,
     ownerMode: input.setup.ownerMode,
-    accountStatus: "active",
+    accountStatus,
     createdAt: existingProfessional?.createdAt ?? createdAt
   });
 
@@ -3429,7 +3437,7 @@ export async function getProfessionalIdByEmail(email: string) {
 
 export async function professionalExistsByEmail(email: string) {
   const professional = await getProfessionalProfileByEmail(email);
-  return Boolean(professional && normalizeProfessionalAccountStatus(professional.accountStatus) === "active");
+  return Boolean(professional && normalizeProfessionalAccountStatus(professional.accountStatus) !== "placeholder");
 }
 
 export async function getProfessionalPasswordResetProfile(email: string) {
@@ -3446,7 +3454,7 @@ export async function getProfessionalPasswordResetProfile(email: string) {
 
     const { data, error } = await supabase
       .from("professionals")
-      .select("id, first_name, last_name, email, password_hash")
+      .select("id, first_name, last_name, email, password_hash, account_status, created_at")
       .ilike("email", normalizedEmail)
       .maybeSingle();
 
@@ -3463,7 +3471,9 @@ export async function getProfessionalPasswordResetProfile(email: string) {
       firstName: data.first_name || "",
       lastName: data.last_name || "",
       email: data.email,
-      passwordHash: data.password_hash
+      passwordHash: data.password_hash,
+      accountStatus: normalizeProfessionalAccountStatus(data.account_status),
+      createdAt: data.created_at
     };
   }
 
@@ -3481,8 +3491,46 @@ export async function getProfessionalPasswordResetProfile(email: string) {
     firstName: professional.firstName,
     lastName: professional.lastName,
     email: professional.email,
-    passwordHash: professional.passwordHash
+    passwordHash: professional.passwordHash,
+    accountStatus: normalizeProfessionalAccountStatus(professional.accountStatus),
+    createdAt: professional.createdAt
   };
+}
+
+export async function activateProfessionalEmailByEmail(email: string) {
+  const normalizedEmail = email.trim().toLowerCase();
+  if (!normalizedEmail) {
+    throw new Error("Email is required.");
+  }
+
+  if (isSupabaseConfigured()) {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      throw new Error("Supabase is not available.");
+    }
+
+    const { error } = await supabase
+      .from("professionals")
+      .update({ account_status: "active" })
+      .ilike("email", normalizedEmail)
+      .eq("account_status", "pending_email");
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    invalidateBusinessDirectoryCache();
+    return { ok: true };
+  }
+
+  const store = await ensureDemoBusinessesInLocalStore();
+  const professional = store.professionals.find((item) => item.email.trim().toLowerCase() === normalizedEmail);
+  if (professional && normalizeProfessionalAccountStatus(professional.accountStatus) === "pending_email") {
+    professional.accountStatus = "active";
+    await writeStore(store);
+  }
+  invalidateBusinessDirectoryCache();
+  return { ok: true };
 }
 
 export async function updateProfessionalPasswordByEmail(email: string, nextPassword: string) {

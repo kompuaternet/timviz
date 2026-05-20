@@ -25,7 +25,15 @@ const visualCopy = {
 function getSavedLanguage(): ProLanguage {
   if (typeof window === "undefined") return "ru";
 
-  const savedLanguage = window.localStorage.getItem("rezervo-pro-language");
+  let savedLanguage: string | null = null;
+  try {
+    savedLanguage =
+      typeof window.localStorage?.getItem === "function"
+        ? window.localStorage.getItem("rezervo-pro-language")
+        : null;
+  } catch {
+    savedLanguage = null;
+  }
   if (savedLanguage === "uk" || savedLanguage === "en" || savedLanguage === "ru") {
     return savedLanguage;
   }

@@ -560,11 +560,13 @@ export async function DELETE(request: Request) {
 
     const { searchParams } = new URL(request.url);
     const appointmentId = searchParams.get("appointmentId") || "";
+    const bookingId = searchParams.get("bookingId") || undefined;
     const targetProfessionalId = searchParams.get("targetProfessionalId") || undefined;
     const deletedAppointment = await deleteCalendarAppointment({ professionalId, targetProfessionalId, appointmentId });
 
     if (deletedAppointment.kind === "appointment") {
       await cancelBookingFromCalendarAppointment({
+        bookingId,
         businessId: deletedAppointment.businessId,
         appointmentDate: deletedAppointment.appointmentDate,
         appointmentTime: deletedAppointment.startTime,
@@ -635,6 +637,7 @@ export async function PATCH(request: Request) {
 
       if (appointment.kind === "appointment") {
         await syncBookingStatusFromCalendarAppointment({
+          bookingId: typeof body.bookingId === "string" ? body.bookingId : undefined,
           businessId: appointment.businessId,
           appointmentDate: appointment.appointmentDate,
           appointmentTime: appointment.startTime,
@@ -701,6 +704,7 @@ export async function PATCH(request: Request) {
 
     if (appointment.kind === "appointment") {
       await syncBookingStatusFromCalendarAppointment({
+        bookingId: typeof body.bookingId === "string" ? body.bookingId : undefined,
         businessId: appointment.businessId,
         appointmentDate: appointment.appointmentDate,
         appointmentTime: appointment.startTime,
