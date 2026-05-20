@@ -90,6 +90,24 @@ export type PendingStaffInvitationSnapshot = {
   } | null;
 };
 
+export type IncomingStaffInvitationSnapshot = {
+  id: string;
+  email: string;
+  role: string;
+  createdAt: string;
+  business: {
+    id: string;
+    name: string;
+    address: string;
+  };
+  invitedBy: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+  } | null;
+};
+
 export type BusinessStaffSnapshot = {
   business: {
     id: string;
@@ -114,6 +132,7 @@ export type BusinessStaffSnapshot = {
   members: StaffMemberSnapshot[];
   joinRequests: PendingStaffJoinRequestSnapshot[];
   invitations: PendingStaffInvitationSnapshot[];
+  incomingInvitations: IncomingStaffInvitationSnapshot[];
 };
 
 export type StaffMemberEditorSnapshot = {
@@ -147,13 +166,14 @@ function compareAppointmentDesc(left: CalendarAppointment, right: CalendarAppoin
 export async function getBusinessStaffSnapshot(ownerProfessionalId: string): Promise<BusinessStaffSnapshot | null> {
   const workspace = await getWorkspaceSnapshot(ownerProfessionalId);
 
-  if (!workspace || workspace.membership.scope !== "owner") {
+  if (!workspace) {
     return null;
   }
 
+  const canManageTeam = workspace.membership.scope === "owner";
   const [directory, joinRequests, appointments] = await Promise.all([
     getBusinessDirectorySnapshot(),
-    getJoinRequestsForOwner(ownerProfessionalId),
+    canManageTeam ? getJoinRequestsForOwner(ownerProfessionalId) : Promise.resolve([]),
     getAppointmentsForBusiness(workspace.business.id)
   ]);
 
@@ -312,26 +332,64 @@ export async function getBusinessStaffSnapshot(ownerProfessionalId: string): Pro
       );
     });
 
-  const pendingInvitations = directory.staffInvitations
-    .filter((item) => item.businessId === workspace.business.id && item.status === "pending")
+  const pendingInvitations = canManageTeam
+    ? directory.staffInvitations
+        .filter((item) => item.businessId === workspace.business.id && item.status === "pending")
+        .map((invitation) => {
+          const invitedProfessional =
+            directory.professionals.find((item) => item.email.trim().toLowerCase() === invitation.email) || null;
+
+          return {
+            id: invitation.id,
+            email: invitation.email,
+            role: invitation.role,
+            createdAt: invitation.createdAt,
+            invitedProfessional: invitedProfessional
+              ? {
+                  id: invitedProfessional.id,
+                  firstName: invitedProfessional.firstName,
+                  lastName: invitedProfessional.lastName
+                }
+              : null
+          } satisfies PendingStaffInvitationSnapshot;
+        })
+    : [];
+  const viewerEmail = workspace.professional.email.trim().toLowerCase();
+  const incomingInvitations = directory.staffInvitations
+    .filter(
+      (item) =>
+        item.status === "pending" &&
+        item.email === viewerEmail
+    )
     .map((invitation) => {
-      const invitedProfessional =
-        directory.professionals.find((item) => item.email.trim().toLowerCase() === invitation.email) || null;
+      const business = directory.businesses.find((item) => item.id === invitation.businessId) || null;
+      const invitedBy = invitation.invitedByProfessionalId
+        ? directory.professionals.find((item) => item.id === invitation.invitedByProfessionalId) || null
+        : null;
+
+      if (!business) return null;
 
       return {
         id: invitation.id,
         email: invitation.email,
         role: invitation.role,
         createdAt: invitation.createdAt,
-        invitedProfessional: invitedProfessional
+        business: {
+          id: business.id,
+          name: business.name,
+          address: business.address
+        },
+        invitedBy: invitedBy
           ? {
-              id: invitedProfessional.id,
-              firstName: invitedProfessional.firstName,
-              lastName: invitedProfessional.lastName
+              id: invitedBy.id,
+              firstName: invitedBy.firstName,
+              lastName: invitedBy.lastName,
+              email: invitedBy.email
             }
           : null
-      } satisfies PendingStaffInvitationSnapshot;
-    });
+      } satisfies IncomingStaffInvitationSnapshot;
+    })
+    .filter((item): item is IncomingStaffInvitationSnapshot => item !== null);
 
   const monthAppointments = appointments.filter(
     (appointment) => appointment.kind === "appointment" && appointment.appointmentDate.startsWith(monthPrefix)
@@ -379,7 +437,8 @@ export async function getBusinessStaffSnapshot(ownerProfessionalId: string): Pro
           }
         : null
     })),
-    invitations: pendingInvitations
+    invitations: pendingInvitations,
+    incomingInvitations
   };
 }
 

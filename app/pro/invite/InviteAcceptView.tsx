@@ -8,7 +8,7 @@ import { useProLanguage } from "../useProLanguage";
 type InvitationPreview = {
   email: string;
   role: string;
-  status: "pending" | "accepted" | "revoked";
+  status: "pending" | "accepted" | "revoked" | "declined";
   hasExistingAccount: boolean;
   business: {
     id: string;
@@ -150,13 +150,13 @@ export default function InviteAcceptView({
   const title =
     invitation.status === "accepted"
       ? copy.acceptedTitle
-      : invitation.status === "revoked"
+      : invitation.status === "revoked" || invitation.status === "declined"
         ? copy.revokedTitle
         : copy.pendingTitle;
   const text =
     invitation.status === "accepted"
       ? copy.acceptedText
-      : invitation.status === "revoked"
+      : invitation.status === "revoked" || invitation.status === "declined"
         ? copy.revokedText
         : copy.pendingText;
 
@@ -188,7 +188,7 @@ export default function InviteAcceptView({
                 </a>
               ) : null}
 
-              {invitation.status === "revoked" ? (
+              {invitation.status === "revoked" || invitation.status === "declined" ? (
                 <a href="/pro/login" className={styles.ghostButton}>
                   {copy.login}
                 </a>

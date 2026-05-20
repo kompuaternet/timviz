@@ -4,6 +4,8 @@ import { getBusinessStaffSnapshot } from "../../../../../lib/pro-staff";
 import {
   createManualStaffMember,
   createStaffInvitation,
+  acceptStaffInvitationById,
+  declineStaffInvitation,
   getWorkspaceSnapshot,
   revokeStaffInvitation,
   resolveJoinRequestForOwner,
@@ -100,7 +102,7 @@ export async function POST(request: Request) {
         role: typeof body.role === "string" ? body.role : "",
         email: typeof body.email === "string" ? body.email : "",
         phone: typeof body.phone === "string" ? body.phone : "",
-        sendInvitation: body.sendInvitation === true,
+        sendInvitation: true,
         request
       });
     } else if (action === "updateMember") {
@@ -124,6 +126,16 @@ export async function POST(request: Request) {
     } else if (action === "revokeInvitation") {
       await revokeStaffInvitation({
         ownerProfessionalId: professionalId,
+        invitationId: String(body.invitationId || "")
+      });
+    } else if (action === "acceptInvitation") {
+      await acceptStaffInvitationById({
+        professionalId,
+        invitationId: String(body.invitationId || "")
+      });
+    } else if (action === "declineInvitation") {
+      await declineStaffInvitation({
+        professionalId,
         invitationId: String(body.invitationId || "")
       });
     } else if (action === "resolveJoinRequest") {

@@ -41,6 +41,7 @@ export default async function ProStaffMembersPage({ searchParams }: ProStaffMemb
     <StaffView
       professionalId={professionalId}
       snapshot={snapshot}
+      canManageStaff={workspace.membership.scope === "owner"}
       initialAddOpen={params.openAdd === "1"}
       onboardingCta={getOnboardingCtaState(workspace, Boolean(telegramConnection?.chatId))}
       header={{

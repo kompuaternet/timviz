@@ -26,6 +26,10 @@ export default async function ProStaffSchedulePage() {
     redirect("/pro/login");
   }
 
+  if (workspace.membership.scope !== "owner") {
+    redirect("/pro/staff/members");
+  }
+
   if (!snapshot) {
     redirect("/pro/settings");
   }

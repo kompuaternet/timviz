@@ -15,10 +15,16 @@ export type WorkBreak = {
   endTime: string;
 };
 
+export type WorkInterval = {
+  startTime: string;
+  endTime: string;
+};
+
 export type WorkDaySchedule = {
   enabled: boolean;
   startTime: string;
   endTime: string;
+  intervals?: WorkInterval[];
   breakStart: string;
   breakEnd: string;
   breaks?: WorkBreak[];
@@ -33,6 +39,10 @@ export type WorkScheduleMode = "fixed" | "flexible";
 export const defaultWorkTemplate: Omit<WorkDaySchedule, "enabled"> = {
   startTime: "09:00",
   endTime: "18:00",
+  intervals: [
+    { startTime: "09:00", endTime: "13:00" },
+    { startTime: "14:00", endTime: "18:00" }
+  ],
   breakStart: "13:00",
   breakEnd: "14:00",
   breaks: [{ startTime: "13:00", endTime: "14:00" }],
@@ -66,6 +76,76 @@ function normalizeBreaks(input: unknown, fallbackStart: string, fallbackEnd: str
   }
 
   return [];
+}
+
+function normalizeIntervals(input: unknown) {
+  if (!Array.isArray(input)) {
+    return [];
+  }
+
+  return input
+    .map((item) => {
+      if (!item || typeof item !== "object") {
+        return null;
+      }
+
+      const candidate = item as Partial<WorkInterval>;
+      const startTime = typeof candidate.startTime === "string" ? candidate.startTime : "";
+      const endTime = typeof candidate.endTime === "string" ? candidate.endTime : "";
+
+      if (!startTime || !endTime) {
+        return null;
+      }
+
+      return { startTime, endTime } satisfies WorkInterval;
+    })
+    .filter((item): item is WorkInterval => Boolean(item))
+    .sort((left, right) => timeToMinutes(left.startTime) - timeToMinutes(right.startTime));
+}
+
+function deriveIntervalsFromBreaks(startTime: string, endTime: string, breaks: WorkBreak[]) {
+  const dayStart = timeToMinutes(startTime);
+  const dayEnd = timeToMinutes(endTime);
+
+  if (dayStart >= dayEnd) {
+    return [{ startTime, endTime }] satisfies WorkInterval[];
+  }
+
+  const intervals: WorkInterval[] = [];
+  let cursor = dayStart;
+
+  for (const item of breaks) {
+    const breakStart = Math.max(dayStart, Math.min(dayEnd, timeToMinutes(item.startTime)));
+    const breakEnd = Math.max(dayStart, Math.min(dayEnd, timeToMinutes(item.endTime)));
+
+    if (breakStart > cursor) {
+      intervals.push({ startTime: minutesToTime(cursor), endTime: minutesToTime(breakStart) });
+    }
+
+    cursor = Math.max(cursor, breakEnd);
+  }
+
+  if (cursor < dayEnd) {
+    intervals.push({ startTime: minutesToTime(cursor), endTime: minutesToTime(dayEnd) });
+  }
+
+  return intervals.length > 0 ? intervals : [{ startTime, endTime }];
+}
+
+function deriveBreaksFromIntervals(intervals: WorkInterval[]) {
+  const validIntervals = normalizeIntervals(intervals).filter((item) => item.startTime < item.endTime);
+  const breaks: WorkBreak[] = [];
+
+  for (let index = 0; index < validIntervals.length - 1; index += 1) {
+    const current = validIntervals[index];
+    const next = validIntervals[index + 1];
+
+    if (current.endTime < next.startTime) {
+      breaks.push({ startTime: current.endTime, endTime: next.startTime });
+    }
+  }
+
+  return breaks;
 }
 
 export function createEmptyWorkSchedule(): WorkSchedule {
@@ -118,18 +198,25 @@ export function normalizeWorkSchedule(input: unknown): WorkSchedule {
       continue;
     }
 
+    const startTime = typeof value.startTime === "string" ? value.startTime : defaultWorkTemplate.startTime;
+    const endTime = typeof value.endTime === "string" ? value.endTime : defaultWorkTemplate.endTime;
+    const legacyBreaks = normalizeBreaks(
+      (value as Partial<WorkDaySchedule>).breaks,
+      typeof value.breakStart === "string" ? value.breakStart : defaultWorkTemplate.breakStart,
+      typeof value.breakEnd === "string" ? value.breakEnd : defaultWorkTemplate.breakEnd
+    );
+    const explicitIntervals = normalizeIntervals((value as Partial<WorkDaySchedule>).intervals);
+    const intervals = explicitIntervals.length > 0 ? explicitIntervals : deriveIntervalsFromBreaks(startTime, endTime, legacyBreaks);
+    const breaks = explicitIntervals.length > 0 ? deriveBreaksFromIntervals(explicitIntervals) : legacyBreaks;
+
     fallback[day.key] = {
       enabled: Boolean(value.enabled),
-      startTime: typeof value.startTime === "string" ? value.startTime : defaultWorkTemplate.startTime,
-      endTime: typeof value.endTime === "string" ? value.endTime : defaultWorkTemplate.endTime,
-      breakStart:
-        typeof value.breakStart === "string" ? value.breakStart : defaultWorkTemplate.breakStart,
-      breakEnd: typeof value.breakEnd === "string" ? value.breakEnd : defaultWorkTemplate.breakEnd,
-      breaks: normalizeBreaks(
-        (value as Partial<WorkDaySchedule>).breaks,
-        typeof value.breakStart === "string" ? value.breakStart : defaultWorkTemplate.breakStart,
-        typeof value.breakEnd === "string" ? value.breakEnd : defaultWorkTemplate.breakEnd
-      ),
+      startTime,
+      endTime,
+      intervals,
+      breakStart: breaks[0]?.startTime ?? startTime,
+      breakEnd: breaks[0]?.endTime ?? startTime,
+      breaks,
       dayType:
         value.dayType === "holiday"
           ? "holiday"
@@ -158,18 +245,25 @@ export function normalizeCustomSchedule(input: unknown): CustomSchedule {
       continue;
     }
 
+    const startTime = typeof value.startTime === "string" ? value.startTime : defaultWorkTemplate.startTime;
+    const endTime = typeof value.endTime === "string" ? value.endTime : defaultWorkTemplate.endTime;
+    const legacyBreaks = normalizeBreaks(
+      (value as Partial<WorkDaySchedule>).breaks,
+      typeof value.breakStart === "string" ? value.breakStart : defaultWorkTemplate.breakStart,
+      typeof value.breakEnd === "string" ? value.breakEnd : defaultWorkTemplate.breakEnd
+    );
+    const explicitIntervals = normalizeIntervals((value as Partial<WorkDaySchedule>).intervals);
+    const intervals = explicitIntervals.length > 0 ? explicitIntervals : deriveIntervalsFromBreaks(startTime, endTime, legacyBreaks);
+    const breaks = explicitIntervals.length > 0 ? deriveBreaksFromIntervals(explicitIntervals) : legacyBreaks;
+
     fallback[dateKey] = {
       enabled: Boolean(value.enabled),
-      startTime: typeof value.startTime === "string" ? value.startTime : defaultWorkTemplate.startTime,
-      endTime: typeof value.endTime === "string" ? value.endTime : defaultWorkTemplate.endTime,
-      breakStart:
-        typeof value.breakStart === "string" ? value.breakStart : defaultWorkTemplate.breakStart,
-      breakEnd: typeof value.breakEnd === "string" ? value.breakEnd : defaultWorkTemplate.breakEnd,
-      breaks: normalizeBreaks(
-        (value as Partial<WorkDaySchedule>).breaks,
-        typeof value.breakStart === "string" ? value.breakStart : defaultWorkTemplate.breakStart,
-        typeof value.breakEnd === "string" ? value.breakEnd : defaultWorkTemplate.breakEnd
-      ),
+      startTime,
+      endTime,
+      intervals,
+      breakStart: breaks[0]?.startTime ?? startTime,
+      breakEnd: breaks[0]?.endTime ?? startTime,
+      breaks,
       dayType:
         value.dayType === "holiday"
           ? "holiday"
@@ -199,6 +293,7 @@ export function getLastEnabledTemplate(schedule: WorkSchedule) {
     return {
       startTime: item.startTime,
       endTime: item.endTime,
+      intervals: getDayIntervals(item),
       breakStart: item.breakStart,
       breakEnd: item.breakEnd,
       breaks: getDayBreaks(item)
@@ -223,6 +318,7 @@ export function getLastTemplateFromCustomSchedule(customSchedule: CustomSchedule
   return {
     startTime: item.startTime,
     endTime: item.endTime,
+    intervals: getDayIntervals(item),
     breakStart: item.breakStart,
     breakEnd: item.breakEnd,
     breaks: getDayBreaks(item)
@@ -234,7 +330,25 @@ export function getDayBreaks(daySchedule: WorkDaySchedule | null | undefined) {
     return [];
   }
 
+  const intervals = normalizeIntervals(daySchedule.intervals);
+  if (intervals.length > 0) {
+    return deriveBreaksFromIntervals(intervals);
+  }
+
   return normalizeBreaks(daySchedule.breaks, daySchedule.breakStart, daySchedule.breakEnd);
+}
+
+export function getDayIntervals(daySchedule: WorkDaySchedule | null | undefined) {
+  if (!daySchedule) {
+    return [];
+  }
+
+  const intervals = normalizeIntervals(daySchedule.intervals);
+  if (intervals.length > 0) {
+    return intervals;
+  }
+
+  return deriveIntervalsFromBreaks(daySchedule.startTime, daySchedule.endTime, getDayBreaks(daySchedule));
 }
 
 export function timeToMinutes(value: string) {
@@ -277,11 +391,7 @@ export function isWithinWorkingWindow(time: string, daySchedule: WorkDaySchedule
     return false;
   }
 
-  if (time < daySchedule.startTime || time >= daySchedule.endTime) {
-    return false;
-  }
-
-  return !isWithinBreak(time, daySchedule);
+  return getDayIntervals(daySchedule).some((interval) => time >= interval.startTime && time < interval.endTime);
 }
 
 export function timeRangesOverlap(startA: string, endA: string, startB: string, endB: string) {

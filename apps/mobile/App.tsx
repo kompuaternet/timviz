@@ -182,6 +182,7 @@ type WorkDayScheduleRecord = {
   enabled: boolean;
   startTime: string;
   endTime: string;
+  intervals?: WorkIntervalRecord[];
   breakStart?: string;
   breakEnd?: string;
   breaks?: WorkBreakRecord[];
@@ -341,6 +342,23 @@ type StaffSnapshot = {
       id: string;
       firstName: string;
       lastName: string;
+    } | null;
+  }>;
+  incomingInvitations?: Array<{
+    id: string;
+    email: string;
+    role: string;
+    createdAt: string;
+    business: {
+      id: string;
+      name: string;
+      address?: string;
+    };
+    invitedBy?: {
+      id: string;
+      firstName: string;
+      lastName: string;
+      email: string;
     } | null;
   }>;
 };
@@ -1114,6 +1132,10 @@ const baseCopy = {
     revokeInvite: "Скасувати запрошення",
     sendInvite: "Надіслати запрошення на email",
     pendingInvites: "Очікують запрошення",
+    incomingInvites: "Запрошення для мене",
+    noIncomingInvites: "Нових запрошень поки немає.",
+    acceptInvite: "Прийняти",
+    declineInvite: "Відхилити",
     monthBookings: "Записів за місяць",
     upcomingBookings: "Майбутні записи",
     scheduleMenu: "Графік",
@@ -1126,9 +1148,9 @@ const baseCopy = {
     applyToWeekdays: "Застосувати до всіх буднів",
     clearWeek: "Очистити тиждень",
     noWork: "Не працює",
-    workIntervals: "Робочий час",
+    workIntervals: "Робочий інтервал",
     addWorkTime: "Додати час",
-    removeWorkTime: "Видалити час",
+    removeWorkTime: "Видалити робочий інтервал",
     monthPlanner: "Робочі дні місяця",
     selectedDays: "Обрано днів",
     applyToSelectedDays: "Застосувати до обраних",
@@ -1136,14 +1158,14 @@ const baseCopy = {
     noRoomForInterval: "Немає місця для ще одного інтервалу.",
     invalidIntervalRange: "Кінець має бути пізніше початку.",
     overlappingIntervals: "Інтервали не мають перетинатися.",
-    addBreak: "Додати перерву",
-    removeBreak: "Прибрати перерву",
+    addBreak: "Додати час",
+    removeBreak: "Видалити робочий інтервал",
     onThisWeek: "На цьому тижні",
     saveSchedule: "Зберегти графік",
     workFrom: "З",
     workTo: "До",
-    breakFrom: "Перерва з",
-    breakTo: "Перерва до",
+    breakFrom: "Робочий інтервал з",
+    breakTo: "До",
     owner: "Власник",
     employee: "Співробітник",
     hoursShort: "год",
@@ -1578,6 +1600,10 @@ const baseCopy = {
     revokeInvite: "Отозвать приглашение",
     sendInvite: "Отправить приглашение на email",
     pendingInvites: "Ожидают приглашение",
+    incomingInvites: "Приглашения для меня",
+    noIncomingInvites: "Новых приглашений пока нет.",
+    acceptInvite: "Принять",
+    declineInvite: "Отклонить",
     monthBookings: "Записей за месяц",
     upcomingBookings: "Будущие записи",
     scheduleMenu: "График",
@@ -1590,9 +1616,9 @@ const baseCopy = {
     applyToWeekdays: "Применить ко всем будням",
     clearWeek: "Очистить неделю",
     noWork: "Не работает",
-    workIntervals: "Рабочее время",
+    workIntervals: "Рабочий интервал",
     addWorkTime: "Добавить время",
-    removeWorkTime: "Удалить время",
+    removeWorkTime: "Удалить рабочий интервал",
     monthPlanner: "Рабочие дни месяца",
     selectedDays: "Выбрано дней",
     applyToSelectedDays: "Применить к выбранным",
@@ -1600,14 +1626,14 @@ const baseCopy = {
     noRoomForInterval: "Нет места для еще одного интервала.",
     invalidIntervalRange: "Конец должен быть позже начала.",
     overlappingIntervals: "Интервалы не должны пересекаться.",
-    addBreak: "Добавить перерыв",
-    removeBreak: "Убрать перерыв",
+    addBreak: "Добавить время",
+    removeBreak: "Удалить рабочий интервал",
     onThisWeek: "На этой неделе",
     saveSchedule: "Сохранить график",
     workFrom: "С",
     workTo: "До",
-    breakFrom: "Перерыв с",
-    breakTo: "Перерыв до",
+    breakFrom: "Рабочий интервал с",
+    breakTo: "До",
     owner: "Владелец",
     employee: "Сотрудник",
     hoursShort: "ч",
@@ -2042,6 +2068,10 @@ const baseCopy = {
     revokeInvite: "Revoke invite",
     sendInvite: "Send email invite",
     pendingInvites: "Pending invites",
+    incomingInvites: "Invitations for me",
+    noIncomingInvites: "No new invitations yet.",
+    acceptInvite: "Accept",
+    declineInvite: "Decline",
     monthBookings: "Month bookings",
     upcomingBookings: "Upcoming bookings",
     scheduleMenu: "Schedule",
@@ -2054,9 +2084,9 @@ const baseCopy = {
     applyToWeekdays: "Apply to weekdays",
     clearWeek: "Clear week",
     noWork: "Off",
-    workIntervals: "Work time",
+    workIntervals: "Working interval",
     addWorkTime: "Add time",
-    removeWorkTime: "Remove time",
+    removeWorkTime: "Remove working interval",
     monthPlanner: "Month work days",
     selectedDays: "Selected days",
     applyToSelectedDays: "Apply to selected",
@@ -2064,14 +2094,14 @@ const baseCopy = {
     noRoomForInterval: "No room for another interval.",
     invalidIntervalRange: "End must be later than start.",
     overlappingIntervals: "Intervals cannot overlap.",
-    addBreak: "Add break",
-    removeBreak: "Remove break",
+    addBreak: "Add time",
+    removeBreak: "Remove working interval",
     onThisWeek: "This week",
     saveSchedule: "Save schedule",
     workFrom: "From",
     workTo: "To",
-    breakFrom: "Break from",
-    breakTo: "Break to",
+    breakFrom: "Working interval from",
+    breakTo: "To",
     owner: "Owner",
     employee: "Employee",
     hoursShort: "h",
@@ -2487,7 +2517,7 @@ const generatedMobileCopy = {
     noWork: "Désactivé",
     workIntervals: "Temps de travail",
     addWorkTime: "Ajouter du temps",
-    removeWorkTime: "Supprimer l'heure",
+    removeWorkTime: "Supprimer l'intervalle",
     monthPlanner: "Mois jours de travail",
     selectedDays: "Jours sélectionnés",
     applyToSelectedDays: "Appliquer à la sélection",
@@ -2495,14 +2525,14 @@ const generatedMobileCopy = {
     noRoomForInterval: "Pas de place pour un autre intervalle.",
     invalidIntervalRange: "La fin doit être postérieure au début.",
     overlappingIntervals: "Les intervalles ne peuvent pas se chevaucher.",
-    addBreak: "Ajouter une pause",
-    removeBreak: "Supprimer la pause",
+    addBreak: "Ajouter du temps",
+    removeBreak: "Supprimer l'intervalle",
     onThisWeek: "Cette semaine",
     saveSchedule: "Enregistrer le programme",
     workFrom: "De",
     workTo: "À",
-    breakFrom: "Pause de",
-    breakTo: "Pause à",
+    breakFrom: "Intervalle de",
+    breakTo: "À",
     owner: "Propriétaire",
     employee: "Employé",
     hoursShort: "h",
@@ -2865,22 +2895,22 @@ const generatedMobileCopy = {
     noWork: "Wył.",
     workIntervals: "Czas pracy",
     addWorkTime: "Dodaj czas",
-    removeWorkTime: "Usuń czas",
+    removeWorkTime: "Usuń interwał pracy",
     monthPlanner: "Dni robocze miesiąca",
     selectedDays: "Wybrane dni",
     applyToSelectedDays: "Zastosuj do wybranych",
     selectedDaysHint: "Wybierz dni miesiąca i zastosuj do nich te same interwały robocze.",
-    noRoomForInterval: "Nie ma miejsca na kolejną przerwę.",
+    noRoomForInterval: "Nie ma miejsca na kolejny interwał.",
     invalidIntervalRange: "Koniec musi być późniejszy niż początek.",
     overlappingIntervals: "Przedziały nie mogą się nakładać.",
-    addBreak: "Dodaj przerwę",
-    removeBreak: "Usuń przerwę",
+    addBreak: "Dodaj czas",
+    removeBreak: "Usuń interwał pracy",
     onThisWeek: "W tym tygodniu",
     saveSchedule: "Zapisz harmonogram",
     workFrom: "Od",
     workTo: "Do",
-    breakFrom: "Przerwa od",
-    breakTo: "Przerwa do",
+    breakFrom: "Interwał od",
+    breakTo: "Do",
     owner: "Właściciel",
     employee: "Pracownik",
     hoursShort: "h",
@@ -3243,7 +3273,7 @@ const generatedMobileCopy = {
     noWork: "Vypnuto",
     workIntervals: "Pracovní doba",
     addWorkTime: "Přidejte čas",
-    removeWorkTime: "Odstraňte čas",
+    removeWorkTime: "Odebrat pracovní interval",
     monthPlanner: "Měsíc pracovní dny",
     selectedDays: "Vybrané dny",
     applyToSelectedDays: "Použít na vybrané",
@@ -3251,14 +3281,14 @@ const generatedMobileCopy = {
     noRoomForInterval: "Není místo na další interval.",
     invalidIntervalRange: "Konec musí být pozdější než začátek.",
     overlappingIntervals: "Intervaly se nemohou překrývat.",
-    addBreak: "Přidat přestávku",
-    removeBreak: "Odebrat přestávku",
+    addBreak: "Přidat čas",
+    removeBreak: "Odebrat pracovní interval",
     onThisWeek: "Tento týden",
     saveSchedule: "Uložit plán",
     workFrom: "Od",
     workTo: "do",
-    breakFrom: "Přestávka od",
-    breakTo: "Přestávka do",
+    breakFrom: "Pracovní interval od",
+    breakTo: "Do",
     owner: "Vlastník",
     employee: "Zaměstnanec",
     hoursShort: "h",
@@ -3621,7 +3651,7 @@ const generatedMobileCopy = {
     noWork: "Desactivado",
     workIntervals: "Tiempo de trabajo",
     addWorkTime: "Agregar tiempo",
-    removeWorkTime: "Eliminar tiempo",
+    removeWorkTime: "Eliminar intervalo",
     monthPlanner: "Mes días laborales",
     selectedDays: "Días seleccionados",
     applyToSelectedDays: "Aplicar a",
@@ -3629,14 +3659,14 @@ const generatedMobileCopy = {
     noRoomForInterval: "No hay lugar para otro intervalo.",
     invalidIntervalRange: "El final debe ser posterior al inicio.",
     overlappingIntervals: "Los intervalos no pueden superponerse.",
-    addBreak: "Agregar descanso",
-    removeBreak: "Eliminar descanso",
+    addBreak: "Agregar tiempo",
+    removeBreak: "Eliminar intervalo",
     onThisWeek: "Esta semana",
     saveSchedule: "Guardar horario",
     workFrom: "De",
     workTo: "A",
-    breakFrom: "Descanso de",
-    breakTo: "Descanso a",
+    breakFrom: "Intervalo desde",
+    breakTo: "Hasta",
     owner: "Propietario",
     employee: "Empleado",
     hoursShort: "h",
@@ -3999,7 +4029,7 @@ const generatedMobileCopy = {
     noWork: "Aus",
     workIntervals: "Arbeitszeit",
     addWorkTime: "Zeit hinzufügen",
-    removeWorkTime: "Zeit entfernen",
+    removeWorkTime: "Arbeitsintervall entfernen",
     monthPlanner: "Monatsarbeitstage",
     selectedDays: "Ausgewählte Tage",
     applyToSelectedDays: "Auf ausgewählte anwenden",
@@ -4007,14 +4037,14 @@ const generatedMobileCopy = {
     noRoomForInterval: "Kein Platz für ein weiteres Intervall.",
     invalidIntervalRange: "Das Ende muss später als der Start liegen.",
     overlappingIntervals: "Intervalle dürfen sich nicht überschneiden.",
-    addBreak: "Pause hinzufügen",
-    removeBreak: "Pause entfernen",
+    addBreak: "Zeit hinzufügen",
+    removeBreak: "Arbeitsintervall entfernen",
     onThisWeek: "Diese Woche",
     saveSchedule: "Zeitplan speichern",
     workFrom: "Von",
     workTo: "Bis",
-    breakFrom: "Pause von",
-    breakTo: "Pause bis",
+    breakFrom: "Arbeitsintervall von",
+    breakTo: "Bis",
     owner: "Inhaber",
     employee: "Angestellter",
     hoursShort: "h",
@@ -5832,12 +5862,19 @@ function normalizeScheduleDay(day: WorkDayScheduleRecord | undefined, date: stri
     : day.breakStart && day.breakEnd && day.breakStart < day.breakEnd
       ? [{ startTime: day.breakStart, endTime: day.breakEnd }]
       : [];
+  const intervals = Array.isArray(day.intervals)
+    ? day.intervals
+        .filter((item) => item?.startTime && item?.endTime)
+        .map((item) => ({ startTime: item.startTime, endTime: item.endTime }))
+        .sort((left, right) => timeToMinutes(left.startTime) - timeToMinutes(right.startTime))
+    : undefined;
 
   return {
     ...day,
     enabled,
     startTime,
     endTime,
+    intervals,
     breaks,
     dayType: enabled ? "workday" : day.dayType || "day-off",
   };
@@ -5871,6 +5908,12 @@ function getDayBreaksRecord(day: WorkDayScheduleRecord | undefined) {
 
 function getDayIntervalsRecord(day: WorkDayScheduleRecord | undefined) {
   if (!day) return [{ startTime: "09:00", endTime: "18:00" }];
+  if (Array.isArray(day.intervals) && day.intervals.length > 0) {
+    return day.intervals
+      .filter((item) => item?.startTime && item?.endTime)
+      .map((item) => ({ startTime: item.startTime, endTime: item.endTime }))
+      .sort((left, right) => timeToMinutes(left.startTime) - timeToMinutes(right.startTime));
+  }
   const dayStart = timeToMinutes(day.startTime);
   const dayEnd = timeToMinutes(day.endTime);
   if (dayStart >= dayEnd) {
@@ -5933,6 +5976,7 @@ function serializeIntervalsToDay(enabled: boolean, intervals: WorkIntervalRecord
       enabled: false,
       startTime: fallbackStart,
       endTime: fallbackEnd,
+      intervals,
       breakStart: fallbackStart,
       breakEnd: fallbackStart,
       breaks: [],
@@ -5940,19 +5984,23 @@ function serializeIntervalsToDay(enabled: boolean, intervals: WorkIntervalRecord
     };
   }
 
-  const first = normalized[0];
-  const last = normalized[normalized.length - 1];
+  const sorted = [...normalized].sort((left, right) => timeToMinutes(left.startTime) - timeToMinutes(right.startTime));
+  const first = sorted[0];
+  const last = sorted[sorted.length - 1];
   const breaks: WorkBreakRecord[] = [];
-  for (let index = 0; index < normalized.length - 1; index += 1) {
-    const current = normalized[index];
-    const next = normalized[index + 1];
-    breaks.push({ startTime: current.endTime, endTime: next.startTime });
+  for (let index = 0; index < sorted.length - 1; index += 1) {
+    const current = sorted[index];
+    const next = sorted[index + 1];
+    if (current.endTime < next.startTime) {
+      breaks.push({ startTime: current.endTime, endTime: next.startTime });
+    }
   }
 
   return {
     enabled: true,
     startTime: first.startTime,
     endTime: last.endTime,
+    intervals: sorted,
     breakStart: breaks[0]?.startTime || first.startTime,
     breakEnd: breaks[0]?.endTime || first.startTime,
     breaks,
@@ -5974,7 +6022,7 @@ function createSplitWorkIntervals(interval: WorkIntervalRecord) {
   const start = timeToMinutes(interval.startTime);
   const end = timeToMinutes(interval.endTime);
   const duration = end - start;
-  if (duration < 180) return null;
+  if (duration < 360) return null;
   const gap = 60;
   const firstEnd = Math.round((start + (duration - gap) / 2) / 15) * 15;
   const safeFirstEnd = Math.max(start + 60, Math.min(firstEnd, end - gap - 60));
@@ -6000,8 +6048,10 @@ function createWorkIntervalAfter(intervals: WorkIntervalRecord[], index: number)
       return { startTime: minutesToTime(windowStart), endTime: minutesToTime(desiredEnd) };
     }
   }
-  const desiredStart = Math.min(currentEnd + 60, 24 * 60 - 30);
-  const desiredEnd = Math.min(24 * 60 - 1, desiredStart + 60);
+  const desiredGap = currentEnd < timeToMinutes("14:00") ? 60 : 15;
+  const desiredDuration = currentEnd < timeToMinutes("14:00") ? 240 : 60;
+  const desiredStart = Math.min(currentEnd + desiredGap, 24 * 60 - 30);
+  const desiredEnd = Math.min(24 * 60 - 1, desiredStart + desiredDuration);
   if (desiredEnd - desiredStart < 15) return null;
   return { startTime: minutesToTime(desiredStart), endTime: minutesToTime(desiredEnd) };
 }
@@ -10228,6 +10278,8 @@ function WorkspaceHeader({
 
     if (item.type === "team_join_request") {
       openJoinRequestsFromNotification();
+    } else if (item.type === "team_invitation") {
+      setActiveTab("staff");
     }
   }
 
@@ -11633,11 +11685,13 @@ function StaffMembersTab({
   onOpenSchedule: () => void;
 }) {
   const members = makeStaffMembers(staff, workspace, t);
+  const isOwner = workspace?.membership?.scope === "owner";
   const [resolvedJoinRequestIds, setResolvedJoinRequestIds] = useState<Set<string>>(() => new Set());
+  const [resolvedInvitationIds, setResolvedInvitationIds] = useState<Set<string>>(() => new Set());
   const [addOpen, setAddOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editId, setEditId] = useState("");
-  const [draft, setDraft] = useState({ fullName: "", role: t.employee, email: "", phone: "", sendInvitation: false });
+  const [draft, setDraft] = useState({ fullName: "", role: t.employee, email: "", phone: "" });
   const [editDraft, setEditDraft] = useState({ fullName: "", role: "", email: "", phone: "" });
 
   async function staffAction(body: Record<string, unknown>) {
@@ -11663,6 +11717,10 @@ function StaffMembersTab({
       Alert.alert(t.requiredTitle, t.requiredText);
       return;
     }
+    if (!draft.email.trim()) {
+      Alert.alert(t.requiredTitle, t.email);
+      return;
+    }
     const ok = await staffAction({
       action: "createMember",
       firstName: parsed.firstName,
@@ -11670,10 +11728,9 @@ function StaffMembersTab({
       role: draft.role,
       email: draft.email,
       phone: draft.phone,
-      sendInvitation: draft.sendInvitation,
     });
     if (ok) {
-      setDraft({ fullName: "", role: t.employee, email: "", phone: "", sendInvitation: false });
+      setDraft({ fullName: "", role: t.employee, email: "", phone: "" });
       setAddOpen(false);
     }
   }
@@ -11735,43 +11792,75 @@ function StaffMembersTab({
     }
   }
 
+  async function resolveInvitation(invitationId: string, invitationAction: "acceptInvitation" | "declineInvitation") {
+    setResolvedInvitationIds((current) => new Set([...current, invitationId]));
+    const ok = await staffAction({ action: invitationAction, invitationId });
+    if (!ok) {
+      setResolvedInvitationIds((current) => {
+        const next = new Set(current);
+        next.delete(invitationId);
+        return next;
+      });
+    }
+  }
+
   return (
     <View style={styles.sectionStack}>
       <Panel title={t.teamMembers}>
         <View style={styles.settingsActionRow}>
           <SecondaryButton label={t.staffSchedule} onPress={onOpenSchedule} />
-          <PrimaryButton label={addOpen ? t.cancel : t.addMember} onPress={() => setAddOpen(!addOpen)} disabled={busy || saving} />
+          {isOwner ? (
+            <PrimaryButton label={addOpen ? t.cancel : t.addMember} onPress={() => setAddOpen(!addOpen)} disabled={busy || saving} />
+          ) : null}
         </View>
       </Panel>
 
-      {addOpen ? (
+      {addOpen && isOwner ? (
         <Panel title={t.addMember}>
           <Field label={t.fullName} value={draft.fullName} onChangeText={(value) => setDraft({ ...draft, fullName: value })} />
           <Field label={t.role} value={draft.role} onChangeText={(value) => setDraft({ ...draft, role: value })} />
           <Field label={t.email} value={draft.email} onChangeText={(value) => setDraft({ ...draft, email: value })} keyboardType="email-address" autoCapitalize="none" />
           <Field label={t.phone} value={draft.phone} onChangeText={(value) => setDraft({ ...draft, phone: value })} keyboardType="phone-pad" />
-          <Pressable style={styles.staffToggleRow} onPress={() => setDraft({ ...draft, sendInvitation: !draft.sendInvitation })}>
-            <Text style={styles.settingsCardTitle}>{t.sendInvite}</Text>
-            <View style={[styles.mobileSwitch, draft.sendInvitation && styles.mobileSwitchActive]}>
-              <View style={[styles.mobileSwitchThumb, draft.sendInvitation && styles.mobileSwitchThumbActive]} />
-            </View>
-          </Pressable>
-          <PrimaryButton label={t.addMember} onPress={() => void createMember()} disabled={busy || saving} />
+          <Text style={styles.clientOptionCaption}>{t.sendInvite}</Text>
+          <PrimaryButton label={t.addMember} onPress={() => void createMember()} disabled={busy || saving || !draft.email.trim()} />
         </Panel>
       ) : null}
+
+      <Panel title={t.incomingInvites || t.pendingInvites}>
+        {staff?.incomingInvitations?.filter((invitation) => !resolvedInvitationIds.has(invitation.id)).length ? (
+          staff.incomingInvitations.filter((invitation) => !resolvedInvitationIds.has(invitation.id)).map((invitation) => (
+            <View key={invitation.id} style={styles.joinRequestCard}>
+              <View>
+                <Text style={styles.settingsMiniTitle}>{invitation.business.name}</Text>
+                <Text style={styles.clientOptionCaption}>{[invitation.role, invitation.business.address].filter(Boolean).join(" · ")}</Text>
+              </View>
+              <View style={styles.joinRequestActions}>
+                <Pressable style={styles.joinRejectButton} onPress={() => void resolveInvitation(invitation.id, "declineInvitation")} disabled={saving}>
+                  <Ionicons name="close" size={18} color="#DC2626" />
+                </Pressable>
+                <Pressable style={styles.joinApproveButton} onPress={() => void resolveInvitation(invitation.id, "acceptInvitation")} disabled={saving}>
+                  <Ionicons name="checkmark" size={18} color="#FFFFFF" />
+                </Pressable>
+              </View>
+            </View>
+          ))
+        ) : (
+          <Text style={styles.emptyText}>{t.noIncomingInvites || t.noJoinRequests}</Text>
+        )}
+      </Panel>
 
       {members.map((member) => {
         const editing = editId === member.professional.id;
         const name = makeStaffMemberName(member, t.employee);
-        const isOwner = member.membership.scope === "owner";
+        const memberIsOwner = member.membership.scope === "owner";
         const access = member.workspaceAccess === "owner" ? t.owner : member.workspaceAccess === "active" ? t.connected : member.workspaceAccess === "invited" ? t.pendingInvites : t.notConnected;
         return (
           <View key={member.professional.id} style={styles.staffMemberCard}>
             {editing ? (
               <View style={styles.sectionStack}>
                 <Field label={t.fullName} value={editDraft.fullName} onChangeText={(value) => setEditDraft({ ...editDraft, fullName: value })} />
-                <Field label={t.role} value={editDraft.role} onChangeText={(value) => setEditDraft({ ...editDraft, role: value })} editable={!isOwner} />
-                <Field label={t.email} value={editDraft.email} onChangeText={(value) => setEditDraft({ ...editDraft, email: value })} keyboardType="email-address" autoCapitalize="none" editable={!isOwner} />
+                <Field label={t.role} value={editDraft.role} onChangeText={(value) => setEditDraft({ ...editDraft, role: value })} editable={!memberIsOwner} />
+                <Field label={t.email} value={editDraft.email} onChangeText={(value) => setEditDraft({ ...editDraft, email: value })} keyboardType="email-address" autoCapitalize="none" editable={!memberIsOwner} />
                 <Field label={t.phone} value={editDraft.phone} onChangeText={(value) => setEditDraft({ ...editDraft, phone: value })} keyboardType="phone-pad" />
                 <View style={styles.settingsActionRow}>
                   <SecondaryButton label={t.cancel} onPress={() => setEditId("")} disabled={saving} />
@@ -11805,9 +11894,9 @@ function StaffMembersTab({
                 </View>
                 <View style={styles.settingsActionRow}>
                   <SecondaryButton label={t.scheduleMenu} onPress={onOpenSchedule} />
-                  {!isOwner && member.pendingInvitation ? (
+                  {isOwner && !memberIsOwner && member.pendingInvitation ? (
                     <SecondaryButton label={t.revokeInvite} onPress={() => void revokeInvitation(member.pendingInvitation?.id || "")} disabled={saving || busy} />
-                  ) : !isOwner ? (
+                  ) : isOwner && !memberIsOwner ? (
                     <SecondaryButton label={member.workspaceAccess === "invited" ? t.resendInvite : t.invite} onPress={() => void inviteMember(member)} disabled={saving || busy} />
                   ) : null}
                 </View>
@@ -11817,7 +11906,7 @@ function StaffMembersTab({
         );
       })}
 
-      <Panel title={t.joinRequests}>
+      {isOwner ? <Panel title={t.joinRequests}>
         {staff?.joinRequests?.filter((request) => !resolvedJoinRequestIds.has(request.id)).length ? (
           staff.joinRequests.filter((request) => !resolvedJoinRequestIds.has(request.id)).map((request) => (
             <View key={request.id} style={styles.joinRequestCard}>
@@ -11838,7 +11927,7 @@ function StaffMembersTab({
         ) : (
           <Text style={styles.emptyText}>{t.noJoinRequests}</Text>
         )}
-      </Panel>
+      </Panel> : null}
     </View>
   );
 }

@@ -196,7 +196,7 @@ const scheduleText: Record<"ru" | "uk" | "en", ScheduleCopy> = {
       "В списке сотрудников отображается доступность мастеров для бронирования. Общий график компании остаётся стартовым шаблоном, но каждый мастер дальше живёт по своему личному расписанию.",
     editDay: "Изменить этот день",
     repeatingShifts: "Установить повторяющиеся смены",
-    addFreeTime: "Добавить свободное время",
+    addFreeTime: "Добавить рабочее время",
     deleteShift: "Удалить эту смену",
     dayRemoved: "Смена на этот день удалена.",
     clearedAll: "Личный график сотрудника очищен.",
@@ -230,16 +230,16 @@ const scheduleText: Record<"ru" | "uk" | "en", ScheduleCopy> = {
     workingDay: "Рабочий день",
     workFrom: "С",
     workTo: "До",
-    breakFrom: "Перерыв с",
+    breakFrom: "Рабочий интервал с",
     breakTo: "До",
-    addBreak: "Добавить свободное время",
-    removeBreak: "Удалить перерыв",
-    addWorkWindow: "Добавить рабочее время",
-    removeWorkWindow: "Удалить рабочее время",
-    invalidIntervalRange: "В каждом рабочем окне время окончания должно быть позже времени начала.",
-    overlappingIntervals: "Рабочие окна одного дня не должны пересекаться или заходить друг на друга.",
+    addBreak: "Добавить время",
+    removeBreak: "Удалить рабочий интервал",
+    addWorkWindow: "Добавить время",
+    removeWorkWindow: "Удалить рабочий интервал",
+    invalidIntervalRange: "В каждом рабочем интервале время окончания должно быть позже времени начала.",
+    overlappingIntervals: "Интервалы пересекаются.",
     noRoomForInterval:
-      "Для нового рабочего окна в этом дне уже не осталось места. Измените текущее время или удалите лишний интервал.",
+      "Для нового рабочего интервала в этом дне уже не осталось места. Измените текущее время или удалите лишний интервал.",
     restoreTemplate: "Сбросить к шаблону недели",
     dayEditorTitle: (name, date) => `Изменить ${date} для ${name}`,
     dayEditorText:
@@ -274,7 +274,7 @@ const scheduleText: Record<"ru" | "uk" | "en", ScheduleCopy> = {
       "У списку співробітників показано доступність майстрів для бронювання. Загальний графік компанії лишається стартовим шаблоном, але далі кожен майстер живе за власним розкладом.",
     editDay: "Змінити цей день",
     repeatingShifts: "Встановити повторювані зміни",
-    addFreeTime: "Додати вільний час",
+    addFreeTime: "Додати робочий час",
     deleteShift: "Видалити цю зміну",
     dayRemoved: "Зміну на цей день видалено.",
     clearedAll: "Особистий графік співробітника очищено.",
@@ -308,16 +308,16 @@ const scheduleText: Record<"ru" | "uk" | "en", ScheduleCopy> = {
     workingDay: "Робочий день",
     workFrom: "З",
     workTo: "До",
-    breakFrom: "Перерва з",
+    breakFrom: "Робочий інтервал з",
     breakTo: "До",
-    addBreak: "Додати вільний час",
-    removeBreak: "Видалити перерву",
-    addWorkWindow: "Додати робочий час",
-    removeWorkWindow: "Видалити робочий час",
-    invalidIntervalRange: "У кожному робочому вікні час завершення має бути пізніше за час початку.",
-    overlappingIntervals: "Робочі вікна в межах одного дня не повинні перетинатися або накладатися.",
+    addBreak: "Додати час",
+    removeBreak: "Видалити робочий інтервал",
+    addWorkWindow: "Додати час",
+    removeWorkWindow: "Видалити робочий інтервал",
+    invalidIntervalRange: "У кожному робочому інтервалі час завершення має бути пізніше за час початку.",
+    overlappingIntervals: "Інтервали перетинаються.",
     noRoomForInterval:
-      "Для нового робочого вікна в цьому дні вже не залишилося місця. Змініть поточний час або приберіть зайвий інтервал.",
+      "Для нового робочого інтервалу в цьому дні вже не залишилося місця. Змініть поточний час або приберіть зайвий інтервал.",
     restoreTemplate: "Скинути до шаблону тижня",
     dayEditorTitle: (name, date) => `Змінити ${date} для ${name}`,
     dayEditorText:
@@ -352,7 +352,7 @@ const scheduleText: Record<"ru" | "uk" | "en", ScheduleCopy> = {
       "This table shows the real booking availability of specialists. The business schedule stays a starting template, but each specialist now follows a personal schedule.",
     editDay: "Edit this day",
     repeatingShifts: "Set recurring shifts",
-    addFreeTime: "Add time off",
+    addFreeTime: "Add working time",
     deleteShift: "Delete this shift",
     dayRemoved: "The shift for this day was removed.",
     clearedAll: "The employee personal schedule was cleared.",
@@ -386,16 +386,16 @@ const scheduleText: Record<"ru" | "uk" | "en", ScheduleCopy> = {
     workingDay: "Working day",
     workFrom: "From",
     workTo: "To",
-    breakFrom: "Break from",
+    breakFrom: "Working interval from",
     breakTo: "To",
-    addBreak: "Add time off",
-    removeBreak: "Remove break",
-    addWorkWindow: "Add work period",
-    removeWorkWindow: "Remove work period",
-    invalidIntervalRange: "Each work period must end after it starts.",
-    overlappingIntervals: "Work periods within the same day cannot overlap.",
+    addBreak: "Add time",
+    removeBreak: "Remove working interval",
+    addWorkWindow: "Add time",
+    removeWorkWindow: "Remove working interval",
+    invalidIntervalRange: "Each working interval must end after it starts.",
+    overlappingIntervals: "Intervals overlap.",
     noRoomForInterval:
-      "There is no room left for another work period in this day. Adjust the current time or remove an extra interval.",
+      "There is no room left for another working interval in this day. Adjust the current time or remove an extra interval.",
     restoreTemplate: "Reset to weekly template",
     dayEditorTitle: (name, date) => `Edit ${date} for ${name}`,
     dayEditorText:
@@ -497,6 +497,13 @@ function getDayDurationMinutes(daySchedule: WorkDaySchedule | null | undefined) 
 function getDayIntervals(daySchedule: WorkDaySchedule | null | undefined) {
   if (!daySchedule) {
     return [] as WorkInterval[];
+  }
+
+  if (Array.isArray(daySchedule.intervals) && daySchedule.intervals.length > 0) {
+    return daySchedule.intervals
+      .filter((item) => item?.startTime && item?.endTime)
+      .map((item) => ({ startTime: item.startTime, endTime: item.endTime }))
+      .sort((left, right) => timeToMinutes(left.startTime) - timeToMinutes(right.startTime));
   }
 
   const dayStart = timeToMinutes(daySchedule.startTime);
@@ -712,8 +719,10 @@ function createIntervalAfter(intervals: WorkInterval[], index: number) {
     }
   }
 
-  const desiredStart = Math.min(currentEnd + 60, 24 * 60 - 30);
-  const desiredEnd = Math.min(24 * 60 - 1, desiredStart + 60);
+  const desiredGap = currentEnd < timeToMinutes("14:00") ? 60 : 15;
+  const desiredDuration = currentEnd < timeToMinutes("14:00") ? 240 : 60;
+  const desiredStart = Math.min(currentEnd + desiredGap, 24 * 60 - 30);
+  const desiredEnd = Math.min(24 * 60 - 1, desiredStart + desiredDuration);
 
   if (desiredEnd - desiredStart < 15) {
     return null;
@@ -730,7 +739,7 @@ function createSplitIntervals(interval: WorkInterval) {
   const end = timeToMinutes(interval.endTime);
   const duration = end - start;
 
-  if (duration < 180) {
+  if (duration < 360) {
     return null;
   }
 
@@ -776,10 +785,13 @@ function formatIntervalLabel(interval: WorkInterval) {
 }
 
 function serializeDay(enabled: boolean, startTime: string, endTime: string, breaks: WorkBreak[]) {
+  const intervals = getDayIntervals({ enabled, startTime, endTime, breakStart: breaks[0]?.startTime ?? startTime, breakEnd: breaks[0]?.endTime ?? startTime, breaks });
+
   return {
     enabled,
     startTime,
     endTime,
+    intervals,
     breakStart: breaks[0]?.startTime ?? startTime,
     breakEnd: breaks[0]?.endTime ?? startTime,
     breaks,

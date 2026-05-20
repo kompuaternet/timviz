@@ -30,6 +30,10 @@ type WorkScheduleCardProps = {
 };
 
 type Template = typeof defaultWorkTemplate;
+type WorkInterval = {
+  startTime: string;
+  endTime: string;
+};
 
 function toDateKey(date: Date) {
   const year = date.getFullYear();
@@ -106,7 +110,8 @@ function timeToMinutes(value: string) {
 }
 
 function minutesToTime(value: number) {
-  return `${String(Math.floor(value / 60)).padStart(2, "0")}:${String(value % 60).padStart(2, "0")}`;
+  const safe = Math.max(0, Math.min(value, 24 * 60 - 1));
+  return `${String(Math.floor(safe / 60)).padStart(2, "0")}:${String(safe % 60).padStart(2, "0")}`;
 }
 
 function syncLegacyBreakFields<T extends Pick<WorkDaySchedule, "startTime" | "breakStart" | "breakEnd" | "breaks">>(day: T) {
@@ -128,20 +133,210 @@ function syncLegacyBreakFields<T extends Pick<WorkDaySchedule, "startTime" | "br
   };
 }
 
-function createSuggestedBreak(day: Pick<WorkDaySchedule, "startTime" | "endTime" | "breaks" | "breakStart" | "breakEnd">) {
-  const existing = getDayBreaks(day as unknown as WorkDaySchedule);
-  const workStart = timeToMinutes(day.startTime);
-  const workEnd = timeToMinutes(day.endTime);
-  const anchor = existing.length > 0
-    ? Math.min(workEnd - 30, timeToMinutes(existing[existing.length - 1].endTime) + 30)
-    : Math.min(workEnd - 60, Math.max(workStart + 180, workStart + 60));
-  const start = Math.max(workStart, Math.min(anchor, workEnd - 30));
-  const end = Math.min(workEnd, start + 60);
+function getDayIntervals(day: Pick<WorkDaySchedule, "startTime" | "endTime" | "breaks" | "breakStart" | "breakEnd">) {
+  const explicitIntervals = (day as Pick<WorkDaySchedule, "intervals">).intervals;
+  if (Array.isArray(explicitIntervals) && explicitIntervals.length > 0) {
+    return explicitIntervals
+      .filter((item) => item?.startTime && item?.endTime)
+      .map((item) => ({ startTime: item.startTime, endTime: item.endTime }))
+      .sort((left, right) => timeToMinutes(left.startTime) - timeToMinutes(right.startTime));
+  }
+
+  const dayStart = timeToMinutes(day.startTime);
+  const dayEnd = timeToMinutes(day.endTime);
+
+  if (dayStart >= dayEnd) {
+    return [{ startTime: day.startTime, endTime: day.endTime }] satisfies WorkInterval[];
+  }
+
+  const intervals: WorkInterval[] = [];
+  let cursor = dayStart;
+
+  for (const item of getDayBreaks(day as unknown as WorkDaySchedule)) {
+    const breakStart = Math.max(dayStart, Math.min(dayEnd, timeToMinutes(item.startTime)));
+    const breakEnd = Math.max(dayStart, Math.min(dayEnd, timeToMinutes(item.endTime)));
+
+    if (breakStart > cursor) {
+      intervals.push({ startTime: minutesToTime(cursor), endTime: minutesToTime(breakStart) });
+    }
+
+    cursor = Math.max(cursor, breakEnd);
+  }
+
+  if (cursor < dayEnd) {
+    intervals.push({ startTime: minutesToTime(cursor), endTime: minutesToTime(dayEnd) });
+  }
+
+  return intervals.length > 0 ? intervals : [{ startTime: day.startTime, endTime: day.endTime }];
+}
+
+function validateWorkIntervals(intervals: WorkInterval[]) {
+  const sorted = [...intervals]
+    .map((item) => ({ startTime: item.startTime, endTime: item.endTime }))
+    .sort((left, right) => timeToMinutes(left.startTime) - timeToMinutes(right.startTime));
+
+  if (sorted.some((item) => timeToMinutes(item.startTime) >= timeToMinutes(item.endTime))) {
+    return { ok: false as const, reason: "range" as const, intervals: sorted };
+  }
+
+  const normalized: WorkInterval[] = [];
+
+  for (const interval of sorted) {
+    const previous = normalized[normalized.length - 1];
+
+    if (!previous) {
+      normalized.push(interval);
+      continue;
+    }
+
+    if (timeToMinutes(interval.startTime) < timeToMinutes(previous.endTime)) {
+      return { ok: false as const, reason: "overlap" as const, intervals: sorted };
+    }
+
+    if (interval.startTime === previous.endTime) {
+      previous.endTime = interval.endTime;
+      continue;
+    }
+
+    normalized.push(interval);
+  }
+
+  return { ok: true as const, reason: null, intervals: normalized };
+}
+
+function serializeIntervalsToDay(
+  enabled: boolean,
+  intervals: WorkInterval[],
+  fallback: Pick<WorkDaySchedule, "startTime" | "endTime">
+) {
+  const validation = validateWorkIntervals(intervals);
+  const normalized = validation.ok ? validation.intervals : intervals;
+
+  if (!enabled || normalized.length === 0) {
+    return syncLegacyBreakFields({
+      enabled: false,
+      startTime: fallback.startTime,
+      endTime: fallback.endTime,
+      intervals,
+      breakStart: fallback.startTime,
+      breakEnd: fallback.startTime,
+      breaks: [],
+      dayType: "day-off" as const
+    });
+  }
+
+  const sorted = [...normalized].sort(
+    (left, right) => timeToMinutes(left.startTime) - timeToMinutes(right.startTime)
+  );
+  const first = sorted[0];
+  const last = sorted[sorted.length - 1];
+  const breaks: WorkBreak[] = [];
+
+  for (let index = 0; index < sorted.length - 1; index += 1) {
+    const current = sorted[index];
+    const next = sorted[index + 1];
+    if (current.endTime < next.startTime) {
+      breaks.push({ startTime: current.endTime, endTime: next.startTime });
+    }
+  }
+
+  return syncLegacyBreakFields({
+    enabled: true,
+    startTime: first.startTime,
+    endTime: last.endTime,
+    intervals: sorted,
+    breakStart: breaks[0]?.startTime ?? first.startTime,
+    breakEnd: breaks[0]?.endTime ?? first.startTime,
+    breaks,
+    dayType: "workday" as const
+  });
+}
+
+function getIntervalFallback(day: WorkDaySchedule, intervals: WorkInterval[]) {
+  if (intervals.length === 0) {
+    return { startTime: day.startTime, endTime: day.endTime };
+  }
+
+  const sorted = [...intervals].sort(
+    (left, right) => timeToMinutes(left.startTime) - timeToMinutes(right.startTime)
+  );
 
   return {
-    startTime: minutesToTime(start),
-    endTime: minutesToTime(Math.max(start + 15, end))
-  } satisfies WorkBreak;
+    startTime: sorted[0].startTime,
+    endTime: sorted[sorted.length - 1].endTime
+  };
+}
+
+function createIntervalAfter(intervals: WorkInterval[], index: number) {
+  const current = intervals[index];
+  if (!current) {
+    return null;
+  }
+
+  const next = intervals[index + 1];
+  const minGap = 15;
+  const currentEnd = timeToMinutes(current.endTime);
+  const nextStart = next ? timeToMinutes(next.startTime) : 24 * 60;
+
+  if (nextStart - currentEnd > minGap) {
+    const windowStart = currentEnd + minGap;
+    const desiredEnd = Math.min(nextStart - minGap, windowStart + 60);
+
+    if (desiredEnd - windowStart >= 15) {
+      return { startTime: minutesToTime(windowStart), endTime: minutesToTime(desiredEnd) } satisfies WorkInterval;
+    }
+  }
+
+  const desiredGap = currentEnd < timeToMinutes("14:00") ? 60 : 15;
+  const desiredDuration = currentEnd < timeToMinutes("14:00") ? 240 : 60;
+  const desiredStart = Math.min(currentEnd + desiredGap, 24 * 60 - 30);
+  const desiredEnd = Math.min(24 * 60 - 1, desiredStart + desiredDuration);
+
+  if (desiredEnd - desiredStart < 15) {
+    return null;
+  }
+
+  return { startTime: minutesToTime(desiredStart), endTime: minutesToTime(desiredEnd) } satisfies WorkInterval;
+}
+
+function createSplitIntervals(interval: WorkInterval) {
+  const start = timeToMinutes(interval.startTime);
+  const end = timeToMinutes(interval.endTime);
+  const duration = end - start;
+
+  if (duration < 360) {
+    return null;
+  }
+
+  const gap = 60;
+  const firstEnd = Math.round((start + (duration - gap) / 2) / 15) * 15;
+  const safeFirstEnd = Math.max(start + 60, Math.min(firstEnd, end - gap - 60));
+  const secondStart = safeFirstEnd + gap;
+
+  if (safeFirstEnd <= start || secondStart >= end) {
+    return null;
+  }
+
+  return [
+    { startTime: minutesToTime(start), endTime: minutesToTime(safeFirstEnd) },
+    { startTime: minutesToTime(secondStart), endTime: minutesToTime(end) }
+  ] satisfies WorkInterval[];
+}
+
+function insertWorkInterval(intervals: WorkInterval[], index: number) {
+  if (intervals.length === 1) {
+    const split = createSplitIntervals(intervals[0]);
+    if (split) {
+      return split;
+    }
+  }
+
+  const suggestion = createIntervalAfter(intervals, index);
+  if (!suggestion) {
+    return null;
+  }
+
+  return [...intervals.slice(0, index + 1), suggestion, ...intervals.slice(index + 1)];
 }
 
 export default function WorkScheduleCard({
@@ -250,6 +445,7 @@ export default function WorkScheduleCard({
     setLastTemplate({
       startTime: day.startTime,
       endTime: day.endTime,
+      intervals: getDayIntervals(day),
       breakStart: day.breakStart,
       breakEnd: day.breakEnd,
       breaks: getDayBreaks(day),
@@ -265,6 +461,7 @@ export default function WorkScheduleCard({
     setLastCustomTemplate({
       startTime: day.startTime,
       endTime: day.endTime,
+      intervals: getDayIntervals(day),
       breakStart: day.breakStart,
       breakEnd: day.breakEnd,
       breaks: getDayBreaks(day),
@@ -295,22 +492,6 @@ export default function WorkScheduleCard({
           ...nextTemplate,
           dayType: "workday"
         })
-      };
-
-      rememberTemplate(nextSchedule, dayKey);
-      return nextSchedule;
-    });
-  }
-
-  function updateDay(dayKey: WorkDayKey, field: keyof Template, value: string) {
-    setSchedule((current) => {
-      const nextSchedule = {
-        ...current,
-        [dayKey]: {
-          ...current[dayKey],
-          [field]: value,
-          dayType: "workday"
-        }
       };
 
       rememberTemplate(nextSchedule, dayKey);
@@ -351,40 +532,16 @@ export default function WorkScheduleCard({
     });
   }
 
-  function updateCustomDate(field: keyof Template, value: string) {
-    if (!selectedDateKey) {
-      return;
-    }
-
-    setCustomSchedule((current) => {
-      const base = current[selectedDateKey] ?? {
-        enabled: true,
-        ...lastCustomTemplate,
-        dayType: "workday" as const
-      };
-      const nextDay: WorkDaySchedule = {
-        ...base,
-        enabled: true,
-        dayType: "workday",
-        [field]: value
-      };
-
-      rememberCustomTemplate(nextDay);
-      return {
-        ...current,
-        [selectedDateKey]: nextDay
-      };
-    });
-  }
-
-  function addDayBreak(dayKey: WorkDayKey) {
+  function addDayInterval(dayKey: WorkDayKey, intervalIndex: number) {
     setSchedule((current) => {
       const currentDay = current[dayKey];
-      const nextDay = syncLegacyBreakFields({
-        ...currentDay,
-        breaks: [...getDayBreaks(currentDay), createSuggestedBreak(currentDay)],
-        dayType: "workday" as const
-      });
+      const intervals = getDayIntervals(currentDay);
+      const nextIntervals = insertWorkInterval(intervals, intervalIndex);
+      if (!nextIntervals) {
+        setStatusText(t.schedule.noRoomForInterval);
+        return current;
+      }
+      const nextDay = serializeIntervalsToDay(true, nextIntervals, getIntervalFallback(currentDay, intervals));
       const nextSchedule = {
         ...current,
         [dayKey]: nextDay
@@ -394,17 +551,13 @@ export default function WorkScheduleCard({
     });
   }
 
-  function updateDayBreak(dayKey: WorkDayKey, breakIndex: number, field: keyof WorkBreak, value: string) {
+  function updateDayInterval(dayKey: WorkDayKey, intervalIndex: number, field: keyof WorkInterval, value: string) {
     setSchedule((current) => {
       const currentDay = current[dayKey];
-      const breaks = getDayBreaks(currentDay).map((item, index) =>
-        index === breakIndex ? { ...item, [field]: value } : item
+      const intervals = getDayIntervals(currentDay).map((item, index) =>
+        index === intervalIndex ? { ...item, [field]: value } : item
       );
-      const nextDay = syncLegacyBreakFields({
-        ...currentDay,
-        breaks,
-        dayType: "workday" as const
-      });
+      const nextDay = serializeIntervalsToDay(true, intervals, getIntervalFallback(currentDay, intervals));
       const nextSchedule = {
         ...current,
         [dayKey]: nextDay
@@ -414,14 +567,12 @@ export default function WorkScheduleCard({
     });
   }
 
-  function removeDayBreak(dayKey: WorkDayKey, breakIndex: number) {
+  function removeDayInterval(dayKey: WorkDayKey, intervalIndex: number) {
     setSchedule((current) => {
       const currentDay = current[dayKey];
-      const nextDay = syncLegacyBreakFields({
-        ...currentDay,
-        breaks: getDayBreaks(currentDay).filter((_, index) => index !== breakIndex),
-        dayType: "workday" as const
-      });
+      const intervals = getDayIntervals(currentDay);
+      const nextIntervals = intervals.filter((_, index) => index !== intervalIndex);
+      const nextDay = serializeIntervalsToDay(nextIntervals.length > 0, nextIntervals, getIntervalFallback(currentDay, intervals));
       const nextSchedule = {
         ...current,
         [dayKey]: nextDay
@@ -431,7 +582,7 @@ export default function WorkScheduleCard({
     });
   }
 
-  function addCustomBreak() {
+  function addCustomInterval(intervalIndex: number) {
     if (!selectedDateKey) {
       return;
     }
@@ -442,12 +593,13 @@ export default function WorkScheduleCard({
         ...lastCustomTemplate,
         dayType: "workday" as const
       };
-      const nextDay: WorkDaySchedule = syncLegacyBreakFields({
-        ...base,
-        enabled: true,
-        dayType: "workday",
-        breaks: [...getDayBreaks(base), createSuggestedBreak(base)]
-      });
+      const intervals = getDayIntervals(base);
+      const nextIntervals = insertWorkInterval(intervals, intervalIndex);
+      if (!nextIntervals) {
+        setStatusText(t.schedule.noRoomForInterval);
+        return current;
+      }
+      const nextDay: WorkDaySchedule = serializeIntervalsToDay(true, nextIntervals, getIntervalFallback(base, intervals));
 
       rememberCustomTemplate(nextDay);
       return {
@@ -457,7 +609,7 @@ export default function WorkScheduleCard({
     });
   }
 
-  function updateCustomBreak(breakIndex: number, field: keyof WorkBreak, value: string) {
+  function updateCustomInterval(intervalIndex: number, field: keyof WorkInterval, value: string) {
     if (!selectedDateKey) {
       return;
     }
@@ -468,15 +620,10 @@ export default function WorkScheduleCard({
         ...lastCustomTemplate,
         dayType: "workday" as const
       };
-      const breaks = getDayBreaks(base).map((item, index) =>
-        index === breakIndex ? { ...item, [field]: value } : item
+      const intervals = getDayIntervals(base).map((item, index) =>
+        index === intervalIndex ? { ...item, [field]: value } : item
       );
-      const nextDay: WorkDaySchedule = syncLegacyBreakFields({
-        ...base,
-        enabled: true,
-        dayType: "workday",
-        breaks
-      });
+      const nextDay: WorkDaySchedule = serializeIntervalsToDay(true, intervals, getIntervalFallback(base, intervals));
 
       rememberCustomTemplate(nextDay);
       return {
@@ -486,7 +633,7 @@ export default function WorkScheduleCard({
     });
   }
 
-  function removeCustomBreak(breakIndex: number) {
+  function removeCustomInterval(intervalIndex: number) {
     if (!selectedDateKey) {
       return;
     }
@@ -497,12 +644,9 @@ export default function WorkScheduleCard({
         ...lastCustomTemplate,
         dayType: "workday" as const
       };
-      const nextDay: WorkDaySchedule = syncLegacyBreakFields({
-        ...base,
-        enabled: true,
-        dayType: "workday",
-        breaks: getDayBreaks(base).filter((_, index) => index !== breakIndex)
-      });
+      const intervals = getDayIntervals(base);
+      const nextIntervals = intervals.filter((_, index) => index !== intervalIndex);
+      const nextDay: WorkDaySchedule = serializeIntervalsToDay(nextIntervals.length > 0, nextIntervals, getIntervalFallback(base, intervals));
 
       rememberCustomTemplate(nextDay);
       return {
@@ -533,6 +677,7 @@ export default function WorkScheduleCard({
           enabled: true,
           startTime: template.startTime,
           endTime: template.endTime,
+          intervals: template.intervals ?? getDayIntervals(template as WorkDaySchedule),
           breakStart: template.breakStart,
           breakEnd: template.breakEnd,
           breaks: template.breaks ?? [],
@@ -565,6 +710,7 @@ export default function WorkScheduleCard({
           dayType: "holiday",
           startTime: next[dateKey]?.startTime ?? lastCustomTemplate.startTime,
           endTime: next[dateKey]?.endTime ?? lastCustomTemplate.endTime,
+          intervals: next[dateKey]?.intervals ?? lastCustomTemplate.intervals ?? [],
           breakStart: next[dateKey]?.breakStart ?? lastCustomTemplate.breakStart,
           breakEnd: next[dateKey]?.breakEnd ?? lastCustomTemplate.breakEnd,
           breaks: next[dateKey]?.breaks ?? lastCustomTemplate.breaks ?? []
@@ -598,6 +744,20 @@ export default function WorkScheduleCard({
     if (autoSaveTimerRef.current) {
       window.clearTimeout(autoSaveTimerRef.current);
       autoSaveTimerRef.current = null;
+    }
+
+    const invalidWeeklyDay = Object.values(schedule).find((day) => {
+      return day.enabled && !validateWorkIntervals(getDayIntervals(day)).ok;
+    });
+    const invalidCustomDay = Object.values(customSchedule).find((day) => {
+      return day.enabled && !validateWorkIntervals(getDayIntervals(day)).ok;
+    });
+    const invalidDay = invalidWeeklyDay || invalidCustomDay;
+
+    if (invalidDay) {
+      const validation = validateWorkIntervals(getDayIntervals(invalidDay));
+      setStatusText(validation.reason === "overlap" ? t.schedule.overlappingIntervals : t.schedule.invalidIntervalRange);
+      return;
     }
 
     setIsSaving(true);
@@ -638,64 +798,47 @@ export default function WorkScheduleCard({
 
   function renderScheduleFields(
     day: WorkDaySchedule,
-    onChange: (field: keyof Template, value: string) => void,
-    onAddBreak: () => void,
-    onUpdateBreak: (breakIndex: number, field: keyof WorkBreak, value: string) => void,
-    onRemoveBreak: (breakIndex: number) => void
+    onChangeInterval: (intervalIndex: number, field: keyof WorkInterval, value: string) => void,
+    onAddInterval: (intervalIndex: number) => void,
+    onRemoveInterval: (intervalIndex: number) => void
   ) {
-    const breaks = getDayBreaks(day);
+    const intervals = getDayIntervals(day);
 
     return (
       <div className={styles.scheduleFieldStack}>
-        <div className={styles.scheduleFieldRow}>
-          <label className={styles.scheduleField}>
-            <span>{t.schedule.workFrom}</span>
-            <input type="time" className={styles.input} value={day.startTime} onChange={(event) => onChange("startTime", event.target.value)} disabled={!canEdit} />
-          </label>
-          <label className={styles.scheduleField}>
-            <span>{t.schedule.workTo}</span>
-            <input type="time" className={styles.input} value={day.endTime} onChange={(event) => onChange("endTime", event.target.value)} disabled={!canEdit} />
-          </label>
-        </div>
-
-        {breaks.map((breakItem, breakIndex) => (
-          <div key={`${breakItem.startTime}-${breakItem.endTime}-${breakIndex}`} className={styles.scheduleBreakCard}>
+        {intervals.map((interval, intervalIndex) => (
+          <div key={`${interval.startTime}-${interval.endTime}-${intervalIndex}`} className={styles.scheduleBreakCard}>
+            <strong className={styles.scheduleHint}>{t.schedule.workingInterval}</strong>
             <div className={styles.scheduleFieldRow}>
               <label className={styles.scheduleField}>
-                <span>{t.schedule.breakFrom}</span>
+                <span>{t.schedule.workFrom}</span>
                 <input
                   type="time"
                   className={styles.input}
-                  value={breakItem.startTime}
-                  onChange={(event) => onUpdateBreak(breakIndex, "startTime", event.target.value)}
+                  value={interval.startTime}
+                  onChange={(event) => onChangeInterval(intervalIndex, "startTime", event.target.value)}
                   disabled={!canEdit}
                 />
               </label>
               <label className={styles.scheduleField}>
-                <span>{t.schedule.breakTo}</span>
+                <span>{t.schedule.workTo}</span>
                 <input
                   type="time"
                   className={styles.input}
-                  value={breakItem.endTime}
-                  onChange={(event) => onUpdateBreak(breakIndex, "endTime", event.target.value)}
+                  value={interval.endTime}
+                  onChange={(event) => onChangeInterval(intervalIndex, "endTime", event.target.value)}
                   disabled={!canEdit}
                 />
               </label>
             </div>
-            <button type="button" className={styles.ghostButton} onClick={onAddBreak} disabled={!canEdit}>
-              {t.schedule.addAnotherBreak}
+            <button type="button" className={styles.ghostButton} onClick={() => onAddInterval(intervalIndex)} disabled={!canEdit}>
+              {t.schedule.addWorkTime}
             </button>
-            <button type="button" className={styles.ghostButton} onClick={() => onRemoveBreak(breakIndex)} disabled={!canEdit}>
-              {t.schedule.removeBreak}
+            <button type="button" className={styles.ghostButton} onClick={() => onRemoveInterval(intervalIndex)} disabled={!canEdit}>
+              {t.schedule.removeWorkTime}
             </button>
           </div>
         ))}
-
-        {breaks.length === 0 ? (
-          <button type="button" className={styles.ghostButton} onClick={onAddBreak} disabled={!canEdit}>
-            {t.schedule.addBreak}
-          </button>
-        ) : null}
       </div>
     );
   }
@@ -754,10 +897,9 @@ export default function WorkScheduleCard({
                   </div>
                   {renderScheduleFields(
                     schedule[day.key],
-                    (field, value) => updateDay(day.key, field, value),
-                    () => addDayBreak(day.key),
-                    (breakIndex, field, value) => updateDayBreak(day.key, breakIndex, field, value),
-                    (breakIndex) => removeDayBreak(day.key, breakIndex)
+                    (intervalIndex, field, value) => updateDayInterval(day.key, intervalIndex, field, value),
+                    (intervalIndex) => addDayInterval(day.key, intervalIndex),
+                    (intervalIndex) => removeDayInterval(day.key, intervalIndex)
                   )}
                 </div>
               ))}
@@ -862,10 +1004,9 @@ export default function WorkScheduleCard({
                   {selectedDateSchedule?.dayType === "workday" ? (
                     renderScheduleFields(
                       selectedDateSchedule,
-                      updateCustomDate,
-                      addCustomBreak,
-                      updateCustomBreak,
-                      removeCustomBreak
+                      updateCustomInterval,
+                      addCustomInterval,
+                      removeCustomInterval
                     )
                   ) : (
                     <div className={styles.scheduleEmpty}>

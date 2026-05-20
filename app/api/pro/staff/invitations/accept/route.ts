@@ -1,7 +1,11 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { getSessionCookieName, verifySessionValue } from "../../../../../../lib/pro-auth";
-import { acceptStaffInvitation } from "../../../../../../lib/pro-data";
+import {
+  acceptStaffInvitation,
+  acceptStaffInvitationById,
+  declineStaffInvitation
+} from "../../../../../../lib/pro-data";
 
 export async function POST(request: Request) {
   const cookieStore = await cookies();
@@ -13,10 +17,19 @@ export async function POST(request: Request) {
 
   try {
     const body = await request.json();
-    await acceptStaffInvitation({
-      professionalId,
-      invitationToken: String(body.token || "")
-    });
+    const action = body.action === "decline" ? "decline" : "accept";
+    const invitationId = String(body.invitationId || "").trim();
+
+    if (action === "decline") {
+      await declineStaffInvitation({ professionalId, invitationId });
+    } else if (invitationId) {
+      await acceptStaffInvitationById({ professionalId, invitationId });
+    } else {
+      await acceptStaffInvitation({
+        professionalId,
+        invitationToken: String(body.token || "")
+      });
+    }
 
     return NextResponse.json({ ok: true });
   } catch (error) {

@@ -20,6 +20,7 @@ import type {
 type StaffViewProps = {
   professionalId: string;
   snapshot: BusinessStaffSnapshot;
+  canManageStaff?: boolean;
   initialAddOpen?: boolean;
   onboardingCta: OnboardingCtaState;
   header: {
@@ -62,16 +63,19 @@ const staffText = {
     revokeInvite: "Отозвать приглашение",
     pendingInvites: "Приглашения",
     joinRequests: "Запросы на присоединение",
+    incomingInvites: "Приглашения для меня",
+    noIncomingInvites: "Новых приглашений для вас пока нет.",
     noInvites: "Активных приглашений пока нет.",
     noJoinRequests: "Новых запросов пока нет.",
     approve: "Подтвердить",
     reject: "Отклонить",
+    decline: "Отклонить",
     inviteSent: "Приглашение отправлено.",
     saved: "Изменения сохранены.",
     failed: "Не удалось выполнить действие.",
     addTitle: "Добавить сотрудника",
     addText:
-      "Сотрудника можно сразу добавить в команду и настроить ему график. Доступ в кабинет включается отдельным приглашением.",
+      "После добавления мы сразу отправим приглашение на email сотрудника. Он сможет принять его и перейти в кабинет.",
     fullName: "Имя и фамилия",
     role: "Должность",
     email: "Email",
@@ -126,16 +130,19 @@ const staffText = {
     revokeInvite: "Відкликати запрошення",
     pendingInvites: "Запрошення",
     joinRequests: "Запити на приєднання",
+    incomingInvites: "Запрошення для мене",
+    noIncomingInvites: "Нових запрошень для вас поки немає.",
     noInvites: "Активних запрошень поки немає.",
     noJoinRequests: "Нових запитів поки немає.",
     approve: "Підтвердити",
     reject: "Відхилити",
+    decline: "Відхилити",
     inviteSent: "Запрошення надіслано.",
     saved: "Зміни збережено.",
     failed: "Не вдалося виконати дію.",
     addTitle: "Додати співробітника",
     addText:
-      "Співробітника можна одразу додати до команди й налаштувати йому графік. Доступ до кабінету вмикається окремим запрошенням.",
+      "Після додавання ми одразу надішлемо запрошення на email співробітника. Він зможе прийняти його й перейти до кабінету.",
     fullName: "Ім'я та прізвище",
     role: "Посада",
     email: "Email",
@@ -190,16 +197,19 @@ const staffText = {
     revokeInvite: "Revoke invitation",
     pendingInvites: "Invitations",
     joinRequests: "Join requests",
+    incomingInvites: "Invitations for me",
+    noIncomingInvites: "No new invitations for you yet.",
     noInvites: "No active invitations yet.",
     noJoinRequests: "No new requests yet.",
     approve: "Approve",
     reject: "Reject",
+    decline: "Decline",
     inviteSent: "Invitation sent.",
     saved: "Changes saved.",
     failed: "Could not complete the action.",
     addTitle: "Add employee",
     addText:
-      "You can add an employee to the team right away and set their schedule first. Workspace access is enabled by a separate invitation.",
+      "After adding an employee, Timviz sends an email invitation right away. They can accept it and open their workspace.",
     fullName: "Full name",
     role: "Role",
     email: "Email",
@@ -385,7 +395,7 @@ function PendingInvitationCard({
   );
 }
 
-export default function StaffView({ professionalId, snapshot, initialAddOpen = false, onboardingCta, header }: StaffViewProps) {
+export default function StaffView({ professionalId, snapshot, canManageStaff = true, initialAddOpen = false, onboardingCta, header }: StaffViewProps) {
   const router = useRouter();
   const { language } = useProLanguage();
   const copy = staffText[language];
@@ -397,7 +407,6 @@ export default function StaffView({ professionalId, snapshot, initialAddOpen = f
   const [role, setRole] = useState(language === "en" ? "Specialist" : language === "uk" ? "Майстер" : "Мастер");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
-  const [sendInvitation, setSendInvitation] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [activeActionMenu, setActiveActionMenu] = useState<StaffActionMenuState | null>(null);
 
@@ -430,7 +439,7 @@ export default function StaffView({ professionalId, snapshot, initialAddOpen = f
   }, []);
 
   useEffect(() => {
-    if (snapshot.joinRequests.length === 0) {
+    if (!canManageStaff || snapshot.joinRequests.length === 0) {
       return;
     }
 
@@ -447,7 +456,7 @@ export default function StaffView({ professionalId, snapshot, initialAddOpen = f
         window.dispatchEvent(new CustomEvent("rezervo-pro-notifications-refresh"));
       })
       .catch(() => undefined);
-  }, [snapshot.joinRequests.length]);
+  }, [canManageStaff, snapshot.joinRequests.length]);
 
   const filteredMembers = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -492,7 +501,7 @@ export default function StaffView({ professionalId, snapshot, initialAddOpen = f
   async function handleCreateStaff() {
     const parsed = splitFullName(fullName);
 
-    if (!parsed.firstName) {
+    if (!parsed.firstName || !email.trim()) {
       return;
     }
 
@@ -508,8 +517,7 @@ export default function StaffView({ professionalId, snapshot, initialAddOpen = f
           lastName: parsed.lastName,
           role,
           email,
-          phone,
-          sendInvitation
+          phone
         })
       })
     );
@@ -518,7 +526,6 @@ export default function StaffView({ professionalId, snapshot, initialAddOpen = f
     setRole(language === "en" ? "Specialist" : language === "uk" ? "Майстер" : "Мастер");
     setEmail("");
     setPhone("");
-    setSendInvitation(false);
     setIsAddOpen(false);
   }
 
@@ -572,9 +579,22 @@ export default function StaffView({ professionalId, snapshot, initialAddOpen = f
     await handleRevokeInviteById(member.pendingInvitation.id);
   }
 
+  async function handleIncomingInvitation(invitationId: string, action: "accept" | "decline") {
+    await refreshAfter(
+      fetch("/api/pro/staff/invitations/accept", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ invitationId, action })
+      }),
+      action === "accept" ? copy.saved : copy.saved
+    );
+  }
+
   return (
     <main className={`${styles.workspaceShell} ${styles.scheduleShell}`}>
-      <ProSidebar active="staff" professionalId={professionalId} canManageStaff />
+      <ProSidebar active="staff" professionalId={professionalId} canManageStaff={canManageStaff} />
 
       <section className={styles.staffStudioShell}>
         <ProWorkspaceHeader
@@ -618,15 +638,19 @@ export default function StaffView({ professionalId, snapshot, initialAddOpen = f
                 {copy.options}
                 <span aria-hidden="true">⌄</span>
               </button>
-              <button type="button" className={styles.staffStudioPrimaryButton} onClick={() => setIsAddOpen(true)}>
-                {copy.add}
-              </button>
+              {canManageStaff ? (
+                <button type="button" className={styles.staffStudioPrimaryButton} onClick={() => setIsAddOpen(true)}>
+                  {copy.add}
+                </button>
+              ) : null}
             </div>
           </div>
 
-          <div className={styles.staffStudioNotice}>
-            <span>{copy.filterHint}</span>
-          </div>
+          {canManageStaff ? (
+            <div className={styles.staffStudioNotice}>
+              <span>{copy.filterHint}</span>
+            </div>
+          ) : null}
 
           <div className={styles.staffStudioToolbar}>
             <label className={styles.staffStudioSearch}>
@@ -703,20 +727,24 @@ export default function StaffView({ professionalId, snapshot, initialAddOpen = f
                       }`}
                     >
                       <span className={styles.staffStudioMobileLabel}>{copy.actions}</span>
-                      <StaffRowActions
-                        member={member}
-                        copy={copy}
-                        open={activeActionMenu?.memberId === member.professional.id}
-                        anchorEl={activeActionMenu?.memberId === member.professional.id ? activeActionMenu.anchorEl : null}
-                        onToggle={(anchorEl) =>
-                          setActiveActionMenu((current) =>
-                            current?.memberId === member.professional.id ? null : { memberId: member.professional.id, anchorEl }
-                          )
-                        }
-                        onClose={() => setActiveActionMenu(null)}
-                        onInvite={handleInvite}
-                        onRevoke={handleRevokeInvite}
-                      />
+                      {canManageStaff ? (
+                        <StaffRowActions
+                          member={member}
+                          copy={copy}
+                          open={activeActionMenu?.memberId === member.professional.id}
+                          anchorEl={activeActionMenu?.memberId === member.professional.id ? activeActionMenu.anchorEl : null}
+                          onToggle={(anchorEl) =>
+                            setActiveActionMenu((current) =>
+                              current?.memberId === member.professional.id ? null : { memberId: member.professional.id, anchorEl }
+                            )
+                          }
+                          onClose={() => setActiveActionMenu(null)}
+                          onInvite={handleInvite}
+                          onRevoke={handleRevokeInvite}
+                        />
+                      ) : (
+                        <span className={styles.staffStudioAccessBadge}>{copy.accessState[member.workspaceAccess]}</span>
+                      )}
                     </div>
                   </article>
                 ))
@@ -725,6 +753,45 @@ export default function StaffView({ professionalId, snapshot, initialAddOpen = f
           </section>
 
           <div className={styles.staffStudioBottomGrid}>
+            <section className={styles.staffStudioPanel}>
+              <div className={styles.staffStudioPanelHeader}>
+                <h2>{copy.incomingInvites}</h2>
+              </div>
+
+              {snapshot.incomingInvitations.length === 0 ? (
+                <div className={styles.staffStudioEmpty}>{copy.noIncomingInvites}</div>
+              ) : (
+                <div className={styles.staffStudioSideList}>
+                  {snapshot.incomingInvitations.map((invitation) => (
+                    <article key={invitation.id} className={styles.staffSideCard}>
+                      <div>
+                        <strong>{invitation.business.name}</strong>
+                        <p>{invitation.role || copy.roleFallback}</p>
+                        <span>{`${copy.inviteFrom}: ${formatDate(invitation.createdAt, locale)}`}</span>
+                      </div>
+                      <div className={styles.staffSideActions}>
+                        <button
+                          type="button"
+                          className={styles.staffSecondaryButton}
+                          onClick={() => void handleIncomingInvitation(invitation.id, "decline")}
+                        >
+                          {copy.decline}
+                        </button>
+                        <button
+                          type="button"
+                          className={styles.staffStudioPrimaryButton}
+                          onClick={() => void handleIncomingInvitation(invitation.id, "accept")}
+                        >
+                          {copy.approve}
+                        </button>
+                      </div>
+                    </article>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            {canManageStaff ? (
             <section className={styles.staffStudioPanel}>
               <div className={styles.staffStudioPanelHeader}>
                 <h2>{copy.joinRequests}</h2>
@@ -767,7 +834,9 @@ export default function StaffView({ professionalId, snapshot, initialAddOpen = f
                 </div>
               )}
             </section>
+            ) : null}
 
+            {canManageStaff ? (
             <section className={styles.staffStudioPanel}>
               <div className={styles.staffStudioPanelHeader}>
                 <h2>{copy.pendingInvites}</h2>
@@ -789,6 +858,7 @@ export default function StaffView({ professionalId, snapshot, initialAddOpen = f
                 </div>
               )}
             </section>
+            ) : null}
           </div>
         </section>
       </section>
@@ -834,14 +904,7 @@ export default function StaffView({ professionalId, snapshot, initialAddOpen = f
                   onChange={(event) => setPhone(event.target.value)}
                 />
               </label>
-              <label className={styles.staffDrawerToggle}>
-                <input
-                  type="checkbox"
-                  checked={sendInvitation}
-                  onChange={(event) => setSendInvitation(event.target.checked)}
-                />
-                <span>{copy.sendInvite}</span>
-              </label>
+              <div className={styles.staffStudioNotice}>{copy.sendInvite}</div>
             </div>
 
             <div className={styles.staffDrawerActions}>
@@ -852,7 +915,7 @@ export default function StaffView({ professionalId, snapshot, initialAddOpen = f
                 type="button"
                 className={styles.staffStudioPrimaryButton}
                 onClick={() => void handleCreateStaff()}
-                disabled={!fullName.trim() || isSaving}
+                disabled={!fullName.trim() || !email.trim() || isSaving}
               >
                 {copy.createStaff}
               </button>

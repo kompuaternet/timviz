@@ -13,10 +13,14 @@ import {
   createEmptyCustomSchedule,
   createDefaultWorkSchedule,
   createEmptyWorkSchedule,
+  getDayIntervals,
   normalizeCustomSchedule,
   normalizeWorkSchedule,
   normalizeWorkScheduleMode,
+  timeToMinutes,
+  workDays,
   type CustomSchedule,
+  type WorkDaySchedule,
   type WorkSchedule,
   type WorkScheduleMode
 } from "./work-schedule";
@@ -149,7 +153,7 @@ export type CreatedJoinRequestNotification = {
   role: string;
 };
 
-export type StaffInvitationStatus = "pending" | "accepted" | "revoked";
+export type StaffInvitationStatus = "pending" | "accepted" | "revoked" | "declined";
 
 export type StaffInvitationRecord = {
   id: string;
@@ -792,7 +796,7 @@ function mapSupabaseJoinRequestRow(row: {
 }
 
 function normalizeStaffInvitationStatus(value: unknown): StaffInvitationStatus {
-  if (value === "accepted" || value === "revoked") {
+  if (value === "accepted" || value === "revoked" || value === "declined") {
     return value;
   }
 
@@ -1002,8 +1006,28 @@ async function sendDirectPushBestEffort(input: {
   }
 }
 
+async function sendTelegramDirectBestEffort(input: {
+  professionalId: string;
+  text: string;
+  inviteUrl: string;
+}) {
+  try {
+    const { getTelegramConnectionByProfessionalId, sendTelegramTextMessage } = await import("./telegram-bot");
+    const connection = await getTelegramConnectionByProfessionalId(input.professionalId);
+    if (!connection?.chatId) return;
+    await sendTelegramTextMessage({
+      chatId: connection.chatId,
+      text: `${input.text}\n\n${input.inviteUrl}`,
+      disablePreview: false
+    });
+  } catch {
+    // Telegram is an extra channel; email and in-app notifications remain the source of truth.
+  }
+}
+
 async function notifyInvitedProfessionalAboutInvitation(input: {
   invitedProfessionalId?: string;
+  invitedProfessionalLanguage?: string;
   businessId: string;
   businessName: string;
   ownerName: string;
@@ -1013,30 +1037,50 @@ async function notifyInvitedProfessionalAboutInvitation(input: {
 }) {
   if (!input.invitedProfessionalId) return;
 
-  const title = "Приглашение в команду";
-  const body = `${input.ownerName} приглашает вас в ${input.businessName} как ${input.role}.`;
+  const language = normalizeInvitationLanguage(input.invitedProfessionalLanguage);
+  const copy =
+    language === "uk"
+      ? {
+          title: "Запрошення до команди",
+          body: `${input.ownerName} запрошує вас до ${input.businessName} як ${input.role}.`
+        }
+      : language === "ru"
+        ? {
+            title: "Приглашение в команду",
+            body: `${input.ownerName} приглашает вас в ${input.businessName} как ${input.role}.`
+          }
+        : {
+            title: "Team invitation",
+            body: `${input.ownerName} invited you to ${input.businessName} as ${input.role}.`
+          };
   await createAppNotification({
     professionalId: input.invitedProfessionalId,
     businessId: input.businessId,
     type: "team_invitation",
-    title,
-    body,
-    actionUrl: input.inviteUrl,
+    title: copy.title,
+    body: copy.body,
+    actionUrl: "/pro/staff/members",
     payload: {
       invitationId: input.invitationId,
       businessId: input.businessId,
-      role: input.role
+      role: input.role,
+      inviteUrl: input.inviteUrl
     }
   }).catch(() => undefined);
   await sendDirectPushBestEffort({
     professionalId: input.invitedProfessionalId,
-    title,
-    body,
+    title: copy.title,
+    body: copy.body,
     data: {
       type: "team_invitation",
       invitationId: input.invitationId,
       businessId: input.businessId
     }
+  });
+  await sendTelegramDirectBestEffort({
+    professionalId: input.invitedProfessionalId,
+    text: `${copy.title}\n${copy.body}`,
+    inviteUrl: input.inviteUrl
   });
 }
 
@@ -1965,11 +2009,15 @@ function normalizeInvitationLanguage(value = "") {
     return "uk" as const;
   }
 
+  if (normalized.includes("ru") || normalized.includes("рус") || normalized.includes("рос")) {
+    return "ru" as const;
+  }
+
   if (normalized.includes("en")) {
     return "en" as const;
   }
 
-  return "ru" as const;
+  return "en" as const;
 }
 
 function escapeHtml(value: string) {
@@ -2035,6 +2083,14 @@ export async function createManualStaffMember(input: {
           item.scope !== "pending"
       ) || null
     : null;
+  const existingPendingMembership = existingProfessional
+    ? directory.memberships.find(
+        (item) =>
+          item.professionalId === existingProfessional.id &&
+          item.businessId === workspace.business.id &&
+          item.scope === "pending"
+      ) || null
+    : null;
   const existingMembershipOutsideBusiness = existingProfessional
     ? directory.memberships.find(
         (item) =>
@@ -2056,7 +2112,7 @@ export async function createManualStaffMember(input: {
     throw new Error("Этот email уже привязан к другому бизнес-аккаунту.");
   }
 
-  if (!existingMembership) {
+  if (!existingMembership && !existingPendingMembership) {
     assertCanAddFreeEmployee({
       owner: workspace.professional,
       directory,
@@ -2068,7 +2124,7 @@ export async function createManualStaffMember(input: {
   const createdAt = new Date().toISOString();
   const professionalId = existingProfessional?.id || makeId("pro");
   const professionalEmail = normalizedEmail || buildPlaceholderProfessionalEmail(professionalId);
-  const accountStatus: ProfessionalAccountStatus = normalizedEmail ? "placeholder" : "placeholder";
+  const accountStatus: ProfessionalAccountStatus = existingProfessional?.accountStatus || "placeholder";
 
   if (isSupabaseConfigured()) {
     const supabase = getSupabaseAdmin();
@@ -2076,7 +2132,18 @@ export async function createManualStaffMember(input: {
       throw new Error("Supabase is not available.");
     }
 
-    if (existingProfessional) {
+    if (existingProfessional && normalizeProfessionalAccountStatus(existingProfessional.accountStatus) === "active") {
+      const { error } = await supabase
+        .from("professionals")
+        .update({
+          owner_mode: existingProfessional.ownerMode || "member"
+        })
+        .eq("id", professionalId);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+    } else if (existingProfessional) {
       const { error } = await supabase
         .from("professionals")
         .update({
@@ -2085,7 +2152,10 @@ export async function createManualStaffMember(input: {
           email: professionalEmail,
           phone,
           owner_mode: "member",
-          account_status: accountStatus
+          account_status:
+            normalizeProfessionalAccountStatus(existingProfessional.accountStatus) === "active"
+              ? "active"
+              : accountStatus
         })
         .eq("id", professionalId);
 
@@ -2123,7 +2193,7 @@ export async function createManualStaffMember(input: {
       }
     }
 
-    if (existingMembership) {
+    if (existingMembership || existingPendingMembership) {
       const { error } = await supabase
         .from("business_memberships")
         .update({
@@ -2132,7 +2202,7 @@ export async function createManualStaffMember(input: {
           work_schedule: memberSchedule.workSchedule,
           custom_schedule: memberSchedule.customSchedule
         })
-        .eq("id", existingMembership.id);
+        .eq("id", (existingMembership || existingPendingMembership)?.id || "");
 
       if (error) {
         throw new Error(error.message);
@@ -2143,7 +2213,7 @@ export async function createManualStaffMember(input: {
         business_id: workspace.business.id,
         professional_id: professionalId,
         role,
-        scope: "member",
+        scope: normalizedEmail ? "pending" : "member",
         work_schedule_mode: memberSchedule.workScheduleMode,
         work_schedule: memberSchedule.workSchedule,
         custom_schedule: memberSchedule.customSchedule,
@@ -2158,7 +2228,9 @@ export async function createManualStaffMember(input: {
     const store = await ensureDemoBusinessesInLocalStore();
     const storeProfessional = store.professionals.find((item) => item.id === professionalId);
 
-    if (storeProfessional) {
+    if (storeProfessional && normalizeProfessionalAccountStatus(storeProfessional.accountStatus) === "active") {
+      storeProfessional.ownerMode = storeProfessional.ownerMode || "member";
+    } else if (storeProfessional) {
       storeProfessional.firstName = firstName;
       storeProfessional.lastName = lastName;
       storeProfessional.email = professionalEmail;
@@ -2194,12 +2266,21 @@ export async function createManualStaffMember(input: {
         item.businessId === workspace.business.id &&
         item.scope !== "pending"
     );
+    const storePendingMembership = store.memberships.find(
+      (item) =>
+        item.professionalId === professionalId &&
+        item.businessId === workspace.business.id &&
+        item.scope === "pending"
+    );
 
-    if (storeMembership) {
-      storeMembership.role = role;
-      storeMembership.workScheduleMode = memberSchedule.workScheduleMode;
-      storeMembership.workSchedule = memberSchedule.workSchedule;
-      storeMembership.customSchedule = memberSchedule.customSchedule;
+    if (storeMembership || storePendingMembership) {
+      const targetMembership = storeMembership || storePendingMembership;
+      if (targetMembership) {
+        targetMembership.role = role;
+        targetMembership.workScheduleMode = memberSchedule.workScheduleMode;
+        targetMembership.workSchedule = memberSchedule.workSchedule;
+        targetMembership.customSchedule = memberSchedule.customSchedule;
+      }
     } else {
       store.memberships.push(
         normalizeMembershipRecord({
@@ -2207,7 +2288,7 @@ export async function createManualStaffMember(input: {
           businessId: workspace.business.id,
           professionalId,
           role,
-          scope: "member",
+          scope: normalizedEmail ? "pending" : "member",
           workScheduleMode: memberSchedule.workScheduleMode,
           workSchedule: memberSchedule.workSchedule,
           customSchedule: memberSchedule.customSchedule,
@@ -2221,11 +2302,14 @@ export async function createManualStaffMember(input: {
 
   let invitation: Awaited<ReturnType<typeof createStaffInvitation>> | null = null;
 
-  if (input.sendInvitation) {
+  const shouldSendInvitation = Boolean(normalizedEmail);
+
+  if (shouldSendInvitation) {
     if (!normalizedEmail) {
       throw new Error("Чтобы отправить приглашение, укажите email сотрудника.");
     }
 
+    invalidateBusinessDirectoryCache();
     invitation = await createStaffInvitation({
       ownerProfessionalId: input.ownerProfessionalId,
       memberProfessionalId: professionalId,
@@ -2473,7 +2557,8 @@ export async function createStaffInvitation(input: {
   if (
     invitedProfessional &&
     invitedMembership?.businessId === workspace.business.id &&
-    invitedStatus === "active"
+    invitedStatus === "active" &&
+    !explicitMembership
   ) {
     throw new Error("Этот сотрудник уже подключен к вашему бизнесу.");
   }
@@ -2663,8 +2748,10 @@ export async function createStaffInvitation(input: {
     text: `${copy.headline}\n\n${copy.body}\n\n${inviteUrl}\n\n${copy.footnote}`
   });
 
+  invalidateBusinessDirectoryCache();
   await notifyInvitedProfessionalAboutInvitation({
     invitedProfessionalId: invitedProfessional?.id,
+    invitedProfessionalLanguage: invitedProfessional?.language || workspace.professional.language,
     businessId: workspace.business.id,
     businessName: business.name,
     ownerName,
@@ -2884,6 +2971,7 @@ export async function acceptStaffInvitation(input: {
       throw new Error(invitationError.message);
     }
 
+    invalidateBusinessDirectoryCache();
     return {
       ok: true,
       businessId: invitationPreview.business.id
@@ -2952,6 +3040,91 @@ export async function acceptStaffInvitation(input: {
     ok: true,
     businessId: invitationPreview.business.id
   };
+}
+
+export async function acceptStaffInvitationById(input: {
+  professionalId: string;
+  invitationId: string;
+}) {
+  const directory = await getBusinessDirectorySnapshot();
+  const professional = directory.professionals.find((item) => item.id === input.professionalId) || null;
+  if (!professional) {
+    throw new Error("Professional not found.");
+  }
+
+  const invitation = directory.staffInvitations.find(
+    (item) =>
+      item.id === input.invitationId.trim() &&
+      item.status === "pending" &&
+      item.email === professional.email.trim().toLowerCase()
+  );
+
+  if (!invitation) {
+    throw new Error("Приглашение недействительно или уже использовано.");
+  }
+
+  return acceptStaffInvitation({
+    professionalId: input.professionalId,
+    invitationToken: invitation.token
+  });
+}
+
+export async function declineStaffInvitation(input: {
+  professionalId: string;
+  invitationId: string;
+}) {
+  const directory = await getBusinessDirectorySnapshot();
+  const professional = directory.professionals.find((item) => item.id === input.professionalId) || null;
+  if (!professional) {
+    throw new Error("Professional not found.");
+  }
+
+  const invitation = directory.staffInvitations.find(
+    (item) =>
+      item.id === input.invitationId.trim() &&
+      item.status === "pending" &&
+      item.email === professional.email.trim().toLowerCase()
+  );
+
+  if (!invitation) {
+    throw new Error("Invitation not found.");
+  }
+
+  const declinedAt = new Date().toISOString();
+
+  if (isSupabaseConfigured()) {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      throw new Error("Supabase is not available.");
+    }
+
+    const { error } = await supabase
+      .from("business_staff_invitations")
+      .update({
+        status: "declined",
+        revoked_at: declinedAt
+      })
+      .eq("id", invitation.id)
+      .eq("email", professional.email.trim().toLowerCase())
+      .eq("status", "pending");
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    invalidateBusinessDirectoryCache();
+    return { ok: true };
+  }
+
+  const store = await ensureDemoBusinessesInLocalStore();
+  const storeInvitation = (store.staffInvitations ?? []).find((item) => item.id === invitation.id);
+  if (!storeInvitation) {
+    throw new Error("Invitation not found.");
+  }
+  storeInvitation.status = "declined";
+  storeInvitation.revokedAt = declinedAt;
+  await writeStore(store);
+  return { ok: true };
 }
 
 export async function searchJoinableBusinesses(query: string): Promise<JoinBusinessSearchResult[]> {
@@ -3671,6 +3844,8 @@ export async function updateBusinessScheduleForProfessional(input: {
   const nextCustomSchedule = normalizeCustomSchedule(input.customSchedule);
   const targetProfessionalId = input.targetProfessionalId?.trim() || input.professionalId;
 
+  assertValidWorkSchedulePayload(nextSchedule, nextCustomSchedule);
+
   if (isSupabaseConfigured()) {
     const supabase = getSupabaseAdmin();
     if (!supabase) {
@@ -3778,6 +3953,47 @@ export async function updateBusinessScheduleForProfessional(input: {
 
   await writeStore(store);
   return { ok: true };
+}
+
+function assertValidWorkSchedulePayload(workSchedule: WorkSchedule, customSchedule: CustomSchedule) {
+  for (const day of workDays) {
+    assertValidWorkDaySchedule(workSchedule[day.key]);
+  }
+
+  for (const day of Object.values(customSchedule)) {
+    assertValidWorkDaySchedule(day);
+  }
+}
+
+function assertValidWorkDaySchedule(day: WorkDaySchedule) {
+  if (!day.enabled) {
+    return;
+  }
+
+  const intervals = getDayIntervals(day);
+
+  if (intervals.length === 0) {
+    throw new Error("Add at least one working interval.");
+  }
+
+  const sorted = [...intervals].sort(
+    (left, right) => timeToMinutes(left.startTime) - timeToMinutes(right.startTime)
+  );
+
+  for (const interval of sorted) {
+    if (timeToMinutes(interval.startTime) >= timeToMinutes(interval.endTime)) {
+      throw new Error("Working interval end must be later than start.");
+    }
+  }
+
+  for (let index = 1; index < sorted.length; index += 1) {
+    const previous = sorted[index - 1];
+    const current = sorted[index];
+
+    if (timeToMinutes(current.startTime) < timeToMinutes(previous.endTime)) {
+      throw new Error("Working intervals overlap.");
+    }
+  }
 }
 
 export type WorkspaceSettingsUpdate = {

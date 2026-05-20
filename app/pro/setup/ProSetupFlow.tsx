@@ -651,7 +651,7 @@ type SetupInvitation = {
   businessName: string;
   role: string;
   email: string;
-  status: "pending" | "accepted" | "revoked";
+  status: "pending" | "accepted" | "revoked" | "declined";
 };
 
 const initialDraft: Draft = {
