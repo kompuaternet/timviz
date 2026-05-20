@@ -24,7 +24,7 @@
         "NSPhotoLibraryAddUsageDescription": "Timviz может сохранять изображения, связанные с профилем и услугами, если вы выберете это действие.",
         "NSFaceIDUsageDescription": "Timviz использует Face ID для быстрого и безопасного входа в аккаунт мастера."
       },
-      "buildNumber": "18"
+      "buildNumber": "19"
     },
     "android": {
       "package": "com.timviz.master",
