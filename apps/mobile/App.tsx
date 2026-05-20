@@ -873,8 +873,9 @@ const TELEGRAM_REMINDER_LEAD_OPTIONS = [15, 30, 60, 120, 180, 1440];
 const CALENDAR_MEMORY_TTL_MS = 30_000;
 const CALENDAR_BACKGROUND_SYNC_MS = 12_000;
 const CALENDAR_WARM_CHUNK_SIZE = 90;
-const CALENDAR_TIME_AXIS_WIDTH = 28;
-const CALENDAR_MIN_MEMBER_COLUMN_WIDTH = 192;
+const CALENDAR_MEMBER_META_TTL_MS = 10 * 60 * 1000;
+const CALENDAR_TIME_AXIS_WIDTH = 52;
+const CALENDAR_MIN_MEMBER_COLUMN_WIDTH = 220;
 const CALENDAR_TEAM_HEADER_HEIGHT = 72;
 const CALENDAR_TEAM_HEADER_AVATAR_SIZE = 34;
 const SERVICE_MODE_IDS = ["onsite", "travel", "online"] as const;
@@ -904,6 +905,75 @@ const languageDisplayNames: Record<AppLanguage, string> = {
   es: "Español",
   de: "Deutsch",
 };
+
+function getCalendarMemberDisplayName(input: {
+  firstName?: string | null;
+  lastName?: string | null;
+  email?: string | null;
+  role?: string | null;
+}, fallback: string) {
+  return [input.firstName, input.lastName].map((item) => safeText(item)).filter(Boolean).join(" ") ||
+    safeText(input.email) ||
+    fallback;
+}
+
+function getMasterFallback(language: AppLanguage) {
+  if (language === "uk") return "Майстер";
+  if (language === "ru") return "Мастер";
+  return "Master";
+}
+
+function isGenericCalendarMemberName(name: string, role?: string | null) {
+  const normalized = safeText(name).trim().toLowerCase();
+  const normalizedRole = safeText(role).trim().toLowerCase();
+  return !normalized ||
+    normalized === normalizedRole ||
+    normalized === "сотрудник" ||
+    normalized === "співробітник" ||
+    normalized === "employee";
+}
+
+function mergeCalendarMemberView(previous: CalendarMemberView | undefined, incoming: CalendarMemberView, fallback: string): CalendarMemberView {
+  const previousName = safeText(previous?.name).trim();
+  const incomingName = safeText(incoming.name).trim();
+  const incomingGeneric = isGenericCalendarMemberName(incomingName, incoming.role);
+  const previousGeneric = isGenericCalendarMemberName(previousName, previous?.role);
+  const name = incomingName && (!incomingGeneric || !previousName || previousGeneric)
+    ? incomingName
+    : previousName || incomingName || fallback;
+
+  return {
+    ...previous,
+    ...incoming,
+    name,
+    avatarUrl: safeText(incoming.avatarUrl) || previous?.avatarUrl || null,
+    role: safeText(incoming.role) || previous?.role || fallback,
+    memberSchedule: incoming.memberSchedule || previous?.memberSchedule,
+  };
+}
+
+function mergeStaffSnapshotMedia(current: StaffSnapshot | null, incoming: StaffSnapshot | null): StaffSnapshot | null {
+  if (!incoming) return current;
+  if (!current?.members?.length) return incoming;
+  const currentMembers = new Map(current.members.map((member) => [member.professional.id, member]));
+  return {
+    ...incoming,
+    members: incoming.members.map((member) => {
+      const previous = currentMembers.get(member.professional.id);
+      if (!previous) return member;
+      return {
+        ...member,
+        professional: {
+          ...member.professional,
+          firstName: safeText(member.professional.firstName) || previous.professional.firstName,
+          lastName: safeText(member.professional.lastName) || previous.professional.lastName,
+          email: safeText(member.professional.email) || previous.professional.email,
+          avatarUrl: safeText(member.professional.avatarUrl) || previous.professional.avatarUrl || null,
+        },
+      };
+    }),
+  };
+}
 
 const baseCopy = {
   uk: {
@@ -4944,6 +5014,26 @@ function getAppointmentServiceColor(
   return safeText(matchedService?.color).trim() || SERVICE_COLORS[fallbackIndex % SERVICE_COLORS.length];
 }
 
+function normalizeHexColor(value: string) {
+  const raw = safeText(value).trim();
+  if (/^#[0-9a-f]{6}$/i.test(raw)) return raw;
+  if (/^#[0-9a-f]{3}$/i.test(raw)) {
+    return `#${raw.slice(1).split("").map((char) => `${char}${char}`).join("")}`;
+  }
+  return "";
+}
+
+function mixHexWithWhite(value: string, whiteRatio = 0.62) {
+  const hex = normalizeHexColor(value);
+  if (!hex) return value || "#EEF2FF";
+  const amount = Math.max(0, Math.min(1, whiteRatio));
+  const red = Number.parseInt(hex.slice(1, 3), 16);
+  const green = Number.parseInt(hex.slice(3, 5), 16);
+  const blue = Number.parseInt(hex.slice(5, 7), 16);
+  const mix = (channel: number) => Math.round(channel * (1 - amount) + 255 * amount);
+  return `#${[mix(red), mix(green), mix(blue)].map((channel) => channel.toString(16).padStart(2, "0")).join("")}`;
+}
+
 function localizeServiceCategory(category: string | undefined, t: Record<string, string>) {
   const value = safeText(category).trim();
   if (!value || value === DEFAULT_SERVICE_CATEGORY || value === "Без категорії" || value === "Uncategorized") {
@@ -5819,6 +5909,7 @@ export default function App() {
   const [clients, setClients] = useState<ClientRecord[]>([]);
   const [serviceCatalog, setServiceCatalog] = useState<ServiceCatalogCategory[]>([]);
   const [staffSnapshot, setStaffSnapshot] = useState<StaffSnapshot | null>(null);
+  const staffMediaLoadedAtRef = useRef(0);
   const [activeTab, setActiveTab] = useState<AppTab>("calendar");
   const [servicesModeRequest, setServicesModeRequest] = useState<{ mode: ServiceTabMode; id: number } | null>(null);
   const [settingsSection, setSettingsSection] = useState<MobileSettingsSection>("general");
@@ -5959,6 +6050,9 @@ export default function App() {
     setClients(Array.isArray(cache.clients) ? cache.clients : []);
     setServiceCatalog(Array.isArray(cache.serviceCatalog) ? cache.serviceCatalog : []);
     setStaffSnapshot(cache.staffSnapshot || null);
+    if (cache.staffSnapshot?.members?.some((member) => safeText(member.professional.avatarUrl))) {
+      staffMediaLoadedAtRef.current = Date.now();
+    }
     if (!workspaceLanguageAppliedRef.current) {
       const profileLanguage = normalizeAppLanguage(cache.workspace?.professional?.language);
       if (profileLanguage) {
@@ -6395,6 +6489,8 @@ export default function App() {
     if (!options.silent) setRefreshing(true);
     try {
       const headers = { Authorization: `Bearer ${currentSession.token}` };
+      const shouldLoadStaffMedia = options.media === true || Date.now() - staffMediaLoadedAtRef.current > CALENDAR_MEMBER_META_TTL_MS;
+      const staffUrl = `${API_BASE_URL}/api/mobile/pro/staff${shouldLoadStaffMedia ? "?media=1" : ""}`;
       const [workspaceResult, calendarResult, clientsResult, servicesResult, staffResult] = await Promise.all([
         fetch(`${API_BASE_URL}/api/mobile/pro/workspace/${currentSession.professionalId}?media=${options.media ? "1" : "0"}`, { headers }).then((item) =>
           item.json()
@@ -6404,7 +6500,7 @@ export default function App() {
         ),
         fetch(`${API_BASE_URL}/api/mobile/pro/clients`, { headers }).then((item) => item.json()),
         fetch(`${API_BASE_URL}/api/mobile/pro/services`, { headers }).then((item) => item.json()),
-        fetch(`${API_BASE_URL}/api/mobile/pro/staff`, { headers }).then((item) => item.json().catch(() => null)).catch(() => null),
+        fetch(staffUrl, { headers }).then((item) => item.json().catch(() => null)).catch(() => null),
       ]);
 
       if (workspaceResult?.error) throw new Error(workspaceResult.error);
@@ -6416,6 +6512,10 @@ export default function App() {
       const nextClients = withPendingClientCreates(Array.isArray(clientsResult.clients) ? clientsResult.clients : []);
       const nextCatalog = Array.isArray(servicesResult.catalog) ? servicesResult.catalog : [];
       const nextWorkspace = withPendingServiceSaves(workspaceResult);
+      const nextStaffSnapshot = mergeStaffSnapshotMedia(staffSnapshot, staffResult || null);
+      if (shouldLoadStaffMedia && nextStaffSnapshot?.members?.length) {
+        staffMediaLoadedAtRef.current = Date.now();
+      }
       if (!workspaceLanguageAppliedRef.current) {
         const profileLanguage = normalizeAppLanguage(nextWorkspace.professional?.language);
         if (profileLanguage) setLanguage(profileLanguage);
@@ -6426,13 +6526,13 @@ export default function App() {
       setCalendarDate(date);
       setClients(nextClients);
       setServiceCatalog(nextCatalog);
-      setStaffSnapshot(staffResult || null);
+      setStaffSnapshot(nextStaffSnapshot);
       persistWorkspaceCache(currentSession, date, {
         workspace: nextWorkspace,
         calendar: calendarResult,
         clients: nextClients,
         serviceCatalog: nextCatalog,
-        staffSnapshot: staffResult || null,
+        staffSnapshot: nextStaffSnapshot,
       });
       setVisitDraft((current) => ({
         ...current,
@@ -7862,14 +7962,15 @@ function CalendarTab({
   const loadingDatesRef = useRef<Set<string>>(new Set());
   const calendarMembers = useMemo<CalendarMemberView[]>(() => {
     const map = new Map<string, CalendarMemberView>();
+    const masterFallback = getMasterFallback(language);
     const addMember = (member: CalendarMemberView) => {
       if (!member.id) return;
-      map.set(member.id, { ...map.get(member.id), ...member, name: member.name.trim() || t.employee });
+      map.set(member.id, mergeCalendarMemberView(map.get(member.id), member, masterFallback));
     };
     for (const member of makeStaffMembers(staff, workspace, t)) {
       addMember({
         id: member.professional.id,
-        name: makeStaffMemberName(member, t.employee),
+        name: makeStaffMemberName(member, masterFallback),
         avatarUrl: member.professional.avatarUrl,
         role: member.membership.role || t.employee,
         scope: member.membership.scope,
@@ -7884,7 +7985,7 @@ function CalendarTab({
     for (const member of calendar?.teamMembers || []) {
       addMember({
         id: member.id,
-        name: `${member.firstName || ""} ${member.lastName || ""}`.trim() || member.role || t.employee,
+        name: getCalendarMemberDisplayName(member, masterFallback),
         avatarUrl: member.avatarUrl,
         role: member.role || t.employee,
         scope: member.scope,
@@ -7894,7 +7995,7 @@ function CalendarTab({
     for (const member of calendar?.memberCalendars || []) {
       addMember({
         id: member.professionalId,
-        name: `${member.firstName || ""} ${member.lastName || ""}`.trim() || member.role || t.employee,
+        name: getCalendarMemberDisplayName(member, masterFallback),
         avatarUrl: member.avatarUrl,
         role: member.role || t.employee,
         scope: member.scope,
@@ -7905,7 +8006,7 @@ function CalendarTab({
     if (workspace?.professional.id && !map.has(workspace.professional.id)) {
       addMember({
         id: workspace.professional.id,
-        name: `${workspace.professional.firstName || ""} ${workspace.professional.lastName || ""}`.trim() || "Timviz",
+        name: getCalendarMemberDisplayName(workspace.professional, masterFallback),
         avatarUrl: workspace.professional.avatarUrl,
         role: workspace.membership?.role || t.owner,
         scope: workspace.membership?.scope === "member" ? "member" : "owner",
@@ -7914,7 +8015,7 @@ function CalendarTab({
       });
     }
     return Array.from(map.values());
-  }, [calendar?.memberCalendars, calendar?.teamMembers, staff, t, workspace]);
+  }, [calendar?.memberCalendars, calendar?.teamMembers, language, staff, t, workspace]);
   const selectedMembers = calendarMembers.filter((member) => selectedMemberIds.includes(member.id));
   const primaryMember = selectedMembers[0] || calendarMembers[0] || null;
   const visibleCalendarMembers = selectedMembers.length ? selectedMembers : calendarMembers.slice(0, 1);
@@ -8456,7 +8557,7 @@ function CalendarTab({
                       <Pressable style={styles.teamPickerButton} onPress={() => setMemberPickerOpen(true)}>
                         <Ionicons name="people-outline" size={18} color="#0F172A" />
                         <View style={styles.teamPickerBadge}>
-                          <Text style={styles.teamPickerBadgeText}>{selectedMembers.length || 1}</Text>
+                          <Text style={styles.teamPickerBadgeText} allowFontScaling={false}>{selectedMembers.length || 1}</Text>
                         </View>
                       </Pressable>
                     ) : null}
@@ -8475,8 +8576,15 @@ function CalendarTab({
                       {visibleCalendarMembers.map((member) => (
                         <View key={member.id} style={[styles.teamDayHeader, { width: dayMemberColumnWidth }]}>
                           <MemberAvatar member={member} size={CALENDAR_TEAM_HEADER_AVATAR_SIZE} />
-                          <Text style={styles.masterName} numberOfLines={1} ellipsizeMode="tail">
+                          <Text style={styles.masterName} numberOfLines={1} ellipsizeMode="tail" allowFontScaling={false}>
                             {member.name}
+                          </Text>
+                          <Text style={styles.masterRole} numberOfLines={1} ellipsizeMode="tail" allowFontScaling={false}>
+                            {member.scope === "owner"
+                              ? t.owner
+                              : isGenericCalendarMemberName(member.role)
+                                ? getMasterFallback(language)
+                                : member.role}
                           </Text>
                         </View>
                       ))}
@@ -9040,13 +9148,16 @@ function MemberAvatar({ member, size = 34 }: { member: CalendarMemberView; size?
     .filter(Boolean)
     .slice(0, 2)
     .map((part) => part.slice(0, 1).toUpperCase())
-    .join("") || "T";
+    .join("") || "M";
+  const fallbackColors = ["#7C3AED", "#0EA5E9", "#10B981", "#F59E0B", "#EC4899", "#6366F1", "#14B8A6", "#A855F7"];
+  const colorSeed = (member.name || member.id).split("").reduce((sum, char) => sum + char.charCodeAt(0), 0);
+  const fallbackColor = fallbackColors[colorSeed % fallbackColors.length];
   return (
-    <View style={[styles.masterAvatar, { width: size, height: size, borderRadius: size / 2 }]}>
+    <View style={[styles.masterAvatar, { width: size, height: size, borderRadius: size / 2, backgroundColor: fallbackColor }]}>
       {member.avatarUrl ? (
         <Image source={{ uri: member.avatarUrl }} style={[styles.memberAvatarImage, { width: size, height: size, borderRadius: size / 2 }]} />
       ) : (
-        <Text style={[styles.masterAvatarText, { fontSize: Math.max(12, size / 2.2) }]}>{initials}</Text>
+        <Text style={[styles.masterAvatarText, { fontSize: Math.max(12, size / 2.2) }]} allowFontScaling={false}>{initials}</Text>
       )}
     </View>
   );
@@ -9623,7 +9734,8 @@ function CalendarTimeline({
         const visualGap = actualHeight > 8 ? 2 : 0;
         const blockTop = top + visualGap / 2;
         const height = Math.max(1, actualHeight - visualGap);
-        const color = getAppointmentServiceColor(appointment, services, index);
+        const serviceColor = getAppointmentServiceColor(appointment, services, index);
+        const color = mixHexWithWhite(serviceColor, 0.58);
         const availableWidth = gridWidth - laneGap * 2;
         const blockGap = laneCount > 1 ? 2 : 0;
         const blockWidth = laneCount > 1 ? (availableWidth - blockGap * (laneCount - 1)) / laneCount : availableWidth;
@@ -9648,6 +9760,7 @@ function CalendarTimeline({
                 left: blockLeft,
                 width: blockWidth,
                 backgroundColor: color,
+                borderColor: mixHexWithWhite(serviceColor, 0.22),
               },
             ]}
             onPress={() => onAppointmentPress(appointment)}
@@ -9656,13 +9769,17 @@ function CalendarTimeline({
             <Text style={[styles.appointmentTime, isCompactCard && styles.appointmentTimeTight, isVeryTightCard && styles.appointmentTimeVeryTight]} numberOfLines={1} ellipsizeMode="tail" adjustsFontSizeToFit minimumFontScale={0.78}>
               {timeLabel}
             </Text>
-            <Text style={[styles.appointmentClient, isCompactCard && styles.appointmentClientTight, isVeryTightCard && styles.appointmentClientVeryTight]} numberOfLines={1} ellipsizeMode="tail">
-              {appointment.customerName || t.customer}
-            </Text>
-            <Text style={[styles.appointmentService, isCompactCard && styles.appointmentServiceTight, isVeryTightCard && styles.appointmentServiceVeryTight]} numberOfLines={1} ellipsizeMode="tail">
-              {formatAppointmentServiceName ? formatAppointmentServiceName(appointment) : appointment.serviceName}
-            </Text>
-            <Text style={styles.appointmentPrice}>{formatMoney(appointment.priceAmount, currency)}</Text>
+            {height >= 36 ? (
+              <Text style={[styles.appointmentClient, isCompactCard && styles.appointmentClientTight, isVeryTightCard && styles.appointmentClientVeryTight]} numberOfLines={1} ellipsizeMode="tail">
+                {appointment.customerName || t.customer}
+              </Text>
+            ) : null}
+            {height > 56 ? (
+              <Text style={[styles.appointmentService, isCompactCard && styles.appointmentServiceTight, isVeryTightCard && styles.appointmentServiceVeryTight]} numberOfLines={1} ellipsizeMode="tail">
+                {formatAppointmentServiceName ? formatAppointmentServiceName(appointment) : appointment.serviceName}
+              </Text>
+            ) : null}
+            {height > 86 ? <Text style={styles.appointmentPrice}>{formatMoney(appointment.priceAmount, currency)}</Text> : null}
           </Pressable>
         );
       })}
@@ -11292,7 +11409,7 @@ function makeStaffMembers(staff: StaffSnapshot | null, workspace: WorkspaceSnaps
 }
 
 function makeStaffMemberName(member: StaffMemberRecord, fallback: string) {
-  return `${member.professional.firstName || ""} ${member.professional.lastName || ""}`.trim() || member.professional.email || fallback;
+  return getCalendarMemberDisplayName(member.professional, fallback);
 }
 
 function splitStaffFullName(value: string) {
@@ -15814,11 +15931,22 @@ const styles = StyleSheet.create({
   masterName: {
     width: "100%",
     maxWidth: "100%",
-    marginTop: 5,
-    paddingHorizontal: 8,
-    color: "#334155",
+    marginTop: 4,
+    paddingHorizontal: 10,
+    color: "#0F172A",
     fontSize: 13,
-    lineHeight: 16,
+    lineHeight: 15,
+    fontWeight: "900",
+    textAlign: "center",
+  },
+  masterRole: {
+    width: "100%",
+    maxWidth: "100%",
+    marginTop: 1,
+    paddingHorizontal: 10,
+    color: "#94A3B8",
+    fontSize: 10,
+    lineHeight: 12,
     fontWeight: "800",
     textAlign: "center",
   },
@@ -15929,7 +16057,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     minHeight: CALENDAR_TEAM_HEADER_HEIGHT,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(203, 213, 225, 0.58)",
+    borderBottomColor: "#E5E7EB",
     backgroundColor: "rgba(255,255,255,0.94)",
   },
   teamMembersBodyRow: {
@@ -15949,23 +16077,23 @@ const styles = StyleSheet.create({
     height: CALENDAR_TEAM_HEADER_HEIGHT,
     borderRightWidth: 1,
     borderBottomWidth: 1,
-    borderRightColor: "rgba(203, 213, 225, 0.50)",
-    borderBottomColor: "rgba(203, 213, 225, 0.58)",
-    backgroundColor: "rgba(255,255,255,0.88)",
+    borderRightColor: "#E5E7EB",
+    borderBottomColor: "#E5E7EB",
+    backgroundColor: "#F8FAFC",
   },
   teamPickerRailBody: {
     width: CALENDAR_TIME_AXIS_WIDTH,
     alignSelf: "stretch",
     borderRightWidth: 1,
-    borderRightColor: "rgba(226, 232, 240, 0.42)",
-    backgroundColor: "#FBFCFF",
+    borderRightColor: "#E5E7EB",
+    backgroundColor: "#F8FAFC",
   },
   timeAxisColumn: {
     width: CALENDAR_TIME_AXIS_WIDTH,
     position: "relative",
     borderRightWidth: 1,
-    borderRightColor: "rgba(226, 232, 240, 0.30)",
-    backgroundColor: "#FBFCFF",
+    borderRightColor: "#E5E7EB",
+    backgroundColor: "#F8FAFC",
   },
   timeAxisHour: {
     position: "absolute",
@@ -15985,21 +16113,21 @@ const styles = StyleSheet.create({
     zIndex: 5,
   },
   teamPickerButton: {
-    width: 28,
-    height: 28,
-    marginTop: 22,
-    marginLeft: 0,
+    width: 36,
+    height: 36,
+    marginTop: 18,
+    marginLeft: 8,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 22,
+    borderRadius: 18,
     borderWidth: 1,
     borderColor: "rgba(226, 232, 240, 0.78)",
     backgroundColor: "rgba(255,255,255,0.92)",
   },
   teamPickerBadge: {
     position: "absolute",
-    top: -4,
-    right: -4,
+    top: -7,
+    right: -7,
     minWidth: 20,
     height: 20,
     paddingHorizontal: 5,
@@ -16017,7 +16145,7 @@ const styles = StyleSheet.create({
     minWidth: CALENDAR_MIN_MEMBER_COLUMN_WIDTH,
     overflow: "hidden",
     borderRightWidth: 1,
-    borderRightColor: "rgba(203, 213, 225, 0.50)",
+    borderRightColor: "#E5E7EB",
     backgroundColor: "#FFFFFF",
   },
   teamDayHeader: {
@@ -16026,9 +16154,9 @@ const styles = StyleSheet.create({
     minWidth: CALENDAR_MIN_MEMBER_COLUMN_WIDTH,
     minHeight: CALENDAR_TEAM_HEADER_HEIGHT,
     paddingHorizontal: 8,
-    paddingVertical: 7,
+    paddingVertical: 8,
     borderRightWidth: 1,
-    borderRightColor: "rgba(203, 213, 225, 0.50)",
+    borderRightColor: "#E5E7EB",
     backgroundColor: "rgba(255,255,255,0.94)",
   },
   teamPickerMenu: {
@@ -16588,7 +16716,7 @@ const styles = StyleSheet.create({
   },
   timeline: {
     position: "relative",
-    backgroundColor: "#FEFFFF",
+    backgroundColor: "#FFFFFF",
   },
   hourRow: {
     position: "absolute",
@@ -16599,14 +16727,14 @@ const styles = StyleSheet.create({
   },
   hourText: {
     width: CALENDAR_TIME_AXIS_WIDTH,
-    paddingRight: 2,
+    paddingRight: 6,
     height: 16,
     lineHeight: 16,
     marginTop: -8,
     textAlign: "right",
     color: "#94A3B8",
     fontSize: 12,
-    fontWeight: "500",
+    fontWeight: "700",
   },
   hourTextHidden: {
     opacity: 0,
@@ -16615,7 +16743,7 @@ const styles = StyleSheet.create({
     flex: 1,
     position: "relative",
     borderLeftWidth: 1,
-    borderLeftColor: "rgba(226, 232, 240, 0.24)",
+    borderLeftColor: "rgba(226, 232, 240, 0.48)",
   },
   majorLine: {
     position: "absolute",
@@ -16623,14 +16751,14 @@ const styles = StyleSheet.create({
     right: 0,
     top: 0,
     height: 1,
-    backgroundColor: "rgba(203, 213, 225, 0.22)",
+    backgroundColor: "rgba(203, 213, 225, 0.44)",
   },
   minorLine: {
     position: "absolute",
     left: 0,
     right: 0,
     height: 1,
-    backgroundColor: "rgba(226, 232, 240, 0.06)",
+    backgroundColor: "rgba(226, 232, 240, 0.28)",
   },
   closedBlock: {
     position: "absolute",
@@ -16678,44 +16806,43 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: CALENDAR_TIME_AXIS_WIDTH,
     right: 0,
-    height: 1,
-    backgroundColor: "rgba(239, 71, 111, 0.64)",
-    zIndex: 2,
+    height: 2,
+    backgroundColor: "rgba(244, 63, 94, 0.84)",
+    zIndex: 30,
   },
   currentTimeDot: {
     position: "absolute",
-    left: -3,
-    top: -3,
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-    borderWidth: 1,
-    borderColor: "#EF476F",
-    backgroundColor: "#FFFFFF",
+    left: -5,
+    top: -4,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    borderWidth: 2,
+    borderColor: "#FFFFFF",
+    backgroundColor: "#F43F5E",
   },
   appointmentBlock: {
     position: "absolute",
     zIndex: 3,
-    borderRadius: 17,
+    borderRadius: 12,
     paddingVertical: 8,
     paddingLeft: 10,
     paddingRight: 10,
     overflow: "hidden",
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.92)",
     shadowColor: "#243044",
-    shadowOpacity: 0.075,
-    shadowRadius: 14,
-    shadowOffset: { width: 0, height: 7 },
+    shadowOpacity: 0.08,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
   },
   appointmentBlockTight: {
-    borderRadius: 14,
+    borderRadius: 11,
     paddingVertical: 6,
     paddingLeft: 8,
     paddingRight: 8,
   },
   appointmentBlockVeryTight: {
-    borderRadius: 12,
+    borderRadius: 10,
     paddingVertical: 4,
     paddingLeft: 6,
     paddingRight: 6,
@@ -16762,7 +16889,7 @@ const styles = StyleSheet.create({
     color: "#475569",
     fontSize: 11,
     lineHeight: 14,
-    fontWeight: "600",
+    fontWeight: "800",
   },
   appointmentTimeTight: {
     fontSize: 10,
@@ -16777,8 +16904,8 @@ const styles = StyleSheet.create({
     marginTop: 2,
     color: "#0F172A",
     fontSize: 14,
-    lineHeight: 16,
-    fontWeight: "700",
+    lineHeight: 15,
+    fontWeight: "900",
   },
   appointmentClientTight: {
     marginTop: 1,
@@ -16792,10 +16919,10 @@ const styles = StyleSheet.create({
   },
   appointmentService: {
     marginTop: 1,
-    color: "#667085",
-    fontSize: 12,
-    lineHeight: 14,
-    fontWeight: "500",
+    color: "#64748B",
+    fontSize: 11,
+    lineHeight: 13,
+    fontWeight: "700",
   },
   appointmentServiceTight: {
     fontSize: 11,
