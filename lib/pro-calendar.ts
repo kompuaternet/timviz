@@ -1638,7 +1638,7 @@ export async function updateCalendarAppointmentMeta(input: {
   targetProfessionalId?: string;
   appointmentId: string;
   attendance: CalendarAttendanceStatus;
-  priceAmount: number;
+  priceAmount?: number;
   customerName?: string;
   customerPhone?: string;
   startTime?: string;
@@ -1660,9 +1660,12 @@ export async function updateCalendarAppointmentMeta(input: {
     }
 
     const updatePayload: Record<string, string | number> = {
-      attendance: input.attendance,
-      price_amount: Math.max(0, Number.isFinite(input.priceAmount) ? input.priceAmount : 0)
+      attendance: input.attendance
     };
+
+    if (typeof input.priceAmount === "number" && Number.isFinite(input.priceAmount)) {
+      updatePayload.price_amount = Math.max(0, input.priceAmount);
+    }
 
     if (typeof input.customerName === "string") {
       updatePayload.customer_name = input.customerName.trim();
@@ -1719,7 +1722,9 @@ export async function updateCalendarAppointmentMeta(input: {
   }
 
   appointment.attendance = input.attendance;
-  appointment.priceAmount = Math.max(0, Number.isFinite(input.priceAmount) ? input.priceAmount : 0);
+  if (typeof input.priceAmount === "number" && Number.isFinite(input.priceAmount)) {
+    appointment.priceAmount = Math.max(0, input.priceAmount);
+  }
   if (typeof input.customerName === "string") {
     appointment.customerName = input.customerName.trim();
   }

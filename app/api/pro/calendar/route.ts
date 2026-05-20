@@ -624,7 +624,7 @@ export async function PATCH(request: Request) {
         targetProfessionalId: body.targetProfessionalId,
         appointmentId: body.appointmentId,
         attendance: body.attendance,
-        priceAmount: Number(body.priceAmount ?? 0),
+        priceAmount: typeof body.priceAmount === "undefined" ? undefined : Number(body.priceAmount ?? 0),
         customerName: body.customerName,
         customerPhone: body.customerPhone,
         startTime: body.startTime,

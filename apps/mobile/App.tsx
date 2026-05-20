@@ -575,6 +575,23 @@ const API_BASE_URL = (process.env.EXPO_PUBLIC_API_BASE_URL || "https://timviz.co
 const WORDMARK = require("./assets/timviz-wordmark.png");
 const DEFAULT_SERVICE_CATEGORY = "Без категории";
 const SERVICE_COLORS = ["#9AD86A", "#8ED1F2", "#FF9A84", "#F7C948", "#A78BFA", "#34D399", "#F472B6", "#60A5FA"];
+const SYSTEM_SERVICE_CATEGORIES = [
+  "Массаж",
+  "Волосы",
+  "Ногти",
+  "Брови и ресницы",
+  "Ресницы",
+  "Лицо",
+  "Косметология",
+  "Депиляция",
+  "Тело",
+  "Макияж",
+  "Тату / Перманент",
+  "Обучение",
+  "Ремонт",
+  "Другое",
+];
+const QUICK_DURATION_OPTIONS = [30, 45, 60, 90];
 const APP_ICON = require("./assets/timviz-icon.png");
 const SETTINGS_SECTIONS: MobileSettingsSection[] = ["general", "online", "services", "schedule", "push", "telegram", "address"];
 const PREMIUM_LOCKED_TABS: AppTab[] = [];
@@ -1066,6 +1083,8 @@ const baseCopy = {
     statusPending: "Очікує підтвердження",
     statusConfirmed: "Підтверджена",
     statusCancelled: "Скасована",
+    confirmBooking: "Підтвердити",
+    cancelBooking: "Скасувати запис",
     companySettings: "Налаштування компанії",
     helpSupport: "Допомога і підтримка",
     language: "Мова",
@@ -1097,10 +1116,26 @@ const baseCopy = {
     category: "Категорія",
     newCategory: "Нова категорія",
     selectedCategory: "Обрана категорія",
+    similarServices: "Схожі послуги",
+    serviceCategory: "Категорія послуги",
+    looksLikeCategory: "Схоже, це категорія:",
+    useCategory: "Використати",
+    cantFindCategory: "Не знайшли категорію",
+    customCategory: "Своя категорія",
+    enterCategoryName: "Введіть назву категорії",
+    customCategoryHint: "Створюйте свою категорію тільки якщо її немає у списку.",
+    similarCategoryExists: "Схоже, така категорія вже є:",
+    similarServiceExists: "Схожа послуга вже існує",
+    serviceAlreadyExistsSuffix: "вже є у ваших послугах",
+    openExistingService: "Відкрити існуючу",
+    createNewAnyway: "Все одно створити нову",
+    chooseServiceCategoryOrAddCustom: "Оберіть категорію послуги або додайте свою.",
+    serviceNameRequired: "Введіть назву послуги.",
+    durationRequired: "Вкажіть тривалість.",
     editService: "Редагувати послугу",
     saveService: "Зберегти послугу",
     addFromCatalog: "Додати",
-    alreadyAdded: "Додано",
+    alreadyAdded: "Вже додано",
     catalogHint: "Оберіть готову послугу.",
     myServicesHint: "Редагуйте ціну, тривалість і доступність.",
     price: "Ціна",
@@ -1496,6 +1531,8 @@ const baseCopy = {
     statusPending: "Ожидает подтверждения",
     statusConfirmed: "Подтверждена",
     statusCancelled: "Отменена",
+    confirmBooking: "Подтвердить",
+    cancelBooking: "Отменить запись",
     companySettings: "Настройки компании",
     helpSupport: "Помощь и поддержка",
     language: "Язык",
@@ -1527,10 +1564,26 @@ const baseCopy = {
     category: "Категория",
     newCategory: "Новая категория",
     selectedCategory: "Выбранная категория",
+    similarServices: "Похожие услуги",
+    serviceCategory: "Категория услуги",
+    looksLikeCategory: "Похоже, это категория:",
+    useCategory: "Использовать",
+    cantFindCategory: "Не нашёл категорию",
+    customCategory: "Своя категория",
+    enterCategoryName: "Введите название категории",
+    customCategoryHint: "Создавайте свою категорию только если ее нет в списке.",
+    similarCategoryExists: "Похоже, такая категория уже есть:",
+    similarServiceExists: "Похожая услуга уже есть",
+    serviceAlreadyExistsSuffix: "уже есть в ваших услугах",
+    openExistingService: "Открыть существующую",
+    createNewAnyway: "Все равно создать новую",
+    chooseServiceCategoryOrAddCustom: "Выберите категорию услуги или добавьте свою.",
+    serviceNameRequired: "Введите название услуги.",
+    durationRequired: "Укажите длительность.",
     editService: "Редактировать услугу",
     saveService: "Сохранить услугу",
     addFromCatalog: "Добавить",
-    alreadyAdded: "Добавлено",
+    alreadyAdded: "Уже добавлена",
     catalogHint: "Выберите готовую услугу.",
     myServicesHint: "Редактируйте цену, длительность и доступность.",
     price: "Цена",
@@ -1926,6 +1979,8 @@ const baseCopy = {
     statusPending: "Pending",
     statusConfirmed: "Confirmed",
     statusCancelled: "Cancelled",
+    confirmBooking: "Confirm",
+    cancelBooking: "Cancel booking",
     companySettings: "Company settings",
     helpSupport: "Help and support",
     language: "Language",
@@ -1957,10 +2012,26 @@ const baseCopy = {
     category: "Category",
     newCategory: "New category",
     selectedCategory: "Selected category",
+    similarServices: "Similar services",
+    serviceCategory: "Service category",
+    looksLikeCategory: "Looks like this category:",
+    useCategory: "Use",
+    cantFindCategory: "Can’t find category",
+    customCategory: "Custom category",
+    enterCategoryName: "Enter category name",
+    customCategoryHint: "Create a custom category only if it is not in the list.",
+    similarCategoryExists: "Looks like this category already exists:",
+    similarServiceExists: "Similar service already exists",
+    serviceAlreadyExistsSuffix: "already exists in your services",
+    openExistingService: "Open existing",
+    createNewAnyway: "Create new anyway",
+    chooseServiceCategoryOrAddCustom: "Choose a service category or add your own.",
+    serviceNameRequired: "Enter service name.",
+    durationRequired: "Enter duration.",
     editService: "Edit service",
     saveService: "Save service",
     addFromCatalog: "Add",
-    alreadyAdded: "Added",
+    alreadyAdded: "Already added",
     catalogHint: "Choose a ready-made service.",
     myServicesHint: "Edit price, duration, and availability.",
     price: "Price",
@@ -2339,6 +2410,8 @@ const generatedMobileCopy = {
     statusPending: "En attente",
     statusConfirmed: "Confirmé",
     statusCancelled: "Annulé",
+    confirmBooking: "Confirmer",
+    cancelBooking: "Annuler la réservation",
     companySettings: "Paramètres de l'entreprise",
     helpSupport: "Aide et support",
     language: "Langue",
@@ -2710,6 +2783,8 @@ const generatedMobileCopy = {
     statusPending: "Oczekuje",
     statusConfirmed: "Potwierdzono",
     statusCancelled: "Anulowano",
+    confirmBooking: "Potwierdź",
+    cancelBooking: "Anuluj rezerwację",
     companySettings: "Ustawienia firmy",
     helpSupport: "Pomoc i wsparcie",
     language: "Język",
@@ -3081,6 +3156,8 @@ const generatedMobileCopy = {
     statusPending: "Nevyřízeno",
     statusConfirmed: "Potvrzeno",
     statusCancelled: "Zrušeno",
+    confirmBooking: "Potvrdit",
+    cancelBooking: "Zrušit rezervaci",
     companySettings: "Nastavení společnosti",
     helpSupport: "Pomoc a podpora",
     language: "Jazyk",
@@ -3452,6 +3529,8 @@ const generatedMobileCopy = {
     statusPending: "Pendiente",
     statusConfirmed: "Confirmado",
     statusCancelled: "Cancelado",
+    confirmBooking: "Confirmar",
+    cancelBooking: "Cancelar reserva",
     companySettings: "Ajustes de empresa",
     helpSupport: "Ayuda y soporte",
     language: "Idioma",
@@ -3823,6 +3902,8 @@ const generatedMobileCopy = {
     statusPending: "Ausstehend",
     statusConfirmed: "Bestätigt",
     statusCancelled: "Abgebrochen",
+    confirmBooking: "Bestätigen",
+    cancelBooking: "Buchung stornieren",
     companySettings: "Firmeneinstellungen",
     helpSupport: "Hilfe und Support",
     language: "Sprache",
@@ -4362,8 +4443,20 @@ const COUNTRY_LABELS: Record<AppLanguage, Record<string, string>> = {
 const SERVICE_CATEGORY_LABELS: Record<AppLanguage, Record<string, string>> = {
   uk: {
     "Парикмахерская": "Перукарня",
+    "Массаж": "Масаж",
+    "Волосы": "Волосся",
     "Ногти": "Нігті",
     "Брови и ресницы": "Брови та вії",
+    "Ресницы": "Вії",
+    "Лицо": "Обличчя",
+    "Косметология": "Косметологія",
+    "Депиляция": "Депіляція",
+    "Тело": "Тіло",
+    "Макияж": "Макіяж",
+    "Тату / Перманент": "Тату / Перманент",
+    "Обучение": "Навчання",
+    "Ремонт": "Ремонт",
+    "Другое": "Інше",
     "Салон красоты": "Салон краси",
     "Медспа": "Медспа",
     "Парикмахер": "Перукар",
@@ -4378,8 +4471,20 @@ const SERVICE_CATEGORY_LABELS: Record<AppLanguage, Record<string, string>> = {
   ru: {},
   en: {
     "Парикмахерская": "Hair salon",
+    "Массаж": "Massage",
+    "Волосы": "Hair",
     "Ногти": "Nails",
     "Брови и ресницы": "Brows and lashes",
+    "Ресницы": "Lashes",
+    "Лицо": "Face",
+    "Косметология": "Cosmetology",
+    "Депиляция": "Depilation",
+    "Тело": "Body",
+    "Макияж": "Makeup",
+    "Тату / Перманент": "Tattoo / Permanent",
+    "Обучение": "Training",
+    "Ремонт": "Repair",
+    "Другое": "Other",
     "Салон красоты": "Beauty salon",
     "Медспа": "Medspa",
     "Парикмахер": "Hairdresser",
@@ -4697,6 +4802,93 @@ function serviceNameMatches(service: Pick<ServiceRecord | ServiceTemplateRecord,
   return [service?.name, ...SUPPORTED_APP_LANGUAGES.map((item) => service?.localizedName?.[item])]
     .filter(Boolean)
     .some((candidate) => String(candidate).trim().toLowerCase() === normalized);
+}
+
+function normalizeSmartSearchText(value: unknown) {
+  return safeText(value)
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/ё/g, "е")
+    .replace(/[ії]/g, "и")
+    .replace(/є/g, "е")
+    .replace(/ґ/g, "г")
+    .replace(/\bmassage\b/g, "массаж")
+    .replace(/\bmass\b/g, "массаж")
+    .replace(/\bnails?\b/g, "ногти")
+    .replace(/\bbrows?\b/g, "брови")
+    .replace(/\blashes?\b/g, "ресницы")
+    .replace(/\bhaircut\b/g, "стрижка")
+    .replace(/\bhair\b/g, "волосы")
+    .replace(/\bfacial\b/g, "лицо")
+    .replace(/\bmakeup\b/g, "макияж")
+    .replace(/\btattoo\b/g, "тату")
+    .replace(/\bwaxing\b/g, "депиляция")
+    .replace(/\bsugaring\b/g, "депиляция")
+    .replace(/масаж/g, "массаж")
+    .replace(/\s+/g, " ");
+}
+
+function getServiceSmartSearchText(service: Pick<ServiceRecord | ServiceTemplateRecord, "name" | "localizedName"> | undefined) {
+  return [service?.name, ...SUPPORTED_APP_LANGUAGES.map((item) => service?.localizedName?.[item])]
+    .filter(Boolean)
+    .map(normalizeSmartSearchText)
+    .join(" ");
+}
+
+function areServiceNamesSimilar(service: Pick<ServiceRecord | ServiceTemplateRecord, "name" | "localizedName"> | undefined, value: string) {
+  const query = normalizeSmartSearchText(value);
+  if (!query) return false;
+  const names = [service?.name, ...SUPPORTED_APP_LANGUAGES.map((item) => service?.localizedName?.[item])]
+    .filter(Boolean)
+    .map(normalizeSmartSearchText)
+    .filter(Boolean);
+  return names.some((name) => name === query || name.includes(query) || query.includes(name));
+}
+
+function inferSystemServiceCategory(value: string) {
+  const text = normalizeSmartSearchText(value);
+  if (!text) return "";
+  const rules: Array<[string, RegExp]> = [
+    ["Массаж", /массаж|спина|шея|воротников|релакс|тайск|лимфат|тело/],
+    ["Волосы", /стрижк|волос|окраш|фарб|уклад|hair|cut|fade|барбер|перукар/],
+    ["Ногти", /маникюр|манікюр|ногт|нигт|nail|педикюр/],
+    ["Брови и ресницы", /бров|brow/],
+    ["Ресницы", /ресниц|вии|lash/],
+    ["Лицо", /лицо|облич|facial|пилинг|маска/],
+    ["Депиляция", /депиляц|эпиляц|епіляц|wax|sugar|шугар/],
+    ["Косметология", /ботокс|filler|инъекц|ін'єкц|косметолог|мезотерап|плазм|контур/],
+    ["Макияж", /макияж|makeup|візаж|визаж/],
+    ["Тату / Перманент", /тату|tattoo|перманент|пирсинг/],
+    ["Тело", /тело|body|скраб|обертыван|обгорт/],
+  ];
+  return rules.find(([, pattern]) => pattern.test(text))?.[0] || "";
+}
+
+function isAppointmentWithoutServiceName(value: string | undefined) {
+  const raw = safeText(value).trim().toLowerCase();
+  const normalized = normalizeSmartSearchText(raw);
+  if (!normalized) return true;
+  return (
+    normalized === "без услуги" ||
+    normalized === "без послуги" ||
+    normalized === "without service" ||
+    normalized === "no service" ||
+    normalized.includes("без услуги") ||
+    normalized.includes("без послуги")
+  );
+}
+
+function getAppointmentServiceColor(
+  appointment: Pick<AppointmentRecord, "serviceName" | "kind"> | undefined,
+  services: ServiceRecord[] = [],
+  fallbackIndex = 0
+) {
+  if (!appointment || appointment.kind === "blocked") return "#CBD5E1";
+  if (isAppointmentWithoutServiceName(appointment.serviceName)) return "#EEF2F7";
+  const matchedService = services.find((service) => serviceNameMatches(service, appointment.serviceName) || areServiceNamesSimilar(service, appointment.serviceName));
+  return safeText(matchedService?.color).trim() || SERVICE_COLORS[fallbackIndex % SERVICE_COLORS.length];
 }
 
 function localizeServiceCategory(category: string | undefined, t: Record<string, string>) {
@@ -7150,15 +7342,15 @@ export default function App() {
                 onRefreshWorkspace={() => refreshAll(session, selectedDate)}
                 onWorkspaceUpdated={(nextWorkspace) => setWorkspace(withPendingServiceSaves(nextWorkspace))}
                 setActiveTab={setActiveTab}
-	                activeSection={settingsSection}
-	                setActiveSection={setSettingsSection}
-	                onSignOut={signOut}
-	                biometricAvailable={biometricAvailable}
-	                biometricEnabled={biometricEnabled}
-	                onToggleBiometric={toggleBiometricUnlock}
-	                busy={busy}
+                  activeSection={settingsSection}
+                  setActiveSection={setSettingsSection}
+                  onSignOut={signOut}
+                  biometricAvailable={biometricAvailable}
+                  biometricEnabled={biometricEnabled}
+                  onToggleBiometric={toggleBiometricUnlock}
+                  busy={busy}
                   onRequestPremium={() => openSettingsSection("general")}
-	              />
+                />
             ) : null}
           </ScrollView>
           </KeyboardAvoidingView>
@@ -7188,41 +7380,41 @@ export default function App() {
             <Text style={styles.authSubtitle}>{t.proSubtitle}</Text>
           </View>
 
-	          <View style={styles.authCard}>
-	            <View style={styles.segment}>
-	              <Pressable onPress={() => setMode("login")} style={[styles.segmentButton, mode === "login" && styles.segmentButtonActive]}>
-	                <Text style={[styles.segmentText, mode === "login" && styles.segmentTextActive]}>{t.login}</Text>
+            <View style={styles.authCard}>
+              <View style={styles.segment}>
+                <Pressable onPress={() => setMode("login")} style={[styles.segmentButton, mode === "login" && styles.segmentButtonActive]}>
+                  <Text style={[styles.segmentText, mode === "login" && styles.segmentTextActive]}>{t.login}</Text>
               </Pressable>
               <Pressable onPress={() => setMode("register")} style={[styles.segmentButton, mode === "register" && styles.segmentButtonActive]}>
                 <Text style={[styles.segmentText, mode === "register" && styles.segmentTextActive]}>{t.registerShort || t.register}</Text>
-	              </Pressable>
-	            </View>
+                </Pressable>
+              </View>
 
-	            {pendingBiometricSession ? (
-	              <Pressable style={styles.biometricUnlockCard} onPress={unlockPendingSessionWithBiometrics}>
-	                <View style={styles.biometricUnlockIcon}>
-	                  <Ionicons name="scan-outline" size={20} color="#6D4AFF" />
-	                </View>
-	                <View style={styles.biometricUnlockText}>
-	                  <Text style={styles.socialButtonText}>{t.unlockWithBiometrics}</Text>
-	                  <Text style={styles.socialButtonCaption}>{pendingBiometricSession.email}</Text>
-	                </View>
-	                <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
-	              </Pressable>
-	            ) : null}
+              {pendingBiometricSession ? (
+                <Pressable style={styles.biometricUnlockCard} onPress={unlockPendingSessionWithBiometrics}>
+                  <View style={styles.biometricUnlockIcon}>
+                    <Ionicons name="scan-outline" size={20} color="#6D4AFF" />
+                  </View>
+                  <View style={styles.biometricUnlockText}>
+                    <Text style={styles.socialButtonText}>{t.unlockWithBiometrics}</Text>
+                    <Text style={styles.socialButtonCaption}>{pendingBiometricSession.email}</Text>
+                  </View>
+                  <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
+                </Pressable>
+              ) : null}
 
-	            <SocialAuthButtons
-	              t={t}
-	              googleEnabled={Boolean(googleConfigured)}
-	              appleEnabled={appleSignInAvailable}
-	              busyProvider={socialBusy}
-	              disabled={busy}
-	              onGoogle={signInWithGoogle}
-	              onGoogleToken={(idToken) => authenticateWithSocialProvider("google", idToken)}
-	              onApple={signInWithApple}
-	            />
+              <SocialAuthButtons
+                t={t}
+                googleEnabled={Boolean(googleConfigured)}
+                appleEnabled={appleSignInAvailable}
+                busyProvider={socialBusy}
+                disabled={busy}
+                onGoogle={signInWithGoogle}
+                onGoogleToken={(idToken) => authenticateWithSocialProvider("google", idToken)}
+                onApple={signInWithApple}
+              />
 
-	            {mode === "login" ? (
+              {mode === "login" ? (
               <View style={styles.form}>
                 <Pressable style={styles.authInlineCta} onPress={() => setMode("register")}>
                   <Text style={styles.authInlineCtaText}>{t.newMasterCta}</Text>
@@ -8019,6 +8211,7 @@ function CalendarTab({
                             <CalendarTimeline
                               date={selectedDate}
                               appointments={memberAppointments}
+                              services={workspace?.services || []}
                               currency={currency}
                               compact={isCompact}
                               schedule={memberSchedule}
@@ -8113,7 +8306,13 @@ function CalendarTab({
               </Pressable>
             </View>
             {visitPickerMode === "client" ? (
-              <>
+              <ScrollView
+                style={styles.clientPickerScroll}
+                contentContainerStyle={styles.clientPickerScrollContent}
+                keyboardShouldPersistTaps="handled"
+                keyboardDismissMode="interactive"
+                showsVerticalScrollIndicator={false}
+              >
                 <SearchInput value={clientQuery} onChangeText={setClientQuery} placeholder={t.clientNameOrPhone} />
                 <Pressable style={styles.clientOptionCard} onPress={() => setDraftClient(null)}>
                   <View style={styles.clientAvatar}>
@@ -8165,7 +8364,7 @@ function CalendarTab({
                     <PrimaryButton label={t.addAndSelectClient} onPress={() => void createInlineClient()} disabled={busy} />
                   </View>
                 ) : null}
-                <ScrollView style={styles.pickerList} keyboardShouldPersistTaps="always" showsVerticalScrollIndicator={false}>
+                <View style={styles.clientPickerResults}>
                   {filteredClients.map((client) => (
                     <Pressable key={client.id} style={styles.clientOptionCard} onPress={() => setDraftClient(client)}>
                       <View style={styles.clientAvatar}>
@@ -8185,8 +8384,8 @@ function CalendarTab({
                       </Pressable>
                     </View>
                   ) : null}
-                </ScrollView>
-              </>
+                </View>
+              </ScrollView>
             ) : visitPickerMode === "service" ? (
               <>
                 {hasServices ? (
@@ -8722,7 +8921,7 @@ function CalendarOverview({
                   <Text style={styles.monthVisitBadgeText} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72}>{appointments.length} {t.visits}</Text>
                   <View style={styles.monthVisitDots}>
                     {appointments.slice(0, 3).map((appointment, index) => (
-                      <View key={`${appointment.id}-${appointment.startTime}-${index}`} style={[styles.monthVisitDot, { backgroundColor: index % 3 === 0 ? "#A78BFA" : index % 3 === 1 ? "#7DD3FC" : "#86EFAC" }]} />
+                      <View key={`${appointment.id}-${appointment.startTime}-${index}`} style={[styles.monthVisitDot, { backgroundColor: getAppointmentServiceColor(appointment, workspace?.services || [], index) }]} />
                     ))}
                   </View>
                 </View>
@@ -8784,12 +8983,13 @@ function CalendarOverview({
                 {visibleAppointments.length ? (
                   visibleAppointments.map(({ appointment, member }, index) => {
                     const blocked = appointment.kind === "blocked";
+                    const serviceColor = getAppointmentServiceColor(appointment, workspace?.services || [], index);
                     const title = blocked ? appointment.serviceName || t.unavailableTime : appointment.customerName || appointment.serviceName || t.customer;
                     const subtitle = blocked ? t.unavailableTime : appointment.serviceName || member?.name || "";
                     return (
                       <Pressable
                         key={`${appointment.id}-${appointment.startTime}-${index}`}
-                        style={[styles.mobileWeekAppointmentPill, blocked && styles.mobileWeekAppointmentPillBlocked]}
+                        style={[styles.mobileWeekAppointmentPill, { backgroundColor: serviceColor }, blocked && styles.mobileWeekAppointmentPillBlocked]}
                         onPress={() => onOpenDay(date)}
                       >
                         <Text style={styles.mobileWeekAppointmentTime} numberOfLines={1}>{appointment.startTime}</Text>
@@ -8862,7 +9062,7 @@ function CalendarOverview({
                   onLongPress={() => onCreateAt(date, member.id)}
                 >
                   {appointments.slice(0, 3).map((appointment, index) => (
-                    <View key={appointment.id} style={[styles.teamOverviewAppointmentBar, { backgroundColor: index % 3 === 0 ? "#BFEDE4" : index % 3 === 1 ? "#FFD4C8" : "#D9F5BE" }]}>
+                    <View key={appointment.id} style={[styles.teamOverviewAppointmentBar, { backgroundColor: getAppointmentServiceColor(appointment, workspace?.services || [], index) }]}>
                       <Text style={styles.teamOverviewAppointmentText}>{appointment.startTime}</Text>
                     </View>
                   ))}
@@ -8880,6 +9080,7 @@ function CalendarOverview({
 function CalendarTimeline({
   date,
   appointments,
+  services = [],
   currency,
   compact,
   schedule,
@@ -8897,6 +9098,7 @@ function CalendarTimeline({
 }: {
   date: string;
   appointments: AppointmentRecord[];
+  services?: ServiceRecord[];
   currency?: string;
   compact: boolean;
   schedule: WorkDayScheduleRecord;
@@ -9142,7 +9344,7 @@ function CalendarTimeline({
         const visualGap = actualHeight > 8 ? 2 : 0;
         const blockTop = top + visualGap / 2;
         const height = Math.max(1, actualHeight - visualGap);
-        const color = index % 4 === 0 ? "#FFF0EA" : index % 4 === 1 ? "#FFF6D7" : index % 4 === 2 ? "#E6F7FA" : "#EAF8DF";
+        const color = getAppointmentServiceColor(appointment, services, index);
         const availableWidth = gridWidth - laneGap * 2;
         const blockGap = laneCount > 1 ? 2 : 0;
         const blockWidth = laneCount > 1 ? (availableWidth - blockGap * (laneCount - 1)) / laneCount : availableWidth;
@@ -9230,6 +9432,7 @@ function WorkspaceHeader({
   const supportPollingRef = useRef(false);
   const [notifications, setNotifications] = useState<MobileNotificationsPayload>({});
   const [loadingNotifications, setLoadingNotifications] = useState(false);
+  const [notificationActionId, setNotificationActionId] = useState("");
   const [busy, setBusy] = useState(false);
   const bookingToggleRequestRef = useRef(0);
   const publicBookingUrl = workspace?.business.publicBookingUrl || "";
@@ -9496,6 +9699,55 @@ function WorkspaceHeader({
     onOpenSettingsSection("general");
   }
 
+  function moveOnlineBookingNotificationToArchive(item: MobileNotificationRecord, status: "confirmed" | "cancelled") {
+    const updatedItem = { ...item, status };
+    setNotifications((current) => ({
+      ...current,
+      pendingOnlineBookings: (current.pendingOnlineBookings || []).filter((notification) => notification.id !== item.id),
+      archivedOnlineBookings: [
+        updatedItem,
+        ...(current.archivedOnlineBookings || []).filter((notification) => notification.id !== item.id),
+      ].slice(0, 12),
+    }));
+  }
+
+  async function handleOnlineBookingAction(item: MobileNotificationRecord, action: "confirm" | "cancel") {
+    const appointmentId = safeText(item.appointmentId).trim();
+    if (!appointmentId) {
+      onOpenNotification(item);
+      return;
+    }
+
+    const actionKey = `${action}:${item.id}`;
+    setNotificationActionId(actionKey);
+    moveOnlineBookingNotificationToArchive(item, action === "confirm" ? "confirmed" : "cancelled");
+
+    try {
+      if (action === "confirm") {
+        await apiFetch("/api/mobile/pro/calendar", {
+          method: "PATCH",
+          body: JSON.stringify({
+            mode: "meta",
+            appointmentId,
+            targetProfessionalId: item.professionalId,
+            attendance: "confirmed",
+          }),
+        });
+      } else {
+        const target = item.professionalId ? `&targetProfessionalId=${encodeURIComponent(item.professionalId)}` : "";
+        await apiFetch(`/api/mobile/pro/calendar?appointmentId=${encodeURIComponent(appointmentId)}${target}`, { method: "DELETE" });
+      }
+
+      await loadNotifications();
+      onRefreshWorkspace();
+    } catch (error) {
+      await loadNotifications();
+      Alert.alert("Timviz", error instanceof Error ? error.message : action === "confirm" ? t.confirmBooking || t.statusConfirmed : t.cancelBooking || t.statusCancelled);
+    } finally {
+      setNotificationActionId((current) => (current === actionKey ? "" : current));
+    }
+  }
+
   function renderPanel() {
     if (!panel) return null;
     const close = () => setPanel(null);
@@ -9672,6 +9924,9 @@ function WorkspaceHeader({
                     t={t}
                     language={language}
                     services={workspace?.services || []}
+                    onConfirm={() => void handleOnlineBookingAction(item, "confirm")}
+                    onCancel={() => void handleOnlineBookingAction(item, "cancel")}
+                    actionBusy={notificationActionId === `confirm:${item.id}` || notificationActionId === `cancel:${item.id}`}
                     onPress={() => {
                       close();
                       onOpenNotification(item);
@@ -9857,15 +10112,22 @@ function NotificationCard({
   language,
   services,
   onPress,
+  onConfirm,
+  onCancel,
+  actionBusy,
 }: {
   item: MobileNotificationRecord;
   t: Record<string, string>;
   language: AppLanguage;
   services: ServiceRecord[];
   onPress?: () => void;
+  onConfirm?: () => void;
+  onCancel?: () => void;
+  actionBusy?: boolean;
 }) {
   const statusText = item.status === "cancelled" ? t.statusCancelled : item.status === "confirmed" ? t.statusConfirmed : t.statusPending;
   const serviceName = getServiceDisplayName(services.find((service) => serviceNameMatches(service, item.serviceName)), language) || item.serviceName;
+  const showActions = item.status === "pending" && (onConfirm || onCancel);
   return (
     <Pressable style={styles.notificationCard} onPress={onPress} disabled={!onPress}>
       <View style={styles.notificationCardHeader}>
@@ -9879,6 +10141,32 @@ function NotificationCard({
       <View style={[styles.notificationStatusPill, item.status === "cancelled" ? styles.notificationStatusCancelled : item.status === "confirmed" ? styles.notificationStatusConfirmed : null]}>
         <Text style={[styles.notificationStatusText, item.status === "cancelled" ? styles.notificationStatusCancelledText : item.status === "confirmed" ? styles.notificationStatusConfirmedText : null]}>{statusText}</Text>
       </View>
+      {showActions ? (
+        <View style={styles.notificationActionRow}>
+          <Pressable
+            style={[styles.notificationActionButton, styles.notificationConfirmButton, actionBusy && styles.disabled]}
+            onPress={(event) => {
+              event.stopPropagation();
+              onConfirm?.();
+            }}
+            disabled={actionBusy || !onConfirm}
+          >
+            {actionBusy ? <ActivityIndicator color="#FFFFFF" size="small" /> : <Ionicons name="checkmark" size={16} color="#FFFFFF" />}
+            <Text style={styles.notificationConfirmButtonText}>{t.confirmBooking || t.statusConfirmed}</Text>
+          </Pressable>
+          <Pressable
+            style={[styles.notificationActionButton, styles.notificationCancelButton, actionBusy && styles.disabled]}
+            onPress={(event) => {
+              event.stopPropagation();
+              onCancel?.();
+            }}
+            disabled={actionBusy || !onCancel}
+          >
+            <Ionicons name="close" size={16} color="#BE123C" />
+            <Text style={styles.notificationCancelButtonText}>{t.cancelBooking || t.statusCancelled}</Text>
+          </Pressable>
+        </View>
+      ) : null}
     </Pressable>
   );
 }
@@ -10043,6 +10331,10 @@ function ServicesTab({
   const [editId, setEditId] = useState("");
   const [editDraft, setEditDraft] = useState<ServiceDraftState>({ name: "", category: DEFAULT_SERVICE_CATEGORY, durationMinutes: "60", price: "0", color: SERVICE_COLORS[0] });
   const [customCategory, setCustomCategory] = useState("");
+  const [customCategoryOpen, setCustomCategoryOpen] = useState(false);
+  const [allowDuplicateCreate, setAllowDuplicateCreate] = useState(false);
+  const [customServiceError, setCustomServiceError] = useState("");
+  const [debouncedServiceName, setDebouncedServiceName] = useState("");
   const [catalogQuery, setCatalogQuery] = useState("");
   const [activeCatalogCategory, setActiveCatalogCategory] = useState("");
 
@@ -10054,6 +10346,7 @@ function ServicesTab({
 
   const categories = useMemo(() => {
     const names = [
+      ...SYSTEM_SERVICE_CATEGORIES,
       ...services.map((service) => service.category || ""),
       ...catalog.map((item) => item.title),
       draft.category,
@@ -10064,6 +10357,24 @@ function ServicesTab({
       .filter(Boolean);
     return Array.from(new Set(names));
   }, [catalog, customCategory, draft.category, services]);
+
+  const recommendedCategory = useMemo(() => inferSystemServiceCategory(draft.name), [draft.name]);
+
+  useEffect(() => {
+    setAllowDuplicateCreate(false);
+    setCustomServiceError("");
+  }, [draft.name]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedServiceName(draft.name), 300);
+    return () => clearTimeout(timer);
+  }, [draft.name]);
+
+  useEffect(() => {
+    if (recommendedCategory && (!draft.category || draft.category === DEFAULT_SERVICE_CATEGORY)) {
+      setDraft({ ...draft, category: recommendedCategory });
+    }
+  }, [draft.category, draft.name, recommendedCategory, setDraft]);
 
   const currentCatalogCategory = activeCatalogCategory || catalog[0]?.title || categories[0] || DEFAULT_SERVICE_CATEGORY;
   const catalogServices = useMemo(() => {
@@ -10129,13 +10440,114 @@ function ServicesTab({
   }
 
   function serviceExists(serviceName: string) {
-    return services.some((service) => serviceNameMatches(service, serviceName));
+    return services.some((service) => serviceNameMatches(service, serviceName) || areServiceNamesSimilar(service, serviceName));
+  }
+
+  const similarServices = useMemo(() => {
+    const query = normalizeSmartSearchText(debouncedServiceName);
+    if (query.length < 2) return [];
+    const items: Array<{
+      key: string;
+      service: ServiceRecord | (ServiceTemplateRecord & { category: string });
+      category: string;
+      source: "user" | "catalog";
+      alreadyAdded: boolean;
+    }> = [];
+    const seen = new Set<string>();
+    const pushItem = (
+      service: ServiceRecord | (ServiceTemplateRecord & { category: string }),
+      category: string,
+      source: "user" | "catalog"
+    ) => {
+      const display = getServiceDisplayName(service, language);
+      const smart = getServiceSmartSearchText(service);
+      if (!smart || (!smart.includes(query) && !query.includes(smart) && !areServiceNamesSimilar(service, debouncedServiceName))) return;
+      const key = normalizeSmartSearchText(display || service.name || "");
+      if (!key || seen.has(key)) return;
+      seen.add(key);
+      items.push({
+        key: `${source}-${key}`,
+        service,
+        category,
+        source,
+        alreadyAdded: source === "user" || services.some((item) => areServiceNamesSimilar(item, display || service.name || "")),
+      });
+    };
+    services.forEach((service) => pushItem(service, service.category || DEFAULT_SERVICE_CATEGORY, "user"));
+    catalog.forEach((group) => {
+      [...(group.topSuggestions || []), ...(group.popularServices || [])].forEach((service) => {
+        pushItem({ ...service, category: group.title }, group.title, "catalog");
+      });
+    });
+    return items.slice(0, 7);
+  }, [catalog, debouncedServiceName, language, services]);
+
+  const duplicateService = useMemo(
+    () => services.find((service) => areServiceNamesSimilar(service, draft.name)),
+    [draft.name, services]
+  );
+
+  const similarSystemCategory = useMemo(() => {
+    const value = normalizeSmartSearchText(customCategory);
+    if (!value) return "";
+    return SYSTEM_SERVICE_CATEGORIES.find((category) => {
+      const label = localizeCatalogCategory(category, language, t);
+      const normalizedCategory = normalizeSmartSearchText(`${category} ${label}`);
+      return normalizedCategory === value || normalizedCategory.includes(value) || value.includes(normalizedCategory) || inferSystemServiceCategory(value) === category;
+    }) || "";
+  }, [customCategory, language, t]);
+
+  function applyServiceSuggestion(item: {
+    service: ServiceRecord | (ServiceTemplateRecord & { category: string });
+    category: string;
+    source: "user" | "catalog";
+  }) {
+    const name = getServiceDisplayName(item.service, language) || item.service.name || "";
+    setDraft({
+      ...draft,
+      name,
+      category: item.category || draft.category || DEFAULT_SERVICE_CATEGORY,
+      durationMinutes: String(item.service.durationMinutes || 60),
+      price: String(Number("price" in item.service ? item.service.price || 0 : 0)),
+      color: "color" in item.service ? item.service.color || draft.color || SERVICE_COLORS[0] : draft.color || SERVICE_COLORS[0],
+    });
+    if (item.source === "user" && "id" in item.service) {
+      setMode("mine");
+      startEdit(item.service);
+    }
+  }
+
+  function openExistingDuplicate() {
+    if (!duplicateService) return;
+    setMode("mine");
+    startEdit(duplicateService);
   }
 
   async function saveCustomService() {
+    const hasName = draft.name.trim().length > 0;
+    const hasCategory = Boolean(draft.category.trim() && draft.category !== DEFAULT_SERVICE_CATEGORY);
+    const hasDuration = Number(draft.durationMinutes) > 0;
+    if (!hasName) {
+      setCustomServiceError(t.serviceNameRequired || t.serviceName);
+      return;
+    }
+    if (!hasCategory) {
+      setCustomServiceError(t.chooseServiceCategoryOrAddCustom);
+      return;
+    }
+    if (!hasDuration) {
+      setCustomServiceError(t.durationRequired || t.duration);
+      return;
+    }
+    if (duplicateService && !allowDuplicateCreate) {
+      setCustomServiceError(t.similarServiceExists);
+      return;
+    }
     const created = await onCreate();
     if (created) {
       setMode("mine");
+      setCustomCategoryOpen(false);
+      setCustomServiceError("");
     }
   }
 
@@ -10237,21 +10649,127 @@ function ServicesTab({
 
       {mode === "custom" ? (
         <Panel title={t.ownService}>
-          <Field label={t.serviceName} value={draft.name} onChangeText={(value) => setDraft({ ...draft, name: value })} />
-          <Text style={styles.label}>{t.selectedCategory}</Text>
-          <CategoryChips t={t} language={language} categories={categories} selected={draft.category} onSelect={(category) => setDraft({ ...draft, category })} />
-          <View style={styles.categoryAddRow}>
-            <Field label={t.newCategory} value={customCategory} onChangeText={setCustomCategory} />
-            <Pressable style={styles.categoryAddButton} onPress={addCustomCategory}>
-              <Ionicons name="add" size={22} color="#FFFFFF" />
+          <View style={styles.serviceCreateForm}>
+            <Field label={t.serviceName} value={draft.name} onChangeText={(value) => setDraft({ ...draft, name: value })} />
+
+            {similarServices.length ? (
+              <View style={styles.smartBlock}>
+                <Text style={styles.smartBlockTitle}>{t.similarServices}</Text>
+                {similarServices.map((item) => {
+                  const selected = areServiceNamesSimilar(item.service, draft.name) && normalizeSmartSearchText(getServiceDisplayName(item.service, language)) === normalizeSmartSearchText(draft.name);
+                  return (
+                    <Pressable
+                      key={item.key}
+                      style={[styles.smartSuggestionCard, selected && styles.smartSuggestionCardSelected]}
+                      onPress={() => applyServiceSuggestion(item)}
+                      disabled={busy}
+                    >
+                      <View style={styles.serviceTextBlock}>
+                        <Text style={styles.smartSuggestionTitle}>{getServiceDisplayName(item.service, language)}</Text>
+                        <Text style={styles.smartSuggestionMeta}>
+                          {formatDuration(item.service.durationMinutes || 60, t)} · {localizeCatalogCategory(item.category, language, t)}
+                          {"price" in item.service && Number(item.service.price || 0) ? ` · ${formatMoney(Number(item.service.price || 0), currency)}` : ""}
+                        </Text>
+                      </View>
+                      {item.alreadyAdded ? <Text style={styles.alreadyAddedBadge}>{t.alreadyAdded}</Text> : null}
+                    </Pressable>
+                  );
+                })}
+              </View>
+            ) : null}
+
+            {recommendedCategory ? (
+              <View style={styles.recommendedCategoryBox}>
+                <Text style={styles.recommendedCategoryText}>
+                  {t.looksLikeCategory} {localizeCatalogCategory(recommendedCategory, language, t)}
+                </Text>
+                <Pressable style={styles.recommendedCategoryButton} onPress={() => setDraft({ ...draft, category: recommendedCategory })}>
+                  <Text style={styles.recommendedCategoryButtonText}>{t.useCategory}</Text>
+                </Pressable>
+              </View>
+            ) : null}
+
+            <Text style={styles.label}>{t.serviceCategory}</Text>
+            <CategoryChips
+              t={t}
+              language={language}
+              categories={categories}
+              selected={draft.category}
+              recommended={recommendedCategory}
+              onSelect={(category) => {
+                setDraft({ ...draft, category });
+                setCustomServiceError("");
+              }}
+            />
+
+            <Pressable style={styles.customCategoryToggle} onPress={() => setCustomCategoryOpen((current) => !current)}>
+              <Ionicons name={customCategoryOpen ? "chevron-up" : "add"} size={16} color="#64748B" />
+              <Text style={styles.customCategoryToggleText}>{t.cantFindCategory}</Text>
             </Pressable>
+
+            {customCategoryOpen ? (
+              <View style={styles.customCategoryPanel}>
+                <Text style={styles.compactHelperText}>{t.customCategoryHint}</Text>
+                <View style={styles.categoryAddRow}>
+                  <Field label={t.customCategory} value={customCategory} onChangeText={setCustomCategory} placeholder={t.enterCategoryName} />
+                  <Pressable style={styles.categoryAddButton} onPress={addCustomCategory}>
+                    <Ionicons name="add" size={22} color="#FFFFFF" />
+                  </Pressable>
+                </View>
+                {similarSystemCategory ? (
+                  <View style={styles.softWarningBox}>
+                    <Text style={styles.softWarningText}>
+                      {t.similarCategoryExists} {localizeCatalogCategory(similarSystemCategory, language, t)}
+                    </Text>
+                    <Pressable style={styles.warningInlineButton} onPress={() => {
+                      setDraft({ ...draft, category: similarSystemCategory });
+                      setCustomCategory("");
+                    }}>
+                      <Text style={styles.warningInlineButtonText}>{t.useCategory}</Text>
+                    </Pressable>
+                  </View>
+                ) : null}
+              </View>
+            ) : null}
+
+            <View style={styles.durationQuickRow}>
+              {QUICK_DURATION_OPTIONS.map((minutes) => {
+                const active = String(minutes) === String(draft.durationMinutes);
+                return (
+                  <Pressable key={minutes} style={[styles.durationQuickChip, active && styles.durationQuickChipActive]} onPress={() => setDraft({ ...draft, durationMinutes: String(minutes) })}>
+                    <Text style={[styles.durationQuickText, active && styles.durationQuickTextActive]}>{minutes}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+            <View style={styles.twoColumns}>
+              <Field label={t.duration} value={draft.durationMinutes} onChangeText={(value) => setDraft({ ...draft, durationMinutes: value })} keyboardType="number-pad" />
+              <Field label={t.price} value={draft.price} onChangeText={(value) => setDraft({ ...draft, price: value })} keyboardType="number-pad" />
+            </View>
+            <ColorSwatches value={draft.color} onChange={(color) => setDraft({ ...draft, color })} />
+
+            {duplicateService && !allowDuplicateCreate ? (
+              <View style={styles.softWarningBox}>
+                <Text style={styles.softWarningTitle}>{t.similarServiceExists}</Text>
+                <Text style={styles.softWarningText}>
+                  {getServiceDisplayName(duplicateService, language)} {t.serviceAlreadyExistsSuffix}
+                </Text>
+                <View style={styles.warningActionRow}>
+                  <SecondaryButton label={t.openExistingService} onPress={openExistingDuplicate} disabled={busy} />
+                  <SecondaryButton label={t.createNewAnyway} onPress={() => setAllowDuplicateCreate(true)} disabled={busy} />
+                </View>
+              </View>
+            ) : null}
+
+            {customServiceError ? <Text style={styles.formErrorNotice}>{customServiceError}</Text> : null}
+            <View style={styles.submitBar}>
+              <PrimaryButton
+                label={t.addService}
+                onPress={() => void saveCustomService()}
+                disabled={busy || !draft.name.trim() || !draft.category.trim() || draft.category === DEFAULT_SERVICE_CATEGORY || !Number(draft.durationMinutes || 0)}
+              />
+            </View>
           </View>
-          <View style={styles.twoColumns}>
-            <Field label={t.duration} value={draft.durationMinutes} onChangeText={(value) => setDraft({ ...draft, durationMinutes: value })} keyboardType="number-pad" />
-            <Field label={t.price} value={draft.price} onChangeText={(value) => setDraft({ ...draft, price: value })} keyboardType="number-pad" />
-          </View>
-          <ColorSwatches value={draft.color} onChange={(color) => setDraft({ ...draft, color })} />
-          <PrimaryButton label={t.addService} onPress={() => void saveCustomService()} disabled={busy} />
         </Panel>
       ) : null}
 
@@ -10289,12 +10807,14 @@ function CategoryChips({
   language,
   categories,
   selected,
+  recommended,
   onSelect,
 }: {
   t: Record<string, string>;
   language: AppLanguage;
   categories: string[];
   selected: string;
+  recommended?: string;
   onSelect: (category: string) => void;
 }) {
   const safeCategories = categories.length ? categories : [DEFAULT_SERVICE_CATEGORY];
@@ -10302,9 +10822,10 @@ function CategoryChips({
     <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="always" contentContainerStyle={styles.servicePicker}>
       {safeCategories.map((category) => {
         const active = category === selected;
+        const isRecommended = Boolean(recommended && category === recommended && !active);
         return (
-          <Pressable key={category} style={[styles.choiceChip, active && styles.choiceChipActive]} onPress={() => onSelect(category)}>
-            <Text style={[styles.choiceText, active && styles.choiceTextActive]}>{localizeCatalogCategory(category, language, t)}</Text>
+          <Pressable key={category} style={[styles.choiceChip, isRecommended && styles.choiceChipRecommended, active && styles.choiceChipActive]} onPress={() => onSelect(category)}>
+            <Text style={[styles.choiceText, isRecommended && styles.choiceTextRecommended, active && styles.choiceTextActive]}>{localizeCatalogCategory(category, language, t)}</Text>
           </Pressable>
         );
       })}
@@ -10441,11 +10962,19 @@ function ClientsTab({
                   <Ionicons name="close" size={22} color="#0F172A" />
                 </Pressable>
               </View>
-              <Field label={t.firstName} value={draft.firstName} onChangeText={(value) => setDraft({ ...draft, firstName: value })} />
-              <Field label={t.lastName} value={draft.lastName} onChangeText={(value) => setDraft({ ...draft, lastName: value })} />
-              <Field label={t.phone} value={draft.phone} onChangeText={(value) => setDraft({ ...draft, phone: value })} keyboardType="phone-pad" />
-              <Field label={t.email} value={draft.email} onChangeText={(value) => setDraft({ ...draft, email: value })} keyboardType="email-address" autoCapitalize="none" />
-              <PrimaryButton label={t.addClient} onPress={handleCreateClient} disabled={busy} />
+              <ScrollView
+                style={styles.clientModalScroll}
+                contentContainerStyle={styles.clientModalScrollContent}
+                keyboardShouldPersistTaps="handled"
+                keyboardDismissMode="interactive"
+                showsVerticalScrollIndicator={false}
+              >
+                <Field label={t.firstName} value={draft.firstName} onChangeText={(value) => setDraft({ ...draft, firstName: value })} />
+                <Field label={t.lastName} value={draft.lastName} onChangeText={(value) => setDraft({ ...draft, lastName: value })} />
+                <Field label={t.phone} value={draft.phone} onChangeText={(value) => setDraft({ ...draft, phone: value })} keyboardType="phone-pad" />
+                <Field label={t.email} value={draft.email} onChangeText={(value) => setDraft({ ...draft, email: value })} keyboardType="email-address" autoCapitalize="none" />
+                <PrimaryButton label={t.addClient} onPress={handleCreateClient} disabled={busy} />
+              </ScrollView>
             </View>
           </KeyboardAvoidingView>
         </View>
@@ -11180,7 +11709,7 @@ function StaffScheduleTab({
           ].map((item) => {
             const active = scheduleMode === item.id;
             return (
-	              <Pressable key={item.id} style={[styles.staffScheduleModeButton, active && styles.staffScheduleModeButtonActive]} onPress={() => updateScheduleMode(item.id as "fixed" | "flexible")}>
+                <Pressable key={item.id} style={[styles.staffScheduleModeButton, active && styles.staffScheduleModeButtonActive]} onPress={() => updateScheduleMode(item.id as "fixed" | "flexible")}>
                 <Text style={[styles.staffScheduleModeText, active && styles.staffScheduleModeTextActive]}>{item.label}</Text>
               </Pressable>
             );
@@ -12608,12 +13137,12 @@ function SettingsTab({
             </View>
             <Field label={t.firstName} value={draft.firstName} onChangeText={(value) => updateDraft("firstName", value)} onBlur={() => queueSettingsPatch({ professional: { firstName: draft.firstName } })} />
             <Field label={t.lastName} value={draft.lastName} onChangeText={(value) => updateDraft("lastName", value)} onBlur={() => queueSettingsPatch({ professional: { lastName: draft.lastName } })} />
-		            <Field label={t.email} value={draft.email} onChangeText={(value) => updateDraft("email", value)} onBlur={() => queueSettingsPatch({ professional: { email: draft.email } })} keyboardType="email-address" autoCapitalize="none" />
-		            <Field label={t.phone} value={draft.phone} onChangeText={(value) => updateDraft("phone", value)} onBlur={() => queueSettingsPatch({ professional: { phone: draft.phone } })} keyboardType="phone-pad" />
-	            <Field label={t.newPassword} hint={t.leaveBlankPassword} value={newPassword} onChangeText={setNewPassword} secureTextEntry />
-	            <SettingsToggleRow label={t.unlockWithFaceId} value={biometricEnabled} onPress={onToggleBiometric} disabled={!biometricAvailable} />
-	            {!biometricAvailable ? <Text style={styles.clientOptionCaption}>{t.biometricUnavailable}</Text> : null}
-	          </Panel>
+            <Field label={t.email} value={draft.email} onChangeText={(value) => updateDraft("email", value)} onBlur={() => queueSettingsPatch({ professional: { email: draft.email } })} keyboardType="email-address" autoCapitalize="none" />
+            <Field label={t.phone} value={draft.phone} onChangeText={(value) => updateDraft("phone", value)} onBlur={() => queueSettingsPatch({ professional: { phone: draft.phone } })} keyboardType="phone-pad" />
+              <Field label={t.newPassword} hint={t.leaveBlankPassword} value={newPassword} onChangeText={setNewPassword} secureTextEntry />
+              <SettingsToggleRow label={t.unlockWithFaceId} value={biometricEnabled} onPress={onToggleBiometric} disabled={!biometricAvailable} />
+              {!biometricAvailable ? <Text style={styles.clientOptionCaption}>{t.biometricUnavailable}</Text> : null}
+            </Panel>
 
           <Panel title={t.businessFormat}>
             <Field label={t.companyName} value={draft.businessName} editable={isOwner} onChangeText={(value) => updateDraft("businessName", value)} onBlur={() => queueSettingsPatch({ business: { name: draft.businessName } })} />
@@ -12628,7 +13157,7 @@ function SettingsTab({
                   key={item.value}
                   disabled={!isOwner}
                   style={[styles.settingsChoice, draft.accountType === item.value && styles.settingsChoiceActive]}
-	                  onPress={() => updateDraftAndQueue("accountType", item.value, { business: { accountType: item.value } }, 80)}
+                    onPress={() => updateDraftAndQueue("accountType", item.value, { business: { accountType: item.value } }, 80)}
                 >
                   <Text style={[styles.settingsChoiceText, draft.accountType === item.value && styles.settingsChoiceTextActive]}>{item.label}</Text>
                 </Pressable>
@@ -12639,21 +13168,21 @@ function SettingsTab({
           {renderBusinessPhotosPanel()}
 
           <Panel title={t.localization}>
-	            <LanguageSwitch language={draft.language} setLanguage={(value) => { setLanguage(value); updateDraftAndQueue("language", value, { professional: { language: value } }, 80); }} />
-	            <SettingsOptionRail
-	              label={t.country}
-	              value={draft.country}
-	              options={COUNTRY_OPTIONS}
-	              onSelect={(value) => {
-	                const nextCurrency = inferCurrency(value);
-	                updateDraft("country", value);
-	                updateDraft("currency", nextCurrency);
-	                queueSettingsPatch({ professional: { country: value, currency: nextCurrency } }, 80);
-	              }}
-	              renderLabel={(value) => localizeCountry(value, language)}
-	            />
-	            <SettingsOptionRail label={t.timezone} value={draft.timezone} options={TIMEZONE_OPTIONS} onSelect={(value) => updateDraftAndQueue("timezone", value, { professional: { timezone: value } }, 80)} renderLabel={(value) => TIMEZONE_LABELS[value] || value} />
-	            <SettingsOptionRail label={t.currency} value={draft.currency} options={CURRENCY_OPTIONS} onSelect={(value) => updateDraftAndQueue("currency", value, { professional: { currency: value } }, 80)} />
+              <LanguageSwitch language={draft.language} setLanguage={(value) => { setLanguage(value); updateDraftAndQueue("language", value, { professional: { language: value } }, 80); }} />
+              <SettingsOptionRail
+                label={t.country}
+                value={draft.country}
+                options={COUNTRY_OPTIONS}
+                onSelect={(value) => {
+                  const nextCurrency = inferCurrency(value);
+                  updateDraft("country", value);
+                  updateDraft("currency", nextCurrency);
+                  queueSettingsPatch({ professional: { country: value, currency: nextCurrency } }, 80);
+                }}
+                renderLabel={(value) => localizeCountry(value, language)}
+              />
+              <SettingsOptionRail label={t.timezone} value={draft.timezone} options={TIMEZONE_OPTIONS} onSelect={(value) => updateDraftAndQueue("timezone", value, { professional: { timezone: value } }, 80)} renderLabel={(value) => TIMEZONE_LABELS[value] || value} />
+              <SettingsOptionRail label={t.currency} value={draft.currency} options={CURRENCY_OPTIONS} onSelect={(value) => updateDraftAndQueue("currency", value, { professional: { currency: value } }, 80)} />
           </Panel>
 
           <Panel title={t.joinRequests}>
@@ -12682,7 +13211,7 @@ function SettingsTab({
 
       {!activeSectionLocked && activeSection === "online" ? (
         <Panel title={t.settingsOnline}>
-	          <Pressable style={styles.shareToggleRow} onPress={() => updateDraftAndQueue("allowOnlineBooking", !draft.allowOnlineBooking, { business: { allowOnlineBooking: !draft.allowOnlineBooking } }, 80)} disabled={!isOwner}>
+            <Pressable style={styles.shareToggleRow} onPress={() => updateDraftAndQueue("allowOnlineBooking", !draft.allowOnlineBooking, { business: { allowOnlineBooking: !draft.allowOnlineBooking } }, 80)} disabled={!isOwner}>
             <View>
               <Text style={styles.shareToggleTitle}>{draft.allowOnlineBooking ? t.onlineBookingOn : t.onlineBookingOff}</Text>
               <Text style={styles.clientOptionCaption}>{workspace?.business.name || t.companyName}</Text>
@@ -12718,7 +13247,7 @@ function SettingsTab({
                   key={item}
                   disabled={!isOwner}
                   style={[styles.settingsLongChoice, getServiceModeId(draft.serviceMode) === item && styles.settingsChoiceActive]}
-	                  onPress={() => updateDraftAndQueue("serviceMode", SERVICE_MODE_VALUES[item], { business: { serviceMode: SERVICE_MODE_VALUES[item] } }, 80)}
+                    onPress={() => updateDraftAndQueue("serviceMode", SERVICE_MODE_VALUES[item], { business: { serviceMode: SERVICE_MODE_VALUES[item] } }, 80)}
                 >
                   <Text style={[styles.settingsChoiceText, getServiceModeId(draft.serviceMode) === item && styles.settingsChoiceTextActive]}>{localizeServiceMode(SERVICE_MODE_VALUES[item], t)}</Text>
                 </Pressable>
@@ -12905,14 +13434,14 @@ function SettingsTab({
               <Text style={styles.addressSuggestionAction}>{t.selectAddress}</Text>
             </Pressable>
           ))}
-	          <Field label={t.streetAddress} value={draft.address} editable={isOwner} onChangeText={(value) => updateDraft("address", value)} onBlur={() => queueSettingsPatch({ business: { address: draft.address } })} />
+            <Field label={t.streetAddress} value={draft.address} editable={isOwner} onChangeText={(value) => updateDraft("address", value)} onBlur={() => queueSettingsPatch({ business: { address: draft.address } })} />
           <View style={styles.field}>
             <Text style={styles.label}>{t.addressDetails}</Text>
             <TextInput
-	              value={draft.addressDetails}
-	              editable={isOwner}
-	              onChangeText={(value) => updateDraft("addressDetails", value)}
-	              onBlur={() => queueSettingsPatch({ business: { addressDetails: draft.addressDetails } })}
+                value={draft.addressDetails}
+                editable={isOwner}
+                onChangeText={(value) => updateDraft("addressDetails", value)}
+                onBlur={() => queueSettingsPatch({ business: { addressDetails: draft.addressDetails } })}
               multiline
               textAlignVertical="top"
               placeholderTextColor="#94A3B8"
@@ -14666,6 +15195,40 @@ const styles = StyleSheet.create({
   notificationStatusCancelledText: {
     color: "#BE123C",
   },
+  notificationActionRow: {
+    marginTop: 10,
+    flexDirection: "row",
+    gap: 8,
+  },
+  notificationActionButton: {
+    flex: 1,
+    minHeight: 42,
+    paddingHorizontal: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    borderRadius: 14,
+    borderWidth: 1,
+  },
+  notificationConfirmButton: {
+    borderColor: "#6D4AFF",
+    backgroundColor: "#6D4AFF",
+  },
+  notificationCancelButton: {
+    borderColor: "#FBCFE8",
+    backgroundColor: "#FFF1F2",
+  },
+  notificationConfirmButtonText: {
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "900",
+  },
+  notificationCancelButtonText: {
+    color: "#BE123C",
+    fontSize: 12,
+    fontWeight: "900",
+  },
   accountMenuHeader: {
     flexDirection: "row",
     alignItems: "center",
@@ -16256,6 +16819,22 @@ const styles = StyleSheet.create({
   pickerList: {
     maxHeight: 470,
   },
+  clientPickerScroll: {
+    maxHeight: 650,
+  },
+  clientPickerScrollContent: {
+    paddingBottom: 220,
+  },
+  clientPickerResults: {
+    paddingTop: 2,
+  },
+  clientModalScroll: {
+    maxHeight: 520,
+  },
+  clientModalScrollContent: {
+    gap: 10,
+    paddingBottom: 220,
+  },
   servicePickerSearchBar: {
     zIndex: 2,
     paddingBottom: 8,
@@ -16869,18 +17448,25 @@ const styles = StyleSheet.create({
     borderColor: "rgba(226, 232, 240, 0.68)",
     backgroundColor: DESIGN.colors.surface,
   },
-  choiceChipActive: {
-    borderColor: "#D8D0FF",
-    backgroundColor: DESIGN.colors.primarySoft,
-  },
-  choiceText: {
-    color: DESIGN.colors.muted,
-    fontSize: 12,
-    fontWeight: "700",
-  },
-  choiceTextActive: {
-    color: DESIGN.colors.primaryDark,
-  },
+    choiceChipActive: {
+      borderColor: "#7C3AED",
+      backgroundColor: "#EEF2FF",
+    },
+    choiceChipRecommended: {
+      borderColor: "#86EFAC",
+      backgroundColor: "#ECFDF5",
+    },
+    choiceText: {
+      color: DESIGN.colors.muted,
+      fontSize: 12,
+      fontWeight: "700",
+    },
+    choiceTextActive: {
+      color: DESIGN.colors.primaryDark,
+    },
+    choiceTextRecommended: {
+      color: "#166534",
+    },
   businessCategoryPicker: {
     flexDirection: "row",
     flexWrap: "wrap",
@@ -17031,14 +17617,94 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
   },
-  serviceEditStack: {
-    padding: 12,
-    gap: 10,
-  },
-  serviceActionRow: {
-    flexDirection: "row",
-    gap: 10,
-  },
+    serviceEditStack: {
+      padding: 12,
+      gap: 10,
+    },
+    serviceCreateForm: {
+      gap: 12,
+      paddingBottom: 108,
+    },
+    smartBlock: {
+      gap: 8,
+    },
+    smartBlockTitle: {
+      color: DESIGN.colors.text,
+      fontSize: 13,
+      fontWeight: "900",
+    },
+    smartSuggestionCard: {
+      minHeight: 62,
+      paddingHorizontal: 14,
+      paddingVertical: 12,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 10,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: "#E2E8F0",
+      backgroundColor: "#F8FAFC",
+    },
+    smartSuggestionCardSelected: {
+      borderColor: "#7C3AED",
+      backgroundColor: "#EEF2FF",
+    },
+    smartSuggestionTitle: {
+      color: "#0F172A",
+      fontSize: 14,
+      fontWeight: "900",
+    },
+    smartSuggestionMeta: {
+      marginTop: 3,
+      color: "#64748B",
+      fontSize: 12,
+      fontWeight: "700",
+    },
+    alreadyAddedBadge: {
+      paddingHorizontal: 9,
+      paddingVertical: 5,
+      borderRadius: 999,
+      overflow: "hidden",
+      color: "#166534",
+      fontSize: 10,
+      fontWeight: "900",
+      backgroundColor: "#DCFCE7",
+    },
+    recommendedCategoryBox: {
+      padding: 12,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 10,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: "#86EFAC",
+      backgroundColor: "#ECFDF5",
+    },
+    recommendedCategoryText: {
+      flex: 1,
+      color: "#166534",
+      fontSize: 12,
+      lineHeight: 17,
+      fontWeight: "800",
+    },
+    recommendedCategoryButton: {
+      minHeight: 34,
+      paddingHorizontal: 12,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: 999,
+      backgroundColor: "#FFFFFF",
+    },
+    recommendedCategoryButtonText: {
+      color: "#166534",
+      fontSize: 12,
+      fontWeight: "900",
+    },
+    serviceActionRow: {
+      flexDirection: "row",
+      gap: 10,
+    },
   iconGhostButton: {
     width: 32,
     height: 32,
@@ -17062,20 +17728,127 @@ const styles = StyleSheet.create({
   colorSwatchActive: {
     borderColor: "#6D4AFF",
   },
-  categoryAddRow: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    gap: 10,
-  },
-  categoryAddButton: {
-    width: 50,
-    height: 50,
+    categoryAddRow: {
+      flexDirection: "row",
+      alignItems: "flex-end",
+      gap: 10,
+    },
+    customCategoryToggle: {
+      minHeight: 40,
+      paddingHorizontal: 12,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 7,
+      borderRadius: 999,
+      borderWidth: 1,
+      borderStyle: "dashed",
+      borderColor: "#CBD5E1",
+      backgroundColor: "transparent",
+    },
+    customCategoryToggleText: {
+      color: "#64748B",
+      fontSize: 12,
+      fontWeight: "900",
+    },
+    customCategoryPanel: {
+      gap: 8,
+      padding: 11,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: "#E2E8F0",
+      backgroundColor: "#F8FAFC",
+    },
+    categoryAddButton: {
+      width: 50,
+      height: 50,
     marginBottom: 1,
     borderRadius: 12,
     alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#6D4AFF",
-  },
+      justifyContent: "center",
+      backgroundColor: "#6D4AFF",
+    },
+    durationQuickRow: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 8,
+    },
+    durationQuickChip: {
+      minWidth: 58,
+      minHeight: 36,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: 999,
+      borderWidth: 1,
+      borderColor: "#E2E8F0",
+      backgroundColor: "#FFFFFF",
+    },
+    durationQuickChipActive: {
+      borderColor: "#7C3AED",
+      backgroundColor: "#EEF2FF",
+    },
+    durationQuickText: {
+      color: "#64748B",
+      fontSize: 13,
+      fontWeight: "900",
+    },
+    durationQuickTextActive: {
+      color: "#5B21B6",
+    },
+    softWarningBox: {
+      gap: 8,
+      padding: 12,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: "#FDE68A",
+      backgroundColor: "#FEF3C7",
+    },
+    formErrorNotice: {
+      padding: 12,
+      overflow: "hidden",
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: "#FDE68A",
+      color: "#92400E",
+      fontSize: 12,
+      lineHeight: 17,
+      fontWeight: "900",
+      backgroundColor: "#FEF3C7",
+    },
+    softWarningTitle: {
+      color: "#92400E",
+      fontSize: 13,
+      fontWeight: "900",
+    },
+    softWarningText: {
+      color: "#92400E",
+      fontSize: 12,
+      lineHeight: 17,
+      fontWeight: "800",
+    },
+    warningActionRow: {
+      flexDirection: "row",
+      gap: 8,
+    },
+    warningInlineButton: {
+      alignSelf: "flex-start",
+      minHeight: 32,
+      paddingHorizontal: 11,
+      alignItems: "center",
+      justifyContent: "center",
+      borderRadius: 999,
+      backgroundColor: "#FFFFFF",
+    },
+    warningInlineButtonText: {
+      color: "#92400E",
+      fontSize: 12,
+      fontWeight: "900",
+    },
+    submitBar: {
+      paddingTop: 12,
+      paddingBottom: 8,
+      backgroundColor: "#FFFFFF",
+    },
   catalogServiceCard: {
     minHeight: 66,
     padding: 10,
