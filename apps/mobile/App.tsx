@@ -874,6 +874,9 @@ const CALENDAR_MEMORY_TTL_MS = 30_000;
 const CALENDAR_BACKGROUND_SYNC_MS = 12_000;
 const CALENDAR_WARM_CHUNK_SIZE = 90;
 const CALENDAR_TIME_AXIS_WIDTH = 28;
+const CALENDAR_MIN_MEMBER_COLUMN_WIDTH = 192;
+const CALENDAR_TEAM_HEADER_HEIGHT = 72;
+const CALENDAR_TEAM_HEADER_AVATAR_SIZE = 34;
 const SERVICE_MODE_IDS = ["onsite", "travel", "online"] as const;
 const SERVICE_MODE_VALUES: Record<(typeof SERVICE_MODE_IDS)[number], string> = {
   onsite: "Клиенты приходят в мое физическое заведение",
@@ -5896,6 +5899,20 @@ export default function App() {
         }
         return;
       }
+      if (url.includes("timviz-master://password-reset")) {
+        try {
+          const parsed = new URL(url);
+          const email = parsed.searchParams.get("email")?.trim().toLowerCase() || "";
+          if (email) {
+            setLoginForm((current) => ({ ...current, email }));
+          }
+        } catch {
+          // Ignore malformed deep links.
+        }
+        void WebBrowser.dismissBrowser();
+        setMode("login");
+        return;
+      }
       if (url.includes("create-account")) setMode("register");
       if (url.includes("pro/login")) setMode("login");
     };
@@ -6596,7 +6613,7 @@ export default function App() {
       const response = await fetch(`${API_BASE_URL}/api/mobile/pro/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password: loginForm.password }),
+        body: JSON.stringify({ email, password: loginForm.password, language }),
       });
       const result = await response.json();
       if (!response.ok) {
@@ -6644,6 +6661,8 @@ export default function App() {
           email,
           language,
           captchaToken,
+          source: "mobile",
+          returnTo: "timviz-master://password-reset",
         }),
       });
       const result = await response.json().catch(() => ({}));
@@ -7899,10 +7918,11 @@ function CalendarTab({
   const selectedMembers = calendarMembers.filter((member) => selectedMemberIds.includes(member.id));
   const primaryMember = selectedMembers[0] || calendarMembers[0] || null;
   const visibleCalendarMembers = selectedMembers.length ? selectedMembers : calendarMembers.slice(0, 1);
+  const availableCalendarWidth = Math.max(0, screenWidth - CALENDAR_TIME_AXIS_WIDTH);
   const dayMemberColumnWidth = Math.floor(
     visibleCalendarMembers.length > 1
-      ? Math.max(164, (screenWidth - CALENDAR_TIME_AXIS_WIDTH) / visibleCalendarMembers.length)
-      : Math.max(280, screenWidth - CALENDAR_TIME_AXIS_WIDTH)
+      ? Math.max(CALENDAR_MIN_MEMBER_COLUMN_WIDTH, availableCalendarWidth / visibleCalendarMembers.length)
+      : Math.max(280, availableCalendarWidth)
   );
   const selectedSchedule = getMemberScheduleForDate(primaryMember, workspace, selectedDate);
   const appointmentsByDate = useMemo(() => {
@@ -8454,8 +8474,10 @@ function CalendarTab({
                     <View style={styles.teamMembersHeaderRow}>
                       {visibleCalendarMembers.map((member) => (
                         <View key={member.id} style={[styles.teamDayHeader, { width: dayMemberColumnWidth }]}>
-                          <MemberAvatar member={member} size={34} />
-                          <Text style={styles.masterName} numberOfLines={1}>{member.name}</Text>
+                          <MemberAvatar member={member} size={CALENDAR_TEAM_HEADER_AVATAR_SIZE} />
+                          <Text style={styles.masterName} numberOfLines={1} ellipsizeMode="tail">
+                            {member.name}
+                          </Text>
                         </View>
                       ))}
                     </View>
@@ -15777,6 +15799,7 @@ const styles = StyleSheet.create({
     borderRadius: DESIGN.radius.pill,
     alignItems: "center",
     justifyContent: "center",
+    flexShrink: 0,
     backgroundColor: "#9A7A72",
     overflow: "hidden",
   },
@@ -15789,10 +15812,15 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   masterName: {
-    marginTop: 2,
+    width: "100%",
+    maxWidth: "100%",
+    marginTop: 5,
+    paddingHorizontal: 8,
     color: "#334155",
-    fontSize: 10,
-    fontWeight: "700",
+    fontSize: 13,
+    lineHeight: 16,
+    fontWeight: "800",
+    textAlign: "center",
   },
   calendarScroll: {
     flex: 1,
@@ -15899,10 +15927,10 @@ const styles = StyleSheet.create({
   },
   teamMembersHeaderRow: {
     flexDirection: "row",
-    height: 46,
+    minHeight: CALENDAR_TEAM_HEADER_HEIGHT,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(226, 232, 240, 0.36)",
-    backgroundColor: "rgba(255,255,255,0.90)",
+    borderBottomColor: "rgba(203, 213, 225, 0.58)",
+    backgroundColor: "rgba(255,255,255,0.94)",
   },
   teamMembersBodyRow: {
     flexDirection: "row",
@@ -15918,11 +15946,11 @@ const styles = StyleSheet.create({
   },
   teamPickerRail: {
     width: CALENDAR_TIME_AXIS_WIDTH,
-    height: 46,
+    height: CALENDAR_TEAM_HEADER_HEIGHT,
     borderRightWidth: 1,
     borderBottomWidth: 1,
-    borderRightColor: "rgba(226, 232, 240, 0.32)",
-    borderBottomColor: "rgba(226, 232, 240, 0.36)",
+    borderRightColor: "rgba(203, 213, 225, 0.50)",
+    borderBottomColor: "rgba(203, 213, 225, 0.58)",
     backgroundColor: "rgba(255,255,255,0.88)",
   },
   teamPickerRailBody: {
@@ -15959,8 +15987,8 @@ const styles = StyleSheet.create({
   teamPickerButton: {
     width: 28,
     height: 28,
-    marginTop: 9,
-    marginLeft: 1,
+    marginTop: 22,
+    marginLeft: 0,
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 22,
@@ -15986,18 +16014,22 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
   teamDayColumn: {
+    minWidth: CALENDAR_MIN_MEMBER_COLUMN_WIDTH,
     overflow: "hidden",
     borderRightWidth: 1,
-    borderRightColor: "rgba(226, 232, 240, 0.34)",
+    borderRightColor: "rgba(203, 213, 225, 0.50)",
     backgroundColor: "#FFFFFF",
   },
   teamDayHeader: {
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 6,
+    minWidth: CALENDAR_MIN_MEMBER_COLUMN_WIDTH,
+    minHeight: CALENDAR_TEAM_HEADER_HEIGHT,
+    paddingHorizontal: 8,
+    paddingVertical: 7,
     borderRightWidth: 1,
-    borderRightColor: "rgba(226, 232, 240, 0.34)",
-    backgroundColor: "rgba(255,255,255,0.90)",
+    borderRightColor: "rgba(203, 213, 225, 0.50)",
+    backgroundColor: "rgba(255,255,255,0.94)",
   },
   teamPickerMenu: {
     width: "82%",

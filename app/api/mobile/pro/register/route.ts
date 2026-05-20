@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getClientIp, verifyCaptchaToken } from "../../../../../lib/auth-security";
+import { authApiCopy, normalizeAuthLanguage } from "../../../../../lib/auth-api-i18n";
 import { signSessionValue } from "../../../../../lib/pro-auth";
 import {
   activateProfessionalEmailByEmail,
@@ -10,6 +11,16 @@ import {
 } from "../../../../../lib/pro-data";
 
 const defaultServiceMode = "Клиенты приходят в мое физическое заведение";
+const passwordTooShortCopy = {
+  ru: "Пароль должен содержать минимум 6 символов.",
+  uk: "Пароль має містити мінімум 6 символів.",
+  en: "Password must contain at least 6 characters.",
+  fr: "Le mot de passe doit contenir au moins 6 caractères.",
+  pl: "Hasło musi zawierać co najmniej 6 znaków.",
+  cs: "Heslo musí obsahovat alespoň 6 znaků.",
+  es: "La contraseña debe tener al menos 6 caracteres.",
+  de: "Das Passwort muss mindestens 6 Zeichen enthalten."
+} as const;
 
 function cleanText(value: unknown) {
   return String(value ?? "").trim();
@@ -24,22 +35,23 @@ export async function POST(request: Request) {
     const password = String(body.password ?? "");
     const phone = cleanText(body.phone);
     const companyName = cleanText(body.companyName);
-    const language = cleanText(body.language) || "uk";
+    const language = normalizeAuthLanguage(body.language);
+    const t = authApiCopy[language];
     const country = cleanText(body.country) || "Ukraine";
     const timezone = cleanText(body.timezone) || "Europe/Kyiv";
     const currency = cleanText(body.currency) || "UAH";
 
     if (!firstName || !email || !password || !phone || !companyName) {
-      return NextResponse.json({ error: "Required fields are missing." }, { status: 400 });
+      return NextResponse.json({ error: t.registrationMissing }, { status: 400 });
     }
 
     if (password.length < 6) {
-      return NextResponse.json({ error: "Password must contain at least 6 characters." }, { status: 400 });
+      return NextResponse.json({ error: passwordTooShortCopy[language] }, { status: 400 });
     }
 
     const captchaOk = await verifyCaptchaToken(body.captchaToken, getClientIp(request));
     if (!captchaOk) {
-      return NextResponse.json({ error: "Complete the security check." }, { status: 400 });
+      return NextResponse.json({ error: t.captchaRequired }, { status: 400 });
     }
 
     const existingProfile = await getProfessionalProfileByEmail(email);
@@ -109,7 +121,7 @@ export async function POST(request: Request) {
       }
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Registration failed.";
-    return NextResponse.json({ error: message }, { status: 400 });
+    console.error("[mobile-pro-register] Registration failed", error);
+    return NextResponse.json({ error: authApiCopy.en.registrationFailed }, { status: 400 });
   }
 }

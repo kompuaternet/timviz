@@ -16,6 +16,7 @@ const copy = {
     submit: "Отправить ссылку",
     loading: "Отправляем...",
     timeout: "Запрос занял слишком много времени. Попробуйте ещё раз через несколько секунд.",
+    failed: "Не удалось отправить запрос. Попробуйте ещё раз.",
     back: "Вернуться ко входу",
     success: "Если аккаунт с таким email существует, мы отправили ссылку для восстановления пароля."
   },
@@ -28,6 +29,7 @@ const copy = {
     submit: "Надіслати посилання",
     loading: "Надсилаємо...",
     timeout: "Запит триває надто довго. Спробуйте ще раз за кілька секунд.",
+    failed: "Не вдалося надіслати запит. Спробуйте ще раз.",
     back: "Повернутися до входу",
     success: "Якщо акаунт з таким email існує, ми надіслали посилання для відновлення пароля."
   },
@@ -40,6 +42,7 @@ const copy = {
     submit: "Send reset link",
     loading: "Sending...",
     timeout: "This request is taking too long. Please try again in a few seconds.",
+    failed: "Could not send the request. Please try again.",
     back: "Back to sign in",
     success: "If an account with this email exists, we sent a password reset link."
   }
@@ -90,7 +93,7 @@ export default function ForgotPasswordForm() {
       const result = await response.json();
 
       if (!response.ok) {
-        setError(result.error || "Request failed.");
+        setError(result.error || t.failed);
         if (result.retryAfter) {
           setCooldown(Number(result.retryAfter));
         }
@@ -103,7 +106,7 @@ export default function ForgotPasswordForm() {
       if (error instanceof DOMException && error.name === "AbortError") {
         setError(t.timeout);
       } else {
-        setError("Request failed.");
+        setError(t.failed);
       }
     } finally {
       window.clearTimeout(timeoutId);

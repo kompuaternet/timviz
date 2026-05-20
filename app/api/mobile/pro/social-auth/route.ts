@@ -10,6 +10,7 @@ import {
 } from "../../../../../lib/pro-data";
 
 type SocialProvider = "google" | "apple";
+const TIMVIZ_IOS_GOOGLE_CLIENT_ID = "768484064485-3k8u9fjgoj2usbntj7bmg3evj6o588aj.apps.googleusercontent.com";
 
 type SocialProfile = {
   email: string;
@@ -56,7 +57,8 @@ function getAllowedGoogleAudiences() {
     process.env.GOOGLE_ANDROID_CLIENT_ID,
     process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
     process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
-    process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID
+    process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
+    TIMVIZ_IOS_GOOGLE_CLIENT_ID
   ]
     .map((item) => cleanText(item))
     .filter(Boolean);

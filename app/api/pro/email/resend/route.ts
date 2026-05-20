@@ -7,19 +7,20 @@ import {
   isValidBusinessEmail,
   verifyCaptchaToken
 } from "../../../../../lib/auth-security";
+import { authApiCopy, normalizeAuthLanguage } from "../../../../../lib/auth-api-i18n";
 import { sendProfessionalConfirmationEmail } from "../../../../../lib/pro-confirmation-mail";
 import { getProfessionalPasswordResetProfile } from "../../../../../lib/pro-data";
-
-const responseMessage = {
-  ok: true,
-  message: "Якщо акаунт очікує підтвердження, ми надіслали лист ще раз."
-};
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
     const email = String(body.email || "").trim().toLowerCase();
-    const language = String(body.language || "uk").trim().toLowerCase();
+    const language = normalizeAuthLanguage(body.language);
+    const t = authApiCopy[language];
+    const responseMessage = {
+      ok: true,
+      message: t.resendResponse
+    };
     const ip = getClientIp(request);
 
     if (hasHoneypotValue(body.website) || hasHoneypotValue(body.company)) {
@@ -32,12 +33,12 @@ export async function POST(request: Request) {
 
     const limit = checkRateLimit(`email-resend:${ip}:${email}`, { limit: 1, windowMs: 60 * 1000 });
     if (!limit.ok) {
-      return NextResponse.json({ error: "Надіслати ще раз можна через 60 секунд.", retryAfter: limit.remainingSeconds }, { status: 429 });
+      return NextResponse.json({ error: t.resendWait, retryAfter: limit.remainingSeconds }, { status: 429 });
     }
 
     const captchaOk = await verifyCaptchaToken(body.captchaToken, ip);
     if (!captchaOk) {
-      return NextResponse.json({ error: "Підтвердіть, що ви не робот." }, { status: 400 });
+      return NextResponse.json({ error: t.captchaRequired }, { status: 400 });
     }
 
     const professional = await getProfessionalPasswordResetProfile(email);
@@ -49,7 +50,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(responseMessage);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Could not resend email.";
-    return NextResponse.json({ error: message }, { status: 400 });
+    console.error("[pro-email-resend] Failed to resend confirmation", error);
+    return NextResponse.json({ error: authApiCopy.en.forgotFailed }, { status: 400 });
   }
 }

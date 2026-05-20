@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { isStrongEnoughPassword } from "../../../../../lib/auth-security";
+import { authApiCopy, normalizeAuthLanguage } from "../../../../../lib/auth-api-i18n";
 import { getSessionCookieName, signSessionValue } from "../../../../../lib/pro-auth";
 import { verifyPasswordResetToken } from "../../../../../lib/pro-password-reset";
 import {
@@ -11,37 +12,44 @@ import {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
+    const language = normalizeAuthLanguage(body.language);
+    const t = authApiCopy[language];
     const token = String(body.token ?? "").trim();
     const password = String(body.password ?? "");
 
     if (!token) {
-      return NextResponse.json({ error: "Токен отсутствует." }, { status: 400 });
+      return NextResponse.json({ error: t.passwordMissingToken }, { status: 400 });
     }
 
     if (!isStrongEnoughPassword(password)) {
-      return NextResponse.json({ error: "Пароль: минимум 8 символов, буква и цифра." }, { status: 400 });
+      return NextResponse.json({ error: t.passwordResetWeak }, { status: 400 });
     }
 
     const rawPayload = token.split(".")[0];
     if (!rawPayload) {
-      return NextResponse.json({ error: "Недействительная ссылка восстановления." }, { status: 400 });
+      return NextResponse.json({ error: t.passwordResetInvalid }, { status: 400 });
     }
 
-    const decoded = JSON.parse(Buffer.from(rawPayload, "base64url").toString("utf8")) as { email?: string };
+    let decoded: { email?: string };
+    try {
+      decoded = JSON.parse(Buffer.from(rawPayload, "base64url").toString("utf8")) as { email?: string };
+    } catch {
+      return NextResponse.json({ error: t.passwordResetInvalid }, { status: 400 });
+    }
     const email = String(decoded.email ?? "").trim().toLowerCase();
 
     if (!email) {
-      return NextResponse.json({ error: "Недействительная ссылка восстановления." }, { status: 400 });
+      return NextResponse.json({ error: t.passwordResetInvalid }, { status: 400 });
     }
 
     const professional = await getProfessionalPasswordResetProfile(email);
     if (!professional) {
-      return NextResponse.json({ error: "Аккаунт не найден." }, { status: 404 });
+      return NextResponse.json({ error: t.passwordResetNotFound }, { status: 404 });
     }
 
     const payload = verifyPasswordResetToken(token, professional.passwordHash);
     if (!payload || payload.email.trim().toLowerCase() !== professional.email.trim().toLowerCase()) {
-      return NextResponse.json({ error: "Ссылка восстановления недействительна или устарела." }, { status: 400 });
+      return NextResponse.json({ error: t.passwordResetInvalid }, { status: 400 });
     }
 
     await updateProfessionalPasswordByEmail(professional.email, password);
@@ -54,9 +62,9 @@ export async function POST(request: Request) {
       maxAge: 60 * 60 * 24 * 7
     });
 
-    return NextResponse.json({ ok: true, professionalId: professional.id });
+    return NextResponse.json({ ok: true, professionalId: professional.id, email: professional.email });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Could not reset password.";
-    return NextResponse.json({ error: message }, { status: 400 });
+    console.error("[pro-password-reset] Failed to reset password", error);
+    return NextResponse.json({ error: authApiCopy.en.passwordResetFailed }, { status: 400 });
   }
 }

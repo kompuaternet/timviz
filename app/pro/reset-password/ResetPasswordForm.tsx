@@ -16,11 +16,13 @@ const copy = {
     submit: "Сохранить пароль",
     loading: "Сохраняем...",
     success: "Пароль обновлён. Открываем кабинет...",
+    successMobile: "Пароль обновлён. Возвращаемся в приложение...",
     mismatch: "Пароли не совпадают.",
     requirementLength: "Минимум 8 символов",
     requirementLetter: "Хотя бы одна буква",
     requirementDigit: "Хотя бы одна цифра",
     matchReady: "Пароли совпадают",
+    failed: "Не удалось обновить пароль. Попробуйте ещё раз.",
     backToLogin: "Вернуться ко входу",
     home: "На главную"
   },
@@ -34,11 +36,13 @@ const copy = {
     submit: "Зберегти пароль",
     loading: "Зберігаємо...",
     success: "Пароль оновлено. Відкриваємо кабінет...",
+    successMobile: "Пароль оновлено. Повертаємось у застосунок...",
     mismatch: "Паролі не збігаються.",
     requirementLength: "Мінімум 8 символів",
     requirementLetter: "Хоча б одна літера",
     requirementDigit: "Хоча б одна цифра",
     matchReady: "Паролі збігаються",
+    failed: "Не вдалося оновити пароль. Спробуйте ще раз.",
     backToLogin: "Повернутися до входу",
     home: "На головну"
   },
@@ -52,15 +56,27 @@ const copy = {
     submit: "Save password",
     loading: "Saving...",
     success: "Password updated. Opening your workspace...",
+    successMobile: "Password updated. Returning to the app...",
     mismatch: "Passwords do not match.",
     requirementLength: "At least 8 characters",
     requirementLetter: "At least one letter",
     requirementDigit: "At least one digit",
     matchReady: "Passwords match",
+    failed: "Could not update the password. Please try again.",
     backToLogin: "Back to sign in",
     home: "Home"
   }
 } as const;
+
+function getSafeAppReturnTo(value: string) {
+  if (!value) return "";
+  try {
+    const url = new URL(value);
+    return url.protocol === "timviz-master:" && url.hostname === "password-reset" ? url : null;
+  } catch {
+    return null;
+  }
+}
 
 export default function ResetPasswordForm() {
   const router = useRouter();
@@ -68,6 +84,7 @@ export default function ResetPasswordForm() {
   const t = copy[language];
   const params = useSearchParams();
   const token = params.get("token") || "";
+  const returnToApp = params.get("source") === "mobile" ? getSafeAppReturnTo(params.get("return_to") || "") : null;
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [message, setMessage] = useState("");
@@ -97,13 +114,22 @@ export default function ResetPasswordForm() {
     const response = await fetch("/api/pro/password/reset", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token, password })
+      body: JSON.stringify({ token, password, language })
     });
 
     const result = await response.json();
     if (!response.ok) {
-      setError(result.error || "Reset failed.");
+      setError(result.error || t.failed);
       setIsLoading(false);
+      return;
+    }
+
+    if (returnToApp) {
+      const email = typeof result.email === "string" ? result.email.trim().toLowerCase() : "";
+      if (email) returnToApp.searchParams.set("email", email);
+      setMessage(t.successMobile);
+      setIsLoading(false);
+      window.location.assign(returnToApp.toString());
       return;
     }
 

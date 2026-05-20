@@ -1,4 +1,5 @@
 import { getPublicAppUrl } from "./app-url";
+import { normalizeAuthLanguage } from "./auth-api-i18n";
 import { createEmailConfirmationToken } from "./pro-email-confirmation";
 import { isMailerConfigured, sendMail } from "./mailer";
 
@@ -20,7 +21,7 @@ export async function sendProfessionalConfirmationEmail(input: {
     return false;
   }
 
-  const language = input.language === "uk" || input.language === "en" ? input.language : "ru";
+  const language = normalizeAuthLanguage(input.language);
   const token = createEmailConfirmationToken(
     input.professional.email,
     input.professional.passwordHash,
@@ -30,30 +31,64 @@ export async function sendProfessionalConfirmationEmail(input: {
   const name =
     [input.professional.firstName, input.professional.lastName].filter(Boolean).join(" ").trim() ||
     input.professional.email;
-  const copy =
-    language === "uk"
-      ? {
-          subject: "Підтвердіть email для Timviz",
-          headline: `Вітаємо, ${name}!`,
-          body: "Натисніть кнопку нижче, щоб підтвердити email і почати користуватись Timviz.",
-          cta: "Підтвердити email",
-          footnote: "Якщо це були не ви, просто проігноруйте цей лист."
-        }
-      : language === "en"
-        ? {
-            subject: "Confirm your Timviz email",
-            headline: `Welcome, ${name}!`,
-            body: "Click the button below to confirm your email and start using Timviz.",
-            cta: "Confirm email",
-            footnote: "If this was not you, you can ignore this email."
-          }
-        : {
-            subject: "Подтвердите email для Timviz",
-            headline: `Здравствуйте, ${name}!`,
-            body: "Нажмите кнопку ниже, чтобы подтвердить email и начать пользоваться Timviz.",
-            cta: "Подтвердить email",
-            footnote: "Если это были не вы, просто проигнорируйте это письмо."
-          };
+  const copy = {
+    ru: {
+      subject: "Подтвердите email для Timviz",
+      headline: `Здравствуйте, ${name}!`,
+      body: "Нажмите кнопку ниже, чтобы подтвердить email и начать пользоваться Timviz.",
+      cta: "Подтвердить email",
+      footnote: "Если это были не вы, просто проигнорируйте это письмо."
+    },
+    uk: {
+      subject: "Підтвердіть email для Timviz",
+      headline: `Вітаємо, ${name}!`,
+      body: "Натисніть кнопку нижче, щоб підтвердити email і почати користуватись Timviz.",
+      cta: "Підтвердити email",
+      footnote: "Якщо це були не ви, просто проігноруйте цей лист."
+    },
+    en: {
+      subject: "Confirm your Timviz email",
+      headline: `Welcome, ${name}!`,
+      body: "Click the button below to confirm your email and start using Timviz.",
+      cta: "Confirm email",
+      footnote: "If this was not you, you can ignore this email."
+    },
+    fr: {
+      subject: "Confirmez votre email Timviz",
+      headline: `Bienvenue, ${name} !`,
+      body: "Cliquez sur le bouton ci-dessous pour confirmer votre email et commencer à utiliser Timviz.",
+      cta: "Confirmer l'email",
+      footnote: "Si ce n'était pas vous, ignorez simplement cet email."
+    },
+    pl: {
+      subject: "Potwierdź email Timviz",
+      headline: `Witaj, ${name}!`,
+      body: "Kliknij przycisk poniżej, aby potwierdzić email i zacząć korzystać z Timviz.",
+      cta: "Potwierdź email",
+      footnote: "Jeśli to nie Ty, po prostu zignoruj tę wiadomość."
+    },
+    cs: {
+      subject: "Potvrďte e-mail pro Timviz",
+      headline: `Vítejte, ${name}!`,
+      body: "Kliknutím na tlačítko níže potvrďte e-mail a začněte používat Timviz.",
+      cta: "Potvrdit e-mail",
+      footnote: "Pokud jste to nebyli vy, tento e-mail ignorujte."
+    },
+    es: {
+      subject: "Confirma tu email de Timviz",
+      headline: `Bienvenido, ${name}!`,
+      body: "Haz clic en el botón de abajo para confirmar tu email y empezar a usar Timviz.",
+      cta: "Confirmar email",
+      footnote: "Si no fuiste tú, simplemente ignora este email."
+    },
+    de: {
+      subject: "Bestätige deine Timviz-E-Mail",
+      headline: `Willkommen, ${name}!`,
+      body: "Klicke unten auf die Schaltfläche, um deine E-Mail zu bestätigen und Timviz zu nutzen.",
+      cta: "E-Mail bestätigen",
+      footnote: "Wenn du das nicht warst, ignoriere diese E-Mail einfach."
+    }
+  }[language];
 
   const html = `
     <div style="font-family:Inter,Arial,sans-serif;background:#f8fafc;padding:32px 16px;color:#0f172a">

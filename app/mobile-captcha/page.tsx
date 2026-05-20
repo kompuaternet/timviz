@@ -48,6 +48,41 @@ const copy = {
     loading: "Loading check...",
     error: "The check could not load. Close this window and try again.",
     done: "Done, returning to the app..."
+  },
+  fr: {
+    title: "Vérification de sécurité",
+    text: "Confirmez qu'un vrai professionnel crée ce compte. Cela aide à protéger Timviz du spam.",
+    loading: "Chargement de la vérification...",
+    error: "La vérification n'a pas pu se charger. Fermez la fenêtre et réessayez.",
+    done: "Terminé, retour à l'application..."
+  },
+  pl: {
+    title: "Kontrola bezpieczeństwa",
+    text: "Potwierdź, że konto tworzy prawdziwy specjalista. To pomaga chronić Timviz przed spamem.",
+    loading: "Ładujemy kontrolę...",
+    error: "Nie udało się załadować kontroli. Zamknij okno i spróbuj ponownie.",
+    done: "Gotowe, wracamy do aplikacji..."
+  },
+  cs: {
+    title: "Bezpečnostní kontrola",
+    text: "Potvrďte, že účet vytváří skutečný profesionál. Pomáhá to chránit Timviz před spamem.",
+    loading: "Načítáme kontrolu...",
+    error: "Kontrolu se nepodařilo načíst. Zavřete okno a zkuste to znovu.",
+    done: "Hotovo, vracíme se do aplikace..."
+  },
+  es: {
+    title: "Verificación de seguridad",
+    text: "Confirma que una persona real está creando esta cuenta. Esto ayuda a proteger Timviz del spam.",
+    loading: "Cargando verificación...",
+    error: "La verificación no pudo cargarse. Cierra la ventana e inténtalo de nuevo.",
+    done: "Listo, volviendo a la app..."
+  },
+  de: {
+    title: "Sicherheitsprüfung",
+    text: "Bestätige, dass ein echter Profi dieses Konto erstellt. So schützen wir Timviz vor Spam.",
+    loading: "Prüfung wird geladen...",
+    error: "Die Prüfung konnte nicht geladen werden. Schließe das Fenster und versuche es erneut.",
+    done: "Fertig, zurück zur App..."
   }
 } as const;
 type CaptchaLanguage = keyof typeof copy;
@@ -84,6 +119,18 @@ function getSafeReturnTo(raw: string | null) {
   }
 }
 
+function normalizeCaptchaLanguage(value: string | null): CaptchaLanguage {
+  const language = String(value ?? "").trim().toLowerCase();
+  if (language === "ua" || language.startsWith("uk")) return "uk";
+  if (language.startsWith("en")) return "en";
+  if (language.startsWith("fr")) return "fr";
+  if (language.startsWith("pl")) return "pl";
+  if (language.startsWith("cs") || language.startsWith("cz")) return "cs";
+  if (language.startsWith("es")) return "es";
+  if (language.startsWith("de")) return "de";
+  return "en";
+}
+
 export default function MobileCaptchaPage() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const widgetIdRef = useRef<string | null>(null);
@@ -95,7 +142,7 @@ export default function MobileCaptchaPage() {
     return new URLSearchParams(window.location.search);
   }, []);
   const requestedLanguage = params.get("language");
-  const language: CaptchaLanguage = requestedLanguage === "uk" || requestedLanguage === "en" ? requestedLanguage : "ru";
+  const language = normalizeCaptchaLanguage(requestedLanguage);
   const returnTo = getSafeReturnTo(params.get("return_to"));
   const t = copy[language];
 

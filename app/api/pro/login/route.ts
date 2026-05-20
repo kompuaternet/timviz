@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { checkRateLimit, getClientIp } from "../../../../lib/auth-security";
+import { authApiCopy, normalizeAuthLanguage } from "../../../../lib/auth-api-i18n";
 import { getSessionCookieName, signSessionValue } from "../../../../lib/pro-auth";
 import { acceptStaffInvitation, authenticateProfessional, getProfessionalProfileByEmail } from "../../../../lib/pro-data";
 
@@ -10,12 +11,18 @@ export async function POST(request: Request) {
     const email = String(body.email ?? "").trim();
     const password = String(body.password ?? "");
     const inviteToken = String(body.inviteToken ?? "").trim();
+    const language = normalizeAuthLanguage(body.language);
+    const t = authApiCopy[language];
     const ip = getClientIp(request);
+
+    if (!email || !password) {
+      return NextResponse.json({ error: t.loginMissing }, { status: 400 });
+    }
 
     const limit = checkRateLimit(`login:${ip}:${email}`, { limit: 8, windowMs: 10 * 60 * 1000 });
     if (!limit.ok) {
       return NextResponse.json(
-        { error: "Забагато спроб входу. Спробуйте трохи пізніше.", retryAfter: limit.remainingSeconds, captchaRequired: true },
+        { error: t.rateLimit, retryAfter: limit.remainingSeconds, captchaRequired: true },
         { status: 429 }
       );
     }
@@ -26,18 +33,18 @@ export async function POST(request: Request) {
       const profile = await getProfessionalProfileByEmail(email);
       if (profile?.accountStatus === "pending_email") {
         return NextResponse.json(
-          { error: "Підтвердіть email, щоб увійти в кабінет.", errorCode: "email_not_confirmed", email: profile.email },
+          { error: t.emailNotConfirmed, errorCode: "email_not_confirmed", email: profile.email },
           { status: 403 }
         );
       }
       if (profile?.accountStatus === "blocked") {
         return NextResponse.json(
-          { error: "Акаунт заблоковано.", errorCode: "account_blocked" },
+          { error: t.accountBlocked, errorCode: "account_blocked" },
           { status: 403 }
         );
       }
       return NextResponse.json(
-        { error: "Неверный email или пароль." },
+        { error: t.invalidLogin },
         { status: 401 }
       );
     }
@@ -60,7 +67,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ professionalId });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Login failed.";
-    return NextResponse.json({ error: message }, { status: 400 });
+    console.error("[pro-login] Failed to sign in", error);
+    return NextResponse.json({ error: authApiCopy.en.loginFailed }, { status: 400 });
   }
 }

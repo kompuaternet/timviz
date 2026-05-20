@@ -308,7 +308,7 @@ export default function LoginForm({ staleSession = false, returnTo = "" }: Login
       headers: {
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({ email, password, inviteToken })
+      body: JSON.stringify({ email, password, inviteToken, language })
     });
 
     const result = await response.json();

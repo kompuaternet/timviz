@@ -9,6 +9,7 @@ import {
   isValidBusinessEmail,
   verifyCaptchaToken
 } from "../../../../lib/auth-security";
+import { authApiCopy, normalizeAuthLanguage } from "../../../../lib/auth-api-i18n";
 import { sendProfessionalConfirmationEmail } from "../../../../lib/pro-confirmation-mail";
 import { getSessionCookieName, signSessionValue } from "../../../../lib/pro-auth";
 import { createProfessionalSetup, getProfessionalPasswordResetProfile } from "../../../../lib/pro-data";
@@ -23,6 +24,8 @@ export async function POST(request: Request) {
     const email = String(body?.account?.email || "").trim().toLowerCase();
     const password = String(body?.account?.password || "");
     const authProvider = body?.account?.authProvider === "google" || body?.account?.authProvider === "apple" ? body.account.authProvider : "email";
+    const language = normalizeAuthLanguage(body?.account?.language);
+    const t = authApiCopy[language];
     const ip = getClientIp(request);
 
     if (hasHoneypotValue(body.website) || hasHoneypotValue(body.company)) {
@@ -31,26 +34,26 @@ export async function POST(request: Request) {
 
     const limit = checkRateLimit(`register:${ip}:${email}`, { limit: 5, windowMs: 10 * 60 * 1000 });
     if (!limit.ok) {
-      return NextResponse.json({ error: "Забагато спроб. Спробуйте трохи пізніше.", retryAfter: limit.remainingSeconds }, { status: 429 });
+      return NextResponse.json({ error: t.rateLimit, retryAfter: limit.remainingSeconds }, { status: 429 });
     }
 
     if (!isValidBusinessEmail(email)) {
-      return NextResponse.json({ error: "Вкажіть коректний email." }, { status: 400 });
+      return NextResponse.json({ error: t.emailInvalid }, { status: 400 });
     }
 
     if (isDisposableEmail(email)) {
-      return NextResponse.json({ error: "Використайте справжню email-адресу." }, { status: 400 });
+      return NextResponse.json({ error: t.disposableEmail }, { status: 400 });
     }
 
     if (authProvider === "email" && !isStrongEnoughPassword(password)) {
-      return NextResponse.json({ error: "Пароль: мінімум 8 символів, літера і цифра." }, { status: 400 });
+      return NextResponse.json({ error: t.passwordResetWeak }, { status: 400 });
     }
 
     const shouldVerifyCaptcha = authProvider === "email" && !body?.account?.emailConfirmed;
     if (shouldVerifyCaptcha) {
       const captchaOk = await verifyCaptchaToken(body.captchaToken, ip);
       if (!captchaOk) {
-        return NextResponse.json({ error: "Підтвердіть, що ви не робот." }, { status: 400 });
+        return NextResponse.json({ error: t.captchaRequired }, { status: 400 });
       }
     }
 
@@ -101,16 +104,10 @@ export async function POST(request: Request) {
     if (authProvider === "email") {
       const professional = await getProfessionalPasswordResetProfile(email);
       if (professional) {
-        const accountLanguage = String(body?.account?.language || "").trim().toLowerCase();
-        const emailLanguage = accountLanguage.startsWith("ук")
-          ? "uk"
-          : accountLanguage.startsWith("en") || accountLanguage.startsWith("анг")
-            ? "en"
-            : "ru";
         await sendProfessionalConfirmationEmail({
           request,
           professional,
-          language: emailLanguage
+          language
         }).catch((error) => console.warn("[pro-setup] Confirmation email failed", error));
       }
 
@@ -128,7 +125,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(result);
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to create setup.";
-    return NextResponse.json({ error: message }, { status: 400 });
+    console.error("[pro-setup] Failed to create setup", error);
+    return NextResponse.json({ error: authApiCopy.en.registrationFailed }, { status: 400 });
   }
 }

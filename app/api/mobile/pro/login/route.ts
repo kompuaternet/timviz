@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { authApiCopy, normalizeAuthLanguage } from "../../../../../lib/auth-api-i18n";
 import { signSessionValue } from "../../../../../lib/pro-auth";
 import { authenticateProfessional, getProfessionalProfileById } from "../../../../../lib/pro-data";
 
@@ -7,14 +8,16 @@ export async function POST(request: Request) {
     const body = await request.json();
     const email = String(body.email ?? "").trim();
     const password = String(body.password ?? "");
+    const language = normalizeAuthLanguage(body.language);
+    const t = authApiCopy[language];
 
     if (!email || !password) {
-      return NextResponse.json({ error: "Email and password are required." }, { status: 400 });
+      return NextResponse.json({ error: t.loginMissing }, { status: 400 });
     }
 
     const professionalId = await authenticateProfessional(email, password);
     if (!professionalId) {
-      return NextResponse.json({ error: "Invalid login credentials." }, { status: 401 });
+      return NextResponse.json({ error: t.invalidLogin }, { status: 401 });
     }
 
     const profile = await getProfessionalProfileById(professionalId);
@@ -31,7 +34,7 @@ export async function POST(request: Request) {
       }
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Login failed.";
-    return NextResponse.json({ error: message }, { status: 400 });
+    console.error("[mobile-pro-login] Login failed", error);
+    return NextResponse.json({ error: authApiCopy.en.loginFailed }, { status: 400 });
   }
 }

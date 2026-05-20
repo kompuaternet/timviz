@@ -11,7 +11,8 @@
         "resourceClass": "m-medium"
       },
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://timviz.com"
+        "EXPO_PUBLIC_API_BASE_URL": "https://timviz.com",
+        "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "768484064485-3k8u9fjgoj2usbntj7bmg3evj6o588aj.apps.googleusercontent.com"
       }
     },
     "preview": {
@@ -20,7 +21,8 @@
         "resourceClass": "m-medium"
       },
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://timviz.com"
+        "EXPO_PUBLIC_API_BASE_URL": "https://timviz.com",
+        "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "768484064485-3k8u9fjgoj2usbntj7bmg3evj6o588aj.apps.googleusercontent.com"
       }
     },
     "production": {
@@ -30,7 +32,8 @@
         "resourceClass": "m-medium"
       },
       "env": {
-        "EXPO_PUBLIC_API_BASE_URL": "https://timviz.com"
+        "EXPO_PUBLIC_API_BASE_URL": "https://timviz.com",
+        "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "768484064485-3k8u9fjgoj2usbntj7bmg3evj6o588aj.apps.googleusercontent.com"
       }
     }
   },
