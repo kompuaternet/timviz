@@ -68,6 +68,12 @@ const copy = {
   }
 } as const;
 
+type ResetPasswordLanguage = keyof typeof copy;
+
+function getResetPasswordLanguage(value: string | null): ResetPasswordLanguage {
+  return value === "ru" || value === "uk" || value === "en" ? value : "en";
+}
+
 function getSafeAppReturnTo(value: string) {
   if (!value) return "";
   try {
@@ -80,9 +86,10 @@ function getSafeAppReturnTo(value: string) {
 
 export default function ResetPasswordForm() {
   const router = useRouter();
-  const { language } = useProLanguage();
-  const t = copy[language];
   const params = useSearchParams();
+  const requestedLanguage = getResetPasswordLanguage(params.get("lang"));
+  const { language } = useProLanguage(requestedLanguage);
+  const t = copy[language];
   const token = params.get("token") || "";
   const returnToApp = params.get("source") === "mobile" ? getSafeAppReturnTo(params.get("return_to") || "") : null;
   const [password, setPassword] = useState("");

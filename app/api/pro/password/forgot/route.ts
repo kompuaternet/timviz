@@ -83,6 +83,10 @@ function getMobileResetReturnTo(value: unknown) {
   }
 }
 
+function getResetPageLanguage(language: string) {
+  return language === "ru" || language === "uk" || language === "en" ? language : "en";
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -127,7 +131,7 @@ export async function POST(request: Request) {
     }
 
     const token = createPasswordResetToken(professional.email, professional.passwordHash);
-    const resetParams = new URLSearchParams({ token });
+    const resetParams = new URLSearchParams({ token, lang: getResetPageLanguage(language) });
     if (mobileReturnTo) {
       resetParams.set("source", "mobile");
       resetParams.set("return_to", mobileReturnTo);
