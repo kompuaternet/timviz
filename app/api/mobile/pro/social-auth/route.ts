@@ -6,7 +6,7 @@ import {
   createProfessionalSetup,
   getProfessionalProfileByEmail,
   getProfessionalProfileById,
-  updateProfessionalAvatar
+  updateProfessionalIdentity
 } from "../../../../../lib/pro-data";
 
 type SocialProvider = "google" | "apple";
@@ -215,16 +215,28 @@ async function getOrCreateSocialProfessional(input: {
 }) {
   const existing = await getProfessionalProfileByEmail(input.profile.email);
   if (existing?.id && existing.accountStatus === "active") {
-    if (input.profile.avatarUrl) {
-      await updateProfessionalAvatar(existing.id, input.profile.avatarUrl).catch(() => undefined);
+    const nextFirstName = existing.firstName || input.profile.givenName || input.profile.fullName || "";
+    const nextLastName = existing.lastName || input.profile.familyName || "";
+    if (input.profile.avatarUrl || nextFirstName !== existing.firstName || nextLastName !== existing.lastName) {
+      await updateProfessionalIdentity(existing.id, {
+        firstName: nextFirstName,
+        lastName: nextLastName,
+        avatarUrl: input.profile.avatarUrl || existing.avatarUrl || ""
+      }).catch(() => undefined);
     }
     return existing.id;
   }
 
   if (existing?.id && existing.accountStatus === "pending_email") {
     await activateProfessionalEmailByEmail(input.profile.email);
-    if (input.profile.avatarUrl) {
-      await updateProfessionalAvatar(existing.id, input.profile.avatarUrl).catch(() => undefined);
+    const nextFirstName = existing.firstName || input.profile.givenName || input.profile.fullName || "";
+    const nextLastName = existing.lastName || input.profile.familyName || "";
+    if (input.profile.avatarUrl || nextFirstName !== existing.firstName || nextLastName !== existing.lastName) {
+      await updateProfessionalIdentity(existing.id, {
+        firstName: nextFirstName,
+        lastName: nextLastName,
+        avatarUrl: input.profile.avatarUrl || existing.avatarUrl || ""
+      }).catch(() => undefined);
     }
     return existing.id;
   }

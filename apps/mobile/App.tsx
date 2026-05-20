@@ -7307,20 +7307,7 @@ export default function App() {
       },
       attempts: 0,
     });
-    const savePromise = flushPendingServiceSaves()
-      ?.then(() => refreshAll(session, selectedDate, { silent: true }))
-      .catch((error) => {
-        pendingServiceSavesRef.current.delete(key);
-        Alert.alert(t.addService, error instanceof Error ? error.message : t.addService);
-        revalidateWorkspace();
-      })
-      .finally(() => {
-        if (serviceCreatePromiseRef.current === savePromise) {
-          serviceCreatePromiseRef.current = null;
-        }
-      }) || null;
-    serviceCreatePromiseRef.current = savePromise;
-    if (savePromise) void savePromise;
+    scheduleServiceSaveFlush(120);
     return true;
   }
 
@@ -7530,6 +7517,7 @@ export default function App() {
           <CalendarTab
             t={t}
             language={language}
+            sessionDisplayName={session.displayName}
             workspace={workspace}
             staff={staffSnapshot}
             calendar={calendar}
@@ -7866,6 +7854,7 @@ export default function App() {
 function CalendarTab({
   t,
   language,
+  sessionDisplayName,
   workspace,
   staff,
   calendar,
@@ -7898,6 +7887,7 @@ function CalendarTab({
 }: {
   t: Record<string, string>;
   language: AppLanguage;
+  sessionDisplayName?: string;
   workspace: WorkspaceSnapshot | null;
   staff: StaffSnapshot | null;
   calendar: CalendarSnapshot | null;
@@ -7965,7 +7955,11 @@ function CalendarTab({
     const masterFallback = getMasterFallback(language);
     const addMember = (member: CalendarMemberView) => {
       if (!member.id) return;
-      map.set(member.id, mergeCalendarMemberView(map.get(member.id), member, masterFallback));
+      const displayName = safeText(sessionDisplayName).trim();
+      const name = member.isViewer && displayName && (isGenericCalendarMemberName(member.name, member.role) || member.name.includes("@"))
+        ? displayName
+        : member.name;
+      map.set(member.id, mergeCalendarMemberView(map.get(member.id), { ...member, name }, masterFallback));
     };
     for (const member of makeStaffMembers(staff, workspace, t)) {
       addMember({
@@ -8015,7 +8009,7 @@ function CalendarTab({
       });
     }
     return Array.from(map.values());
-  }, [calendar?.memberCalendars, calendar?.teamMembers, language, staff, t, workspace]);
+  }, [calendar?.memberCalendars, calendar?.teamMembers, language, sessionDisplayName, staff, t, workspace]);
   const selectedMembers = calendarMembers.filter((member) => selectedMemberIds.includes(member.id));
   const primaryMember = selectedMembers[0] || calendarMembers[0] || null;
   const visibleCalendarMembers = selectedMembers.length ? selectedMembers : calendarMembers.slice(0, 1);
@@ -9238,7 +9232,9 @@ function CalendarTimeAxis({ date, compact, schedule }: { date: string; compact: 
         const showLabel = height >= 18 || hour === Math.floor(workStart / 60);
         return (
           <View key={hour} pointerEvents="none" style={[styles.timeAxisHour, { top, height }]}>
-            <Text style={[styles.hourText, !showLabel && styles.hourTextHidden]}>{showLabel ? String(hour).padStart(2, "0") : ""}</Text>
+            <Text style={[styles.hourText, !showLabel && styles.hourTextHidden]} allowFontScaling={false}>
+              {showLabel ? `${String(hour).padStart(2, "0")}:00` : ""}
+            </Text>
           </View>
         );
       })}
@@ -10941,12 +10937,10 @@ function ServicesTab({
       setCustomServiceError(t.similarServiceExists);
       return;
     }
-    const created = await onCreate();
-    if (created) {
-      setMode("mine");
-      setCustomCategoryOpen(false);
-      setCustomServiceError("");
-    }
+    setMode("mine");
+    setCustomCategoryOpen(false);
+    setCustomServiceError("");
+    void onCreate();
   }
 
   function openServiceActions(service: ServiceRecord) {
@@ -16727,13 +16721,13 @@ const styles = StyleSheet.create({
   },
   hourText: {
     width: CALENDAR_TIME_AXIS_WIDTH,
-    paddingRight: 6,
-    height: 16,
-    lineHeight: 16,
-    marginTop: -8,
-    textAlign: "right",
+    paddingRight: 0,
+    height: 18,
+    lineHeight: 18,
+    marginTop: -9,
+    textAlign: "center",
     color: "#94A3B8",
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: "700",
   },
   hourTextHidden: {

@@ -3610,6 +3610,55 @@ export async function updateProfessionalAvatar(professionalId: string, avatarUrl
   return { ok: true };
 }
 
+export async function updateProfessionalIdentity(
+  professionalId: string,
+  input: { firstName?: string; lastName?: string; avatarUrl?: string }
+) {
+  if (!professionalId) {
+    return { ok: false };
+  }
+
+  const firstName = typeof input.firstName === "string" ? input.firstName.trim() : undefined;
+  const lastName = typeof input.lastName === "string" ? input.lastName.trim() : undefined;
+  const avatarUrl = typeof input.avatarUrl === "string" ? normalizeAvatarUrl(input.avatarUrl) : undefined;
+
+  if (isSupabaseConfigured()) {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      throw new Error("Supabase is not available.");
+    }
+
+    const updates: Record<string, string> = {};
+    if (typeof firstName === "string") updates.first_name = firstName;
+    if (typeof lastName === "string") updates.last_name = lastName;
+    if (typeof avatarUrl === "string") updates.avatar_url = avatarUrl;
+
+    if (!Object.keys(updates).length) {
+      return { ok: true };
+    }
+
+    const { error } = await supabase.from("professionals").update(updates).eq("id", professionalId);
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return { ok: true };
+  }
+
+  const store = await ensureDemoBusinessesInLocalStore();
+  const professional = store.professionals.find((item) => item.id === professionalId);
+
+  if (!professional) {
+    throw new Error("Professional not found.");
+  }
+
+  if (typeof firstName === "string") professional.firstName = firstName;
+  if (typeof lastName === "string") professional.lastName = lastName;
+  if (typeof avatarUrl === "string") professional.avatarUrl = avatarUrl;
+  await writeStore(store);
+  return { ok: true };
+}
+
 export async function updateBusinessScheduleForProfessional(input: {
   professionalId: string;
   targetProfessionalId?: string;
