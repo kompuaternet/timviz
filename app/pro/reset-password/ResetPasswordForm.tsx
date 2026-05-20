@@ -20,7 +20,9 @@ const copy = {
     requirementLength: "Минимум 8 символов",
     requirementLetter: "Хотя бы одна буква",
     requirementDigit: "Хотя бы одна цифра",
-    matchReady: "Пароли совпадают"
+    matchReady: "Пароли совпадают",
+    backToLogin: "Вернуться ко входу",
+    home: "На главную"
   },
   uk: {
     eyebrow: "Новий пароль",
@@ -36,7 +38,9 @@ const copy = {
     requirementLength: "Мінімум 8 символів",
     requirementLetter: "Хоча б одна літера",
     requirementDigit: "Хоча б одна цифра",
-    matchReady: "Паролі збігаються"
+    matchReady: "Паролі збігаються",
+    backToLogin: "Повернутися до входу",
+    home: "На головну"
   },
   en: {
     eyebrow: "New password",
@@ -52,7 +56,9 @@ const copy = {
     requirementLength: "At least 8 characters",
     requirementLetter: "At least one letter",
     requirementDigit: "At least one digit",
-    matchReady: "Passwords match"
+    matchReady: "Passwords match",
+    backToLogin: "Back to sign in",
+    home: "Home"
   }
 } as const;
 
@@ -109,6 +115,12 @@ export default function ResetPasswordForm() {
 
   return (
     <div className={styles.panel}>
+      <div className={styles.resetPasswordNav}>
+        <a href="/pro/login" className={styles.resetPasswordBack}>
+          {t.backToLogin}
+        </a>
+      </div>
+
       <div>
         <p className={styles.eyebrow}>{t.eyebrow}</p>
         <h1 className={styles.heroTitle}>{t.title}</h1>
@@ -164,6 +176,12 @@ export default function ResetPasswordForm() {
       >
         {isLoading ? t.loading : t.submit}
       </button>
+
+      <div className={styles.helperBlock}>
+        <a href="/" className={styles.mutedLink}>
+          {t.home}
+        </a>
+      </div>
     </div>
   );
 }
