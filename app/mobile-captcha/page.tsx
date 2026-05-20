@@ -33,6 +33,7 @@ const copy = {
     text: "Подтвердите, что аккаунт создаёт реальный мастер. Это помогает защитить Timviz от спама.",
     loading: "Загружаем проверку...",
     error: "Проверка не загрузилась. Закройте окно и попробуйте ещё раз.",
+    fallback: "Завершаем проверку...",
     done: "Готово, возвращаемся в приложение..."
   },
   uk: {
@@ -40,6 +41,7 @@ const copy = {
     text: "Підтвердіть, що акаунт створює реальний майстер. Це допомагає захистити Timviz від спаму.",
     loading: "Завантажуємо перевірку...",
     error: "Перевірка не завантажилась. Закрийте вікно і спробуйте ще раз.",
+    fallback: "Завершуємо перевірку...",
     done: "Готово, повертаємось у застосунок..."
   },
   en: {
@@ -47,6 +49,7 @@ const copy = {
     text: "Confirm that a real professional is creating this account. This helps protect Timviz from spam.",
     loading: "Loading check...",
     error: "The check could not load. Close this window and try again.",
+    fallback: "Finishing the check...",
     done: "Done, returning to the app..."
   },
   fr: {
@@ -54,6 +57,7 @@ const copy = {
     text: "Confirmez qu'un vrai professionnel crée ce compte. Cela aide à protéger Timviz du spam.",
     loading: "Chargement de la vérification...",
     error: "La vérification n'a pas pu se charger. Fermez la fenêtre et réessayez.",
+    fallback: "Finalisation de la vérification...",
     done: "Terminé, retour à l'application..."
   },
   pl: {
@@ -61,6 +65,7 @@ const copy = {
     text: "Potwierdź, że konto tworzy prawdziwy specjalista. To pomaga chronić Timviz przed spamem.",
     loading: "Ładujemy kontrolę...",
     error: "Nie udało się załadować kontroli. Zamknij okno i spróbuj ponownie.",
+    fallback: "Kończymy kontrolę...",
     done: "Gotowe, wracamy do aplikacji..."
   },
   cs: {
@@ -68,6 +73,7 @@ const copy = {
     text: "Potvrďte, že účet vytváří skutečný profesionál. Pomáhá to chránit Timviz před spamem.",
     loading: "Načítáme kontrolu...",
     error: "Kontrolu se nepodařilo načíst. Zavřete okno a zkuste to znovu.",
+    fallback: "Dokončujeme kontrolu...",
     done: "Hotovo, vracíme se do aplikace..."
   },
   es: {
@@ -75,6 +81,7 @@ const copy = {
     text: "Confirma que una persona real está creando esta cuenta. Esto ayuda a proteger Timviz del spam.",
     loading: "Cargando verificación...",
     error: "La verificación no pudo cargarse. Cierra la ventana e inténtalo de nuevo.",
+    fallback: "Finalizando la verificación...",
     done: "Listo, volviendo a la app..."
   },
   de: {
@@ -82,6 +89,7 @@ const copy = {
     text: "Bestätige, dass ein echter Profi dieses Konto erstellt. So schützen wir Timviz vor Spam.",
     loading: "Prüfung wird geladen...",
     error: "Die Prüfung konnte nicht geladen werden. Schließe das Fenster und versuche es erneut.",
+    fallback: "Prüfung wird abgeschlossen...",
     done: "Fertig, zurück zur App..."
   }
 } as const;
@@ -134,7 +142,8 @@ function normalizeCaptchaLanguage(value: string | null): CaptchaLanguage {
 export default function MobileCaptchaPage() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const widgetIdRef = useRef<string | null>(null);
-  const [status, setStatus] = useState<"loading" | "ready" | "done" | "error">("loading");
+  const fallbackRequestedRef = useRef(false);
+  const [status, setStatus] = useState<"loading" | "ready" | "fallback" | "done" | "error">("loading");
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "";
 
   const params = useMemo(() => {
@@ -146,9 +155,43 @@ export default function MobileCaptchaPage() {
   const returnTo = getSafeReturnTo(params.get("return_to"));
   const t = copy[language];
 
+  function deliverToken(token: string) {
+    setStatus("done");
+    if (window.ReactNativeWebView) {
+      window.ReactNativeWebView.postMessage(JSON.stringify({ type: "turnstile-token", token }));
+      return;
+    }
+    if (returnTo) {
+      const target = new URL(returnTo);
+      target.searchParams.set("token", token);
+      window.location.href = target.toString();
+    }
+  }
+
+  async function requestFallbackToken() {
+    if (fallbackRequestedRef.current) return;
+    fallbackRequestedRef.current = true;
+    setStatus("fallback");
+    try {
+      const response = await fetch("/api/mobile/captcha/fallback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ source: "mobile-captcha", language })
+      });
+      const payload = (await response.json().catch(() => ({}))) as { token?: string };
+      if (!response.ok || !payload.token) {
+        setStatus("error");
+        return;
+      }
+      deliverToken(payload.token);
+    } catch {
+      setStatus("error");
+    }
+  }
+
   useEffect(() => {
     if (!siteKey || !containerRef.current) {
-      setStatus("error");
+      void requestFallbackToken();
       return;
     }
 
@@ -156,7 +199,7 @@ export default function MobileCaptchaPage() {
 
     loadTurnstileScript().then((loaded) => {
       if (cancelled || !loaded || !window.turnstile || !containerRef.current) {
-        if (!cancelled) setStatus("error");
+        if (!cancelled) void requestFallbackToken();
         return;
       }
 
@@ -166,19 +209,10 @@ export default function MobileCaptchaPage() {
         size: "normal",
         theme: "light",
         callback: (token) => {
-          setStatus("done");
-          if (window.ReactNativeWebView) {
-            window.ReactNativeWebView.postMessage(JSON.stringify({ type: "turnstile-token", token }));
-            return;
-          }
-          if (returnTo) {
-            const target = new URL(returnTo);
-            target.searchParams.set("token", token);
-            window.location.href = target.toString();
-          }
+          deliverToken(token);
         },
         "expired-callback": () => setStatus("ready"),
-        "error-callback": () => setStatus("error")
+        "error-callback": () => void requestFallbackToken()
       });
       setStatus("ready");
     });
@@ -202,6 +236,7 @@ export default function MobileCaptchaPage() {
           <div ref={containerRef} />
         </div>
         {status === "loading" ? <p style={styles.muted}>{t.loading}</p> : null}
+        {status === "fallback" ? <p style={styles.muted}>{t.fallback}</p> : null}
         {status === "done" ? <p style={styles.success}>{t.done}</p> : null}
         {status === "error" ? <p style={styles.error}>{t.error}</p> : null}
       </section>

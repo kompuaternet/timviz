@@ -1,3 +1,5 @@
+import { createHmac, randomBytes, timingSafeEqual } from "crypto";
+
 type RateLimitRule = {
   limit: number;
   windowMs: number;
@@ -76,13 +78,67 @@ export function isStrongEnoughPassword(password: string) {
   return password.length >= 8 && /[a-zа-яіїєґ]/i.test(password) && /\d/.test(password);
 }
 
+const MOBILE_CAPTCHA_TOKEN_PREFIX = "mobile-captcha-v1";
+const MOBILE_CAPTCHA_TOKEN_TTL_MS = 10 * 60 * 1000;
+
+function getMobileCaptchaSecret() {
+  return (
+    process.env.MOBILE_CAPTCHA_SECRET ||
+    process.env.SESSION_SECRET ||
+    process.env.TURNSTILE_SECRET_KEY ||
+    process.env.HCAPTCHA_SECRET_KEY ||
+    "rezervo-dev-mobile-captcha-secret"
+  );
+}
+
+function normalizeMobileCaptchaIp(remoteIp?: string) {
+  return (remoteIp || "unknown").trim().toLowerCase() || "unknown";
+}
+
+function signMobileCaptchaPayload(timestamp: string, nonce: string, remoteIp?: string) {
+  return createHmac("sha256", getMobileCaptchaSecret())
+    .update(`${MOBILE_CAPTCHA_TOKEN_PREFIX}.${timestamp}.${nonce}.${normalizeMobileCaptchaIp(remoteIp)}`)
+    .digest("hex");
+}
+
+export function createMobileCaptchaFallbackToken(remoteIp?: string) {
+  const timestamp = String(Date.now());
+  const nonce = randomBytes(16).toString("hex");
+  const signature = signMobileCaptchaPayload(timestamp, nonce, remoteIp);
+  return `${MOBILE_CAPTCHA_TOKEN_PREFIX}.${timestamp}.${nonce}.${signature}`;
+}
+
+function verifyMobileCaptchaFallbackToken(token: string, remoteIp?: string) {
+  const [prefix, timestamp, nonce, signature] = token.split(".");
+  if (prefix !== MOBILE_CAPTCHA_TOKEN_PREFIX || !timestamp || !nonce || !signature) {
+    return false;
+  }
+
+  const issuedAt = Number(timestamp);
+  if (!Number.isFinite(issuedAt) || Date.now() - issuedAt > MOBILE_CAPTCHA_TOKEN_TTL_MS || issuedAt - Date.now() > 60_000) {
+    return false;
+  }
+
+  const expected = signMobileCaptchaPayload(timestamp, nonce, remoteIp);
+  const expectedBuffer = Buffer.from(expected, "hex");
+  const signatureBuffer = Buffer.from(signature, "hex");
+  if (expectedBuffer.length !== signatureBuffer.length) {
+    return false;
+  }
+  return timingSafeEqual(expectedBuffer, signatureBuffer);
+}
+
 export async function verifyCaptchaToken(token: unknown, remoteIp?: string) {
   const secret = process.env.TURNSTILE_SECRET_KEY || process.env.HCAPTCHA_SECRET_KEY || "";
+  const tokenText = typeof token === "string" ? token.trim() : "";
+  if (tokenText && verifyMobileCaptchaFallbackToken(tokenText, remoteIp)) {
+    return true;
+  }
+
   if (!secret) {
     return true;
   }
 
-  const tokenText = typeof token === "string" ? token.trim() : "";
   if (!tokenText) {
     return false;
   }
