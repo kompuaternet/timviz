@@ -400,6 +400,7 @@ export default function StaffView({ professionalId, snapshot, canManageStaff = t
   const { language } = useProLanguage();
   const copy = staffText[language];
   const locale = getLocale(language);
+  const [staffSnapshot, setStaffSnapshot] = useState(snapshot);
   const [query, setQuery] = useState("");
   const [statusText, setStatusText] = useState("");
   const [isAddOpen, setIsAddOpen] = useState(initialAddOpen);
@@ -409,6 +410,10 @@ export default function StaffView({ professionalId, snapshot, canManageStaff = t
   const [phone, setPhone] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [activeActionMenu, setActiveActionMenu] = useState<StaffActionMenuState | null>(null);
+
+  useEffect(() => {
+    setStaffSnapshot(snapshot);
+  }, [snapshot]);
 
   useEffect(() => {
     function closeMenus() {
@@ -439,7 +444,7 @@ export default function StaffView({ professionalId, snapshot, canManageStaff = t
   }, []);
 
   useEffect(() => {
-    if (!canManageStaff || snapshot.joinRequests.length === 0) {
+    if (!canManageStaff || staffSnapshot.joinRequests.length === 0) {
       return;
     }
 
@@ -456,16 +461,16 @@ export default function StaffView({ professionalId, snapshot, canManageStaff = t
         window.dispatchEvent(new CustomEvent("rezervo-pro-notifications-refresh"));
       })
       .catch(() => undefined);
-  }, [canManageStaff, snapshot.joinRequests.length]);
+  }, [canManageStaff, staffSnapshot.joinRequests.length]);
 
   const filteredMembers = useMemo(() => {
     const normalized = query.trim().toLowerCase();
 
     if (!normalized) {
-      return snapshot.members;
+      return staffSnapshot.members;
     }
 
-    return snapshot.members.filter((member) =>
+    return staffSnapshot.members.filter((member) =>
       [
         member.professional.firstName,
         member.professional.lastName,
@@ -478,9 +483,9 @@ export default function StaffView({ professionalId, snapshot, canManageStaff = t
         .toLowerCase()
         .includes(normalized)
     );
-  }, [copy.accessState, query, snapshot.members]);
+  }, [copy.accessState, query, staffSnapshot.members]);
 
-  async function refreshAfter(request: Promise<Response>, successText: string = copy.saved) {
+  async function refreshAfter(request: Promise<Response>, successText: string = copy.saved, onSuccess?: () => void) {
     try {
       const response = await request;
       const payload = await response.json().catch(() => ({}));
@@ -490,6 +495,7 @@ export default function StaffView({ professionalId, snapshot, canManageStaff = t
         return;
       }
 
+      onSuccess?.();
       setStatusText(successText);
       window.dispatchEvent(new CustomEvent("rezervo-pro-notifications-refresh"));
       router.refresh();
@@ -567,7 +573,27 @@ export default function StaffView({ professionalId, snapshot, canManageStaff = t
     await refreshAfter(
       fetch(`/api/pro/staff/invitations?invitationId=${encodeURIComponent(invitationId)}`, {
         method: "DELETE"
-      })
+      }),
+      copy.saved,
+      () => {
+        setStaffSnapshot((current) => ({
+          ...current,
+          summary: {
+            ...current.summary,
+            pendingInvitations: Math.max(0, current.summary.pendingInvitations - 1)
+          },
+          invitations: current.invitations.filter((invitation) => invitation.id !== invitationId),
+          members: current.members.map((member) =>
+            member.pendingInvitation?.id === invitationId
+              ? {
+                  ...member,
+                  workspaceAccess: member.workspaceAccess === "invited" ? "offline" : member.workspaceAccess,
+                  pendingInvitation: null
+                }
+              : member
+          )
+        }));
+      }
     );
   }
 
@@ -598,7 +624,7 @@ export default function StaffView({ professionalId, snapshot, canManageStaff = t
 
       <section className={styles.staffStudioShell}>
         <ProWorkspaceHeader
-          businessName={snapshot.business.name}
+          businessName={staffSnapshot.business.name}
           viewerName={header.viewerName}
           viewerAvatarUrl={header.viewerAvatarUrl}
           viewerInitials={header.viewerInitials}
@@ -628,7 +654,7 @@ export default function StaffView({ professionalId, snapshot, canManageStaff = t
             <div>
               <div className={styles.staffStudioTitleRow}>
                 <h1 className={styles.staffStudioTitle}>{copy.pageTitle}</h1>
-                <span className={styles.staffStudioCount}>{snapshot.members.length}</span>
+                <span className={styles.staffStudioCount}>{staffSnapshot.members.length}</span>
               </div>
               <p className={styles.staffStudioText}>{copy.pageText}</p>
             </div>
@@ -718,7 +744,7 @@ export default function StaffView({ professionalId, snapshot, canManageStaff = t
 
                     <div className={styles.staffStudioStatsCell}>
                       <span className={styles.staffStudioMobileLabel}>{copy.stats}</span>
-                      {renderStats(member, locale, snapshot.business.currency, copy)}
+                      {renderStats(member, locale, staffSnapshot.business.currency, copy)}
                     </div>
 
                     <div
@@ -758,11 +784,11 @@ export default function StaffView({ professionalId, snapshot, canManageStaff = t
                 <h2>{copy.incomingInvites}</h2>
               </div>
 
-              {snapshot.incomingInvitations.length === 0 ? (
+              {staffSnapshot.incomingInvitations.length === 0 ? (
                 <div className={styles.staffStudioEmpty}>{copy.noIncomingInvites}</div>
               ) : (
                 <div className={styles.staffStudioSideList}>
-                  {snapshot.incomingInvitations.map((invitation) => (
+                  {staffSnapshot.incomingInvitations.map((invitation) => (
                     <article key={invitation.id} className={styles.staffSideCard}>
                       <div>
                         <strong>{invitation.business.name}</strong>
@@ -797,11 +823,11 @@ export default function StaffView({ professionalId, snapshot, canManageStaff = t
                 <h2>{copy.joinRequests}</h2>
               </div>
 
-              {snapshot.joinRequests.length === 0 ? (
+              {staffSnapshot.joinRequests.length === 0 ? (
                 <div className={styles.staffStudioEmpty}>{copy.noJoinRequests}</div>
               ) : (
                 <div className={styles.staffStudioSideList}>
-                  {snapshot.joinRequests.map((request) => (
+                  {staffSnapshot.joinRequests.map((request) => (
                     <article key={request.id} className={styles.staffSideCard}>
                       <div>
                         <strong>
@@ -842,11 +868,11 @@ export default function StaffView({ professionalId, snapshot, canManageStaff = t
                 <h2>{copy.pendingInvites}</h2>
               </div>
 
-              {snapshot.invitations.length === 0 ? (
+              {staffSnapshot.invitations.length === 0 ? (
                 <div className={styles.staffStudioEmpty}>{copy.noInvites}</div>
               ) : (
                 <div className={styles.staffStudioSideList}>
-                  {snapshot.invitations.map((invitation) => (
+                  {staffSnapshot.invitations.map((invitation) => (
                     <PendingInvitationCard
                       key={invitation.id}
                       invitation={invitation}
