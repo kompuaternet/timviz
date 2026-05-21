@@ -4014,11 +4014,64 @@
   flex-wrap: wrap;
 }
 
+.staffScheduleMasterPicker label {
+  display: grid;
+  gap: 8px;
+  color: #6f7688;
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.staffScheduleMasterPicker select {
+  min-width: 240px;
+}
+
+.staffScheduleMasterPicker strong {
+  min-height: 52px;
+  padding: 0 18px;
+  border: 1px solid #d9e0ee;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #1f2435;
+  display: inline-flex;
+  align-items: center;
+}
+
 .staffScheduleToolbarRight {
   display: flex;
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
+}
+
+.staffScheduleModeSwitch {
+  min-height: 52px;
+  padding: 4px;
+  border-radius: 999px;
+  border: 1px solid #d9e0ee;
+  background: #f6f8fc;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.staffScheduleModeButton,
+.staffScheduleModeButtonActive {
+  min-height: 42px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #636b80;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.staffScheduleModeButtonActive {
+  background: #11182d;
+  color: #ffffff;
+  box-shadow: 0 10px 22px rgba(17, 24, 45, 0.18);
 }
 
 .staffScheduleRange {
@@ -4152,6 +4205,56 @@
   color: #ffffff;
 }
 
+.staffFlexibleCalendarPanel {
+  border-radius: 24px;
+  border: 1px solid #e2e7f2;
+  background: #ffffff;
+  padding: 18px;
+  display: grid;
+  gap: 14px;
+}
+
+.staffFlexibleCalendarGrid {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.staffFlexibleCalendarDay {
+  min-height: 108px;
+  padding: 12px;
+  border: 1px solid #e5eaf4;
+  border-radius: 18px;
+  background: #f8faff;
+  color: #1f2435;
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.staffFlexibleCalendarDay strong {
+  font-size: 1rem;
+}
+
+.staffFlexibleCalendarDay span {
+  color: #798196;
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.staffFlexibleCalendarDayActive {
+  border-color: #c7d5ff;
+  background: #eef3ff;
+  box-shadow: inset 0 0 0 1px rgba(91, 111, 255, 0.2);
+}
+
+.staffFlexibleCalendarDayActive span {
+  color: #263151;
+}
+
 .staffScheduleBoard {
   border-radius: 24px;
   border: 1px solid #e2e7f2;
@@ -4184,12 +4287,26 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  justify-content: space-between;
 }
 
 .staffScheduleInlineLink {
   color: #5c50f6;
   font-weight: 700;
   text-decoration: none;
+}
+
+.staffScheduleInlineButton {
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid #dfe4ef;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #1f2435;
+  font-size: 0.86rem;
+  font-weight: 800;
+  cursor: pointer;
+  white-space: nowrap;
 }
 
 .staffScheduleDayHead {
@@ -4392,7 +4509,7 @@
 
 .staffPlannerLayout {
   display: grid;
-  grid-template-columns: 360px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 28px;
   align-items: start;
 }
@@ -4991,9 +5108,21 @@
     align-items: stretch;
   }
 
+  .staffScheduleMasterPicker,
+  .staffScheduleMasterPicker select,
+  .staffScheduleModeSwitch {
+    width: 100%;
+  }
+
   .staffScheduleToolbarRight,
-  .staffScheduleRange {
+  .staffScheduleRange,
+  .staffScheduleModeSwitch {
     justify-content: space-between;
+  }
+
+  .staffScheduleModeButton,
+  .staffScheduleModeButtonActive {
+    flex: 1;
   }
 
   .staffScheduleRangeLabelButton {
@@ -5022,6 +5151,18 @@
   .staffScheduleRangeBox {
     display: grid;
     grid-template-columns: 42px minmax(0, 1fr) 42px;
+  }
+
+  .staffFlexibleCalendarPanel .staffScheduleCalendarWeekdays {
+    display: none;
+  }
+
+  .staffFlexibleCalendarGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .staffFlexibleCalendarDay {
+    min-height: 88px;
   }
 
   .staffScheduleShiftWrap {

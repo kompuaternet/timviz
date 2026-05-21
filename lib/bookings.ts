@@ -2,7 +2,12 @@ import { promises as fs } from "fs";
 import path from "path";
 import { getSalonBySlug } from "../data/mock-data";
 import { getPublicBookingSlots } from "./public-booking";
-import { getBusinessDirectorySnapshot, type BusinessRecord, type ServiceRecord } from "./pro-data";
+import {
+  getBusinessDirectorySnapshot,
+  resolveMembershipSchedule,
+  type BusinessRecord,
+  type ServiceRecord
+} from "./pro-data";
 import { createAppNotifications } from "./app-notifications";
 import {
   createCalendarAppointment,
@@ -767,16 +772,21 @@ export async function createBusinessBooking(input: PublicBusinessBookingInput) {
     candidateProfessionalIds.push(ownerProfessionalId);
   }
 
-  const bookingConfig = {
-    workSchedule: business.workSchedule,
-    customSchedule: business.customSchedule,
-    bookingIntervalMinutes: 15,
-    services: businessServices.map((item) => ({
-      name: item.name,
-      durationMinutes: item.durationMinutes ?? 60
-    }))
-  };
+  const bookingServices = businessServices.map((item) => ({
+    name: item.name,
+    durationMinutes: item.durationMinutes ?? 60
+  }));
   const professionalId = candidateProfessionalIds.find((candidateId) => {
+    const membership = directory.memberships.find(
+      (item) => item.businessId === business.id && item.professionalId === candidateId
+    );
+    const memberSchedule = membership
+      ? resolveMembershipSchedule(membership, business)
+      : {
+          workScheduleMode: business.workScheduleMode,
+          workSchedule: business.workSchedule,
+          customSchedule: business.customSchedule
+        };
     const candidateBookings = publicAppointments
       .filter(
         (appointment) =>
@@ -794,7 +804,13 @@ export async function createBusinessBooking(input: PublicBusinessBookingInput) {
       }));
 
     const availableSlots = getPublicBookingSlots({
-      config: bookingConfig,
+      config: {
+        workScheduleMode: memberSchedule.workScheduleMode,
+        workSchedule: memberSchedule.workSchedule,
+        customSchedule: memberSchedule.customSchedule,
+        bookingIntervalMinutes: 15,
+        services: bookingServices
+      },
       date: input.appointmentDate,
       serviceName: primaryService.name,
       durationMinutesOverride: totalDurationMinutes,

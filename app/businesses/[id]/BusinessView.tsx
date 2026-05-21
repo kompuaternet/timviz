@@ -20,7 +20,7 @@ import { localizeCategoryName, localizeServiceName } from "../../../lib/service-
 import { getLocalizedPath, type SiteLanguage } from "../../../lib/site-language";
 import {
   addMinutesToTime,
-  getDaySchedule,
+  getDayScheduleForMode,
   normalizeCustomSchedule,
   normalizeWorkSchedule,
   workDays,
@@ -611,7 +611,15 @@ export default function BusinessView({
           }
         ]
       : [];
-  }, [business.name, business.ownerProfessionalId, language, team]);
+  }, [
+    business.customSchedule,
+    business.name,
+    business.ownerProfessionalId,
+    business.workSchedule,
+    business.workScheduleMode,
+    language,
+    team
+  ]);
 
   const companyPhoneCountry = useMemo(
     () => inferPhoneCountryFromAddress(business.address),
@@ -816,6 +824,7 @@ export default function BusinessView({
     const member = teamMembers.find((item) => item.id === professionalId);
 
     return {
+      workScheduleMode: member?.workScheduleMode ?? business.workScheduleMode,
       workSchedule: member?.workSchedule ?? business.workSchedule,
       customSchedule: member?.customSchedule ?? business.customSchedule
     };
@@ -831,6 +840,7 @@ export default function BusinessView({
 
     return getPublicBookingSlots({
       config: {
+        workScheduleMode: scheduleConfig.workScheduleMode,
         workSchedule: scheduleConfig.workSchedule,
         customSchedule: scheduleConfig.customSchedule,
         bookingIntervalMinutes: 15,
@@ -880,10 +890,11 @@ export default function BusinessView({
       let hasWorkingDay = false;
       for (const professionalId of professionalIdsForSlots) {
         const scheduleConfig = getScheduleConfigForProfessional(professionalId);
-        const schedule = getDaySchedule(
+        const schedule = getDayScheduleForMode(
           day.key,
           normalizeWorkSchedule(scheduleConfig.workSchedule),
-          normalizeCustomSchedule(scheduleConfig.customSchedule)
+          normalizeCustomSchedule(scheduleConfig.customSchedule),
+          scheduleConfig.workScheduleMode
         );
 
         if (schedule?.enabled) {

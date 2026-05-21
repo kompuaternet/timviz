@@ -11,10 +11,11 @@ import { useProLanguage } from "../useProLanguage";
 import type { OnboardingCtaState } from "../../../lib/pro-onboarding";
 import type { BusinessStaffSnapshot, StaffMemberSnapshot } from "../../../lib/pro-staff";
 import {
-  createEmptyCustomSchedule,
   createEmptyWorkSchedule,
+  defaultWorkTemplate,
   getDayBreaks,
-  getDaySchedule,
+  getDayScheduleForMode,
+  getLastTemplateFromCustomSchedule,
   minutesToTime,
   normalizeCustomSchedule,
   normalizeWorkSchedule,
@@ -24,7 +25,8 @@ import {
   type WorkBreak,
   type WorkDayKey,
   type WorkDaySchedule,
-  type WorkSchedule
+  type WorkSchedule,
+  type WorkScheduleMode
 } from "../../../lib/work-schedule";
 
 type StaffScheduleViewProps = {
@@ -41,8 +43,6 @@ type StaffScheduleViewProps = {
   };
 };
 
-type SortMode = "name" | "hours-desc" | "hours-asc";
-
 type ScheduleCopy = {
   sectionTitle: string;
   people: string;
@@ -53,6 +53,11 @@ type ScheduleCopy = {
   sortByName: string;
   sortByHoursDesc: string;
   sortByHoursAsc: string;
+  master: string;
+  scheduleMode: string;
+  weeklyMode: string;
+  flexibleMode: string;
+  month: string;
   today: string;
   options: string;
   add: string;
@@ -112,6 +117,7 @@ type ScheduleCopy = {
   restoreTemplate: string;
   dayEditorTitle: (name: string, date: string) => string;
   dayEditorText: string;
+  flexibleDayEditorText: string;
   resetDay: string;
   weekOf: string;
   notSelected: string;
@@ -131,11 +137,6 @@ type CalendarDayItem = {
 type CellMenuState = {
   memberId: string;
   dateKey: string;
-  anchorEl: HTMLElement;
-};
-
-type MemberMenuState = {
-  memberId: string;
   anchorEl: HTMLElement;
 };
 
@@ -175,12 +176,16 @@ const scheduleText: Record<"ru" | "uk" | "en", ScheduleCopy> = {
     people: "Участники команды",
     schedule: "График смен",
     title: "График смен",
-    text:
-      "Настройте персональные смены мастеров так, чтобы неделя команды выглядела как единая живая сетка. Здесь управляется именно рабочее время сотрудников для записи.",
+    text: "Выберите мастера и настройте его рабочие дни.",
     sort: "Сортировка",
     sortByName: "По имени",
     sortByHoursDesc: "По нагрузке сверху",
     sortByHoursAsc: "По нагрузке снизу",
+    master: "Мастер",
+    scheduleMode: "Режим графика",
+    weeklyMode: "По неделе",
+    flexibleMode: "Свободный",
+    month: "Месяц",
     today: "На этой неделе",
     options: "Варианты",
     add: "Добавить",
@@ -209,8 +214,7 @@ const scheduleText: Record<"ru" | "uk" | "en", ScheduleCopy> = {
     openAccess: "Доступ и кабинет",
     removeAllShifts: "Удалить все смены",
     plannerTitle: (name) => `Установить повторяющиеся смены для ${name}`,
-    plannerText:
-      "Сохраните недельный шаблон сотрудника. Он станет основной сеткой для будущих недель, а отдельные исключения можно будет менять прямо в таблице.",
+    plannerText: "Сохраните недельный шаблон сотрудника.",
     repeatType: "Как применять",
     repeatWeekly: "Сделать основным графиком",
     repeatForPeriod: "Применить на выбранный период",
@@ -244,6 +248,7 @@ const scheduleText: Record<"ru" | "uk" | "en", ScheduleCopy> = {
     dayEditorTitle: (name, date) => `Изменить ${date} для ${name}`,
     dayEditorText:
       "Изменение затронет только выбранный день. Для постоянного шаблона используйте настройку повторяющихся смен.",
+    flexibleDayEditorText: "Этот день работает отдельно от недельного графика.",
     resetDay: "Удалить настройку дня",
     weekOf: "Неделя",
     notSelected: "Не выбрано"
@@ -253,12 +258,16 @@ const scheduleText: Record<"ru" | "uk" | "en", ScheduleCopy> = {
     people: "Учасники команди",
     schedule: "Графік змін",
     title: "Графік змін",
-    text:
-      "Налаштуйте персональні зміни майстрів так, щоб тиждень команди виглядав як єдина жива сітка. Тут керується саме робочий час співробітників для запису.",
+    text: "Оберіть майстра й налаштуйте його робочі дні.",
     sort: "Сортування",
     sortByName: "За іменем",
     sortByHoursDesc: "За навантаженням зверху",
     sortByHoursAsc: "За навантаженням знизу",
+    master: "Майстер",
+    scheduleMode: "Режим графіка",
+    weeklyMode: "За тижнем",
+    flexibleMode: "Вільний",
+    month: "Місяць",
     today: "На цьому тижні",
     options: "Варіанти",
     add: "Додати",
@@ -287,8 +296,7 @@ const scheduleText: Record<"ru" | "uk" | "en", ScheduleCopy> = {
     openAccess: "Доступ і кабінет",
     removeAllShifts: "Видалити всі зміни",
     plannerTitle: (name) => `Встановити повторювані зміни для ${name}`,
-    plannerText:
-      "Збережіть тижневий шаблон співробітника. Він стане основною сіткою для майбутніх тижнів, а окремі винятки можна буде змінювати прямо в таблиці.",
+    plannerText: "Збережіть тижневий шаблон співробітника.",
     repeatType: "Як застосувати",
     repeatWeekly: "Зробити основним графіком",
     repeatForPeriod: "Застосувати на вибраний період",
@@ -322,6 +330,7 @@ const scheduleText: Record<"ru" | "uk" | "en", ScheduleCopy> = {
     dayEditorTitle: (name, date) => `Змінити ${date} для ${name}`,
     dayEditorText:
       "Зміна зачепить лише вибраний день. Для постійного шаблону використовуйте налаштування повторюваних змін.",
+    flexibleDayEditorText: "Цей день працює окремо від тижневого графіка.",
     resetDay: "Видалити налаштування дня",
     weekOf: "Тиждень",
     notSelected: "Не вибрано"
@@ -331,12 +340,16 @@ const scheduleText: Record<"ru" | "uk" | "en", ScheduleCopy> = {
     people: "Team members",
     schedule: "Shift schedule",
     title: "Shift schedule",
-    text:
-      "Set up personal specialist shifts so the whole team week feels like one live planning board. This screen controls staff availability used for bookings.",
+    text: "Choose a specialist and set their working days.",
     sort: "Sort",
     sortByName: "By name",
     sortByHoursDesc: "Most hours first",
     sortByHoursAsc: "Least hours first",
+    master: "Specialist",
+    scheduleMode: "Schedule mode",
+    weeklyMode: "Weekly",
+    flexibleMode: "Flexible",
+    month: "Month",
     today: "This week",
     options: "Options",
     add: "Add",
@@ -365,8 +378,7 @@ const scheduleText: Record<"ru" | "uk" | "en", ScheduleCopy> = {
     openAccess: "Access and workspace",
     removeAllShifts: "Delete all shifts",
     plannerTitle: (name) => `Set recurring shifts for ${name}`,
-    plannerText:
-      "Save a weekly employee template. It becomes the base grid for future weeks, while date-specific exceptions stay editable from the table.",
+    plannerText: "Save the employee weekly template.",
     repeatType: "How to apply",
     repeatWeekly: "Set as base schedule",
     repeatForPeriod: "Apply for selected period",
@@ -400,6 +412,7 @@ const scheduleText: Record<"ru" | "uk" | "en", ScheduleCopy> = {
     dayEditorTitle: (name, date) => `Edit ${date} for ${name}`,
     dayEditorText:
       "This change only affects the selected date. Use recurring shifts if you want to update the permanent weekly template.",
+    flexibleDayEditorText: "This day is managed separately from the weekly schedule.",
     resetDay: "Delete day override",
     weekOf: "Week",
     notSelected: "Not selected"
@@ -803,29 +816,13 @@ function makeMemberName(member: StaffMemberSnapshot) {
   return `${member.professional.firstName} ${member.professional.lastName}`.trim() || member.professional.email;
 }
 
-function compareMembers(left: StaffMemberSnapshot, right: StaffMemberSnapshot, sortMode: SortMode, weekDays: Array<{ key: string }>) {
-  if (sortMode === "name") {
-    return makeMemberName(left).localeCompare(makeMemberName(right), "ru");
-  }
-
-  const leftHours = weekDays.reduce(
-    (sum, day) =>
-      sum +
-      getDayDurationMinutes(getDaySchedule(day.key, left.membership.workSchedule, left.membership.customSchedule)),
-    0
+function resolveMemberDaySchedule(member: StaffMemberSnapshot, dateKey: string) {
+  return getDayScheduleForMode(
+    dateKey,
+    member.membership.workSchedule,
+    member.membership.customSchedule,
+    member.membership.workScheduleMode
   );
-  const rightHours = weekDays.reduce(
-    (sum, day) =>
-      sum +
-      getDayDurationMinutes(getDaySchedule(day.key, right.membership.workSchedule, right.membership.customSchedule)),
-    0
-  );
-
-  if (sortMode === "hours-asc") {
-    return leftHours - rightHours || makeMemberName(left).localeCompare(makeMemberName(right), "ru");
-  }
-
-  return rightHours - leftHours || makeMemberName(left).localeCompare(makeMemberName(right), "ru");
 }
 
 function formatInputDate(dateKey: string) {
@@ -967,8 +964,6 @@ type SaveScheduleBuildResult =
 
 function SchedulePlannerModal({
   member,
-  businessName,
-  businessCategories,
   localizedWorkDays,
   anchorDateKey,
   copy,
@@ -977,8 +972,6 @@ function SchedulePlannerModal({
   onSave
 }: {
   member: StaffMemberSnapshot;
-  businessName: string;
-  businessCategories: string[];
   localizedWorkDays: LocalizedWorkDay[];
   anchorDateKey?: string;
   copy: ScheduleCopy;
@@ -1284,94 +1277,6 @@ function SchedulePlannerModal({
           </div>
 
           <div className={styles.staffPlannerLayout}>
-            <aside className={styles.staffPlannerSidebar}>
-              <div className={styles.staffPlannerInfoCard}>
-                <strong>{businessName}</strong>
-                <span>{businessCategories.join(" · ") || copy.notSelected}</span>
-                <p>{copy.businessHint}</p>
-              </div>
-
-              <div className={styles.staffPlannerInfoCard}>
-                <label className={styles.staffDrawerField}>
-                  <span>{copy.repeatType}</span>
-                  <select
-                    className={styles.select}
-                    value={applyMode}
-                    onChange={(event) => {
-                      const nextMode = event.target.value as PlannerApplyMode;
-                      setApplyMode(nextMode);
-                      setEndMode(nextMode === "period" ? "until-date" : "until-changed");
-                      if (nextMode === "period" && endDate < startDate) {
-                        setEndDate(startDate);
-                      }
-                      setStatusText("");
-                    }}
-                  >
-                    <option value="template">{copy.repeatWeekly}</option>
-                    <option value="period">{copy.repeatForPeriod}</option>
-                  </select>
-                </label>
-
-                <label className={styles.staffDrawerField}>
-                  <span>{copy.startDate}</span>
-                  <input
-                    type="date"
-                    className={styles.input}
-                    value={formatInputDate(startDate)}
-                    onChange={(event) => {
-                      const nextStartDate = event.target.value;
-                      setStartDate(nextStartDate);
-                      if (endMode === "until-date" && endDate < nextStartDate) {
-                        setEndDate(nextStartDate);
-                      }
-                      setStatusText("");
-                    }}
-                  />
-                </label>
-
-                <label className={styles.staffDrawerField}>
-                  <span>{copy.endBehavior}</span>
-                  <select
-                    className={styles.select}
-                    value={endMode}
-                    onChange={(event) => {
-                      const nextMode = event.target.value as PlannerEndMode;
-                      setEndMode(nextMode);
-                      if (nextMode === "until-date" && endDate < startDate) {
-                        setEndDate(startDate);
-                      }
-                      setStatusText("");
-                    }}
-                  >
-                    <option value="until-changed" disabled={applyMode === "period"}>
-                      {copy.untilChanged}
-                    </option>
-                    <option value="until-date" disabled={applyMode === "template"}>
-                      {copy.untilDate}
-                    </option>
-                  </select>
-                </label>
-
-                {endMode === "until-date" ? (
-                  <label className={styles.staffDrawerField}>
-                    <span>{copy.endDate}</span>
-                    <input
-                      type="date"
-                      className={styles.input}
-                      value={formatInputDate(endDate)}
-                      min={formatInputDate(startDate)}
-                      onChange={(event) => {
-                        setEndDate(event.target.value);
-                        setStatusText("");
-                      }}
-                    />
-                  </label>
-                ) : null}
-              </div>
-
-              <div className={styles.staffPlannerHintCard}>{copy.plannerHint}</div>
-            </aside>
-
             <section className={styles.staffPlannerPanel}>
               <div className={styles.staffPlannerPanelHeader}>
                 <div>
@@ -1431,7 +1336,8 @@ function DayScheduleModal({
   copy,
   focusBreak = false,
   onClose,
-  onSave
+  onSave,
+  onTemplateSaved
 }: {
   member: StaffMemberSnapshot;
   dateKey: string;
@@ -1440,10 +1346,11 @@ function DayScheduleModal({
   focusBreak?: boolean;
   onClose: () => void;
   onSave: (payload: SaveScheduleInput) => Promise<boolean>;
+  onTemplateSaved?: (memberId: string, intervals: WorkInterval[]) => void;
 }) {
   const sourceSchedule = useMemo(
-    () => getDaySchedule(dateKey, member.membership.workSchedule, member.membership.customSchedule),
-    [dateKey, member.membership.customSchedule, member.membership.workSchedule]
+    () => resolveMemberDaySchedule(member, dateKey),
+    [dateKey, member.membership.customSchedule, member.membership.workSchedule, member.membership.workScheduleMode]
   );
   const hasOverride = Boolean(member.membership.customSchedule[dateKey]);
   const [enabled, setEnabled] = useState(sourceSchedule.enabled);
@@ -1454,7 +1361,7 @@ function DayScheduleModal({
   const lastSavedSignatureRef = useRef("");
 
   useEffect(() => {
-    const nextSchedule = getDaySchedule(dateKey, member.membership.workSchedule, member.membership.customSchedule);
+    const nextSchedule = resolveMemberDaySchedule(member, dateKey);
     const nextEditableSchedule = createEditableDaySchedule(nextSchedule, focusBreak);
     setEnabled(nextSchedule.enabled);
     setIntervals(nextEditableSchedule.intervals);
@@ -1550,6 +1457,9 @@ function DayScheduleModal({
 
     if (success) {
       lastSavedSignatureRef.current = daySignature;
+      if (enabled) {
+        onTemplateSaved?.(member.professional.id, intervals);
+      }
       setStatusText(copy.saved);
       if (closeAfter) {
         onClose();
@@ -1575,6 +1485,9 @@ function DayScheduleModal({
     setIsSaving(false);
 
     if (success) {
+      if (member.membership.workScheduleMode === "flexible") {
+        onTemplateSaved?.(member.professional.id, []);
+      }
       onClose();
     } else {
       setStatusText(copy.failed);
@@ -1638,7 +1551,7 @@ function DayScheduleModal({
         <div className={styles.staffDayModalHeader}>
           <div>
             <h2>{copy.dayEditorTitle(makeMemberName(member), formattedDate)}</h2>
-            <p>{copy.dayEditorText}</p>
+            <p>{member.membership.workScheduleMode === "flexible" ? copy.flexibleDayEditorText : copy.dayEditorText}</p>
           </div>
           <button type="button" className={styles.staffStudioGhostButton} onClick={() => void handleDismiss()}>
             {copy.close}
@@ -1682,7 +1595,7 @@ function DayScheduleModal({
             onClick={() => void resetToTemplate()}
             disabled={isSaving || !hasOverride}
           >
-            {copy.restoreTemplate}
+            {member.membership.workScheduleMode === "flexible" ? copy.resetDay : copy.restoreTemplate}
           </button>
 
           <div className={styles.staffDayModalActionsRight}>
@@ -1704,31 +1617,35 @@ export default function StaffScheduleView({ professionalId, snapshot, onboarding
   const copy = scheduleText[language];
   const locale = getLocale(language);
   const [members, setMembers] = useState(snapshot.members);
+  const [selectedMemberId, setSelectedMemberId] = useState(() => snapshot.members[0]?.professional.id || "");
   const [weekDate, setWeekDate] = useState(() => startOfWeek(new Date()));
-  const [sortMode, setSortMode] = useState<SortMode>("name");
-  const [sortMenuAnchor, setSortMenuAnchor] = useState<HTMLElement | null>(null);
-  const [optionsMenuAnchor, setOptionsMenuAnchor] = useState<HTMLElement | null>(null);
-  const [addMenuAnchor, setAddMenuAnchor] = useState<HTMLElement | null>(null);
   const [calendarAnchor, setCalendarAnchor] = useState<HTMLElement | null>(null);
   const [pickerMonthDate, setPickerMonthDate] = useState(() => startOfMonth(new Date()));
-  const [rowMenuState, setRowMenuState] = useState<MemberMenuState | null>(null);
   const [cellMenu, setCellMenu] = useState<CellMenuState | null>(null);
   const [plannerState, setPlannerState] = useState<PlannerState | null>(null);
   const [dayEditorState, setDayEditorState] = useState<DayEditorState | null>(null);
   const [statusText, setStatusText] = useState("");
+  const flexibleTemplateRef = useRef<Record<string, WorkInterval[]>>({});
 
   function closeFloatingMenus() {
-    setSortMenuAnchor(null);
-    setOptionsMenuAnchor(null);
-    setAddMenuAnchor(null);
     setCalendarAnchor(null);
-    setRowMenuState(null);
     setCellMenu(null);
   }
 
   useEffect(() => {
     setMembers(snapshot.members);
   }, [snapshot.members]);
+
+  useEffect(() => {
+    if (members.length === 0) {
+      setSelectedMemberId("");
+      return;
+    }
+
+    if (!members.some((member) => member.professional.id === selectedMemberId)) {
+      setSelectedMemberId(members[0].professional.id);
+    }
+  }, [members, selectedMemberId]);
 
   useEffect(() => {
     function handlePointerDown(event: PointerEvent) {
@@ -1782,26 +1699,28 @@ export default function StaffScheduleView({ professionalId, snapshot, onboarding
   const rangeLabel = useMemo(() => formatRangeLabel(weekDays, locale), [locale, weekDays]);
   const monthDays = useMemo(() => buildMonthDays(pickerMonthDate), [pickerMonthDate]);
 
-  const sortedMembers = useMemo(
-    () => [...members].sort((left, right) => compareMembers(left, right, sortMode, weekDays)),
-    [members, sortMode, weekDays]
+  const selectedMember = useMemo(
+    () =>
+      members.find((member) => member.professional.id === selectedMemberId) ||
+      members.find((member) => member.professional.id === professionalId) ||
+      members[0] ||
+      null,
+    [members, professionalId, selectedMemberId]
   );
+  const visibleMembers = selectedMember ? [selectedMember] : [];
+  const selectedScheduleMode: WorkScheduleMode = selectedMember?.membership.workScheduleMode || "fixed";
 
   const teamHoursByDay = useMemo(() => {
     return new Map(
       weekDays.map((day) => [
         day.key,
-        sortedMembers.reduce((sum, member) => {
-          const daySchedule = getDaySchedule(
-            day.key,
-            member.membership.workSchedule,
-            member.membership.customSchedule
-          );
+        visibleMembers.reduce((sum, member) => {
+          const daySchedule = resolveMemberDaySchedule(member, day.key);
           return sum + getDayDurationMinutes(daySchedule);
         }, 0)
       ])
     );
-  }, [sortedMembers, weekDays]);
+  }, [visibleMembers, weekDays]);
 
   const plannerMember =
     plannerState ? members.find((item) => item.professional.id === plannerState.memberId) || null : null;
@@ -1848,7 +1767,7 @@ export default function StaffScheduleView({ professionalId, snapshot, onboarding
   }
 
   async function handleDeleteShift(member: StaffMemberSnapshot, dateKey: string) {
-    const source = getDaySchedule(dateKey, member.membership.workSchedule, member.membership.customSchedule);
+    const source = resolveMemberDaySchedule(member, dateKey);
     const nextCustomSchedule = normalizeCustomSchedule(member.membership.customSchedule);
     nextCustomSchedule[dateKey] = serializeDay(false, source.startTime, source.endTime, getDayBreaks(source));
     setCellMenu(null);
@@ -1861,22 +1780,80 @@ export default function StaffScheduleView({ professionalId, snapshot, onboarding
     });
   }
 
-  async function handleClearAllShifts(member: StaffMemberSnapshot) {
-    const confirmed =
-      typeof window === "undefined" ? true : window.confirm(copy.removeAllShifts);
+  function getFlexibleTemplateIntervals(member: StaffMemberSnapshot) {
+    const remembered = flexibleTemplateRef.current[member.professional.id];
+    if (remembered?.length) {
+      return remembered;
+    }
 
-    if (!confirmed) {
+    const template = getLastTemplateFromCustomSchedule(member.membership.customSchedule);
+    return template.intervals?.length
+      ? template.intervals.map((interval) => ({ startTime: interval.startTime, endTime: interval.endTime }))
+      : (defaultWorkTemplate.intervals || []).map((interval) => ({ startTime: interval.startTime, endTime: interval.endTime }));
+  }
+
+  function rememberFlexibleTemplate(memberId: string, intervals: WorkInterval[]) {
+    if (intervals.length === 0) {
+      delete flexibleTemplateRef.current[memberId];
       return;
     }
 
-    setRowMenuState(null);
+    flexibleTemplateRef.current[memberId] = intervals.map((interval) => ({ ...interval }));
+  }
+
+  async function handleScheduleModeChange(member: StaffMemberSnapshot, nextMode: WorkScheduleMode) {
+    if (member.membership.workScheduleMode === nextMode) {
+      return;
+    }
+
     await persistMemberSchedule({
       memberId: member.professional.id,
-      workScheduleMode: "fixed",
-      workSchedule: createEmptyWorkSchedule(),
-      customSchedule: createEmptyCustomSchedule(),
-      successText: copy.clearedAll
+      workScheduleMode: nextMode,
+      workSchedule: member.membership.workSchedule,
+      customSchedule: member.membership.customSchedule,
+      successText: copy.saved
     });
+  }
+
+  async function handleFlexibleDateClick(member: StaffMemberSnapshot, dateKey: string) {
+    closeFloatingMenus();
+
+    if (member.membership.workScheduleMode !== "flexible") {
+      const modeChanged = await persistMemberSchedule({
+        memberId: member.professional.id,
+        workScheduleMode: "flexible",
+        workSchedule: member.membership.workSchedule,
+        customSchedule: member.membership.customSchedule,
+        successText: copy.saved
+      });
+
+      if (!modeChanged) {
+        return;
+      }
+    }
+
+    if (member.membership.customSchedule[dateKey]) {
+      setDayEditorState({ memberId: member.professional.id, dateKey });
+      return;
+    }
+
+    const intervals = getFlexibleTemplateIntervals(member);
+    const fallbackRange = getFallbackRange(intervals, defaultWorkTemplate);
+    const nextCustomSchedule = normalizeCustomSchedule(member.membership.customSchedule);
+    nextCustomSchedule[dateKey] = serializeIntervals(true, intervals, fallbackRange);
+    rememberFlexibleTemplate(member.professional.id, intervals);
+
+    const saved = await persistMemberSchedule({
+      memberId: member.professional.id,
+      workScheduleMode: "flexible",
+      workSchedule: member.membership.workSchedule,
+      customSchedule: nextCustomSchedule,
+      successText: copy.saved
+    });
+
+    if (saved) {
+      setDayEditorState({ memberId: member.professional.id, dateKey });
+    }
   }
 
   return (
@@ -1916,143 +1893,68 @@ export default function StaffScheduleView({ professionalId, snapshot, onboarding
               <h1 className={styles.staffStudioTitle}>{copy.title}</h1>
               <p className={styles.staffStudioText}>{copy.text}</p>
             </div>
-
-            <div className={styles.staffStudioTopActions}>
-              <div className={styles.staffControlMenuWrap} data-staff-floating-root>
-                <button
-                  type="button"
-                  className={styles.staffStudioGhostButton}
-                  onClick={(event) => {
-                    const nextAnchor = optionsMenuAnchor ? null : event.currentTarget;
-                    closeFloatingMenus();
-                    setOptionsMenuAnchor(nextAnchor);
-                  }}
-                >
-                  {copy.options}
-                  <span aria-hidden="true">⌄</span>
-                </button>
-
-                <FloatingPopover
-                  open={Boolean(optionsMenuAnchor)}
-                  anchorEl={optionsMenuAnchor}
-                  className={styles.staffControlMenu}
-                  placement="bottom-end"
-                >
-                    <Link href="/pro/staff/members" className={styles.staffControlMenuItem}>
-                      {copy.membersList}
-                    </Link>
-                    <button
-                      type="button"
-                      className={styles.staffControlMenuItem}
-                      onClick={() => {
-                        setWeekDate(startOfWeek(new Date()));
-                        setOptionsMenuAnchor(null);
-                      }}
-                    >
-                      {copy.openCurrentWeek}
-                    </button>
-                </FloatingPopover>
-              </div>
-
-              <div className={styles.staffControlMenuWrap} data-staff-floating-root>
-                <button
-                  type="button"
-                  className={styles.staffStudioPrimaryButton}
-                  onClick={(event) => {
-                    const nextAnchor = addMenuAnchor ? null : event.currentTarget;
-                    closeFloatingMenus();
-                    setAddMenuAnchor(nextAnchor);
-                  }}
-                >
-                  {copy.add}
-                  <span aria-hidden="true">⌄</span>
-                </button>
-
-                <FloatingPopover
-                  open={Boolean(addMenuAnchor)}
-                  anchorEl={addMenuAnchor}
-                  className={styles.staffControlMenu}
-                  placement="bottom-end"
-                >
-                    <Link href="/pro/staff/members?openAdd=1" className={styles.staffControlMenuItem}>
-                      {copy.addMember}
-                    </Link>
-                    <Link href="/pro/staff/members" className={styles.staffControlMenuItem}>
-                      {copy.membersList}
-                    </Link>
-                </FloatingPopover>
-              </div>
-            </div>
           </div>
 
           {statusText ? <div className={styles.staffStudioStatus}>{statusText}</div> : null}
 
           <div className={styles.staffStudioToolbar}>
             <div className={styles.staffScheduleTopBar}>
-              <div className={styles.staffControlMenuWrap} data-staff-floating-root>
-                <button
-                  type="button"
-                  className={styles.staffStudioGhostButton}
-                  onClick={(event) => {
-                    const nextAnchor = sortMenuAnchor ? null : event.currentTarget;
-                    closeFloatingMenus();
-                    setSortMenuAnchor(nextAnchor);
-                  }}
-                >
-                  {copy.sort}
-                  <span aria-hidden="true">⇅</span>
-                </button>
-
-                <FloatingPopover
-                  open={Boolean(sortMenuAnchor)}
-                  anchorEl={sortMenuAnchor}
-                  className={styles.staffControlMenu}
-                  placement="bottom-start"
-                >
-                    <button
-                      type="button"
-                      className={styles.staffControlMenuItem}
-                      onClick={() => {
-                        setSortMode("name");
-                        setSortMenuAnchor(null);
+              <div className={styles.staffScheduleMasterPicker}>
+                <label>
+                  <span>{copy.master}</span>
+                  {members.length > 1 ? (
+                    <select
+                      className={styles.select}
+                      value={selectedMember?.professional.id || ""}
+                      onChange={(event) => {
+                        closeFloatingMenus();
+                        setSelectedMemberId(event.target.value);
                       }}
                     >
-                      {copy.sortByName}
-                    </button>
-                    <button
-                      type="button"
-                      className={styles.staffControlMenuItem}
-                      onClick={() => {
-                        setSortMode("hours-desc");
-                        setSortMenuAnchor(null);
-                      }}
-                    >
-                      {copy.sortByHoursDesc}
-                    </button>
-                    <button
-                      type="button"
-                      className={styles.staffControlMenuItem}
-                      onClick={() => {
-                        setSortMode("hours-asc");
-                        setSortMenuAnchor(null);
-                      }}
-                    >
-                      {copy.sortByHoursAsc}
-                    </button>
-                </FloatingPopover>
+                      {members.map((member) => (
+                        <option key={member.professional.id} value={member.professional.id}>
+                          {makeMemberName(member)}
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <strong>{selectedMember ? makeMemberName(selectedMember) : copy.notSelected}</strong>
+                  )}
+                </label>
               </div>
 
               <div className={styles.staffScheduleToolbarRight}>
-                <button
-                  type="button"
-                  className={styles.staffStudioGhostButton}
-                  onClick={() => {
-                    closeFloatingMenus();
-                    setWeekDate(startOfWeek(new Date()));
-                  }}
-                >
-                  {copy.today}
-                </button>
+                {selectedMember ? (
+                  <div className={styles.staffScheduleModeSwitch} aria-label={copy.scheduleMode}>
+                    <button
+                      type="button"
+                      className={selectedScheduleMode === "fixed" ? styles.staffScheduleModeButtonActive : styles.staffScheduleModeButton}
+                      onClick={() => void handleScheduleModeChange(selectedMember, "fixed")}
+                    >
+                      {copy.weeklyMode}
+                    </button>
+                    <button
+                      type="button"
+                      className={selectedScheduleMode === "flexible" ? styles.staffScheduleModeButtonActive : styles.staffScheduleModeButton}
+                      onClick={() => void handleScheduleModeChange(selectedMember, "flexible")}
+                    >
+                      {copy.flexibleMode}
+                    </button>
+                  </div>
+                ) : null}
+
+                {selectedScheduleMode === "fixed" ? (
+                  <button
+                    type="button"
+                    className={styles.staffStudioGhostButton}
+                    onClick={() => {
+                      closeFloatingMenus();
+                      setWeekDate(startOfWeek(new Date()));
+                    }}
+                  >
+                    {copy.today}
+                  </button>
+                ) : null}
 
                 <div className={styles.staffScheduleRangeBox} data-staff-floating-root>
                   <button
@@ -2060,7 +1962,11 @@ export default function StaffScheduleView({ professionalId, snapshot, onboarding
                     className={styles.staffScheduleRangeButton}
                     onClick={() => {
                       closeFloatingMenus();
-                      setWeekDate(addDays(weekDate, -7));
+                      if (selectedScheduleMode === "fixed") {
+                        setWeekDate(addDays(weekDate, -7));
+                      } else {
+                        setPickerMonthDate(addMonths(pickerMonthDate, -1));
+                      }
                     }}
                   >
                     ‹
@@ -2070,19 +1976,27 @@ export default function StaffScheduleView({ professionalId, snapshot, onboarding
                     className={styles.staffScheduleRangeLabelButton}
                     onClick={(event) => {
                       const nextAnchor = calendarAnchor ? null : event.currentTarget;
-                      setPickerMonthDate(startOfMonth(weekDate));
+                      if (selectedScheduleMode === "fixed") {
+                        setPickerMonthDate(startOfMonth(weekDate));
+                      }
                       closeFloatingMenus();
                       setCalendarAnchor(nextAnchor);
                     }}
                   >
-                    {rangeLabel}
+                    {selectedScheduleMode === "fixed"
+                      ? rangeLabel
+                      : pickerMonthDate.toLocaleDateString(locale, { month: "long", year: "numeric" })}
                   </button>
                   <button
                     type="button"
                     className={styles.staffScheduleRangeButton}
                     onClick={() => {
                       closeFloatingMenus();
-                      setWeekDate(addDays(weekDate, 7));
+                      if (selectedScheduleMode === "fixed") {
+                        setWeekDate(addDays(weekDate, 7));
+                      } else {
+                        setPickerMonthDate(addMonths(pickerMonthDate, 1));
+                      }
                     }}
                   >
                     ›
@@ -2122,8 +2036,8 @@ export default function StaffScheduleView({ professionalId, snapshot, onboarding
                           }
 
                           const dateKey = toDateKey(item.date);
-                          const isSelectedWeek = selectedWeekKeys.has(dateKey);
-                          const isCurrentAnchor = dateKey === weekDays[0]?.key;
+                          const isSelectedWeek = selectedScheduleMode === "fixed" && selectedWeekKeys.has(dateKey);
+                          const isCurrentAnchor = selectedScheduleMode === "fixed" && dateKey === weekDays[0]?.key;
 
                           return (
                             <button
@@ -2133,7 +2047,11 @@ export default function StaffScheduleView({ professionalId, snapshot, onboarding
                                 isSelectedWeek ? styles.staffScheduleCalendarDayRange : ""
                               } ${isCurrentAnchor ? styles.staffScheduleCalendarDayActive : ""}`}
                               onClick={() => {
-                                setWeekDate(startOfWeek(item.date as Date));
+                                if (selectedScheduleMode === "fixed") {
+                                  setWeekDate(startOfWeek(item.date as Date));
+                                } else {
+                                  setPickerMonthDate(startOfMonth(item.date as Date));
+                                }
                                 setCalendarAnchor(null);
                               }}
                             >
@@ -2148,17 +2066,25 @@ export default function StaffScheduleView({ professionalId, snapshot, onboarding
             </div>
           </div>
 
-          {sortedMembers.length === 0 ? (
+          {visibleMembers.length === 0 ? (
             <div className={styles.staffStudioEmpty}>{copy.empty}</div>
-          ) : (
+          ) : selectedScheduleMode === "fixed" ? (
             <section className={styles.staffScheduleBoard}>
               <div className={styles.staffScheduleBoardScroller}>
                 <div className={styles.staffScheduleHead}>
                   <div className={styles.staffScheduleMemberHead}>
                     <span>{copy.employee}</span>
-                    <Link href="/pro/staff/members" className={styles.staffScheduleInlineLink}>
-                      {copy.change}
-                    </Link>
+                    <button
+                      type="button"
+                      className={styles.staffScheduleInlineButton}
+                      onClick={() => {
+                        if (selectedMember) {
+                          setPlannerState({ memberId: selectedMember.professional.id, anchorDateKey: weekDays[0]?.key });
+                        }
+                      }}
+                    >
+                      {copy.repeatingShifts}
+                    </button>
                   </div>
 
                   {weekDays.map((day) => (
@@ -2171,25 +2097,15 @@ export default function StaffScheduleView({ professionalId, snapshot, onboarding
                 </div>
 
                 <div className={styles.staffScheduleRows}>
-                  {sortedMembers.map((member) => {
+                  {visibleMembers.map((member) => {
                     const memberHours = weekDays.reduce((sum, day) => {
-                      return (
-                        sum +
-                        getDayDurationMinutes(
-                          getDaySchedule(
-                            day.key,
-                            member.membership.workSchedule,
-                            member.membership.customSchedule
-                          )
-                        )
-                      );
+                      return sum + getDayDurationMinutes(resolveMemberDaySchedule(member, day.key));
                     }, 0);
-                    const isMemberMenuOpen = rowMenuState?.memberId === member.professional.id;
 
                     return (
                       <article key={member.professional.id} className={styles.staffScheduleRow}>
                         <div className={styles.staffScheduleMemberCell}>
-                          <Link href={`/pro/staff/${member.professional.id}?tab=profile`} className={styles.staffScheduleMemberIdentity}>
+                          <div className={styles.staffScheduleMemberIdentity}>
                             <ProfileAvatar
                               avatarUrl={member.professional.avatarUrl}
                               initials={`${member.professional.firstName?.[0] ?? ""}${member.professional.lastName?.[0] ?? ""}`.trim() || "M"}
@@ -2202,74 +2118,11 @@ export default function StaffScheduleView({ professionalId, snapshot, onboarding
                               <strong>{makeMemberName(member)}</strong>
                               <span>{formatHourCount(memberHours, copy.hours)}</span>
                             </div>
-                          </Link>
-
-                          <div
-                            className={`${styles.staffControlMenuWrap} ${
-                              isMemberMenuOpen ? styles.staffControlMenuWrapOpen : ""
-                            }`}
-                            data-staff-floating-root
-                          >
-                            <button
-                              type="button"
-                              className={styles.staffScheduleMemberAction}
-                              onClick={(event) => {
-                                const anchorEl = event.currentTarget;
-                                const nextState =
-                                  isMemberMenuOpen ? null : { memberId: member.professional.id, anchorEl };
-                                closeFloatingMenus();
-                                setRowMenuState(nextState);
-                              }}
-                              aria-label={copy.editMember}
-                            >
-                              ✎
-                            </button>
-
-                            <FloatingPopover
-                              open={isMemberMenuOpen}
-                              anchorEl={isMemberMenuOpen ? rowMenuState?.anchorEl ?? null : null}
-                              className={`${styles.staffControlMenu} ${styles.staffScheduleMemberMenu}`}
-                              placement="bottom-end"
-                            >
-                                <strong className={styles.staffScheduleMenuTitle}>{copy.planSection}</strong>
-                                <button
-                                  type="button"
-                                  className={styles.staffControlMenuItem}
-                                  onClick={() => {
-                                    setPlannerState({ memberId: member.professional.id, anchorDateKey: weekDays[0]?.key });
-                                    setRowMenuState(null);
-                                  }}
-                                >
-                                  {copy.repeatingShifts}
-                                </button>
-                                <button
-                                  type="button"
-                                  className={`${styles.staffControlMenuItem} ${styles.staffControlMenuDanger}`}
-                                  onClick={() => void handleClearAllShifts(member)}
-                                >
-                                  {copy.removeAllShifts}
-                                </button>
-                                <div className={styles.staffControlMenuDivider} />
-                                <strong className={styles.staffScheduleMenuTitle}>{copy.memberSection}</strong>
-                                <Link href={`/pro/staff/${member.professional.id}?tab=profile`} className={styles.staffControlMenuItem}>
-                                  {copy.viewMember}
-                                </Link>
-                                <Link href={`/pro/staff/${member.professional.id}?tab=profile`} className={styles.staffControlMenuItem}>
-                                  {copy.editMember}
-                                </Link>
-                                <Link href={`/pro/staff/${member.professional.id}?tab=access`} className={styles.staffControlMenuItem}>
-                                  {copy.openAccess}
-                                </Link>
-                            </FloatingPopover>
                           </div>
                         </div>
 
                         {weekDays.map((day) => {
-                          const daySchedule = getDaySchedule(
-                            day.key,
-                            member.membership.workSchedule,
-                            member.membership.customSchedule
-                          );
+                          const daySchedule = resolveMemberDaySchedule(member, day.key);
                           const dayIntervals = daySchedule.enabled ? getDayIntervals(daySchedule) : [];
                           const intervalLabel = dayIntervals.map((interval) => formatIntervalLabel(interval)).join(" · ");
                           const isCellMenuOpen =
@@ -2370,17 +2223,53 @@ export default function StaffScheduleView({ professionalId, snapshot, onboarding
                 </div>
               </div>
             </section>
-          )}
+          ) : selectedMember ? (
+            <section className={styles.staffFlexibleCalendarPanel}>
+              <div className={styles.staffScheduleCalendarWeekdays}>
+                {localizedWorkDays.map((day) => (
+                  <span key={day.key}>{day.shortLabel}</span>
+                ))}
+              </div>
 
-          <div className={styles.staffStudioNotice}>{copy.footer}</div>
+              <div className={styles.staffFlexibleCalendarGrid}>
+                {monthDays.map((item) => {
+                  if (!item.date) {
+                    return <span key={item.key} className={styles.staffScheduleCalendarEmpty} />;
+                  }
+
+                  const dateKey = toDateKey(item.date);
+                  const daySchedule = resolveMemberDaySchedule(selectedMember, dateKey);
+                  const dayIntervals = daySchedule.enabled ? getDayIntervals(daySchedule) : [];
+
+                  return (
+                    <button
+                      key={item.key}
+                      type="button"
+                      className={`${styles.staffFlexibleCalendarDay} ${
+                        daySchedule.enabled ? styles.staffFlexibleCalendarDayActive : ""
+                      }`}
+                      onClick={() => void handleFlexibleDateClick(selectedMember, dateKey)}
+                    >
+                      <strong>{item.date.getDate()}</strong>
+                      {daySchedule.enabled ? (
+                        <span>
+                          {dayIntervals.map((interval) => formatIntervalLabel(interval)).join(" · ")}
+                        </span>
+                      ) : (
+                        <span>{copy.noWork}</span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </section>
+          ) : null}
         </section>
       </section>
 
       {plannerState && plannerMember ? (
         <SchedulePlannerModal
           member={plannerMember}
-          businessName={snapshot.business.name}
-          businessCategories={snapshot.business.categories}
           localizedWorkDays={localizedWorkDays}
           anchorDateKey={plannerState.anchorDateKey}
           copy={copy}
@@ -2399,6 +2288,7 @@ export default function StaffScheduleView({ professionalId, snapshot, onboarding
           copy={copy}
           onClose={() => setDayEditorState(null)}
           onSave={persistMemberSchedule}
+          onTemplateSaved={rememberFlexibleTemplate}
         />
       ) : null}
     </main>

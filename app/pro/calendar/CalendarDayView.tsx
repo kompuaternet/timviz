@@ -14,7 +14,7 @@ import { languageFromProfile, profileLanguageFromCode } from "../i18n";
 import type { OnboardingCtaState, OnboardingStepId } from "../../../lib/pro-onboarding";
 import {
   getDayBreaks,
-  getDaySchedule as resolveDaySchedule,
+  getDayScheduleForMode as resolveDaySchedule,
   isWithinWorkingWindow as isTimeWithinWorkingWindow,
   type CustomSchedule,
   type WorkDaySchedule,
@@ -3021,9 +3021,7 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
       return {};
     }
 
-    return focusedMemberCalendar.memberSchedule.workScheduleMode === "flexible"
-      ? focusedMemberCalendar.memberSchedule.customSchedule
-      : {};
+    return focusedMemberCalendar.memberSchedule.customSchedule;
   }, [focusedMemberCalendar]);
 
   const daySchedule = useMemo(() => {
@@ -3031,7 +3029,12 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
       return null;
     }
 
-    return resolveDaySchedule(selectedDate, focusedMemberCalendar.memberSchedule.workSchedule, scheduleOverrides);
+    return resolveDaySchedule(
+      selectedDate,
+      focusedMemberCalendar.memberSchedule.workSchedule,
+      scheduleOverrides,
+      focusedMemberCalendar.memberSchedule.workScheduleMode
+    );
   }, [focusedMemberCalendar, scheduleOverrides, selectedDate]);
 
   const monthSchedules = useMemo(() => {
@@ -3042,7 +3045,12 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
     return new Map(
       monthGrid.map((day) => [
         day.key,
-        resolveDaySchedule(day.key, focusedMemberCalendar.memberSchedule.workSchedule, scheduleOverrides)
+        resolveDaySchedule(
+          day.key,
+          focusedMemberCalendar.memberSchedule.workSchedule,
+          scheduleOverrides,
+          focusedMemberCalendar.memberSchedule.workScheduleMode
+        )
       ])
     );
   }, [focusedMemberCalendar, monthGrid, scheduleOverrides]);
@@ -3993,12 +4001,14 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
     setIsMobileCreateSheetOpen(false);
     clearActiveMobileBookingActions();
     const targetMember = memberCalendars.find((member) => member.professionalId === targetProfessionalId) ?? null;
-    const targetScheduleOverrides =
-      targetMember?.memberSchedule.workScheduleMode === "flexible"
-        ? targetMember.memberSchedule.customSchedule
-        : {};
+    const targetScheduleOverrides = targetMember?.memberSchedule.customSchedule ?? {};
     const targetDaySchedule = targetMember
-      ? resolveDaySchedule(selectedDate, targetMember.memberSchedule.workSchedule, targetScheduleOverrides)
+      ? resolveDaySchedule(
+          selectedDate,
+          targetMember.memberSchedule.workSchedule,
+          targetScheduleOverrides,
+          targetMember.memberSchedule.workScheduleMode
+        )
       : daySchedule;
 
     setSelectedProfessionalId(targetProfessionalId);
@@ -4806,12 +4816,9 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
   }
 
   function getMemberScheduleForDate(member: CalendarSnapshot["memberCalendars"][number], dayKey: string) {
-    const overrides =
-      member.memberSchedule.workScheduleMode === "flexible"
-        ? member.memberSchedule.customSchedule
-        : {};
+    const overrides = member.memberSchedule.customSchedule;
 
-    return resolveDaySchedule(dayKey, member.memberSchedule.workSchedule, overrides);
+    return resolveDaySchedule(dayKey, member.memberSchedule.workSchedule, overrides, member.memberSchedule.workScheduleMode);
   }
 
   function getMemberSchedule(member: CalendarSnapshot["memberCalendars"][number]) {
@@ -5795,11 +5802,13 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
             >
               {visibleCalendars.map((member) => {
                 const memberSchedule = getMemberSchedule(member);
-                const memberScheduleOverrides =
-                  member.memberSchedule.workScheduleMode === "flexible"
-                    ? member.memberSchedule.customSchedule
-                    : {};
-                const memberDaySchedule = resolveDaySchedule(selectedDate, member.memberSchedule.workSchedule, memberScheduleOverrides);
+                const memberScheduleOverrides = member.memberSchedule.customSchedule;
+                const memberDaySchedule = resolveDaySchedule(
+                  selectedDate,
+                  member.memberSchedule.workSchedule,
+                  memberScheduleOverrides,
+                  member.memberSchedule.workScheduleMode
+                );
                 const memberBreaks = getDayBreaks(memberDaySchedule).map((breakItem) => ({
                   ...breakItem,
                   startMinutes: timeToMinutes(breakItem.startTime),
@@ -6232,7 +6241,12 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
             <div className={styles.calendarWeekOverviewGrid}>
               {weekKeys.map((dayKey) => {
                 const schedule = snapshot
-                  ? resolveDaySchedule(dayKey, snapshot.workspace.memberSchedule.workSchedule, scheduleOverrides)
+                  ? resolveDaySchedule(
+                      dayKey,
+                      snapshot.workspace.memberSchedule.workSchedule,
+                      scheduleOverrides,
+                      snapshot.workspace.memberSchedule.workScheduleMode
+                    )
                   : null;
                 const dayAppointments = allVisibleAppointments.filter(
                   (appointment) => appointment.appointmentDate === dayKey

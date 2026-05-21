@@ -1,14 +1,15 @@
 import {
   addMinutesToTime,
   getDayBreaks,
-  getDaySchedule,
+  getDayScheduleForMode,
   normalizeCustomSchedule,
   normalizeWorkSchedule,
   timeRangesOverlap,
   timeToMinutes,
   minutesToTime,
   type CustomSchedule,
-  type WorkSchedule
+  type WorkSchedule,
+  type WorkScheduleMode
 } from "./work-schedule";
 
 export type PublicBookableService = {
@@ -24,6 +25,7 @@ export type PublicBookingEntry = {
 };
 
 export type PublicBookingConfig = {
+  workScheduleMode?: WorkScheduleMode;
   workSchedule: WorkSchedule;
   customSchedule?: CustomSchedule;
   bookingIntervalMinutes?: number;
@@ -51,7 +53,12 @@ export function getPublicBookingSlots(input: {
 
   const workSchedule = normalizeWorkSchedule(input.config.workSchedule);
   const customSchedule = normalizeCustomSchedule(input.config.customSchedule);
-  const daySchedule = getDaySchedule(input.date, workSchedule, customSchedule);
+  const daySchedule = getDayScheduleForMode(
+    input.date,
+    workSchedule,
+    customSchedule,
+    input.config.workScheduleMode === "flexible" ? "flexible" : "fixed"
+  );
 
   if (!daySchedule?.enabled) {
     return [];

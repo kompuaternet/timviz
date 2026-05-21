@@ -2,7 +2,7 @@ import type { LocalizedText, SiteLanguage } from "../data/mock-data";
 import {
   addMinutesToTime,
   getDayBreaks,
-  getDaySchedule,
+  getDayScheduleForMode,
   isWithinWorkingWindow,
   normalizeCustomSchedule,
   normalizeWorkSchedule,
@@ -390,7 +390,12 @@ function isBusinessAvailable(input: {
 
   const workSchedule = normalizeWorkSchedule(input.business.workSchedule);
   const customSchedule = normalizeCustomSchedule(input.business.customSchedule);
-  const daySchedule = getDaySchedule(input.date, workSchedule, customSchedule);
+  const daySchedule = getDayScheduleForMode(
+    input.date,
+    workSchedule,
+    customSchedule,
+    input.business.workScheduleMode === "flexible" ? "flexible" : "fixed"
+  );
   const query = normalize(input.query);
   const matchedService =
     input.services.find((service) => normalize(service.name).includes(query)) ?? input.services[0];

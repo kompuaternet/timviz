@@ -376,6 +376,26 @@ export function getDaySchedule(dateKey: string, workSchedule: WorkSchedule, cust
   return workSchedule[dayKeys[dayIndex]];
 }
 
+export function getDayScheduleForMode(
+  dateKey: string,
+  workSchedule: WorkSchedule,
+  customSchedule: CustomSchedule,
+  workScheduleMode: WorkScheduleMode
+): WorkDaySchedule {
+  if (workScheduleMode !== "flexible") {
+    return getDaySchedule(dateKey, workSchedule, customSchedule);
+  }
+
+  const custom = customSchedule[dateKey];
+  if (custom) {
+    return custom;
+  }
+
+  const dayIndex = new Date(`${dateKey}T00:00:00`).getDay();
+  const dayKeys = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"] as const;
+  return createEmptyWorkSchedule()[dayKeys[dayIndex]];
+}
+
 export function isWithinBreak(time: string, daySchedule: WorkDaySchedule | null) {
   if (!daySchedule || !daySchedule.enabled) {
     return false;
