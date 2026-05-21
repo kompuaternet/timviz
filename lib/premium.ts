@@ -4,6 +4,15 @@ import type { SiteLanguage } from "./site-language";
 export type TimvizPlan = "free" | "premium";
 export type PremiumStatus = "inactive" | "trialing" | "active" | "past_due" | "canceled";
 export type PremiumBilling = "monthly" | "yearly";
+export type EntitlementSource = "apple" | "monobank" | "manual" | "promo" | "free" | "mixed";
+
+export type UserAccess = {
+  plan: "free" | "pro";
+  isPro: boolean;
+  source: EntitlementSource;
+  activeUntil: string | null;
+  features: Record<string, boolean | number | string>;
+};
 
 export const FREE_APPOINTMENTS_PER_MONTH = 500;
 export const PREMIUM_TRIAL_DAYS = 14;
@@ -107,6 +116,121 @@ function maxIsoDate(left: string | null | undefined, right: string | null | unde
 
   return leftTime >= rightTime ? left : right;
 }
+
+function entitlementStatusFromPremiumStatus(status: PremiumStatus) {
+  if (status === "trialing") return "trial";
+  if (status === "active" || status === "canceled") return "active";
+  if (status === "past_due") return "grace";
+  return "expired";
+}
+
+function isActiveEntitlement(status: unknown, activeUntil: unknown) {
+  const normalizedStatus = String(status || "");
+  if (!["active", "trial", "grace"].includes(normalizedStatus)) return false;
+  if (!activeUntil) return normalizedStatus === "active";
+  return isFutureDate(String(activeUntil));
+}
+
+export async function upsertUserEntitlement(input: {
+  userId: string;
+  planCode: string;
+  status: "free" | "trial" | "active" | "grace" | "expired" | "cancelled" | "blocked";
+  source: Exclude<EntitlementSource, "mixed">;
+  activeFrom?: string | null;
+  activeUntil?: string | null;
+  trialUntil?: string | null;
+  cancelAtPeriodEnd?: boolean;
+}) {
+  if (!isSupabaseConfigured()) return { updated: false, reason: "supabase_not_configured" as const };
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return { updated: false, reason: "supabase_unavailable" as const };
+
+  const id = `${input.userId}:${input.source}:${input.planCode}`;
+  const { error } = await supabase.from("user_entitlements").upsert(
+    {
+      id,
+      user_id: input.userId,
+      plan_code: input.planCode,
+      status: input.status,
+      source: input.source,
+      active_from: input.activeFrom || new Date().toISOString(),
+      active_until: input.activeUntil || null,
+      trial_until: input.trialUntil || null,
+      cancel_at_period_end: input.cancelAtPeriodEnd === true,
+      updated_at: new Date().toISOString()
+    },
+    { onConflict: "id" }
+  );
+  if (error) throw new Error(error.message);
+  return { updated: true };
+}
+
+export async function getUserAccess(userId: string): Promise<UserAccess> {
+  const freeAccess: UserAccess = {
+    plan: "free",
+    isPro: false,
+    source: "free",
+    activeUntil: null,
+    features: {
+      limitedAppointments: true,
+      basicServices: true,
+      basicCalendar: true
+    }
+  };
+
+  if (!isSupabaseConfigured()) return freeAccess;
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return freeAccess;
+
+  const { data, error } = await supabase
+    .from("user_entitlements")
+    .select("plan_code, status, source, active_until")
+    .eq("user_id", userId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  const active = (data || []).filter((item) => item.plan_code !== "free" && isActiveEntitlement(item.status, item.active_until));
+  if (!active.length) {
+    const snapshot = await getProfessionalPremiumSnapshot({ professionalId: userId });
+    if (snapshot && isPremiumAccessActive({ plan: "premium", premiumStatus: snapshot.premium_status, premiumUntil: snapshot.premium_until })) {
+      return {
+        plan: "pro",
+        isPro: true,
+        source: "manual",
+        activeUntil: snapshot.premium_until || null,
+        features: PRO_FEATURES
+      };
+    }
+    return freeAccess;
+  }
+
+  const sorted = [...active].sort((left, right) => {
+    const leftTime = left.active_until ? new Date(left.active_until).getTime() : Number.MAX_SAFE_INTEGER;
+    const rightTime = right.active_until ? new Date(right.active_until).getTime() : Number.MAX_SAFE_INTEGER;
+    return rightTime - leftTime;
+  });
+  const sources = Array.from(new Set(active.map((item) => String(item.source || "manual"))));
+
+  return {
+    plan: "pro",
+    isPro: true,
+    source: sources.length > 1 ? "mixed" : (sources[0] as EntitlementSource) || "manual",
+    activeUntil: sorted[0]?.active_until || null,
+    features: PRO_FEATURES
+  };
+}
+
+export const PRO_FEATURES: Record<string, boolean | number | string> = {
+  unlimitedAppointments: true,
+  onlineBooking: true,
+  telegramBot: true,
+  reminders: true,
+  analytics: true,
+  team: true,
+  advancedSchedule: true
+};
 
 export function getPremiumUntilAfterCheckout(input: {
   existingPremiumUntil?: string | null;
@@ -265,6 +389,7 @@ export async function updateProfessionalPremiumFromAppStore(input: {
   if (!supabase) {
     return { updated: false, reason: "supabase_unavailable" as const };
   }
+  const admin = supabase;
 
   const patch: Record<string, string | null> = {
     plan: input.status === "inactive" ? "free" : "premium",
@@ -280,6 +405,42 @@ export async function updateProfessionalPremiumFromAppStore(input: {
     patch.premium_until = maxIsoDate(existing?.premium_until, input.premiumUntil);
   }
 
+  async function syncAppStoreEntitlement(professionalId: string) {
+    const status = entitlementStatusFromPremiumStatus(input.status);
+    await upsertUserEntitlement({
+      userId: professionalId,
+      planCode: getPremiumBillingFromAppStoreProductId(input.productId) === "yearly" ? "pro_yearly" : "pro_monthly",
+      status,
+      source: "apple",
+      activeUntil: patch.premium_until || input.premiumUntil || null,
+      trialUntil: status === "trial" ? patch.premium_until || input.premiumUntil || null : null,
+      cancelAtPeriodEnd: input.status === "canceled"
+    });
+
+    if (input.originalTransactionId || input.transactionId) {
+      const subscriptionId = input.originalTransactionId || input.transactionId || `${professionalId}:${input.productId || "apple"}`;
+      const { error } = await admin.from("apple_subscriptions").upsert(
+        {
+          id: `apple_${subscriptionId}`,
+          user_id: professionalId,
+          original_transaction_id: subscriptionId,
+          transaction_id: input.transactionId || null,
+          product_id: input.productId || "",
+          status,
+          expires_at: patch.premium_until || input.premiumUntil || null,
+          raw_payload: {
+            productId: input.productId || null,
+            transactionId: input.transactionId || null,
+            originalTransactionId: input.originalTransactionId || null
+          },
+          updated_at: new Date().toISOString()
+        },
+        { onConflict: "original_transaction_id" }
+      );
+      if (error) throw new Error(error.message);
+    }
+  }
+
   if (input.professionalId) {
     const { data, error } = await supabase
       .from("professionals")
@@ -289,6 +450,7 @@ export async function updateProfessionalPremiumFromAppStore(input: {
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (data?.id) {
+      await syncAppStoreEntitlement(data.id);
       return { updated: true, by: "id" as const, professionalId: data.id };
     }
   }
@@ -303,6 +465,7 @@ export async function updateProfessionalPremiumFromAppStore(input: {
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (data?.id) {
+      await syncAppStoreEntitlement(data.id);
       return { updated: true, by: "email" as const, professionalId: data.id };
     }
   }

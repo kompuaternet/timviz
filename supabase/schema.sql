@@ -156,6 +156,82 @@ create table if not exists public.business_staff_invitations (
   revoked_at timestamptz
 );
 
+create table if not exists public.plans (
+  id text primary key,
+  code text not null unique,
+  name text not null,
+  description text not null default '',
+  price_monthly_uah integer,
+  price_yearly_uah integer,
+  apple_product_id_monthly text,
+  apple_product_id_yearly text,
+  features jsonb not null default '{}'::jsonb,
+  is_active boolean not null default true,
+  sort_order integer not null default 100,
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now())
+);
+
+create table if not exists public.user_entitlements (
+  id text primary key,
+  user_id text not null references public.professionals(id) on delete cascade,
+  plan_code text not null,
+  status text not null default 'free',
+  source text not null default 'free',
+  active_from timestamptz,
+  active_until timestamptz,
+  trial_until timestamptz,
+  cancel_at_period_end boolean not null default false,
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now())
+);
+
+create table if not exists public.apple_subscriptions (
+  id text primary key,
+  user_id text not null references public.professionals(id) on delete cascade,
+  original_transaction_id text not null unique,
+  transaction_id text,
+  product_id text not null,
+  environment text not null default '',
+  status text not null default 'active',
+  expires_at timestamptz,
+  revoked_at timestamptz,
+  auto_renew_status text,
+  raw_payload jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now())
+);
+
+create table if not exists public.monobank_payments (
+  id text primary key,
+  user_id text not null references public.professionals(id) on delete cascade,
+  invoice_id text not null unique,
+  plan_code text not null,
+  amount integer not null default 0,
+  currency text not null default 'UAH',
+  status text not null default 'created',
+  period_months integer not null default 1,
+  active_from timestamptz,
+  active_until timestamptz,
+  mono_modified_date timestamptz,
+  raw_payload jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now())
+);
+
+create table if not exists public.webhook_events (
+  id text primary key,
+  provider text not null,
+  event_id text not null,
+  event_type text not null default '',
+  user_id text references public.professionals(id) on delete set null,
+  processed boolean not null default false,
+  raw_payload jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default timezone('utc', now()),
+  processed_at timestamptz,
+  unique(provider, event_id)
+);
+
 create table if not exists public.app_notifications (
   id text primary key,
   professional_id text not null references public.professionals(id) on delete cascade,
@@ -371,6 +447,12 @@ create index if not exists bookings_salon_status_created_idx on public.bookings 
 create index if not exists bookings_customer_email_idx on public.bookings (customer_email, created_at desc);
 create index if not exists professionals_paddle_customer_idx on public.professionals (paddle_customer_id);
 create index if not exists professionals_paddle_subscription_idx on public.professionals (paddle_subscription_id);
+create index if not exists plans_code_idx on public.plans (code);
+create index if not exists user_entitlements_user_status_idx on public.user_entitlements (user_id, status, active_until desc);
+create index if not exists user_entitlements_source_idx on public.user_entitlements (source, updated_at desc);
+create index if not exists apple_subscriptions_user_idx on public.apple_subscriptions (user_id, expires_at desc);
+create index if not exists monobank_payments_user_idx on public.monobank_payments (user_id, active_until desc);
+create index if not exists webhook_events_provider_created_idx on public.webhook_events (provider, created_at desc);
 create index if not exists business_memberships_professional_idx on public.business_memberships (professional_id);
 create index if not exists business_memberships_business_professional_idx on public.business_memberships (business_id, professional_id);
 create index if not exists business_memberships_business_scope_idx on public.business_memberships (business_id, scope);
@@ -427,6 +509,11 @@ alter table if exists public.global_service_catalog enable row level security;
 alter table if exists public.business_memberships enable row level security;
 alter table if exists public.business_join_requests enable row level security;
 alter table if exists public.business_staff_invitations enable row level security;
+alter table if exists public.plans enable row level security;
+alter table if exists public.user_entitlements enable row level security;
+alter table if exists public.apple_subscriptions enable row level security;
+alter table if exists public.monobank_payments enable row level security;
+alter table if exists public.webhook_events enable row level security;
 alter table if exists public.app_notifications enable row level security;
 alter table if exists public.calendar_appointments enable row level security;
 alter table if exists public.pro_clients enable row level security;

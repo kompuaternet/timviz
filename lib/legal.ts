@@ -14,7 +14,7 @@ type LegalCopy = {
   }>;
 };
 
-export type LegalPageType = "privacy" | "terms" | "refund-policy" | "contact";
+export type LegalPageType = "privacy" | "terms" | "subscription-terms" | "refund-policy" | "support" | "account-deletion" | "contact";
 
 export const legalCopy: Record<
   LegalPageType,
@@ -55,7 +55,7 @@ export const legalCopy: Record<
           title: "Подписки и платежи",
           paragraphs: [
             "Email может использоваться для аккаунта, подписки, поддержки, сервисных уведомлений и важных сообщений о работе Timviz.",
-            "Платежные данные для подписки Timviz обрабатывает Paddle. Timviz не хранит полные номера банковских карт."
+            "Платежный статус подписки может поступать от Apple In-App Purchase для iOS или от Monobank для платежей на сайте. Timviz не хранит полные номера банковских карт."
           ]
         },
         {
@@ -107,7 +107,7 @@ export const legalCopy: Record<
           title: "Підписки та платежі",
           paragraphs: [
             "Email може використовуватися для акаунта, підписки, підтримки, сервісних сповіщень і важливих повідомлень про роботу Timviz.",
-            "Платіжні дані для підписки Timviz обробляє Paddle. Timviz не зберігає повні номери банківських карток."
+            "Платіжний статус підписки може надходити від Apple In-App Purchase для iOS або від Monobank для платежів на сайті. Timviz не зберігає повні номери банківських карток."
           ]
         },
         {
@@ -159,7 +159,7 @@ export const legalCopy: Record<
           title: "Subscriptions and payments",
           paragraphs: [
             "Email may be used for account, subscription, support, service notifications and important Timviz product messages.",
-            "Payment data for Timviz subscriptions is processed by Paddle. Timviz does not store full card numbers."
+            "Subscription payment status may be provided by Apple In-App Purchase for iOS or by Monobank for website payments. Timviz does not store full card numbers."
           ]
         },
         {
@@ -224,9 +224,9 @@ export const legalCopy: Record<
           ]
         },
         {
-          title: "Paddle и сторонние услуги",
+          title: "Подписки и сторонние услуги",
           paragraphs: [
-            "Paddle используется только для обработки платежей за подписку на программное обеспечение Timviz.",
+            "В iOS подписки Timviz оформляются через Apple In-App Purchase. На сайте платежи за подписку могут обрабатываться через Monobank.",
             "Timviz предоставляет программные инструменты для онлайн-записи и управления бизнесом. Timviz не продаёт сторонние услуги, не является маркетплейсом и не обрабатывает платежи между клиентами и поставщиками услуг.",
             "Пользователи сами отвечают за свои записи, услуги, цены, выполнение работ и отношения с клиентами. Legal/business name: [LEGAL_BUSINESS_NAME]. Support: adm@timviz.com."
           ]
@@ -285,9 +285,9 @@ export const legalCopy: Record<
           ]
         },
         {
-          title: "Paddle і сторонні послуги",
+          title: "Підписки та сторонні послуги",
           paragraphs: [
-            "Paddle використовується лише для обробки платежів за підписку на програмне забезпечення Timviz.",
+            "В iOS підписки Timviz оформлюються через Apple In-App Purchase. На сайті платежі за підписку можуть оброблятися через Monobank.",
             "Timviz надає програмні інструменти для онлайн-запису та керування бізнесом. Timviz не продає сторонні послуги, не є маркетплейсом і не обробляє платежі між клієнтами та постачальниками послуг.",
             "Користувачі самі відповідають за свої записи, послуги, ціни, виконання робіт і відносини з клієнтами. Legal/business name: [LEGAL_BUSINESS_NAME]. Support: adm@timviz.com."
           ]
@@ -346,9 +346,9 @@ export const legalCopy: Record<
           ]
         },
         {
-          title: "Paddle and third-party services",
+          title: "Subscriptions and third-party services",
           paragraphs: [
-            "Paddle is used only to process payments for Timviz software subscriptions.",
+            "On iOS, Timviz subscriptions are purchased through Apple In-App Purchase. On the website, subscription payments may be processed through Monobank.",
             "Timviz provides software tools for appointment scheduling and business management. Timviz does not sell third-party services, act as a marketplace, or process payments between clients and service providers.",
             "Users are responsible for their own appointments, services, pricing, delivery and client relationships. Legal/business name: [LEGAL_BUSINESS_NAME]. Support: adm@timviz.com."
           ]
@@ -376,7 +376,7 @@ export const legalCopy: Record<
           title: "Подписка на программное обеспечение",
           paragraphs: [
             "Оплата Timviz относится только к доступу к программному обеспечению Timviz и Premium-функциям платформы.",
-            "Paddle используется только для обработки платежей за подписку Timviz и не используется для оплаты услуг мастеров, салонов или клиентов."
+            "В iOS возвраты за покупки в App Store обрабатывает Apple. Платежи на сайте могут обрабатываться через Monobank и не используются для оплаты услуг мастеров, салонов или клиентов."
           ]
         },
         {
@@ -408,7 +408,7 @@ export const legalCopy: Record<
           title: "Підписка на програмне забезпечення",
           paragraphs: [
             "Оплата Timviz стосується лише доступу до програмного забезпечення Timviz і Premium-функцій платформи.",
-            "Paddle використовується лише для обробки платежів за підписку Timviz і не використовується для оплати послуг майстрів, салонів або клієнтів."
+            "В iOS повернення за покупки в App Store обробляє Apple. Платежі на сайті можуть оброблятися через Monobank і не використовуються для оплати послуг майстрів, салонів або клієнтів."
           ]
         },
         {
@@ -440,7 +440,7 @@ export const legalCopy: Record<
           title: "Software subscription",
           paragraphs: [
             "Timviz payments relate only to access to Timviz software and Premium platform features.",
-            "Paddle is used only to process Timviz subscription payments and is not used to pay for master, salon or client services."
+            "Apple handles refunds for App Store purchases. Website payments may be processed through Monobank and are not used to pay for master, salon or client services."
           ]
         },
         {
@@ -458,6 +458,195 @@ export const legalCopy: Record<
             "No refunds are provided for periods that have already ended or in cases of abuse, fraud or violation of service rules."
           ]
         }
+      ]
+    }
+  },
+  "subscription-terms": {
+    ru: {
+      title: "Условия подписки Timviz",
+      description: "Как работают Free и PRO, Apple In-App Purchase и платежи на сайте.",
+      eyebrow: "Timviz Subscription Terms",
+      heading: "Условия подписки",
+      intro: "Эта страница объясняет доступ к Timviz PRO, продление, отмену и период действия подписки.",
+      sections: [
+        {
+          title: "Free и PRO",
+          paragraphs: [
+            "Free позволяет начать работу с базовыми возможностями Timviz. PRO открывает расширенные возможности, включая больший лимит записей, уведомления, команду и дополнительные инструменты.",
+            "Доступ PRO действует до даты active until, рассчитанной по активной подписке, пробному периоду, промо или ручной активации."
+          ]
+        },
+        {
+          title: "Apple In-App Purchase",
+          paragraphs: [
+            "В iOS подписка PRO оформляется через Apple In-App Purchase. Оплата списывается с Apple ID пользователя.",
+            "Подписка продлевается автоматически, если пользователь не отменит её минимум за 24 часа до окончания текущего периода. Управлять подпиской можно в настройках Apple ID."
+          ]
+        },
+        {
+          title: "Платежи на сайте",
+          paragraphs: [
+            "На сайте Timviz подписка может оплачиваться через Monobank. Доступ активируется после успешного платежа.",
+            "Если у пользователя есть несколько активных источников доступа, Timviz применяет максимальную дату действия PRO."
+          ]
+        },
+        {
+          title: "Возвраты и истечение доступа",
+          paragraphs: [
+            "После окончания оплаченного периода или пробного доступа платные возможности могут быть ограничены до Free.",
+            "Возвраты по покупкам App Store обрабатывает Apple. Вопросы по платежам на сайте рассматривает поддержка Timviz."
+          ]
+        }
+      ]
+    },
+    uk: {
+      title: "Умови підписки Timviz",
+      description: "Як працюють Free і PRO, Apple In-App Purchase та платежі на сайті.",
+      eyebrow: "Timviz Subscription Terms",
+      heading: "Умови підписки",
+      intro: "Ця сторінка пояснює доступ до Timviz PRO, продовження, скасування та період дії підписки.",
+      sections: [
+        {
+          title: "Free і PRO",
+          paragraphs: [
+            "Free дозволяє почати роботу з базовими можливостями Timviz. PRO відкриває розширені можливості, зокрема більший ліміт записів, сповіщення, команду та додаткові інструменти.",
+            "Доступ PRO діє до дати active until, розрахованої за активною підпискою, пробним періодом, промо або ручною активацією."
+          ]
+        },
+        {
+          title: "Apple In-App Purchase",
+          paragraphs: [
+            "В iOS підписка PRO оформлюється через Apple In-App Purchase. Оплата списується з Apple ID користувача.",
+            "Підписка продовжується автоматично, якщо користувач не скасує її щонайменше за 24 години до завершення поточного періоду. Керувати підпискою можна в налаштуваннях Apple ID."
+          ]
+        },
+        {
+          title: "Платежі на сайті",
+          paragraphs: [
+            "На сайті Timviz підписка може оплачуватися через Monobank. Доступ активується після успішного платежу.",
+            "Якщо користувач має кілька активних джерел доступу, Timviz застосовує максимальну дату дії PRO."
+          ]
+        },
+        {
+          title: "Повернення та завершення доступу",
+          paragraphs: [
+            "Після завершення оплаченого періоду або пробного доступу платні можливості можуть бути обмежені до Free.",
+            "Повернення за покупки App Store обробляє Apple. Питання щодо платежів на сайті розглядає підтримка Timviz."
+          ]
+        }
+      ]
+    },
+    en: {
+      title: "Timviz Subscription Terms",
+      description: "How Free and PRO plans, Apple In-App Purchase and website payments work.",
+      eyebrow: "Timviz Subscription Terms",
+      heading: "Subscription Terms",
+      intro: "This page explains Timviz PRO access, renewal, cancellation and subscription access periods.",
+      sections: [
+        {
+          title: "Free and PRO",
+          paragraphs: [
+            "Free lets users start with the basic Timviz features. PRO unlocks extended capabilities, including higher appointment limits, notifications, team tools and additional business features.",
+            "PRO access remains active until the active until date calculated from an active subscription, trial, promo or manual activation."
+          ]
+        },
+        {
+          title: "Apple In-App Purchase",
+          paragraphs: [
+            "In the iOS app, PRO subscriptions are purchased through Apple In-App Purchase. Payment is charged to the user's Apple ID.",
+            "The subscription renews automatically unless cancelled at least 24 hours before the end of the current period. Users can manage or cancel it in Apple ID settings."
+          ]
+        },
+        {
+          title: "Website payments",
+          paragraphs: [
+            "On the Timviz website, subscriptions may be paid through Monobank. Access is activated after a successful payment.",
+            "If a user has multiple active access sources, Timviz applies the latest PRO active until date."
+          ]
+        },
+        {
+          title: "Refunds and expiration",
+          paragraphs: [
+            "After a paid period or trial ends, paid capabilities may be limited back to Free.",
+            "Apple handles refunds for App Store purchases. Website payment questions are reviewed by Timviz support."
+          ]
+        }
+      ]
+    }
+  },
+  support: {
+    ru: {
+      title: "Поддержка Timviz",
+      description: "Помощь по аккаунту, подписке, приложению и удалению аккаунта Timviz.",
+      eyebrow: "Timviz Support",
+      heading: "Поддержка Timviz",
+      intro: "Мы помогаем с аккаунтом, календарём, подпиской, приложением и вопросами безопасности.",
+      sections: [
+        { title: "Как связаться", paragraphs: ["Email: adm@timviz.com", "Обычно мы отвечаем в течение 1–2 рабочих дней."] },
+        { title: "Подписка", paragraphs: ["Подписками Apple нужно управлять в настройках Apple ID.", "По вопросам платежей на сайте напишите в поддержку Timviz."] },
+        { title: "Удаление аккаунта", paragraphs: ["Удаление можно инициировать внутри iOS-приложения в меню Account → Delete account.", "Также можно обратиться на adm@timviz.com, если доступ к аккаунту потерян."] }
+      ]
+    },
+    uk: {
+      title: "Підтримка Timviz",
+      description: "Допомога щодо акаунта, підписки, застосунку та видалення акаунта Timviz.",
+      eyebrow: "Timviz Support",
+      heading: "Підтримка Timviz",
+      intro: "Ми допомагаємо з акаунтом, календарем, підпискою, застосунком і питаннями безпеки.",
+      sections: [
+        { title: "Як зв'язатися", paragraphs: ["Email: adm@timviz.com", "Зазвичай ми відповідаємо протягом 1–2 робочих днів."] },
+        { title: "Підписка", paragraphs: ["Підписками Apple потрібно керувати в налаштуваннях Apple ID.", "Щодо платежів на сайті напишіть у підтримку Timviz."] },
+        { title: "Видалення акаунта", paragraphs: ["Видалення можна ініціювати в iOS-застосунку в меню Account → Delete account.", "Також можна звернутися на adm@timviz.com, якщо доступ до акаунта втрачено."] }
+      ]
+    },
+    en: {
+      title: "Timviz Support",
+      description: "Help with Timviz account, subscription, app and account deletion questions.",
+      eyebrow: "Timviz Support",
+      heading: "Timviz Support",
+      intro: "We help with account, calendar, subscription, app and safety questions.",
+      sections: [
+        { title: "How to contact support", paragraphs: ["Email: adm@timviz.com", "Typical response time: 1–2 business days."] },
+        { title: "Subscription management", paragraphs: ["For Apple subscriptions, manage or cancel your subscription in Apple ID settings.", "For website payment questions, contact Timviz support."] },
+        { title: "Account deletion", paragraphs: ["Deletion can be initiated inside the iOS app from Account → Delete account.", "You can also contact adm@timviz.com if you cannot access your account."] }
+      ]
+    }
+  },
+  "account-deletion": {
+    ru: {
+      title: "Удаление аккаунта Timviz",
+      description: "Как запросить удаление аккаунта и персональных данных Timviz.",
+      eyebrow: "Timviz Account Deletion",
+      heading: "Удаление аккаунта",
+      intro: "Пользователь может инициировать удаление аккаунта внутри приложения или обратиться в поддержку, если потерял доступ.",
+      sections: [
+        { title: "В приложении", paragraphs: ["Откройте Account → Delete account, прочитайте предупреждение, введите DELETE и подтвердите действие.", "После подтверждения аккаунт помечается как удалённый, персональные поля очищаются там, где это возможно, и выполняется выход из приложения."] },
+        { title: "Какие данные могут сохраняться", paragraphs: ["Некоторые записи, платежные события и технические журналы могут храниться, если это требуется законом, безопасностью или финансовой отчётностью.", "Мы стараемся удалить или обезличить персональные данные, которые больше не нужны для работы сервиса."] },
+        { title: "Контакт", paragraphs: ["Если вы не можете войти в аккаунт, напишите на adm@timviz.com с email аккаунта."] }
+      ]
+    },
+    uk: {
+      title: "Видалення акаунта Timviz",
+      description: "Як запросити видалення акаунта та персональних даних Timviz.",
+      eyebrow: "Timviz Account Deletion",
+      heading: "Видалення акаунта",
+      intro: "Користувач може ініціювати видалення акаунта в застосунку або звернутися до підтримки, якщо втратив доступ.",
+      sections: [
+        { title: "У застосунку", paragraphs: ["Відкрийте Account → Delete account, прочитайте попередження, введіть DELETE і підтвердьте дію.", "Після підтвердження акаунт позначається як видалений, персональні поля очищуються там, де це можливо, і виконується вихід із застосунку."] },
+        { title: "Які дані можуть зберігатися", paragraphs: ["Деякі записи, платіжні події та технічні журнали можуть зберігатися, якщо це потрібно за законом, для безпеки або фінансової звітності.", "Ми намагаємося видалити або знеособити персональні дані, які більше не потрібні для роботи сервісу."] },
+        { title: "Контакт", paragraphs: ["Якщо ви не можете увійти в акаунт, напишіть на adm@timviz.com з email акаунта."] }
+      ]
+    },
+    en: {
+      title: "Timviz Account Deletion",
+      description: "How to request deletion of your Timviz account and personal data.",
+      eyebrow: "Timviz Account Deletion",
+      heading: "Account Deletion",
+      intro: "Users can initiate account deletion inside the app or contact support if they no longer have access.",
+      sections: [
+        { title: "Inside the app", paragraphs: ["Open Account → Delete account, read the warning, type DELETE and confirm.", "After confirmation, the account is marked as deleted, personal fields are cleared where possible, and the user is signed out."] },
+        { title: "Data that may be retained", paragraphs: ["Some booking, payment event and technical records may be retained when required for legal, safety or financial reporting reasons.", "We aim to delete or anonymize personal data that is no longer needed to operate the service."] },
+        { title: "Contact", paragraphs: ["If you cannot access your account, contact adm@timviz.com from the account email address."] }
       ]
     }
   },

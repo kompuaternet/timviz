@@ -26,7 +26,6 @@ const chromeCopy = {
     legal: "Юридическая информация",
     privacy: "Политика конфиденциальности",
     terms: "Условия использования",
-    pricing: "Тарифы",
     refund: "Политика возвратов",
     contact: "Контакты",
     support: "Поддержка"
@@ -49,7 +48,6 @@ const chromeCopy = {
     legal: "Юридична інформація",
     privacy: "Політика конфіденційності",
     terms: "Умови використання",
-    pricing: "Тарифи",
     refund: "Політика повернень",
     contact: "Контакти",
     support: "Підтримка"
@@ -72,7 +70,6 @@ const chromeCopy = {
     legal: "Legal",
     privacy: "Privacy policy",
     terms: "Terms of use",
-    pricing: "Pricing",
     refund: "Refund policy",
     contact: "Contact",
     support: "Support"
@@ -105,7 +102,6 @@ export default function PublicLegalPage({ copy, language }: PublicLegalPageProps
               <Link href={getLocalizedPath(language, "/account")}>{t.clientAuth}</Link>
               <Link href={getLocalizedPath(language, "/privacy")}>{t.privacy}</Link>
               <Link href={getLocalizedPath(language, "/terms")}>{t.terms}</Link>
-              <Link href={getLocalizedPath(language, "/pricing")}>{t.pricing}</Link>
               <Link href={getLocalizedPath(language, "/refund-policy")}>{t.refund}</Link>
               <Link href={getLocalizedPath(language, "/contact")}>{t.contact}</Link>
               <hr />
@@ -150,7 +146,6 @@ export default function PublicLegalPage({ copy, language }: PublicLegalPageProps
           <h3>{t.about}</h3>
           <Link href={getLocalizedPath(language, "/catalog")}>{t.catalog}</Link>
           <Link href={getLocalizedPath(language, "/for-business")}>{t.features}</Link>
-          <Link href={getLocalizedPath(language, "/pricing")}>{t.pricing}</Link>
         </div>
         <div>
           <h3>{t.business}</h3>

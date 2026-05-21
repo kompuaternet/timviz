@@ -1336,8 +1336,8 @@ const baseCopy = {
     sharePage: "Поділитися",
     supportTitle: "Підтримка Timviz",
     supportGuideTitle: "Написати в підтримку",
-    supportGuideText: "Опишіть, що ви робите, на якій сторінці виникло питання і що має вийти.",
-    supportGreeting: "Вітаю! Напишіть питання щодо сайту, записів, налаштувань або оплати. Ми допоможемо розібратися.",
+    supportGuideText: "Опишіть, що ви робите, де виникло питання і що має вийти.",
+    supportGreeting: "Вітаю! Напишіть питання щодо акаунта, записів, налаштувань або підписки. Ми допоможемо розібратися.",
     supportPlaceholder: "Напишіть питання одним повідомленням...",
     supportSend: "Надіслати",
     supportSent: "Повідомлення надіслано.",
@@ -1353,6 +1353,15 @@ const baseCopy = {
     cancelBooking: "Скасувати запис",
     companySettings: "Налаштування компанії",
     helpSupport: "Допомога і підтримка",
+    privacyPolicy: "Політика конфіденційності",
+    termsOfUse: "Умови використання",
+    accountDeletion: "Видалення акаунта",
+    deleteAccount: "Видалити акаунт",
+    deleteAccountTitle: "Видалити акаунт",
+    deleteAccountText: "Це видалить акаунт і пов'язані персональні дані, які ми не зобов'язані зберігати. Введіть DELETE для підтвердження.",
+    deleteAccountConfirmPlaceholder: "DELETE",
+    deleteAccountConfirm: "Підтвердити видалення",
+    deleteAccountFailed: "Не вдалося видалити акаунт.",
     language: "Мова",
     compact: "Стиснутий",
     dayView: "День",
@@ -1457,6 +1466,7 @@ const baseCopy = {
     premiumStartYearly: "Підключити на рік",
     premiumRestore: "Відновити покупку",
     premiumManage: "Керувати підпискою можна в App Store.",
+    subscriptionAutoRenewText: "Підписка продовжується автоматично, якщо її не скасувати щонайменше за 24 години до завершення поточного періоду. Керувати підпискою можна в налаштуваннях Apple ID.",
     premiumReady: "Premium оновлено.",
     premiumUnavailable: "Покупки доступні у TestFlight або App Store збірці.",
     premiumMissingConfig: "Покупка ще готується в App Store. Спробуйте ще раз після обробки продуктів.",
@@ -1817,8 +1827,8 @@ const baseCopy = {
     sharePage: "Поделиться",
     supportTitle: "Поддержка Timviz",
     supportGuideTitle: "Написать в поддержку",
-    supportGuideText: "Опишите, что вы делаете, на какой странице возник вопрос и что должно выйти.",
-    supportGreeting: "Привет! Напишите вопрос по сайту, записям, настройкам или оплате. Мы поможем разобраться.",
+    supportGuideText: "Опишите, что вы делаете, где возник вопрос и что должно выйти.",
+    supportGreeting: "Привет! Напишите вопрос по аккаунту, записям, настройкам или подписке. Мы поможем разобраться.",
     supportPlaceholder: "Напишите вопрос одним сообщением...",
     supportSend: "Отправить",
     supportSent: "Сообщение отправлено.",
@@ -1834,6 +1844,15 @@ const baseCopy = {
     cancelBooking: "Отменить запись",
     companySettings: "Настройки компании",
     helpSupport: "Помощь и поддержка",
+    privacyPolicy: "Политика конфиденциальности",
+    termsOfUse: "Условия использования",
+    accountDeletion: "Удаление аккаунта",
+    deleteAccount: "Удалить аккаунт",
+    deleteAccountTitle: "Удалить аккаунт",
+    deleteAccountText: "Это удалит аккаунт и связанные персональные данные, которые мы не обязаны хранить. Введите DELETE для подтверждения.",
+    deleteAccountConfirmPlaceholder: "DELETE",
+    deleteAccountConfirm: "Подтвердить удаление",
+    deleteAccountFailed: "Не удалось удалить аккаунт.",
     language: "Язык",
     compact: "Сжатый",
     dayView: "День",
@@ -1938,6 +1957,7 @@ const baseCopy = {
     premiumStartYearly: "Подключить на год",
     premiumRestore: "Восстановить покупку",
     premiumManage: "Управлять подпиской можно в App Store.",
+    subscriptionAutoRenewText: "Подписка продлевается автоматически, если не отменить её минимум за 24 часа до конца текущего периода. Управлять подпиской можно в настройках Apple ID.",
     premiumReady: "Premium обновлен.",
     premiumUnavailable: "Покупки доступны в TestFlight или App Store сборке.",
     premiumMissingConfig: "Покупка еще готовится в App Store. Попробуйте еще раз после обработки продуктов.",
@@ -2299,7 +2319,7 @@ const baseCopy = {
     supportTitle: "Timviz support",
     supportGuideTitle: "Write to support",
     supportGuideText: "Describe what you are doing, where the issue appeared, and what should happen.",
-    supportGreeting: "Hi! Ask us about the site, bookings, settings, or payments. We will help.",
+    supportGreeting: "Hi! Ask us about your account, bookings, settings, or subscription. We will help.",
     supportPlaceholder: "Write your question in one message...",
     supportSend: "Send",
     supportSent: "Message sent.",
@@ -2315,6 +2335,15 @@ const baseCopy = {
     cancelBooking: "Cancel booking",
     companySettings: "Company settings",
     helpSupport: "Help and support",
+    privacyPolicy: "Privacy Policy",
+    termsOfUse: "Terms of Use",
+    accountDeletion: "Account deletion",
+    deleteAccount: "Delete account",
+    deleteAccountTitle: "Delete account",
+    deleteAccountText: "This will delete your account and related personal data that we are not legally required to keep. Type DELETE to confirm.",
+    deleteAccountConfirmPlaceholder: "DELETE",
+    deleteAccountConfirm: "Confirm deletion",
+    deleteAccountFailed: "Could not delete account.",
     language: "Language",
     compact: "Compact",
     dayView: "Day",
@@ -2419,6 +2448,7 @@ const baseCopy = {
     premiumStartYearly: "Start yearly",
     premiumRestore: "Restore purchase",
     premiumManage: "Manage the subscription in the App Store.",
+    subscriptionAutoRenewText: "Subscription renews automatically unless cancelled at least 24 hours before the end of the current period. You can manage or cancel your subscription in your Apple ID settings.",
     premiumReady: "Premium updated.",
     premiumUnavailable: "Purchases are available in TestFlight or App Store builds.",
     premiumMissingConfig: "The App Store purchase is still being prepared. Try again after products finish processing.",
@@ -2732,7 +2762,7 @@ const generatedMobileCopy = {
     supportTitle: "Support Timviz",
     supportGuideTitle: "Écrivez au support",
     supportGuideText: "Décrivez ce que vous faites, où le problème est apparu et ce qui devrait arriver.",
-    supportGreeting: "Salut ! Renseignez-vous sur le site, les réservations, les paramètres ou les paiements. Nous allons vous aider.",
+    supportGreeting: "Salut ! Posez une question sur votre compte, les réservations, les paramètres ou l'abonnement. Nous allons vous aider.",
     supportPlaceholder: "Écrivez votre question dans un seul message...",
     supportSend: "Envoyer",
     supportSent: "Message envoyé.",
@@ -3112,7 +3142,7 @@ const generatedMobileCopy = {
     supportTitle: "Wsparcie Timviz",
     supportGuideTitle: "Napisz do wsparcia",
     supportGuideText: "Opisz, co robisz, gdzie pojawił się problem i co powinno się wydarzyć.",
-    supportGreeting: "Cześć! Zapytaj nas o stronę, rezerwacje, ustawienia lub płatności. Pomożemy.",
+    supportGreeting: "Cześć! Zapytaj nas o konto, rezerwacje, ustawienia lub subskrypcję. Pomożemy.",
     supportPlaceholder: "Napisz swoje pytanie w jednej wiadomości...",
     supportSend: "Wyślij",
     supportSent: "Wiadomość wysłana.",
@@ -3492,7 +3522,7 @@ const generatedMobileCopy = {
     supportTitle: "Podpora Timviz",
     supportGuideTitle: "Napište na podporu",
     supportGuideText: "Popište, co se objevilo, děláte, kde se problém vyskytl.",
-    supportGreeting: "Ahoj! Zeptejte se nás na stránky, rezervace, nastavení nebo platby. pomůžeme.",
+    supportGreeting: "Ahoj! Zeptejte se nás na účet, rezervace, nastavení nebo předplatné. Pomůžeme.",
     supportPlaceholder: "Napište svůj dotaz do jedné zprávy...",
     supportSend: "Odeslat",
     supportSent: "Zpráva odeslána.",
@@ -3872,7 +3902,7 @@ const generatedMobileCopy = {
     supportTitle: "Soporte de Timviz",
     supportGuideTitle: "Escribe al soporte",
     supportGuideText: "Describe lo que estás haciendo, dónde apareció el problema y qué debería suceder.",
-    supportGreeting: "¡Hola! Pregúntanos sobre el sitio, las reservas, la configuración o los pagos. Le ayudaremos.",
+    supportGreeting: "¡Hola! Pregúntanos sobre tu cuenta, reservas, ajustes o suscripción. Te ayudaremos.",
     supportPlaceholder: "Escribe tu pregunta en un solo mensaje...",
     supportSend: "Enviar",
     supportSent: "Mensaje enviado.",
@@ -4252,7 +4282,7 @@ const generatedMobileCopy = {
     supportTitle: "Timviz-Support",
     supportGuideTitle: "Schreiben Sie an den Support",
     supportGuideText: "Beschreiben Sie, was Sie tun, wo das Problem aufgetreten ist und was passieren sollte.",
-    supportGreeting: "Hallo! Fragen Sie uns nach der Website, Buchungen, Einstellungen oder Zahlungen. Wir helfen.",
+    supportGreeting: "Hallo! Fragen Sie uns zu Konto, Buchungen, Einstellungen oder Abonnement. Wir helfen.",
     supportPlaceholder: "Schreiben Sie Ihre Frage in einer Nachricht ...",
     supportSend: "Senden",
     supportSent: "Nachricht gesendet.",
@@ -10916,8 +10946,9 @@ function WorkspaceHeader({
   onSignOut: () => void;
 }) {
   const title = activeTab === "calendar" ? t.calendarHeaderTitle : t[activeTab];
-  const [panel, setPanel] = useState<"setup" | "share" | "support" | "notifications" | "account" | null>(null);
+  const [panel, setPanel] = useState<"setup" | "share" | "support" | "notifications" | "account" | "deleteAccount" | null>(null);
   const [supportMessage, setSupportMessage] = useState("");
+  const [deleteAccountConfirm, setDeleteAccountConfirm] = useState("");
   const [supportTicketId, setSupportTicketId] = useState("");
   const [supportStatus, setSupportStatus] = useState("");
   const [supportMessages, setSupportMessages] = useState<SupportChatMessage[]>([
@@ -11169,6 +11200,23 @@ function WorkspaceHeader({
     }
   }
 
+  async function openLegalPage(pathname: string) {
+    await Linking.openURL(`${API_BASE_URL}${pathname}`).catch(() => undefined);
+  }
+
+  async function deleteAccount() {
+    if (deleteAccountConfirm.trim() !== "DELETE" || busy) return;
+    setBusy(true);
+    try {
+      await apiFetch("/api/mobile/pro/account", { method: "DELETE" });
+      await onSignOut();
+    } catch (error) {
+      Alert.alert(t.deleteAccountTitle || "Delete account", error instanceof Error ? error.message : t.deleteAccountFailed || "Could not delete account.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   function openAppNotification(item: MobileAppNotificationRecord) {
     if (!item.readAt) {
       const readAt = new Date().toISOString();
@@ -11259,7 +11307,7 @@ function WorkspaceHeader({
               <View style={styles.headerPanelTitleStack}>
                 <Text style={styles.headerPanelEyebrow}>Timviz</Text>
                 <Text style={styles.headerPanelTitle} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.82}>
-                  {panel === "setup" ? (setupComplete ? t.setupCompleteTitle : t.setupAssistant) : panel === "share" ? t.bookingPage : panel === "support" ? t.supportTitle : panel === "notifications" ? t.reminders : t.accountMenu || t.settings}
+                  {panel === "setup" ? (setupComplete ? t.setupCompleteTitle : t.setupAssistant) : panel === "share" ? t.bookingPage : panel === "support" ? t.supportTitle : panel === "notifications" ? t.reminders : panel === "deleteAccount" ? t.deleteAccountTitle || "Delete account" : t.accountMenu || t.settings}
                 </Text>
               </View>
               <Pressable style={styles.headerPanelClose} onPress={close}>
@@ -11461,10 +11509,45 @@ function WorkspaceHeader({
                 <Pressable style={styles.accountMenuItem} onPress={() => setPanel("support")}>
                   <Text style={styles.accountMenuItemText}>{t.helpSupport}</Text>
                 </Pressable>
+                <Pressable style={styles.accountMenuItem} onPress={() => void openLegalPage("/privacy")}>
+                  <Text style={styles.accountMenuItemText}>{t.privacyPolicy || "Privacy Policy"}</Text>
+                </Pressable>
+                <Pressable style={styles.accountMenuItem} onPress={() => void openLegalPage("/terms")}>
+                  <Text style={styles.accountMenuItemText}>{t.termsOfUse || "Terms of Use"}</Text>
+                </Pressable>
+                <Pressable style={styles.accountMenuItem} onPress={() => void openLegalPage("/support")}>
+                  <Text style={styles.accountMenuItemText}>{t.supportTitle || "Support"}</Text>
+                </Pressable>
+                <Pressable style={styles.accountMenuItem} onPress={() => void openLegalPage("/account-deletion")}>
+                  <Text style={styles.accountMenuItemText}>{t.accountDeletion || "Account deletion"}</Text>
+                </Pressable>
                 <Text style={styles.accountMenuLabel}>{t.language}</Text>
                 <LanguageSwitch language={language} setLanguage={setLanguage} />
+                <Pressable style={styles.accountMenuItem} onPress={() => { setDeleteAccountConfirm(""); setPanel("deleteAccount"); }}>
+                  <Text style={styles.accountDangerText}>{t.deleteAccount || "Delete account"}</Text>
+                </Pressable>
                 <Pressable style={styles.accountLogout} onPress={() => { close(); void onSignOut(); }}>
                   <Text style={styles.accountLogoutText}>{t.signOut}</Text>
+                </Pressable>
+              </View>
+            ) : null}
+
+            {panel === "deleteAccount" ? (
+              <View style={styles.headerPanelBody}>
+                <Text style={styles.panelHint}>{t.deleteAccountText || "This will delete your account and related personal data that we are not legally required to keep. Type DELETE to confirm."}</Text>
+                <TextInput
+                  value={deleteAccountConfirm}
+                  onChangeText={setDeleteAccountConfirm}
+                  placeholder={t.deleteAccountConfirmPlaceholder || "DELETE"}
+                  autoCapitalize="characters"
+                  style={styles.supportInput}
+                />
+                <Pressable
+                  style={[styles.headerPrimaryButton, styles.headerPrimaryButtonFull, deleteAccountConfirm.trim() !== "DELETE" && styles.disabled]}
+                  onPress={() => void deleteAccount()}
+                  disabled={deleteAccountConfirm.trim() !== "DELETE" || busy}
+                >
+                  <Text style={styles.headerPrimaryButtonText}>{t.deleteAccountConfirm || "Confirm deletion"}</Text>
                 </Pressable>
               </View>
             ) : null}
@@ -14855,6 +14938,14 @@ function SettingsTab({
               <SecondaryButton label={t.premiumRestore} onPress={() => void restorePremiumPurchase()} disabled={isPremiumLoading} />
               <SecondaryButton label={t.premiumManage} onPress={() => Linking.openURL("https://apps.apple.com/account/subscriptions").catch(() => undefined)} disabled={Platform.OS !== "ios"} />
             </View>
+            <Text style={styles.settingsMutedNotice}>
+              {t.subscriptionAutoRenewText ||
+                "Subscription renews automatically unless cancelled at least 24 hours before the end of the current period. You can manage or cancel your subscription in your Apple ID settings."}
+            </Text>
+            <View style={styles.settingsActionRow}>
+              <SecondaryButton label={t.privacyPolicy || "Privacy Policy"} onPress={() => Linking.openURL(`${API_BASE_URL}/privacy`).catch(() => undefined)} />
+              <SecondaryButton label={t.termsOfUse || "Terms of Use"} onPress={() => Linking.openURL(`${API_BASE_URL}/terms`).catch(() => undefined)} />
+            </View>
             {isPremiumLoading ? <ActivityIndicator color="#6D4AFF" /> : null}
             {premiumMessage ? <Text style={styles.settingsMutedNotice}>{premiumMessage}</Text> : null}
           </Panel>
@@ -17135,6 +17226,11 @@ const styles = StyleSheet.create({
   },
   accountMenuItemText: {
     color: "#0F172A",
+    fontSize: 15,
+    fontWeight: "900",
+  },
+  accountDangerText: {
+    color: "#E11D48",
     fontSize: 15,
     fontWeight: "900",
   },

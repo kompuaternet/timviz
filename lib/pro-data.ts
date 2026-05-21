@@ -4404,6 +4404,66 @@ export async function updateProfessionalAvatar(professionalId: string, avatarUrl
   return { ok: true };
 }
 
+export async function requestProfessionalAccountDeletion(professionalId: string) {
+  const deletedAt = new Date().toISOString();
+  const anonymizedEmail = `deleted-${professionalId}-${Date.now()}@deleted.timviz.local`;
+
+  if (isSupabaseConfigured()) {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      throw new Error("Supabase is not available.");
+    }
+
+    const { error } = await supabase
+      .from("professionals")
+      .update({
+        first_name: "",
+        last_name: "",
+        email: anonymizedEmail,
+        phone: "",
+        avatar_url: "",
+        account_status: "deleted",
+        plan: "free",
+        premium_status: "inactive",
+        premium_until: null
+      })
+      .eq("id", professionalId);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    await supabase
+      .from("app_notifications")
+      .delete()
+      .eq("professional_id", professionalId)
+      .then(({ error: notificationError }) => {
+        if (notificationError) console.warn("[account-deletion] Could not clear app notifications", notificationError.message);
+      });
+
+    return { ok: true, deletedAt };
+  }
+
+  const store = await ensureDemoBusinessesInLocalStore();
+  const professional = store.professionals.find((item) => item.id === professionalId);
+  if (!professional) {
+    throw new Error("Professional not found.");
+  }
+
+  professional.firstName = "";
+  professional.lastName = "";
+  professional.email = anonymizedEmail;
+  professional.phone = "";
+  professional.avatarUrl = "";
+  professional.accountStatus = "deleted";
+  professional.plan = "free";
+  professional.premiumStatus = "inactive";
+  professional.premiumUntil = undefined;
+  await writeStore(store);
+
+  return { ok: true, deletedAt };
+}
+
 export async function updateProfessionalIdentity(
   professionalId: string,
   input: { firstName?: string; lastName?: string; avatarUrl?: string }
