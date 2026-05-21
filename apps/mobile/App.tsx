@@ -7542,7 +7542,7 @@ export default function App() {
       const shouldLoadStaffMedia = options.media === true || Date.now() - staffMediaLoadedAtRef.current > CALENDAR_MEMBER_META_TTL_MS;
       const staffUrl = `${API_BASE_URL}/api/mobile/pro/staff${shouldLoadStaffMedia ? "?media=1" : ""}`;
       const [workspaceResult, calendarResult, clientsResult, servicesResult, staffResult] = await Promise.all([
-        fetch(`${API_BASE_URL}/api/mobile/pro/workspace/${currentSession.professionalId}?media=${options.media ? "1" : "0"}`, { headers }).then((item) =>
+        fetch(`${API_BASE_URL}/api/mobile/pro/workspace/${currentSession.professionalId}?media=1`, { headers }).then((item) =>
           item.json()
         ),
         fetch(`${API_BASE_URL}/api/mobile/pro/calendar?date=${encodeURIComponent(date)}`, { headers }).then((item) =>
