@@ -6,6 +6,8 @@
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
+    "ios:device": "expo run:ios --device",
+    "ios:device:release": "expo run:ios --device --configuration Release",
     "ios:localhost": "expo start --ios --localhost",
     "web": "expo start --web",
     "eas": "eas",
