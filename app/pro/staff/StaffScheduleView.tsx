@@ -118,6 +118,7 @@ type ScheduleCopy = {
   dayEditorTitle: (name: string, date: string) => string;
   dayEditorText: string;
   flexibleDayEditorText: string;
+  dayIntervalsTitle: string;
   resetDay: string;
   weekOf: string;
   notSelected: string;
@@ -249,6 +250,7 @@ const scheduleText: Record<"ru" | "uk" | "en", ScheduleCopy> = {
     dayEditorText:
       "Изменение затронет только выбранный день. Для постоянного шаблона используйте настройку повторяющихся смен.",
     flexibleDayEditorText: "Этот день работает отдельно от недельного графика.",
+    dayIntervalsTitle: "Рабочее время",
     resetDay: "Удалить настройку дня",
     weekOf: "Неделя",
     notSelected: "Не выбрано"
@@ -331,6 +333,7 @@ const scheduleText: Record<"ru" | "uk" | "en", ScheduleCopy> = {
     dayEditorText:
       "Зміна зачепить лише вибраний день. Для постійного шаблону використовуйте налаштування повторюваних змін.",
     flexibleDayEditorText: "Цей день працює окремо від тижневого графіка.",
+    dayIntervalsTitle: "Робочий час",
     resetDay: "Видалити налаштування дня",
     weekOf: "Тиждень",
     notSelected: "Не вибрано"
@@ -413,6 +416,7 @@ const scheduleText: Record<"ru" | "uk" | "en", ScheduleCopy> = {
     dayEditorText:
       "This change only affects the selected date. Use recurring shifts if you want to update the permanent weekly template.",
     flexibleDayEditorText: "This day is managed separately from the weekly schedule.",
+    dayIntervalsTitle: "Working time",
     resetDay: "Delete day override",
     weekOf: "Week",
     notSelected: "Not selected"
@@ -1572,7 +1576,7 @@ function DayScheduleModal({
 
         <div className={styles.staffDayIntervals}>
           <div className={styles.staffDayIntervalsHeader}>
-            <strong>{copy.plannerSummary}</strong>
+            <strong>{copy.dayIntervalsTitle}</strong>
             <span>{enabled ? formatHourCount(getIntervalsDurationMinutes(intervals), copy.hours) : copy.noWork}</span>
           </div>
 
