@@ -770,7 +770,7 @@ export default function ProSetupFlow({
   const previewSuggestion = addressSuggestions[0] ?? null;
   const categoryOptions = useMemo(() => getCategoryOptions(catalog), [catalog]);
   const manualCategoryOptions = useMemo(
-    () => Array.from(new Set(["Другая", ...categoryOptions.filter((category) => category !== "Другая")])),
+    () => Array.from(new Set([...categoryOptions, "Другая"])),
     [categoryOptions]
   );
   const initialSuggestedServicesCount = 8;

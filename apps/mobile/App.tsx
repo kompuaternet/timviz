@@ -153,6 +153,14 @@ type PendingServiceSave = {
   attempts: number;
 };
 
+type ServiceUpdatePayload = {
+  name: string;
+  category: string;
+  durationMinutes: number;
+  price: number;
+  color: string;
+};
+
 type AppointmentRecord = {
   id: string;
   professionalId?: string;
@@ -597,21 +605,38 @@ const WORDMARK = require("./assets/timviz-wordmark.png");
 const DEFAULT_SERVICE_CATEGORY = "Без категории";
 const SERVICE_COLORS = ["#9AD86A", "#8ED1F2", "#FF9A84", "#F7C948", "#A78BFA", "#34D399", "#F472B6", "#60A5FA"];
 const SYSTEM_SERVICE_CATEGORIES = [
-  "Массаж",
-  "Волосы",
   "Ногти",
+  "Волосы",
   "Брови и ресницы",
-  "Ресницы",
-  "Лицо",
+  "Массаж",
   "Косметология",
+  "Лицо",
   "Депиляция",
   "Тело",
   "Макияж",
-  "Тату / Перманент",
+  "Перманентный макияж",
+  "Тату",
   "Обучение",
   "Ремонт",
   "Другое",
 ];
+const SERVICE_CATEGORY_SORT_ORDER: Record<string, number> = {
+  "Ногти": 10,
+  "Волосы": 20,
+  "Брови и ресницы": 30,
+  "Массаж": 40,
+  "Косметология": 50,
+  "Лицо": 60,
+  "Депиляция": 70,
+  "Тело": 80,
+  "Макияж": 90,
+  "Перманентный макияж": 100,
+  "Тату": 110,
+  "Обучение": 120,
+  "Ремонт": 130,
+  "Другое": 900,
+  [DEFAULT_SERVICE_CATEGORY]: 999,
+};
 const QUICK_DURATION_OPTIONS = [30, 45, 60, 90];
 const APP_ICON = require("./assets/timviz-icon.png");
 const SETTINGS_SECTIONS: MobileSettingsSection[] = ["general", "online", "services", "schedule", "push", "telegram", "address"];
@@ -4630,12 +4655,15 @@ const SERVICE_CATEGORY_LABELS: Record<AppLanguage, Record<string, string>> = {
     "Лицо": "Обличчя",
     "Косметология": "Косметологія",
     "Депиляция": "Депіляція",
-    "Тело": "Тіло",
-    "Макияж": "Макіяж",
-    "Тату / Перманент": "Тату / Перманент",
-    "Обучение": "Навчання",
-    "Ремонт": "Ремонт",
-    "Другое": "Інше",
+	    "Тело": "Тіло",
+	    "Макияж": "Макіяж",
+	    "Перманентный макияж": "Перманент",
+	    "Тату": "Тату",
+	    "Тату / Перманент": "Перманент",
+	    "Обучение": "Навчання",
+	    "Ремонт": "Ремонт",
+	    "Другое": "Інше",
+	    "Без категории": "Без категорії",
     "Салон красоты": "Салон краси",
     "Медспа": "Медспа",
     "Парикмахер": "Перукар",
@@ -4653,17 +4681,20 @@ const SERVICE_CATEGORY_LABELS: Record<AppLanguage, Record<string, string>> = {
     "Массаж": "Massage",
     "Волосы": "Hair",
     "Ногти": "Nails",
-    "Брови и ресницы": "Brows and lashes",
+	    "Брови и ресницы": "Brows & Lashes",
     "Ресницы": "Lashes",
-    "Лицо": "Face",
-    "Косметология": "Cosmetology",
-    "Депиляция": "Depilation",
-    "Тело": "Body",
-    "Макияж": "Makeup",
-    "Тату / Перманент": "Tattoo / Permanent",
-    "Обучение": "Training",
-    "Ремонт": "Repair",
-    "Другое": "Other",
+	    "Лицо": "Face Care",
+	    "Перманентный макияж": "Permanent Makeup",
+	    "Тату": "Tattoo",
+	    "Косметология": "Cosmetology",
+	    "Депиляция": "Hair Removal",
+	    "Тело": "Body / SPA",
+	    "Макияж": "Makeup",
+	    "Тату / Перманент": "Permanent Makeup",
+	    "Обучение": "Education",
+	    "Ремонт": "Repair",
+	    "Другое": "Other",
+	    "Без категории": "No Category",
     "Салон красоты": "Beauty salon",
     "Медспа": "Medspa",
     "Парикмахер": "Hairdresser",
@@ -4682,15 +4713,18 @@ const SERVICE_CATEGORY_LABELS: Record<AppLanguage, Record<string, string>> = {
     "Ногти": "Ongles",
     "Брови и ресницы": "Sourcils et cils",
     "Ресницы": "Cils",
-    "Лицо": "Visage",
-    "Косметология": "Cosmétologie",
-    "Депиляция": "Épilation",
-    "Тело": "Corps",
-    "Макияж": "Maquillage",
-    "Тату / Перманент": "Tatouage / Permanent",
-    "Обучение": "Formation",
-    "Ремонт": "Réparation",
-    "Другое": "Autre",
+	    "Лицо": "Visage",
+	    "Перманентный макияж": "Maquillage permanent",
+	    "Тату": "Tatouage",
+	    "Косметология": "Cosmétologie",
+	    "Депиляция": "Épilation",
+	    "Тело": "Corps / SPA",
+	    "Макияж": "Maquillage",
+	    "Тату / Перманент": "Maquillage permanent",
+	    "Обучение": "Formation",
+	    "Ремонт": "Réparation",
+	    "Другое": "Autre",
+	    "Без категории": "Sans catégorie",
     "Салон красоты": "Institut de beauté",
     "Медспа": "Medspa",
     "Парикмахер": "Coiffeur",
@@ -4709,15 +4743,18 @@ const SERVICE_CATEGORY_LABELS: Record<AppLanguage, Record<string, string>> = {
     "Ногти": "Paznokcie",
     "Брови и ресницы": "Brwi i rzęsy",
     "Ресницы": "Rzęsy",
-    "Лицо": "Twarz",
-    "Косметология": "Kosmetologia",
-    "Депиляция": "Depilacja",
-    "Тело": "Ciało",
-    "Макияж": "Makijaż",
-    "Тату / Перманент": "Tatuaż / Permanentny",
-    "Обучение": "Szkolenia",
-    "Ремонт": "Naprawa",
-    "Другое": "Inne",
+	    "Лицо": "Twarz",
+	    "Перманентный макияж": "Makijaż permanentny",
+	    "Тату": "Tatuaż",
+	    "Косметология": "Kosmetologia",
+	    "Депиляция": "Depilacja",
+	    "Тело": "Ciało / SPA",
+	    "Макияж": "Makijaż",
+	    "Тату / Перманент": "Makijaż permanentny",
+	    "Обучение": "Szkolenia",
+	    "Ремонт": "Naprawa",
+	    "Другое": "Inne",
+	    "Без категории": "Bez kategorii",
     "Салон красоты": "Salon beauty",
     "Медспа": "Medspa",
     "Парикмахер": "Fryzjer",
@@ -4736,15 +4773,18 @@ const SERVICE_CATEGORY_LABELS: Record<AppLanguage, Record<string, string>> = {
     "Ногти": "Nehty",
     "Брови и ресницы": "Obočí a řasy",
     "Ресницы": "Řasy",
-    "Лицо": "Obličej",
-    "Косметология": "Kosmetologie",
-    "Депиляция": "Depilace",
-    "Тело": "Tělo",
-    "Макияж": "Make-up",
-    "Тату / Перманент": "Tetování / Permanentní",
-    "Обучение": "Školení",
-    "Ремонт": "Opravy",
-    "Другое": "Jiné",
+	    "Лицо": "Obličej",
+	    "Перманентный макияж": "Permanentní make-up",
+	    "Тату": "Tetování",
+	    "Косметология": "Kosmetologie",
+	    "Депиляция": "Depilace",
+	    "Тело": "Tělo / SPA",
+	    "Макияж": "Make-up",
+	    "Тату / Перманент": "Permanentní make-up",
+	    "Обучение": "Školení",
+	    "Ремонт": "Opravy",
+	    "Другое": "Jiné",
+	    "Без категории": "Bez kategorie",
     "Салон красоты": "Kosmetický salon",
     "Медспа": "Medspa",
     "Парикмахер": "Kadeřník",
@@ -4763,15 +4803,18 @@ const SERVICE_CATEGORY_LABELS: Record<AppLanguage, Record<string, string>> = {
     "Ногти": "Uñas",
     "Брови и ресницы": "Cejas y pestañas",
     "Ресницы": "Pestañas",
-    "Лицо": "Rostro",
-    "Косметология": "Cosmetología",
-    "Депиляция": "Depilación",
-    "Тело": "Cuerpo",
-    "Макияж": "Maquillaje",
-    "Тату / Перманент": "Tatuaje / Permanente",
-    "Обучение": "Formación",
-    "Ремонт": "Reparación",
-    "Другое": "Otro",
+	    "Лицо": "Rostro",
+	    "Перманентный макияж": "Maquillaje permanente",
+	    "Тату": "Tatuaje",
+	    "Косметология": "Cosmetología",
+	    "Депиляция": "Depilación",
+	    "Тело": "Cuerpo / SPA",
+	    "Макияж": "Maquillaje",
+	    "Тату / Перманент": "Maquillaje permanente",
+	    "Обучение": "Formación",
+	    "Ремонт": "Reparación",
+	    "Другое": "Otro",
+	    "Без категории": "Sin categoría",
     "Салон красоты": "Salón de belleza",
     "Медспа": "Medspa",
     "Парикмахер": "Peluquero",
@@ -4790,15 +4833,18 @@ const SERVICE_CATEGORY_LABELS: Record<AppLanguage, Record<string, string>> = {
     "Ногти": "Nägel",
     "Брови и ресницы": "Augenbrauen und Wimpern",
     "Ресницы": "Wimpern",
-    "Лицо": "Gesicht",
-    "Косметология": "Kosmetologie",
-    "Депиляция": "Haarentfernung",
-    "Тело": "Körper",
-    "Макияж": "Make-up",
-    "Тату / Перманент": "Tattoo / Permanent",
-    "Обучение": "Schulung",
-    "Ремонт": "Reparatur",
-    "Другое": "Andere",
+	    "Лицо": "Gesicht",
+	    "Перманентный макияж": "Permanent Make-up",
+	    "Тату": "Tattoo",
+	    "Косметология": "Kosmetologie",
+	    "Депиляция": "Haarentfernung",
+	    "Тело": "Körper / SPA",
+	    "Макияж": "Make-up",
+	    "Тату / Перманент": "Permanent Make-up",
+	    "Обучение": "Schulung",
+	    "Ремонт": "Reparatur",
+	    "Другое": "Andere",
+	    "Без категории": "Ohne Kategorie",
     "Салон красоты": "Kosmetikstudio",
     "Медспа": "Medspa",
     "Парикмахер": "Friseur",
@@ -5047,6 +5093,20 @@ function getServiceCategoryDisplayName(category: string | undefined, localizedCa
   return localizeCatalogCategory(localized || category, language, t);
 }
 
+function getServiceCategorySortOrder(category: string | undefined) {
+  const canonical = getCanonicalServiceCategory(category);
+  return SERVICE_CATEGORY_SORT_ORDER[canonical] ?? 500;
+}
+
+function compareServiceCategoryOptions(left: string, right: string) {
+  const orderDiff = getServiceCategorySortOrder(left) - getServiceCategorySortOrder(right);
+  return orderDiff || getCanonicalServiceCategory(left).localeCompare(getCanonicalServiceCategory(right));
+}
+
+function sortServiceCategoryOptions(categories: string[]) {
+  return [...categories].sort(compareServiceCategoryOptions);
+}
+
 function getCanonicalServiceCategory(category: string | undefined) {
   const value = safeText(category).trim();
   const normalized = normalizeSmartSearchText(value);
@@ -5062,6 +5122,64 @@ function getCanonicalServiceCategory(category: string | undefined) {
     "Nicht kategorisiert",
   ].map(normalizeSmartSearchText);
   if (defaultLabels.includes(normalized)) return DEFAULT_SERVICE_CATEGORY;
+
+  const aliases: Record<string, string> = {
+    "ногти": "Ногти",
+    "нігті": "Ногти",
+    nails: "Ногти",
+    "волосы": "Волосы",
+    "волосся": "Волосы",
+    hair: "Волосы",
+    "парикмахерская": "Волосы",
+    "парикмахер": "Волосы",
+    "брови и ресницы": "Брови и ресницы",
+    "брови та вії": "Брови и ресницы",
+    "brows & lashes": "Брови и ресницы",
+    "brows and lashes": "Брови и ресницы",
+    "массаж": "Массаж",
+    "масаж": "Массаж",
+    massage: "Массаж",
+    "массажный салон": "Массаж",
+    "косметология": "Косметология",
+    "косметологія": "Косметология",
+    cosmetology: "Косметология",
+    "медспа": "Косметология",
+    "лицо": "Лицо",
+    "обличчя": "Лицо",
+    face: "Лицо",
+    "face care": "Лицо",
+    "депиляция": "Депиляция",
+    "депіляція": "Депиляция",
+    depilation: "Депиляция",
+    "hair removal": "Депиляция",
+    "салон депиляции": "Депиляция",
+    "тело": "Тело",
+    "тіло": "Тело",
+    body: "Тело",
+    "body / spa": "Тело",
+    "спа-салон и сауна": "Тело",
+    "макияж": "Макияж",
+    "макіяж": "Макияж",
+    makeup: "Макияж",
+    "перманент": "Перманентный макияж",
+    "перманентный макияж": "Перманентный макияж",
+    "permanent makeup": "Перманентный макияж",
+    "тату / перманент": "Перманентный макияж",
+    "тату": "Тату",
+    tattoo: "Тату",
+    "тату и пирсинг": "Тату",
+    "обучение": "Обучение",
+    "навчання": "Обучение",
+    education: "Обучение",
+    training: "Обучение",
+    "ремонт": "Ремонт",
+    repair: "Ремонт",
+    "другое": "Другое",
+    "інше": "Другое",
+    "другая": "Другое",
+    other: "Другое",
+  };
+  if (aliases[normalized]) return aliases[normalized];
 
   for (const systemCategory of SYSTEM_SERVICE_CATEGORIES) {
     if (normalizeSmartSearchText(systemCategory) === normalized) return systemCategory;
@@ -5087,7 +5205,7 @@ function uniqueServiceCategoryOptions(categories: string[], includeDefault = fal
     seen.add(key);
     options.push(canonical);
   });
-  return options;
+  return sortServiceCategoryOptions(options);
 }
 
 function getServiceSearchText(service: Pick<ServiceRecord | ServiceTemplateRecord, "name" | "localizedName"> | undefined) {
@@ -6348,6 +6466,51 @@ export default function App() {
     });
   }
 
+  function isOptimisticServiceId(serviceId: string | undefined) {
+    return safeText(serviceId).startsWith("service-");
+  }
+
+  function servicePatchPayload(service: ServiceRecord): ServiceUpdatePayload {
+    return {
+      name: safeText(service.name).trim(),
+      category: getCanonicalServiceCategory(service.category),
+      durationMinutes: Number(service.durationMinutes || 60),
+      price: Number(service.price || 0),
+      color: service.color || SERVICE_COLORS[0],
+    };
+  }
+
+  function findPendingServiceSave(serviceId: string, service?: Pick<ServiceRecord, "name" | "localizedName">) {
+    return Array.from(pendingServiceSavesRef.current.values()).find((item) =>
+      item.optimisticService.id === serviceId || Boolean(service && serviceIdentityOverlaps(item.optimisticService, service))
+    );
+  }
+
+  function updatePendingServiceSave(serviceId: string, updatedService: ServiceRecord) {
+    const pending = findPendingServiceSave(serviceId, updatedService);
+    if (!pending) return false;
+    const nextService = { ...pending.optimisticService, ...updatedService, id: pending.optimisticService.id };
+    pendingServiceSavesRef.current.set(pending.key, {
+      ...pending,
+      optimisticService: nextService,
+      payload: {
+        ...pending.payload,
+        ...servicePatchPayload(nextService),
+      },
+    });
+    return true;
+  }
+
+  function findSavedServiceForPatch(serviceId: string, service?: Pick<ServiceRecord, "name" | "localizedName">) {
+    const services = workspace?.services || [];
+    return services.find((item) => item.id === serviceId && !isOptimisticServiceId(item.id)) ||
+      services.find((item) => !isOptimisticServiceId(item.id) && Boolean(service && serviceIdentityOverlaps(item, service)));
+  }
+
+  function isServiceNotFoundError(error: unknown) {
+    return error instanceof Error && /service\s+not\s+found/i.test(error.message);
+  }
+
   function serviceMatchesPending(service: ServiceRecord, pending: PendingServiceSave) {
     return service.id === pending.optimisticService.id || serviceIdentityOverlaps(service, pending.optimisticService);
   }
@@ -6368,7 +6531,8 @@ export default function App() {
   function withPendingServiceSaves(snapshot: WorkspaceSnapshot): WorkspaceSnapshot {
     const pending = Array.from(pendingServiceSavesRef.current.values());
     const hasPendingDeletes = pendingServiceDeletesRef.current.size > 0;
-    if (!pending.length && !hasPendingDeletes) return snapshot;
+    const hasPendingPatches = pendingServicePatchesRef.current.size > 0;
+    if (!pending.length && !hasPendingDeletes && !hasPendingPatches) return snapshot;
 
     const nextServices = (snapshot.services || [])
       .filter((service) => !serviceIsPendingDelete(service))
@@ -6388,17 +6552,28 @@ export default function App() {
   function replaceOptimisticServices(savedServices: ServiceRecord[], pendingItems: PendingServiceSave[]) {
     if (!savedServices.length || !pendingItems.length) return;
     const optimisticIds = new Set(pendingItems.map((item) => item.optimisticService.id));
+    const patchesToFlush: Array<{ serviceId: string; patch: ServiceRecord }> = [];
+    const patchedSavedServices = savedServices.map((savedService) => {
+      const pendingItem = pendingItems.find((item) => serviceMatchesPending(savedService, item));
+      const optimisticPatch = pendingItem ? pendingServicePatchesRef.current.get(pendingItem.optimisticService.id) : undefined;
+      if (!optimisticPatch || !pendingItem) return savedService;
+      const patchedSavedService = { ...savedService, ...optimisticPatch, id: savedService.id };
+      pendingServicePatchesRef.current.delete(pendingItem.optimisticService.id);
+      pendingServicePatchesRef.current.set(savedService.id, patchedSavedService);
+      patchesToFlush.push({ serviceId: savedService.id, patch: patchedSavedService });
+      return patchedSavedService;
+    });
 
     setWorkspace((current) => {
       if (!current) return current;
       const nextServices = (current.services || []).filter((service) => !optimisticIds.has(service.id));
 
-      savedServices.forEach((savedService) => {
-        const existingIndex = nextServices.findIndex((service) => service.id === savedService.id || serviceIdentityOverlaps(service, savedService));
+      patchedSavedServices.forEach((patchedSavedService) => {
+        const existingIndex = nextServices.findIndex((service) => service.id === patchedSavedService.id || serviceIdentityOverlaps(service, patchedSavedService));
         if (existingIndex >= 0) {
-          nextServices[existingIndex] = { ...nextServices[existingIndex], ...savedService };
+          nextServices[existingIndex] = { ...nextServices[existingIndex], ...patchedSavedService };
         } else {
-          nextServices.unshift(savedService);
+          nextServices.unshift(patchedSavedService);
         }
       });
 
@@ -6406,6 +6581,10 @@ export default function App() {
         ...current,
         services: nextServices,
       };
+    });
+
+    patchesToFlush.forEach((item) => {
+      void flushServicePatch(item.serviceId, item.patch, { silent: true });
     });
   }
 
@@ -7544,6 +7723,43 @@ export default function App() {
     return true;
   }
 
+  async function flushServicePatch(serviceId: string, updatedService: ServiceRecord, options: { silent?: boolean; resolveRetry?: boolean } = {}) {
+    if (!session) return false;
+    if (isOptimisticServiceId(serviceId)) {
+      pendingServicePatchesRef.current.set(serviceId, updatedService);
+      updatePendingServiceSave(serviceId, updatedService);
+      scheduleServiceSaveFlush(80);
+      return true;
+    }
+
+    const payload = servicePatchPayload(updatedService);
+    try {
+      await apiFetch("/api/mobile/pro/services", {
+        method: "PATCH",
+        body: JSON.stringify({
+          serviceId,
+          ...payload,
+        }),
+      });
+      pendingServicePatchesRef.current.delete(serviceId);
+      await refreshAll(session, selectedDate, { silent: true });
+      return true;
+    } catch (error) {
+      const resolvedService = options.resolveRetry === false ? null : findSavedServiceForPatch(serviceId, updatedService);
+      if (isServiceNotFoundError(error) && resolvedService && resolvedService.id !== serviceId) {
+        const resolvedPatch = { ...resolvedService, ...updatedService, id: resolvedService.id };
+        pendingServicePatchesRef.current.delete(serviceId);
+        pendingServicePatchesRef.current.set(resolvedService.id, resolvedPatch);
+        mergeWorkspaceServices((services) => services.map((service) => (service.id === resolvedService.id ? { ...service, ...resolvedPatch } : service)));
+        return flushServicePatch(resolvedService.id, resolvedPatch, { ...options, resolveRetry: false });
+      }
+      if (!options.silent) {
+        Alert.alert(t.editService, error instanceof Error ? error.message : t.editService);
+      }
+      return false;
+    }
+  }
+
   async function updateService(serviceId: string, draft: ServiceDraftState) {
     if (!draft.name.trim()) {
       Alert.alert(t.requiredTitle, t.requiredText);
@@ -7565,26 +7781,28 @@ export default function App() {
     };
     pendingServicePatchesRef.current.set(serviceId, updatedService);
     mergeWorkspaceServices((services) => services.map((service) => (service.id === serviceId ? { ...service, ...updatedService } : service)));
-    void apiFetch("/api/mobile/pro/services", {
-        method: "PATCH",
-        body: JSON.stringify({
-          serviceId,
-          name: updatedService.name,
-          category: updatedService.category,
-          durationMinutes: updatedService.durationMinutes,
-          price: updatedService.price,
-          color: updatedService.color,
-        }),
-      })
-      .then(async () => {
+    if (updatePendingServiceSave(serviceId, updatedService)) {
+      scheduleServiceSaveFlush(80);
+      return true;
+    }
+    if (isOptimisticServiceId(serviceId)) {
+      const resolvedService = findSavedServiceForPatch(serviceId, updatedService);
+      if (resolvedService) {
+        const resolvedPatch = { ...resolvedService, ...updatedService, id: resolvedService.id };
         pendingServicePatchesRef.current.delete(serviceId);
-        await refreshAll(session, selectedDate, { silent: true });
-      })
-      .catch((error) => {
-        pendingServicePatchesRef.current.delete(serviceId);
-        Alert.alert(t.editService, error instanceof Error ? error.message : t.editService);
-        revalidateWorkspace();
-      });
+        pendingServicePatchesRef.current.set(resolvedService.id, resolvedPatch);
+        mergeWorkspaceServices((services) => services.map((service) => (service.id === resolvedService.id ? { ...service, ...resolvedPatch } : service)));
+        void flushServicePatch(resolvedService.id, resolvedPatch, { silent: true }).then((saved) => {
+          if (!saved) revalidateWorkspace();
+        });
+        return true;
+      }
+      scheduleServiceSaveFlush(80);
+      return true;
+    }
+    void flushServicePatch(serviceId, updatedService, { silent: true }).then((saved) => {
+      if (!saved) revalidateWorkspace();
+    });
     return true;
   }
 
@@ -11030,6 +11248,10 @@ function ServicesTab({
   }, [modeRequest, onModeRequestHandled]);
 
   const categories = useMemo(() => uniqueServiceCategoryOptions(SYSTEM_SERVICE_CATEGORIES), []);
+  const sortedCatalog = useMemo(
+    () => [...catalog].sort((left, right) => compareServiceCategoryOptions(left.title, right.title)),
+    [catalog]
+  );
 
   const recommendedCategory = useMemo(() => inferSystemServiceCategory(draft.name), [draft.name]);
 
@@ -11049,16 +11271,16 @@ function ServicesTab({
     }
   }, [draft.category, draft.name, recommendedCategory, setDraft]);
 
-  const currentCatalogCategory = activeCatalogCategory || catalog[0]?.title || categories[0] || DEFAULT_SERVICE_CATEGORY;
+  const currentCatalogCategory = activeCatalogCategory || sortedCatalog[0]?.title || categories[0] || DEFAULT_SERVICE_CATEGORY;
   const catalogServices = useMemo(() => {
     const query = catalogQuery.trim().toLowerCase();
-    return catalog
+    return sortedCatalog
       .filter((group) => query || group.title === currentCatalogCategory)
       .flatMap((group) => [...(group.topSuggestions || []), ...(group.popularServices || [])].map((service) => ({ ...service, category: group.title })))
       .filter((service) => !query || getServiceSearchText(service).includes(query));
-  }, [catalog, catalogQuery, currentCatalogCategory]);
+  }, [catalogQuery, currentCatalogCategory, sortedCatalog]);
   const quickServiceSuggestions = useMemo(() => {
-    const catalogSuggestions = catalog
+    const catalogSuggestions = sortedCatalog
       .flatMap((group) => [...(group.topSuggestions || []), ...(group.popularServices || [])].map((service) => ({
         name: getServiceDisplayName(service, language),
         category: group.title,
@@ -11073,7 +11295,7 @@ function ServicesTab({
       { name: t.serviceSuggestionHaircut, category: DEFAULT_SERVICE_CATEGORY, durationMinutes: "45", price: "0" },
       { name: t.serviceSuggestionConsultation, category: DEFAULT_SERVICE_CATEGORY, durationMinutes: "30", price: "0" },
     ];
-  }, [catalog, language, t]);
+  }, [language, sortedCatalog, t]);
 
   function startCustomServiceFromSuggestion(item?: { name?: string; category?: string; durationMinutes?: string; price?: string }) {
     setDraft({
@@ -11449,7 +11671,7 @@ function ServicesTab({
       {mode === "catalog" ? (
         <Panel title={t.generalCatalog}>
           <Field label={t.search} value={catalogQuery} onChangeText={setCatalogQuery} placeholder={t.searchService} />
-          <CategoryChips t={t} language={language} categories={catalog.map((item) => item.title)} selected={currentCatalogCategory} onSelect={setActiveCatalogCategory} />
+          <CategoryChips t={t} language={language} categories={sortedCatalog.map((item) => item.title)} selected={currentCatalogCategory} onSelect={setActiveCatalogCategory} />
           {catalogServices.length ? (
             catalogServices.map((service) => {
               const exists = serviceExists(service.name);
@@ -12607,7 +12829,7 @@ function normalizeCategoryList(categories: unknown[]) {
     result.push(value);
   }
 
-  return result;
+  return sortServiceCategoryOptions(result);
 }
 
 function makeSettingsDraft(workspace: WorkspaceSnapshot | null, language: AppLanguage): SettingsDraftState {
@@ -12725,7 +12947,7 @@ function SettingsTab({
   const activeSectionLocked = !hasPremium && isPremiumSettingsSection(activeSection);
   const selectedBusinessCategories = useMemo(() => normalizeCategoryList(draft.categories), [draft.categories]);
   const businessCategoryOptions = useMemo(
-    () => normalizeCategoryList([...catalog.map((item) => item.title), ...(workspace?.business.categories || []), ...selectedBusinessCategories]),
+    () => normalizeCategoryList([...sortServiceCategoryOptions(catalog.map((item) => item.title)), ...(workspace?.business.categories || []), ...selectedBusinessCategories]),
     [catalog, selectedBusinessCategories, workspace?.business.categories]
   );
 

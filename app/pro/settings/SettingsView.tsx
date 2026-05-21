@@ -13,7 +13,7 @@ import { uploadProMediaFile } from "../media-upload";
 import { type BusinessPhoto } from "../../../lib/pro-data";
 import type { OnboardingCtaState } from "../../../lib/pro-onboarding";
 import type { WorkSchedule } from "../../../lib/work-schedule";
-import { categoryOptions, localizeCategoryName } from "../../../lib/service-templates";
+import { categoryOptions, compareServiceCategories, localizeCategoryName } from "../../../lib/service-templates";
 import ProfileAvatar from "../../ProfileAvatar";
 
 const MAX_BUSINESS_PHOTOS = 5;
@@ -800,7 +800,7 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
   const [isPhotoTooltipDismissed, setIsPhotoTooltipDismissed] = useState(false);
   const selectedBusinessCategories = useMemo(() => normalizeCategoryList(data.business.categories), [data.business.categories]);
   const businessCategoryOptions = useMemo(
-    () => normalizeCategoryList([...categoryOptions, ...selectedBusinessCategories]),
+    () => normalizeCategoryList([...categoryOptions, ...selectedBusinessCategories]).sort(compareServiceCategories),
     [selectedBusinessCategories]
   );
 

@@ -75,6 +75,7 @@ export default function TurnstileWidget({ onToken, onExpire }: TurnstileWidgetPr
   const containerRef = useRef<HTMLDivElement | null>(null);
   const widgetIdRef = useRef<string | null>(null);
   const fallbackRequestedRef = useRef(false);
+  const tokenReceivedRef = useRef(false);
   const [status, setStatus] = useState<"loading" | "ready" | "fallback" | "unavailable">("loading");
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "";
   const t = copy[language];
@@ -106,14 +107,19 @@ export default function TurnstileWidget({ onToken, onExpire }: TurnstileWidgetPr
   }
 
   useEffect(() => {
-    if (!siteKey || !containerRef.current) return;
+    if (!siteKey || !containerRef.current) {
+      void requestFallbackToken();
+      return;
+    }
     let cancelled = false;
     fallbackRequestedRef.current = false;
+    tokenReceivedRef.current = false;
     setStatus("loading");
 
     const slowLoadTimer = window.setTimeout(() => {
       void requestFallbackToken();
     }, 8000);
+    let noTokenTimer: number | null = null;
 
     loadTurnstileScript().then((loaded) => {
       if (cancelled || !loaded || !window.turnstile || !containerRef.current) {
@@ -128,10 +134,13 @@ export default function TurnstileWidget({ onToken, onExpire }: TurnstileWidgetPr
         size: "normal",
         theme: "light",
         callback: (token) => {
+          tokenReceivedRef.current = true;
+          if (noTokenTimer) window.clearTimeout(noTokenTimer);
           setStatus("ready");
           onToken(token);
         },
         "expired-callback": () => {
+          tokenReceivedRef.current = false;
           onToken("");
           fallbackRequestedRef.current = false;
           setStatus("loading");
@@ -142,11 +151,16 @@ export default function TurnstileWidget({ onToken, onExpire }: TurnstileWidgetPr
           void requestFallbackToken();
         }
       });
+      setStatus("ready");
+      noTokenTimer = window.setTimeout(() => {
+        if (!cancelled && !tokenReceivedRef.current) void requestFallbackToken();
+      }, 4500);
     });
 
     return () => {
       cancelled = true;
       window.clearTimeout(slowLoadTimer);
+      if (noTokenTimer) window.clearTimeout(noTokenTimer);
       if (widgetIdRef.current && window.turnstile) {
         window.turnstile.remove(widgetIdRef.current);
       }

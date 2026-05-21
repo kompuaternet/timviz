@@ -12,6 +12,7 @@ export type ServiceTemplate = {
 export type CategoryTemplate = {
   key: string;
   title: string;
+  sortOrder?: number;
   heroTitle: string;
   heroDescription: string;
   topSuggestions: ServiceTemplate[];
@@ -655,12 +656,110 @@ export function getTemplateBasePriceUah(serviceName: string) {
   return Math.round(stats.total / stats.count);
 }
 
-export const categoryOptions = SERVICE_TEMPLATE_CATALOG.map((item) => item.title);
+const CATEGORY_ORDER_DEFAULT = 500;
+
+const categorySortOrderEntries: Array<[string, number]> = [
+  ["Ногти", 10],
+  ["Нігті", 10],
+  ["Nails", 10],
+  ["Волосы", 20],
+  ["Волосся", 20],
+  ["Hair", 20],
+  ["Парикмахерская", 20],
+  ["Парикмахер", 20],
+  ["Брови и ресницы", 30],
+  ["Брови та вії", 30],
+  ["Brows & Lashes", 30],
+  ["Brows and lashes", 30],
+  ["Массаж", 40],
+  ["Масаж", 40],
+  ["Massage", 40],
+  ["Массажный салон", 40],
+  ["Косметология", 50],
+  ["Косметологія", 50],
+  ["Cosmetology", 50],
+  ["Медспа", 50],
+  ["Салон красоты", 50],
+  ["Обличчя", 60],
+  ["Лицо", 60],
+  ["Face Care", 60],
+  ["Face", 60],
+  ["Депіляція", 70],
+  ["Депиляция", 70],
+  ["Hair Removal", 70],
+  ["Салон депиляции", 70],
+  ["Тіло", 80],
+  ["Тело", 80],
+  ["Body / SPA", 80],
+  ["Body", 80],
+  ["Спа-салон и сауна", 80],
+  ["Студия загара", 80],
+  ["Макіяж", 90],
+  ["Макияж", 90],
+  ["Makeup", 90],
+  ["Перманент", 100],
+  ["Перманентный макияж", 100],
+  ["Permanent Makeup", 100],
+  ["Тату / Перманент", 100],
+  ["Тату", 110],
+  ["Tattoo", 110],
+  ["Тату и пирсинг", 110],
+  ["Навчання", 120],
+  ["Обучение", 120],
+  ["Education", 120],
+  ["Ремонт", 130],
+  ["Repair", 130],
+  ["Інше", 900],
+  ["Другое", 900],
+  ["Другая", 900],
+  ["Other", 900],
+  ["Без категорії", 999],
+  ["Без категории", 999],
+  ["No Category", 999],
+  ["No category", 999],
+  ["Uncategorized", 999],
+];
+
+function normalizeCategoryOrderKey(category: string) {
+  return category.trim().toLocaleLowerCase();
+}
+
+export const categorySortOrderByName = new Map(
+  categorySortOrderEntries.map(([category, order]) => [normalizeCategoryOrderKey(category), order])
+);
+
+export function getCategorySortOrder(category: string) {
+  return categorySortOrderByName.get(normalizeCategoryOrderKey(category)) ?? CATEGORY_ORDER_DEFAULT;
+}
+
+export function compareServiceCategories(left: string, right: string) {
+  const orderDiff = getCategorySortOrder(left) - getCategorySortOrder(right);
+  return orderDiff || left.localeCompare(right, "ru");
+}
+
+export function sortCategoryTemplates<T extends { title: string }>(catalog: T[]) {
+  return [...catalog].sort((left, right) => compareServiceCategories(left.title, right.title));
+}
+
+export const categoryOptions = sortCategoryTemplates(SERVICE_TEMPLATE_CATALOG).map((item) => item.title);
 
 const categoryNameTranslations: Record<string, LocalizedServiceText> = {
+  "Волосы": { ru: "Волосы", uk: "Волосся", en: "Hair", fr: "Cheveux", pl: "Włosy", cs: "Vlasy", es: "Cabello", de: "Haare" },
+  "Массаж": { ru: "Массаж", uk: "Масаж", en: "Massage", fr: "Massage", pl: "Masaż", cs: "Masáž", es: "Masaje", de: "Massage" },
+  "Косметология": { ru: "Косметология", uk: "Косметологія", en: "Cosmetology", fr: "Cosmétologie", pl: "Kosmetologia", cs: "Kosmetologie", es: "Cosmetología", de: "Kosmetologie" },
+  "Лицо": { ru: "Лицо", uk: "Обличчя", en: "Face Care", fr: "Soin du visage", pl: "Pielęgnacja twarzy", cs: "Péče o obličej", es: "Cuidado facial", de: "Gesichtspflege" },
+  "Депиляция": { ru: "Депиляция", uk: "Депіляція", en: "Hair Removal", fr: "Épilation", pl: "Depilacja", cs: "Depilace", es: "Depilación", de: "Haarentfernung" },
+  "Тело": { ru: "Тело", uk: "Тіло", en: "Body / SPA", fr: "Corps / SPA", pl: "Ciało / SPA", cs: "Tělo / SPA", es: "Cuerpo / SPA", de: "Körper / SPA" },
+  "Макияж": { ru: "Макияж", uk: "Макіяж", en: "Makeup", fr: "Maquillage", pl: "Makijaż", cs: "Make-up", es: "Maquillaje", de: "Make-up" },
+  "Перманентный макияж": { ru: "Перманентный макияж", uk: "Перманент", en: "Permanent Makeup", fr: "Maquillage permanent", pl: "Makijaż permanentny", cs: "Permanentní make-up", es: "Maquillaje permanente", de: "Permanent Make-up" },
+  "Тату": { ru: "Тату", uk: "Тату", en: "Tattoo", fr: "Tatouage", pl: "Tatuaż", cs: "Tetování", es: "Tatuaje", de: "Tattoo" },
+  "Обучение": { ru: "Обучение", uk: "Навчання", en: "Education", fr: "Formation", pl: "Edukacja", cs: "Vzdělávání", es: "Formación", de: "Schulung" },
+  "Ремонт": { ru: "Ремонт", uk: "Ремонт", en: "Repair", fr: "Réparation", pl: "Naprawa", cs: "Oprava", es: "Reparación", de: "Reparatur" },
+  "Другое": { ru: "Другое", uk: "Інше", en: "Other", fr: "Autre", pl: "Inne", cs: "Jiné", es: "Otro", de: "Andere" },
+  "Без категории": { ru: "Без категории", uk: "Без категорії", en: "No Category", fr: "Sans catégorie", pl: "Bez kategorii", cs: "Bez kategorie", es: "Sin categoría", de: "Ohne Kategorie" },
   "Парикмахерская": { ru: "Парикмахерская", uk: "Перукарня", en: "Hair salon", fr: "Salon de coiffure", pl: "Salon fryzjerski", cs: "Kadeřnictví", es: "Peluquería", de: "Friseursalon" },
   "Ногти": { ru: "Ногти", uk: "Нігті", en: "Nails", fr: "Ongles", pl: "Paznokcie", cs: "Nehty", es: "Uñas", de: "Nägel" },
-  "Брови и ресницы": { ru: "Брови и ресницы", uk: "Брови та вії", en: "Brows and lashes", fr: "Sourcils et cils", pl: "Brwi i rzęsy", cs: "Obočí a řasy", es: "Cejas y pestañas", de: "Augenbrauen und Wimpern" },
+  "Брови и ресницы": { ru: "Брови и ресницы", uk: "Брови та вії", en: "Brows & Lashes", fr: "Sourcils et cils", pl: "Brwi i rzęsy", cs: "Obočí a řasy", es: "Cejas y pestañas", de: "Augenbrauen und Wimpern" },
   "Салон красоты": { ru: "Салон красоты", uk: "Салон краси", en: "Beauty salon", fr: "Institut de beauté", pl: "Salon beauty", cs: "Kosmetický salon", es: "Salón de belleza", de: "Kosmetikstudio" },
   "Медспа": { ru: "Медспа", uk: "Медспа", en: "Medspa", fr: "Medspa", pl: "Medspa", cs: "Medspa", es: "Medspa", de: "Medspa" },
   "Парикмахер": { ru: "Парикмахер", uk: "Перукар", en: "Hairdresser", fr: "Coiffeur", pl: "Fryzjer", cs: "Kadeřník", es: "Peluquero", de: "Friseur" },
@@ -670,7 +769,7 @@ const categoryNameTranslations: Record<string, LocalizedServiceText> = {
   "Тату и пирсинг": { ru: "Тату и пирсинг", uk: "Тату та пірсинг", en: "Tattoo and piercing", fr: "Tatouage et piercing", pl: "Tatuaż i piercing", cs: "Tetování a piercing", es: "Tatuajes y piercing", de: "Tattoo und Piercing" },
   "Студия загара": { ru: "Студия загара", uk: "Студія засмаги", en: "Tanning studio", fr: "Studio de bronzage", pl: "Studio opalania", cs: "Solární studio", es: "Centro de bronceado", de: "Sonnenstudio" },
   "Физиотерапия": { ru: "Физиотерапия", uk: "Фізіотерапія", en: "Physiotherapy", fr: "Kinésithérapie", pl: "Fizjoterapia", cs: "Fyzioterapie", es: "Fisioterapia", de: "Physiotherapie" },
-  "Другая": { ru: "Другая", uk: "Інша", en: "Other", fr: "Autre", pl: "Inne", cs: "Jiné", es: "Otra", de: "Andere" }
+  "Другая": { ru: "Другое", uk: "Інше", en: "Other", fr: "Autre", pl: "Inne", cs: "Jiné", es: "Otro", de: "Andere" }
 };
 
 export function localizeCategoryName(category: string, language: ServiceTemplateLanguage) {
@@ -678,7 +777,7 @@ export function localizeCategoryName(category: string, language: ServiceTemplate
 }
 
 export function getCategoryOptions(catalog: CategoryTemplate[] = SERVICE_TEMPLATE_CATALOG) {
-  return catalog.map((item) => item.title);
+  return sortCategoryTemplates(catalog).map((item) => item.title);
 }
 
 export function getCategoryTemplate(

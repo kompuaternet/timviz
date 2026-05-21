@@ -4,7 +4,10 @@ import { getSupabaseAdmin, isSupabaseConfigured } from "./supabase";
 import {
   CategoryTemplate,
   SERVICE_TEMPLATE_CATALOG,
+  compareServiceCategories,
+  getCategorySortOrder,
   getServiceLocalizedText,
+  sortCategoryTemplates,
   type LocalizedServiceText,
   type ServiceTemplate
 } from "./service-templates";
@@ -102,11 +105,11 @@ function normalizeItems(input: unknown): GlobalCatalogItem[] {
 
   return rows
     .filter((item): item is GlobalCatalogItem => item !== null)
-    .sort((left, right) => left.category.localeCompare(right.category) || left.sortOrder - right.sortOrder);
+    .sort((left, right) => compareServiceCategories(left.category, right.category) || left.sortOrder - right.sortOrder);
 }
 
 function flattenStaticCatalog(): GlobalCatalogItem[] {
-  return SERVICE_TEMPLATE_CATALOG.flatMap((category) => [
+  return sortCategoryTemplates(SERVICE_TEMPLATE_CATALOG).flatMap((category) => [
     ...category.topSuggestions.map((service, index) => ({
       id: `${category.title}-top-${index}`,
       category: category.title,
@@ -115,7 +118,7 @@ function flattenStaticCatalog(): GlobalCatalogItem[] {
       localizedName: service.localizedName,
       durationMinutes: service.durationMinutes,
       price: service.price,
-      sortOrder: index
+      sortOrder: getCategorySortOrder(category.title) * 1000 + index
     })),
     ...category.popularServices.map((service, index) => ({
       id: `${category.title}-popular-${index}`,
@@ -125,7 +128,7 @@ function flattenStaticCatalog(): GlobalCatalogItem[] {
       localizedName: service.localizedName,
       durationMinutes: service.durationMinutes,
       price: service.price,
-      sortOrder: index
+      sortOrder: getCategorySortOrder(category.title) * 1000 + 100 + index
     }))
   ]);
 }
@@ -161,7 +164,7 @@ function buildCatalogFromItems(items: GlobalCatalogItem[]): CategoryTemplate[] {
     return SERVICE_TEMPLATE_CATALOG;
   }
 
-  const categories = Array.from(new Set(items.map((item) => item.category)));
+  const categories = Array.from(new Set(items.map((item) => item.category))).sort(compareServiceCategories);
 
   return categories.map((categoryTitle) => {
     const meta = staticMetaForCategory(categoryTitle);

@@ -109,6 +109,15 @@ create table if not exists public.global_service_catalog (
   created_at timestamptz not null default timezone('utc', now())
 );
 
+create table if not exists public.service_categories (
+  id text primary key,
+  name text not null,
+  slug text not null unique,
+  sort_order integer not null default 500,
+  is_system boolean not null default true,
+  created_at timestamptz not null default timezone('utc', now())
+);
+
 create table if not exists public.business_memberships (
   id text primary key,
   business_id text not null references public.businesses(id) on delete cascade,
@@ -311,6 +320,8 @@ alter table public.business_services add column if not exists is_blocked boolean
 alter table public.global_service_catalog add column if not exists localized_name_ru text;
 alter table public.global_service_catalog add column if not exists localized_name_uk text;
 alter table public.global_service_catalog add column if not exists localized_name_en text;
+alter table public.service_categories add column if not exists sort_order integer not null default 500;
+alter table public.service_categories add column if not exists is_system boolean not null default true;
 alter table public.business_memberships add column if not exists work_schedule_mode text;
 alter table public.business_memberships add column if not exists work_schedule jsonb;
 alter table public.business_memberships add column if not exists custom_schedule jsonb;
@@ -365,6 +376,7 @@ create index if not exists business_join_requests_business_status_viewed_idx on 
 create index if not exists business_services_business_idx on public.business_services (business_id, sort_order, created_at);
 create index if not exists business_services_blocked_idx on public.business_services (is_blocked, created_at desc);
 create index if not exists business_services_source_idx on public.business_services (source, moderation_status, is_blocked, created_at desc);
+create index if not exists service_categories_sort_order_idx on public.service_categories (sort_order, name);
 create index if not exists business_staff_invitations_business_idx on public.business_staff_invitations (business_id, created_at desc);
 create index if not exists business_staff_invitations_business_status_email_idx on public.business_staff_invitations (business_id, status, email);
 create unique index if not exists business_staff_invitations_token_uidx on public.business_staff_invitations (token);

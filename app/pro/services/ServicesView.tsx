@@ -6,9 +6,11 @@ import ProWorkspaceHeader from "../ProWorkspaceHeader";
 import { isProPremiumActive } from "../premium-status";
 import styles from "../pro.module.css";
 import {
+  compareServiceCategories,
   getServiceLocalizationKey,
   localizeCategoryName,
   localizeServiceName,
+  sortCategoryTemplates,
   type CategoryTemplate
 } from "../../../lib/service-templates";
 import type { OnboardingCtaState } from "../../../lib/pro-onboarding";
@@ -172,7 +174,7 @@ export default function ServicesView({ initialWorkspace, catalog, onboardingCta 
         ...catalog.map((item) => item.title),
         t.common.noCategory
       ])
-    );
+    ).sort(compareServiceCategories);
   }, [catalog, initialWorkspace.business.categories, services, t.common.allCategories, t.common.noCategory]);
 
   const visibleServices = useMemo(() => {
@@ -238,7 +240,7 @@ export default function ServicesView({ initialWorkspace, catalog, onboardingCta 
   const catalogGroups = useMemo(() => {
     const query = catalogQuery.trim().toLowerCase();
 
-    return catalog
+    return sortCategoryTemplates(catalog)
       .map((category) => {
         const categoryServices = [...category.topSuggestions, ...category.popularServices]
           .map((service) => ({
