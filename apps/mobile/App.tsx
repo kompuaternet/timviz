@@ -607,7 +607,17 @@ type PushBooleanSettingKey =
   | "notificationsCabinetBooking"
   | "notificationsRescheduled"
   | "notificationsCancelled"
-  | "notificationsReminder";
+  | "notificationsReminder"
+  | "notificationsToday";
+
+const PUSH_BOOLEAN_SETTING_KEYS: PushBooleanSettingKey[] = [
+  "notificationsNewBooking",
+  "notificationsCabinetBooking",
+  "notificationsRescheduled",
+  "notificationsCancelled",
+  "notificationsReminder",
+  "notificationsToday",
+];
 
 type SupportChatMessage = {
   id: string;
@@ -12100,7 +12110,6 @@ function ServicesTab({
         <Panel title={t.yourServices}>
           {services.length ? (
             <>
-              <Text style={styles.compactHelperText}>{t.myServicesHint}</Text>
               {services.map((service) => {
                 const isEditing = editId === service.id;
                 return (
@@ -14670,7 +14679,7 @@ function SettingsTab({
 
       if (pushResult.status !== "granted") {
         setPushError(t.pushPermissionDenied);
-        return;
+        return false;
       }
 
       const payload = await apiFetch("/api/mobile/pro/push", {
@@ -14685,6 +14694,7 @@ function SettingsTab({
       });
       setPushPanel(normalizePushPanel(payload, pushPanel));
       setStatusText(t.pushSaved);
+      return true;
     } catch (error) {
       const message = error instanceof Error ? error.message : "";
       setPushError(
@@ -14694,6 +14704,7 @@ function SettingsTab({
             ? t.pushIosCapabilityMissing || t.pushSaveFailed
             : message || t.pushSaveFailed
       );
+      return false;
     } finally {
       setIsPushSaving(false);
     }
@@ -14732,6 +14743,23 @@ function SettingsTab({
   function togglePushSetting(key: PushBooleanSettingKey) {
     if (!pushPanel) return;
     void updatePushSettings({ [key]: !pushPanel.settings[key] });
+  }
+
+  const pushGlobalEnabled = Boolean(pushPanel?.connected && PUSH_BOOLEAN_SETTING_KEYS.some((key) => pushPanel.settings[key]));
+
+  async function togglePushGlobal() {
+    if (isPushSaving || isPushLoading) return;
+    if (pushGlobalEnabled) {
+      await updatePushSettings(Object.fromEntries(PUSH_BOOLEAN_SETTING_KEYS.map((key) => [key, false])) as Partial<PushPanelState["settings"]>);
+      return;
+    }
+
+    if (!pushPanel?.connected || pushPermissionStatus !== "granted") {
+      const registered = await registerPushNotifications();
+      if (!registered) return;
+    }
+
+    await updatePushSettings(Object.fromEntries(PUSH_BOOLEAN_SETTING_KEYS.map((key) => [key, true])) as Partial<PushPanelState["settings"]>);
   }
 
   const settingsBusinessName = workspace?.business.name || workspace?.professional.email || "";
@@ -14785,7 +14813,6 @@ function SettingsTab({
             <View style={styles.premiumMobileHeader}>
               <View style={styles.premiumMobileHeaderCopy}>
                 <Text style={styles.settingsCardTitle} numberOfLines={2}>{t.premiumSubscriptionTitle}</Text>
-                <Text style={styles.clientOptionCaption}>{t.premiumSubscriptionText}</Text>
                 {premiumStatusDetail ? <Text style={styles.premiumMobileDetail}>{premiumStatusDetail}</Text> : null}
               </View>
               <View style={[styles.premiumMobileBadge, hasPremium && styles.premiumMobileBadgeActive]}>
@@ -14865,14 +14892,13 @@ function SettingsTab({
                     </Pressable>
                   ) : null}
                 </View>
-                <Text style={styles.clientOptionCaption}>{t.avatarHint}</Text>
               </View>
             </View>
             <Field label={t.firstName} value={draft.firstName} onChangeText={(value) => updateDraft("firstName", value)} onBlur={() => queueSettingsPatch({ professional: { firstName: draft.firstName } })} />
             <Field label={t.lastName} value={draft.lastName} onChangeText={(value) => updateDraft("lastName", value)} onBlur={() => queueSettingsPatch({ professional: { lastName: draft.lastName } })} />
             <Field label={t.email} value={draft.email} onChangeText={(value) => updateDraft("email", value)} onBlur={() => queueSettingsPatch({ professional: { email: draft.email } })} keyboardType="email-address" autoCapitalize="none" />
             <Field label={t.phone} value={draft.phone} onChangeText={(value) => updateDraft("phone", value)} onBlur={() => queueSettingsPatch({ professional: { phone: draft.phone } })} keyboardType="phone-pad" />
-              <Field label={t.newPassword} hint={t.leaveBlankPassword} value={newPassword} onChangeText={setNewPassword} secureTextEntry />
+              <Field label={t.newPassword} value={newPassword} onChangeText={setNewPassword} secureTextEntry />
               <SettingsToggleRow label={t.unlockWithFaceId} value={biometricEnabled} onPress={onToggleBiometric} disabled={!biometricAvailable} />
               {!biometricAvailable ? <Text style={styles.clientOptionCaption}>{t.biometricUnavailable}</Text> : null}
             </Panel>
@@ -14987,7 +15013,6 @@ function SettingsTab({
               ))}
             </View>
             <Text style={styles.label}>{t.categoriesText}</Text>
-            <Text style={styles.compactHelperText}>{t.categoriesHint}</Text>
             <MultiCategoryPicker
               t={t}
               language={language}
@@ -15009,7 +15034,6 @@ function SettingsTab({
                 <Text style={styles.statLabel}>{t.categoriesText}</Text>
               </View>
             </View>
-            <Text style={styles.compactHelperText}>{t.myServicesHint}</Text>
             {(workspace?.services || []).slice(0, 4).map((service) => (
               <View key={service.id} style={styles.settingsMiniRow}>
                 <View style={[styles.serviceDot, { backgroundColor: service.color || "#8ED1F2" }]} />
@@ -15037,7 +15061,6 @@ function SettingsTab({
               <Text style={styles.statLabel}>{t.staffSchedule}</Text>
             </View>
           </View>
-          <Text style={styles.emptyText}>{t.staffScheduleHint}</Text>
           <SecondaryButton label={t.manageSchedule} onPress={() => setActiveTab("staff")} />
         </Panel>
       ) : null}
@@ -15048,13 +15071,12 @@ function SettingsTab({
             <View style={[styles.telegramDot, pushPanel?.connected ? styles.telegramDotConnected : styles.telegramDotDisconnected]} />
             <View style={styles.settingsMiniInfo}>
               <Text style={styles.settingsCardTitle}>{pushPanel?.connected ? t.pushEnabled : t.pushDisabled}</Text>
-              <Text style={styles.clientOptionCaption} numberOfLines={2}>{t.pushHint}</Text>
             </View>
           </View>
           {pushError ? <Text style={styles.settingsMutedNotice}>{pushError}</Text> : null}
           {isPushLoading ? <ActivityIndicator color="#6D4AFF" /> : null}
+          <SettingsToggleRow label={pushGlobalEnabled ? t.pushEnabled : t.pushDisabled} value={pushGlobalEnabled} onPress={() => void togglePushGlobal()} disabled={isPushSaving || isPushLoading} />
           <View style={styles.settingsActionRow}>
-            <SecondaryButton label={t.pushEnable} onPress={() => void registerPushNotifications()} disabled={isPushSaving} />
             {pushPermissionStatus === "denied" ? (
               <SecondaryButton label={t.pushOpenSettings} onPress={() => Linking.openSettings().catch(() => undefined)} />
             ) : null}
@@ -15085,14 +15107,13 @@ function SettingsTab({
             <View style={[styles.telegramDot, telegramPanel?.connected || workspace?.telegram?.connected ? styles.telegramDotConnected : styles.telegramDotDisconnected]} />
             <View style={styles.settingsMiniInfo}>
               <Text style={styles.settingsCardTitle}>{telegramPanel?.connected || workspace?.telegram?.connected ? t.connected : t.notConnected}</Text>
-              <Text style={styles.clientOptionCaption}>{telegramPanel?.chatId || workspace?.telegram?.chatId || t.telegramHint}</Text>
+              {telegramPanel?.chatId || workspace?.telegram?.chatId ? <Text style={styles.clientOptionCaption}>{telegramPanel?.chatId || workspace?.telegram?.chatId}</Text> : null}
             </View>
           </View>
           {telegramError ? <Text style={styles.settingsMutedNotice}>{telegramError}</Text> : null}
           {isTelegramLoading ? <ActivityIndicator color="#6D4AFF" /> : null}
           {telegramPanel ? (
             <>
-              <InfoLine label={t.telegramTokenExpires} value={telegramPanel.tokenExpiresAt || t.empty} />
               <View style={styles.settingsActionRow}>
                 <SecondaryButton label={telegramPanel.connected ? t.telegramOpenBot : t.telegramConnectButton} onPress={openTelegramBot} disabled={!telegramPanel.deepLink} />
                 <SecondaryButton label={t.telegramCopyLink} onPress={shareTelegramLink} disabled={!telegramPanel.deepLink} />
@@ -15132,7 +15153,6 @@ function SettingsTab({
               ) : null}
               {telegramSection === "support" ? (
                 <View>
-                  <Text style={styles.emptyText}>{t.telegramSupportHint}</Text>
                   <SettingsToggleRow label={t.telegramForwarding} value={telegramPanel.settings.forwardingEnabled} onPress={() => toggleTelegramSetting("forwardingEnabled")} disabled={isTelegramSaving} />
                 </View>
               ) : null}
