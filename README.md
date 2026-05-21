@@ -30,6 +30,24 @@ npm run dev -- --hostname 127.0.0.1 --port 3005
 - Для подключения Supabase скопируй `.env.example` в `.env.local`.
 - SQL для таблиц лежит в `supabase/schema.sql`.
 
+## Apple вход на сайте
+
+Для веб-входа через Apple нужен Services ID из Apple Developer. iOS Bundle ID (`com.timviz.master`) используется для мобильного приложения и проверки audience, но не заменяет Services ID для сайта.
+
+Минимальные env:
+
+1. `APPLE_SERVICE_ID=com.timviz.web` (или фактический Services ID из Apple Developer).
+2. `APPLE_CLIENT_ID=com.timviz.web` (можно указать тот же Services ID для совместимости со старым названием env).
+3. `APPLE_REDIRECT_URI=https://timviz.com/api/pro/auth/apple/callback`.
+4. `APP_URL=https://timviz.com` (если `APPLE_REDIRECT_URI` не задан, callback строится из публичного URL сайта).
+
+В Apple Developer для Services ID добавь:
+
+1. Domain: `timviz.com`.
+2. Return URL: `https://timviz.com/api/pro/auth/apple/callback`.
+
+Если домен или Services ID отличаются, те же значения должны совпадать в Apple Developer, Railway env и `.env.local`.
+
 ## Бэкап БД
 
 В проект добавлены скрипты резервного копирования и восстановления:

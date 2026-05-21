@@ -1,4 +1,5 @@
 import { createPublicKey, createVerify } from "crypto";
+import { getPublicAppUrl } from "./app-url";
 
 export type AppleOAuthProfile = {
   email: string;
@@ -16,6 +17,30 @@ function splitEnvList(value: unknown) {
     .split(",")
     .map((item) => item.trim())
     .filter(Boolean);
+}
+
+function ensureEnv(name: string) {
+  const value = process.env[name]?.trim();
+  if (!value) {
+    throw new Error(`${name} is not configured.`);
+  }
+  return value;
+}
+
+export function getAppleOAuthSettings(request?: Request) {
+  const clientId = process.env.APPLE_SERVICE_ID?.trim() || ensureEnv("APPLE_CLIENT_ID");
+  const redirectUri =
+    process.env.APPLE_REDIRECT_URI?.trim() ||
+    `${getPublicAppUrl(request)}/api/pro/auth/apple/callback`;
+
+  if (!redirectUri.startsWith("https://") && process.env.NODE_ENV === "production") {
+    throw new Error("APPLE_REDIRECT_URI must be an HTTPS URL in production.");
+  }
+
+  return {
+    clientId,
+    redirectUri
+  };
 }
 
 function decodeBase64Url(value: string) {
@@ -65,7 +90,8 @@ export function parseAppleUserProfile(rawUser: string) {
 
 export async function verifyAppleIdentityToken(
   idToken: string,
-  fallbackProfile: Partial<AppleOAuthProfile> = {}
+  fallbackProfile: Partial<AppleOAuthProfile> = {},
+  expectedNonce = ""
 ): Promise<AppleOAuthProfile> {
   const [encodedHeader, encodedPayload, encodedSignature] = idToken.split(".");
   if (!encodedHeader || !encodedPayload || !encodedSignature) {
@@ -77,6 +103,7 @@ export async function verifyAppleIdentityToken(
     iss?: string;
     aud?: string;
     exp?: number;
+    nonce?: string;
     email?: string;
     email_verified?: string | boolean;
   }>(encodedPayload);
@@ -87,6 +114,10 @@ export async function verifyAppleIdentityToken(
 
   if (!payload.exp || payload.exp * 1000 < Date.now()) {
     throw new Error("Apple token expired.");
+  }
+
+  if (expectedNonce && payload.nonce !== expectedNonce) {
+    throw new Error("Apple token nonce is invalid.");
   }
 
   if (payload.email_verified === false || payload.email_verified === "false") {

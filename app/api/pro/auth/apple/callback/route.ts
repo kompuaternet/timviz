@@ -9,6 +9,7 @@ import {
 } from "../../../../../../lib/pro-data";
 
 const APPLE_OAUTH_STATE_COOKIE = "rezervo_apple_oauth_state";
+const APPLE_OAUTH_NONCE_COOKIE = "rezervo_apple_oauth_nonce";
 const APPLE_OAUTH_RETURN_TO_COOKIE = "rezervo_apple_oauth_return_to";
 
 function normalizeReturnTo(value: string, fallback = "/pro/workspace") {
@@ -19,17 +20,29 @@ function normalizeReturnTo(value: string, fallback = "/pro/workspace") {
   return trimmed;
 }
 
+function isSecureRequest(request: Request) {
+  return getPublicAppUrl(request).startsWith("https://");
+}
+
 function clearAppleCookies(cookieStore: Awaited<ReturnType<typeof cookies>>, isSecure: boolean) {
+  const sameSite = isSecure ? "none" : "lax";
   cookieStore.set(APPLE_OAUTH_STATE_COOKIE, "", {
     httpOnly: true,
-    sameSite: "lax",
+    sameSite,
     path: "/",
     secure: isSecure,
     maxAge: 0
   });
   cookieStore.set(APPLE_OAUTH_RETURN_TO_COOKIE, "", {
     httpOnly: true,
-    sameSite: "lax",
+    sameSite,
+    path: "/",
+    secure: isSecure,
+    maxAge: 0
+  });
+  cookieStore.set(APPLE_OAUTH_NONCE_COOKIE, "", {
+    httpOnly: true,
+    sameSite,
     path: "/",
     secure: isSecure,
     maxAge: 0
@@ -43,10 +56,10 @@ function redirectWithError(request: Request, error: "state" | "oauth") {
 }
 
 async function handleAppleCallback(request: Request, form: FormData) {
-  const url = new URL(request.url);
-  const isSecure = url.protocol === "https:";
+  const isSecure = isSecureRequest(request);
   const cookieStore = await cookies();
   const expectedState = cookieStore.get(APPLE_OAUTH_STATE_COOKIE)?.value || "";
+  const expectedNonce = cookieStore.get(APPLE_OAUTH_NONCE_COOKIE)?.value || "";
   const returnTo = normalizeReturnTo(cookieStore.get(APPLE_OAUTH_RETURN_TO_COOKIE)?.value || "");
   const state = String(form.get("state") || "").trim();
   const idToken = String(form.get("id_token") || "").trim();
@@ -59,7 +72,7 @@ async function handleAppleCallback(request: Request, form: FormData) {
 
   try {
     const appleUser = parseAppleUserProfile(rawUser);
-    const appleProfile = await verifyAppleIdentityToken(idToken, appleUser);
+    const appleProfile = await verifyAppleIdentityToken(idToken, appleUser, expectedNonce);
     let professional = await getProfessionalProfileByEmail(appleProfile.email);
 
     if (professional?.accountStatus === "pending_email") {
