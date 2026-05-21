@@ -155,6 +155,7 @@ type PendingServiceSave = {
   optimisticService: ServiceRecord;
   payload: {
     name: string;
+    localizedName?: LocalizedText;
     category: string;
     durationMinutes: number;
     price: number;
@@ -166,6 +167,7 @@ type PendingServiceSave = {
 
 type ServiceUpdatePayload = {
   name: string;
+  localizedName?: LocalizedText;
   category: string;
   durationMinutes: number;
   price: number;
@@ -7014,6 +7016,7 @@ export default function App() {
   function servicePatchPayload(service: ServiceRecord): ServiceUpdatePayload {
     return {
       name: safeText(service.name).trim(),
+      localizedName: service.localizedName,
       category: getCanonicalServiceCategory(service.category),
       durationMinutes: Number(service.durationMinutes || 60),
       price: Number(service.price || 0),
@@ -8249,14 +8252,15 @@ export default function App() {
       Alert.alert(t.requiredTitle, t.requiredText);
       return false;
     }
+    const serviceName = serviceDraft.name.trim();
+    const localizedName = SUPPORTED_APP_LANGUAGES.reduce<LocalizedText>(
+      (acc, item) => ({ ...acc, [item]: serviceName }),
+      {}
+    );
     const optimisticService: ServiceRecord = {
       id: createLocalId("service"),
-      name: serviceDraft.name.trim(),
-      localizedName: {
-        ru: serviceDraft.name.trim(),
-        uk: serviceDraft.name.trim(),
-        en: serviceDraft.name.trim(),
-      },
+      name: serviceName,
+      localizedName,
       category: serviceDraft.category.trim() || DEFAULT_SERVICE_CATEGORY,
       durationMinutes: Math.max(5, parseServiceNumberInput(serviceDraft.durationMinutes, 60)),
       price: Math.max(0, parseServiceNumberInput(serviceDraft.price, 0)),
@@ -8273,6 +8277,7 @@ export default function App() {
       optimisticService,
       payload: {
         name: optimisticService.name,
+        localizedName: optimisticService.localizedName,
         category: getCanonicalServiceCategory(optimisticService.category),
         durationMinutes: optimisticService.durationMinutes || 60,
         price: optimisticService.price || 0,
@@ -8337,14 +8342,19 @@ export default function App() {
       return false;
     }
 
+    const existingService = workspace?.services.find((service) => service.id === serviceId);
+    const nextLocalizedName: LocalizedText = {
+      ...(existingService?.localizedName || {}),
+      [language]: draft.name.trim(),
+    };
+    if (!nextLocalizedName.ru && existingService?.name) {
+      nextLocalizedName.ru = existingService.name;
+    }
+
     const updatedService: ServiceRecord = {
       id: serviceId,
-      name: draft.name.trim(),
-      localizedName: {
-        ru: draft.name.trim(),
-        uk: draft.name.trim(),
-        en: draft.name.trim(),
-      },
+      name: language === "ru" ? draft.name.trim() : existingService?.name || draft.name.trim(),
+      localizedName: nextLocalizedName,
       category: getCanonicalServiceCategory(draft.category),
       durationMinutes: Math.max(5, parseServiceNumberInput(draft.durationMinutes, 60)),
       price: Math.max(0, parseServiceNumberInput(draft.price, 0)),
@@ -8397,6 +8407,7 @@ export default function App() {
       optimisticService,
       payload: {
         name: optimisticService.name,
+        localizedName: optimisticService.localizedName,
         category: getCanonicalServiceCategory(optimisticService.category),
         durationMinutes: optimisticService.durationMinutes || 60,
         price: optimisticService.price,
@@ -11921,7 +11932,7 @@ function ServicesTab({
   function startEdit(service: ServiceRecord) {
     setEditId(service.id);
     setEditDraft({
-      name: service.name,
+      name: getServiceDisplayName(service, language) || service.name,
       category: getCanonicalServiceCategory(service.category),
       durationMinutes: String(service.durationMinutes || 60),
       price: String(service.price || 0),

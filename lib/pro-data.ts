@@ -4801,6 +4801,7 @@ export async function updateWorkspaceSettingsForProfessional(
 export async function ensureServiceForProfessional(input: {
   professionalId: string;
   serviceName: string;
+  localizedName?: Partial<LocalizedServiceText>;
   category?: string;
   durationMinutes?: number;
   price?: number;
@@ -4819,7 +4820,7 @@ export async function ensureServiceForProfessional(input: {
     throw new Error("Workspace not found.");
   }
 
-  const requestedLocalizedName = getServiceLocalizedText(serviceName);
+  const requestedLocalizedName = getServiceLocalizedText(serviceName, input.localizedName);
   const existing = workspace.services.find((service) =>
     serviceDuplicateKeysOverlap(service.name, service.localizedName, serviceName, requestedLocalizedName)
   );
@@ -4952,6 +4953,7 @@ export async function addServicesForProfessional(input: {
   services: Array<{
     name: string;
     category?: string;
+    localizedName?: Partial<LocalizedServiceText>;
     durationMinutes?: number;
     price?: number;
     color?: string;
@@ -4965,6 +4967,7 @@ export async function addServicesForProfessional(input: {
       await ensureServiceForProfessional({
         professionalId: input.professionalId,
         serviceName: service.name,
+        localizedName: service.localizedName,
         category: service.category,
         durationMinutes: service.durationMinutes,
         price: service.price,
@@ -4981,6 +4984,7 @@ export async function updateServiceForProfessional(input: {
   professionalId: string;
   serviceId: string;
   name?: string;
+  localizedName?: Partial<LocalizedServiceText>;
   category?: string;
   durationMinutes?: number;
   price?: number;
@@ -5006,6 +5010,7 @@ export async function updateServiceForProfessional(input: {
 
   const updates = {
     name: nextName,
+    localizedName: getServiceLocalizedText(nextName, input.localizedName || existing.localizedName),
     category: input.category || existing.category || "Без категории",
     price:
       typeof input.price === "number" && Number.isFinite(input.price)
@@ -5034,6 +5039,7 @@ export async function updateServiceForProfessional(input: {
       .from("business_services")
       .update({
         name: updates.name,
+        localized_name: updates.localizedName,
         category: updates.category,
         price: updates.price,
         duration_minutes: updates.durationMinutes,

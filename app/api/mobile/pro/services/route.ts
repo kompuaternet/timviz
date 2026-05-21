@@ -14,6 +14,7 @@ import { sendSuperadminTelegramNotification } from "../../../../../lib/telegram-
 
 type ServiceInput = {
   name?: string;
+  localizedName?: Record<string, string>;
   category?: string;
   durationMinutes?: number;
   price?: number;
@@ -81,6 +82,7 @@ export async function POST(request: Request) {
       : [
           {
             name: body.name,
+            localizedName: body.localizedName,
             category: body.category,
             durationMinutes: body.durationMinutes,
             price: body.price,
@@ -93,6 +95,7 @@ export async function POST(request: Request) {
       const service = await ensureServiceForProfessional({
         professionalId,
         serviceName: String(services[0].name || ""),
+        localizedName: services[0].localizedName,
         category: services[0].category,
         durationMinutes: Number(services[0].durationMinutes || 60),
         price: Number(services[0].price || 0),
@@ -119,6 +122,7 @@ export async function POST(request: Request) {
       professionalId,
       services: services.map((service) => ({
         name: String(service.name || ""),
+        localizedName: service.localizedName,
         category: service.category,
         durationMinutes: Number(service.durationMinutes || 60),
         price: Number(service.price || 0),
@@ -167,6 +171,7 @@ export async function PATCH(request: Request) {
       professionalId,
       serviceId: String(body.serviceId || ""),
       name: body.name,
+      localizedName: body.localizedName,
       category: body.category,
       durationMinutes: Number(body.durationMinutes || 0),
       price: Number(body.price || 0),
