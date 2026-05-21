@@ -104,7 +104,16 @@ const staffText = {
     roleFallback: "Сотрудник",
     emptySearch: "По этому запросу никого не нашли.",
     requestFrom: "Запрос от",
-    inviteFrom: "Приглашение от"
+    inviteFrom: "Приглашение от",
+    memberPageTitle: "Моя компания",
+    memberPageText: "Здесь показана компания, к которой подключён ваш аккаунт.",
+    memberCompanyEyebrow: "Текущая группа",
+    memberCompanyTitle: "Вы в группе",
+    memberCompanyRole: "Роль",
+    memberCompanyJoined: "В компании с",
+    leaveCompany: "Выйти из компании",
+    leaveCompanyConfirm: "Выйти из этой компании? Доступ к рабочему кабинету будет закрыт.",
+    leaveCompanySuccess: "Вы вышли из компании."
   },
   uk: {
     sectionTitle: "Команда",
@@ -171,7 +180,16 @@ const staffText = {
     roleFallback: "Співробітник",
     emptySearch: "За цим запитом нікого не знайдено.",
     requestFrom: "Запит від",
-    inviteFrom: "Запрошення від"
+    inviteFrom: "Запрошення від",
+    memberPageTitle: "Моя компанія",
+    memberPageText: "Тут показана компанія, до якої підключено ваш акаунт.",
+    memberCompanyEyebrow: "Поточна група",
+    memberCompanyTitle: "Ви в групі",
+    memberCompanyRole: "Роль",
+    memberCompanyJoined: "У компанії з",
+    leaveCompany: "Вийти з компанії",
+    leaveCompanyConfirm: "Вийти з цієї компанії? Доступ до робочого кабінету буде закрито.",
+    leaveCompanySuccess: "Ви вийшли з компанії."
   },
   en: {
     sectionTitle: "Team",
@@ -238,7 +256,16 @@ const staffText = {
     roleFallback: "Employee",
     emptySearch: "No one matched this search.",
     requestFrom: "Request from",
-    inviteFrom: "Invitation from"
+    inviteFrom: "Invitation from",
+    memberPageTitle: "My company",
+    memberPageText: "This is the company connected to your account.",
+    memberCompanyEyebrow: "Current group",
+    memberCompanyTitle: "You are in",
+    memberCompanyRole: "Role",
+    memberCompanyJoined: "In company since",
+    leaveCompany: "Leave company",
+    leaveCompanyConfirm: "Leave this company? Workspace access will be closed.",
+    leaveCompanySuccess: "You left the company."
   }
 } as const;
 
@@ -409,6 +436,7 @@ export default function StaffView({ professionalId, snapshot, canManageStaff = t
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [isLeaving, setIsLeaving] = useState(false);
   const [activeActionMenu, setActiveActionMenu] = useState<StaffActionMenuState | null>(null);
 
   useEffect(() => {
@@ -615,6 +643,110 @@ export default function StaffView({ professionalId, snapshot, canManageStaff = t
         body: JSON.stringify({ invitationId, action })
       }),
       action === "accept" ? copy.saved : copy.saved
+    );
+  }
+
+  async function handleLeaveCompany() {
+    if (isLeaving) {
+      return;
+    }
+
+    if (typeof window !== "undefined" && !window.confirm(copy.leaveCompanyConfirm)) {
+      return;
+    }
+
+    setIsLeaving(true);
+    try {
+      const response = await fetch("/api/pro/staff/membership", {
+        method: "DELETE"
+      });
+      const payload = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        setStatusText(String(payload.error || copy.failed));
+        return;
+      }
+
+      setStatusText(copy.leaveCompanySuccess);
+      window.dispatchEvent(new CustomEvent("rezervo-pro-notifications-refresh"));
+      router.replace("/pro/login");
+      router.refresh();
+    } catch {
+      setStatusText(copy.failed);
+    } finally {
+      setIsLeaving(false);
+    }
+  }
+
+  if (!canManageStaff) {
+    const currentMember =
+      staffSnapshot.members.find((member) => member.professional.id === professionalId) || null;
+
+    return (
+      <main className={`${styles.workspaceShell} ${styles.scheduleShell}`}>
+        <ProSidebar active="staff" professionalId={professionalId} canManageStaff={canManageStaff} />
+
+        <section className={styles.staffStudioShell}>
+          <ProWorkspaceHeader
+            businessName={staffSnapshot.business.name}
+            viewerName={header.viewerName}
+            viewerAvatarUrl={header.viewerAvatarUrl}
+            viewerInitials={header.viewerInitials}
+            isPremium={header.isPremium === true}
+            publicBookingUrl={header.publicBookingUrl}
+            publicBookingEnabled={header.publicBookingEnabled === true}
+            canTogglePublicBooking={false}
+            onboardingCta={onboardingCta}
+          />
+
+          <aside className={styles.staffStudioSidebar}>
+            <div className={styles.staffStudioSidebarCard}>
+              <strong>{copy.sectionTitle}</strong>
+              <nav className={styles.staffStudioLocalNav}>
+                <Link href="/pro/staff/members" className={`${styles.staffStudioLocalLink} ${styles.staffStudioLocalLinkActive}`}>
+                  {copy.people}
+                </Link>
+              </nav>
+            </div>
+          </aside>
+
+          <section className={styles.staffStudioMain}>
+            <div className={styles.staffStudioHeader}>
+              <div>
+                <h1 className={styles.staffStudioTitle}>{copy.memberPageTitle}</h1>
+                <p className={styles.staffStudioText}>{copy.memberPageText}</p>
+              </div>
+            </div>
+
+            {statusText ? <div className={styles.staffStudioStatus}>{statusText}</div> : null}
+
+            <section className={styles.staffMembershipCard}>
+              <span className={styles.staffMembershipEyebrow}>{copy.memberCompanyEyebrow}</span>
+              <h2>
+                {copy.memberCompanyTitle} <strong>{staffSnapshot.business.name}</strong>
+              </h2>
+              <dl className={styles.staffMembershipDetails}>
+                <div>
+                  <dt>{copy.memberCompanyRole}</dt>
+                  <dd>{currentMember?.membership.role || copy.roleFallback}</dd>
+                </div>
+                <div>
+                  <dt>{copy.memberCompanyJoined}</dt>
+                  <dd>{formatDate(currentMember?.membership.createdAt || new Date().toISOString(), locale)}</dd>
+                </div>
+              </dl>
+              <button
+                type="button"
+                className={`${styles.staffSecondaryButton} ${styles.staffDangerButton}`}
+                onClick={() => void handleLeaveCompany()}
+                disabled={isLeaving}
+              >
+                {isLeaving ? copy.saved : copy.leaveCompany}
+              </button>
+            </section>
+          </section>
+        </section>
+      </main>
     );
   }
 

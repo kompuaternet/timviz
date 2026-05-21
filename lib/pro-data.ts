@@ -2864,6 +2864,62 @@ export async function revokeStaffInvitation(input: {
   return { ok: true };
 }
 
+export async function leaveCurrentBusinessMembership(professionalId: string) {
+  const workspace = await getWorkspaceSnapshot(professionalId);
+
+  if (!workspace) {
+    throw new Error("Business membership not found.");
+  }
+
+  if (workspace.membership.scope === "owner") {
+    throw new Error("Владелец компании не может выйти из неё как сотрудник.");
+  }
+
+  if (isSupabaseConfigured()) {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      throw new Error("Supabase is not available.");
+    }
+
+    const { error } = await supabase
+      .from("business_memberships")
+      .delete()
+      .eq("id", workspace.membership.id)
+      .eq("professional_id", professionalId)
+      .neq("scope", "owner");
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    invalidateBusinessDirectoryCache();
+    return {
+      ok: true,
+      businessName: workspace.business.name
+    };
+  }
+
+  const store = await ensureDemoBusinessesInLocalStore();
+  const membershipIndex = store.memberships.findIndex(
+    (item) =>
+      item.id === workspace.membership.id &&
+      item.professionalId === professionalId &&
+      item.scope !== "owner"
+  );
+
+  if (membershipIndex === -1) {
+    throw new Error("Business membership not found.");
+  }
+
+  store.memberships.splice(membershipIndex, 1);
+  await writeStore(store);
+
+  return {
+    ok: true,
+    businessName: workspace.business.name
+  };
+}
+
 export async function acceptStaffInvitation(input: {
   professionalId: string;
   invitationToken: string;

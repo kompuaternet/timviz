@@ -3845,6 +3845,79 @@
   padding: 20px;
 }
 
+.staffMembershipCard {
+  max-width: 760px;
+  border-radius: 24px;
+  border: 1px solid #e2e7f2;
+  background: #ffffff;
+  padding: 26px;
+  display: grid;
+  gap: 18px;
+}
+
+.staffMembershipEyebrow {
+  color: #6a62f5;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.staffMembershipCard h2 {
+  margin: 0;
+  color: #171b2c;
+  font-size: clamp(1.6rem, 2.5vw, 2.2rem);
+  letter-spacing: -0.04em;
+  line-height: 1.08;
+}
+
+.staffMembershipCard h2 strong {
+  color: #6a62f5;
+}
+
+.staffMembershipDetails {
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.staffMembershipDetails div {
+  border-radius: 18px;
+  border: 1px solid #e8ecf6;
+  background: #fbfcff;
+  padding: 16px;
+}
+
+.staffMembershipDetails dt {
+  color: #71788c;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.staffMembershipDetails dd {
+  margin: 6px 0 0;
+  color: #202437;
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.staffDangerButton {
+  width: fit-content;
+  border-color: #ffd2da;
+  color: #c92d48;
+}
+
+.staffDangerButton:hover {
+  background: #fff5f7;
+}
+
+.staffDangerButton:disabled {
+  cursor: progress;
+  opacity: 0.7;
+  transform: none;
+}
+
 .staffDrawerBackdrop {
   position: fixed;
   inset: 0;
@@ -4803,6 +4876,7 @@
   }
 
   .staffStudioBottomGrid,
+  .staffMembershipDetails,
   .staffEditorGrid,
   .staffEditorStats,
   .staffScheduleHead,
