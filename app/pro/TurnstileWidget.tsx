@@ -33,14 +33,17 @@ const turnstileScriptSrc = "https://challenges.cloudflare.com/turnstile/v0/api.j
 const copy = {
   ru: {
     loading: "Проверка безопасности загружается...",
+    fallback: "Завершаем проверку...",
     unavailable: "Не удалось загрузить проверку. Обновите страницу."
   },
   uk: {
     loading: "Перевірка безпеки завантажується...",
+    fallback: "Завершуємо перевірку...",
     unavailable: "Не вдалося завантажити перевірку. Оновіть сторінку."
   },
   en: {
     loading: "Security check is loading...",
+    fallback: "Finishing the security check...",
     unavailable: "Could not load the security check. Refresh the page."
   }
 } as const;
@@ -71,25 +74,54 @@ export default function TurnstileWidget({ onToken, onExpire }: TurnstileWidgetPr
   const { language } = useProLanguage();
   const containerRef = useRef<HTMLDivElement | null>(null);
   const widgetIdRef = useRef<string | null>(null);
-  const [status, setStatus] = useState<"loading" | "ready" | "unavailable">("loading");
+  const fallbackRequestedRef = useRef(false);
+  const [status, setStatus] = useState<"loading" | "ready" | "fallback" | "unavailable">("loading");
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "";
   const t = copy[language];
+
+  async function requestFallbackToken() {
+    if (fallbackRequestedRef.current) return;
+    fallbackRequestedRef.current = true;
+    setStatus("fallback");
+    try {
+      const response = await fetch("/api/mobile/captcha/fallback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ source: "web-captcha", language })
+      });
+      const payload = (await response.json().catch(() => ({}))) as { token?: string };
+      if (!response.ok || !payload.token) {
+        onToken("");
+        setStatus("unavailable");
+        onExpire?.();
+        return;
+      }
+      onToken(payload.token);
+      setStatus("ready");
+    } catch {
+      onToken("");
+      setStatus("unavailable");
+      onExpire?.();
+    }
+  }
 
   useEffect(() => {
     if (!siteKey || !containerRef.current) return;
     let cancelled = false;
+    fallbackRequestedRef.current = false;
     setStatus("loading");
 
     const slowLoadTimer = window.setTimeout(() => {
-      setStatus((current) => (current === "loading" ? "unavailable" : current));
+      void requestFallbackToken();
     }, 8000);
 
     loadTurnstileScript().then((loaded) => {
       if (cancelled || !loaded || !window.turnstile || !containerRef.current) {
-        if (!cancelled) setStatus("unavailable");
+        if (!cancelled) void requestFallbackToken();
         return;
       }
 
+      window.clearTimeout(slowLoadTimer);
       widgetIdRef.current = window.turnstile.render(containerRef.current, {
         sitekey: siteKey,
         appearance: "always",
@@ -101,13 +133,13 @@ export default function TurnstileWidget({ onToken, onExpire }: TurnstileWidgetPr
         },
         "expired-callback": () => {
           onToken("");
+          fallbackRequestedRef.current = false;
           setStatus("loading");
           onExpire?.();
         },
         "error-callback": () => {
           onToken("");
-          setStatus("unavailable");
-          onExpire?.();
+          void requestFallbackToken();
         }
       });
     });
@@ -128,6 +160,7 @@ export default function TurnstileWidget({ onToken, onExpire }: TurnstileWidgetPr
     <div className={styles.turnstileBox}>
       <div ref={containerRef} />
       {status === "loading" ? <span>{t.loading}</span> : null}
+      {status === "fallback" ? <span>{t.fallback}</span> : null}
       {status === "unavailable" ? <span>{t.unavailable}</span> : null}
     </div>
   );
