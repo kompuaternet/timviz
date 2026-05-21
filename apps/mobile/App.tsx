@@ -13756,8 +13756,10 @@ function SettingsTab({
   const activeSectionLocked = !hasPremium && isPremiumSettingsSection(activeSection);
   const selectedBusinessCategories = useMemo(() => normalizeCategoryList(draft.categories), [draft.categories]);
   const businessCategoryOptions = useMemo(
-    () => normalizeCategoryList([...sortServiceCategoryOptions(catalog.map((item) => item.title)), ...(workspace?.business.categories || []), ...selectedBusinessCategories]),
-    [catalog, selectedBusinessCategories, workspace?.business.categories]
+    () => normalizeCategoryList([...SYSTEM_SERVICE_CATEGORIES, ...(workspace?.business.categories || []), ...selectedBusinessCategories]).sort(
+      (left, right) => getServiceCategorySortOrder(left) - getServiceCategorySortOrder(right) || left.localeCompare(right)
+    ),
+    [selectedBusinessCategories, workspace?.business.categories]
   );
 
   function filterPendingPhotoDeletes(nextPhotos: BusinessPhotoRecord[]) {
@@ -14999,7 +15001,6 @@ function SettingsTab({
       {!activeSectionLocked && activeSection === "services" ? (
         <>
           <Panel title={t.businessFormat}>
-            <Text style={styles.label}>{t.serviceMode}</Text>
             <View style={styles.settingsStackedChoices}>
               {SERVICE_MODE_IDS.map((item) => (
                 <Pressable
