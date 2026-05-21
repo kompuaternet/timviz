@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   buildInternationalPhone,
   formatPhoneLocal,
@@ -237,7 +237,7 @@ type SetupAccountDraft = {
   currency?: string;
 };
 
-type FieldErrors = Partial<Record<"firstName" | "email" | "password" | "confirmPassword" | "phone" | "terms", string>>;
+type FieldErrors = Partial<Record<"firstName" | "email" | "password" | "confirmPassword" | "phone" | "terms" | "captcha", string>>;
 
 function readStoredJson<T>(storage: Storage | undefined, key: string) {
   if (!storage) return null;
@@ -501,8 +501,14 @@ export default function CreateAccountForm() {
   const phoneIsValid = isPhoneValid(phoneCountry, phone);
   const t = formCopy[language];
   const phonePlaceholder = phoneCountry === "Ukraine" ? t.phonePlaceholder : phoneRule.placeholder;
-  const turnstileEnabled = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
-  const captchaRequired = authProviderMode === "email" && turnstileEnabled;
+  const captchaRequired = authProviderMode === "email";
+
+  const handleCaptchaToken = useCallback((token: string) => {
+    setCaptchaToken(token);
+    if (token) {
+      setFieldErrors((current) => (current.captcha ? { ...current, captcha: "" } : current));
+    }
+  }, []);
 
   function applyLanguage(nextLanguage: ProLanguage) {
     setLanguage(nextLanguage);
@@ -992,7 +998,13 @@ export default function CreateAccountForm() {
     setIsCheckingEmail(false);
 
     if (!response.ok) {
-      setFieldErrors({ email: result.error || t.emailRequired });
+      const error = String(result.error || t.emailRequired);
+      if (/робот|robot|captcha|security|перевір|провер/i.test(error)) {
+        setCaptchaToken("");
+        setFieldErrors({ captcha: error });
+      } else {
+        setFieldErrors({ email: error });
+      }
       return;
     }
 
@@ -1036,7 +1048,7 @@ export default function CreateAccountForm() {
           <p className={styles.heroSubtitle}>{t.checkEmailText}</p>
         </div>
         <div className={styles.confirmEmailBox}>{emailConfirmationSent}</div>
-        <TurnstileWidget onToken={setCaptchaToken} />
+        <TurnstileWidget onToken={handleCaptchaToken} />
         {fieldErrors.email ? <div className={styles.addressWarning}>{fieldErrors.email}</div> : null}
         <button type="button" className={styles.primaryButton} disabled={isCheckingEmail || resendCooldown > 0} onClick={() => void resendConfirmation()}>
           {resendCooldown > 0 ? `${t.resend} · ${resendCooldown}` : t.resend}
@@ -1334,7 +1346,10 @@ export default function CreateAccountForm() {
         <span>{t.terms}</span>
       </label>
       {fieldErrors.terms ? <span className={styles.fieldError}>{fieldErrors.terms}</span> : null}
-      {captchaRequired ? <TurnstileWidget onToken={setCaptchaToken} /> : null}
+      <div id="captchaCheck">
+        {captchaRequired ? <TurnstileWidget onToken={handleCaptchaToken} /> : null}
+        {fieldErrors.captcha ? <span className={styles.fieldError}>{fieldErrors.captcha}</span> : null}
+      </div>
 
       <div className={styles.createAccountActions}>
         <button
