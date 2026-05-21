@@ -1023,7 +1023,7 @@ const CALENDAR_WARM_CHUNK_SIZE = 90;
 const CALENDAR_MEMBER_META_TTL_MS = 10 * 60 * 1000;
 const CALENDAR_TIME_AXIS_WIDTH = 52;
 const CALENDAR_MIN_MEMBER_COLUMN_WIDTH = 220;
-const CALENDAR_TEAM_HEADER_HEIGHT = 72;
+const CALENDAR_TEAM_HEADER_HEIGHT = 58;
 const CALENDAR_TEAM_HEADER_AVATAR_SIZE = 34;
 const SERVICE_MODE_IDS = ["onsite", "travel", "online"] as const;
 const SERVICE_MODE_VALUES: Record<(typeof SERVICE_MODE_IDS)[number], string> = {
@@ -1075,6 +1075,9 @@ function isGenericCalendarMemberName(name: string, role?: string | null) {
   const normalizedRole = safeText(role).trim().toLowerCase();
   return !normalized ||
     normalized === normalizedRole ||
+    normalized === "майстер" ||
+    normalized === "мастер" ||
+    normalized === "master" ||
     normalized === "сотрудник" ||
     normalized === "співробітник" ||
     normalized === "employee";
@@ -8989,7 +8992,10 @@ function CalendarTab({
     const masterFallback = getMasterFallback(language);
     const addMember = (member: CalendarMemberView) => {
       if (!member.id) return;
-      const displayName = safeText(sessionDisplayName).trim();
+      const viewerProfileName = workspace?.professional.id === member.id
+        ? getCalendarMemberDisplayName(workspace.professional, "")
+        : "";
+      const displayName = viewerProfileName || safeText(sessionDisplayName).trim();
       const name = member.isViewer && displayName && (isGenericCalendarMemberName(member.name, member.role) || member.name.includes("@"))
         ? displayName
         : member.name;
@@ -9661,13 +9667,6 @@ function CalendarTab({
                           <MemberAvatar member={member} size={CALENDAR_TEAM_HEADER_AVATAR_SIZE} />
                           <Text style={styles.masterName} numberOfLines={1} ellipsizeMode="tail" allowFontScaling={false}>
                             {member.name}
-                          </Text>
-                          <Text style={styles.masterRole} numberOfLines={1} ellipsizeMode="tail" allowFontScaling={false}>
-                            {member.scope === "owner"
-                              ? t.owner
-                              : isGenericCalendarMemberName(member.role)
-                                ? getMasterFallback(language)
-                                : member.role}
                           </Text>
                         </View>
                       ))}
@@ -17459,7 +17458,7 @@ const styles = StyleSheet.create({
   teamPickerButton: {
     width: 36,
     height: 36,
-    marginTop: 18,
+    marginTop: 11,
     marginLeft: 8,
     alignItems: "center",
     justifyContent: "center",
@@ -17498,7 +17497,7 @@ const styles = StyleSheet.create({
     minWidth: CALENDAR_MIN_MEMBER_COLUMN_WIDTH,
     minHeight: CALENDAR_TEAM_HEADER_HEIGHT,
     paddingHorizontal: 8,
-    paddingVertical: 8,
+    paddingVertical: 5,
     borderRightWidth: 1,
     borderRightColor: "#E5E7EB",
     backgroundColor: "rgba(255,255,255,0.94)",
