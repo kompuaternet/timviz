@@ -6943,7 +6943,8 @@ export default function App() {
     autoPushRegisteringRef.current = true;
     AsyncStorage.getItem(storageKey)
       .then(async (alreadyPrompted) => {
-        if (alreadyPrompted === "1") return;
+        const permission = await Notifications.getPermissionsAsync();
+        if (alreadyPrompted === "1" && permission.status !== "granted") return;
         await registerPushForSession(session, { markPrompted: true });
       })
       .catch(() => undefined)
@@ -12469,17 +12470,24 @@ function StaffMembersTab({
         <Panel title={t.incomingInvites || t.pendingInvites}>
           {staff?.incomingInvitations?.filter((invitation) => !resolvedInvitationIds.has(invitation.id)).length ? (
             staff.incomingInvitations.filter((invitation) => !resolvedInvitationIds.has(invitation.id)).map((invitation) => (
-              <View key={invitation.id} style={styles.joinRequestCard}>
-                <View>
-                  <Text style={styles.settingsMiniTitle}>{invitation.business.name}</Text>
-                  <Text style={styles.clientOptionCaption}>{[invitation.role, invitation.business.address].filter(Boolean).join(" · ")}</Text>
+              <View key={invitation.id} style={styles.staffInviteCard}>
+                <View style={styles.staffInviteInfo}>
+                  <Text style={styles.staffInviteCompany} numberOfLines={2}>{invitation.business.name}</Text>
                 </View>
-                <View style={styles.joinRequestActions}>
-                  <Pressable style={styles.joinRejectButton} onPress={() => void resolveInvitation(invitation.id, "declineInvitation")} disabled={saving}>
-                    <Ionicons name="close" size={18} color="#DC2626" />
+                <View style={styles.staffInviteActions}>
+                  <Pressable
+                    style={({ pressed }) => [styles.staffInviteButton, styles.staffInviteDeclineButton, pressed && styles.pressablePressed, saving && styles.disabled]}
+                    onPress={() => void resolveInvitation(invitation.id, "declineInvitation")}
+                    disabled={saving}
+                  >
+                    <Text style={styles.staffInviteDeclineText}>{t.declineInvite}</Text>
                   </Pressable>
-                  <Pressable style={styles.joinApproveButton} onPress={() => void resolveInvitation(invitation.id, "acceptInvitation")} disabled={saving}>
-                    <Ionicons name="checkmark" size={18} color="#FFFFFF" />
+                  <Pressable
+                    style={({ pressed }) => [styles.staffInviteButton, styles.staffInviteAcceptButton, pressed && styles.pressablePressed, saving && styles.disabled]}
+                    onPress={() => void resolveInvitation(invitation.id, "acceptInvitation")}
+                    disabled={saving}
+                  >
+                    <Text style={styles.staffInviteAcceptText}>{t.acceptInvite}</Text>
                   </Pressable>
                 </View>
               </View>
@@ -12570,17 +12578,24 @@ function StaffMembersTab({
       <Panel title={t.incomingInvites || t.pendingInvites}>
         {staff?.incomingInvitations?.filter((invitation) => !resolvedInvitationIds.has(invitation.id)).length ? (
           staff.incomingInvitations.filter((invitation) => !resolvedInvitationIds.has(invitation.id)).map((invitation) => (
-            <View key={invitation.id} style={styles.joinRequestCard}>
-              <View>
-                <Text style={styles.settingsMiniTitle}>{invitation.business.name}</Text>
-                <Text style={styles.clientOptionCaption}>{[invitation.role, invitation.business.address].filter(Boolean).join(" · ")}</Text>
+            <View key={invitation.id} style={styles.staffInviteCard}>
+              <View style={styles.staffInviteInfo}>
+                <Text style={styles.staffInviteCompany} numberOfLines={2}>{invitation.business.name}</Text>
               </View>
-              <View style={styles.joinRequestActions}>
-                <Pressable style={styles.joinRejectButton} onPress={() => void resolveInvitation(invitation.id, "declineInvitation")} disabled={saving}>
-                  <Ionicons name="close" size={18} color="#DC2626" />
+              <View style={styles.staffInviteActions}>
+                <Pressable
+                  style={({ pressed }) => [styles.staffInviteButton, styles.staffInviteDeclineButton, pressed && styles.pressablePressed, saving && styles.disabled]}
+                  onPress={() => void resolveInvitation(invitation.id, "declineInvitation")}
+                  disabled={saving}
+                >
+                  <Text style={styles.staffInviteDeclineText}>{t.declineInvite}</Text>
                 </Pressable>
-                <Pressable style={styles.joinApproveButton} onPress={() => void resolveInvitation(invitation.id, "acceptInvitation")} disabled={saving}>
-                  <Ionicons name="checkmark" size={18} color="#FFFFFF" />
+                <Pressable
+                  style={({ pressed }) => [styles.staffInviteButton, styles.staffInviteAcceptButton, pressed && styles.pressablePressed, saving && styles.disabled]}
+                  onPress={() => void resolveInvitation(invitation.id, "acceptInvitation")}
+                  disabled={saving}
+                >
+                  <Text style={styles.staffInviteAcceptText}>{t.acceptInvite}</Text>
                 </Pressable>
               </View>
             </View>
@@ -20370,6 +20385,54 @@ const styles = StyleSheet.create({
   joinRequestActions: {
     flexDirection: "row",
     gap: 8,
+  },
+  staffInviteCard: {
+    gap: 12,
+    padding: 12,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "rgba(226, 232, 240, 0.78)",
+    backgroundColor: "#FBFCFF",
+  },
+  staffInviteInfo: {
+    minWidth: 0,
+  },
+  staffInviteCompany: {
+    color: "#0F172A",
+    fontSize: 18,
+    lineHeight: 23,
+    fontWeight: "900",
+    flexShrink: 1,
+  },
+  staffInviteActions: {
+    flexDirection: "row",
+    gap: 10,
+  },
+  staffInviteButton: {
+    flex: 1,
+    minHeight: 44,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 14,
+    paddingHorizontal: 12,
+  },
+  staffInviteAcceptButton: {
+    backgroundColor: "#6D4AFF",
+  },
+  staffInviteDeclineButton: {
+    borderWidth: 1,
+    borderColor: "rgba(252, 165, 165, 0.8)",
+    backgroundColor: "#FFF1F2",
+  },
+  staffInviteAcceptText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "900",
+  },
+  staffInviteDeclineText: {
+    color: "#DC2626",
+    fontSize: 14,
+    fontWeight: "900",
   },
   staffMembershipCard: {
     gap: 14,

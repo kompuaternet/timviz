@@ -34,9 +34,6 @@ export async function POST(request: Request) {
     if (!workspace) {
       return NextResponse.json({ error: "Workspace not found." }, { status: 404 });
     }
-    if (!isPremiumAccessActive(workspace.professional)) {
-      return NextResponse.json({ error: "Push notifications require an active Pro subscription." }, { status: 402 });
-    }
 
     const body = (await request.json().catch(() => ({}))) as {
       expoPushToken?: string;
