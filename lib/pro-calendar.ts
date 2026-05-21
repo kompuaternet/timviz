@@ -1400,7 +1400,9 @@ export async function getClientDirectory(professionalId: string): Promise<Client
   );
 }
 
-export async function getAppointmentUsageForProfessional(professionalId: string) {
+export async function getAppointmentUsageForProfessional(professionalId: string, appointmentDate = new Date().toISOString().slice(0, 10)) {
+  const range = getAppointmentMonthRange(appointmentDate);
+
   if (isSupabaseConfigured()) {
     const supabase = getSupabaseAdmin();
     if (!supabase) {
@@ -1411,7 +1413,9 @@ export async function getAppointmentUsageForProfessional(professionalId: string)
       .from("calendar_appointments")
       .select("id", { count: "exact", head: true })
       .eq("professional_id", professionalId)
-      .eq("kind", "appointment");
+      .eq("kind", "appointment")
+      .gte("appointment_date", range.start)
+      .lt("appointment_date", range.end);
 
     if (error) {
       throw new Error(error.message);
@@ -1423,7 +1427,11 @@ export async function getAppointmentUsageForProfessional(professionalId: string)
   const store = await readStore();
 
   return store.appointments.filter(
-    (appointment) => appointment.professionalId === professionalId && appointment.kind === "appointment"
+    (appointment) =>
+      appointment.professionalId === professionalId &&
+      appointment.kind === "appointment" &&
+      appointment.appointmentDate >= range.start &&
+      appointment.appointmentDate < range.end
   ).length;
 }
 

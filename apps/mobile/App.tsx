@@ -279,6 +279,11 @@ type WorkspaceSnapshot = {
     connected: boolean;
     chatId: string | null;
   };
+  bookingCredits?: {
+    total: number;
+    used: number;
+    remaining: number;
+  };
 };
 
 type BusinessPhotoRecord = NonNullable<WorkspaceSnapshot["business"]["photos"]>[number];
@@ -754,7 +759,7 @@ const QUICK_DURATION_OPTIONS = [30, 45, 60, 90];
 const APP_ICON = require("./assets/timviz-icon.png");
 const SETTINGS_SECTIONS: MobileSettingsSection[] = ["general", "online", "services", "schedule", "push", "telegram", "address"];
 const PREMIUM_LOCKED_TABS: AppTab[] = [];
-const PREMIUM_LOCKED_SETTINGS_SECTIONS: MobileSettingsSection[] = ["push", "telegram"];
+const PREMIUM_LOCKED_SETTINGS_SECTIONS: MobileSettingsSection[] = ["online", "schedule", "push", "telegram"];
 const COUNTRY_OPTIONS = ["Ukraine", "Russia", "Poland", "United Kingdom", "United States", "Germany", "France", "Spain", "Italy", "International"];
 const TIMEZONE_OPTIONS = ["Europe/Kiev", "Europe/Warsaw", "Europe/Berlin", "Europe/London", "America/New_York", "Europe/Moscow", "Asia/Dubai", "UTC"];
 const TIMEZONE_LABELS: Record<string, string> = {
@@ -1431,7 +1436,16 @@ const baseCopy = {
     premiumSubscriptionActive: "Premium активний",
     premiumSubscriptionTrial: "Пробний період",
     premiumSubscriptionFree: "Free",
-    premiumSubscriptionText: "Нові акаунти отримують 14 днів Premium безкоштовно. Після пробного періоду Pro відкриває платні інструменти без обмежень.",
+    premiumSubscriptionText: "Нові акаунти отримують 14 днів Premium безкоштовно. Free має 100 записів щомісяця, Pro відкриває інструменти без обмежень.",
+    bookingLimitTitle: "Записи цього місяця",
+    bookingLimitFreeText: "На Free доступно 100 записів на місяць. Ліміт оновиться на початку наступного місяця.",
+    bookingLimitPremiumText: "На Premium записи не списуються: працюйте без обмежень.",
+    bookingLimitEndedTitle: "Записи на цей місяць закінчилися",
+    bookingLimitEndedText: "Підключіть Pro, щоб створювати записи без ліміту і відкрити онлайн-запис, Telegram та нагадування.",
+    bookingLimitRemaining: "Залишилось",
+    bookingLimitUsed: "Використано",
+    bookingLimitLimit: "Ліміт",
+    unlimitedShort: "unlim",
     premiumTrialIncluded: "14 днів Premium безкоштовно",
     premiumTrialDaysLeft: "Залишилось {count} дн. Premium",
     premiumTrialOneDayLeft: "Останній день Premium",
@@ -1439,7 +1453,7 @@ const baseCopy = {
     premiumUpgradeCta: "Оформити Pro",
     premiumLockedBadge: "Pro",
     premiumFeatureBenefitsTitle: "У Pro відкривається",
-    premiumBenefitOnlineBooking: "необмежені записи понад Free",
+    premiumBenefitOnlineBooking: "онлайн-запис і необмежені записи понад Free",
     premiumBenefitReminders: "push і Telegram-нагадування",
     premiumBenefitTeam: "більше співробітників, графіки і ролі",
     premiumBenefitClients: "розширені бізнес-інструменти для росту",
@@ -1448,10 +1462,10 @@ const baseCopy = {
     premiumFeatureClientsText: "Зберігайте клієнтів, створюйте повторні записи і ведіть базову історію без оформлення Pro.",
     premiumFeatureStaffTitle: "Більше співробітників доступно в Pro",
     premiumFeatureStaffText: "Free залишає власника і 1 співробітника. Pro відкриває команду ширше, ролі і графіки без ліміту Free.",
-    premiumFeatureOnlineTitle: "Онлайн-запис входить у Free",
-    premiumFeatureOnlineText: "Клієнтське посилання, календар, послуги і базовий профіль працюють безкоштовно. Pro прибирає ліміти Free.",
-    premiumFeatureScheduleTitle: "Календар і графік входять у Free",
-    premiumFeatureScheduleText: "Ведіть календар і базовий графік безкоштовно. Pro прибирає ліміти і розширює командну роботу.",
+    premiumFeatureOnlineTitle: "Онлайн-запис доступний у Pro",
+    premiumFeatureOnlineText: "Free залишає ручні записи в календарі. Pro відкриває клієнтське посилання для самостійного запису.",
+    premiumFeatureScheduleTitle: "Розширений календар доступний у Pro",
+    premiumFeatureScheduleText: "Free дає базовий календар. Pro відкриває розширені графіки, режими роботи і командний розклад.",
     premiumFeaturePushTitle: "Push-нагадування доступні в Pro",
     premiumFeaturePushText: "Підключайте повідомлення про нові, перенесені і скасовані записи.",
     premiumFeatureTelegramTitle: "Telegram-сповіщення доступні в Pro",
@@ -1922,7 +1936,16 @@ const baseCopy = {
     premiumSubscriptionActive: "Premium активен",
     premiumSubscriptionTrial: "Пробный период",
     premiumSubscriptionFree: "Free",
-    premiumSubscriptionText: "Новые аккаунты получают 14 дней Premium бесплатно. После пробного периода Pro открывает платные инструменты без ограничений.",
+    premiumSubscriptionText: "Новые аккаунты получают 14 дней Premium бесплатно. Free дает 100 записей каждый месяц, Pro открывает инструменты без ограничений.",
+    bookingLimitTitle: "Записи этого месяца",
+    bookingLimitFreeText: "На Free доступно 100 записей в месяц. Лимит обновится в начале следующего месяца.",
+    bookingLimitPremiumText: "На Premium записи не списываются: работайте без ограничений.",
+    bookingLimitEndedTitle: "Записи на этот месяц закончились",
+    bookingLimitEndedText: "Подключите Pro, чтобы создавать записи без лимита и открыть онлайн-запись, Telegram и напоминания.",
+    bookingLimitRemaining: "Осталось",
+    bookingLimitUsed: "Использовано",
+    bookingLimitLimit: "Лимит",
+    unlimitedShort: "unlim",
     premiumTrialIncluded: "14 дней Premium бесплатно",
     premiumTrialDaysLeft: "Осталось {count} дн. Premium",
     premiumTrialOneDayLeft: "Последний день Premium",
@@ -1930,7 +1953,7 @@ const baseCopy = {
     premiumUpgradeCta: "Оформить Pro",
     premiumLockedBadge: "Pro",
     premiumFeatureBenefitsTitle: "В Pro открывается",
-    premiumBenefitOnlineBooking: "неограниченные записи сверх Free",
+    premiumBenefitOnlineBooking: "онлайн-запись и неограниченные записи сверх Free",
     premiumBenefitReminders: "push и Telegram-напоминания",
     premiumBenefitTeam: "больше сотрудников, графики и роли",
     premiumBenefitClients: "расширенные бизнес-инструменты для роста",
@@ -1939,10 +1962,10 @@ const baseCopy = {
     premiumFeatureClientsText: "Сохраняйте клиентов, создавайте повторные записи и ведите базовую историю без оформления Pro.",
     premiumFeatureStaffTitle: "Больше сотрудников доступно в Pro",
     premiumFeatureStaffText: "Free оставляет владельца и 1 сотрудника. Pro открывает команду шире, роли и графики без лимита Free.",
-    premiumFeatureOnlineTitle: "Онлайн-запись входит в Free",
-    premiumFeatureOnlineText: "Клиентская ссылка, календарь, услуги и базовый профиль работают бесплатно. Pro убирает лимиты Free.",
-    premiumFeatureScheduleTitle: "Календарь и график входят в Free",
-    premiumFeatureScheduleText: "Ведите календарь и базовый график бесплатно. Pro убирает лимиты и расширяет командную работу.",
+    premiumFeatureOnlineTitle: "Онлайн-запись доступна в Pro",
+    premiumFeatureOnlineText: "Free оставляет ручные записи в календаре. Pro открывает клиентскую ссылку для самостоятельной записи.",
+    premiumFeatureScheduleTitle: "Расширенный календар доступен в Pro",
+    premiumFeatureScheduleText: "Free дает базовый календар. Pro открывает расширенные графики, режимы работы и командное расписание.",
     premiumFeaturePushTitle: "Push-напоминания доступны в Pro",
     premiumFeaturePushText: "Подключайте уведомления о новых, перенесенных и отмененных записях.",
     premiumFeatureTelegramTitle: "Telegram-уведомления доступны в Pro",
@@ -2413,7 +2436,16 @@ const baseCopy = {
     premiumSubscriptionActive: "Premium active",
     premiumSubscriptionTrial: "Trial period",
     premiumSubscriptionFree: "Free",
-    premiumSubscriptionText: "New accounts get 14 days of Premium for free. After the trial, Pro keeps paid tools open without limits.",
+    premiumSubscriptionText: "New accounts get 14 days of Premium for free. Free includes 100 appointments every month, Pro keeps tools open without limits.",
+    bookingLimitTitle: "This month's appointments",
+    bookingLimitFreeText: "Free includes 100 appointments per month. The limit refreshes at the start of next month.",
+    bookingLimitPremiumText: "Premium does not spend appointment credits: work without limits.",
+    bookingLimitEndedTitle: "Appointments are used up for this month",
+    bookingLimitEndedText: "Get Pro to create unlimited appointments and unlock online booking, Telegram, and reminders.",
+    bookingLimitRemaining: "Remaining",
+    bookingLimitUsed: "Used",
+    bookingLimitLimit: "Limit",
+    unlimitedShort: "unlim",
     premiumTrialIncluded: "14 days of Premium free",
     premiumTrialDaysLeft: "{count} days of Premium left",
     premiumTrialOneDayLeft: "Last day of Premium",
@@ -2421,7 +2453,7 @@ const baseCopy = {
     premiumUpgradeCta: "Get Pro",
     premiumLockedBadge: "Pro",
     premiumFeatureBenefitsTitle: "Pro unlocks",
-    premiumBenefitOnlineBooking: "unlimited appointments beyond Free",
+    premiumBenefitOnlineBooking: "online booking and unlimited appointments beyond Free",
     premiumBenefitReminders: "push and Telegram reminders",
     premiumBenefitTeam: "more employees, schedules, and roles",
     premiumBenefitClients: "advanced business tools for growth",
@@ -2430,10 +2462,10 @@ const baseCopy = {
     premiumFeatureClientsText: "Save clients, create repeat bookings, and keep basic history without Pro.",
     premiumFeatureStaffTitle: "More employees are available in Pro",
     premiumFeatureStaffText: "Free keeps the owner and 1 employee. Pro opens a larger team, roles, and schedules beyond the Free limit.",
-    premiumFeatureOnlineTitle: "Online booking is included in Free",
-    premiumFeatureOnlineText: "Client links, calendar, services, and the basic profile keep working for free. Pro removes Free limits.",
-    premiumFeatureScheduleTitle: "Calendar and schedule are included in Free",
-    premiumFeatureScheduleText: "Run your calendar and basic schedule for free. Pro removes limits and expands team work.",
+    premiumFeatureOnlineTitle: "Online booking is available in Pro",
+    premiumFeatureOnlineText: "Free keeps manual calendar bookings. Pro unlocks the client link for self-booking.",
+    premiumFeatureScheduleTitle: "Advanced calendar is available in Pro",
+    premiumFeatureScheduleText: "Free includes the basic calendar. Pro unlocks advanced schedules, work modes, and team planning.",
     premiumFeaturePushTitle: "Push reminders are available in Pro",
     premiumFeaturePushText: "Enable notifications for new, rescheduled, and cancelled bookings.",
     premiumFeatureTelegramTitle: "Telegram notifications are available in Pro",
@@ -4599,7 +4631,16 @@ Object.assign(generatedMobileCopy.de, {
 });
 
 Object.assign(generatedMobileCopy.fr, {
-  premiumSubscriptionText: "Les nouveaux comptes reçoivent 14 jours de Premium gratuits. Après l'essai, Pro garde les outils payants ouverts sans limites.",
+  premiumSubscriptionText: "Les nouveaux comptes reçoivent 14 jours de Premium gratuits. Free inclut 100 réservations par mois, Pro ouvre les outils sans limites.",
+  bookingLimitTitle: "Réservations du mois",
+  bookingLimitFreeText: "Free inclut 100 réservations par mois. La limite se renouvelle au début du mois suivant.",
+  bookingLimitPremiumText: "Premium ne dépense pas de crédits de réservation.",
+  bookingLimitEndedTitle: "Les réservations du mois sont épuisées",
+  bookingLimitEndedText: "Passez à Pro pour créer des réservations sans limite et ouvrir la réservation en ligne, Telegram et les rappels.",
+  bookingLimitRemaining: "Restant",
+  bookingLimitUsed: "Utilisé",
+  bookingLimitLimit: "Limite",
+  unlimitedShort: "unlim",
   premiumTrialIncluded: "14 jours de Premium gratuits",
   premiumTrialDaysLeft: "{count} jours de Premium restants",
   premiumTrialOneDayLeft: "Dernier jour de Premium",
@@ -4607,7 +4648,7 @@ Object.assign(generatedMobileCopy.fr, {
   premiumUpgradeCta: "Passer à Pro",
   premiumLockedBadge: "Pro",
   premiumFeatureBenefitsTitle: "Pro débloque",
-  premiumBenefitOnlineBooking: "les réservations illimitées au-delà de Free",
+  premiumBenefitOnlineBooking: "la réservation en ligne et les réservations illimitées au-delà de Free",
   premiumBenefitReminders: "les rappels push et Telegram",
   premiumBenefitTeam: "plus d'employés, plannings et rôles",
   premiumBenefitClients: "des outils business avancés pour grandir",
@@ -4616,10 +4657,10 @@ Object.assign(generatedMobileCopy.fr, {
   premiumFeatureClientsText: "Enregistrez les clients, créez des réservations répétées et gardez l'historique de base sans Pro.",
   premiumFeatureStaffTitle: "Plus d'employés sont disponibles avec Pro",
   premiumFeatureStaffText: "Free garde le propriétaire et 1 employé. Pro ouvre une équipe plus large, les rôles et les plannings au-delà de la limite Free.",
-  premiumFeatureOnlineTitle: "La réservation en ligne est incluse dans Free",
-  premiumFeatureOnlineText: "Les liens clients, le calendrier, les services et le profil de base restent gratuits. Pro retire les limites Free.",
-  premiumFeatureScheduleTitle: "Le calendrier et le planning sont inclus dans Free",
-  premiumFeatureScheduleText: "Gérez le calendrier et le planning de base gratuitement. Pro retire les limites et élargit le travail en équipe.",
+  premiumFeatureOnlineTitle: "La réservation en ligne est disponible avec Pro",
+  premiumFeatureOnlineText: "Free garde les réservations manuelles dans le calendrier. Pro ouvre le lien client pour réserver seul.",
+  premiumFeatureScheduleTitle: "Le calendrier avancé est disponible avec Pro",
+  premiumFeatureScheduleText: "Free inclut le calendrier de base. Pro ouvre les plannings avancés, les modes de travail et l'équipe.",
   premiumFeaturePushTitle: "Les rappels push sont disponibles avec Pro",
   premiumFeaturePushText: "Activez les notifications pour les nouvelles réservations, reports et annulations.",
   premiumFeatureTelegramTitle: "Les notifications Telegram sont disponibles avec Pro",
@@ -4629,7 +4670,16 @@ Object.assign(generatedMobileCopy.fr, {
 });
 
 Object.assign(generatedMobileCopy.pl, {
-  premiumSubscriptionText: "Nowe konta otrzymują 14 dni Premium za darmo. Po okresie próbnym Pro utrzymuje płatne narzędzia bez limitów.",
+  premiumSubscriptionText: "Nowe konta otrzymują 14 dni Premium za darmo. Free obejmuje 100 wizyt miesięcznie, Pro otwiera narzędzia bez limitów.",
+  bookingLimitTitle: "Wizyty w tym miesiącu",
+  bookingLimitFreeText: "Free obejmuje 100 wizyt miesięcznie. Limit odnawia się na początku następnego miesiąca.",
+  bookingLimitPremiumText: "Premium nie zużywa kredytów wizyt.",
+  bookingLimitEndedTitle: "Limit wizyt w tym miesiącu się skończył",
+  bookingLimitEndedText: "Wybierz Pro, aby tworzyć wizyty bez limitu i odblokować rezerwacje online, Telegram i przypomnienia.",
+  bookingLimitRemaining: "Pozostało",
+  bookingLimitUsed: "Użyto",
+  bookingLimitLimit: "Limit",
+  unlimitedShort: "unlim",
   premiumTrialIncluded: "14 dni Premium za darmo",
   premiumTrialDaysLeft: "Pozostało {count} dni Premium",
   premiumTrialOneDayLeft: "Ostatni dzień Premium",
@@ -4637,7 +4687,7 @@ Object.assign(generatedMobileCopy.pl, {
   premiumUpgradeCta: "Wybierz Pro",
   premiumLockedBadge: "Pro",
   premiumFeatureBenefitsTitle: "Pro odblokowuje",
-  premiumBenefitOnlineBooking: "nielimitowane wizyty ponad Free",
+  premiumBenefitOnlineBooking: "rezerwacje online i nielimitowane wizyty ponad Free",
   premiumBenefitReminders: "przypomnienia push i Telegram",
   premiumBenefitTeam: "więcej pracowników, grafiki i role",
   premiumBenefitClients: "zaawansowane narzędzia biznesowe do wzrostu",
@@ -4646,10 +4696,10 @@ Object.assign(generatedMobileCopy.pl, {
   premiumFeatureClientsText: "Zapisuj klientów, twórz ponowne wizyty i zachowuj podstawową historię bez Pro.",
   premiumFeatureStaffTitle: "Więcej pracowników jest dostępne w Pro",
   premiumFeatureStaffText: "Free zostawia właściciela i 1 pracownika. Pro otwiera większy zespół, role i grafiki ponad limit Free.",
-  premiumFeatureOnlineTitle: "Rezerwacje online są w Free",
-  premiumFeatureOnlineText: "Linki dla klientów, kalendarz, usługi i podstawowy profil działają za darmo. Pro usuwa limity Free.",
-  premiumFeatureScheduleTitle: "Kalendarz i grafik są w Free",
-  premiumFeatureScheduleText: "Prowadź kalendarz i podstawowy grafik za darmo. Pro usuwa limity i rozszerza pracę zespołu.",
+  premiumFeatureOnlineTitle: "Rezerwacje online są dostępne w Pro",
+  premiumFeatureOnlineText: "Free zostawia ręczne wizyty w kalendarzu. Pro otwiera link klienta do samodzielnej rezerwacji.",
+  premiumFeatureScheduleTitle: "Zaawansowany kalendarz jest dostępny w Pro",
+  premiumFeatureScheduleText: "Free obejmuje podstawowy kalendarz. Pro otwiera zaawansowane grafiki, tryby pracy i planowanie zespołu.",
   premiumFeaturePushTitle: "Przypomnienia push są dostępne w Pro",
   premiumFeaturePushText: "Włącz powiadomienia o nowych, przeniesionych i anulowanych wizytach.",
   premiumFeatureTelegramTitle: "Powiadomienia Telegram są dostępne w Pro",
@@ -4659,7 +4709,16 @@ Object.assign(generatedMobileCopy.pl, {
 });
 
 Object.assign(generatedMobileCopy.cs, {
-  premiumSubscriptionText: "Nové účty získají 14 dní Premium zdarma. Po zkušební době Pro ponechá placené nástroje bez omezení.",
+  premiumSubscriptionText: "Nové účty získají 14 dní Premium zdarma. Free obsahuje 100 rezervací měsíčně, Pro otevírá nástroje bez omezení.",
+  bookingLimitTitle: "Rezervace tento měsíc",
+  bookingLimitFreeText: "Free obsahuje 100 rezervací měsíčně. Limit se obnoví na začátku dalšího měsíce.",
+  bookingLimitPremiumText: "Premium nespotřebovává kredity rezervací.",
+  bookingLimitEndedTitle: "Rezervace na tento měsíc došly",
+  bookingLimitEndedText: "Přejděte na Pro pro rezervace bez limitu, online rezervace, Telegram a připomenutí.",
+  bookingLimitRemaining: "Zbývá",
+  bookingLimitUsed: "Použito",
+  bookingLimitLimit: "Limit",
+  unlimitedShort: "unlim",
   premiumTrialIncluded: "14 dní Premium zdarma",
   premiumTrialDaysLeft: "Zbývá {count} dní Premium",
   premiumTrialOneDayLeft: "Poslední den Premium",
@@ -4667,7 +4726,7 @@ Object.assign(generatedMobileCopy.cs, {
   premiumUpgradeCta: "Přejít na Pro",
   premiumLockedBadge: "Pro",
   premiumFeatureBenefitsTitle: "Pro odemyká",
-  premiumBenefitOnlineBooking: "neomezené rezervace nad rámec Free",
+  premiumBenefitOnlineBooking: "online rezervace a neomezené rezervace nad rámec Free",
   premiumBenefitReminders: "push a Telegram připomenutí",
   premiumBenefitTeam: "více zaměstnanců, rozvrhy a role",
   premiumBenefitClients: "pokročilé firemní nástroje pro růst",
@@ -4676,10 +4735,10 @@ Object.assign(generatedMobileCopy.cs, {
   premiumFeatureClientsText: "Ukládejte klienty, vytvářejte opakované rezervace a držte základní historii bez Pro.",
   premiumFeatureStaffTitle: "Více zaměstnanců je v Pro",
   premiumFeatureStaffText: "Free ponechá vlastníka a 1 zaměstnance. Pro otevírá širší tým, role a rozvrhy nad limit Free.",
-  premiumFeatureOnlineTitle: "Online rezervace jsou ve Free",
-  premiumFeatureOnlineText: "Klientské odkazy, kalendář, služby a základní profil fungují zdarma. Pro ruší limity Free.",
-  premiumFeatureScheduleTitle: "Kalendář a rozvrh jsou ve Free",
-  premiumFeatureScheduleText: "Veďte kalendář a základní rozvrh zdarma. Pro ruší limity a rozšiřuje týmovou práci.",
+  premiumFeatureOnlineTitle: "Online rezervace jsou v Pro",
+  premiumFeatureOnlineText: "Free ponechá ruční rezervace v kalendáři. Pro otevře klientský odkaz pro samostatnou rezervaci.",
+  premiumFeatureScheduleTitle: "Pokročilý kalendář je v Pro",
+  premiumFeatureScheduleText: "Free obsahuje základní kalendář. Pro otevírá pokročilé rozvrhy, pracovní režimy a týmové plánování.",
   premiumFeaturePushTitle: "Push připomenutí jsou v Pro",
   premiumFeaturePushText: "Zapněte upozornění na nové, přesunuté a zrušené rezervace.",
   premiumFeatureTelegramTitle: "Telegram upozornění jsou v Pro",
@@ -4689,7 +4748,16 @@ Object.assign(generatedMobileCopy.cs, {
 });
 
 Object.assign(generatedMobileCopy.es, {
-  premiumSubscriptionText: "Las cuentas nuevas reciben 14 días de Premium gratis. Después de la prueba, Pro mantiene abiertas las herramientas de pago sin límites.",
+  premiumSubscriptionText: "Las cuentas nuevas reciben 14 días de Premium gratis. Free incluye 100 reservas al mes, Pro abre herramientas sin límites.",
+  bookingLimitTitle: "Reservas de este mes",
+  bookingLimitFreeText: "Free incluye 100 reservas al mes. El límite se renueva al inicio del próximo mes.",
+  bookingLimitPremiumText: "Premium no consume créditos de reserva.",
+  bookingLimitEndedTitle: "Las reservas de este mes se agotaron",
+  bookingLimitEndedText: "Activa Pro para crear reservas sin límite y desbloquear reserva online, Telegram y recordatorios.",
+  bookingLimitRemaining: "Quedan",
+  bookingLimitUsed: "Usado",
+  bookingLimitLimit: "Límite",
+  unlimitedShort: "unlim",
   premiumTrialIncluded: "14 días de Premium gratis",
   premiumTrialDaysLeft: "Quedan {count} días de Premium",
   premiumTrialOneDayLeft: "Último día de Premium",
@@ -4697,7 +4765,7 @@ Object.assign(generatedMobileCopy.es, {
   premiumUpgradeCta: "Activar Pro",
   premiumLockedBadge: "Pro",
   premiumFeatureBenefitsTitle: "Pro desbloquea",
-  premiumBenefitOnlineBooking: "reservas ilimitadas más allá de Free",
+  premiumBenefitOnlineBooking: "reserva online y reservas ilimitadas más allá de Free",
   premiumBenefitReminders: "recordatorios push y Telegram",
   premiumBenefitTeam: "más empleados, horarios y roles",
   premiumBenefitClients: "herramientas avanzadas de negocio para crecer",
@@ -4706,10 +4774,10 @@ Object.assign(generatedMobileCopy.es, {
   premiumFeatureClientsText: "Guarda clientes, crea reservas repetidas y conserva el historial básico sin Pro.",
   premiumFeatureStaffTitle: "Más empleados están disponibles en Pro",
   premiumFeatureStaffText: "Free mantiene al propietario y 1 empleado. Pro abre un equipo más amplio, roles y horarios sin el límite Free.",
-  premiumFeatureOnlineTitle: "La reserva online está incluida en Free",
-  premiumFeatureOnlineText: "Los enlaces de clientes, calendario, servicios y perfil básico funcionan gratis. Pro elimina los límites Free.",
-  premiumFeatureScheduleTitle: "Calendario y horario están incluidos en Free",
-  premiumFeatureScheduleText: "Gestiona el calendario y horario básico gratis. Pro elimina límites y amplía el trabajo en equipo.",
+  premiumFeatureOnlineTitle: "La reserva online está disponible en Pro",
+  premiumFeatureOnlineText: "Free mantiene reservas manuales en el calendario. Pro abre el enlace de cliente para reservar.",
+  premiumFeatureScheduleTitle: "El calendario avanzado está disponible en Pro",
+  premiumFeatureScheduleText: "Free incluye el calendario básico. Pro abre horarios avanzados, modos de trabajo y planificación de equipo.",
   premiumFeaturePushTitle: "Los recordatorios push están disponibles en Pro",
   premiumFeaturePushText: "Activa notificaciones para reservas nuevas, movidas y canceladas.",
   premiumFeatureTelegramTitle: "Las notificaciones de Telegram están disponibles en Pro",
@@ -4719,7 +4787,16 @@ Object.assign(generatedMobileCopy.es, {
 });
 
 Object.assign(generatedMobileCopy.de, {
-  premiumSubscriptionText: "Neue Konten erhalten 14 Tage Premium kostenlos. Danach hält Pro die kostenpflichtigen Werkzeuge ohne Limits offen.",
+  premiumSubscriptionText: "Neue Konten erhalten 14 Tage Premium kostenlos. Free enthält 100 Termine pro Monat, Pro öffnet Werkzeuge ohne Limits.",
+  bookingLimitTitle: "Termine dieses Monats",
+  bookingLimitFreeText: "Free enthält 100 Termine pro Monat. Das Limit erneuert sich zu Beginn des nächsten Monats.",
+  bookingLimitPremiumText: "Premium verbraucht keine Terminguthaben.",
+  bookingLimitEndedTitle: "Termine für diesen Monat sind aufgebraucht",
+  bookingLimitEndedText: "Aktivieren Sie Pro für unbegrenzte Termine, Online-Buchung, Telegram und Erinnerungen.",
+  bookingLimitRemaining: "Übrig",
+  bookingLimitUsed: "Genutzt",
+  bookingLimitLimit: "Limit",
+  unlimitedShort: "unlim",
   premiumTrialIncluded: "14 Tage Premium kostenlos",
   premiumTrialDaysLeft: "Noch {count} Tage Premium",
   premiumTrialOneDayLeft: "Letzter Premium-Tag",
@@ -4727,7 +4804,7 @@ Object.assign(generatedMobileCopy.de, {
   premiumUpgradeCta: "Pro aktivieren",
   premiumLockedBadge: "Pro",
   premiumFeatureBenefitsTitle: "Pro schaltet frei",
-  premiumBenefitOnlineBooking: "unbegrenzte Termine über Free hinaus",
+  premiumBenefitOnlineBooking: "Online-Buchung und unbegrenzte Termine über Free hinaus",
   premiumBenefitReminders: "Push- und Telegram-Erinnerungen",
   premiumBenefitTeam: "mehr Mitarbeiter, Dienstpläne und Rollen",
   premiumBenefitClients: "erweiterte Business-Werkzeuge für Wachstum",
@@ -4736,10 +4813,10 @@ Object.assign(generatedMobileCopy.de, {
   premiumFeatureClientsText: "Speichern Sie Kunden, erstellen Sie Wiederholungsbuchungen und behalten Sie die Basis-Historie ohne Pro.",
   premiumFeatureStaffTitle: "Mehr Mitarbeiter sind in Pro verfügbar",
   premiumFeatureStaffText: "Free behält Inhaber und 1 Mitarbeiter. Pro öffnet ein größeres Team, Rollen und Dienstpläne über das Free-Limit hinaus.",
-  premiumFeatureOnlineTitle: "Online-Buchung ist in Free enthalten",
-  premiumFeatureOnlineText: "Kundenlinks, Kalender, Services und Basisprofil funktionieren kostenlos. Pro entfernt Free-Limits.",
-  premiumFeatureScheduleTitle: "Kalender und Dienstplan sind in Free enthalten",
-  premiumFeatureScheduleText: "Nutzen Sie Kalender und Basis-Dienstplan kostenlos. Pro entfernt Limits und erweitert Teamarbeit.",
+  premiumFeatureOnlineTitle: "Online-Buchung ist in Pro verfügbar",
+  premiumFeatureOnlineText: "Free behält manuelle Kalendereinträge. Pro öffnet den Kundenlink zur Selbstbuchung.",
+  premiumFeatureScheduleTitle: "Erweiterter Kalender ist in Pro verfügbar",
+  premiumFeatureScheduleText: "Free enthält den Basiskalender. Pro öffnet erweiterte Dienstpläne, Arbeitsmodi und Teamplanung.",
   premiumFeaturePushTitle: "Push-Erinnerungen sind in Pro verfügbar",
   premiumFeaturePushText: "Aktivieren Sie Hinweise für neue, verschobene und stornierte Buchungen.",
   premiumFeatureTelegramTitle: "Telegram-Benachrichtigungen sind in Pro verfügbar",
@@ -10963,6 +11040,15 @@ function WorkspaceHeader({
   const bookingToggleRequestRef = useRef(0);
   const publicBookingUrl = workspace?.business.publicBookingUrl || "";
   const onlineBookingEnabled = workspace?.business.allowOnlineBooking === true;
+  const headerHasPremium = isPremiumActive(workspace?.professional);
+  const headerBookingCredits = workspace?.bookingCredits || {
+    total: 100,
+    used: 0,
+    remaining: 100,
+  };
+  const headerBookingLimitPercent = headerBookingCredits.total > 0
+    ? Math.min(100, Math.round((headerBookingCredits.used / headerBookingCredits.total) * 100))
+    : 0;
   const businessHasPhoto = Boolean(workspace?.business.photos?.some((photo) => photo.status !== "blocked"));
   const setupItems = [
     { id: "services", title: t.setupServices, done: Boolean(workspace?.services?.length), icon: "pricetag-outline" as const },
@@ -11104,6 +11190,10 @@ function WorkspaceHeader({
   }, [session.professionalId, session.token]);
 
   async function openPanel(nextPanel: typeof panel) {
+    if (nextPanel === "share" && !headerHasPremium) {
+      onOpenSettingsSection("online");
+      return;
+    }
     setPanel(nextPanel);
     if (nextPanel === "notifications") {
       await loadNotifications({ spinner: true });
@@ -11111,6 +11201,11 @@ function WorkspaceHeader({
   }
 
   async function togglePublicBooking() {
+    if (!headerHasPremium) {
+      close();
+      onOpenSettingsSection("online");
+      return;
+    }
     const previousValue = onlineBookingEnabled;
     const nextValue = !previousValue;
     const requestId = bookingToggleRequestRef.current + 1;
@@ -11502,6 +11597,20 @@ function WorkspaceHeader({
                     <Text style={styles.accountName}>{session.displayName}</Text>
                     <Text style={styles.clientOptionCaption}>{workspace?.business.name || session.email}</Text>
                   </View>
+                </View>
+                <View style={styles.accountBookingCard}>
+                  <View style={styles.bookingLimitHeader}>
+                    <Text style={styles.bookingLimitTitle}>{t.bookingLimitTitle || "This month's appointments"}</Text>
+                    <Text style={styles.bookingLimitValue}>
+                      {headerHasPremium ? t.unlimitedShort || "unlim" : `${headerBookingCredits.remaining}/${headerBookingCredits.total}`}
+                    </Text>
+                  </View>
+                  <View style={styles.bookingLimitTrack}>
+                    <View style={[styles.bookingLimitTrackFill, { width: headerHasPremium ? "100%" : `${headerBookingLimitPercent}%` }]} />
+                  </View>
+                  <Text style={styles.bookingLimitHint}>
+                    {headerHasPremium ? t.bookingLimitPremiumText || "Premium does not spend appointment credits." : t.bookingLimitFreeText || "Free includes 100 appointments per month."}
+                  </Text>
                 </View>
                 <Pressable style={styles.accountMenuItem} onPress={() => { close(); onOpenSettingsSection("general"); }}>
                   <Text style={styles.accountMenuItemText}>{t.companySettings || t.settingsGeneral}</Text>
@@ -13837,6 +13946,13 @@ function SettingsTab({
   const premiumStatusLabel = getPremiumStatusLabel(workspace?.professional, t);
   const premiumStatusDetail = getPremiumStatusDetail(workspace?.professional, t);
   const activeSectionLocked = !hasPremium && isPremiumSettingsSection(activeSection);
+  const bookingCredits = workspace?.bookingCredits || {
+    total: 100,
+    used: 0,
+    remaining: 100,
+  };
+  const bookingLimitPercent = bookingCredits.total > 0 ? Math.min(100, Math.round((bookingCredits.used / bookingCredits.total) * 100)) : 0;
+  const bookingLimitEnded = !hasPremium && bookingCredits.remaining <= 0;
   const selectedBusinessCategories = useMemo(() => normalizeCategoryList(draft.categories), [draft.categories]);
   const businessCategoryOptions = useMemo(
     () => normalizeCategoryList([...SYSTEM_SERVICE_CATEGORIES, ...(workspace?.business.categories || []), ...selectedBusinessCategories]).sort(
@@ -13851,7 +13967,10 @@ function SettingsTab({
 
   function applySettingsPayload(payload: any) {
     if (payload?.workspace?.professional?.id) {
-      onWorkspaceUpdated(payload.workspace as WorkspaceSnapshot);
+      onWorkspaceUpdated({
+        ...(payload.workspace as WorkspaceSnapshot),
+        bookingCredits: payload.bookingCredits || (payload.workspace as WorkspaceSnapshot).bookingCredits,
+      });
     }
   }
 
@@ -14905,6 +15024,28 @@ function SettingsTab({
                   {premiumStatusLabel}
                 </Text>
               </View>
+            </View>
+            <View style={[styles.bookingLimitCard, bookingLimitEnded && styles.bookingLimitCardWarning]}>
+              <View style={styles.bookingLimitHeader}>
+                <Text style={styles.bookingLimitTitle}>{t.bookingLimitTitle || "This month's appointments"}</Text>
+                <Text style={styles.bookingLimitValue}>
+                  {hasPremium ? t.unlimitedShort || "unlim" : `${bookingCredits.remaining}/${bookingCredits.total}`}
+                </Text>
+              </View>
+              <View style={styles.bookingLimitTrack}>
+                <View style={[styles.bookingLimitTrackFill, { width: hasPremium ? "100%" : `${bookingLimitPercent}%` }]} />
+              </View>
+              <View style={styles.bookingLimitMetrics}>
+                <Text style={styles.bookingLimitMetricText}>{t.bookingLimitRemaining || "Remaining"}: {hasPremium ? t.unlimitedShort || "unlim" : bookingCredits.remaining}</Text>
+                <Text style={styles.bookingLimitMetricText}>{t.bookingLimitUsed || "Used"}: {hasPremium ? t.unlimitedShort || "unlim" : bookingCredits.used}</Text>
+              </View>
+              <Text style={styles.bookingLimitHint}>
+                {hasPremium
+                  ? t.bookingLimitPremiumText || "Premium does not spend appointment credits."
+                  : bookingLimitEnded
+                    ? t.bookingLimitEndedText || "Get Pro to create unlimited appointments."
+                    : t.bookingLimitFreeText || "Free includes 100 appointments per month."}
+              </Text>
             </View>
             <View style={styles.premiumBenefitList}>
               {[t.premiumBenefitOnlineBooking, t.premiumBenefitReminders, t.premiumBenefitTeam, t.premiumBenefitClients].map((benefit) => (
@@ -17199,6 +17340,15 @@ const styles = StyleSheet.create({
     paddingBottom: 14,
     borderBottomWidth: 1,
     borderBottomColor: "#E2E8F0",
+  },
+  accountBookingCard: {
+    gap: 8,
+    marginTop: 10,
+    padding: 12,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    backgroundColor: "#F8FAFF",
   },
   accountAvatarLarge: {
     width: 56,
@@ -20515,6 +20665,62 @@ const styles = StyleSheet.create({
     lineHeight: 17,
     fontWeight: "700",
     backgroundColor: "#FFF7D6",
+  },
+  bookingLimitCard: {
+    gap: 9,
+    padding: 12,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    backgroundColor: "#F8FAFF",
+  },
+  bookingLimitCardWarning: {
+    borderColor: "#FED7AA",
+    backgroundColor: "#FFF7ED",
+  },
+  bookingLimitHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 10,
+  },
+  bookingLimitTitle: {
+    flex: 1,
+    color: "#0F172A",
+    fontSize: 15,
+    fontWeight: "900",
+  },
+  bookingLimitValue: {
+    color: DESIGN.colors.primary,
+    fontSize: 16,
+    fontWeight: "900",
+  },
+  bookingLimitTrack: {
+    height: 9,
+    overflow: "hidden",
+    borderRadius: 999,
+    backgroundColor: "#E2E8F0",
+  },
+  bookingLimitTrackFill: {
+    height: "100%",
+    borderRadius: 999,
+    backgroundColor: DESIGN.colors.primary,
+  },
+  bookingLimitMetrics: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+  },
+  bookingLimitMetricText: {
+    color: "#64748B",
+    fontSize: 12,
+    fontWeight: "900",
+  },
+  bookingLimitHint: {
+    color: "#64748B",
+    fontSize: 12,
+    lineHeight: 17,
+    fontWeight: "700",
   },
   settingsAvatarRow: {
     flexDirection: "row",

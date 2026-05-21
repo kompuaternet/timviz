@@ -45,7 +45,7 @@ export default async function ProSettingsPage({ searchParams }: ProSettingsPageP
   }
 
   const usedCredits = await getAppointmentUsageForProfessional(professionalId);
-  const totalCredits = workspace.professional.bookingCreditsTotal ?? DEFAULT_BOOKING_CREDITS;
+  const totalCredits = DEFAULT_BOOKING_CREDITS;
   const joinRequests = workspace.membership.scope === "owner" ? await getJoinRequestsForOwner(professionalId) : [];
 
   return (

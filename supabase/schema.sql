@@ -40,7 +40,7 @@ create table if not exists public.professionals (
   timezone text not null,
   language text not null,
   currency text not null default 'USD',
-  booking_credits_total integer not null default 500,
+  booking_credits_total integer not null default 100,
   wallet_balance integer not null default 0,
   plan text not null default 'free',
   premium_status text not null default 'inactive',
@@ -371,7 +371,7 @@ create table if not exists public.mobile_push_events (
 );
 
 alter table public.professionals add column if not exists currency text not null default 'USD';
-alter table public.professionals add column if not exists booking_credits_total integer not null default 500;
+alter table public.professionals add column if not exists booking_credits_total integer not null default 100;
 alter table public.professionals add column if not exists wallet_balance integer not null default 0;
 alter table public.professionals add column if not exists plan text not null default 'free';
 alter table public.professionals add column if not exists premium_status text not null default 'inactive';

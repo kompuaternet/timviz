@@ -546,13 +546,24 @@ const planCopy = {
     renewsOn: "Далее",
     yearlyRenewal: "Premium Yearly · $29/year",
     monthlyRenewal: "Premium Monthly · $3/month",
-    freeHint: "Бесплатный тариф: до 500 записей. Premium открывает аналитику, Telegram-уведомления, напоминания и дополнительные бизнес-инструменты.",
+    freeHint: "Бесплатный тариф: 100 записей каждый месяц. Premium открывает онлайн-запись, Telegram, напоминания и расширенный календарь.",
     premiumHint: "Premium активен для программного обеспечения Timviz. Подписку можно отменить в любое время.",
     trialHintMonthly: "После пробного периода подписка продолжится как Premium Monthly за $3/month. Отменить можно в любое время.",
     trialHintYearly: "После пробного периода подписка продолжится как Premium Yearly за $29/year. Отменить можно в любое время.",
     upgrade: "Перейти на Premium",
     manage: "Управлять подпиской",
-    unknownDate: "Дата появится после первого платежа."
+    unknownDate: "Дата появится после первого платежа.",
+    appointmentsTitle: "Записи этого месяца",
+    appointmentsFreeText: "На Free доступно 100 записей в месяц. В начале месяца лимит обновится автоматически.",
+    appointmentsPremiumText: "На Premium записи не списываются: можно создавать без ограничений.",
+    appointmentsRemaining: "Осталось",
+    appointmentsUsed: "Использовано",
+    appointmentsLimit: "Лимит",
+    unlimited: "unlim",
+    limitEndedTitle: "Записи на этот месяц закончились",
+    limitEndedText: "Premium откроет новые записи без ограничений и включит онлайн-запись, Telegram и напоминания.",
+    lockedTitle: "Эта функция доступна в Premium",
+    lockedText: "Free остается для базового учета. Premium открывает онлайн-запись, Telegram-уведомления, напоминания клиентам и расширенный календарь."
   },
   uk: {
     eyebrow: "Тариф",
@@ -571,13 +582,24 @@ const planCopy = {
     renewsOn: "Далі",
     yearlyRenewal: "Premium Yearly · $29/year",
     monthlyRenewal: "Premium Monthly · $3/month",
-    freeHint: "Безкоштовний тариф: до 500 записів. Premium відкриває необмежені записи, Telegram-сповіщення, статистику та пріоритет у каталозі.",
+    freeHint: "Безкоштовний тариф: 100 записів щомісяця. Premium відкриває онлайн-запис, Telegram, нагадування та розширений календар.",
     premiumHint: "Premium активний для програмного забезпечення Timviz. Підписку можна скасувати будь-коли.",
     trialHintMonthly: "Після пробного періоду підписка продовжиться як Premium Monthly за $3/month. Скасувати можна будь-коли.",
     trialHintYearly: "Після пробного періоду підписка продовжиться як Premium Yearly за $29/year. Скасувати можна будь-коли.",
     upgrade: "Перейти на Premium",
     manage: "Керувати підпискою",
-    unknownDate: "Дата зʼявиться після першого платежу."
+    unknownDate: "Дата зʼявиться після першого платежу.",
+    appointmentsTitle: "Записи цього місяця",
+    appointmentsFreeText: "На Free доступно 100 записів на місяць. На початку місяця ліміт оновиться автоматично.",
+    appointmentsPremiumText: "На Premium записи не списуються: можна створювати без обмежень.",
+    appointmentsRemaining: "Залишилось",
+    appointmentsUsed: "Використано",
+    appointmentsLimit: "Ліміт",
+    unlimited: "unlim",
+    limitEndedTitle: "Записи на цей місяць закінчилися",
+    limitEndedText: "Premium відкриє нові записи без обмежень і увімкне онлайн-запис, Telegram та нагадування.",
+    lockedTitle: "Ця функція доступна в Premium",
+    lockedText: "Free залишається для базового обліку. Premium відкриває онлайн-запис, Telegram-сповіщення, нагадування клієнтам і розширений календар."
   },
   en: {
     eyebrow: "Plan",
@@ -596,13 +618,24 @@ const planCopy = {
     renewsOn: "Then",
     yearlyRenewal: "Premium Yearly · $29/year",
     monthlyRenewal: "Premium Monthly · $3/month",
-    freeHint: "Free plan: up to 500 appointments. Premium unlocks unlimited appointments, Telegram notifications, statistics, and priority in the catalog.",
+    freeHint: "Free plan: 100 appointments every month. Premium unlocks online booking, Telegram, reminders, and the advanced calendar.",
     premiumHint: "Premium is active for Timviz software. You can cancel the subscription anytime.",
     trialHintMonthly: "After the trial, your subscription continues as Premium Monthly for $3/month. You can cancel anytime.",
     trialHintYearly: "After the trial, your subscription continues as Premium Yearly for $29/year. You can cancel anytime.",
     upgrade: "Upgrade to Premium",
     manage: "Manage subscription",
-    unknownDate: "The date will appear after the first payment."
+    unknownDate: "The date will appear after the first payment.",
+    appointmentsTitle: "This month's appointments",
+    appointmentsFreeText: "Free includes 100 appointments per month. The limit refreshes automatically at the start of each month.",
+    appointmentsPremiumText: "Premium does not spend appointment credits: create bookings without limits.",
+    appointmentsRemaining: "Remaining",
+    appointmentsUsed: "Used",
+    appointmentsLimit: "Limit",
+    unlimited: "unlim",
+    limitEndedTitle: "Appointments are used up for this month",
+    limitEndedText: "Premium unlocks unlimited new appointments plus online booking, Telegram, and reminders.",
+    lockedTitle: "This feature is available in Premium",
+    lockedText: "Free covers basic tracking. Premium unlocks online booking, Telegram notifications, client reminders, and the advanced calendar."
   }
 } as const;
 
@@ -781,6 +814,9 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
   const [isTelegramSaving, setIsTelegramSaving] = useState(false);
   const [telegramError, setTelegramError] = useState("");
   const [activeSection, setActiveSection] = useState<SettingsSectionId>(initialSection ?? "general");
+  const hasPremium = isProPremiumActive(data.professional);
+  const premiumLockedSectionIds = useMemo(() => new Set<SettingsSectionId>(["online-booking", "schedule", "telegram"]), []);
+  const activeSectionLocked = !hasPremium && premiumLockedSectionIds.has(activeSection);
   const isHydratedRef = useRef(false);
   const autoSaveTimerRef = useRef<number | null>(null);
   const lastSavedSnapshotRef = useRef("");
@@ -886,6 +922,10 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
     !isPhotoTooltipDismissed;
   const scheduleSettingsPath =
     data.membership.scope === "owner" ? "/pro/staff/schedule" : "/pro/schedule";
+  const bookingLimitPercent = data.bookingCredits.total > 0
+    ? Math.min(100, Math.round((data.bookingCredits.used / data.bookingCredits.total) * 100))
+    : 0;
+  const bookingLimitEnded = !hasPremium && data.bookingCredits.remaining <= 0;
 
   const profileReadyPercent = useMemo(() => {
     const checks = [
@@ -1900,6 +1940,7 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
           publicBookingEnabled={data.business.allowOnlineBooking === true}
           canTogglePublicBooking={data.membership.scope === "owner"}
           onboardingCta={onboardingCta}
+          bookingCredits={data.bookingCredits}
         />
 
         <header className={styles.settingsHero}>
@@ -1997,6 +2038,7 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
                   onClick={() => setActiveSection(item.id)}
                 >
                   {item.label}
+                  {!hasPremium && premiumLockedSectionIds.has(item.id) ? <small>Premium</small> : null}
                 </button>
               ))}
             </nav>
@@ -2036,6 +2078,41 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
                     <a className={styles.primaryButton} href="/pricing">
                       {data.professional.plan === "premium" ? planText.manage : planText.upgrade}
                     </a>
+                  </section>
+
+                  <section className={`${styles.settingsCard} ${styles.settingsCreditsCard}`}>
+                    <div className={styles.settingsCardHeader}>
+                      <div>
+                        <span>{t.settings.credits}</span>
+                        <h2>{planText.appointmentsTitle}</h2>
+                      </div>
+                      <strong>{hasPremium ? planText.unlimited : `${data.bookingCredits.remaining}/${data.bookingCredits.total}`}</strong>
+                    </div>
+                    <div className={styles.settingsProgressTrack}>
+                      <span style={{ width: hasPremium ? "100%" : `${bookingLimitPercent}%` }} />
+                    </div>
+                    <div className={styles.settingsMetrics}>
+                      <div>
+                        <span>{planText.appointmentsRemaining}</span>
+                        <strong>{hasPremium ? planText.unlimited : data.bookingCredits.remaining}</strong>
+                      </div>
+                      <div>
+                        <span>{planText.appointmentsUsed}</span>
+                        <strong>{hasPremium ? planText.unlimited : data.bookingCredits.used}</strong>
+                      </div>
+                      <div>
+                        <span>{planText.appointmentsLimit}</span>
+                        <strong>{hasPremium ? planText.unlimited : data.bookingCredits.total}</strong>
+                      </div>
+                    </div>
+                    <p className={styles.settingsCardHint}>
+                      {hasPremium ? planText.appointmentsPremiumText : bookingLimitEnded ? planText.limitEndedText : planText.appointmentsFreeText}
+                    </p>
+                    {bookingLimitEnded ? (
+                      <a className={styles.ghostButton} href="/pricing">
+                        {planText.upgrade}
+                      </a>
+                    ) : null}
                   </section>
 
                   <section className={styles.settingsCard}>
@@ -2212,7 +2289,21 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
                 </>
               ) : null}
 
-              {activeSection === "online-booking" ? (
+              {activeSectionLocked ? (
+                <section className={`${styles.settingsCard} ${styles.settingsPlanCard}`}>
+                  <div className={styles.settingsCardHeader}>
+                    <div>
+                      <span>Premium</span>
+                      <h2>{planText.lockedTitle}</h2>
+                    </div>
+                    <strong className={styles.settingsPlanBadge}>Pro</strong>
+                  </div>
+                  <p className={styles.settingsCardHint}>{planText.lockedText}</p>
+                  <a className={styles.primaryButton} href="/pricing">{planText.upgrade}</a>
+                </section>
+              ) : null}
+
+              {!activeSectionLocked && activeSection === "online-booking" ? (
                 <>
                   <section className={styles.settingsCard}>
                     <div className={styles.settingsCardHeader}>
@@ -2453,7 +2544,7 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
                 </>
               ) : null}
 
-              {activeSection === "schedule" ? (
+              {!activeSectionLocked && activeSection === "schedule" ? (
                 <>
                   <section className={styles.settingsCard}>
                     <div className={styles.settingsCardHeader}>
@@ -2476,7 +2567,7 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
                 </>
               ) : null}
 
-              {activeSection === "telegram" ? (
+              {!activeSectionLocked && activeSection === "telegram" ? (
                 <section className={styles.settingsCard}>
                   <div className={styles.settingsCardHeader}>
                     <div>

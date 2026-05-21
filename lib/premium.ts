@@ -14,13 +14,13 @@ export type UserAccess = {
   features: Record<string, boolean | number | string>;
 };
 
-export const FREE_APPOINTMENTS_PER_MONTH = 500;
+export const FREE_APPOINTMENTS_PER_MONTH = 100;
 export const PREMIUM_TRIAL_DAYS = 14;
 
 const freeLimitMessages: Record<SiteLanguage, string> = {
-  ru: "Вы достигли лимита бесплатного тарифа. Перейдите на Premium, чтобы создавать записи без ограничений.",
-  uk: "Ви досягли ліміту безкоштовного тарифу. Перейдіть на Premium, щоб створювати записи без обмежень.",
-  en: "You have reached the Free plan limit. Upgrade to Premium to create unlimited appointments."
+  ru: "В этом месяце бесплатные записи закончились. Premium откроет новые записи без ограничений.",
+  uk: "Цього місяця безкоштовні записи закінчилися. Premium відкриє нові записи без обмежень.",
+  en: "Free appointments are used up for this month. Premium unlocks unlimited appointments."
 };
 
 export function normalizePlan(value: unknown): TimvizPlan {

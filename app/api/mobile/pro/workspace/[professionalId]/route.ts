@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { createApiTimer } from "../../../../../../lib/api-timing";
 import { verifySessionValue } from "../../../../../../lib/pro-auth";
-import { getWorkspaceSnapshot } from "../../../../../../lib/pro-data";
+import { getAppointmentUsageForProfessional } from "../../../../../../lib/pro-calendar";
+import { DEFAULT_BOOKING_CREDITS, getWorkspaceSnapshot } from "../../../../../../lib/pro-data";
 import { getTelegramConnectionByProfessionalId } from "../../../../../../lib/telegram-bot";
 import type { WorkspaceSnapshot } from "../../../../../../lib/pro-data";
 
@@ -70,9 +71,19 @@ export async function GET(request: Request, { params }: RouteProps) {
 
     const url = new URL(request.url);
     const responseSnapshot = url.searchParams.get("media") === "0" ? compactWorkspaceMedia(snapshot) : snapshot;
+    const used = await getAppointmentUsageForProfessional(professionalId);
+    const total = DEFAULT_BOOKING_CREDITS;
 
     timer({ status: 200, telegram: telegram.connected });
-    return NextResponse.json({ ...responseSnapshot, telegram });
+    return NextResponse.json({
+      ...responseSnapshot,
+      telegram,
+      bookingCredits: {
+        total,
+        used,
+        remaining: Math.max(0, total - used)
+      }
+    });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to load workspace.";
     timer({ status: 400, error: true });

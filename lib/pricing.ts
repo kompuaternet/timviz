@@ -93,7 +93,6 @@ export const pricingCopy: Record<SiteLanguage, PricingCopy> = {
           "basicAccess",
           "oneMaster",
           "appointmentsLimit",
-          "onlineBooking",
           "calendar",
           "services",
           "clients",
@@ -143,7 +142,7 @@ export const pricingCopy: Record<SiteLanguage, PricingCopy> = {
     features: {
       basicAccess: "Базовый доступ",
       oneMaster: "1 мастер / 1 сотрудник",
-      appointmentsLimit: "До 500 записей",
+      appointmentsLimit: "До 100 записей в месяц",
       onlineBooking: "Онлайн-запись",
       calendar: "Календарь",
       services: "Услуги",
@@ -180,7 +179,7 @@ export const pricingCopy: Record<SiteLanguage, PricingCopy> = {
       },
       {
         question: "Можно ли пользоваться Timviz бесплатно?",
-        answer: "Да. Free подходит для старта и включает до 500 записей, базовый календарь, услуги, расписание, ссылку онлайн-записи и публичный профиль."
+        answer: "Да. Free подходит для старта и включает до 100 записей в месяц, базовый календарь, услуги, расписание и публичный профиль."
       }
     ]
   },
@@ -215,7 +214,6 @@ export const pricingCopy: Record<SiteLanguage, PricingCopy> = {
           "basicAccess",
           "oneMaster",
           "appointmentsLimit",
-          "onlineBooking",
           "calendar",
           "services",
           "clients",
@@ -265,7 +263,7 @@ export const pricingCopy: Record<SiteLanguage, PricingCopy> = {
     features: {
       basicAccess: "Базовий доступ",
       oneMaster: "1 майстер / 1 співробітник",
-      appointmentsLimit: "До 500 записів",
+      appointmentsLimit: "До 100 записів на місяць",
       onlineBooking: "Онлайн-запис",
       calendar: "Календар",
       services: "Послуги",
@@ -302,7 +300,7 @@ export const pricingCopy: Record<SiteLanguage, PricingCopy> = {
       },
       {
         question: "Чи можна користуватися Timviz безкоштовно?",
-        answer: "Так. Free підходить для старту і включає до 500 записів, базовий календар, послуги, розклад, посилання для онлайн-запису та публічний профіль."
+        answer: "Так. Free підходить для старту і включає до 100 записів на місяць, базовий календар, послуги, розклад і публічний профіль."
       }
     ]
   },
@@ -337,7 +335,6 @@ export const pricingCopy: Record<SiteLanguage, PricingCopy> = {
           "basicAccess",
           "oneMaster",
           "appointmentsLimit",
-          "onlineBooking",
           "calendar",
           "services",
           "clients",
@@ -387,7 +384,7 @@ export const pricingCopy: Record<SiteLanguage, PricingCopy> = {
     features: {
       basicAccess: "Basic access",
       oneMaster: "1 master / 1 staff member",
-      appointmentsLimit: "Up to 500 appointments",
+      appointmentsLimit: "Up to 100 appointments per month",
       onlineBooking: "Online booking",
       calendar: "Calendar",
       services: "Services",
@@ -424,7 +421,7 @@ export const pricingCopy: Record<SiteLanguage, PricingCopy> = {
       },
       {
         question: "Can I use Timviz for free?",
-        answer: "Yes. Free is designed for getting started and includes up to 500 appointments, basic calendar, services, working hours, online booking link and public profile."
+        answer: "Yes. Free is designed for getting started and includes up to 100 appointments per month, basic calendar, services, working hours and public profile."
       }
     ]
   }

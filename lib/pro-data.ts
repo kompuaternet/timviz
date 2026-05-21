@@ -6,7 +6,16 @@ import { isMailerConfigured, sendMail } from "./mailer";
 import { getSupabaseAdmin, isSupabaseConfigured } from "./supabase";
 import { hashPassword, verifyPassword } from "./pro-auth";
 import { getPublicBusinessPathId } from "./public-business-path";
-import { getPremiumTrialUntil, isPremiumAccessActive, normalizePlan, normalizePremiumStatus, type PremiumStatus, type TimvizPlan } from "./premium";
+import {
+  FREE_APPOINTMENTS_PER_MONTH,
+  getPremiumTrialUntil,
+  isPremiumAccessActive,
+  normalizePlan,
+  normalizePremiumStatus,
+  upsertUserEntitlement,
+  type PremiumStatus,
+  type TimvizPlan
+} from "./premium";
 import { convertBaseUahPriceToCountryPrice, inferCurrencyFromCountryName, type PricingContext } from "./service-pricing";
 import { getServiceLocalizedText, getTemplateBasePriceUah, localizeCategoryName, type LocalizedServiceText } from "./service-templates";
 import {
@@ -266,7 +275,7 @@ const defaultServiceColors = [
   "#90cdf4"
 ];
 
-export const DEFAULT_BOOKING_CREDITS = 500;
+export const DEFAULT_BOOKING_CREDITS = FREE_APPOINTMENTS_PER_MONTH;
 const FREE_ACTIVE_EMPLOYEE_LIMIT = 1;
 
 let activeDirectorySnapshotPromise: Promise<BusinessDirectorySnapshot> | null = null;
@@ -1688,6 +1697,18 @@ export async function createProfessionalSetup(input: {
       if (professionalError) {
         throw new Error(professionalError.message);
       }
+    }
+
+    if (shouldStartPremiumTrial && initialPremiumUntil) {
+      await upsertUserEntitlement({
+        userId: professionalId,
+        planCode: "pro_monthly",
+        status: "trial",
+        source: "promo",
+        activeFrom: createdAt,
+        activeUntil: initialPremiumUntil,
+        trialUntil: initialPremiumUntil
+      }).catch(() => undefined);
     }
 
     let businessId: string;
@@ -4730,6 +4751,17 @@ export async function updateWorkspaceSettingsForProfessional(
 
   if (password && password.length < 6) {
     throw new Error("Password must be at least 6 characters.");
+  }
+
+  if (
+    nextBusiness.allowOnlineBooking === true &&
+    !isPremiumAccessActive({
+      plan: workspace.professional.plan,
+      premiumStatus: workspace.professional.premiumStatus,
+      premiumUntil: workspace.professional.premiumUntil
+    })
+  ) {
+    throw new Error("Online booking is available on Premium.");
   }
 
   if (isSupabaseConfigured()) {

@@ -23,6 +23,11 @@ type ProWorkspaceHeaderProps = {
   publicBookingEnabled?: boolean;
   canTogglePublicBooking?: boolean;
   onboardingCta?: OnboardingCtaState | null;
+  bookingCredits?: {
+    total: number;
+    used: number;
+    remaining: number;
+  };
 };
 
 function formatDateKey(date: Date) {
@@ -68,7 +73,11 @@ const headerCopy = {
     onboardingSchedule: "Налаштувати графік",
     onboardingBooking: "Увімкнути запис",
     onboardingPhoto: "Додати фото",
-    onboardingTelegram: "Підключити Telegram"
+    onboardingTelegram: "Підключити Telegram",
+    appointments: "Записи этого месяца",
+    remaining: "осталось",
+    used: "использовано",
+    unlimited: "unlim"
   },
   uk: {
     workspace: "Робочий простір",
@@ -105,7 +114,11 @@ const headerCopy = {
     onboardingSchedule: "Налаштувати графік",
     onboardingBooking: "Увімкнути запис",
     onboardingPhoto: "Додати фото",
-    onboardingTelegram: "Підключити Telegram"
+    onboardingTelegram: "Підключити Telegram",
+    appointments: "Записи цього місяця",
+    remaining: "залишилось",
+    used: "використано",
+    unlimited: "unlim"
   },
   en: {
     workspace: "Workspace",
@@ -142,7 +155,11 @@ const headerCopy = {
     onboardingSchedule: "Set schedule",
     onboardingBooking: "Enable booking",
     onboardingPhoto: "Add photos",
-    onboardingTelegram: "Connect Telegram"
+    onboardingTelegram: "Connect Telegram",
+    appointments: "This month's appointments",
+    remaining: "remaining",
+    used: "used",
+    unlimited: "unlim"
   }
 } as const;
 type HeaderCopy = (typeof headerCopy)[keyof typeof headerCopy];
@@ -218,7 +235,8 @@ export default function ProWorkspaceHeader({
   publicBookingUrl = "",
   publicBookingEnabled = false,
   canTogglePublicBooking = false,
-  onboardingCta = null
+  onboardingCta = null,
+  bookingCredits
 }: ProWorkspaceHeaderProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -238,6 +256,9 @@ export default function ProWorkspaceHeader({
   const [menuAvatarUrl, setMenuAvatarUrl] = useState((viewerAvatarUrl || "").trim());
   const [notificationsCount, setNotificationsCount] = useState(0);
   const [publicBookingState, setPublicBookingState] = useState(publicBookingEnabled);
+  const bookingCreditsPercent = bookingCredits && bookingCredits.total > 0
+    ? Math.min(100, Math.round((bookingCredits.used / bookingCredits.total) * 100))
+    : 0;
   const pageTitle = useMemo(() => getPageTitle(pathname, language), [language, pathname]);
   const onboardingStepText = onboardingCta
     ? getOnboardingStepText(copy, onboardingCta.step)
@@ -508,7 +529,13 @@ export default function ProWorkspaceHeader({
           type="button"
           className={`${styles.calendarIconButton} ${styles.calendarShareButton} ${activeMenu === "share" ? styles.calendarIconButtonActive : ""}`}
           aria-label={copy.publicLink}
-          onClick={() => setActiveMenu((current) => (current === "share" ? null : "share"))}
+          onClick={() => {
+            if (!isPremium) {
+              router.push("/pricing");
+              return;
+            }
+            setActiveMenu((current) => (current === "share" ? null : "share"));
+          }}
         >
           <ShareIcon />
         </button>
@@ -671,6 +698,23 @@ export default function ProWorkspaceHeader({
               </div>
             </div>
           </div>
+
+          {bookingCredits ? (
+            <div className={styles.profileMenuCreditsCard}>
+              <div className={styles.profileMenuCreditsTop}>
+                <span>{copy.appointments}</span>
+                <strong>{isPremium ? copy.unlimited : `${bookingCredits.remaining}/${bookingCredits.total}`}</strong>
+              </div>
+              <div className={styles.profileMenuCreditsTrack}>
+                <span style={{ width: isPremium ? "100%" : `${bookingCreditsPercent}%` }} />
+              </div>
+              <small>
+                {isPremium
+                  ? `${copy.used}: ${copy.unlimited}`
+                  : `${copy.remaining}: ${bookingCredits.remaining} · ${copy.used}: ${bookingCredits.used}`}
+              </small>
+            </div>
+          ) : null}
 
           <div className={styles.calendarAccountMenuSection}>
             <button

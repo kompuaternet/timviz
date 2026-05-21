@@ -18,6 +18,7 @@ import { sendOnlineBookingPushNotification } from "./push-notifications";
 import { getSupabaseAdmin, isSupabaseConfigured } from "./supabase";
 import { sendBookingTelegramNotification } from "./telegram-bot";
 import { addMinutesToTime } from "./work-schedule";
+import { isPremiumAccessActive } from "./premium";
 
 export type BookingStatus = "pending" | "confirmed" | "completed" | "cancelled";
 
@@ -720,6 +721,17 @@ export async function createBusinessBooking(input: PublicBusinessBookingInput) {
 
   if (business.allowOnlineBooking !== true) {
     throw new Error("Online booking is not enabled for this business.");
+  }
+  const owner = directory.professionals.find((item) => item.id === business.ownerProfessionalId);
+  if (
+    !owner ||
+    !isPremiumAccessActive({
+      plan: owner.plan,
+      premiumStatus: owner.premiumStatus,
+      premiumUntil: owner.premiumUntil
+    })
+  ) {
+    throw new Error("Online booking is available on Premium.");
   }
 
   const businessServices = directory.services

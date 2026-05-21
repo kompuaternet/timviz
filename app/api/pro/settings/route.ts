@@ -22,7 +22,7 @@ async function getPayload(professionalId: string) {
   }
 
   const used = await getAppointmentUsageForProfessional(professionalId);
-  const total = workspace.professional.bookingCreditsTotal ?? DEFAULT_BOOKING_CREDITS;
+  const total = DEFAULT_BOOKING_CREDITS;
 
   return {
     workspace,

@@ -11,7 +11,7 @@ async function getPayload(professionalId: string) {
   const workspace = await getWorkspaceSnapshot(professionalId);
   if (!workspace) return null;
   const used = await getAppointmentUsageForProfessional(professionalId);
-  const total = workspace.professional.bookingCreditsTotal ?? DEFAULT_BOOKING_CREDITS;
+  const total = DEFAULT_BOOKING_CREDITS;
   return {
     workspace,
     bookingCredits: {

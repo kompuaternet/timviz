@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { getSessionCookieName, verifySessionValue } from "../../../../../lib/pro-auth";
 import { getWorkspaceSnapshot } from "../../../../../lib/pro-data";
+import { isPremiumAccessActive } from "../../../../../lib/premium";
 import {
   ensureTelegramBotCommandsConfigured,
   ensureTelegramWebhookConfigured,
@@ -36,6 +37,14 @@ export async function GET() {
 
     if (!workspace) {
       return NextResponse.json({ error: "Workspace not found." }, { status: 404 });
+    }
+
+    if (!isPremiumAccessActive({
+      plan: workspace.professional.plan,
+      premiumStatus: workspace.professional.premiumStatus,
+      premiumUntil: workspace.professional.premiumUntil
+    })) {
+      return NextResponse.json({ error: "Telegram notifications are available on Premium." }, { status: 402 });
     }
 
     await Promise.all([
@@ -98,6 +107,14 @@ export async function PATCH(request: Request) {
 
     if (!workspace) {
       return NextResponse.json({ error: "Workspace not found." }, { status: 404 });
+    }
+
+    if (!isPremiumAccessActive({
+      plan: workspace.professional.plan,
+      premiumStatus: workspace.professional.premiumStatus,
+      premiumUntil: workspace.professional.premiumUntil
+    })) {
+      return NextResponse.json({ error: "Telegram notifications are available on Premium." }, { status: 402 });
     }
 
     const body = (await request.json().catch(() => ({}))) as Partial<{
