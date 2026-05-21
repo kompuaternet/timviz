@@ -5085,9 +5085,167 @@
 }
 
 @media (max-width: 720px) {
+  .workspaceShell.scheduleShell,
+  .staffStudioShell {
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+
   .staffStudioMain,
   .staffEditorLayout {
-    padding: 20px 16px 96px;
+    width: 100%;
+    min-width: 0;
+    padding: 18px 12px calc(96px + env(safe-area-inset-bottom, 0px));
+    gap: 14px;
+  }
+
+  .staffStudioToolbar,
+  .staffStudioTable,
+  .staffStudioRows,
+  .staffStudioBottomGrid,
+  .staffStudioPanel,
+  .staffStudioSideList,
+  .staffMembershipCard {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .staffStudioToolbar {
+    padding: 12px;
+    border-radius: 18px;
+  }
+
+  .staffStudioSearch {
+    min-height: 48px;
+    padding: 0 14px;
+  }
+
+  .staffStudioTitle {
+    font-size: 1.85rem;
+    line-height: 1.03;
+    letter-spacing: -0.04em;
+  }
+
+  .staffStudioText {
+    margin-top: 8px;
+    font-size: 0.94rem;
+    line-height: 1.45;
+  }
+
+  .staffStudioTable {
+    border-radius: 20px;
+  }
+
+  .staffStudioRow {
+    min-width: 0;
+    padding: 16px;
+  }
+
+  .staffStudioNameCell {
+    min-width: 0;
+    gap: 12px;
+  }
+
+  .staffStudioIdentity,
+  .staffStudioContactCell,
+  .staffStudioStatsCell {
+    min-width: 0;
+  }
+
+  .staffStudioIdentity strong,
+  .staffStudioIdentity span,
+  .staffStudioIdentity small,
+  .staffStudioContactCell span,
+  .staffStudioStatsCell {
+    overflow-wrap: anywhere;
+  }
+
+  .staffStudioPanel {
+    padding: 16px 14px;
+    border-radius: 20px;
+    gap: 12px;
+  }
+
+  .staffStudioPanelHeader h2 {
+    font-size: 1.12rem;
+    line-height: 1.18;
+  }
+
+  .staffStudioEmpty {
+    min-height: 116px;
+    padding: 16px 12px;
+    border-radius: 18px;
+    font-size: 0.94rem;
+  }
+
+  .staffSideCard {
+    width: 100%;
+    min-width: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+    gap: 12px;
+    padding: 14px;
+    border-radius: 16px;
+  }
+
+  .staffSideCard > div {
+    min-width: 0;
+  }
+
+  .staffSideCard strong,
+  .staffSideCard p,
+  .staffSideCard span {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+
+  .staffSideCard strong {
+    font-size: 0.96rem;
+    line-height: 1.25;
+  }
+
+  .staffSideCard p,
+  .staffSideCard span {
+    margin-top: 4px;
+    font-size: 0.9rem;
+    line-height: 1.35;
+  }
+
+  .staffSideActions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .staffSideActions .staffStudioPrimaryButton,
+  .staffSideActions .staffSecondaryButton,
+  .staffSideCard > .staffSecondaryButton {
+    width: 100%;
+    min-width: 0;
+    min-height: 42px;
+    padding: 0 12px;
+    font-size: 0.9rem;
+    line-height: 1.12;
+    white-space: normal;
+    text-align: center;
+  }
+
+  .staffMembershipCard {
+    padding: 18px;
+    border-radius: 20px;
+  }
+
+  .staffMembershipCard h2 {
+    font-size: 1.35rem;
+  }
+
+  .staffDangerButton {
+    width: 100%;
   }
 
   .staffStudioHeader,
@@ -14882,6 +15040,23 @@
   .staffStudioSidebar {
     padding-left: 12px;
     padding-right: 12px;
+  }
+
+  .staffStudioMain {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  .staffStudioPanel {
+    padding: 14px 12px;
+  }
+
+  .staffStudioEmpty {
+    min-height: 104px;
+  }
+
+  .staffStudioTitle {
+    font-size: 1.68rem;
   }
 
   .calendarTopBarV2 {
