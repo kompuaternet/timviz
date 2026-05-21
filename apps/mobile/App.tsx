@@ -138,6 +138,17 @@ type ServiceCatalogCategory = {
   popularServices?: ServiceTemplateRecord[];
 };
 
+type CatalogServiceOption = ServiceTemplateRecord & {
+  category: string;
+  localizedLabel: string;
+  localizationKey: string;
+};
+
+type CatalogGroupOption = {
+  category: ServiceCatalogCategory;
+  services: CatalogServiceOption[];
+};
+
 type PendingServiceSave = {
   key: string;
   keys: string[];
@@ -637,6 +648,69 @@ const SERVICE_CATEGORY_SORT_ORDER: Record<string, number> = {
   "Другое": 900,
   [DEFAULT_SERVICE_CATEGORY]: 999,
 };
+const SERVICE_CATALOG_CATEGORY_SORT_ORDER = new Map(
+  ([
+    ["Ногти", 10],
+    ["Нігті", 10],
+    ["Nails", 10],
+    ["Волосы", 20],
+    ["Волосся", 20],
+    ["Hair", 20],
+    ["Парикмахерская", 20],
+    ["Парикмахер", 20],
+    ["Брови и ресницы", 30],
+    ["Брови та вії", 30],
+    ["Brows & Lashes", 30],
+    ["Brows and lashes", 30],
+    ["Массаж", 40],
+    ["Масаж", 40],
+    ["Massage", 40],
+    ["Массажный салон", 40],
+    ["Косметология", 50],
+    ["Косметологія", 50],
+    ["Cosmetology", 50],
+    ["Медспа", 50],
+    ["Салон красоты", 50],
+    ["Обличчя", 60],
+    ["Лицо", 60],
+    ["Face Care", 60],
+    ["Face", 60],
+    ["Депіляція", 70],
+    ["Депиляция", 70],
+    ["Hair Removal", 70],
+    ["Салон депиляции", 70],
+    ["Тіло", 80],
+    ["Тело", 80],
+    ["Body / SPA", 80],
+    ["Body", 80],
+    ["Спа-салон и сауна", 80],
+    ["Студия загара", 80],
+    ["Макіяж", 90],
+    ["Макияж", 90],
+    ["Makeup", 90],
+    ["Перманент", 100],
+    ["Перманентный макияж", 100],
+    ["Permanent Makeup", 100],
+    ["Тату / Перманент", 100],
+    ["Тату", 110],
+    ["Tattoo", 110],
+    ["Тату и пирсинг", 110],
+    ["Навчання", 120],
+    ["Обучение", 120],
+    ["Education", 120],
+    ["Ремонт", 130],
+    ["Repair", 130],
+    ["Інше", 900],
+    ["Другое", 900],
+    ["Другая", 900],
+    ["Other", 900],
+    ["Без категорії", 999],
+    ["Без категории", 999],
+    ["No Category", 999],
+    ["No category", 999],
+    ["Uncategorized", 999],
+  ] as Array<[string, number]>).map(([category, order]) => [category.trim().toLocaleLowerCase(), order] as const)
+);
 const QUICK_DURATION_OPTIONS = [30, 45, 60, 90];
 const APP_ICON = require("./assets/timviz-icon.png");
 const SETTINGS_SECTIONS: MobileSettingsSection[] = ["general", "online", "services", "schedule", "push", "telegram", "address"];
@@ -5058,6 +5132,10 @@ function normalizeServiceIdentityPart(value: unknown) {
   return safeText(value).trim().toLowerCase();
 }
 
+function getCatalogServiceLocalizationKey(service: Pick<ServiceRecord | ServiceTemplateRecord, "name" | "localizedName"> | undefined) {
+  return normalizeSmartSearchText(service?.name || getServiceIdentityKey(service));
+}
+
 function getServiceIdentityKey(service: Pick<ServiceRecord | ServiceTemplateRecord, "name" | "localizedName"> | undefined) {
   return Array.from(getServiceIdentityKeys(service))[0] || "";
 }
@@ -5101,6 +5179,15 @@ function getServiceCategorySortOrder(category: string | undefined) {
 function compareServiceCategoryOptions(left: string, right: string) {
   const orderDiff = getServiceCategorySortOrder(left) - getServiceCategorySortOrder(right);
   return orderDiff || getCanonicalServiceCategory(left).localeCompare(getCanonicalServiceCategory(right));
+}
+
+function getCatalogCategorySortOrder(category: string | undefined) {
+  return SERVICE_CATALOG_CATEGORY_SORT_ORDER.get(safeText(category).trim().toLocaleLowerCase()) ?? 500;
+}
+
+function compareCatalogCategories(left: string, right: string) {
+  const orderDiff = getCatalogCategorySortOrder(left) - getCatalogCategorySortOrder(right);
+  return orderDiff || left.localeCompare(right, "ru");
 }
 
 function sortServiceCategoryOptions(categories: string[]) {
@@ -11249,9 +11336,38 @@ function ServicesTab({
 
   const categories = useMemo(() => uniqueServiceCategoryOptions(SYSTEM_SERVICE_CATEGORIES), []);
   const sortedCatalog = useMemo(
-    () => [...catalog].sort((left, right) => compareServiceCategoryOptions(left.title, right.title)),
+    () => [...catalog].sort((left, right) => compareCatalogCategories(left.title, right.title)),
     [catalog]
   );
+  const catalogGroups = useMemo<CatalogGroupOption[]>(() => {
+    const query = catalogQuery.trim().toLowerCase();
+    const normalizedQuery = normalizeSmartSearchText(catalogQuery);
+
+    return sortedCatalog
+      .map((category) => {
+        const localizedCategory = localizeCatalogCategory(localizeText(category.title, category.localizedTitle, language), language, t);
+        const services = [...(category.topSuggestions || []), ...(category.popularServices || [])]
+          .map((service) => {
+            const localizedLabel = getServiceDisplayName(service, language) || service.name;
+            return {
+              ...service,
+              category: category.title,
+              localizedLabel,
+              localizationKey: getCatalogServiceLocalizationKey(service),
+            };
+          })
+          .filter((service, index, list) => list.findIndex((item) => item.localizationKey === service.localizationKey) === index)
+          .filter((service) => {
+            if (!query) return true;
+            const searchText = `${service.name} ${service.localizedLabel} ${category.title} ${localizedCategory}`.toLowerCase();
+            const normalizedSearchText = normalizeSmartSearchText(searchText);
+            return searchText.includes(query) || Boolean(normalizedQuery && normalizedSearchText.includes(normalizedQuery));
+          });
+
+        return { category, services };
+      })
+      .filter((group) => group.services.length > 0);
+  }, [catalogQuery, language, sortedCatalog, t]);
 
   const recommendedCategory = useMemo(() => inferSystemServiceCategory(draft.name), [draft.name]);
 
@@ -11271,14 +11387,22 @@ function ServicesTab({
     }
   }, [draft.category, draft.name, recommendedCategory, setDraft]);
 
-  const currentCatalogCategory = activeCatalogCategory || sortedCatalog[0]?.title || categories[0] || DEFAULT_SERVICE_CATEGORY;
+  const activeCatalogGroup = useMemo(() => {
+    if (!catalogGroups.length) return null;
+    if (!activeCatalogCategory) return catalogGroups[0];
+    return catalogGroups.find((group) => group.category.title === activeCatalogCategory) || null;
+  }, [activeCatalogCategory, catalogGroups]);
+  const currentCatalogCategory = activeCatalogGroup?.category.title || catalogGroups[0]?.category.title || categories[0] || DEFAULT_SERVICE_CATEGORY;
+  useEffect(() => {
+    if (activeCatalogCategory && !activeCatalogGroup) {
+      setActiveCatalogCategory("");
+    }
+  }, [activeCatalogCategory, activeCatalogGroup]);
+
   const catalogServices = useMemo(() => {
-    const query = catalogQuery.trim().toLowerCase();
-    return sortedCatalog
-      .filter((group) => query || group.title === currentCatalogCategory)
-      .flatMap((group) => [...(group.topSuggestions || []), ...(group.popularServices || [])].map((service) => ({ ...service, category: group.title })))
-      .filter((service) => !query || getServiceSearchText(service).includes(query));
-  }, [catalogQuery, currentCatalogCategory, sortedCatalog]);
+    if (catalogQuery.trim()) return catalogGroups.flatMap((group) => group.services);
+    return activeCatalogGroup?.services || [];
+  }, [catalogGroups, catalogQuery, activeCatalogGroup]);
   const quickServiceSuggestions = useMemo(() => {
     const catalogSuggestions = sortedCatalog
       .flatMap((group) => [...(group.topSuggestions || []), ...(group.popularServices || [])].map((service) => ({
@@ -11335,8 +11459,8 @@ function ServicesTab({
     setCustomCategory("");
   }
 
-  function serviceExists(serviceName: string) {
-    return services.some((service) => serviceNameMatches(service, serviceName) || areServiceNamesSimilar(service, serviceName));
+  function catalogServiceExists(serviceTemplate: Pick<ServiceRecord | ServiceTemplateRecord, "name" | "localizedName">) {
+    return services.some((service) => serviceIdentityOverlaps(service, serviceTemplate));
   }
 
   const similarServices = useMemo(() => {
@@ -11671,14 +11795,14 @@ function ServicesTab({
       {mode === "catalog" ? (
         <Panel title={t.generalCatalog}>
           <Field label={t.search} value={catalogQuery} onChangeText={setCatalogQuery} placeholder={t.searchService} />
-          <CategoryChips t={t} language={language} categories={sortedCatalog.map((item) => item.title)} selected={currentCatalogCategory} onSelect={setActiveCatalogCategory} />
+          <CatalogCategoryChips t={t} language={language} categories={catalogGroups} selected={currentCatalogCategory} onSelect={setActiveCatalogCategory} />
           {catalogServices.length ? (
             catalogServices.map((service) => {
-              const exists = serviceExists(service.name);
+              const exists = catalogServiceExists(service);
               return (
                 <Pressable key={`${service.category}-${service.name}`} style={[styles.catalogServiceCard, exists && styles.catalogServiceCardActive]} onPress={() => !exists && onAddCatalog(service)} disabled={busy || exists}>
                   <View style={styles.serviceTextBlock}>
-                    <Text style={styles.listTitle}>{getServiceDisplayName(service, language)}</Text>
+                    <Text style={styles.listTitle}>{service.localizedLabel}</Text>
                     <Text style={styles.listCaption}>{localizeCatalogCategory(localizeText(service.category, catalog.find((group) => group.title === service.category)?.localizedTitle, language), language, t)} · {formatDuration(service.durationMinutes || 60, t)} · {formatMoney(Number(service.price || 0), currency)}</Text>
                   </View>
                   <View style={[styles.catalogAddBadge, exists && styles.catalogAddBadgeDone]}>
@@ -11722,6 +11846,34 @@ function CategoryChips({
         return (
           <Pressable key={category} style={[styles.choiceChip, isRecommended && styles.choiceChipRecommended, active && styles.choiceChipActive]} onPress={() => onSelect(category)}>
             <Text style={[styles.choiceText, isRecommended && styles.choiceTextRecommended, active && styles.choiceTextActive]}>{localizeCatalogCategory(category, language, t)}</Text>
+          </Pressable>
+        );
+      })}
+    </ScrollView>
+  );
+}
+
+function CatalogCategoryChips({
+  t,
+  language,
+  categories,
+  selected,
+  onSelect,
+}: {
+  t: Record<string, string>;
+  language: AppLanguage;
+  categories: CatalogGroupOption[];
+  selected: string;
+  onSelect: (category: string) => void;
+}) {
+  return (
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="always" contentContainerStyle={styles.servicePicker}>
+      {categories.map((group) => {
+        const active = group.category.title === selected;
+        const label = localizeCatalogCategory(localizeText(group.category.title, group.category.localizedTitle, language), language, t);
+        return (
+          <Pressable key={group.category.title} style={[styles.choiceChip, active && styles.choiceChipActive]} onPress={() => onSelect(group.category.title)}>
+            <Text style={[styles.choiceText, active && styles.choiceTextActive]}>{label}</Text>
           </Pressable>
         );
       })}
