@@ -488,6 +488,37 @@ function normalizeServiceRecord(service: ServiceRecord, context: PricingContext 
   };
 }
 
+function normalizeServiceDuplicateLabel(value: unknown) {
+  return String(value ?? "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+function getServiceDuplicateKeys(name: string, localizedName?: Partial<LocalizedServiceText>) {
+  const localized = getServiceLocalizedText(name, localizedName);
+  return new Set(
+    [name, ...Object.values(localized)]
+      .map(normalizeServiceDuplicateLabel)
+      .filter(Boolean)
+  );
+}
+
+function serviceDuplicateKeysOverlap(
+  leftName: string,
+  leftLocalized: Partial<LocalizedServiceText> | undefined,
+  rightName: string,
+  rightLocalized?: Partial<LocalizedServiceText>
+) {
+  const leftKeys = getServiceDuplicateKeys(leftName, leftLocalized);
+  if (!leftKeys.size) return false;
+  for (const key of getServiceDuplicateKeys(rightName, rightLocalized)) {
+    if (leftKeys.has(key)) return true;
+  }
+  return false;
+}
+
 export function inferCurrencyFromCountry(country = "") {
   return inferCurrencyFromCountryName(country);
 }
@@ -4203,8 +4234,9 @@ export async function ensureServiceForProfessional(input: {
     throw new Error("Workspace not found.");
   }
 
-  const existing = workspace.services.find(
-    (service) => service.name.toLowerCase() === serviceName.toLowerCase()
+  const requestedLocalizedName = getServiceLocalizedText(serviceName);
+  const existing = workspace.services.find((service) =>
+    serviceDuplicateKeysOverlap(service.name, service.localizedName, serviceName, requestedLocalizedName)
   );
 
   if (existing) {
@@ -4238,6 +4270,7 @@ export async function ensureServiceForProfessional(input: {
       id: makeId("svc"),
       business_id: workspace.business.id,
       name: serviceName,
+      localized_name: requestedLocalizedName,
       price: resolvedPrice,
       category: input.category || "Без категории",
       duration_minutes:
@@ -4256,7 +4289,7 @@ export async function ensureServiceForProfessional(input: {
 
     let { error } = await supabase.from("business_services").insert(service);
 
-    if (error && /created_by_professional_id|is_blocked|source|moderation_status|moderated_at/i.test(error.message)) {
+    if (error && /localized_name|created_by_professional_id|is_blocked|source|moderation_status|moderated_at/i.test(error.message)) {
       ({ error } = await supabase.from("business_services").insert({
         id: service.id,
         business_id: service.business_id,
@@ -4278,6 +4311,7 @@ export async function ensureServiceForProfessional(input: {
       id: service.id,
       businessId: service.business_id,
       name: service.name,
+      localizedName: requestedLocalizedName,
       price:
         typeof service.price === "number"
           ? service.price
@@ -4304,6 +4338,7 @@ export async function ensureServiceForProfessional(input: {
     id: makeId("svc"),
     businessId: workspace.business.id,
     name: serviceName,
+    localizedName: requestedLocalizedName,
     price: resolvedPrice,
     category: input.category || "Без категории",
     durationMinutes:

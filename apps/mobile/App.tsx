@@ -140,6 +140,7 @@ type ServiceCatalogCategory = {
 
 type PendingServiceSave = {
   key: string;
+  keys: string[];
   optimisticService: ServiceRecord;
   payload: {
     name: string;
@@ -5012,14 +5013,33 @@ function normalizeServiceIdentityPart(value: unknown) {
 }
 
 function getServiceIdentityKey(service: Pick<ServiceRecord | ServiceTemplateRecord, "name" | "localizedName"> | undefined) {
+  return Array.from(getServiceIdentityKeys(service))[0] || "";
+}
+
+function getServiceIdentityKeys(service: Pick<ServiceRecord | ServiceTemplateRecord, "name" | "localizedName"> | undefined) {
   const names = [
     service?.name,
     ...SUPPORTED_APP_LANGUAGES.map((item) => service?.localizedName?.[item]),
   ]
     .map(normalizeServiceIdentityPart)
-    .filter(Boolean)
-    .sort();
-  return names[0] || "";
+    .filter(Boolean);
+  return new Set(names);
+}
+
+function makePendingServiceKey(service: Pick<ServiceRecord | ServiceTemplateRecord, "name" | "localizedName"> | undefined) {
+  return Array.from(getServiceIdentityKeys(service)).sort().join("|");
+}
+
+function serviceIdentityOverlaps(
+  left: Pick<ServiceRecord | ServiceTemplateRecord, "name" | "localizedName"> | undefined,
+  right: Pick<ServiceRecord | ServiceTemplateRecord, "name" | "localizedName"> | undefined
+) {
+  const leftKeys = getServiceIdentityKeys(left);
+  if (!leftKeys.size) return false;
+  for (const key of getServiceIdentityKeys(right)) {
+    if (leftKeys.has(key)) return true;
+  }
+  return false;
 }
 
 function getServiceCategoryDisplayName(category: string | undefined, localizedCategory: LocalizedText | undefined, language: AppLanguage, t: Record<string, string>) {
@@ -5080,9 +5100,7 @@ function getServiceSearchText(service: Pick<ServiceRecord | ServiceTemplateRecor
 function serviceNameMatches(service: Pick<ServiceRecord | ServiceTemplateRecord, "name" | "localizedName"> | undefined, value: string) {
   const normalized = value.trim().toLowerCase();
   if (!normalized) return false;
-  return [service?.name, ...SUPPORTED_APP_LANGUAGES.map((item) => service?.localizedName?.[item])]
-    .filter(Boolean)
-    .some((candidate) => String(candidate).trim().toLowerCase() === normalized);
+  return getServiceIdentityKeys(service).has(normalized);
 }
 
 function normalizeSmartSearchText(value: unknown) {
@@ -6331,31 +6349,16 @@ export default function App() {
   }
 
   function serviceMatchesPending(service: ServiceRecord, pending: PendingServiceSave) {
-    return service.id === pending.optimisticService.id || serviceNameMatches(service, pending.optimisticService.name) || getServiceIdentityKey(service) === pending.key;
+    return service.id === pending.optimisticService.id || serviceIdentityOverlaps(service, pending.optimisticService);
   }
 
-  function hasServiceOrPendingSave(service: Pick<ServiceRecord | ServiceTemplateRecord, "name" | "localizedName">, key = getServiceIdentityKey(service)) {
+  function hasServiceOrPendingSave(service: Pick<ServiceRecord | ServiceTemplateRecord, "name" | "localizedName">, key = makePendingServiceKey(service)) {
     if (!key) return false;
     if (pendingServiceSavesRef.current.has(key)) return true;
-    const pendingLookup: PendingServiceSave = {
-      key,
-      optimisticService: {
-        id: "",
-        name: service.name,
-        localizedName: service.localizedName,
-        price: 0,
-      },
-      payload: {
-        name: service.name,
-        category: DEFAULT_SERVICE_CATEGORY,
-        durationMinutes: 60,
-        price: 0,
-        color: SERVICE_COLORS[0],
-        source: "catalog",
-      },
-      attempts: 0,
-    };
-    return Boolean(workspace?.services.some((item) => serviceMatchesPending(item, pendingLookup)));
+    if (Array.from(pendingServiceSavesRef.current.values()).some((item) => serviceIdentityOverlaps(item.optimisticService, service))) {
+      return true;
+    }
+    return Boolean(workspace?.services.some((item) => serviceIdentityOverlaps(item, service) && !pendingServiceDeletesRef.current.has(item.id)));
   }
 
   function serviceIsPendingDelete(service: ServiceRecord) {
@@ -6391,7 +6394,7 @@ export default function App() {
       const nextServices = (current.services || []).filter((service) => !optimisticIds.has(service.id));
 
       savedServices.forEach((savedService) => {
-        const existingIndex = nextServices.findIndex((service) => service.id === savedService.id || serviceNameMatches(service, savedService.name));
+        const existingIndex = nextServices.findIndex((service) => service.id === savedService.id || serviceIdentityOverlaps(service, savedService));
         if (existingIndex >= 0) {
           nextServices[existingIndex] = { ...nextServices[existingIndex], ...savedService };
         } else {
@@ -6437,6 +6440,30 @@ export default function App() {
 
         pendingItems.forEach((item) => pendingServiceSavesRef.current.delete(item.key));
         replaceOptimisticServices(savedServices, pendingItems);
+        setVisitDraft((current) => {
+          const items = Array.isArray(current.items) ? current.items : [];
+          if (!items.length || !savedServices.length) return current;
+          let changed = false;
+          const nextItems = items.map((item) => {
+            if (!item.serviceId.startsWith("service-")) return item;
+            const saved = savedServices.find((service) => serviceNameMatches(service, item.serviceName) || serviceIdentityOverlaps(service, { name: item.serviceName }));
+            if (!saved) return item;
+            changed = true;
+            return {
+              ...item,
+              serviceId: saved.id,
+              serviceName: getServiceDisplayName(saved, language) || item.serviceName,
+              priceAmount: Number(saved.price || item.priceAmount || 0),
+              durationMinutes: Number(saved.durationMinutes || item.durationMinutes || 15),
+            };
+          });
+          if (!changed) return current;
+          return {
+            ...current,
+            serviceId: current.serviceId.startsWith("service-") ? nextItems[0]?.serviceId || current.serviceId : current.serviceId,
+            items: nextItems,
+          };
+        });
       } catch {
         pendingItems.forEach((item) => {
           pendingServiceSavesRef.current.set(item.key, { ...item, attempts: item.attempts + 1 });
@@ -7117,7 +7144,11 @@ export default function App() {
     return (Array.isArray(visitDraft.items) ? visitDraft.items : []).map((item) => ({
       ...item,
       serviceId: safeText(item.serviceId),
-      serviceName: getServiceDisplayName(workspace?.services.find((service) => service.id === item.serviceId), language) || safeText(item.serviceName).trim() || t.withoutService,
+      serviceName:
+        getServiceDisplayName(workspace?.services.find((service) => service.id === item.serviceId), language) ||
+        getServiceDisplayName(Array.from(pendingServiceSavesRef.current.values()).find((pending) => pending.optimisticService.id === item.serviceId)?.optimisticService, language) ||
+        safeText(item.serviceName).trim() ||
+        t.withoutService,
       startTime: normalizeTimeInput(safeText(item.startTime)),
       endTime: normalizeTimeInput(safeText(item.endTime)),
       priceAmount: Number(item.priceAmount || 0),
@@ -7154,6 +7185,10 @@ export default function App() {
     if (validationMessage) {
       Alert.alert(t.requiredTitle, validationMessage);
       return false;
+    }
+
+    if (pendingServiceSavesRef.current.size) {
+      await flushPendingServiceSaves();
     }
 
     const appointmentDate = visitDraft.appointmentDate || selectedDate;
@@ -7490,9 +7525,10 @@ export default function App() {
     optimisticService.category = getCanonicalServiceCategory(optimisticService.category);
     mergeWorkspaceServices((services) => [optimisticService, ...services]);
     setServiceDraft({ name: "", category: getCanonicalServiceCategory(serviceDraft.category), durationMinutes: "60", price: "0", color: SERVICE_COLORS[0] });
-    const key = getServiceIdentityKey(optimisticService) || optimisticService.id;
+    const key = makePendingServiceKey(optimisticService) || optimisticService.id;
     pendingServiceSavesRef.current.set(key, {
       key,
+      keys: Array.from(getServiceIdentityKeys(optimisticService)),
       optimisticService,
       payload: {
         name: optimisticService.name,
@@ -7553,7 +7589,7 @@ export default function App() {
   }
 
   async function addCatalogService(service: ServiceTemplateRecord & { category: string }) {
-    const key = getServiceIdentityKey(service);
+    const key = makePendingServiceKey(service);
     if (!key) return;
     if (hasServiceOrPendingSave(service, key)) return;
     const optimisticService: ServiceRecord = {
@@ -7568,6 +7604,7 @@ export default function App() {
     };
     const pendingSave: PendingServiceSave = {
       key,
+      keys: Array.from(getServiceIdentityKeys(optimisticService)),
       optimisticService,
       payload: {
         name: optimisticService.name,
@@ -7618,7 +7655,7 @@ export default function App() {
   async function removeService(serviceId: string) {
     const serviceToDelete = workspace?.services.find((service) => service.id === serviceId);
     if (serviceToDelete) {
-      const pendingKey = getServiceIdentityKey(serviceToDelete);
+      const pendingKey = makePendingServiceKey(serviceToDelete);
       if (pendingKey) pendingServiceSavesRef.current.delete(pendingKey);
     }
     pendingServiceDeletesRef.current.add(serviceId);
@@ -8279,11 +8316,11 @@ function CalendarTab({
       onOpenServices();
       return;
     }
-    openComposerAt(getRoundedTime(10), selectedDate, primaryMember?.id);
+    openComposerAt("", selectedDate, primaryMember?.id);
   }
 
   function openEmptyCalendarSecondaryAction() {
-    setNoServicesHelper({ date: selectedDate, time: getRoundedTime(10), targetProfessionalId: primaryMember?.id, source: "time" });
+    setNoServicesHelper({ date: selectedDate, time: getDefaultVisitStartTime(selectedDate, primaryMember?.id), targetProfessionalId: primaryMember?.id, source: "time" });
   }
 
   const mergeRangeSnapshots = useCallback((snapshots: Record<string, CalendarSnapshot>) => {
@@ -8366,7 +8403,7 @@ function CalendarTab({
     const timer = setTimeout(() => {
       setNoServicesHelper({
         date: selectedDate,
-        time: getRoundedTime(10),
+        time: getDefaultVisitStartTime(selectedDate, primaryMember?.id),
         targetProfessionalId: primaryMember?.id,
         source: "time",
       });
@@ -8403,6 +8440,60 @@ function CalendarTab({
 
   function getScheduleForMember(date: string, member: CalendarMemberView | null) {
     return getMemberScheduleForDate(member, workspace, date);
+  }
+
+  function getCalendarMemberById(memberId?: string) {
+    if (!memberId) return primaryMember;
+    return calendarMembers.find((member) => member.id === memberId) || primaryMember;
+  }
+
+  function roundUpMinuteValue(minutes: number, step = 10) {
+    return Math.max(0, Math.min(24 * 60 - step, Math.ceil(minutes / step) * step));
+  }
+
+  function getDefaultVisitStartTime(date = selectedDate, targetProfessionalId = primaryMember?.id) {
+    const member = getCalendarMemberById(targetProfessionalId);
+    const schedule = getScheduleForMember(date, member);
+    const duration = Math.max(5, services[0]?.durationMinutes || 15);
+    const isToday = date === getTodayIso();
+    const nowMinutes = timeToMinutes(getRoundedTime(10));
+    const appointments = getAppointmentsForMember(date, member?.id || targetProfessionalId || workspace?.professional.id || "")
+      .filter((appointment) => isValidTime(appointment.startTime) && isValidTime(appointment.endTime))
+      .map((appointment) => ({
+        start: timeToMinutes(appointment.startTime),
+        end: timeToMinutes(appointment.endTime),
+      }))
+      .filter((range) => range.end > range.start)
+      .sort((left, right) => left.start - right.start);
+
+    const scheduleIntervals = schedule.enabled ? getDayIntervalsRecord(schedule) : [];
+    let intervals = scheduleIntervals
+      .map((interval) => ({
+        start: timeToMinutes(interval.startTime),
+        end: timeToMinutes(interval.endTime),
+      }))
+      .filter((interval) => interval.end > interval.start);
+
+    if (isToday) {
+      intervals = [{ start: nowMinutes, end: 24 * 60 - 1 }];
+    } else if (!intervals.length) {
+      const start = isValidTime(schedule.startTime) ? timeToMinutes(schedule.startTime) : 9 * 60;
+      const end = isValidTime(schedule.endTime) && timeToMinutes(schedule.endTime) > start ? timeToMinutes(schedule.endTime) : 18 * 60;
+      intervals = [{ start, end }];
+    }
+
+    for (const interval of intervals) {
+      let cursor = roundUpMinuteValue(interval.start, 10);
+      while (cursor + duration <= interval.end) {
+        const blocking = appointments.find((appointment) => cursor < appointment.end && cursor + duration > appointment.start);
+        if (!blocking) return minutesToTime(cursor);
+        cursor = roundUpMinuteValue(blocking.end, 10);
+      }
+    }
+
+    if (isToday) return minutesToTime(nowMinutes);
+    const fallbackStart = intervals[0]?.start ?? (isValidTime(schedule.startTime) ? timeToMinutes(schedule.startTime) : 9 * 60);
+    return minutesToTime(roundUpMinuteValue(fallbackStart, 10));
   }
 
   function getLocalizedAppointmentServiceName(appointment: Pick<AppointmentRecord, "serviceName">) {
@@ -8563,13 +8654,14 @@ function CalendarTab({
   }
 
   function openComposerAt(time: string, date = selectedDate, targetProfessionalId = primaryMember?.id) {
+    const startTime = isValidTime(time) ? normalizeTimeInput(time) : getDefaultVisitStartTime(date, targetProfessionalId);
     if (!hasServices) {
-      setNoServicesHelper({ date, time, targetProfessionalId, source: "time" });
+      setNoServicesHelper({ date, time: startTime, targetProfessionalId, source: "time" });
       return;
     }
     setEditingAppointment(null);
     setSelectedDate(date);
-    const nextDraft = createDefaultVisitDraft(date, time);
+    const nextDraft = createDefaultVisitDraft(date, startTime);
     setVisitDraft({ ...nextDraft, targetProfessionalId });
     setComposerOpen(true);
   }
@@ -8846,7 +8938,7 @@ function CalendarTab({
           getScheduleForMember={getScheduleForMember}
           onSelectDate={(date) => chooseDate(date, viewMode)}
           onOpenDay={(date) => chooseDate(date, "day")}
-          onCreateAt={(date, memberId) => openComposerAt("09:00", date, memberId)}
+          onCreateAt={(date, memberId) => openComposerAt("", date, memberId)}
         />
       )}
 
@@ -8854,7 +8946,7 @@ function CalendarTab({
         <Pressable
           style={({ pressed }) => [styles.fabButton, pressed && styles.fabButtonPressed]}
           onPress={() => {
-            setTimeAction({ date: selectedDate, time: getRoundedTime(10), targetProfessionalId: primaryMember?.id });
+            setTimeAction({ date: selectedDate, time: getDefaultVisitStartTime(selectedDate, primaryMember?.id), targetProfessionalId: primaryMember?.id });
           }}
         >
           <Ionicons name="add" size={31} color="#FFFFFF" />
