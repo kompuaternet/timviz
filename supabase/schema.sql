@@ -112,6 +112,7 @@ create table if not exists public.global_service_catalog (
 create table if not exists public.service_categories (
   id text primary key,
   name text not null,
+  localized_name jsonb not null default '{}'::jsonb,
   slug text not null unique,
   sort_order integer not null default 500,
   is_system boolean not null default true,
@@ -320,6 +321,7 @@ alter table public.business_services add column if not exists is_blocked boolean
 alter table public.global_service_catalog add column if not exists localized_name_ru text;
 alter table public.global_service_catalog add column if not exists localized_name_uk text;
 alter table public.global_service_catalog add column if not exists localized_name_en text;
+alter table public.service_categories add column if not exists localized_name jsonb not null default '{}'::jsonb;
 alter table public.service_categories add column if not exists sort_order integer not null default 500;
 alter table public.service_categories add column if not exists is_system boolean not null default true;
 alter table public.business_memberships add column if not exists work_schedule_mode text;
