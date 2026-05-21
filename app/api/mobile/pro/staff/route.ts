@@ -7,6 +7,7 @@ import {
   acceptStaffInvitationById,
   declineStaffInvitation,
   getWorkspaceSnapshot,
+  leaveCurrentBusinessMembership,
   revokeStaffInvitation,
   resolveJoinRequestForOwner,
   updateBusinessScheduleForProfessional,
@@ -54,6 +55,21 @@ export async function GET(request: Request) {
         totalPeople: 1,
         activeEmployees: workspace.membership.scope === "owner" ? 0 : 1
       },
+      myMemberships: [
+        {
+          business: {
+            id: workspace.business.id,
+            name: workspace.business.name,
+            address: workspace.business.address
+          },
+          membership: {
+            id: workspace.membership.id,
+            role: workspace.membership.role,
+            scope: workspace.membership.scope === "owner" ? "owner" : "member",
+            createdAt: workspace.membership.createdAt
+          }
+        }
+      ],
       members: [
         {
           professional: {
@@ -138,6 +154,11 @@ export async function POST(request: Request) {
         professionalId,
         invitationId: String(body.invitationId || "")
       });
+    } else if (action === "leaveCompany") {
+      await leaveCurrentBusinessMembership(
+        professionalId,
+        typeof body.businessId === "string" ? body.businessId : undefined
+      );
     } else if (action === "resolveJoinRequest") {
       await resolveJoinRequestForOwner({
         ownerProfessionalId: professionalId,

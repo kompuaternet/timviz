@@ -53,20 +53,41 @@ function loadTurnstileScript() {
   if (window.turnstile) return Promise.resolve(true);
 
   return new Promise<boolean>((resolve) => {
-    const existingScript = document.querySelector<HTMLScriptElement>(`script[src="${turnstileScriptSrc}"]`);
-    if (existingScript) {
-      existingScript.addEventListener("load", () => resolve(true), { once: true });
-      existingScript.addEventListener("error", () => resolve(false), { once: true });
+    let settled = false;
+    const finish = (loaded: boolean) => {
+      if (settled) return;
+      settled = true;
+      resolve(Boolean(loaded && window.turnstile));
+    };
+
+    let script = document.querySelector<HTMLScriptElement>(`script[src="${turnstileScriptSrc}"]`);
+    if (script?.dataset.turnstileStatus === "loaded" && !window.turnstile) {
+      script.remove();
+      script = null;
+    }
+
+    if (script) {
+      script.addEventListener("load", () => finish(true), { once: true });
+      script.addEventListener("error", () => finish(false), { once: true });
+      window.setTimeout(() => finish(Boolean(window.turnstile)), 3500);
       return;
     }
 
-    const script = document.createElement("script");
+    script = document.createElement("script");
     script.src = turnstileScriptSrc;
     script.async = true;
     script.defer = true;
-    script.onload = () => resolve(true);
-    script.onerror = () => resolve(false);
+    script.dataset.turnstileStatus = "loading";
+    script.onload = () => {
+      script.dataset.turnstileStatus = "loaded";
+      finish(true);
+    };
+    script.onerror = () => {
+      script.dataset.turnstileStatus = "failed";
+      finish(false);
+    };
     document.head.appendChild(script);
+    window.setTimeout(() => finish(Boolean(window.turnstile)), 8000);
   });
 }
 
@@ -128,30 +149,34 @@ export default function TurnstileWidget({ onToken, onExpire }: TurnstileWidgetPr
       }
 
       window.clearTimeout(slowLoadTimer);
-      widgetIdRef.current = window.turnstile.render(containerRef.current, {
-        sitekey: siteKey,
-        appearance: "always",
-        size: "normal",
-        theme: "light",
-        callback: (token) => {
-          tokenReceivedRef.current = true;
-          if (noTokenTimer) window.clearTimeout(noTokenTimer);
-          setStatus("ready");
-          onToken(token);
-        },
-        "expired-callback": () => {
-          tokenReceivedRef.current = false;
-          onToken("");
-          fallbackRequestedRef.current = false;
-          setStatus("loading");
-          onExpire?.();
-        },
-        "error-callback": () => {
-          onToken("");
-          void requestFallbackToken();
-        }
-      });
-      setStatus("ready");
+      try {
+        widgetIdRef.current = window.turnstile.render(containerRef.current, {
+          sitekey: siteKey,
+          appearance: "always",
+          size: "normal",
+          theme: "light",
+          callback: (token) => {
+            tokenReceivedRef.current = true;
+            if (noTokenTimer) window.clearTimeout(noTokenTimer);
+            setStatus("ready");
+            onToken(token);
+          },
+          "expired-callback": () => {
+            tokenReceivedRef.current = false;
+            onToken("");
+            fallbackRequestedRef.current = false;
+            setStatus("loading");
+            onExpire?.();
+          },
+          "error-callback": () => {
+            onToken("");
+            void requestFallbackToken();
+          }
+        });
+      } catch {
+        void requestFallbackToken();
+        return;
+      }
       noTokenTimer = window.setTimeout(() => {
         if (!cancelled && !tokenReceivedRef.current) void requestFallbackToken();
       }, 4500);

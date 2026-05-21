@@ -2122,25 +2122,12 @@ export async function createManualStaffMember(input: {
           item.scope === "pending"
       ) || null
     : null;
-  const existingMembershipOutsideBusiness = existingProfessional
-    ? directory.memberships.find(
-        (item) =>
-          item.professionalId === existingProfessional.id &&
-          item.businessId !== workspace.business.id &&
-          item.scope !== "pending"
-      ) || null
-    : null;
-
   if (
     existingProfessional &&
     normalizeProfessionalAccountStatus(existingProfessional.accountStatus) === "active" &&
     existingMembership
   ) {
     throw new Error("Этот сотрудник уже есть в вашей команде.");
-  }
-
-  if (existingMembershipOutsideBusiness) {
-    throw new Error("Этот email уже привязан к другому бизнес-аккаунту.");
   }
 
   if (!existingMembership && !existingPendingMembership) {
@@ -2581,6 +2568,12 @@ export async function createStaffInvitation(input: {
         (item) => item.professionalId === invitedProfessional.id && item.scope !== "pending"
       ) || null
     : null;
+  const existingPending = directory.staffInvitations.find(
+    (item) =>
+      item.businessId === workspace.business.id &&
+      item.email === normalizedEmail &&
+      item.status === "pending"
+  );
   const invitedStatus = invitedProfessional
     ? normalizeProfessionalAccountStatus(invitedProfessional.accountStatus)
     : null;
@@ -2594,9 +2587,8 @@ export async function createStaffInvitation(input: {
     throw new Error("Этот сотрудник уже подключен к вашему бизнесу.");
   }
 
-  if (invitedMembership && invitedMembership.businessId !== workspace.business.id) {
-    throw new Error("Этот email уже привязан к другому бизнес-аккаунту.");
-  }
+  // A registered professional may already have a personal workspace. Keep the invitation
+  // pending so they can accept it from the Team section and switch intentionally.
 
   if (
     explicitProfessional &&
@@ -2638,13 +2630,6 @@ export async function createStaffInvitation(input: {
 
   const timestamp = new Date().toISOString();
   const token = makeInvitationToken();
-  const existingPending = directory.staffInvitations.find(
-    (item) =>
-      item.businessId === workspace.business.id &&
-      item.email === normalizedEmail &&
-      item.status === "pending"
-  );
-
   const invitationId = existingPending?.id || makeId("invite");
 
   if (!explicitMembership) {
@@ -2864,16 +2849,21 @@ export async function revokeStaffInvitation(input: {
   return { ok: true };
 }
 
-export async function leaveCurrentBusinessMembership(professionalId: string) {
-  const workspace = await getWorkspaceSnapshot(professionalId);
+export async function leaveCurrentBusinessMembership(professionalId: string, businessId?: string) {
+  const normalizedBusinessId = businessId?.trim() || "";
+  const directory = await getBusinessDirectorySnapshot();
+  const membership =
+    directory.memberships.find(
+      (item) =>
+        item.professionalId === professionalId &&
+        item.scope !== "pending" &&
+        (!normalizedBusinessId || item.businessId === normalizedBusinessId)
+    ) || null;
 
-  if (!workspace) {
+  if (!membership) {
     throw new Error("Business membership not found.");
   }
-
-  if (workspace.membership.scope === "owner") {
-    throw new Error("Владелец компании не может выйти из неё как сотрудник.");
-  }
+  const business = directory.businesses.find((item) => item.id === membership.businessId) || null;
 
   if (isSupabaseConfigured()) {
     const supabase = getSupabaseAdmin();
@@ -2884,9 +2874,8 @@ export async function leaveCurrentBusinessMembership(professionalId: string) {
     const { error } = await supabase
       .from("business_memberships")
       .delete()
-      .eq("id", workspace.membership.id)
-      .eq("professional_id", professionalId)
-      .neq("scope", "owner");
+      .eq("id", membership.id)
+      .eq("professional_id", professionalId);
 
     if (error) {
       throw new Error(error.message);
@@ -2895,16 +2884,15 @@ export async function leaveCurrentBusinessMembership(professionalId: string) {
     invalidateBusinessDirectoryCache();
     return {
       ok: true,
-      businessName: workspace.business.name
+      businessName: business?.name || ""
     };
   }
 
   const store = await ensureDemoBusinessesInLocalStore();
   const membershipIndex = store.memberships.findIndex(
     (item) =>
-      item.id === workspace.membership.id &&
-      item.professionalId === professionalId &&
-      item.scope !== "owner"
+      item.id === membership.id &&
+      item.professionalId === professionalId
   );
 
   if (membershipIndex === -1) {
@@ -2916,7 +2904,7 @@ export async function leaveCurrentBusinessMembership(professionalId: string) {
 
   return {
     ok: true,
-    businessName: workspace.business.name
+    businessName: business?.name || ""
   };
 }
 
@@ -2942,9 +2930,12 @@ export async function acceptStaffInvitation(input: {
 
   const directory = await getBusinessDirectorySnapshot();
   const targetBusiness = directory.businesses.find((item) => item.id === invitationPreview.business.id) || null;
-  const activeMembership =
+  const activeTargetMembership =
     directory.memberships.find(
-      (item) => item.professionalId === input.professionalId && item.scope !== "pending"
+      (item) =>
+        item.professionalId === input.professionalId &&
+        item.businessId === invitationPreview.business.id &&
+        item.scope !== "pending"
     ) || null;
   const pendingMembership =
     directory.memberships.find(
@@ -2955,11 +2946,7 @@ export async function acceptStaffInvitation(input: {
     ) || null;
   const resolvedAt = new Date().toISOString();
 
-  if (activeMembership && activeMembership.businessId !== invitationPreview.business.id) {
-    throw new Error("Этот аккаунт уже привязан к другому бизнесу.");
-  }
-
-  if (!activeMembership) {
+  if (!activeTargetMembership && !pendingMembership) {
     const ownerProfessional = targetBusiness ? getBusinessOwnerProfessional(directory, targetBusiness) : null;
     if (ownerProfessional) {
       assertCanAddFreeEmployee({
@@ -3001,18 +2988,18 @@ export async function acceptStaffInvitation(input: {
       if (error) {
         throw new Error(error.message);
       }
-    } else if (activeMembership) {
+    } else if (activeTargetMembership) {
       const { error } = await supabase
         .from("business_memberships")
         .update({
           role: invitationPreview.role
         })
-        .eq("id", activeMembership.id);
+        .eq("id", activeTargetMembership.id);
 
       if (error) {
         throw new Error(error.message);
       }
-    } else if (!activeMembership) {
+    } else {
       const { error } = await supabase.from("business_memberships").insert({
         id: makeId("membership"),
         business_id: invitationPreview.business.id,
@@ -3072,8 +3059,11 @@ export async function acceptStaffInvitation(input: {
       item.businessId === invitationPreview.business.id &&
       item.scope === "pending"
   );
-  const storeActiveMembership = store.memberships.find(
-    (item) => item.professionalId === input.professionalId && item.scope !== "pending"
+  const storeActiveTargetMembership = store.memberships.find(
+    (item) =>
+      item.professionalId === input.professionalId &&
+      item.businessId === invitationPreview.business.id &&
+      item.scope !== "pending"
   );
 
   if (storePendingMembership) {
@@ -3082,9 +3072,9 @@ export async function acceptStaffInvitation(input: {
     storePendingMembership.workScheduleMode = memberSchedule.workScheduleMode;
     storePendingMembership.workSchedule = memberSchedule.workSchedule;
     storePendingMembership.customSchedule = memberSchedule.customSchedule;
-  } else if (storeActiveMembership) {
-    storeActiveMembership.role = invitationPreview.role;
-  } else if (!storeActiveMembership) {
+  } else if (storeActiveTargetMembership) {
+    storeActiveTargetMembership.role = invitationPreview.role;
+  } else {
     store.memberships.push(
       normalizeMembershipRecord({
       id: makeId("membership"),
@@ -4363,6 +4353,7 @@ export async function ensureServiceForProfessional(input: {
       throw new Error(error.message);
     }
 
+    invalidateBusinessDirectoryCache();
     const createdService: ServiceRecord = {
       id: service.id,
       businessId: service.business_id,
@@ -4522,6 +4513,7 @@ export async function updateServiceForProfessional(input: {
       throw new Error(error.message);
     }
 
+    invalidateBusinessDirectoryCache();
     return {
       ...existing,
       ...updates,
@@ -4575,6 +4567,7 @@ export async function deleteServiceForProfessional(input: {
       throw new Error(error.message);
     }
 
+    invalidateBusinessDirectoryCache();
     return { ok: true };
   }
 
@@ -4617,6 +4610,7 @@ export async function reorderServicesForProfessional(input: {
       }
     }
 
+    invalidateBusinessDirectoryCache();
     return { ok: true };
   }
 

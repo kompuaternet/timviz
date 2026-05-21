@@ -108,6 +108,20 @@ export type IncomingStaffInvitationSnapshot = {
   } | null;
 };
 
+export type MyBusinessMembershipSnapshot = {
+  business: {
+    id: string;
+    name: string;
+    address: string;
+  };
+  membership: {
+    id: string;
+    role: string;
+    scope: "owner" | "member";
+    createdAt: string;
+  };
+};
+
 export type BusinessStaffSnapshot = {
   business: {
     id: string;
@@ -129,6 +143,7 @@ export type BusinessStaffSnapshot = {
     name: string;
     category: string;
   }>;
+  myMemberships: MyBusinessMembershipSnapshot[];
   members: StaffMemberSnapshot[];
   joinRequests: PendingStaffJoinRequestSnapshot[];
   invitations: PendingStaffInvitationSnapshot[];
@@ -390,6 +405,27 @@ export async function getBusinessStaffSnapshot(ownerProfessionalId: string): Pro
       } satisfies IncomingStaffInvitationSnapshot;
     })
     .filter((item): item is IncomingStaffInvitationSnapshot => item !== null);
+  const myMemberships = directory.memberships
+    .filter((membership) => membership.professionalId === ownerProfessionalId && membership.scope !== "pending")
+    .map<MyBusinessMembershipSnapshot | null>((membership) => {
+      const business = directory.businesses.find((item) => item.id === membership.businessId) || null;
+      if (!business) return null;
+
+      return {
+        business: {
+          id: business.id,
+          name: business.name,
+          address: business.address
+        },
+        membership: {
+          id: membership.id,
+          role: membership.role,
+          scope: membership.scope === "owner" ? "owner" : "member",
+          createdAt: membership.createdAt
+        }
+      };
+    })
+    .filter((item): item is MyBusinessMembershipSnapshot => item !== null);
 
   const monthAppointments = appointments.filter(
     (appointment) => appointment.kind === "appointment" && appointment.appointmentDate.startsWith(monthPrefix)
@@ -422,6 +458,7 @@ export async function getBusinessStaffSnapshot(ownerProfessionalId: string): Pro
       name: service.name,
       category: service.category || "Без категории"
     })),
+    myMemberships,
     members,
     joinRequests: joinRequests.map((request) => ({
       id: request.id,

@@ -340,6 +340,19 @@ type StaffSnapshot = {
     name: string;
     category: string;
   }>;
+  myMemberships?: Array<{
+    business: {
+      id: string;
+      name: string;
+      address?: string;
+    };
+    membership: {
+      id: string;
+      role: string;
+      scope: "owner" | "member";
+      createdAt: string;
+    };
+  }>;
   members: StaffMemberRecord[];
   joinRequests?: Array<{
     id: string;
@@ -401,6 +414,20 @@ type ServiceDraftState = {
   price: string;
   color: string;
 };
+
+function parseServiceNumberInput(value: string | number | undefined, fallback = 0) {
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : fallback;
+  }
+
+  const normalized = String(value ?? "")
+    .trim()
+    .replace(",", ".");
+  if (!normalized) return fallback;
+
+  const parsed = Number(normalized);
+  return Number.isFinite(parsed) ? parsed : fallback;
+}
 
 type CalendarSnapshot = {
   appointments: AppointmentRecord[];
@@ -1234,6 +1261,13 @@ const baseCopy = {
     pendingInvites: "Очікують запрошення",
     incomingInvites: "Запрошення для мене",
     noIncomingInvites: "Нових запрошень поки немає.",
+    memberCompanyEyebrow: "Моя команда",
+    memberCompanyTitle: "Ви в групі",
+    memberCompanyRole: "Роль",
+    memberCompanyJoined: "Приєдналися",
+    leaveCompany: "Вийти з компанії",
+    leaveCompanyConfirm: "Вийти з цієї компанії? Доступ до робочого кабінету буде закрито.",
+    leaveCompanySuccess: "Ви вийшли з компанії.",
     acceptInvite: "Прийняти",
     declineInvite: "Відхилити",
     monthBookings: "Записів за місяць",
@@ -1702,6 +1736,13 @@ const baseCopy = {
     pendingInvites: "Ожидают приглашение",
     incomingInvites: "Приглашения для меня",
     noIncomingInvites: "Новых приглашений пока нет.",
+    memberCompanyEyebrow: "Моя команда",
+    memberCompanyTitle: "Вы в группе",
+    memberCompanyRole: "Роль",
+    memberCompanyJoined: "Присоединились",
+    leaveCompany: "Выйти из компании",
+    leaveCompanyConfirm: "Выйти из этой компании? Доступ к рабочему кабинету будет закрыт.",
+    leaveCompanySuccess: "Вы вышли из компании.",
     acceptInvite: "Принять",
     declineInvite: "Отклонить",
     monthBookings: "Записей за месяц",
@@ -2170,6 +2211,13 @@ const baseCopy = {
     pendingInvites: "Pending invites",
     incomingInvites: "Invitations for me",
     noIncomingInvites: "No new invitations yet.",
+    memberCompanyEyebrow: "My team",
+    memberCompanyTitle: "You are in",
+    memberCompanyRole: "Role",
+    memberCompanyJoined: "Joined",
+    leaveCompany: "Leave company",
+    leaveCompanyConfirm: "Leave this company? Workspace access will be closed.",
+    leaveCompanySuccess: "You left the company.",
     acceptInvite: "Accept",
     declineInvite: "Decline",
     monthBookings: "Month bookings",
@@ -6044,6 +6092,10 @@ function isSameMonth(left: string, right: string) {
 }
 
 const dayScheduleKeys = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+const DEFAULT_FLEXIBLE_INTERVALS: WorkIntervalRecord[] = [
+  { startTime: "09:00", endTime: "13:00" },
+  { startTime: "14:00", endTime: "18:00" },
+];
 
 function getFallbackSchedule(date: string): WorkDayScheduleRecord {
   const weekend = isWeekend(date);
@@ -6056,9 +6108,17 @@ function getFallbackSchedule(date: string): WorkDayScheduleRecord {
   };
 }
 
+function getClosedScheduleForDate(date: string): WorkDayScheduleRecord {
+  const fallback = getFallbackSchedule(date);
+  return serializeIntervalsToDay(false, getDayIntervalsRecord(fallback), fallback);
+}
+
 function getScheduleForDate(workspace: WorkspaceSnapshot | null, date: string): WorkDayScheduleRecord {
   const custom = workspace?.memberSchedule?.customSchedule?.[date];
   if (custom) return normalizeScheduleDay(custom, date);
+  if (workspace?.memberSchedule?.workScheduleMode === "flexible") {
+    return getClosedScheduleForDate(date);
+  }
   const dayIndex = new Date(`${date}T12:00:00`).getDay();
   const schedule = workspace?.memberSchedule?.workSchedule?.[dayScheduleKeys[dayIndex]];
   return normalizeScheduleDay(schedule, date);
@@ -6068,6 +6128,9 @@ function getMemberScheduleForDate(member: CalendarMemberView | null, workspace: 
   if (!member?.memberSchedule) return getScheduleForDate(workspace, date);
   const custom = member.memberSchedule.customSchedule?.[date];
   if (custom) return normalizeScheduleDay(custom, date);
+  if (member.memberSchedule.workScheduleMode === "flexible") {
+    return getClosedScheduleForDate(date);
+  }
   const dayIndex = new Date(`${date}T12:00:00`).getDay();
   return normalizeScheduleDay(member.memberSchedule.workSchedule?.[dayScheduleKeys[dayIndex]], date);
 }
@@ -6553,6 +6616,26 @@ export default function App() {
     });
   }
 
+  function mergeRemoteServicesPreservingLocal(remoteServices: ServiceRecord[], localServices: ServiceRecord[]) {
+    if (!localServices.length || remoteServices.length >= localServices.length || pendingServiceDeletesRef.current.size > 0) {
+      return remoteServices;
+    }
+
+    const merged = [...remoteServices];
+    localServices.forEach((localService) => {
+      const existingIndex = merged.findIndex(
+        (remoteService) => remoteService.id === localService.id || serviceIdentityOverlaps(remoteService, localService)
+      );
+      if (existingIndex >= 0) {
+        merged[existingIndex] = { ...localService, ...merged[existingIndex] };
+      } else {
+        merged.push(localService);
+      }
+    });
+
+    return merged;
+  }
+
   function isOptimisticServiceId(serviceId: string | undefined) {
     return safeText(serviceId).startsWith("service-");
   }
@@ -6983,7 +7066,27 @@ export default function App() {
 
       const nextClients = withPendingClientCreates(Array.isArray(clientsResult.clients) ? clientsResult.clients : []);
       const nextCatalog = Array.isArray(servicesResult.catalog) ? servicesResult.catalog : [];
-      const nextWorkspace = withPendingServiceSaves(workspaceResult);
+      const serviceEndpointServices = Array.isArray(servicesResult.services) ? servicesResult.services : null;
+      const workspaceEndpointServices = Array.isArray(workspaceResult.services) ? workspaceResult.services : [];
+      const hasLocalServiceState = Boolean(
+        workspace?.services?.length ||
+          pendingServiceSavesRef.current.size ||
+          pendingServicePatchesRef.current.size
+      );
+      const localServices = workspace?.services || [];
+      let resolvedServices = serviceEndpointServices ?? workspaceEndpointServices;
+      resolvedServices = mergeRemoteServicesPreservingLocal(resolvedServices, localServices);
+      if (
+        resolvedServices.length === 0 &&
+        hasLocalServiceState &&
+        pendingServiceDeletesRef.current.size === 0
+      ) {
+        resolvedServices = localServices;
+      }
+      const nextWorkspace = withPendingServiceSaves({
+        ...workspaceResult,
+        services: resolvedServices,
+      });
       const nextStaffSnapshot = mergeStaffSnapshotMedia(staffSnapshot, staffResult || null);
       if (shouldLoadStaffMedia && nextStaffSnapshot?.members?.length) {
         staffMediaLoadedAtRef.current = Date.now();
@@ -7783,8 +7886,8 @@ export default function App() {
         en: serviceDraft.name.trim(),
       },
       category: serviceDraft.category.trim() || DEFAULT_SERVICE_CATEGORY,
-      durationMinutes: Number(serviceDraft.durationMinutes || 60),
-      price: Number(serviceDraft.price || 0),
+      durationMinutes: Math.max(5, parseServiceNumberInput(serviceDraft.durationMinutes, 60)),
+      price: Math.max(0, parseServiceNumberInput(serviceDraft.price, 0)),
       color: serviceDraft.color || SERVICE_COLORS[0],
       source: "custom",
     };
@@ -7821,15 +7924,24 @@ export default function App() {
 
     const payload = servicePatchPayload(updatedService);
     try {
-      await apiFetch("/api/mobile/pro/services", {
+      const result = await apiFetch("/api/mobile/pro/services", {
         method: "PATCH",
         body: JSON.stringify({
           serviceId,
           ...payload,
         }),
       });
+      const savedService = result?.service as ServiceRecord | undefined;
       pendingServicePatchesRef.current.delete(serviceId);
-      await refreshAll(session, selectedDate, { silent: true });
+      if (savedService?.id) {
+        mergeWorkspaceServices((services) =>
+          services.map((service) =>
+            service.id === serviceId || service.id === savedService.id
+              ? { ...service, ...savedService, ...updatedService, id: savedService.id }
+              : service
+          )
+        );
+      }
       return true;
     } catch (error) {
       const resolvedService = options.resolveRetry === false ? null : findSavedServiceForPatch(serviceId, updatedService);
@@ -7862,8 +7974,8 @@ export default function App() {
         en: draft.name.trim(),
       },
       category: getCanonicalServiceCategory(draft.category),
-      durationMinutes: Number(draft.durationMinutes || 60),
-      price: Number(draft.price || 0),
+      durationMinutes: Math.max(5, parseServiceNumberInput(draft.durationMinutes, 60)),
+      price: Math.max(0, parseServiceNumberInput(draft.price, 0)),
       color: draft.color || SERVICE_COLORS[0],
     };
     pendingServicePatchesRef.current.set(serviceId, updatedService);
@@ -8149,6 +8261,7 @@ export default function App() {
                 apiFetch={apiFetch}
                 onRefreshWorkspace={() => refreshAll(session, selectedDate)}
                 onSaveSchedule={saveStaffSchedule}
+                onSignOut={signOut}
               />
             ) : null}
             {activeTab === "settings" ? (
@@ -12079,6 +12192,7 @@ function StaffWorkspaceTab({
   apiFetch,
   onRefreshWorkspace,
   onSaveSchedule,
+  onSignOut,
 }: {
   t: Record<string, string>;
   language: AppLanguage;
@@ -12088,6 +12202,7 @@ function StaffWorkspaceTab({
   apiFetch: (path: string, options?: RequestInit) => Promise<any>;
   onRefreshWorkspace: () => void;
   onSaveSchedule: (member: StaffMemberRecord, workSchedule: WorkScheduleRecord, customSchedule?: Record<string, WorkDayScheduleRecord>, mode?: "fixed" | "flexible", options?: { silent?: boolean }) => Promise<boolean>;
+  onSignOut: () => Promise<void>;
 }) {
   const [section, setSection] = useState<"members" | "schedule">("members");
 
@@ -12117,6 +12232,7 @@ function StaffWorkspaceTab({
           apiFetch={apiFetch}
           onRefreshWorkspace={onRefreshWorkspace}
           onOpenSchedule={() => setSection("schedule")}
+          onSignOut={onSignOut}
         />
       ) : (
         <StaffScheduleTab
@@ -12141,6 +12257,7 @@ function StaffMembersTab({
   apiFetch,
   onRefreshWorkspace,
   onOpenSchedule,
+  onSignOut,
 }: {
   t: Record<string, string>;
   staff: StaffSnapshot | null;
@@ -12149,9 +12266,13 @@ function StaffMembersTab({
   apiFetch: (path: string, options?: RequestInit) => Promise<any>;
   onRefreshWorkspace: () => void;
   onOpenSchedule: () => void;
+  onSignOut: () => Promise<void>;
 }) {
   const members = makeStaffMembers(staff, workspace, t);
   const isOwner = workspace?.membership?.scope === "owner";
+  const joinedBusinessMemberships = (staff?.myMemberships || []).filter(
+    (item) => item.business.id !== workspace?.business.id || item.membership.scope !== "owner"
+  );
   const [resolvedJoinRequestIds, setResolvedJoinRequestIds] = useState<Set<string>>(() => new Set());
   const [resolvedInvitationIds, setResolvedInvitationIds] = useState<Set<string>>(() => new Set());
   const [addOpen, setAddOpen] = useState(false);
@@ -12270,6 +12391,88 @@ function StaffMembersTab({
     }
   }
 
+  async function leaveCompany(businessId?: string, options: { signOutAfter?: boolean } = {}) {
+    Alert.alert(t.leaveCompany || t.logout, t.leaveCompanyConfirm || "", [
+      { text: t.cancel, style: "cancel" },
+      {
+        text: t.leaveCompany || t.logout,
+        style: "destructive",
+        onPress: async () => {
+          const ok = await staffAction({ action: "leaveCompany", businessId });
+          if (ok) {
+            Alert.alert("Timviz", t.leaveCompanySuccess || t.logout);
+            if (options.signOutAfter) {
+              await onSignOut();
+            }
+          }
+        },
+      },
+    ]);
+  }
+
+  if (!isOwner) {
+    const currentMember = members.find((member) => member.professional.id === workspace?.professional.id) || members[0] || null;
+    const memberRole = currentMember?.membership.role || t.employee;
+    const joinedAt = currentMember?.membership.createdAt
+      ? new Date(currentMember.membership.createdAt).toLocaleDateString()
+      : "";
+
+    return (
+      <View style={styles.sectionStack}>
+        <Panel title={t.teamMembers}>
+          <View style={styles.staffMembershipCard}>
+            <Text style={styles.staffMembershipEyebrow}>{t.memberCompanyEyebrow || t.teamMembers}</Text>
+            <Text style={styles.staffMembershipTitle}>
+              {t.memberCompanyTitle || "Вы в группе"} <Text style={styles.staffMembershipBusinessName}>{workspace?.business.name || staff?.business.name || "Timviz"}</Text>
+            </Text>
+            <View style={styles.staffMembershipDetails}>
+              <View style={styles.staffMembershipDetailItem}>
+                <Text style={styles.clientOptionCaption}>{t.memberCompanyRole || t.role}</Text>
+                <Text style={styles.settingsMiniTitle}>{memberRole}</Text>
+              </View>
+              {joinedAt ? (
+                <View style={styles.staffMembershipDetailItem}>
+                  <Text style={styles.clientOptionCaption}>{t.memberCompanyJoined || ""}</Text>
+                  <Text style={styles.settingsMiniTitle}>{joinedAt}</Text>
+                </View>
+              ) : null}
+            </View>
+            <Pressable
+              style={({ pressed }) => [styles.secondaryButton, styles.dangerButton, pressed && styles.pressablePressed, (busy || saving) && styles.disabled]}
+              onPress={() => void leaveCompany(workspace?.business.id, { signOutAfter: true })}
+              disabled={busy || saving}
+            >
+              <Text style={styles.dangerButtonText}>{saving ? t.signingIn : t.leaveCompany || t.logout}</Text>
+            </Pressable>
+          </View>
+        </Panel>
+
+        <Panel title={t.incomingInvites || t.pendingInvites}>
+          {staff?.incomingInvitations?.filter((invitation) => !resolvedInvitationIds.has(invitation.id)).length ? (
+            staff.incomingInvitations.filter((invitation) => !resolvedInvitationIds.has(invitation.id)).map((invitation) => (
+              <View key={invitation.id} style={styles.joinRequestCard}>
+                <View>
+                  <Text style={styles.settingsMiniTitle}>{invitation.business.name}</Text>
+                  <Text style={styles.clientOptionCaption}>{[invitation.role, invitation.business.address].filter(Boolean).join(" · ")}</Text>
+                </View>
+                <View style={styles.joinRequestActions}>
+                  <Pressable style={styles.joinRejectButton} onPress={() => void resolveInvitation(invitation.id, "declineInvitation")} disabled={saving}>
+                    <Ionicons name="close" size={18} color="#DC2626" />
+                  </Pressable>
+                  <Pressable style={styles.joinApproveButton} onPress={() => void resolveInvitation(invitation.id, "acceptInvitation")} disabled={saving}>
+                    <Ionicons name="checkmark" size={18} color="#FFFFFF" />
+                  </Pressable>
+                </View>
+              </View>
+            ))
+          ) : (
+            <Text style={styles.emptyText}>{t.noIncomingInvites || t.noJoinRequests}</Text>
+          )}
+        </Panel>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.sectionStack}>
       <Panel title={t.teamMembers}>
@@ -12279,6 +12482,42 @@ function StaffMembersTab({
             <PrimaryButton label={addOpen ? t.cancel : t.addMember} onPress={() => setAddOpen(!addOpen)} disabled={busy || saving} />
           ) : null}
         </View>
+        {joinedBusinessMemberships.length ? (
+          <View style={styles.sectionStack}>
+            {joinedBusinessMemberships.map((item) => {
+              const joinedAt = item.membership.createdAt
+                ? new Date(item.membership.createdAt).toLocaleDateString()
+                : "";
+              return (
+                <View key={`${item.business.id}:${item.membership.id}`} style={styles.staffMembershipCard}>
+                  <Text style={styles.staffMembershipEyebrow}>{t.memberCompanyEyebrow || t.teamMembers}</Text>
+                  <Text style={styles.staffMembershipTitle}>
+                    {t.memberCompanyTitle || "Вы в группе"} <Text style={styles.staffMembershipBusinessName}>{item.business.name || "Timviz"}</Text>
+                  </Text>
+                  <View style={styles.staffMembershipDetails}>
+                    <View style={styles.staffMembershipDetailItem}>
+                      <Text style={styles.clientOptionCaption}>{t.memberCompanyRole || t.role}</Text>
+                      <Text style={styles.settingsMiniTitle}>{item.membership.role || t.employee}</Text>
+                    </View>
+                    {joinedAt ? (
+                      <View style={styles.staffMembershipDetailItem}>
+                        <Text style={styles.clientOptionCaption}>{t.memberCompanyJoined || ""}</Text>
+                        <Text style={styles.settingsMiniTitle}>{joinedAt}</Text>
+                      </View>
+                    ) : null}
+                  </View>
+                  <Pressable
+                    style={({ pressed }) => [styles.secondaryButton, styles.dangerButton, pressed && styles.pressablePressed, (busy || saving) && styles.disabled]}
+                    onPress={() => void leaveCompany(item.business.id)}
+                    disabled={busy || saving}
+                  >
+                    <Text style={styles.dangerButtonText}>{saving ? t.signingIn : t.leaveCompany || t.logout}</Text>
+                  </Pressable>
+                </View>
+              );
+            })}
+          </View>
+        ) : null}
       </Panel>
 
       {addOpen && isOwner ? (
@@ -12424,11 +12663,12 @@ function StaffScheduleTab({
   const [weekStart, setWeekStart] = useState(getWeekDates(getTodayIso())[0]);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [pickerMonth, setPickerMonth] = useState(getTodayIso().slice(0, 7) + "-01");
-  const [selectedMonthDates, setSelectedMonthDates] = useState<string[]>([]);
+  const [selectedFlexibleDate, setSelectedFlexibleDate] = useState(getTodayIso());
   const [scheduleAutoStatus, setScheduleAutoStatus] = useState("");
   const scheduleSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scheduleSaveInFlightRef = useRef(false);
   const latestScheduleDraftRef = useRef({ workDraft, customDraft, scheduleMode });
+  const flexibleTemplateRef = useRef<Record<string, WorkIntervalRecord[]>>({});
   const weekDates = getWeekDates(weekStart);
   const weekTitle = formatCalendarTitle("week", weekDates[0], language);
   const monthDates = getMonthGridDates(pickerMonth);
@@ -12447,6 +12687,11 @@ function StaffScheduleTab({
     setScheduleMode(selectedMember.membership.workScheduleMode || "fixed");
     setScheduleAutoStatus("");
   }, [selectedMember?.professional.id, weekStart]);
+
+  useEffect(() => {
+    setSelectedFlexibleDate(getTodayIso());
+    setPickerMonth(getTodayIso().slice(0, 7) + "-01");
+  }, [selectedMember?.professional.id]);
 
   useEffect(() => {
     latestScheduleDraftRef.current = { workDraft, customDraft, scheduleMode };
@@ -12488,6 +12733,10 @@ function StaffScheduleTab({
 
   function updateScheduleMode(mode: "fixed" | "flexible") {
     setScheduleMode(mode);
+    if (mode === "flexible") {
+      setCalendarOpen(false);
+      setPickerMonth(selectedFlexibleDate.slice(0, 7) + "-01");
+    }
     latestScheduleDraftRef.current = { workDraft, customDraft, scheduleMode: mode };
     queueScheduleAutosave(120);
   }
@@ -12541,81 +12790,75 @@ function StaffScheduleTab({
     setDaySchedule(key, date, serializeIntervalsToDay(nextIntervals.length > 0, nextIntervals, current));
   }
 
-  function applyToWeekdays() {
-    const monday = getDraftDay("monday", weekDates[0]);
-    if (scheduleMode === "flexible") {
-      const next = { ...customDraft };
-      weekDates.slice(0, 5).forEach((date) => {
-        next[date] = { ...monday };
-      });
-      setCustomDraft(next);
-      latestScheduleDraftRef.current = { workDraft, customDraft: next, scheduleMode };
-      queueScheduleAutosave(120);
-      return;
+  function getRememberedFlexibleIntervals(member = selectedMember) {
+    const memberId = member?.professional.id || "";
+    const remembered = flexibleTemplateRef.current[memberId];
+    if (remembered?.length) {
+      return remembered.map((interval) => ({ ...interval }));
     }
-    const next = { ...workDraft };
-    staffWeekKeys.slice(0, 5).forEach((key) => {
-      next[key] = { ...monday };
-    });
-    setWorkDraft(next);
-    latestScheduleDraftRef.current = { workDraft: next, customDraft, scheduleMode };
-    queueScheduleAutosave(120);
+
+    const source = customDraft || member?.membership.customSchedule || {};
+    const latestDate = Object.keys(source)
+      .sort()
+      .reverse()
+      .find((date) => source[date]?.enabled);
+    const intervals = latestDate ? getDayIntervalsRecord(source[latestDate]) : DEFAULT_FLEXIBLE_INTERVALS;
+    return intervals.length ? intervals.map((interval) => ({ ...interval })) : DEFAULT_FLEXIBLE_INTERVALS.map((interval) => ({ ...interval }));
   }
 
-  function clearWeek() {
-    if (scheduleMode === "flexible") {
-      const next = { ...customDraft };
-      weekDates.forEach((date, index) => {
-        const current = getDraftDay(staffWeekKeys[index], date);
-        next[date] = serializeIntervalsToDay(false, getDayIntervalsRecord(current), current);
-      });
-      setCustomDraft(next);
-      latestScheduleDraftRef.current = { workDraft, customDraft: next, scheduleMode };
-      queueScheduleAutosave(120);
+  function rememberFlexibleIntervals(memberId: string, intervals: WorkIntervalRecord[]) {
+    if (!intervals.length) {
+      delete flexibleTemplateRef.current[memberId];
       return;
     }
-    const next = { ...workDraft };
-    staffWeekKeys.forEach((key, index) => {
-      const current = getDraftDay(key, weekDates[index]);
-      next[key] = serializeIntervalsToDay(false, getDayIntervalsRecord(current), current);
-    });
-    setWorkDraft(next);
-    latestScheduleDraftRef.current = { workDraft: next, customDraft, scheduleMode };
-    queueScheduleAutosave(120);
+    flexibleTemplateRef.current[memberId] = intervals.map((interval) => ({ ...interval }));
   }
 
-  function toggleMonthDate(date: string) {
-    const selected = selectedMonthDates.includes(date);
-    if (selected) {
-      setSelectedMonthDates((current) => current.filter((item) => item !== date));
+  function selectFlexibleDate(date: string) {
+    if (!selectedMember) return;
+    setSelectedFlexibleDate(date);
+    setPickerMonth(date.slice(0, 7) + "-01");
+
+    const existing = customDraft[date] || selectedMember.membership.customSchedule?.[date];
+    if (existing) {
+      if (existing.enabled) {
+        rememberFlexibleIntervals(selectedMember.professional.id, getDayIntervalsRecord(existing));
+      }
       return;
     }
 
-    const existing = customDraft[date] || selectedMember?.membership.customSchedule?.[date];
-    if (!existing) {
-      setCustomDraft((current) => ({
-        ...current,
-        [date]: serializeIntervalsToDay(true, [
-          { startTime: "09:00", endTime: "13:00" },
-          { startTime: "14:00", endTime: "18:00" },
-        ], getFallbackSchedule(date)),
-      }));
-    }
-    setSelectedMonthDates((current) => [...current, date].sort());
+    const intervals = getRememberedFlexibleIntervals(selectedMember);
+    const nextDay = serializeIntervalsToDay(true, intervals, getFallbackSchedule(date));
+    const nextCustomDraft = { ...customDraft, [date]: nextDay };
+    setCustomDraft(nextCustomDraft);
+    rememberFlexibleIntervals(selectedMember.professional.id, intervals);
+    latestScheduleDraftRef.current = { workDraft, customDraft: nextCustomDraft, scheduleMode };
+    queueScheduleAutosave(120);
   }
 
   function getMonthDraftDay(date: string) {
-    return normalizeScheduleDay(customDraft[date] || selectedMember?.membership.customSchedule?.[date], date);
+    const existing = customDraft[date] || selectedMember?.membership.customSchedule?.[date];
+    return existing ? normalizeScheduleDay(existing, date) : getClosedScheduleForDate(date);
   }
 
   function setMonthDateSchedule(date: string, next: WorkDayScheduleRecord) {
     const nextCustomDraft = { ...customDraft, [date]: next };
     setCustomDraft(nextCustomDraft);
+    if (selectedMember && next.enabled) {
+      rememberFlexibleIntervals(selectedMember.professional.id, getDayIntervalsRecord(next));
+    }
     latestScheduleDraftRef.current = { workDraft, customDraft: nextCustomDraft, scheduleMode };
     queueScheduleAutosave();
   }
 
   function updateMonthDateEnabled(date: string, enabled: boolean) {
+    const existing = customDraft[date] || selectedMember?.membership.customSchedule?.[date];
+    if (enabled && !existing && selectedMember) {
+      const intervals = getRememberedFlexibleIntervals(selectedMember);
+      setMonthDateSchedule(date, serializeIntervalsToDay(true, intervals, getFallbackSchedule(date)));
+      return;
+    }
+
     const current = getMonthDraftDay(date);
     setMonthDateSchedule(date, serializeIntervalsToDay(enabled, getDayIntervalsRecord(current), current));
   }
@@ -12642,41 +12885,9 @@ function StaffScheduleTab({
     setMonthDateSchedule(date, serializeIntervalsToDay(nextIntervals.length > 0, nextIntervals, current));
   }
 
-  function validateMonthSelectionBeforeSave(showAlert = true, customSchedule = customDraft) {
-    for (const date of selectedMonthDates) {
-      const day = normalizeScheduleDay(customSchedule[date] || selectedMember?.membership.customSchedule?.[date], date);
-      if (!day.enabled) continue;
-      const validation = validateWorkIntervals(getDayIntervalsRecord(day));
-      if (!validation.ok) {
-        if (showAlert) {
-          Alert.alert(t.staffSchedule, validation.reason === "overlap" ? t.overlappingIntervals : t.invalidIntervalRange);
-        }
-        return false;
-      }
-    }
-
-    return true;
-  }
-
-  function applyMonthSelection() {
-    if (!selectedMonthDates.length) {
-      Alert.alert(t.monthPlanner, t.selectedDaysHint);
-      return;
-    }
-    if (!validateMonthSelectionBeforeSave()) {
-      return;
-    }
-    const nextWeek = getWeekDates(selectedMonthDates[0])[0];
-    setWeekStart(nextWeek);
-    setCalendarOpen(false);
-  }
   function validateScheduleBeforeSave(showAlert = true, workSchedule = workDraft, customSchedule = customDraft, mode = scheduleMode) {
-    if (!validateMonthSelectionBeforeSave(showAlert, customSchedule)) {
-      return false;
-    }
-
     const daysToCheck = mode === "flexible"
-      ? weekDates.map((date) => normalizeScheduleDay(customSchedule[date] || selectedMember?.membership.customSchedule?.[date], date))
+      ? Object.entries(customSchedule).map(([date, day]) => normalizeScheduleDay(day, date))
       : staffWeekKeys.map((key, index) => normalizeScheduleDay(workSchedule[key], weekDates[index]));
 
     for (const day of daysToCheck) {
@@ -12719,41 +12930,75 @@ function StaffScheduleTab({
           </View>
           <SecondaryButton label={t.teamMembers} onPress={onOpenMembers} />
         </View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.staffMemberRail}>
-          {members.map((member) => {
-            const active = member.professional.id === selectedMember.professional.id;
-            const name = makeStaffMemberName(member, t.employee);
-            return (
-              <Pressable key={member.professional.id} style={[styles.staffMemberChip, active && styles.staffMemberChipActive]} onPress={() => setSelectedMemberId(member.professional.id)}>
-                <View style={styles.staffAvatar}>
-                  <Text style={styles.staffAvatarText}>{name.slice(0, 1).toUpperCase()}</Text>
-                </View>
-                <View>
-                  <Text style={[styles.staffMemberName, active && styles.staffMemberNameActive]}>{name}</Text>
-                  <Text style={[styles.staffMemberRole, active && styles.staffMemberNameActive]}>{member.membership.scope === "owner" ? t.owner : member.membership.role || t.employee}</Text>
-                </View>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
+        {members.length > 1 ? (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.staffMemberRail}>
+            {members.map((member) => {
+              const active = member.professional.id === selectedMember.professional.id;
+              const name = makeStaffMemberName(member, t.employee);
+              return (
+                <Pressable key={member.professional.id} style={[styles.staffMemberChip, active && styles.staffMemberChipActive]} onPress={() => setSelectedMemberId(member.professional.id)}>
+                  <View style={styles.staffAvatar}>
+                    <Text style={styles.staffAvatarText}>{name.slice(0, 1).toUpperCase()}</Text>
+                  </View>
+                  <View>
+                    <Text style={[styles.staffMemberName, active && styles.staffMemberNameActive]}>{name}</Text>
+                    <Text style={[styles.staffMemberRole, active && styles.staffMemberNameActive]}>{member.membership.scope === "owner" ? t.owner : member.membership.role || t.employee}</Text>
+                  </View>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        ) : null}
       </View>
 
       <View style={styles.staffWeekCard}>
         <View style={styles.staffCalendarControls}>
-          <Pressable style={styles.dateButton} onPress={() => setWeekStart(shiftDate(weekStart, -7))}>
+          <Pressable
+            style={styles.dateButton}
+            onPress={() => {
+              if (scheduleMode === "flexible") {
+                const nextMonth = shiftMonth(pickerMonth, -1);
+                setPickerMonth(nextMonth);
+                setSelectedFlexibleDate(nextMonth);
+              } else {
+                setWeekStart(shiftDate(weekStart, -7));
+              }
+            }}
+          >
             <Ionicons name="chevron-back" size={22} color="#0F172A" />
           </Pressable>
-          <Pressable style={styles.staffWeekPickerButton} onPress={() => { setPickerMonth(weekStart.slice(0, 7) + "-01"); setCalendarOpen(!calendarOpen); }}>
-            <Text style={styles.staffWeekPickerText}>{weekTitle}</Text>
+          <Pressable
+            style={styles.staffWeekPickerButton}
+            onPress={() => {
+              if (scheduleMode === "fixed") {
+                setPickerMonth(weekStart.slice(0, 7) + "-01");
+                setCalendarOpen(!calendarOpen);
+              }
+            }}
+          >
+            <Text style={styles.staffWeekPickerText}>{scheduleMode === "flexible" ? monthTitle : weekTitle}</Text>
           </Pressable>
-          <Pressable style={styles.dateButton} onPress={() => setWeekStart(shiftDate(weekStart, 7))}>
+          <Pressable
+            style={styles.dateButton}
+            onPress={() => {
+              if (scheduleMode === "flexible") {
+                const nextMonth = shiftMonth(pickerMonth, 1);
+                setPickerMonth(nextMonth);
+                setSelectedFlexibleDate(nextMonth);
+              } else {
+                setWeekStart(shiftDate(weekStart, 7));
+              }
+            }}
+          >
             <Ionicons name="chevron-forward" size={22} color="#0F172A" />
           </Pressable>
         </View>
-        <View style={styles.settingsActionRow}>
-          <SecondaryButton label={t.currentWeek} onPress={() => setWeekStart(getWeekDates(getTodayIso())[0])} />
-        </View>
-        {calendarOpen ? (
+        {scheduleMode === "fixed" ? (
+          <View style={styles.settingsActionRow}>
+            <SecondaryButton label={t.currentWeek} onPress={() => setWeekStart(getWeekDates(getTodayIso())[0])} />
+          </View>
+        ) : null}
+        {calendarOpen && scheduleMode === "fixed" ? (
           <View style={styles.staffCalendarBox}>
             <View style={styles.staffDayHeader}>
               <Pressable style={styles.iconGhostButton} onPress={() => setPickerMonth(shiftMonth(pickerMonth, -1))}>
@@ -12789,7 +13034,7 @@ function StaffScheduleTab({
       <Panel title={t.scheduleMenu}>
         <View style={styles.staffScheduleModeRow}>
           {[
-            { id: "fixed", label: t.repeatingSchedule },
+            { id: "fixed", label: t.weekView || t.repeatingSchedule },
             { id: "flexible", label: t.calendar },
           ].map((item) => {
             const active = scheduleMode === item.id;
@@ -12800,77 +13045,73 @@ function StaffScheduleTab({
             );
           })}
         </View>
-        <View style={styles.settingsActionRow}>
-          <SecondaryButton label={t.applyToWeekdays} onPress={applyToWeekdays} />
-          <SecondaryButton label={t.clearWeek} onPress={clearWeek} />
-        </View>
         {scheduleMode === "flexible" ? (
           <View style={styles.staffMonthPlanner}>
-            <View>
-              <Text style={styles.settingsCardTitle}>{t.monthPlanner}</Text>
-              <Text style={styles.clientOptionCaption}>{t.selectedDaysHint}</Text>
-            </View>
             <View style={styles.staffCalendarGrid}>
               {monthDates.map((date) => {
                 const inMonth = date.slice(0, 7) === pickerMonth.slice(0, 7);
-                const selected = selectedMonthDates.includes(date);
-                const working = customDraft[date]?.enabled === true;
+                const selected = selectedFlexibleDate === date;
+                const day = getMonthDraftDay(date);
+                const working = day.enabled === true;
+                const intervals = getDayIntervalsRecord(day);
                 return (
                   <Pressable
                     key={`month-${date}`}
                     style={[
                       styles.staffCalendarDay,
+                      styles.staffFlexibleCalendarDay,
                       !inMonth && styles.staffCalendarDayMuted,
                       working && styles.staffCalendarDayWork,
                       selected && styles.staffCalendarDayActive,
                     ]}
-                    onPress={() => toggleMonthDate(date)}
+                    onPress={() => selectFlexibleDate(date)}
                   >
                     <Text style={[styles.staffCalendarDayText, selected && styles.staffCalendarDayTextActive]}>{Number(date.slice(8, 10))}</Text>
+                    {working ? (
+                      <Text style={[styles.staffCalendarDayCaption, selected && styles.staffCalendarDayTextActive]} numberOfLines={1}>
+                        {intervals.map((interval) => `${interval.startTime}-${interval.endTime}`).join(" · ")}
+                      </Text>
+                    ) : null}
                   </Pressable>
                 );
               })}
             </View>
-            {selectedMonthDates.length ? (
-              <View style={styles.staffSelectedDaysStack}>
-                {selectedMonthDates.map((date) => {
-                  const day = getMonthDraftDay(date);
-                  const intervals = getDayIntervalsRecord(day);
-                  return (
-                    <View key={date} style={styles.staffSelectedDayCard}>
-                      <View style={styles.staffDayHeader}>
-                        <View>
-                          <Text style={styles.staffDayTitle}>{formatShortDate(date, language)}</Text>
-                          <Text style={styles.clientOptionCaption}>{day.enabled ? formatMoneylessHours(getIntervalsDurationMinutes(intervals), t.hoursShort) : t.noWork}</Text>
-                        </View>
-                        <Pressable style={[styles.mobileSwitch, day.enabled && styles.mobileSwitchActive]} onPress={() => updateMonthDateEnabled(date, !day.enabled)}>
-                          <View style={[styles.mobileSwitchThumb, day.enabled && styles.mobileSwitchThumbActive]} />
-                        </Pressable>
+            <View style={styles.staffSelectedDayCard}>
+              {(() => {
+                const day = getMonthDraftDay(selectedFlexibleDate);
+                const intervals = getDayIntervalsRecord(day);
+                return (
+                  <>
+                    <View style={styles.staffDayHeader}>
+                      <View style={styles.staffMemberCardInfo}>
+                        <Text style={styles.staffDayTitle}>{formatShortDate(selectedFlexibleDate, language)}</Text>
+                        <Text style={styles.clientOptionCaption}>
+                          {day.enabled ? `${t.workingDay} · ${formatMoneylessHours(getIntervalsDurationMinutes(intervals), t.hoursShort)}` : t.dayOff}
+                        </Text>
                       </View>
-                      {day.enabled ? (
-                        <View style={styles.staffIntervalsBox}>
-                          <Text style={styles.staffTimeLabel}>{t.workIntervals}</Text>
-                          <WorkIntervalsEditor
-                            t={t}
-                            intervals={intervals}
-                            onChange={(intervalIndex, field, value) => updateMonthDateInterval(date, intervalIndex, field, value)}
-                            onAddAfter={(intervalIndex) => addMonthDateInterval(date, intervalIndex)}
-                            onRemove={(intervalIndex) => removeMonthDateInterval(date, intervalIndex)}
-                          />
-                        </View>
-                      ) : null}
+                      <Pressable style={[styles.mobileSwitch, day.enabled && styles.mobileSwitchActive]} onPress={() => updateMonthDateEnabled(selectedFlexibleDate, !day.enabled)}>
+                        <View style={[styles.mobileSwitchThumb, day.enabled && styles.mobileSwitchThumbActive]} />
+                      </Pressable>
                     </View>
-                  );
-                })}
-              </View>
-            ) : null}
-            <View style={styles.settingsActionRow}>
-              <Text style={styles.badgeText}>{selectedMonthDates.length}</Text>
-              <PrimaryButton label={t.applyToSelectedDays} onPress={applyMonthSelection} disabled={busy} />
+                    {day.enabled ? (
+                      <View style={styles.staffIntervalsBox}>
+                        <Text style={styles.staffTimeLabel}>{t.workIntervals}</Text>
+                        <WorkIntervalsEditor
+                          t={t}
+                          intervals={intervals}
+                          onChange={(intervalIndex, field, value) => updateMonthDateInterval(selectedFlexibleDate, intervalIndex, field, value)}
+                          onAddAfter={(intervalIndex) => addMonthDateInterval(selectedFlexibleDate, intervalIndex)}
+                          onRemove={(intervalIndex) => removeMonthDateInterval(selectedFlexibleDate, intervalIndex)}
+                        />
+                      </View>
+                    ) : null}
+                  </>
+                );
+              })()}
             </View>
           </View>
-        ) : null}
-        {staffWeekKeys.map((key, index) => {
+        ) : (
+          staffWeekKeys.map((key, index) => {
           const date = weekDates[index] || getTodayIso();
           const day = getDraftDay(key, date);
           const active = day.enabled;
@@ -12900,7 +13141,8 @@ function StaffScheduleTab({
               ) : null}
             </View>
           );
-        })}
+          })
+        )}
         {scheduleAutoStatus ? <Text style={styles.settingsMutedNotice}>{scheduleAutoStatus}</Text> : null}
         <PrimaryButton label={t.saveSchedule} onPress={() => { if (validateScheduleBeforeSave()) void onSaveSchedule(selectedMember, workDraft, customDraft, scheduleMode); }} disabled={busy} />
       </Panel>
@@ -14838,7 +15080,7 @@ function RegisterPhoneField({
           onChangeText={onChangeText}
           keyboardType="phone-pad"
           autoCorrect={false}
-          placeholder="98 999 99 55"
+          placeholder="00 000 00 00"
           placeholderTextColor="#94A3B8"
           style={styles.phoneNumberInput}
         />
@@ -19507,10 +19749,29 @@ const styles = StyleSheet.create({
   staffCalendarDayWork: {
     backgroundColor: "#DCFCE7",
   },
+  staffFlexibleCalendarDay: {
+    width: 38,
+    height: 58,
+    paddingHorizontal: 2,
+    paddingVertical: 5,
+    justifyContent: "flex-start",
+    gap: 2,
+    borderWidth: 1,
+    borderColor: "rgba(226, 232, 240, 0.8)",
+    backgroundColor: "#F8FAFC",
+  },
   staffCalendarDayText: {
     color: "#0F172A",
     fontSize: 12,
     fontWeight: "800",
+  },
+  staffCalendarDayCaption: {
+    maxWidth: "100%",
+    color: "#64748B",
+    fontSize: 7,
+    lineHeight: 9,
+    fontWeight: "800",
+    textAlign: "center",
   },
   staffCalendarDayTextActive: {
     color: "#FFFFFF",
@@ -20092,6 +20353,43 @@ const styles = StyleSheet.create({
   joinRequestActions: {
     flexDirection: "row",
     gap: 8,
+  },
+  staffMembershipCard: {
+    gap: 14,
+    padding: 14,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "rgba(124, 58, 237, 0.18)",
+    backgroundColor: "#F8FAFF",
+  },
+  staffMembershipEyebrow: {
+    color: "#6D4AFF",
+    fontSize: 11,
+    fontWeight: "900",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  staffMembershipTitle: {
+    color: "#0F172A",
+    fontSize: 20,
+    fontWeight: "900",
+    lineHeight: 26,
+  },
+  staffMembershipBusinessName: {
+    color: "#4C1D95",
+  },
+  staffMembershipDetails: {
+    gap: 10,
+  },
+  staffMembershipDetailItem: {
+    minHeight: 52,
+    justifyContent: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: "rgba(226, 232, 240, 0.8)",
+    backgroundColor: "#FFFFFF",
   },
   joinApproveButton: {
     width: 38,
