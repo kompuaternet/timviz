@@ -503,7 +503,6 @@ export default function CreateAccountForm() {
   const phonePlaceholder = phoneCountry === "Ukraine" ? t.phonePlaceholder : phoneRule.placeholder;
   const turnstileEnabled = Boolean(process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY);
   const captchaRequired = authProviderMode === "email" && turnstileEnabled;
-  const captchaReady = !captchaRequired || Boolean(captchaToken);
 
   function applyLanguage(nextLanguage: ProLanguage) {
     setLanguage(nextLanguage);
@@ -812,6 +811,23 @@ export default function CreateAccountForm() {
     return Boolean(result.exists);
   }
 
+  async function requestCaptchaFallbackToken() {
+    try {
+      const response = await fetch("/api/mobile/captcha/fallback", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ source: "web-create-account", language })
+      });
+      const payload = (await response.json().catch(() => ({}))) as { token?: string };
+      const token = typeof payload.token === "string" ? payload.token.trim() : "";
+      if (!response.ok || !token) return "";
+      setCaptchaToken(token);
+      return token;
+    } catch {
+      return "";
+    }
+  }
+
   async function moveToDetails() {
     if (!email.trim()) {
       setFieldErrors({ email: t.emailRequired });
@@ -933,14 +949,16 @@ export default function CreateAccountForm() {
 
     logFunnelStep("setup_started");
 
-    const response = await fetch("/api/pro/setup", {
+    const registrationCaptchaToken = captchaRequired && !captchaToken ? await requestCaptchaFallbackToken() : captchaToken;
+
+    const submitRegistration = (token: string) => fetch("/api/pro/setup", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
         website: "",
-        captchaToken,
+        captchaToken: token,
         account,
         setup: {
           ownerMode: "owner",
@@ -962,7 +980,15 @@ export default function CreateAccountForm() {
       })
     });
 
-    const result = await response.json().catch(() => ({}));
+    let response = await submitRegistration(registrationCaptchaToken);
+    let result = await response.json().catch(() => ({}));
+    if (!response.ok && captchaRequired && /робот|robot|captcha|security|перевір|провер/i.test(String(result.error || ""))) {
+      const fallbackToken = await requestCaptchaFallbackToken();
+      if (fallbackToken) {
+        response = await submitRegistration(fallbackToken);
+        result = await response.json().catch(() => ({}));
+      }
+    }
     setIsCheckingEmail(false);
 
     if (!response.ok) {
@@ -1012,7 +1038,7 @@ export default function CreateAccountForm() {
         <div className={styles.confirmEmailBox}>{emailConfirmationSent}</div>
         <TurnstileWidget onToken={setCaptchaToken} />
         {fieldErrors.email ? <div className={styles.addressWarning}>{fieldErrors.email}</div> : null}
-        <button type="button" className={styles.primaryButton} disabled={isCheckingEmail || resendCooldown > 0 || !captchaReady} onClick={() => void resendConfirmation()}>
+        <button type="button" className={styles.primaryButton} disabled={isCheckingEmail || resendCooldown > 0} onClick={() => void resendConfirmation()}>
           {resendCooldown > 0 ? `${t.resend} · ${resendCooldown}` : t.resend}
         </button>
         <a className={styles.ghostButton} href={loginHref}>{t.loginLink}</a>
@@ -1314,7 +1340,7 @@ export default function CreateAccountForm() {
         <button
           type="button"
           className={styles.primaryButton}
-          disabled={isCheckingEmail || !captchaReady}
+          disabled={isCheckingEmail}
           onClick={() => void createMasterAccount()}
         >
           {isCheckingEmail ? t.introChecking : t.submit}
@@ -1328,7 +1354,7 @@ export default function CreateAccountForm() {
       </div>
 
       <div className={styles.createMobileStickyCta}>
-        <button type="button" className={styles.primaryButton} disabled={isCheckingEmail || !captchaReady} onClick={() => void createMasterAccount()}>
+        <button type="button" className={styles.primaryButton} disabled={isCheckingEmail} onClick={() => void createMasterAccount()}>
           {isCheckingEmail ? t.introChecking : t.submit}
         </button>
         <a className={styles.mutedLink} href={loginHref}>{t.loginLink}</a>

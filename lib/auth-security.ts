@@ -119,13 +119,21 @@ function verifyMobileCaptchaFallbackToken(token: string, remoteIp?: string) {
     return false;
   }
 
-  const expected = signMobileCaptchaPayload(timestamp, nonce, remoteIp);
-  const expectedBuffer = Buffer.from(expected, "hex");
   const signatureBuffer = Buffer.from(signature, "hex");
-  if (expectedBuffer.length !== signatureBuffer.length) {
-    return false;
+
+  const candidateSignatures = [
+    signMobileCaptchaPayload(timestamp, nonce, remoteIp),
+    signMobileCaptchaPayload(timestamp, nonce)
+  ];
+
+  for (const expected of candidateSignatures) {
+    const expectedBuffer = Buffer.from(expected, "hex");
+    if (expectedBuffer.length === signatureBuffer.length && timingSafeEqual(expectedBuffer, signatureBuffer)) {
+      return true;
+    }
   }
-  return timingSafeEqual(expectedBuffer, signatureBuffer);
+
+  return false;
 }
 
 export async function verifyCaptchaToken(token: unknown, remoteIp?: string) {
