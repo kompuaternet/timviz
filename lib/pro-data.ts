@@ -471,7 +471,12 @@ function normalizeServiceRecord(service: ServiceRecord, context: PricingContext 
     localizedCategory: {
       ru: localizeCategoryName(category, "ru"),
       uk: localizeCategoryName(category, "uk"),
-      en: localizeCategoryName(category, "en")
+      en: localizeCategoryName(category, "en"),
+      fr: localizeCategoryName(category, "fr"),
+      pl: localizeCategoryName(category, "pl"),
+      cs: localizeCategoryName(category, "cs"),
+      es: localizeCategoryName(category, "es"),
+      de: localizeCategoryName(category, "de")
     },
     durationMinutes:
       typeof service.durationMinutes === "number"

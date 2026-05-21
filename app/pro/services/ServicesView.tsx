@@ -25,6 +25,7 @@ type ServicesViewProps = {
 
 type DraftService = {
   name: string;
+  localizedName?: ServiceRecord["localizedName"];
   category: string;
   durationMinutes: number;
   price: number;
@@ -189,7 +190,7 @@ export default function ServicesView({ initialWorkspace, catalog, onboardingCta 
     }
 
     return scopedServices.filter((service) => {
-      const localizedName = localizeServiceName(service.name, language);
+      const localizedName = localizeServiceName(service.name, language, service.localizedName);
       const localizedCategory = service.category ? localizeCategoryName(service.category, language) : "";
       return `${service.name} ${localizedName} ${service.category || ""} ${localizedCategory}`
         .toLowerCase()
@@ -327,10 +328,20 @@ export default function ServicesView({ initialWorkspace, catalog, onboardingCta 
     setStatusText("");
 
     try {
+      const originalService = services.find((service) => service.id === editId);
+      const localizedName = {
+        ...(originalService?.localizedName || editDraft.localizedName || {}),
+        [language]: editDraft.name.trim()
+      };
       const response = await fetch("/api/pro/services", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ serviceId: editId, ...editDraft })
+        body: JSON.stringify({
+          serviceId: editId,
+          ...editDraft,
+          name: language === "ru" ? editDraft.name.trim() : originalService?.name || editDraft.name.trim(),
+          localizedName
+        })
       });
       const payload = await response.json();
 
@@ -397,6 +408,7 @@ export default function ServicesView({ initialWorkspace, catalog, onboardingCta 
 
   async function addCatalogService(service: {
     name: string;
+    localizedName?: ServiceRecord["localizedName"];
     category: string;
     durationMinutes?: number;
     price?: number;
@@ -411,6 +423,7 @@ export default function ServicesView({ initialWorkspace, catalog, onboardingCta 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: service.name,
+          localizedName: service.localizedName,
           category: service.category,
           durationMinutes: service.durationMinutes || 60,
           price: service.price || 0,
@@ -455,7 +468,7 @@ export default function ServicesView({ initialWorkspace, catalog, onboardingCta 
       }
 
       setServices((current) => current.filter((item) => item.id !== service.id));
-      setStatusText(copy.removedNamed(localizedLabel || localizeServiceName(service.name, language)));
+      setStatusText(copy.removedNamed(localizedLabel || localizeServiceName(service.name, language, service.localizedName)));
     } catch {
       setStatusText(copy.removeFromCatalogFailed);
     } finally {
@@ -466,7 +479,8 @@ export default function ServicesView({ initialWorkspace, catalog, onboardingCta 
   function startEdit(service: ServiceRecord) {
     setEditId(service.id);
     setEditDraft({
-      name: service.name,
+      name: localizeServiceName(service.name, language, service.localizedName),
+      localizedName: service.localizedName,
       category: service.category || t.common.noCategory,
       durationMinutes: service.durationMinutes || 60,
       price: service.price || 0,
@@ -669,7 +683,14 @@ export default function ServicesView({ initialWorkspace, catalog, onboardingCta 
                         <input
                           className={styles.input}
                           value={editDraft.name}
-                          onChange={(event) => setEditDraft((current) => ({ ...current, name: event.target.value }))}
+                          onChange={(event) => setEditDraft((current) => ({
+                            ...current,
+                            name: event.target.value,
+                            localizedName: {
+                              ...(current.localizedName || {}),
+                              [language]: event.target.value
+                            }
+                          }))}
                           placeholder={t.services.name}
                         />
                         <select
@@ -729,7 +750,7 @@ export default function ServicesView({ initialWorkspace, catalog, onboardingCta 
                     ) : (
                       <>
                         <div className={styles.serviceMenuMain}>
-                          <strong>{localizeServiceName(service.name, language)}</strong>
+                          <strong>{localizeServiceName(service.name, language, service.localizedName)}</strong>
                           <span>
                             {(service.category ? localizeCategoryName(service.category, language) : t.common.noCategory)} ·{" "}
                             {formatDuration(service.durationMinutes || 60, t.common)}

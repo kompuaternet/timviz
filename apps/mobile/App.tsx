@@ -10366,6 +10366,10 @@ function CalendarOverview({
   onCreateAt: (date: string, memberId?: string) => void;
 }) {
   const { width: screenWidth } = useWindowDimensions();
+  const formatServiceName = (appointment: Pick<AppointmentRecord, "serviceName">) => {
+    const matchedService = (workspace?.services || []).find((service) => serviceNameMatches(service, appointment.serviceName));
+    return getServiceDisplayName(matchedService, language) || appointment.serviceName;
+  };
 
   if (mode === "month") {
     return (
@@ -10459,8 +10463,9 @@ function CalendarOverview({
                   visibleAppointments.map(({ appointment, member }, index) => {
                     const blocked = appointment.kind === "blocked";
                     const serviceColor = getAppointmentServiceColor(appointment, workspace?.services || [], index);
-                    const title = blocked ? appointment.serviceName || t.unavailableTime : appointment.customerName || appointment.serviceName || t.customer;
-                    const subtitle = blocked ? t.unavailableTime : appointment.serviceName || member?.name || "";
+                    const serviceName = formatServiceName(appointment);
+                    const title = blocked ? appointment.serviceName || t.unavailableTime : appointment.customerName || serviceName || t.customer;
+                    const subtitle = blocked ? t.unavailableTime : serviceName || member?.name || "";
                     return (
                       <Pressable
                         key={`${appointment.id}-${appointment.startTime}-${index}`}

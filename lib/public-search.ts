@@ -533,7 +533,7 @@ async function loadPublicSearchIndex(params: PublicSearchParams = {}): Promise<P
       services: businessServices.map((service) => ({
         id: service.id,
         name: service.name,
-        localizedName: getServiceLocalizedText(service.name),
+        localizedName: getServiceLocalizedText(service.name, service.localizedName),
         price: service.price || 0,
         durationMinutes: service.durationMinutes || 60,
         color: service.color
