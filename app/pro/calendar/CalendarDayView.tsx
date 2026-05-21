@@ -183,11 +183,22 @@ type CalendarSnapshot = {
   pendingOnlineBookings?: CalendarOnlineBookingNotification[];
   pendingJoinRequests?: CalendarJoinRequestNotification[];
   archivedOnlineBookings?: CalendarOnlineBookingNotification[];
+  appNotifications?: CalendarAppNotification[];
   stats?: {
     day: CalendarPeriodStats;
     week: CalendarPeriodStats;
     month: CalendarPeriodStats;
   };
+};
+
+type CalendarAppNotification = {
+  id: string;
+  type: "online_booking" | "team_invitation" | "team_join_request" | "admin_message";
+  title: string;
+  body: string;
+  actionUrl?: string;
+  readAt?: string;
+  createdAt: string;
 };
 
 type CalendarRangePayload = {
@@ -409,6 +420,7 @@ const CALENDAR_TEXT: Record<AppLanguage, {
   notifications: string;
   pendingOnlineBookings: string;
   pendingJoinRequests: string;
+  notificationsMessages: string;
   archivedOnlineBookings: string;
   notificationsEmpty: string;
   recentBookings: string;
@@ -570,6 +582,7 @@ const CALENDAR_TEXT: Record<AppLanguage, {
     notifications: "Уведомления",
     pendingOnlineBookings: "Неподтвержденные онлайн-записи",
     pendingJoinRequests: "Запросы на присоединение",
+    notificationsMessages: "Приглашения и сообщения",
     archivedOnlineBookings: "Архив",
     notificationsEmpty: "Пока нет новых событий.",
     recentBookings: "Недавние записи",
@@ -731,6 +744,7 @@ const CALENDAR_TEXT: Record<AppLanguage, {
     notifications: "Сповіщення",
     pendingOnlineBookings: "Непідтверджені онлайн-записи",
     pendingJoinRequests: "Запити на приєднання",
+    notificationsMessages: "Запрошення і повідомлення",
     archivedOnlineBookings: "Архів",
     notificationsEmpty: "Поки немає нових подій.",
     recentBookings: "Останні записи",
@@ -892,6 +906,7 @@ const CALENDAR_TEXT: Record<AppLanguage, {
     notifications: "Notifications",
     pendingOnlineBookings: "Pending online bookings",
     pendingJoinRequests: "Join requests",
+    notificationsMessages: "Invitations and messages",
     archivedOnlineBookings: "Archive",
     notificationsEmpty: "There are no new updates yet.",
     recentBookings: "Recent bookings",
@@ -1930,7 +1945,7 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
   }
 
   function applyNotificationPayload(
-    payload: Pick<CalendarSnapshot, "pendingOnlineBookings" | "pendingJoinRequests" | "archivedOnlineBookings">
+    payload: Pick<CalendarSnapshot, "pendingOnlineBookings" | "pendingJoinRequests" | "archivedOnlineBookings" | "appNotifications">
   ) {
     setSnapshot((current) =>
       current
@@ -1938,7 +1953,8 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
             ...current,
             pendingOnlineBookings: payload.pendingOnlineBookings ?? [],
             pendingJoinRequests: payload.pendingJoinRequests ?? [],
-            archivedOnlineBookings: payload.archivedOnlineBookings ?? []
+            archivedOnlineBookings: payload.archivedOnlineBookings ?? [],
+            appNotifications: payload.appNotifications ?? []
           }
         : current
     );
@@ -2207,7 +2223,7 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
 
     try {
       const response = await fetch(buildNotificationsUrl(dateKey));
-      const data = (await response.json()) as Pick<CalendarSnapshot, "pendingOnlineBookings" | "pendingJoinRequests" | "archivedOnlineBookings">;
+      const data = (await response.json()) as Pick<CalendarSnapshot, "pendingOnlineBookings" | "pendingJoinRequests" | "archivedOnlineBookings" | "appNotifications">;
 
       if (!response.ok) {
         throw new Error("Failed to load notifications.");
@@ -2519,7 +2535,11 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
   const pendingOnlineBookings = snapshot?.pendingOnlineBookings ?? [];
   const pendingJoinRequests = snapshot?.pendingJoinRequests ?? [];
   const archivedOnlineBookings = snapshot?.archivedOnlineBookings ?? [];
-  const totalPendingNotifications = pendingOnlineBookings.length + pendingJoinRequests.length;
+  const appNotifications = (snapshot?.appNotifications ?? []).filter(
+    (item) => item.type !== "online_booking" && item.type !== "team_join_request"
+  );
+  const unreadAppNotifications = appNotifications.filter((item) => !item.readAt);
+  const totalPendingNotifications = pendingOnlineBookings.length + pendingJoinRequests.length + unreadAppNotifications.length;
   const viewerHasPremium = isProPremiumActive(snapshot?.viewer ?? {});
   const canSwitchProfessional = snapshot?.viewer.scope === "owner" && teamMembers.length > 1;
   const filteredTeamMembers = useMemo(() => {
@@ -3953,6 +3973,41 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
       .finally(() => {
         router.push("/pro/staff/members");
       });
+  }
+
+  function handleAppNotificationSelect(item: CalendarAppNotification) {
+    setActiveToolbarMenu(null);
+    clearActiveMobileBookingActions();
+    setQuickMenu((current) => ({ ...current, visible: false, x: 0, y: 0, time: "" }));
+    setDeleteConfirmTarget(null);
+    setDrawerStage("closed");
+
+    if (!item.readAt) {
+      const readAt = new Date().toISOString();
+      setSnapshot((current) =>
+        current
+          ? {
+              ...current,
+              appNotifications: (current.appNotifications || []).map((notification) =>
+                notification.id === item.id ? { ...notification, readAt } : notification
+              )
+            }
+          : current
+      );
+      void fetch("/api/pro/notifications", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ ids: [item.id] })
+      })
+        .then(() => {
+          window.dispatchEvent(new CustomEvent("rezervo-pro-notifications-refresh"));
+        })
+        .catch(() => undefined);
+    }
+
+    router.push(item.actionUrl || "/pro/staff/members");
   }
 
   function startAppointmentDrag(
@@ -6315,6 +6370,34 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
                 </div>
               ) : null}
 
+              {appNotifications.length ? (
+                <>
+                  <div className={styles.calendarNotificationsHeading}>
+                    <strong>{t.notificationsMessages}</strong>
+                    <span>{unreadAppNotifications.length || appNotifications.length}</span>
+                  </div>
+                  <div className={styles.calendarNotificationsList}>
+                    {appNotifications.map((item) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        className={`${styles.calendarNotificationCard} ${styles.calendarNotificationCardInteractive}`}
+                        onClick={() => handleAppNotificationSelect(item)}
+                      >
+                        <div className={styles.calendarNotificationCardHeader}>
+                          <strong>{item.title}</strong>
+                          <span>{formatActivityTime(item.createdAt, locale)}</span>
+                        </div>
+                        <div className={styles.calendarNotificationCardBody}>
+                          <span>{item.body}</span>
+                          {!item.readAt ? <em className={styles.calendarNotificationStatusPending}>{t.notifications}</em> : null}
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              ) : null}
+
               {pendingJoinRequests.length ? (
                 <>
                   <div className={styles.calendarNotificationsHeading}>
@@ -6349,7 +6432,7 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
                 <span>{pendingOnlineBookings.length}</span>
               </div>
 
-              {isNotificationsRefreshing && !pendingOnlineBookings.length && !pendingJoinRequests.length && !archivedOnlineBookings.length ? (
+              {isNotificationsRefreshing && !pendingOnlineBookings.length && !pendingJoinRequests.length && !appNotifications.length && !archivedOnlineBookings.length ? (
                 <div className={styles.calendarNotificationSkeletonList} aria-hidden="true">
                   <span className={styles.mobileSkeletonLine} />
                   <span className={styles.mobileSkeletonLineShort} />
@@ -6383,7 +6466,7 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
                     </button>
                   ))}
                 </div>
-              ) : pendingJoinRequests.length ? null : (
+              ) : pendingJoinRequests.length || appNotifications.length ? null : (
                 <div className={styles.calendarNotificationEmpty}>
                   <strong>{t.notifications}</strong>
                   <span>{t.notificationsEmpty}</span>

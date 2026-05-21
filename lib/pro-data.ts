@@ -1056,6 +1056,35 @@ async function sendTelegramDirectBestEffort(input: {
   }
 }
 
+async function sendTeamMailBestEffort(input: {
+  to?: string;
+  subject: string;
+  headline: string;
+  body: string;
+}) {
+  const to = input.to?.trim().toLowerCase() || "";
+  if (!to || !isMailerConfigured() || to.endsWith("@placeholder.timviz.local")) {
+    return;
+  }
+
+  const safeHeadline = escapeHtml(input.headline);
+  const safeBody = escapeHtml(input.body);
+  await sendMail({
+    to,
+    subject: input.subject,
+    html: `
+      <div style="font-family:Inter,Arial,sans-serif;background:#f5f7ff;padding:32px 16px;color:#171411">
+        <div style="max-width:560px;margin:0 auto;background:#ffffff;border:1px solid rgba(23,20,17,.08);border-radius:24px;padding:32px">
+          <div style="font-size:28px;font-weight:800;letter-spacing:-0.03em;margin-bottom:12px">Timviz</div>
+          <div style="font-size:24px;font-weight:800;letter-spacing:-0.03em;margin-bottom:12px">${safeHeadline}</div>
+          <p style="font-size:16px;line-height:1.6;color:#5f5a65;margin:0">${safeBody}</p>
+        </div>
+      </div>
+    `,
+    text: `${input.headline}\n\n${input.body}`
+  }).catch(() => undefined);
+}
+
 async function notifyInvitedProfessionalAboutInvitation(input: {
   invitedProfessionalId?: string;
   invitedProfessionalLanguage?: string;
@@ -1113,6 +1142,181 @@ async function notifyInvitedProfessionalAboutInvitation(input: {
     text: `${copy.title}\n${copy.body}`,
     inviteUrl: input.inviteUrl
   });
+}
+
+async function notifyBusinessOwnersAboutInvitationResolution(input: {
+  businessId: string;
+  invitationId: string;
+  actorProfessionalId: string;
+  actorName: string;
+  actorEmail: string;
+  businessName: string;
+  role: string;
+  action: "accepted" | "declined";
+}) {
+  const directory = await getBusinessDirectorySnapshot();
+  const ownerIds = Array.from(
+    new Set(
+      directory.memberships
+        .filter((membership) => membership.businessId === input.businessId && membership.scope === "owner")
+        .map((membership) => membership.professionalId)
+        .filter((professionalId) => professionalId !== input.actorProfessionalId)
+    )
+  );
+
+  if (!ownerIds.length) return;
+
+  const accepted = input.action === "accepted";
+  const title = accepted ? "Приглашение принято" : "Приглашение отклонено";
+  const body = accepted
+    ? `${input.actorName || input.actorEmail} присоединился к ${input.businessName} как ${input.role}.`
+    : `${input.actorName || input.actorEmail} отклонил приглашение в ${input.businessName}.`;
+
+  await createAppNotifications(
+    ownerIds.map((ownerId) => ({
+      professionalId: ownerId,
+      businessId: input.businessId,
+      type: "team_invitation" as const,
+      title,
+      body,
+      actionUrl: "/pro/staff/members",
+      payload: {
+        invitationId: input.invitationId,
+        actorProfessionalId: input.actorProfessionalId,
+        actorEmail: input.actorEmail,
+        role: input.role,
+        action: input.action
+      }
+    }))
+  ).catch(() => undefined);
+
+  await Promise.allSettled(
+    ownerIds.map(async (ownerId) => {
+      await sendDirectPushBestEffort({
+        professionalId: ownerId,
+        title,
+        body,
+        data: {
+          type: "team_invitation",
+          invitationId: input.invitationId,
+          businessId: input.businessId,
+          action: input.action
+        }
+      });
+      const owner = directory.professionals.find((item) => item.id === ownerId) || null;
+      await sendTeamMailBestEffort({
+        to: owner?.email,
+        subject: title,
+        headline: title,
+        body
+      });
+    })
+  );
+}
+
+async function notifyProfessionalRemovedFromTeam(input: {
+  professional: ProfessionalRecord;
+  businessId: string;
+  businessName: string;
+  ownerName: string;
+}) {
+  if (normalizeProfessionalAccountStatus(input.professional.accountStatus) !== "active") {
+    return;
+  }
+
+  const title = "Доступ к команде закрыт";
+  const body = `${input.ownerName || "Владелец"} удалил вас из команды ${input.businessName}. Ваш аккаунт Timviz остался самостоятельным.`;
+
+  await createAppNotification({
+    professionalId: input.professional.id,
+    businessId: input.businessId,
+    type: "team_invitation",
+    title,
+    body,
+    actionUrl: "/pro/staff/members",
+    payload: {
+      businessId: input.businessId,
+      action: "removed"
+    }
+  }).catch(() => undefined);
+  await sendDirectPushBestEffort({
+    professionalId: input.professional.id,
+    title,
+    body,
+    data: {
+      type: "team_invitation",
+      businessId: input.businessId,
+      action: "removed"
+    }
+  });
+  await sendTeamMailBestEffort({
+    to: input.professional.email,
+    subject: title,
+    headline: title,
+    body
+  });
+}
+
+async function notifyBusinessOwnersAboutMemberLeft(input: {
+  professional: ProfessionalRecord;
+  businessId: string;
+  businessName: string;
+  membershipId: string;
+}) {
+  const directory = await getBusinessDirectorySnapshot();
+  const ownerIds = Array.from(
+    new Set(
+      directory.memberships
+        .filter((membership) => membership.businessId === input.businessId && membership.scope === "owner")
+        .map((membership) => membership.professionalId)
+        .filter((professionalId) => professionalId !== input.professional.id)
+    )
+  );
+
+  if (!ownerIds.length) return;
+
+  const memberName = getProfessionalDisplayName(input.professional) || input.professional.email;
+  const title = "Участник вышел из команды";
+  const body = `${memberName} вышел из команды ${input.businessName}.`;
+
+  await createAppNotifications(
+    ownerIds.map((ownerId) => ({
+      professionalId: ownerId,
+      businessId: input.businessId,
+      type: "team_invitation" as const,
+      title,
+      body,
+      actionUrl: "/pro/staff/members",
+      payload: {
+        membershipId: input.membershipId,
+        memberProfessionalId: input.professional.id,
+        action: "left"
+      }
+    }))
+  ).catch(() => undefined);
+
+  await Promise.allSettled(
+    ownerIds.map(async (ownerId) => {
+      await sendDirectPushBestEffort({
+        professionalId: ownerId,
+        title,
+        body,
+        data: {
+          type: "team_invitation",
+          membershipId: input.membershipId,
+          businessId: input.businessId,
+          action: "left"
+        }
+      });
+      const owner = directory.professionals.find((item) => item.id === ownerId) || null;
+      await sendTeamMailBestEffort({
+        to: owner?.email,
+        subject: title,
+        headline: title,
+        body
+      });
+    })
+  );
 }
 
 async function notifyBusinessOwnersAboutJoinRequest(request: CreatedJoinRequestNotification | null) {
@@ -2849,6 +3053,265 @@ export async function revokeStaffInvitation(input: {
   return { ok: true };
 }
 
+async function ensureStandaloneWorkspaceForProfessional(input: {
+  professionalId: string;
+  removedMembershipId?: string;
+}) {
+  const directory = await getBusinessDirectorySnapshot();
+  const professional = directory.professionals.find((item) => item.id === input.professionalId) || null;
+
+  if (!professional || normalizeProfessionalAccountStatus(professional.accountStatus) !== "active") {
+    return { created: false, businessId: "" };
+  }
+
+  const hasActiveMembership = directory.memberships.some(
+    (membership) =>
+      membership.professionalId === input.professionalId &&
+      membership.id !== input.removedMembershipId &&
+      membership.scope !== "pending"
+  );
+
+  if (hasActiveMembership) {
+    return { created: false, businessId: "" };
+  }
+
+  const createdAt = new Date().toISOString();
+  const businessId = makeId("biz");
+  const membershipId = makeId("membership");
+  const businessName =
+    `${professional.firstName} ${professional.lastName}`.trim() ||
+    professional.email ||
+    "Timviz";
+  const workSchedule = createDefaultWorkSchedule();
+  const customSchedule = createEmptyCustomSchedule();
+
+  if (isSupabaseConfigured()) {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      return { created: false, businessId: "" };
+    }
+
+    const { error: businessError } = await supabase.from("businesses").insert({
+      id: businessId,
+      name: businessName,
+      website: "",
+      categories: [],
+      account_type: "solo",
+      service_mode: "offline",
+      address: "",
+      address_details: "",
+      address_lat: null,
+      address_lon: null,
+      work_schedule_mode: "fixed",
+      work_schedule: workSchedule,
+      custom_schedule: customSchedule,
+      allow_online_booking: false,
+      photos: [],
+      owner_professional_id: professional.id,
+      created_at: createdAt
+    });
+
+    if (businessError) {
+      throw new Error(businessError.message);
+    }
+
+    const { error: membershipError } = await supabase.from("business_memberships").insert({
+      id: membershipId,
+      business_id: businessId,
+      professional_id: professional.id,
+      role: "owner",
+      scope: "owner",
+      work_schedule_mode: "fixed",
+      work_schedule: workSchedule,
+      custom_schedule: customSchedule,
+      created_at: createdAt
+    });
+
+    if (membershipError) {
+      throw new Error(membershipError.message);
+    }
+
+    await supabase.from("professionals").update({ owner_mode: "owner" }).eq("id", professional.id);
+    invalidateBusinessDirectoryCache();
+    return { created: true, businessId };
+  }
+
+  const store = await ensureDemoBusinessesInLocalStore();
+  const storeHasActiveMembership = store.memberships.some(
+    (membership) =>
+      membership.professionalId === input.professionalId &&
+      membership.id !== input.removedMembershipId &&
+      membership.scope !== "pending"
+  );
+
+  if (storeHasActiveMembership) {
+    return { created: false, businessId: "" };
+  }
+
+  const storeProfessional = store.professionals.find((item) => item.id === professional.id);
+  if (storeProfessional) {
+    storeProfessional.ownerMode = "owner";
+  }
+
+  store.businesses.push(
+    normalizeBusinessRecord({
+      id: businessId,
+      name: businessName,
+      website: "",
+      categories: [],
+      accountType: "solo",
+      serviceMode: "offline",
+      address: "",
+      addressDetails: "",
+      addressLat: null,
+      addressLon: null,
+      workScheduleMode: "fixed",
+      workSchedule,
+      customSchedule,
+      allowOnlineBooking: false,
+      photos: [],
+      ownerProfessionalId: professional.id,
+      createdAt
+    })
+  );
+  store.memberships.push(
+    normalizeMembershipRecord({
+      id: membershipId,
+      businessId,
+      professionalId: professional.id,
+      role: "owner",
+      scope: "owner",
+      workScheduleMode: "fixed",
+      workSchedule,
+      customSchedule,
+      createdAt
+    })
+  );
+
+  await writeStore(store);
+  invalidateBusinessDirectoryCache();
+  return { created: true, businessId };
+}
+
+export async function removeStaffMemberByOwner(input: {
+  ownerProfessionalId: string;
+  memberProfessionalId: string;
+}) {
+  const workspace = await getWorkspaceSnapshot(input.ownerProfessionalId);
+
+  if (!workspace || workspace.membership.scope !== "owner") {
+    throw new Error("Only business owners can remove employees.");
+  }
+
+  const memberProfessionalId = input.memberProfessionalId.trim();
+  if (!memberProfessionalId) {
+    throw new Error("Employee id is required.");
+  }
+
+  if (memberProfessionalId === input.ownerProfessionalId) {
+    throw new Error("Владельца нельзя удалить из собственной команды.");
+  }
+
+  const directory = await getBusinessDirectorySnapshot();
+  const membership = directory.memberships.find(
+    (item) =>
+      item.professionalId === memberProfessionalId &&
+      item.businessId === workspace.business.id &&
+      item.scope !== "owner"
+  ) || null;
+
+  if (!membership) {
+    throw new Error("Employee not found.");
+  }
+
+  const professional = directory.professionals.find((item) => item.id === memberProfessionalId) || null;
+  const businessName = workspace.business.name || "Timviz";
+  const ownerName = getProfessionalDisplayName(workspace.professional) || workspace.professional.email;
+  const memberEmail = professional?.email.trim().toLowerCase() || "";
+
+  if (isSupabaseConfigured()) {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      throw new Error("Supabase is not available.");
+    }
+
+    const { error: membershipError } = await supabase
+      .from("business_memberships")
+      .delete()
+      .eq("id", membership.id)
+      .eq("business_id", workspace.business.id)
+      .eq("professional_id", memberProfessionalId);
+
+    if (membershipError) {
+      throw new Error(membershipError.message);
+    }
+
+    if (memberEmail) {
+      const { error: invitationError } = await supabase
+        .from("business_staff_invitations")
+        .update({
+          status: "revoked",
+          revoked_at: new Date().toISOString()
+        })
+        .eq("business_id", workspace.business.id)
+        .eq("email", memberEmail)
+        .eq("status", "pending");
+
+      if (invitationError && !isMissingStaffInvitationsTableError(invitationError.message)) {
+        throw new Error(invitationError.message);
+      }
+    }
+  } else {
+    const store = await ensureDemoBusinessesInLocalStore();
+    const membershipIndex = store.memberships.findIndex(
+      (item) =>
+        item.id === membership.id &&
+        item.businessId === workspace.business.id &&
+        item.professionalId === memberProfessionalId
+    );
+
+    if (membershipIndex === -1) {
+      throw new Error("Employee not found.");
+    }
+
+    store.memberships.splice(membershipIndex, 1);
+    const revokedAt = new Date().toISOString();
+    for (const invitation of store.staffInvitations ?? []) {
+      if (
+        memberEmail &&
+        invitation.businessId === workspace.business.id &&
+        invitation.email === memberEmail &&
+        invitation.status === "pending"
+      ) {
+        invitation.status = "revoked";
+        invitation.revokedAt = revokedAt;
+      }
+    }
+    await writeStore(store);
+  }
+
+  invalidateBusinessDirectoryCache();
+  await ensureStandaloneWorkspaceForProfessional({
+    professionalId: memberProfessionalId,
+    removedMembershipId: membership.id
+  });
+  invalidateBusinessDirectoryCache();
+
+  if (professional) {
+    await notifyProfessionalRemovedFromTeam({
+      professional,
+      businessId: workspace.business.id,
+      businessName,
+      ownerName
+    }).catch(() => undefined);
+  }
+
+  return {
+    ok: true,
+    businessName
+  };
+}
+
 export async function leaveCurrentBusinessMembership(professionalId: string, businessId?: string) {
   const normalizedBusinessId = businessId?.trim() || "";
   const directory = await getBusinessDirectorySnapshot();
@@ -2863,7 +3326,12 @@ export async function leaveCurrentBusinessMembership(professionalId: string, bus
   if (!membership) {
     throw new Error("Business membership not found.");
   }
+  if (membership.scope === "owner") {
+    throw new Error("Владелец не может выйти из собственной компании.");
+  }
+
   const business = directory.businesses.find((item) => item.id === membership.businessId) || null;
+  const professional = directory.professionals.find((item) => item.id === professionalId) || null;
 
   if (isSupabaseConfigured()) {
     const supabase = getSupabaseAdmin();
@@ -2882,6 +3350,19 @@ export async function leaveCurrentBusinessMembership(professionalId: string, bus
     }
 
     invalidateBusinessDirectoryCache();
+    await ensureStandaloneWorkspaceForProfessional({
+      professionalId,
+      removedMembershipId: membership.id
+    });
+    invalidateBusinessDirectoryCache();
+    if (professional) {
+      await notifyBusinessOwnersAboutMemberLeft({
+        professional,
+        businessId: membership.businessId,
+        businessName: business?.name || "Timviz",
+        membershipId: membership.id
+      }).catch(() => undefined);
+    }
     return {
       ok: true,
       businessName: business?.name || ""
@@ -2901,6 +3382,20 @@ export async function leaveCurrentBusinessMembership(professionalId: string, bus
 
   store.memberships.splice(membershipIndex, 1);
   await writeStore(store);
+  invalidateBusinessDirectoryCache();
+  await ensureStandaloneWorkspaceForProfessional({
+    professionalId,
+    removedMembershipId: membership.id
+  });
+  invalidateBusinessDirectoryCache();
+  if (professional) {
+    await notifyBusinessOwnersAboutMemberLeft({
+      professional,
+      businessId: membership.businessId,
+      businessName: business?.name || "Timviz",
+      membershipId: membership.id
+    }).catch(() => undefined);
+  }
 
   return {
     ok: true,
@@ -3046,6 +3541,16 @@ export async function acceptStaffInvitation(input: {
     }
 
     invalidateBusinessDirectoryCache();
+    await notifyBusinessOwnersAboutInvitationResolution({
+      businessId: invitationPreview.business.id,
+      invitationId: invitationPreview.id,
+      actorProfessionalId: input.professionalId,
+      actorName: getProfessionalDisplayName(professional),
+      actorEmail: professional.email,
+      businessName: invitationPreview.business.name,
+      role: invitationPreview.role,
+      action: "accepted"
+    }).catch(() => undefined);
     return {
       ok: true,
       businessId: invitationPreview.business.id
@@ -3112,6 +3617,17 @@ export async function acceptStaffInvitation(input: {
   delete invitation.revokedAt;
 
   await writeStore(store);
+  invalidateBusinessDirectoryCache();
+  await notifyBusinessOwnersAboutInvitationResolution({
+    businessId: invitationPreview.business.id,
+    invitationId: invitationPreview.id,
+    actorProfessionalId: input.professionalId,
+    actorName: getProfessionalDisplayName(professional),
+    actorEmail: professional.email,
+    businessName: invitationPreview.business.name,
+    role: invitationPreview.role,
+    action: "accepted"
+  }).catch(() => undefined);
 
   return {
     ok: true,
@@ -3190,6 +3706,17 @@ export async function declineStaffInvitation(input: {
     }
 
     invalidateBusinessDirectoryCache();
+    const business = directory.businesses.find((item) => item.id === invitation.businessId) || null;
+    await notifyBusinessOwnersAboutInvitationResolution({
+      businessId: invitation.businessId,
+      invitationId: invitation.id,
+      actorProfessionalId: input.professionalId,
+      actorName: getProfessionalDisplayName(professional),
+      actorEmail: professional.email,
+      businessName: business?.name || "Timviz",
+      role: invitation.role,
+      action: "declined"
+    }).catch(() => undefined);
     return { ok: true };
   }
 
@@ -3201,6 +3728,18 @@ export async function declineStaffInvitation(input: {
   storeInvitation.status = "declined";
   storeInvitation.revokedAt = declinedAt;
   await writeStore(store);
+  invalidateBusinessDirectoryCache();
+  const business = directory.businesses.find((item) => item.id === invitation.businessId) || null;
+  await notifyBusinessOwnersAboutInvitationResolution({
+    businessId: invitation.businessId,
+    invitationId: invitation.id,
+    actorProfessionalId: input.professionalId,
+    actorName: getProfessionalDisplayName(professional),
+    actorEmail: professional.email,
+    businessName: business?.name || "Timviz",
+    role: invitation.role,
+    action: "declined"
+  }).catch(() => undefined);
   return { ok: true };
 }
 

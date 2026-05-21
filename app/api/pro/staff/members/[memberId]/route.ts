@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { getSessionCookieName, verifySessionValue } from "../../../../../../lib/pro-auth";
-import { updateStaffMemberByOwner } from "../../../../../../lib/pro-data";
+import { removeStaffMemberByOwner, updateStaffMemberByOwner } from "../../../../../../lib/pro-data";
 
 type RouteProps = {
   params: Promise<{
@@ -39,6 +39,30 @@ export async function PATCH(request: Request, { params }: RouteProps) {
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Could not update employee." },
+      { status: 400 }
+    );
+  }
+}
+
+export async function DELETE(_request: Request, { params }: RouteProps) {
+  const professionalId = await getProfessionalId();
+
+  if (!professionalId) {
+    return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  }
+
+  try {
+    const { memberId } = await params;
+
+    await removeStaffMemberByOwner({
+      ownerProfessionalId: professionalId,
+      memberProfessionalId: memberId
+    });
+
+    return NextResponse.json({ ok: true });
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Could not remove employee." },
       { status: 400 }
     );
   }

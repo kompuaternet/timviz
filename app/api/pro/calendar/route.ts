@@ -9,6 +9,7 @@ import {
   type BookingRecord,
   type BookingStatus
 } from "../../../../lib/bookings";
+import { getAppNotificationsForProfessional } from "../../../../lib/app-notifications";
 import { getSessionCookieName, verifySessionValue } from "../../../../lib/pro-auth";
 import { getJoinRequestsForOwner } from "../../../../lib/pro-data";
 import {
@@ -54,6 +55,7 @@ type CalendarRouteSnapshot = Awaited<ReturnType<typeof getCalendarDaySnapshot>> 
   pendingOnlineBookings?: Array<Record<string, string>>;
   archivedOnlineBookings?: Array<Record<string, string>>;
   pendingJoinRequests?: Array<Record<string, string>>;
+  appNotifications?: Array<Record<string, unknown>>;
 };
 
 type CalendarRouteTeamMember = {
@@ -197,13 +199,15 @@ async function getOnlineBookingNotifications(input: {
   teamMembers: CalendarRouteTeamMember[];
   viewerProfessionalId: string;
 }) {
+  const appNotificationsPromise = getAppNotificationsForProfessional(input.viewerProfessionalId, { limit: 40 }).catch(() => []);
   const businessId = input.businessId;
 
   if (!businessId) {
     return {
       pendingOnlineBookings: [],
       archivedOnlineBookings: [],
-      pendingJoinRequests: []
+      pendingJoinRequests: [],
+      appNotifications: await appNotificationsPromise
     };
   }
 
@@ -345,7 +349,8 @@ async function getOnlineBookingNotifications(input: {
   return {
     pendingOnlineBookings: notifications.filter((item) => item.status === "pending"),
     archivedOnlineBookings: notifications.filter((item) => item.status !== "pending").slice(0, 12),
-    pendingJoinRequests
+    pendingJoinRequests,
+    appNotifications: await appNotificationsPromise
   };
 }
 

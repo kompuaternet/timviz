@@ -1248,7 +1248,7 @@ const baseCopy = {
     allTeam: "Вся команда",
     showWholeTeam: "Показати всю команду",
     selectedMasters: "Вибрані майстри",
-    addMember: "Додати співробітника",
+    addMember: "Запросити",
     editMember: "Редагувати співробітника",
     saveMember: "Зберегти співробітника",
     fullName: "Ім'я та прізвище",
@@ -1257,10 +1257,14 @@ const baseCopy = {
     invite: "Запросити",
     resendInvite: "Надіслати ще раз",
     revokeInvite: "Скасувати запрошення",
-    sendInvite: "Надіслати запрошення на email",
-    pendingInvites: "Очікують запрошення",
-    incomingInvites: "Запрошення для мене",
-    noIncomingInvites: "Нових запрошень поки немає.",
+    sendInvite: "Вкажіть email. Інші дані співробітник заповнить після прийняття.",
+    pendingInvites: "Надіслані запрошення",
+    incomingInvites: "Отримані запрошення",
+    noIncomingInvites: "Вас поки ніхто не запросив.",
+    noInvites: "Ви поки нікого не запросили.",
+    removeMember: "Видалити з команди",
+    removeMemberConfirm: "Видалити співробітника з команди? Його акаунт залишиться самостійним.",
+    removeMemberSuccess: "Співробітника видалено з команди.",
     memberCompanyEyebrow: "Моя команда",
     memberCompanyTitle: "Ви в групі",
     memberCompanyRole: "Роль",
@@ -1723,7 +1727,7 @@ const baseCopy = {
     allTeam: "Вся команда",
     showWholeTeam: "Показать всю команду",
     selectedMasters: "Выбранные мастера",
-    addMember: "Добавить сотрудника",
+    addMember: "Пригласить",
     editMember: "Редактировать сотрудника",
     saveMember: "Сохранить сотрудника",
     fullName: "Имя и фамилия",
@@ -1732,10 +1736,14 @@ const baseCopy = {
     invite: "Пригласить",
     resendInvite: "Отправить еще раз",
     revokeInvite: "Отозвать приглашение",
-    sendInvite: "Отправить приглашение на email",
-    pendingInvites: "Ожидают приглашение",
-    incomingInvites: "Приглашения для меня",
-    noIncomingInvites: "Новых приглашений пока нет.",
+    sendInvite: "Укажите email. Остальные данные сотрудник заполнит после принятия.",
+    pendingInvites: "Отправленные приглашения",
+    incomingInvites: "Полученные приглашения",
+    noIncomingInvites: "Вас пока никто не пригласил.",
+    noInvites: "Вы пока никого не пригласили.",
+    removeMember: "Удалить из команды",
+    removeMemberConfirm: "Удалить сотрудника из команды? Его аккаунт останется самостоятельным.",
+    removeMemberSuccess: "Сотрудник удалён из команды.",
     memberCompanyEyebrow: "Моя команда",
     memberCompanyTitle: "Вы в группе",
     memberCompanyRole: "Роль",
@@ -2198,7 +2206,7 @@ const baseCopy = {
     allTeam: "Whole team",
     showWholeTeam: "Show the full team",
     selectedMasters: "Selected masters",
-    addMember: "Add employee",
+    addMember: "Invite",
     editMember: "Edit employee",
     saveMember: "Save employee",
     fullName: "Full name",
@@ -2207,10 +2215,14 @@ const baseCopy = {
     invite: "Invite",
     resendInvite: "Resend invite",
     revokeInvite: "Revoke invite",
-    sendInvite: "Send email invite",
-    pendingInvites: "Pending invites",
-    incomingInvites: "Invitations for me",
-    noIncomingInvites: "No new invitations yet.",
+    sendInvite: "Enter an email. The employee fills in the rest after accepting.",
+    pendingInvites: "Sent invitations",
+    incomingInvites: "Received invitations",
+    noIncomingInvites: "No one has invited you yet.",
+    noInvites: "You have not invited anyone yet.",
+    removeMember: "Remove from team",
+    removeMemberConfirm: "Remove this employee from the team? Their account will remain standalone.",
+    removeMemberSuccess: "Employee removed from the team.",
     memberCompanyEyebrow: "My team",
     memberCompanyTitle: "You are in",
     memberCompanyRole: "Role",
@@ -8261,7 +8273,6 @@ export default function App() {
                 apiFetch={apiFetch}
                 onRefreshWorkspace={() => refreshAll(session, selectedDate)}
                 onSaveSchedule={saveStaffSchedule}
-                onSignOut={signOut}
               />
             ) : null}
             {activeTab === "settings" ? (
@@ -10552,7 +10563,9 @@ function WorkspaceHeader({
     : !workspace?.services?.length
       ? t.setupFirstServiceText
       : (t.setupRemaining || t.setupAssistantText).replace("{count}", String(setupMissingCount));
-  const visibleAppNotifications = (notifications.appNotifications || []).filter((item) => item.type !== "online_booking");
+  const visibleAppNotifications = (notifications.appNotifications || []).filter(
+    (item) => item.type !== "online_booking" && item.type !== "team_join_request"
+  );
   const unreadAppNotificationCount = visibleAppNotifications.filter((item) => !item.readAt).length;
   const pendingCount =
     (notifications.pendingOnlineBookings?.length || 0) +
@@ -12192,7 +12205,6 @@ function StaffWorkspaceTab({
   apiFetch,
   onRefreshWorkspace,
   onSaveSchedule,
-  onSignOut,
 }: {
   t: Record<string, string>;
   language: AppLanguage;
@@ -12202,7 +12214,6 @@ function StaffWorkspaceTab({
   apiFetch: (path: string, options?: RequestInit) => Promise<any>;
   onRefreshWorkspace: () => void;
   onSaveSchedule: (member: StaffMemberRecord, workSchedule: WorkScheduleRecord, customSchedule?: Record<string, WorkDayScheduleRecord>, mode?: "fixed" | "flexible", options?: { silent?: boolean }) => Promise<boolean>;
-  onSignOut: () => Promise<void>;
 }) {
   const [section, setSection] = useState<"members" | "schedule">("members");
 
@@ -12232,7 +12243,6 @@ function StaffWorkspaceTab({
           apiFetch={apiFetch}
           onRefreshWorkspace={onRefreshWorkspace}
           onOpenSchedule={() => setSection("schedule")}
-          onSignOut={onSignOut}
         />
       ) : (
         <StaffScheduleTab
@@ -12257,7 +12267,6 @@ function StaffMembersTab({
   apiFetch,
   onRefreshWorkspace,
   onOpenSchedule,
-  onSignOut,
 }: {
   t: Record<string, string>;
   staff: StaffSnapshot | null;
@@ -12266,19 +12275,17 @@ function StaffMembersTab({
   apiFetch: (path: string, options?: RequestInit) => Promise<any>;
   onRefreshWorkspace: () => void;
   onOpenSchedule: () => void;
-  onSignOut: () => Promise<void>;
 }) {
   const members = makeStaffMembers(staff, workspace, t);
   const isOwner = workspace?.membership?.scope === "owner";
   const joinedBusinessMemberships = (staff?.myMemberships || []).filter(
     (item) => item.business.id !== workspace?.business.id || item.membership.scope !== "owner"
   );
-  const [resolvedJoinRequestIds, setResolvedJoinRequestIds] = useState<Set<string>>(() => new Set());
   const [resolvedInvitationIds, setResolvedInvitationIds] = useState<Set<string>>(() => new Set());
   const [addOpen, setAddOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editId, setEditId] = useState("");
-  const [draft, setDraft] = useState({ fullName: "", role: t.employee, email: "", phone: "" });
+  const [inviteEmail, setInviteEmail] = useState("");
   const [editDraft, setEditDraft] = useState({ fullName: "", role: "", email: "", phone: "" });
 
   async function staffAction(body: Record<string, unknown>) {
@@ -12299,25 +12306,16 @@ function StaffMembersTab({
   }
 
   async function createMember() {
-    const parsed = splitStaffFullName(draft.fullName);
-    if (!parsed.firstName) {
-      Alert.alert(t.requiredTitle, t.requiredText);
-      return;
-    }
-    if (!draft.email.trim()) {
+    if (!inviteEmail.trim()) {
       Alert.alert(t.requiredTitle, t.email);
       return;
     }
     const ok = await staffAction({
-      action: "createMember",
-      firstName: parsed.firstName,
-      lastName: parsed.lastName,
-      role: draft.role,
-      email: draft.email,
-      phone: draft.phone,
+      action: "inviteMember",
+      email: inviteEmail,
     });
     if (ok) {
-      setDraft({ fullName: "", role: t.employee, email: "", phone: "" });
+      setInviteEmail("");
       setAddOpen(false);
     }
   }
@@ -12367,16 +12365,20 @@ function StaffMembersTab({
     await staffAction({ action: "revokeInvitation", invitationId });
   }
 
-  async function resolveJoinRequest(requestId: string, requestAction: "approve" | "reject") {
-    setResolvedJoinRequestIds((current) => new Set([...current, requestId]));
-    const ok = await staffAction({ action: "resolveJoinRequest", requestId, requestAction });
-    if (!ok) {
-      setResolvedJoinRequestIds((current) => {
-        const next = new Set(current);
-        next.delete(requestId);
-        return next;
-      });
-    }
+  async function removeMember(member: StaffMemberRecord) {
+    Alert.alert(t.removeMember || t.deleteConfirm || t.staff, t.removeMemberConfirm || "", [
+      { text: t.cancel, style: "cancel" },
+      {
+        text: t.removeMember || t.deleteConfirm || t.staff,
+        style: "destructive",
+        onPress: async () => {
+          const ok = await staffAction({ action: "removeMember", memberProfessionalId: member.professional.id });
+          if (ok) {
+            Alert.alert("Timviz", t.removeMemberSuccess || t.saved);
+          }
+        },
+      },
+    ]);
   }
 
   async function resolveInvitation(invitationId: string, invitationAction: "acceptInvitation" | "declineInvitation") {
@@ -12391,7 +12393,7 @@ function StaffMembersTab({
     }
   }
 
-  async function leaveCompany(businessId?: string, options: { signOutAfter?: boolean } = {}) {
+  async function leaveCompany(businessId?: string) {
     Alert.alert(t.leaveCompany || t.logout, t.leaveCompanyConfirm || "", [
       { text: t.cancel, style: "cancel" },
       {
@@ -12401,9 +12403,6 @@ function StaffMembersTab({
           const ok = await staffAction({ action: "leaveCompany", businessId });
           if (ok) {
             Alert.alert("Timviz", t.leaveCompanySuccess || t.logout);
-            if (options.signOutAfter) {
-              await onSignOut();
-            }
           }
         },
       },
@@ -12412,39 +12411,59 @@ function StaffMembersTab({
 
   if (!isOwner) {
     const currentMember = members.find((member) => member.professional.id === workspace?.professional.id) || members[0] || null;
-    const memberRole = currentMember?.membership.role || t.employee;
-    const joinedAt = currentMember?.membership.createdAt
-      ? new Date(currentMember.membership.createdAt).toLocaleDateString()
-      : "";
+    const visibleMemberships = joinedBusinessMemberships.length
+      ? joinedBusinessMemberships
+      : workspace
+        ? [{
+            business: {
+              id: workspace.business.id,
+              name: workspace.business.name,
+              address: workspace.business.address,
+            },
+            membership: {
+              id: currentMember?.membership.id || workspace.business.id,
+              role: currentMember?.membership.role || workspace.membership?.role || t.employee,
+              scope: "member" as const,
+              createdAt: currentMember?.membership.createdAt || new Date().toISOString(),
+            },
+          }]
+        : [];
 
     return (
       <View style={styles.sectionStack}>
         <Panel title={t.teamMembers}>
-          <View style={styles.staffMembershipCard}>
-            <Text style={styles.staffMembershipEyebrow}>{t.memberCompanyEyebrow || t.teamMembers}</Text>
-            <Text style={styles.staffMembershipTitle}>
-              {t.memberCompanyTitle || "Вы в группе"} <Text style={styles.staffMembershipBusinessName}>{workspace?.business.name || staff?.business.name || "Timviz"}</Text>
-            </Text>
-            <View style={styles.staffMembershipDetails}>
-              <View style={styles.staffMembershipDetailItem}>
-                <Text style={styles.clientOptionCaption}>{t.memberCompanyRole || t.role}</Text>
-                <Text style={styles.settingsMiniTitle}>{memberRole}</Text>
-              </View>
-              {joinedAt ? (
-                <View style={styles.staffMembershipDetailItem}>
-                  <Text style={styles.clientOptionCaption}>{t.memberCompanyJoined || ""}</Text>
-                  <Text style={styles.settingsMiniTitle}>{joinedAt}</Text>
+          {visibleMemberships.map((item) => {
+            const joinedAt = item.membership.createdAt
+              ? new Date(item.membership.createdAt).toLocaleDateString()
+              : "";
+            return (
+              <View key={`${item.business.id}:${item.membership.id}`} style={styles.staffMembershipCard}>
+                <Text style={styles.staffMembershipEyebrow}>{t.memberCompanyEyebrow || t.teamMembers}</Text>
+                <Text style={styles.staffMembershipTitle}>
+                  {t.memberCompanyTitle || "Вы в группе"} <Text style={styles.staffMembershipBusinessName}>{item.business.name || "Timviz"}</Text>
+                </Text>
+                <View style={styles.staffMembershipDetails}>
+                  <View style={styles.staffMembershipDetailItem}>
+                    <Text style={styles.clientOptionCaption}>{t.memberCompanyRole || t.role}</Text>
+                    <Text style={styles.settingsMiniTitle}>{item.membership.role || t.employee}</Text>
+                  </View>
+                  {joinedAt ? (
+                    <View style={styles.staffMembershipDetailItem}>
+                      <Text style={styles.clientOptionCaption}>{t.memberCompanyJoined || ""}</Text>
+                      <Text style={styles.settingsMiniTitle}>{joinedAt}</Text>
+                    </View>
+                  ) : null}
                 </View>
-              ) : null}
-            </View>
-            <Pressable
-              style={({ pressed }) => [styles.secondaryButton, styles.dangerButton, pressed && styles.pressablePressed, (busy || saving) && styles.disabled]}
-              onPress={() => void leaveCompany(workspace?.business.id, { signOutAfter: true })}
-              disabled={busy || saving}
-            >
-              <Text style={styles.dangerButtonText}>{saving ? t.signingIn : t.leaveCompany || t.logout}</Text>
-            </Pressable>
-          </View>
+                <Pressable
+                  style={({ pressed }) => [styles.secondaryButton, styles.dangerButton, pressed && styles.pressablePressed, (busy || saving) && styles.disabled]}
+                  onPress={() => void leaveCompany(item.business.id)}
+                  disabled={busy || saving}
+                >
+                  <Text style={styles.dangerButtonText}>{saving ? t.signingIn : t.leaveCompany || t.logout}</Text>
+                </Pressable>
+              </View>
+            );
+          })}
         </Panel>
 
         <Panel title={t.incomingInvites || t.pendingInvites}>
@@ -12522,12 +12541,29 @@ function StaffMembersTab({
 
       {addOpen && isOwner ? (
         <Panel title={t.addMember}>
-          <Field label={t.fullName} value={draft.fullName} onChangeText={(value) => setDraft({ ...draft, fullName: value })} />
-          <Field label={t.role} value={draft.role} onChangeText={(value) => setDraft({ ...draft, role: value })} />
-          <Field label={t.email} value={draft.email} onChangeText={(value) => setDraft({ ...draft, email: value })} keyboardType="email-address" autoCapitalize="none" />
-          <Field label={t.phone} value={draft.phone} onChangeText={(value) => setDraft({ ...draft, phone: value })} keyboardType="phone-pad" />
+          <Field label={t.email} value={inviteEmail} onChangeText={setInviteEmail} keyboardType="email-address" autoCapitalize="none" />
           <Text style={styles.clientOptionCaption}>{t.sendInvite}</Text>
-          <PrimaryButton label={t.addMember} onPress={() => void createMember()} disabled={busy || saving || !draft.email.trim()} />
+          <PrimaryButton label={t.addMember} onPress={() => void createMember()} disabled={busy || saving || !inviteEmail.trim()} />
+        </Panel>
+      ) : null}
+
+      {isOwner ? (
+        <Panel title={t.pendingInvites}>
+          {staff?.invitations?.length ? (
+            staff.invitations.map((invitation) => (
+              <View key={invitation.id} style={styles.joinRequestCard}>
+                <View>
+                  <Text style={styles.settingsMiniTitle}>{invitation.email}</Text>
+                  <Text style={styles.clientOptionCaption}>{new Date(invitation.createdAt).toLocaleDateString()}</Text>
+                </View>
+                <Pressable style={styles.joinRejectButton} onPress={() => void revokeInvitation(invitation.id)} disabled={saving}>
+                  <Ionicons name="close" size={18} color="#DC2626" />
+                </Pressable>
+              </View>
+            ))
+          ) : (
+            <Text style={styles.emptyText}>{t.noInvites || t.noIncomingInvites || t.empty}</Text>
+          )}
         </Panel>
       ) : null}
 
@@ -12604,6 +12640,9 @@ function StaffMembersTab({
                   ) : isOwner && !memberIsOwner ? (
                     <SecondaryButton label={member.workspaceAccess === "invited" ? t.resendInvite : t.invite} onPress={() => void inviteMember(member)} disabled={saving || busy} />
                   ) : null}
+                  {isOwner && !memberIsOwner ? (
+                    <SecondaryButton label={t.removeMember || t.deleteConfirm || t.staff} onPress={() => void removeMember(member)} disabled={saving || busy} />
+                  ) : null}
                 </View>
               </>
             )}
@@ -12611,28 +12650,6 @@ function StaffMembersTab({
         );
       })}
 
-      {isOwner ? <Panel title={t.joinRequests}>
-        {staff?.joinRequests?.filter((request) => !resolvedJoinRequestIds.has(request.id)).length ? (
-          staff.joinRequests.filter((request) => !resolvedJoinRequestIds.has(request.id)).map((request) => (
-            <View key={request.id} style={styles.joinRequestCard}>
-              <View>
-                <Text style={styles.settingsMiniTitle}>{request.professional ? `${request.professional.firstName} ${request.professional.lastName}`.trim() || request.professional.email : t.empty}</Text>
-                <Text style={styles.clientOptionCaption}>{request.professional?.email || request.professional?.phone || request.role}</Text>
-              </View>
-              <View style={styles.joinRequestActions}>
-                <Pressable style={styles.joinRejectButton} onPress={() => void resolveJoinRequest(request.id, "reject")} disabled={saving}>
-                  <Ionicons name="close" size={18} color="#DC2626" />
-                </Pressable>
-                <Pressable style={styles.joinApproveButton} onPress={() => void resolveJoinRequest(request.id, "approve")} disabled={saving}>
-                  <Ionicons name="checkmark" size={18} color="#FFFFFF" />
-                </Pressable>
-              </View>
-            </View>
-          ))
-        ) : (
-          <Text style={styles.emptyText}>{t.noJoinRequests}</Text>
-        )}
-      </Panel> : null}
     </View>
   );
 }

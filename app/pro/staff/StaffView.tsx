@@ -45,11 +45,9 @@ const staffText = {
     schedule: "График смен",
     pageTitle: "Участники команды",
     pageText:
-      "Добавляйте сотрудников вручную, редактируйте их профиль и график, а доступ в кабинет выдавайте отдельным приглашением на email.",
-    add: "Добавить",
-    options: "Варианты",
+      "Приглашайте сотрудников по email, управляйте участниками команды и их графиком.",
+    add: "Пригласить",
     search: "Поиск участников команды",
-    filterHint: "Вход в кабинет отправляется по приглашению. Без приглашения сотрудник остаётся в команде и участвует в графике.",
     name: "Имя",
     contacts: "Контактные данные",
     access: "Роль разрешения",
@@ -61,11 +59,11 @@ const staffText = {
     resendInvite: "Отправить повторно",
     addEmail: "Добавить email",
     revokeInvite: "Отозвать приглашение",
-    pendingInvites: "Приглашения",
+    pendingInvites: "Отправленные приглашения",
     joinRequests: "Запросы на присоединение",
-    incomingInvites: "Приглашения для меня",
-    noIncomingInvites: "Новых приглашений для вас пока нет.",
-    noInvites: "Активных приглашений пока нет.",
+    incomingInvites: "Полученные приглашения",
+    noIncomingInvites: "Вас пока никто не пригласил.",
+    noInvites: "Вы пока никого не пригласили.",
     noJoinRequests: "Новых запросов пока нет.",
     approve: "Подтвердить",
     reject: "Отклонить",
@@ -73,15 +71,15 @@ const staffText = {
     inviteSent: "Приглашение отправлено.",
     saved: "Изменения сохранены.",
     failed: "Не удалось выполнить действие.",
-    addTitle: "Добавить сотрудника",
+    addTitle: "Пригласить сотрудника",
     addText:
-      "После добавления мы сразу отправим приглашение на email сотрудника. Он сможет принять его и перейти в кабинет.",
+      "Укажите email. Timviz отправит приглашение, а сотрудник сам заполнит профиль после принятия.",
     fullName: "Имя и фамилия",
     role: "Должность",
     email: "Email",
     phone: "Телефон",
-    sendInvite: "Сразу отправить приглашение в кабинет",
-    createStaff: "Добавить сотрудника",
+    sendInvite: "Приглашение уйдет на этот email.",
+    createStaff: "Отправить приглашение",
     cancel: "Закрыть",
     placeholderEmail: "name@example.com",
     placeholderPhone: "+380...",
@@ -104,7 +102,11 @@ const staffText = {
     roleFallback: "Сотрудник",
     emptySearch: "По этому запросу никого не нашли.",
     requestFrom: "Запрос от",
-    inviteFrom: "Приглашение от",
+    inviteFrom: "Пригласил",
+    inviteSentAt: "Отправлено",
+    removeMember: "Удалить из команды",
+    removeMemberConfirm: "Удалить сотрудника из команды? Его аккаунт останется самостоятельным.",
+    removeMemberSuccess: "Сотрудник удалён из команды.",
     memberPageTitle: "Моя компания",
     memberPageText: "Здесь показана компания, к которой подключён ваш аккаунт.",
     memberCompanyEyebrow: "Текущая группа",
@@ -121,11 +123,9 @@ const staffText = {
     schedule: "Графік змін",
     pageTitle: "Учасники команди",
     pageText:
-      "Додавайте співробітників вручну, редагуйте їхній профіль і графік, а доступ до кабінету видавайте окремим запрошенням на email.",
-    add: "Додати",
-    options: "Варіанти",
+      "Запрошуйте співробітників за email, керуйте учасниками команди та їхнім графіком.",
+    add: "Запросити",
     search: "Пошук учасників команди",
-    filterHint: "Вхід до кабінету надсилається окремим запрошенням. Без нього співробітник лишається в команді та бере участь у графіку.",
     name: "Ім'я",
     contacts: "Контактні дані",
     access: "Роль доступу",
@@ -137,11 +137,11 @@ const staffText = {
     resendInvite: "Надіслати повторно",
     addEmail: "Додати email",
     revokeInvite: "Відкликати запрошення",
-    pendingInvites: "Запрошення",
+    pendingInvites: "Надіслані запрошення",
     joinRequests: "Запити на приєднання",
-    incomingInvites: "Запрошення для мене",
-    noIncomingInvites: "Нових запрошень для вас поки немає.",
-    noInvites: "Активних запрошень поки немає.",
+    incomingInvites: "Отримані запрошення",
+    noIncomingInvites: "Вас поки ніхто не запросив.",
+    noInvites: "Ви поки нікого не запросили.",
     noJoinRequests: "Нових запитів поки немає.",
     approve: "Підтвердити",
     reject: "Відхилити",
@@ -149,15 +149,15 @@ const staffText = {
     inviteSent: "Запрошення надіслано.",
     saved: "Зміни збережено.",
     failed: "Не вдалося виконати дію.",
-    addTitle: "Додати співробітника",
+    addTitle: "Запросити співробітника",
     addText:
-      "Після додавання ми одразу надішлемо запрошення на email співробітника. Він зможе прийняти його й перейти до кабінету.",
+      "Вкажіть email. Timviz надішле запрошення, а співробітник сам заповнить профіль після прийняття.",
     fullName: "Ім'я та прізвище",
     role: "Посада",
     email: "Email",
     phone: "Телефон",
-    sendInvite: "Одразу надіслати запрошення до кабінету",
-    createStaff: "Додати співробітника",
+    sendInvite: "Запрошення піде на цей email.",
+    createStaff: "Надіслати запрошення",
     cancel: "Закрити",
     placeholderEmail: "name@example.com",
     placeholderPhone: "+380...",
@@ -180,7 +180,11 @@ const staffText = {
     roleFallback: "Співробітник",
     emptySearch: "За цим запитом нікого не знайдено.",
     requestFrom: "Запит від",
-    inviteFrom: "Запрошення від",
+    inviteFrom: "Запросив",
+    inviteSentAt: "Надіслано",
+    removeMember: "Видалити з команди",
+    removeMemberConfirm: "Видалити співробітника з команди? Його акаунт залишиться самостійним.",
+    removeMemberSuccess: "Співробітника видалено з команди.",
     memberPageTitle: "Моя компанія",
     memberPageText: "Тут показана компанія, до якої підключено ваш акаунт.",
     memberCompanyEyebrow: "Поточна група",
@@ -197,11 +201,9 @@ const staffText = {
     schedule: "Shift schedule",
     pageTitle: "Team members",
     pageText:
-      "Add employees manually, manage their profile and schedule, and only send workspace access when you are ready.",
-    add: "Add",
-    options: "Options",
+      "Invite employees by email, manage team members and their schedules.",
+    add: "Invite",
     search: "Search team members",
-    filterHint: "Workspace access is sent separately by email invitation. Without it, the employee still stays in the team and schedule.",
     name: "Name",
     contacts: "Contact details",
     access: "Access role",
@@ -213,11 +215,11 @@ const staffText = {
     resendInvite: "Resend invitation",
     addEmail: "Add email",
     revokeInvite: "Revoke invitation",
-    pendingInvites: "Invitations",
+    pendingInvites: "Sent invitations",
     joinRequests: "Join requests",
-    incomingInvites: "Invitations for me",
-    noIncomingInvites: "No new invitations for you yet.",
-    noInvites: "No active invitations yet.",
+    incomingInvites: "Received invitations",
+    noIncomingInvites: "No one has invited you yet.",
+    noInvites: "You have not invited anyone yet.",
     noJoinRequests: "No new requests yet.",
     approve: "Approve",
     reject: "Reject",
@@ -225,15 +227,15 @@ const staffText = {
     inviteSent: "Invitation sent.",
     saved: "Changes saved.",
     failed: "Could not complete the action.",
-    addTitle: "Add employee",
+    addTitle: "Invite employee",
     addText:
-      "After adding an employee, Timviz sends an email invitation right away. They can accept it and open their workspace.",
+      "Enter an email. Timviz will send an invitation, and the employee will fill in their profile after accepting.",
     fullName: "Full name",
     role: "Role",
     email: "Email",
     phone: "Phone",
-    sendInvite: "Send workspace invitation now",
-    createStaff: "Add employee",
+    sendInvite: "The invitation will be sent to this email.",
+    createStaff: "Send invitation",
     cancel: "Close",
     placeholderEmail: "name@example.com",
     placeholderPhone: "+1...",
@@ -256,7 +258,11 @@ const staffText = {
     roleFallback: "Employee",
     emptySearch: "No one matched this search.",
     requestFrom: "Request from",
-    inviteFrom: "Invitation from",
+    inviteFrom: "Invited by",
+    inviteSentAt: "Sent",
+    removeMember: "Remove from team",
+    removeMemberConfirm: "Remove this employee from the team? Their account will remain standalone.",
+    removeMemberSuccess: "Employee removed from the team.",
     memberPageTitle: "My company",
     memberPageText: "This is the company connected to your account.",
     memberCompanyEyebrow: "Current group",
@@ -298,14 +304,6 @@ function makeInitials(member: StaffMemberSnapshot) {
   return (initials || member.professional.email[0] || "S").toUpperCase();
 }
 
-function splitFullName(value: string) {
-  const parts = value.trim().split(/\s+/).filter(Boolean);
-  return {
-    firstName: parts[0] || "",
-    lastName: parts.slice(1).join(" ")
-  };
-}
-
 function renderContact(member: StaffMemberSnapshot, copy: StaffCopy) {
   const values = [member.professional.email, member.professional.phone].filter(Boolean);
   return values.length ? values : [copy.noContact];
@@ -323,7 +321,8 @@ function StaffRowActions({
   onToggle,
   onClose,
   onInvite,
-  onRevoke
+  onRevoke,
+  onRemove
 }: {
   member: StaffMemberSnapshot;
   copy: StaffCopy;
@@ -333,8 +332,10 @@ function StaffRowActions({
   onClose: () => void;
   onInvite: (member: StaffMemberSnapshot) => void;
   onRevoke: (member: StaffMemberSnapshot) => void;
+  onRemove: (member: StaffMemberSnapshot) => void;
 }) {
   const canInvite = Boolean(member.professional.email);
+  const canRemove = member.membership.scope !== "owner";
 
   return (
     <div
@@ -392,6 +393,18 @@ function StaffRowActions({
               {copy.revokeInvite}
             </button>
           ) : null}
+          {canRemove ? (
+            <button
+              type="button"
+              className={`${styles.staffControlMenuItem} ${styles.staffControlMenuDanger}`}
+              onClick={() => {
+                onClose();
+                onRemove(member);
+              }}
+            >
+              {copy.removeMember}
+            </button>
+          ) : null}
       </FloatingPopover>
     </div>
   );
@@ -412,8 +425,7 @@ function PendingInvitationCard({
     <article className={styles.staffSideCard}>
       <div>
         <strong>{invitation.email}</strong>
-        <p>{invitation.role || copy.roleFallback}</p>
-        <span>{`${copy.inviteFrom}: ${formatDate(invitation.createdAt, locale)}`}</span>
+        <span>{`${copy.inviteSentAt}: ${formatDate(invitation.createdAt, locale)}`}</span>
       </div>
       <button type="button" className={styles.staffSecondaryButton} onClick={() => onRevoke(invitation.id)}>
         {copy.revokeInvite}
@@ -431,10 +443,7 @@ export default function StaffView({ professionalId, snapshot, canManageStaff = t
   const [query, setQuery] = useState("");
   const [statusText, setStatusText] = useState("");
   const [isAddOpen, setIsAddOpen] = useState(initialAddOpen);
-  const [fullName, setFullName] = useState("");
-  const [role, setRole] = useState(language === "en" ? "Specialist" : language === "uk" ? "Майстер" : "Мастер");
   const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
   const [activeActionMenu, setActiveActionMenu] = useState<StaffActionMenuState | null>(null);
@@ -470,26 +479,6 @@ export default function StaffView({ professionalId, snapshot, canManageStaff = t
       document.removeEventListener("keydown", handleKeyDown);
     };
   }, []);
-
-  useEffect(() => {
-    if (!canManageStaff || staffSnapshot.joinRequests.length === 0) {
-      return;
-    }
-
-    void fetch("/api/pro/join-requests", {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json"
-      }
-    })
-      .then((response) => {
-        if (!response.ok) {
-          return;
-        }
-        window.dispatchEvent(new CustomEvent("rezervo-pro-notifications-refresh"));
-      })
-      .catch(() => undefined);
-  }, [canManageStaff, staffSnapshot.joinRequests.length]);
 
   const filteredMembers = useMemo(() => {
     const normalized = query.trim().toLowerCase();
@@ -533,46 +522,26 @@ export default function StaffView({ professionalId, snapshot, canManageStaff = t
   }
 
   async function handleCreateStaff() {
-    const parsed = splitFullName(fullName);
-
-    if (!parsed.firstName || !email.trim()) {
+    if (!email.trim()) {
       return;
     }
 
     setIsSaving(true);
     await refreshAfter(
-      fetch("/api/pro/staff/members", {
+      fetch("/api/pro/staff/invitations", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          firstName: parsed.firstName,
-          lastName: parsed.lastName,
-          role,
-          email,
-          phone
+          email
         })
-      })
+      }),
+      copy.inviteSent
     );
     setIsSaving(false);
-    setFullName("");
-    setRole(language === "en" ? "Specialist" : language === "uk" ? "Майстер" : "Мастер");
     setEmail("");
-    setPhone("");
     setIsAddOpen(false);
-  }
-
-  async function handleJoinRequest(requestId: string, action: "approve" | "reject") {
-    await refreshAfter(
-      fetch("/api/pro/join-requests", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ requestId, action })
-      })
-    );
   }
 
   async function handleInvite(member: StaffMemberSnapshot) {
@@ -633,6 +602,35 @@ export default function StaffView({ professionalId, snapshot, canManageStaff = t
     await handleRevokeInviteById(member.pendingInvitation.id);
   }
 
+  async function handleRemoveMember(member: StaffMemberSnapshot) {
+    if (member.membership.scope === "owner") {
+      return;
+    }
+
+    if (typeof window !== "undefined" && !window.confirm(copy.removeMemberConfirm)) {
+      return;
+    }
+
+    await refreshAfter(
+      fetch(`/api/pro/staff/members/${encodeURIComponent(member.professional.id)}`, {
+        method: "DELETE"
+      }),
+      copy.removeMemberSuccess,
+      () => {
+        setStaffSnapshot((current) => ({
+          ...current,
+          summary: {
+            ...current.summary,
+            totalPeople: Math.max(0, current.summary.totalPeople - 1),
+            activeEmployees: Math.max(0, current.summary.activeEmployees - 1)
+          },
+          members: current.members.filter((item) => item.professional.id !== member.professional.id),
+          invitations: current.invitations.filter((invitation) => invitation.email !== member.professional.email)
+        }));
+      }
+    );
+  }
+
   async function handleIncomingInvitation(invitationId: string, action: "accept" | "decline") {
     await refreshAfter(
       fetch("/api/pro/staff/invitations/accept", {
@@ -646,7 +644,7 @@ export default function StaffView({ professionalId, snapshot, canManageStaff = t
     );
   }
 
-  async function handleLeaveCompany() {
+  async function handleLeaveCompany(businessId?: string) {
     if (isLeaving) {
       return;
     }
@@ -657,7 +655,8 @@ export default function StaffView({ professionalId, snapshot, canManageStaff = t
 
     setIsLeaving(true);
     try {
-      const response = await fetch("/api/pro/staff/membership", {
+      const target = businessId ? `?businessId=${encodeURIComponent(businessId)}` : "";
+      const response = await fetch(`/api/pro/staff/membership${target}`, {
         method: "DELETE"
       });
       const payload = await response.json().catch(() => ({}));
@@ -669,7 +668,9 @@ export default function StaffView({ professionalId, snapshot, canManageStaff = t
 
       setStatusText(copy.leaveCompanySuccess);
       window.dispatchEvent(new CustomEvent("rezervo-pro-notifications-refresh"));
-      router.replace("/pro/login");
+      if (!canManageStaff && (!businessId || businessId === staffSnapshot.business.id)) {
+        router.replace("/pro/settings");
+      }
       router.refresh();
     } catch {
       setStatusText(copy.failed);
@@ -681,6 +682,24 @@ export default function StaffView({ professionalId, snapshot, canManageStaff = t
   if (!canManageStaff) {
     const currentMember =
       staffSnapshot.members.find((member) => member.professional.id === professionalId) || null;
+    const memberMemberships = staffSnapshot.myMemberships.filter((item) => item.membership.scope === "member");
+    const visibleMemberships = memberMemberships.length
+      ? memberMemberships
+      : [
+          {
+            business: {
+              id: staffSnapshot.business.id,
+              name: staffSnapshot.business.name,
+              address: ""
+            },
+            membership: {
+              id: currentMember?.membership.id || "",
+              role: currentMember?.membership.role || copy.roleFallback,
+              scope: "member" as const,
+              createdAt: currentMember?.membership.createdAt || new Date().toISOString()
+            }
+          }
+        ];
 
     return (
       <main className={`${styles.workspaceShell} ${styles.scheduleShell}`}>
@@ -720,35 +739,84 @@ export default function StaffView({ professionalId, snapshot, canManageStaff = t
 
             {statusText ? <div className={styles.staffStudioStatus}>{statusText}</div> : null}
 
-            <section className={styles.staffMembershipCard}>
-              <span className={styles.staffMembershipEyebrow}>{copy.memberCompanyEyebrow}</span>
-              <h2>
-                {copy.memberCompanyTitle} <strong>{staffSnapshot.business.name}</strong>
-              </h2>
-              <dl className={styles.staffMembershipDetails}>
-                <div>
-                  <dt>{copy.memberCompanyRole}</dt>
-                  <dd>{currentMember?.membership.role || copy.roleFallback}</dd>
+            {visibleMemberships.map((item) => (
+              <section key={`${item.business.id}:${item.membership.id}`} className={styles.staffMembershipCard}>
+                <span className={styles.staffMembershipEyebrow}>{copy.memberCompanyEyebrow}</span>
+                <h2>
+                  {copy.memberCompanyTitle} <strong>{item.business.name}</strong>
+                </h2>
+                <dl className={styles.staffMembershipDetails}>
+                  <div>
+                    <dt>{copy.memberCompanyRole}</dt>
+                    <dd>{item.membership.role || copy.roleFallback}</dd>
+                  </div>
+                  <div>
+                    <dt>{copy.memberCompanyJoined}</dt>
+                    <dd>{formatDate(item.membership.createdAt, locale)}</dd>
+                  </div>
+                </dl>
+                <button
+                  type="button"
+                  className={`${styles.staffSecondaryButton} ${styles.staffDangerButton}`}
+                  onClick={() => void handleLeaveCompany(item.business.id)}
+                  disabled={isLeaving}
+                >
+                  {isLeaving ? copy.saved : copy.leaveCompany}
+                </button>
+              </section>
+            ))}
+
+            <section className={styles.staffStudioPanel}>
+              <div className={styles.staffStudioPanelHeader}>
+                <h2>{copy.incomingInvites}</h2>
+              </div>
+
+              {staffSnapshot.incomingInvitations.length === 0 ? (
+                <div className={styles.staffStudioEmpty}>{copy.noIncomingInvites}</div>
+              ) : (
+                <div className={styles.staffStudioSideList}>
+                  {staffSnapshot.incomingInvitations.map((invitation) => (
+                    <article key={invitation.id} className={styles.staffSideCard}>
+                      <div>
+                        <strong>{invitation.business.name}</strong>
+                        <span>
+                          {`${copy.inviteFrom}: ${
+                            invitation.invitedBy
+                              ? `${invitation.invitedBy.firstName} ${invitation.invitedBy.lastName}`.trim() ||
+                                invitation.invitedBy.email
+                              : invitation.email
+                          }`}
+                        </span>
+                        <span>{`${copy.inviteSentAt}: ${formatDate(invitation.createdAt, locale)}`}</span>
+                      </div>
+                      <div className={styles.staffSideActions}>
+                        <button
+                          type="button"
+                          className={styles.staffSecondaryButton}
+                          onClick={() => void handleIncomingInvitation(invitation.id, "decline")}
+                        >
+                          {copy.decline}
+                        </button>
+                        <button
+                          type="button"
+                          className={styles.staffStudioPrimaryButton}
+                          onClick={() => void handleIncomingInvitation(invitation.id, "accept")}
+                        >
+                          {copy.approve}
+                        </button>
+                      </div>
+                    </article>
+                  ))}
                 </div>
-                <div>
-                  <dt>{copy.memberCompanyJoined}</dt>
-                  <dd>{formatDate(currentMember?.membership.createdAt || new Date().toISOString(), locale)}</dd>
-                </div>
-              </dl>
-              <button
-                type="button"
-                className={`${styles.staffSecondaryButton} ${styles.staffDangerButton}`}
-                onClick={() => void handleLeaveCompany()}
-                disabled={isLeaving}
-              >
-                {isLeaving ? copy.saved : copy.leaveCompany}
-              </button>
+              )}
             </section>
           </section>
         </section>
       </main>
     );
   }
+
+  const joinedMemberships = staffSnapshot.myMemberships.filter((item) => item.membership.scope === "member");
 
   return (
     <main className={`${styles.workspaceShell} ${styles.scheduleShell}`}>
@@ -792,10 +860,6 @@ export default function StaffView({ professionalId, snapshot, canManageStaff = t
             </div>
 
             <div className={styles.staffStudioTopActions}>
-              <button type="button" className={styles.staffStudioGhostButton}>
-                {copy.options}
-                <span aria-hidden="true">⌄</span>
-              </button>
               {canManageStaff ? (
                 <button type="button" className={styles.staffStudioPrimaryButton} onClick={() => setIsAddOpen(true)}>
                   {copy.add}
@@ -803,12 +867,6 @@ export default function StaffView({ professionalId, snapshot, canManageStaff = t
               ) : null}
             </div>
           </div>
-
-          {canManageStaff ? (
-            <div className={styles.staffStudioNotice}>
-              <span>{copy.filterHint}</span>
-            </div>
-          ) : null}
 
           <div className={styles.staffStudioToolbar}>
             <label className={styles.staffStudioSearch}>
@@ -821,6 +879,37 @@ export default function StaffView({ professionalId, snapshot, canManageStaff = t
           </div>
 
           {statusText ? <div className={styles.staffStudioStatus}>{statusText}</div> : null}
+
+          {joinedMemberships.length ? (
+            <div className={styles.staffStudioSideList}>
+              {joinedMemberships.map((item) => (
+                <section key={`${item.business.id}:${item.membership.id}`} className={styles.staffMembershipCard}>
+                  <span className={styles.staffMembershipEyebrow}>{copy.memberCompanyEyebrow}</span>
+                  <h2>
+                    {copy.memberCompanyTitle} <strong>{item.business.name}</strong>
+                  </h2>
+                  <dl className={styles.staffMembershipDetails}>
+                    <div>
+                      <dt>{copy.memberCompanyRole}</dt>
+                      <dd>{item.membership.role || copy.roleFallback}</dd>
+                    </div>
+                    <div>
+                      <dt>{copy.memberCompanyJoined}</dt>
+                      <dd>{formatDate(item.membership.createdAt, locale)}</dd>
+                    </div>
+                  </dl>
+                  <button
+                    type="button"
+                    className={`${styles.staffSecondaryButton} ${styles.staffDangerButton}`}
+                    onClick={() => void handleLeaveCompany(item.business.id)}
+                    disabled={isLeaving}
+                  >
+                    {isLeaving ? copy.saved : copy.leaveCompany}
+                  </button>
+                </section>
+              ))}
+            </div>
+          ) : null}
 
           <section className={styles.staffStudioTable}>
             <div className={styles.staffStudioTableHead}>
@@ -899,6 +988,7 @@ export default function StaffView({ professionalId, snapshot, canManageStaff = t
                           onClose={() => setActiveActionMenu(null)}
                           onInvite={handleInvite}
                           onRevoke={handleRevokeInvite}
+                          onRemove={handleRemoveMember}
                         />
                       ) : (
                         <span className={styles.staffStudioAccessBadge}>{copy.accessState[member.workspaceAccess]}</span>
@@ -925,7 +1015,15 @@ export default function StaffView({ professionalId, snapshot, canManageStaff = t
                       <div>
                         <strong>{invitation.business.name}</strong>
                         <p>{invitation.role || copy.roleFallback}</p>
-                        <span>{`${copy.inviteFrom}: ${formatDate(invitation.createdAt, locale)}`}</span>
+                        <span>
+                          {`${copy.inviteFrom}: ${
+                            invitation.invitedBy
+                              ? `${invitation.invitedBy.firstName} ${invitation.invitedBy.lastName}`.trim() ||
+                                invitation.invitedBy.email
+                              : invitation.email
+                          }`}
+                        </span>
+                        <span>{`${copy.inviteSentAt}: ${formatDate(invitation.createdAt, locale)}`}</span>
                       </div>
                       <div className={styles.staffSideActions}>
                         <button
@@ -948,51 +1046,6 @@ export default function StaffView({ professionalId, snapshot, canManageStaff = t
                 </div>
               )}
             </section>
-
-            {canManageStaff ? (
-            <section className={styles.staffStudioPanel}>
-              <div className={styles.staffStudioPanelHeader}>
-                <h2>{copy.joinRequests}</h2>
-              </div>
-
-              {staffSnapshot.joinRequests.length === 0 ? (
-                <div className={styles.staffStudioEmpty}>{copy.noJoinRequests}</div>
-              ) : (
-                <div className={styles.staffStudioSideList}>
-                  {staffSnapshot.joinRequests.map((request) => (
-                    <article key={request.id} className={styles.staffSideCard}>
-                      <div>
-                        <strong>
-                          {request.professional
-                            ? `${request.professional.firstName} ${request.professional.lastName}`.trim() ||
-                              request.professional.email
-                            : "—"}
-                        </strong>
-                        <p>{request.professional?.email || request.professional?.phone || copy.noContact}</p>
-                        <span>{`${copy.requestFrom}: ${formatDate(request.createdAt, locale)}`}</span>
-                      </div>
-                      <div className={styles.staffSideActions}>
-                        <button
-                          type="button"
-                          className={styles.staffSecondaryButton}
-                          onClick={() => void handleJoinRequest(request.id, "reject")}
-                        >
-                          {copy.reject}
-                        </button>
-                        <button
-                          type="button"
-                          className={styles.staffStudioPrimaryButton}
-                          onClick={() => void handleJoinRequest(request.id, "approve")}
-                        >
-                          {copy.approve}
-                        </button>
-                      </div>
-                    </article>
-                  ))}
-                </div>
-              )}
-            </section>
-            ) : null}
 
             {canManageStaff ? (
             <section className={styles.staffStudioPanel}>
@@ -1036,14 +1089,6 @@ export default function StaffView({ professionalId, snapshot, canManageStaff = t
 
             <div className={styles.staffDrawerForm}>
               <label className={styles.staffDrawerField}>
-                <span>{copy.fullName}</span>
-                <input className={styles.input} value={fullName} onChange={(event) => setFullName(event.target.value)} />
-              </label>
-              <label className={styles.staffDrawerField}>
-                <span>{copy.role}</span>
-                <input className={styles.input} value={role} onChange={(event) => setRole(event.target.value)} />
-              </label>
-              <label className={styles.staffDrawerField}>
                 <span>{copy.email}</span>
                 <input
                   className={styles.input}
@@ -1051,15 +1096,6 @@ export default function StaffView({ professionalId, snapshot, canManageStaff = t
                   placeholder={copy.placeholderEmail}
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
-                />
-              </label>
-              <label className={styles.staffDrawerField}>
-                <span>{copy.phone}</span>
-                <input
-                  className={styles.input}
-                  placeholder={copy.placeholderPhone}
-                  value={phone}
-                  onChange={(event) => setPhone(event.target.value)}
                 />
               </label>
               <div className={styles.staffStudioNotice}>{copy.sendInvite}</div>
@@ -1073,7 +1109,7 @@ export default function StaffView({ professionalId, snapshot, canManageStaff = t
                 type="button"
                 className={styles.staffStudioPrimaryButton}
                 onClick={() => void handleCreateStaff()}
-                disabled={!fullName.trim() || !email.trim() || isSaving}
+                disabled={!email.trim() || isSaving}
               >
                 {copy.createStaff}
               </button>

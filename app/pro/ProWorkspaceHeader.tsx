@@ -256,10 +256,18 @@ export default function ProWorkspaceHeader({
 
     void fetch(`/api/pro/calendar?mode=notifications&date=${todayDate}`)
       .then((response) => response.json())
-      .then((payload: { pendingOnlineBookings?: Array<unknown>; pendingJoinRequests?: Array<unknown> }) => {
+      .then((payload: {
+        pendingOnlineBookings?: Array<unknown>;
+        pendingJoinRequests?: Array<unknown>;
+        appNotifications?: Array<{ type?: string; readAt?: string | null }>;
+      }) => {
         const onlineCount = payload.pendingOnlineBookings?.length ?? 0;
         const joinCount = payload.pendingJoinRequests?.length ?? 0;
-        setNotificationsCount(onlineCount + joinCount);
+        const appCount =
+          payload.appNotifications?.filter(
+            (item) => !item.readAt && item.type !== "online_booking" && item.type !== "team_join_request"
+          ).length ?? 0;
+        setNotificationsCount(onlineCount + joinCount + appCount);
       })
       .catch(() => setNotificationsCount(0));
   }, []);

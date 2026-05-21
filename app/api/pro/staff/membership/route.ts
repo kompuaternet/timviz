@@ -8,7 +8,7 @@ async function getProfessionalId() {
   return verifySessionValue(cookieStore.get(getSessionCookieName())?.value) || "";
 }
 
-export async function DELETE() {
+export async function DELETE(request: Request) {
   const professionalId = await getProfessionalId();
 
   if (!professionalId) {
@@ -16,16 +16,10 @@ export async function DELETE() {
   }
 
   try {
-    const result = await leaveCurrentBusinessMembership(professionalId);
-    const response = NextResponse.json(result);
-    response.cookies.set(getSessionCookieName(), "", {
-      httpOnly: true,
-      sameSite: "lax",
-      path: "/",
-      secure: false,
-      maxAge: 0
-    });
-    return response;
+    const { searchParams } = new URL(request.url);
+    const businessId = searchParams.get("businessId") || undefined;
+    const result = await leaveCurrentBusinessMembership(professionalId, businessId);
+    return NextResponse.json(result);
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Could not leave company." },

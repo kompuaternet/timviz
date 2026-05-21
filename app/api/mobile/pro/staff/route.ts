@@ -8,6 +8,7 @@ import {
   declineStaffInvitation,
   getWorkspaceSnapshot,
   leaveCurrentBusinessMembership,
+  removeStaffMemberByOwner,
   revokeStaffInvitation,
   resolveJoinRequestForOwner,
   updateBusinessScheduleForProfessional,
@@ -130,6 +131,11 @@ export async function POST(request: Request) {
         role: typeof body.role === "string" ? body.role : "",
         email: typeof body.email === "string" ? body.email : "",
         phone: typeof body.phone === "string" ? body.phone : ""
+      });
+    } else if (action === "removeMember") {
+      await removeStaffMemberByOwner({
+        ownerProfessionalId: professionalId,
+        memberProfessionalId: String(body.memberProfessionalId || "")
       });
     } else if (action === "inviteMember") {
       await createStaffInvitation({
