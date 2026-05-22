@@ -11498,6 +11498,25 @@ function WorkspaceHeader({
     await Linking.openURL(publicBookingUrl).catch(() => undefined);
   }
 
+  async function saveAccountLanguage(nextLanguage: AppLanguage) {
+    const previousLanguage = language;
+    setLanguage(nextLanguage);
+    setPanel("account");
+    setBusy(true);
+    try {
+      await apiFetch("/api/mobile/pro/settings", {
+        method: "PATCH",
+        body: JSON.stringify({ professional: { language: nextLanguage } }),
+      });
+      void onRefreshWorkspace();
+    } catch (error) {
+      setLanguage(previousLanguage);
+      Alert.alert(t.language || "Language", error instanceof Error ? error.message : t.supportFailed);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function sendSupportMessage() {
     const message = supportMessage.trim();
     if (!message) return;
@@ -11952,10 +11971,7 @@ function WorkspaceHeader({
                   <Pressable
                     key={item}
                     style={[styles.accountLanguageListItem, language === item && styles.accountLanguageListItemActive]}
-                    onPress={() => {
-                      setLanguage(item);
-                      setPanel("account");
-                    }}
+                    onPress={() => void saveAccountLanguage(item)}
                   >
                     <Text style={[styles.accountLanguageText, language === item && styles.accountLanguageTextActive]}>{languageDisplayNames[item]}</Text>
                     {language === item ? <Ionicons name="checkmark" size={20} color="#6D4AFF" /> : null}

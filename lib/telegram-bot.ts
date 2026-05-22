@@ -968,6 +968,46 @@ function mapConnectionRow(row: Record<string, unknown>): TelegramConnection {
   };
 }
 
+async function getProfessionalNotificationPreferences(professionalId: string) {
+  const id = professionalId.trim();
+  if (!id || !isSupabaseConfigured()) {
+    return null;
+  }
+
+  const supabase = getSupabaseAdmin();
+  if (!supabase) {
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from("professionals")
+    .select("language, timezone")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error || !data) {
+    return null;
+  }
+
+  return {
+    language: normalizeLanguage(String((data as { language?: unknown }).language ?? "")),
+    timezone: String((data as { timezone?: unknown }).timezone ?? "").trim()
+  };
+}
+
+async function applyProfessionalNotificationPreferences(connection: TelegramConnection) {
+  const preferences = await getProfessionalNotificationPreferences(connection.professionalId);
+  if (!preferences) {
+    return connection;
+  }
+
+  return {
+    ...connection,
+    language: preferences.language,
+    timezone: preferences.timezone || connection.timezone
+  };
+}
+
 function mapReminderRow(row: Record<string, unknown>): TelegramReminderEvent {
   return {
     id: String(row.id ?? ""),
@@ -1527,7 +1567,7 @@ export async function getTelegramConnectionByProfessionalId(professionalId: stri
       throw new Error(error.message);
     }
 
-    return data ? mapConnectionRow(data as Record<string, unknown>) : null;
+    return data ? applyProfessionalNotificationPreferences(mapConnectionRow(data as Record<string, unknown>)) : null;
   }
 
   const store = await readStore();
@@ -1558,7 +1598,7 @@ export async function getTelegramConnectionByChatId(chatId: string) {
       throw new Error(error.message);
     }
 
-    return data ? mapConnectionRow(data as Record<string, unknown>) : null;
+    return data ? applyProfessionalNotificationPreferences(mapConnectionRow(data as Record<string, unknown>)) : null;
   }
 
   const store = await readStore();
@@ -1588,7 +1628,7 @@ export async function getTelegramConnectionByTelegramUserId(telegramUserId: numb
       throw new Error(error.message);
     }
 
-    return data ? mapConnectionRow(data as Record<string, unknown>) : null;
+    return data ? applyProfessionalNotificationPreferences(mapConnectionRow(data as Record<string, unknown>)) : null;
   }
 
   const store = await readStore();
@@ -3136,9 +3176,11 @@ export async function getAllConnectedTelegramConnections() {
       throw new Error(error.message);
     }
 
-    return (data ?? [])
-      .map((row) => mapConnectionRow(row as Record<string, unknown>))
-      .filter((item) => item.chatId && item.connectedAt);
+    const hydrated = await Promise.all(
+      (data ?? []).map((row) => applyProfessionalNotificationPreferences(mapConnectionRow(row as Record<string, unknown>)))
+    );
+
+    return hydrated.filter((item) => item.chatId && item.connectedAt);
   }
 
   const store = await readStore();
@@ -3186,9 +3228,13 @@ async function getConnectedOwnerTelegramConnectionsForBusiness(businessId: strin
       throw new Error(connectionsError.message);
     }
 
-    return (connections ?? [])
-      .map((row) => mapConnectionRow(row as Record<string, unknown>))
-      .filter((item) => item.chatId && item.connectedAt);
+    const hydrated = await Promise.all(
+      (connections ?? []).map((row) =>
+        applyProfessionalNotificationPreferences(mapConnectionRow(row as Record<string, unknown>))
+      )
+    );
+
+    return hydrated.filter((item) => item.chatId && item.connectedAt);
   }
 
   const store = await readStore();
