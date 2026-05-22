@@ -39,12 +39,6 @@ export default async function PricingPage({ params }: PricingPageProps) {
       language={lang}
       copy={pricingCopy[lang]}
       user={workspace ? { id: workspace.professional.id, email: workspace.professional.email } : null}
-      paddle={{
-        token: process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN || "",
-        environment: process.env.NEXT_PUBLIC_PADDLE_ENV || "sandbox",
-        monthlyPriceId: process.env.NEXT_PUBLIC_PADDLE_PRICE_MONTHLY || "",
-        yearlyPriceId: process.env.NEXT_PUBLIC_PADDLE_PRICE_YEARLY || ""
-      }}
     />
   );
 }

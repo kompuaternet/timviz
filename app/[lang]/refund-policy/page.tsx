@@ -6,6 +6,7 @@ import { isSiteLanguage } from "../../../lib/site-language";
 
 type LegalPageProps = {
   params: Promise<{ lang: string }>;
+  searchParams?: Promise<{ source?: string }>;
 };
 
 export async function generateMetadata({ params }: LegalPageProps): Promise<Metadata> {
@@ -13,8 +14,9 @@ export async function generateMetadata({ params }: LegalPageProps): Promise<Meta
   return isSiteLanguage(lang) ? buildLegalMetadata("refund-policy", lang) : {};
 }
 
-export default async function RefundPolicyPage({ params }: LegalPageProps) {
+export default async function RefundPolicyPage({ params, searchParams }: LegalPageProps) {
   const { lang } = await params;
+  const query = await searchParams;
   if (!isSiteLanguage(lang)) notFound();
-  return <PublicLegalPage copy={legalCopy["refund-policy"][lang]} language={lang} />;
+  return <PublicLegalPage copy={legalCopy["refund-policy"][lang]} language={lang} iosSafe={query?.source === "ios"} />;
 }

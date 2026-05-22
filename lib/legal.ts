@@ -464,7 +464,7 @@ export const legalCopy: Record<
   "subscription-terms": {
     ru: {
       title: "Условия подписки Timviz",
-      description: "Как работают Free и PRO, Apple In-App Purchase и платежи на сайте.",
+      description: "Как работают Free, PRO, пробный период и Apple In-App Purchase.",
       eyebrow: "Timviz Subscription Terms",
       heading: "Условия подписки",
       intro: "Эта страница объясняет доступ к Timviz PRO, продление, отмену и период действия подписки.",
@@ -501,7 +501,7 @@ export const legalCopy: Record<
     },
     uk: {
       title: "Умови підписки Timviz",
-      description: "Як працюють Free і PRO, Apple In-App Purchase та платежі на сайті.",
+      description: "Як працюють Free, PRO, пробний період та Apple In-App Purchase.",
       eyebrow: "Timviz Subscription Terms",
       heading: "Умови підписки",
       intro: "Ця сторінка пояснює доступ до Timviz PRO, продовження, скасування та період дії підписки.",
@@ -538,7 +538,7 @@ export const legalCopy: Record<
     },
     en: {
       title: "Timviz Subscription Terms",
-      description: "How Free and PRO plans, Apple In-App Purchase and website payments work.",
+      description: "How Free and PRO plans, trial access and Apple In-App Purchase work.",
       eyebrow: "Timviz Subscription Terms",
       heading: "Subscription Terms",
       intro: "This page explains Timviz PRO access, renewal, cancellation and subscription access periods.",

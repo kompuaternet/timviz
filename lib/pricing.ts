@@ -32,11 +32,11 @@ export type PricingCopy = {
   subtitle: string;
   trialBadge: string;
   cancelAnytime: string;
-  securePaddle: string;
+  secureBilling: string;
   softwareNotice: string;
   loginRequired: string;
-  missingConfig: string;
   startingCheckout: string;
+  billingError: string;
   buttons: Record<PricingPlanKey, string>;
   plans: Record<
     PricingPlanKey,
@@ -55,12 +55,6 @@ export type PricingCopy = {
   faq: Array<{ question: string; answer: string }>;
 };
 
-const paddleAnswer = {
-  ru: "Paddle используется только для обработки оплаты подписки на программное обеспечение Timviz. Paddle не используется для оплаты сторонних услуг, записей, салонов, мастеров или клиентов.",
-  uk: "Paddle використовується лише для обробки оплати підписки на програмне забезпечення Timviz. Paddle не використовується для оплати сторонніх послуг, записів, салонів, майстрів або клієнтів.",
-  en: "Paddle is used only to process Timviz software subscription payments. It is not used to process payments for third-party services or appointments."
-} satisfies Record<SiteLanguage, string>;
-
 export const pricingCopy: Record<SiteLanguage, PricingCopy> = {
   ru: {
     seoTitle: "Тарифы Timviz — онлайн-запись для мастеров",
@@ -72,12 +66,12 @@ export const pricingCopy: Record<SiteLanguage, PricingCopy> = {
       "Начните бесплатно, а когда понадобится больше автоматизации, подключите Premium с 14-дневным пробным периодом.",
     trialBadge: "14 дней бесплатно",
     cancelAnytime: "Отменить можно в любое время",
-    securePaddle: "Безопасные платежи через Paddle",
+    secureBilling: "Безопасное управление подпиской",
     softwareNotice:
       "Timviz продаёт подписку на программное обеспечение для управления записью. Мы не являемся маркетплейсом и не обрабатываем платежи между клиентами и мастерами.",
     loginRequired: "Сначала войдите или создайте аккаунт, чтобы запустить пробный период.",
-    missingConfig: "Paddle пока не настроен. Добавьте Price ID и Client Token в переменные окружения.",
-    startingCheckout: "Открываем Paddle Checkout...",
+    startingCheckout: "Готовим защищённую оплату...",
+    billingError: "Не удалось открыть оплату. Попробуйте ещё раз или напишите в поддержку.",
     buttons: {
       free: "Начать бесплатно",
       monthly: "Начать пробный период",
@@ -163,7 +157,7 @@ export const pricingCopy: Record<SiteLanguage, PricingCopy> = {
     faq: [
       {
         question: "Что будет после бесплатного периода?",
-        answer: "После 14 дней пробного периода подписка автоматически продлевается через Paddle по выбранному тарифу: $3 в месяц или $29 в год."
+        answer: "После 14 дней пробного периода Premium можно продолжить по выбранному тарифу: $3 в месяц или $29 в год."
       },
       {
         question: "Можно ли отменить в любое время?",
@@ -174,8 +168,8 @@ export const pricingCopy: Record<SiteLanguage, PricingCopy> = {
         answer: "Всё из Free, расширенная аналитика, уведомления, Telegram-интеграции и дополнительные бизнес-инструменты."
       },
       {
-        question: "Paddle используется для оплаты услуг салонов или мастеров?",
-        answer: paddleAnswer.ru
+        question: "Timviz используется для оплаты услуг салонов или мастеров?",
+        answer: "Нет. Timviz продаёт только подписку на программное обеспечение и не обрабатывает платежи между клиентами и мастерами."
       },
       {
         question: "Можно ли пользоваться Timviz бесплатно?",
@@ -193,12 +187,12 @@ export const pricingCopy: Record<SiteLanguage, PricingCopy> = {
       "Почніть безкоштовно, а коли знадобиться більше автоматизації, підключіть Premium із 14-денним пробним періодом.",
     trialBadge: "14 днів безкоштовно",
     cancelAnytime: "Скасувати можна будь-коли",
-    securePaddle: "Безпечні платежі через Paddle",
+    secureBilling: "Безпечне керування підпискою",
     softwareNotice:
       "Timviz продає підписку на програмне забезпечення для керування записом. Ми не є маркетплейсом і не обробляємо платежі між клієнтами та майстрами.",
     loginRequired: "Спочатку увійдіть або створіть акаунт, щоб запустити пробний період.",
-    missingConfig: "Paddle поки не налаштовано. Додайте Price ID і Client Token у змінні середовища.",
-    startingCheckout: "Відкриваємо Paddle Checkout...",
+    startingCheckout: "Готуємо захищену оплату...",
+    billingError: "Не вдалося відкрити оплату. Спробуйте ще раз або напишіть у підтримку.",
     buttons: {
       free: "Почати безкоштовно",
       monthly: "Почати пробний період",
@@ -284,7 +278,7 @@ export const pricingCopy: Record<SiteLanguage, PricingCopy> = {
     faq: [
       {
         question: "Що буде після безкоштовного періоду?",
-        answer: "Після 14 днів пробного періоду підписка автоматично продовжується через Paddle за обраним тарифом: $3 на місяць або $29 на рік."
+        answer: "Після 14 днів пробного періоду Premium можна продовжити за обраним тарифом: $3 на місяць або $29 на рік."
       },
       {
         question: "Чи можна скасувати будь-коли?",
@@ -295,8 +289,8 @@ export const pricingCopy: Record<SiteLanguage, PricingCopy> = {
         answer: "Усе з Free, розширена аналітика, сповіщення, Telegram-інтеграції та додаткові бізнес-інструменти."
       },
       {
-        question: "Paddle використовується для оплати послуг салонів або майстрів?",
-        answer: paddleAnswer.uk
+        question: "Timviz використовується для оплати послуг салонів або майстрів?",
+        answer: "Ні. Timviz продає лише підписку на програмне забезпечення і не обробляє платежі між клієнтами та майстрами."
       },
       {
         question: "Чи можна користуватися Timviz безкоштовно?",
@@ -314,12 +308,12 @@ export const pricingCopy: Record<SiteLanguage, PricingCopy> = {
       "Start free, then upgrade to Premium when you want more automation. Premium includes a 14-day free trial.",
     trialBadge: "14 days free",
     cancelAnytime: "Cancel anytime",
-    securePaddle: "Secure payments powered by Paddle",
+    secureBilling: "Secure subscription management",
     softwareNotice:
       "Timviz sells a software subscription for appointment management. We are not a marketplace and do not process payments between clients and service providers.",
     loginRequired: "Please sign in or create an account first to start your free trial.",
-    missingConfig: "Paddle is not configured yet. Add Price IDs and Client Token to environment variables.",
-    startingCheckout: "Opening Paddle Checkout...",
+    startingCheckout: "Preparing secure checkout...",
+    billingError: "Could not open checkout. Please try again or contact support.",
     buttons: {
       free: "Start free",
       monthly: "Start monthly trial",
@@ -405,7 +399,7 @@ export const pricingCopy: Record<SiteLanguage, PricingCopy> = {
     faq: [
       {
         question: "What happens after the free trial?",
-        answer: "After the 14-day trial, the subscription renews automatically through Paddle on your selected plan: $3/month or $29/year."
+        answer: "After the 14-day trial, Premium can continue on your selected plan: $3/month or $29/year."
       },
       {
         question: "Can I cancel anytime?",
@@ -416,8 +410,8 @@ export const pricingCopy: Record<SiteLanguage, PricingCopy> = {
         answer: "Everything in Free, advanced analytics, notifications, Telegram integrations and additional business tools."
       },
       {
-        question: "Is Paddle used to pay for salon or master services?",
-        answer: paddleAnswer.en
+        question: "Is Timviz used to pay for salon or master services?",
+        answer: "No. Timviz only sells a software subscription and does not process payments between clients and service providers."
       },
       {
         question: "Can I use Timviz for free?",

@@ -121,9 +121,6 @@ export type ProfessionalRecord = {
   plan?: TimvizPlan;
   premiumStatus?: PremiumStatus;
   premiumUntil?: string;
-  paddleCustomerId?: string;
-  paddleSubscriptionId?: string;
-  paddlePriceId?: string;
   ownerMode: "owner" | "member";
   accountStatus?: ProfessionalAccountStatus;
   createdAt: string;
@@ -285,7 +282,7 @@ const DIRECTORY_SNAPSHOT_TTL_MS = Number(process.env.DIRECTORY_SNAPSHOT_TTL_MS |
 const BUSINESS_SELECT_FIELDS =
   "id, name, website, categories, account_type, service_mode, address, address_details, address_lat, address_lon, work_schedule_mode, work_schedule, custom_schedule, allow_online_booking, photos, owner_professional_id, created_at";
 const PROFESSIONAL_SELECT_FIELDS =
-  "id, first_name, last_name, email, password_hash, avatar_url, phone, country, timezone, language, currency, booking_credits_total, wallet_balance, plan, premium_status, premium_until, paddle_customer_id, paddle_subscription_id, paddle_price_id, owner_mode, account_status, created_at";
+  "id, first_name, last_name, email, password_hash, avatar_url, phone, country, timezone, language, currency, booking_credits_total, wallet_balance, plan, premium_status, premium_until, owner_mode, account_status, created_at";
 const MEMBERSHIP_SELECT_FIELDS =
   "id, business_id, professional_id, role, scope, work_schedule_mode, work_schedule, custom_schedule, created_at";
 const SERVICE_SELECT_FIELDS =
@@ -556,18 +553,6 @@ function normalizeProfessionalRecord(professional: ProfessionalRecord): Professi
     premiumUntil:
       typeof professional.premiumUntil === "string" && professional.premiumUntil.trim()
         ? professional.premiumUntil.trim()
-        : undefined,
-    paddleCustomerId:
-      typeof professional.paddleCustomerId === "string" && professional.paddleCustomerId.trim()
-        ? professional.paddleCustomerId.trim()
-        : undefined,
-    paddleSubscriptionId:
-      typeof professional.paddleSubscriptionId === "string" && professional.paddleSubscriptionId.trim()
-        ? professional.paddleSubscriptionId.trim()
-        : undefined,
-    paddlePriceId:
-      typeof professional.paddlePriceId === "string" && professional.paddlePriceId.trim()
-        ? professional.paddlePriceId.trim()
         : undefined
   };
 }
@@ -709,9 +694,6 @@ function mapSupabaseProfessionalRow(row: {
   plan?: string | null;
   premium_status?: string | null;
   premium_until?: string | null;
-  paddle_customer_id?: string | null;
-  paddle_subscription_id?: string | null;
-  paddle_price_id?: string | null;
   owner_mode: string;
   account_status?: string | null;
   created_at: string;
@@ -734,9 +716,6 @@ function mapSupabaseProfessionalRow(row: {
     plan: normalizePlan(row.plan),
     premiumStatus: normalizePremiumStatus(row.premium_status),
     premiumUntil: row.premium_until ?? undefined,
-    paddleCustomerId: row.paddle_customer_id ?? undefined,
-    paddleSubscriptionId: row.paddle_subscription_id ?? undefined,
-    paddlePriceId: row.paddle_price_id ?? undefined,
     ownerMode: row.owner_mode === "member" ? "member" : "owner",
     accountStatus: normalizeProfessionalAccountStatus(row.account_status),
     createdAt: row.created_at
@@ -1760,9 +1739,6 @@ export async function createProfessionalSetup(input: {
       plan: existingProfessional?.plan ?? (shouldStartPremiumTrial ? "premium" : "free"),
       premium_status: existingProfessional?.premiumStatus ?? (shouldStartPremiumTrial ? "trialing" : "inactive"),
       premium_until: existingProfessional?.premiumUntil ?? initialPremiumUntil,
-      paddle_customer_id: existingProfessional?.paddleCustomerId ?? null,
-      paddle_subscription_id: existingProfessional?.paddleSubscriptionId ?? null,
-      paddle_price_id: existingProfessional?.paddlePriceId ?? null,
       owner_mode: input.setup.ownerMode,
       account_status: accountStatus,
       created_at: existingProfessional?.createdAt ?? createdAt
@@ -2082,9 +2058,6 @@ export async function createProfessionalSetup(input: {
     plan: existingProfessional?.plan ?? (shouldStartPremiumTrial ? "premium" : "free"),
     premiumStatus: existingProfessional?.premiumStatus ?? (shouldStartPremiumTrial ? "trialing" : "inactive"),
     premiumUntil: existingProfessional?.premiumUntil ?? initialPremiumUntil ?? undefined,
-    paddleCustomerId: existingProfessional?.paddleCustomerId,
-    paddleSubscriptionId: existingProfessional?.paddleSubscriptionId,
-    paddlePriceId: existingProfessional?.paddlePriceId,
     ownerMode: input.setup.ownerMode,
     accountStatus,
     createdAt: existingProfessional?.createdAt ?? createdAt
@@ -2685,9 +2658,6 @@ export async function createManualStaffMember(input: {
         plan: "free",
         premium_status: "inactive",
         premium_until: null,
-        paddle_customer_id: null,
-        paddle_subscription_id: null,
-        paddle_price_id: null,
         owner_mode: "member",
         account_status: accountStatus,
         created_at: createdAt

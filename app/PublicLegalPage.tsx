@@ -79,10 +79,25 @@ const chromeCopy = {
 type PublicLegalPageProps = {
   copy: LegalCopy;
   language: SiteLanguage;
+  iosSafe?: boolean;
 };
 
-export default function PublicLegalPage({ copy, language }: PublicLegalPageProps) {
+const iosUnsafePattern = /monobank|website payments|website payment|платеж[а-яё\s]*на сайте|платежі[а-яіїєґ\s]*на сайті|оплат[а-яё\s]*на сайте|оплат[а-яіїєґ\s]*на сайті/i;
+
+function getVisibleSections(copy: LegalCopy, iosSafe?: boolean) {
+  if (!iosSafe) return copy.sections;
+  return copy.sections
+    .filter((section) => !iosUnsafePattern.test(section.title))
+    .map((section) => ({
+      ...section,
+      paragraphs: section.paragraphs.filter((paragraph) => !iosUnsafePattern.test(paragraph))
+    }))
+    .filter((section) => section.paragraphs.length > 0);
+}
+
+export default function PublicLegalPage({ copy, language, iosSafe }: PublicLegalPageProps) {
   const t = chromeCopy[language];
+  const sections = getVisibleSections(copy, iosSafe);
 
   return (
     <main className="public-home legal-page">
@@ -126,7 +141,7 @@ export default function PublicLegalPage({ copy, language }: PublicLegalPageProps
       </section>
 
       <section className="legal-content">
-        {copy.sections.map((section) => (
+        {sections.map((section) => (
           <article className="legal-card" key={section.title}>
             <h2>{section.title}</h2>
             <div className="legal-card-body">

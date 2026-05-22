@@ -45,9 +45,6 @@ create table if not exists public.professionals (
   plan text not null default 'free',
   premium_status text not null default 'inactive',
   premium_until timestamptz,
-  paddle_customer_id text,
-  paddle_subscription_id text,
-  paddle_price_id text,
   owner_mode text not null,
   account_status text not null default 'active',
   created_at timestamptz not null default timezone('utc', now())
@@ -376,9 +373,6 @@ alter table public.professionals add column if not exists wallet_balance integer
 alter table public.professionals add column if not exists plan text not null default 'free';
 alter table public.professionals add column if not exists premium_status text not null default 'inactive';
 alter table public.professionals add column if not exists premium_until timestamptz;
-alter table public.professionals add column if not exists paddle_customer_id text;
-alter table public.professionals add column if not exists paddle_subscription_id text;
-alter table public.professionals add column if not exists paddle_price_id text;
 
 alter table public.businesses add column if not exists photos jsonb not null default '[]'::jsonb;
 alter table public.businesses add column if not exists allow_online_booking boolean not null default false;
@@ -445,8 +439,6 @@ alter table public.mobile_push_tokens add column if not exists updated_at timest
 create index if not exists bookings_salon_date_idx on public.bookings (salon_slug, appointment_date, appointment_time);
 create index if not exists bookings_salon_status_created_idx on public.bookings (salon_slug, status, created_at desc);
 create index if not exists bookings_customer_email_idx on public.bookings (customer_email, created_at desc);
-create index if not exists professionals_paddle_customer_idx on public.professionals (paddle_customer_id);
-create index if not exists professionals_paddle_subscription_idx on public.professionals (paddle_subscription_id);
 create index if not exists plans_code_idx on public.plans (code);
 create index if not exists user_entitlements_user_status_idx on public.user_entitlements (user_id, status, active_until desc);
 create index if not exists user_entitlements_source_idx on public.user_entitlements (source, updated_at desc);

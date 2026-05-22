@@ -8,6 +8,9 @@ type LegalPageProps = {
   params: Promise<{
     lang: string;
   }>;
+  searchParams?: Promise<{
+    source?: string;
+  }>;
 };
 
 export async function generateMetadata({ params }: LegalPageProps): Promise<Metadata> {
@@ -20,13 +23,14 @@ export async function generateMetadata({ params }: LegalPageProps): Promise<Meta
   return buildLegalMetadata("terms", lang);
 }
 
-export default async function TermsPage({ params }: LegalPageProps) {
+export default async function TermsPage({ params, searchParams }: LegalPageProps) {
   const { lang } = await params;
+  const query = await searchParams;
 
   if (!isSiteLanguage(lang)) {
     notFound();
   }
 
   const copy = legalCopy.terms[lang];
-  return <PublicLegalPage copy={copy} language={lang} />;
+  return <PublicLegalPage copy={copy} language={lang} iosSafe={query?.source === "ios"} />;
 }

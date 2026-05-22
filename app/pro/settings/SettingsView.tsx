@@ -35,7 +35,6 @@ type SettingsData = {
     plan?: "free" | "premium";
     premiumStatus?: "inactive" | "trialing" | "active" | "past_due" | "canceled";
     premiumUntil?: string;
-    paddlePriceId?: string;
   };
   business: {
     id: string;
@@ -750,12 +749,6 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
   const planText = planCopy[language];
   const serviceModes = serviceModeGroups.map((mode) => mode[language]);
   const [data, setData] = useState(initialData);
-  const premiumBilling =
-    data.professional.paddlePriceId === process.env.NEXT_PUBLIC_PADDLE_PRICE_YEARLY
-      ? "yearly"
-      : data.professional.paddlePriceId === process.env.NEXT_PUBLIC_PADDLE_PRICE_MONTHLY
-        ? "monthly"
-        : null;
   const premiumUntilTime = data.professional.premiumUntil ? new Date(data.professional.premiumUntil).getTime() : 0;
   const isShortTrialWindow =
     Number.isFinite(premiumUntilTime) && premiumUntilTime > Date.now() && premiumUntilTime - Date.now() <= 45 * 24 * 60 * 60 * 1000;
@@ -763,11 +756,7 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
     data.professional.plan === "premium" && data.professional.premiumStatus === "trialing" && isShortTrialWindow;
   const premiumPlanLabel =
     data.professional.plan === "premium"
-      ? premiumBilling === "yearly"
-        ? planText.premiumYearly
-        : premiumBilling === "monthly"
-          ? planText.premiumMonthly
-          : planText.premium
+      ? planText.premium
       : planText.free;
   const premiumDateText = data.professional.premiumUntil
     ? new Intl.DateTimeFormat(language === "uk" ? "uk-UA" : language === "en" ? "en-US" : "ru-RU", {
@@ -777,12 +766,7 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
       }).format(new Date(data.professional.premiumUntil))
     : planText.unknownDate;
   const premiumNextLabel = isPremiumTrial ? planText.renewsOn : planText.nextDate;
-  const premiumNextValue =
-    isPremiumTrial && premiumBilling === "yearly"
-      ? planText.yearlyRenewal
-      : isPremiumTrial && premiumBilling === "monthly"
-        ? planText.monthlyRenewal
-        : premiumDateText;
+  const premiumNextValue = premiumDateText;
   const premiumStatusValue = isPremiumTrial ? premiumDateText : data.professional.plan === "premium" ? planText.premium : planText.free;
   const premiumStatusLabel =
     data.professional.plan === "premium" && data.professional.premiumStatus === "trialing" && !isPremiumTrial
@@ -793,11 +777,7 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
   const premiumHint =
     data.professional.plan !== "premium"
       ? planText.freeHint
-      : isPremiumTrial && premiumBilling === "yearly"
-        ? planText.trialHintYearly
-        : isPremiumTrial && premiumBilling === "monthly"
-          ? planText.trialHintMonthly
-          : planText.premiumHint;
+      : planText.premiumHint;
   const selectedServiceMode = localizeServiceMode(data.business.serviceMode, language);
   const [password, setPassword] = useState("");
   const [status, setStatus] = useState("");

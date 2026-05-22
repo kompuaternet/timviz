@@ -249,7 +249,6 @@ type WorkspaceSnapshot = {
     plan?: "free" | "premium";
     premiumStatus?: "inactive" | "trialing" | "active" | "past_due" | "canceled";
     premiumUntil?: string;
-    paddlePriceId?: string;
   };
   business: {
     id: string;
@@ -11552,7 +11551,7 @@ function WorkspaceHeader({
   }
 
   async function openLegalPage(pathname: string) {
-    await Linking.openURL(`${API_BASE_URL}${pathname}`).catch(() => undefined);
+    await Linking.openURL(`${API_BASE_URL}/${language}${pathname}?source=ios`).catch(() => undefined);
   }
 
   function openDeleteAccountFlow() {
@@ -11968,7 +11967,6 @@ function WorkspaceHeader({
             {panel === "help" ? (
               <View style={styles.headerPanelBody}>
                 <AccountMenuRow icon="chatbubble-ellipses-outline" title={t.support || t.supportTitle || "Support"} onPress={() => setPanel("support")} />
-                <AccountMenuRow icon="globe-outline" title={t.timvizWebsite || "Timviz website"} value="timviz.com" onPress={() => void Linking.openURL(API_BASE_URL)} />
                 <AccountMenuRow icon="shield-checkmark-outline" title={t.privacyPolicy || "Privacy Policy"} onPress={() => void openLegalPage("/privacy")} />
                 <AccountMenuRow icon="document-text-outline" title={t.termsOfUse || "Terms of Use"} onPress={() => void openLegalPage("/terms")} />
                 <AccountMenuRow icon="receipt-outline" title={t.subscriptionTerms || "Subscription Terms"} onPress={() => void openLegalPage("/subscription-terms")} />
@@ -15558,8 +15556,8 @@ function SettingsTab({
                 "Subscription renews automatically unless cancelled at least 24 hours before the end of the current period. You can manage or cancel your subscription in your Apple ID settings."}
             </Text>
             <View style={styles.settingsActionRow}>
-              <SecondaryButton label={t.privacyPolicy || "Privacy Policy"} onPress={() => Linking.openURL(`${API_BASE_URL}/privacy`).catch(() => undefined)} />
-              <SecondaryButton label={t.termsOfUse || "Terms of Use"} onPress={() => Linking.openURL(`${API_BASE_URL}/terms`).catch(() => undefined)} />
+              <SecondaryButton label={t.privacyPolicy || "Privacy Policy"} onPress={() => Linking.openURL(`${API_BASE_URL}/${language}/privacy?source=ios`).catch(() => undefined)} />
+              <SecondaryButton label={t.termsOfUse || "Terms of Use"} onPress={() => Linking.openURL(`${API_BASE_URL}/${language}/terms?source=ios`).catch(() => undefined)} />
             </View>
             {isPremiumLoading ? <ActivityIndicator color="#6D4AFF" /> : null}
             {premiumMessage ? <Text style={styles.settingsMutedNotice}>{premiumMessage}</Text> : null}

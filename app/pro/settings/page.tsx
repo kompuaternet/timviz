@@ -65,8 +65,7 @@ export default async function ProSettingsPage({ searchParams }: ProSettingsPageP
           ownerMode: workspace.professional.ownerMode,
           plan: workspace.professional.plan,
           premiumStatus: workspace.professional.premiumStatus,
-          premiumUntil: workspace.professional.premiumUntil,
-          paddlePriceId: workspace.professional.paddlePriceId
+          premiumUntil: workspace.professional.premiumUntil
         },
         business: workspace.business,
         membership: workspace.membership,

@@ -1,31 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useState } from "react";
 import BrandLogo from "./BrandLogo";
 import GlobalLanguageSwitcher from "./GlobalLanguageSwitcher";
 import PublicHeaderAuthMenu from "./PublicHeaderAuthMenu";
 import { getLocalizedPath, type SiteLanguage } from "../lib/site-language";
 import type { PricingCopy, PricingPlanKey } from "../lib/pricing";
-
-type PaddleCheckoutBilling = "monthly" | "yearly";
-
-type PaddleWindow = Window & {
-  Paddle?: {
-    Environment?: {
-      set(environment: string): void;
-    };
-    Initialize(options: { token: string; eventCallback?: (event: unknown) => void }): void;
-    Checkout: {
-      open(options: {
-        items: Array<{ priceId: string; quantity: number }>;
-        customer?: { email: string };
-        customData?: Record<string, string>;
-        settings?: { displayMode: "overlay"; theme: "light" };
-      }): void;
-    };
-  };
-};
 
 type PricingViewProps = {
   language: SiteLanguage;
@@ -34,12 +15,6 @@ type PricingViewProps = {
     id: string;
     email: string;
   } | null;
-  paddle: {
-    token: string;
-    environment: string;
-    monthlyPriceId: string;
-    yearlyPriceId: string;
-  };
 };
 
 const planOrder: PricingPlanKey[] = ["free", "monthly", "yearly"];
@@ -83,147 +58,43 @@ const footerCopy = {
   }
 } satisfies Record<SiteLanguage, Record<string, string>>;
 
-export default function PricingView({ language, copy, user, paddle }: PricingViewProps) {
-  const [message, setMessage] = useState("");
-  const [loadingBilling, setLoadingBilling] = useState<PaddleCheckoutBilling | null>(null);
-  const checkoutRedirectRef = useRef(false);
+export default function PricingView({ language, copy, user }: PricingViewProps) {
   const footer = footerCopy[language];
-
-  useEffect(() => {
-    if (!paddle.token) {
-      return;
-    }
-
-    const existing = document.querySelector<HTMLScriptElement>("script[data-paddle-js]");
-    if (existing) {
-      return;
-    }
-
-    const script = document.createElement("script");
-    script.src = "https://cdn.paddle.com/paddle/v2/paddle.js";
-    script.async = true;
-    script.dataset.paddleJs = "true";
-    document.head.appendChild(script);
-  }, [paddle.token]);
-
-  const checkoutPriceIds = useMemo(
-    () => ({
-      monthly: paddle.monthlyPriceId,
-      yearly: paddle.yearlyPriceId
-    }),
-    [paddle.monthlyPriceId, paddle.yearlyPriceId]
-  );
+  const [message, setMessage] = useState("");
+  const [loadingBilling, setLoadingBilling] = useState<Exclude<PricingPlanKey, "free"> | null>(null);
 
   function goFree() {
     window.location.assign(user ? "/pro/calendar" : "/pro/create-account");
   }
 
-  function redirectToLogin(billing: PaddleCheckoutBilling) {
-    const returnTo = `${getLocalizedPath(language, "/pricing")}?checkout=${billing}`;
-    window.location.assign(`/pro/login?return_to=${encodeURIComponent(returnTo)}`);
-  }
-
-  function initializePaddle(billing: PaddleCheckoutBilling) {
-    const paddleClient = (window as PaddleWindow).Paddle;
-
-    if (!paddleClient || !paddle.token) {
-      return false;
-    }
-
-    if (paddle.environment && paddle.environment !== "production") {
-      paddleClient.Environment?.set(paddle.environment);
-    }
-
-    paddleClient.Initialize({
-      token: paddle.token,
-      eventCallback: (event) => {
-        const payload = event && typeof event === "object" ? (event as Record<string, unknown>) : {};
-        const name = String(payload.name || payload.event || "");
-        if (!name.includes("checkout.completed")) {
-          return;
-        }
-
-        if (checkoutRedirectRef.current) {
-          return;
-        }
-
-        checkoutRedirectRef.current = true;
-        setMessage(copy.startingCheckout);
-
-        fetch("/api/paddle/checkout-completed", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            event: payload,
-            billing,
-            priceId: checkoutPriceIds[billing],
-            userId: user?.id,
-            email: user?.email
-          })
-        })
-          .catch(() => undefined)
-          .finally(() => {
-            window.location.assign("/pro/calendar?premium=1");
-          });
-      }
-    });
-    return true;
-  }
-
-  function openCheckout(billing: PaddleCheckoutBilling) {
+  async function openWebBilling(plan: Exclude<PricingPlanKey, "free">) {
     setMessage("");
-
+    const returnTo = `${getLocalizedPath(language, "/pricing")}?plan=${plan}`;
     if (!user) {
       setMessage(copy.loginRequired);
-      redirectToLogin(billing);
+      window.location.assign(`/pro/login?return_to=${encodeURIComponent(returnTo)}`);
       return;
     }
 
-    const priceId = checkoutPriceIds[billing];
-    if (!paddle.token || !priceId) {
-      setMessage(copy.missingConfig);
-      return;
-    }
-
-    setLoadingBilling(billing);
+    setLoadingBilling(plan);
     setMessage(copy.startingCheckout);
-
-    const tryOpen = () => {
-      if (!initializePaddle(billing)) {
-        window.setTimeout(tryOpen, 160);
-        return;
-      }
-
-      (window as PaddleWindow).Paddle?.Checkout.open({
-        items: [{ priceId, quantity: 1 }],
-        customer: user.email ? { email: user.email } : undefined,
-        customData: {
-          user_id: user.id,
-          professional_id: user.id,
-          email: user.email,
-          plan: "premium",
-          billing
-        },
-        settings: {
-          displayMode: "overlay",
-          theme: "light"
-        }
+    try {
+      const response = await fetch("/api/billing/monobank/create-invoice", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ billing: plan })
       });
+      const payload = (await response.json().catch(() => ({}))) as { paymentUrl?: string; pageUrl?: string; error?: string };
+      const url = payload.paymentUrl || payload.pageUrl;
+      if (!response.ok || !url) {
+        throw new Error(payload.error || copy.billingError);
+      }
+      window.location.assign(url);
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : copy.billingError);
       setLoadingBilling(null);
-    };
-
-    tryOpen();
-  }
-
-  useEffect(() => {
-    if (!user) return;
-    const params = new URLSearchParams(window.location.search);
-    const checkout = params.get("checkout");
-    if (checkout === "monthly" || checkout === "yearly") {
-      openCheckout(checkout);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.id]);
+  }
 
   return (
     <main className="public-home pricing-page">
@@ -247,7 +118,7 @@ export default function PricingView({ language, copy, user, paddle }: PricingVie
         <div className="pricing-trust-row">
           <strong>{copy.trialBadge}</strong>
           <strong>{copy.cancelAnytime}</strong>
-          <strong>{copy.securePaddle}</strong>
+          <strong>{copy.secureBilling}</strong>
         </div>
       </section>
 
@@ -277,9 +148,7 @@ export default function PricingView({ language, copy, user, paddle }: PricingVie
               <button
                 type="button"
                 className={`pricing-button ${isYearly ? "pricing-button-primary" : ""}`}
-                onClick={() =>
-                  planKey === "free" ? goFree() : openCheckout(planKey === "monthly" ? "monthly" : "yearly")
-                }
+                onClick={() => (planKey === "free" ? goFree() : void openWebBilling(planKey))}
                 disabled={loadingBilling === planKey}
               >
                 {copy.buttons[planKey]}
@@ -310,7 +179,7 @@ export default function PricingView({ language, copy, user, paddle }: PricingVie
           <Link className="public-logo" href={getLocalizedPath(language)}>
             <BrandLogo />
           </Link>
-          <p>{copy.securePaddle}</p>
+          <p>{copy.secureBilling}</p>
         </div>
         <div>
           <h3>{footer.about}</h3>

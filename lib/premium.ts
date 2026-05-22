@@ -74,15 +74,6 @@ export function getPremiumTrialUntil(startDate: Date | string = new Date()) {
   return date.toISOString();
 }
 
-export function getPremiumBillingFromPriceId(priceId: string | null | undefined): PremiumBilling | null {
-  const monthly = process.env.NEXT_PUBLIC_PADDLE_PRICE_MONTHLY?.trim();
-  const yearly = process.env.NEXT_PUBLIC_PADDLE_PRICE_YEARLY?.trim();
-
-  if (priceId && monthly && priceId === monthly) return "monthly";
-  if (priceId && yearly && priceId === yearly) return "yearly";
-  return null;
-}
-
 export function getPremiumBillingFromAppStoreProductId(productId: string | null | undefined): PremiumBilling | null {
   const monthly =
     process.env.NEXT_PUBLIC_REVENUECAT_MONTHLY_PRODUCT_ID?.trim() ||
@@ -262,7 +253,7 @@ export async function getProfessionalPremiumSnapshot(input: {
     return null;
   }
 
-  const columns = "id, premium_until, paddle_price_id, premium_status";
+  const columns = "id, premium_until, premium_status";
 
   if (input.professionalId) {
     const { data, error } = await supabase
@@ -271,7 +262,7 @@ export async function getProfessionalPremiumSnapshot(input: {
       .eq("id", input.professionalId)
       .maybeSingle();
     if (error) throw new Error(error.message);
-    if (data) return data as { id: string; premium_until: string | null; paddle_price_id: string | null; premium_status: string | null };
+    if (data) return data as { id: string; premium_until: string | null; premium_status: string | null };
   }
 
   const email = input.email?.trim().toLowerCase();
@@ -282,89 +273,10 @@ export async function getProfessionalPremiumSnapshot(input: {
       .eq("email", email)
       .maybeSingle();
     if (error) throw new Error(error.message);
-    if (data) return data as { id: string; premium_until: string | null; paddle_price_id: string | null; premium_status: string | null };
+    if (data) return data as { id: string; premium_until: string | null; premium_status: string | null };
   }
 
   return null;
-}
-
-export async function updateProfessionalPremiumFromPaddle(input: {
-  professionalId?: string | null;
-  email?: string | null;
-  status: PremiumStatus;
-  premiumUntil?: string | null;
-  paddleCustomerId?: string | null;
-  paddleSubscriptionId?: string | null;
-  paddlePriceId?: string | null;
-}) {
-  if (!isSupabaseConfigured()) {
-    console.info("[paddle] Supabase is not configured; skipping premium update.", {
-      professionalId: input.professionalId,
-      email: input.email,
-      status: input.status
-    });
-    return { updated: false, reason: "supabase_not_configured" as const };
-  }
-
-  const supabase = getSupabaseAdmin();
-  if (!supabase) {
-    return { updated: false, reason: "supabase_unavailable" as const };
-  }
-
-  const patch: Record<string, string | null> = {
-    plan: input.status === "inactive" ? "free" : "premium",
-    premium_status: input.status
-  };
-
-  if (input.premiumUntil !== undefined) {
-    patch.premium_until = input.premiumUntil;
-  }
-
-  if (input.paddleCustomerId) {
-    patch.paddle_customer_id = input.paddleCustomerId;
-  }
-
-  if (input.paddleSubscriptionId) {
-    patch.paddle_subscription_id = input.paddleSubscriptionId;
-  }
-
-  if (input.paddlePriceId) {
-    patch.paddle_price_id = input.paddlePriceId;
-  }
-
-  if (input.premiumUntil) {
-    const existing = await getProfessionalPremiumSnapshot(input);
-    patch.premium_until = maxIsoDate(existing?.premium_until, input.premiumUntil);
-  }
-
-  if (input.professionalId) {
-    const { data, error } = await supabase
-      .from("professionals")
-      .update(patch)
-      .eq("id", input.professionalId)
-      .select("id")
-      .maybeSingle();
-    if (error) throw new Error(error.message);
-    if (data?.id) {
-      return { updated: true, by: "id" as const, professionalId: data.id };
-    }
-  }
-
-  const email = input.email?.trim().toLowerCase();
-  if (email) {
-    const { data, error } = await supabase
-      .from("professionals")
-      .update(patch)
-      .eq("email", email)
-      .select("id")
-      .maybeSingle();
-    if (error) throw new Error(error.message);
-    if (data?.id) {
-      return { updated: true, by: "email" as const, professionalId: data.id };
-    }
-  }
-
-  return { updated: false, reason: input.professionalId || email ? "professional_not_found" as const : "no_user_reference" as const };
 }
 
 export async function updateProfessionalPremiumFromAppStore(input: {
@@ -471,4 +383,55 @@ export async function updateProfessionalPremiumFromAppStore(input: {
   }
 
   return { updated: false, reason: input.professionalId || email ? "professional_not_found" as const : "no_user_reference" as const };
+}
+
+export async function updateProfessionalPremiumFromMonobank(input: {
+  professionalId: string;
+  status: "active" | "expired" | "cancelled";
+  premiumUntil?: string | null;
+  planCode?: string | null;
+  invoiceId?: string | null;
+}) {
+  if (!isSupabaseConfigured()) {
+    console.info("[monobank] Supabase is not configured; skipping premium update.", {
+      professionalId: input.professionalId,
+      status: input.status
+    });
+    return { updated: false, reason: "supabase_not_configured" as const };
+  }
+
+  const supabase = getSupabaseAdmin();
+  if (!supabase) {
+    return { updated: false, reason: "supabase_unavailable" as const };
+  }
+
+  const active = input.status === "active";
+  const existing = await getProfessionalPremiumSnapshot({ professionalId: input.professionalId });
+  const premiumUntil = active ? maxIsoDate(existing?.premium_until, input.premiumUntil) : existing?.premium_until || null;
+  const patch: Record<string, string | null> = {
+    plan: active ? "premium" : isPremiumAccessActive({ plan: "premium", premiumStatus: existing?.premium_status, premiumUntil }) ? "premium" : "free",
+    premium_status: active ? "active" : "inactive",
+    premium_until: premiumUntil
+  };
+
+  const { data, error } = await supabase
+    .from("professionals")
+    .update(patch)
+    .eq("id", input.professionalId)
+    .select("id")
+    .maybeSingle();
+  if (error) throw new Error(error.message);
+
+  await upsertUserEntitlement({
+    userId: input.professionalId,
+    planCode: input.planCode || "pro_monthly",
+    status: active ? "active" : input.status,
+    source: "monobank",
+    activeUntil: premiumUntil,
+    cancelAtPeriodEnd: false
+  });
+
+  return data?.id
+    ? { updated: true, professionalId: data.id, invoiceId: input.invoiceId || null }
+    : { updated: false, reason: "professional_not_found" as const };
 }
