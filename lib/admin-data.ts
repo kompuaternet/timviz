@@ -12,6 +12,7 @@ import { getSupabaseAdmin, isSupabaseConfigured } from "./supabase";
 import {
   deleteRootCatalogItem,
   getRootCatalogItems,
+  renameRootCatalogCategory,
   seedRootCatalogDefaults,
   upsertRootCatalogItem,
   type GlobalCatalogGroupKey
@@ -720,6 +721,10 @@ export async function saveSuperadminCatalogItem(input: {
   sortOrder?: number;
 }) {
   return upsertRootCatalogItem(input);
+}
+
+export async function renameSuperadminCatalogCategory(input: { fromCategory: string; toCategory: string }) {
+  return renameRootCatalogCategory(input);
 }
 
 export async function removeSuperadminCatalogItem(itemId: string) {

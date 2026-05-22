@@ -2,7 +2,7 @@ import { randomUUID } from "crypto";
 import { getSupabaseAdmin, isSupabaseConfigured } from "./supabase";
 
 const DEFAULT_MEDIA_BUCKET = "timviz-media";
-const allowedImageTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif", "image/heic", "image/heif"]);
+const allowedImageTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 
 export type MediaUploadKind = "avatar" | "business-photo";
 
@@ -15,9 +15,6 @@ function getExtension(contentType: string) {
   if (contentType === "image/png") return "png";
   if (contentType === "image/webp") return "webp";
   if (contentType === "image/gif") return "gif";
-  if (contentType === "image/avif") return "avif";
-  if (contentType === "image/heic") return "heic";
-  if (contentType === "image/heif") return "heif";
   return "bin";
 }
 

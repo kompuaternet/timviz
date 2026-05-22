@@ -66,6 +66,10 @@ const CLIENTS_TEXT: Record<AppLanguage, {
   close: string;
   save: string;
   saving: string;
+  deleteClient: string;
+  deleting: string;
+  deleteConfirm: string;
+  deleteError: string;
   editClient: string;
   newClient: string;
   personalInfo: string;
@@ -113,6 +117,10 @@ const CLIENTS_TEXT: Record<AppLanguage, {
     close: "Закрыть",
     save: "Сохранить",
     saving: "Сохраняем...",
+    deleteClient: "Удалить клиента",
+    deleting: "Удаляем...",
+    deleteConfirm: "Удалить эту карточку клиента?",
+    deleteError: "Не удалось удалить клиента.",
     editClient: "Редактировать клиента",
     newClient: "Добавить нового клиента",
     personalInfo: "Личные сведения",
@@ -160,6 +168,10 @@ const CLIENTS_TEXT: Record<AppLanguage, {
     close: "Закрити",
     save: "Зберегти",
     saving: "Зберігаємо...",
+    deleteClient: "Видалити клієнта",
+    deleting: "Видаляємо...",
+    deleteConfirm: "Видалити цю картку клієнта?",
+    deleteError: "Не вдалося видалити клієнта.",
     editClient: "Редагувати клієнта",
     newClient: "Додати нового клієнта",
     personalInfo: "Особисті дані",
@@ -207,6 +219,10 @@ const CLIENTS_TEXT: Record<AppLanguage, {
     close: "Close",
     save: "Save",
     saving: "Saving...",
+    deleteClient: "Delete client",
+    deleting: "Deleting...",
+    deleteConfirm: "Delete this client card?",
+    deleteError: "Could not delete client.",
     editClient: "Edit client",
     newClient: "Add new client",
     personalInfo: "Personal details",
@@ -334,6 +350,7 @@ export default function ClientsView({
   const [isPrefixOpen, setIsPrefixOpen] = useState(false);
   const [prefixSearch, setPrefixSearch] = useState("");
   const [saving, setSaving] = useState(false);
+  const [deletingClient, setDeletingClient] = useState(false);
   const [isRefreshingClients, setIsRefreshingClients] = useState(false);
   const [statusText, setStatusText] = useState("");
   const phoneRule = getPhoneRule(phoneCountry || accountCountry || "Ukraine");
@@ -502,6 +519,34 @@ export default function ClientsView({
     setSaving(false);
     setModalOpen(false);
     setStatusText(form.clientId ? t.saved : t.created);
+  }
+
+  async function handleDelete() {
+    if (!form.clientId || deletingClient || saving) {
+      return;
+    }
+
+    if (!window.confirm(t.deleteConfirm)) {
+      return;
+    }
+
+    setDeletingClient(true);
+    setStatusText("");
+
+    const response = await fetch(`/api/pro/clients?clientId=${encodeURIComponent(form.clientId)}`, {
+      method: "DELETE"
+    });
+    const payload = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      setStatusText(payload.error || t.deleteError);
+      setDeletingClient(false);
+      return;
+    }
+
+    await refreshClients();
+    setDeletingClient(false);
+    setModalOpen(false);
   }
 
   return (
@@ -832,9 +877,15 @@ export default function ClientsView({
             </section>
 
             <footer className={styles.clientsDrawerFooter}>
-              <button type="button" className={styles.calendarSecondaryAction} onClick={() => setModalOpen(false)}>
-                {t.close}
-              </button>
+              {form.clientId ? (
+                <button type="button" className={styles.dangerTextButton} onClick={() => void handleDelete()} disabled={saving || deletingClient}>
+                  {deletingClient ? t.deleting : t.deleteClient}
+                </button>
+              ) : (
+                <button type="button" className={styles.calendarSecondaryAction} onClick={() => setModalOpen(false)}>
+                  {t.close}
+                </button>
+              )}
               <button type="button" className={styles.primaryButton} onClick={() => void handleSave()} disabled={saving}>
                 {saving ? t.saving : t.save}
               </button>

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import {
   getSuperadminCatalogItems,
   removeSuperadminCatalogItem,
+  renameSuperadminCatalogCategory,
   saveSuperadminCatalogItem,
   seedSuperadminCatalogDefaults
 } from "../../../../lib/admin-data";
@@ -29,6 +30,17 @@ export async function POST(request: Request) {
       return NextResponse.json({
         ok: true,
         ...seedResult,
+        items
+      });
+    }
+    if (body?.action === "rename_category") {
+      const result = await renameSuperadminCatalogCategory({
+        fromCategory: String(body.fromCategory || ""),
+        toCategory: String(body.toCategory || "")
+      });
+      const items = await getSuperadminCatalogItems();
+      return NextResponse.json({
+        ...result,
         items
       });
     }

@@ -47,6 +47,7 @@ type PushText = {
   bookingCancelled: string;
   reminderPrefix: string;
   unknownClient: string;
+  unknownService: string;
   fromLabel: string;
   toLabel: string;
 };
@@ -94,6 +95,7 @@ const textByLanguage: Record<PushLanguage, PushText> = {
     bookingCancelled: "Запись отменена",
     reminderPrefix: "Напоминание о записи",
     unknownClient: "Клиент",
+    unknownService: "Без услуги",
     fromLabel: "Было",
     toLabel: "Стало"
   },
@@ -106,6 +108,7 @@ const textByLanguage: Record<PushLanguage, PushText> = {
     bookingCancelled: "Запис скасовано",
     reminderPrefix: "Нагадування про запис",
     unknownClient: "Клієнт",
+    unknownService: "Без послуги",
     fromLabel: "Було",
     toLabel: "Стало"
   },
@@ -118,6 +121,7 @@ const textByLanguage: Record<PushLanguage, PushText> = {
     bookingCancelled: "Appointment cancelled",
     reminderPrefix: "Appointment reminder",
     unknownClient: "Client",
+    unknownService: "Without service",
     fromLabel: "From",
     toLabel: "To"
   },
@@ -130,6 +134,7 @@ const textByLanguage: Record<PushLanguage, PushText> = {
     bookingCancelled: "Rendez-vous annulé",
     reminderPrefix: "Rappel de rendez-vous",
     unknownClient: "Client",
+    unknownService: "Sans service",
     fromLabel: "Avant",
     toLabel: "Après"
   },
@@ -142,6 +147,7 @@ const textByLanguage: Record<PushLanguage, PushText> = {
     bookingCancelled: "Wizyta anulowana",
     reminderPrefix: "Przypomnienie o wizycie",
     unknownClient: "Klient",
+    unknownService: "Bez usługi",
     fromLabel: "Było",
     toLabel: "Jest"
   },
@@ -154,6 +160,7 @@ const textByLanguage: Record<PushLanguage, PushText> = {
     bookingCancelled: "Rezervace zrušena",
     reminderPrefix: "Připomenutí rezervace",
     unknownClient: "Klient",
+    unknownService: "Bez služby",
     fromLabel: "Původně",
     toLabel: "Nově"
   },
@@ -166,6 +173,7 @@ const textByLanguage: Record<PushLanguage, PushText> = {
     bookingCancelled: "Cita cancelada",
     reminderPrefix: "Recordatorio de cita",
     unknownClient: "Cliente",
+    unknownService: "Sin servicio",
     fromLabel: "Antes",
     toLabel: "Ahora"
   },
@@ -178,6 +186,7 @@ const textByLanguage: Record<PushLanguage, PushText> = {
     bookingCancelled: "Termin storniert",
     reminderPrefix: "Terminerinnerung",
     unknownClient: "Kunde",
+    unknownService: "Ohne Service",
     fromLabel: "Vorher",
     toLabel: "Jetzt"
   }
@@ -192,6 +201,29 @@ function normalizeLanguage(value: unknown): PushLanguage {
 
 function getPushText(language: PushLanguage) {
   return textByLanguage[language] || textByLanguage.en;
+}
+
+function isWithoutServiceName(value: string) {
+  const normalized = value.trim().toLowerCase();
+  return (
+    !normalized ||
+    normalized === "без услуги" ||
+    normalized === "без послуги" ||
+    normalized === "without service" ||
+    normalized === "no service" ||
+    normalized === "sans service" ||
+    normalized === "bez usługi" ||
+    normalized === "bez uslugi" ||
+    normalized === "bez služby" ||
+    normalized === "bez sluzby" ||
+    normalized === "sin servicio" ||
+    normalized === "ohne service" ||
+    normalized === "ohne dienst"
+  );
+}
+
+function getPushServiceName(serviceName: string, text: PushText) {
+  return isWithoutServiceName(serviceName) ? text.unknownService : serviceName.trim();
 }
 
 function normalizeReminderLeadMinutes(value: unknown, fallback = 120) {
@@ -335,7 +367,7 @@ function buildBookingPush(input: {
 
   return {
     title,
-    body: `${input.appointmentDate} ${input.appointmentTime} · ${input.customerName.trim() || input.text.unknownClient} · ${input.serviceName.trim() || "-"}`
+    body: `${input.appointmentDate} ${input.appointmentTime} · ${input.customerName.trim() || input.text.unknownClient} · ${getPushServiceName(input.serviceName, input.text)}`
   };
 }
 
@@ -479,6 +511,26 @@ async function updateLocalMobilePushSettings(
   return getMobilePushState(professionalId);
 }
 
+async function updateLocalMobilePushLanguageForProfessional(input: {
+  professionalId: string;
+  language: string;
+  timezone?: string;
+}) {
+  const store = await readLocalPushStore();
+  const now = new Date().toISOString();
+  store.tokens = store.tokens.map((record) => {
+    if (record.professionalId !== input.professionalId || record.active === false) return record;
+    return {
+      ...record,
+      language: normalizeLanguage(input.language),
+      timezone: input.timezone?.trim() || record.timezone,
+      updatedAt: now
+    };
+  });
+  await writeLocalPushStore(store);
+  return getMobilePushState(input.professionalId);
+}
+
 export async function upsertMobilePushToken(input: {
   professionalId: string;
   businessId: string;
@@ -606,6 +658,32 @@ export async function updateMobilePushSettings(
   if (isMissingPushStorageError(error)) return updateLocalMobilePushSettings(professionalId, settings);
   if (error) throw new Error(error.message);
   return getMobilePushState(professionalId);
+}
+
+export async function updateMobilePushLanguageForProfessional(input: {
+  professionalId: string;
+  language: string;
+  timezone?: string;
+}) {
+  if (!isSupabaseConfigured()) return updateLocalMobilePushLanguageForProfessional(input);
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return updateLocalMobilePushLanguageForProfessional(input);
+
+  const patch: Record<string, unknown> = {
+    language: normalizeLanguage(input.language),
+    updated_at: new Date().toISOString()
+  };
+  if (input.timezone?.trim()) patch.timezone = input.timezone.trim();
+
+  const { error } = await supabase
+    .from("mobile_push_tokens")
+    .update(patch)
+    .eq("professional_id", input.professionalId)
+    .eq("active", true);
+
+  if (isMissingPushStorageError(error)) return updateLocalMobilePushLanguageForProfessional(input);
+  if (error) throw new Error(error.message);
+  return getMobilePushState(input.professionalId);
 }
 
 export async function unregisterMobilePushToken(professionalId: string, expoPushToken: string) {
@@ -899,7 +977,7 @@ async function processPushRemindersForRecords(recordsInput: PushTokenRecord[], s
             to: record.expoPushToken,
             sound: "default",
             title: text.reminderPrefix,
-            body: `${appointment.appointmentDate} ${appointment.startTime} · ${appointment.customerName.trim() || text.unknownClient} · ${appointment.serviceName.trim() || "-"}`,
+            body: `${appointment.appointmentDate} ${appointment.startTime} · ${appointment.customerName.trim() || text.unknownClient} · ${getPushServiceName(appointment.serviceName, text)}`,
             data: {
               type: "reminder",
               appointmentId: appointment.id,

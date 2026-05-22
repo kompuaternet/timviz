@@ -4,6 +4,7 @@ import { createApiTimer } from "../../../../lib/api-timing";
 import { getSessionCookieName, verifySessionValue } from "../../../../lib/pro-auth";
 import {
   createClientProfile,
+  deleteClientProfile,
   getClientsList,
   mergeClientsByPhone,
   updateClientProfile
@@ -91,6 +92,30 @@ export async function PATCH(request: Request) {
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Не удалось сохранить клиента." },
+      { status: 400 }
+    );
+  }
+}
+
+export async function DELETE(request: Request) {
+  const professionalId = await getProfessionalId();
+
+  if (!professionalId) {
+    return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  }
+
+  const { searchParams } = new URL(request.url);
+
+  try {
+    const result = await deleteClientProfile({
+      professionalId,
+      clientId: searchParams.get("clientId") ?? ""
+    });
+
+    return NextResponse.json({ ok: true, ...result });
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : "Не удалось удалить клиента." },
       { status: 400 }
     );
   }

@@ -1042,6 +1042,7 @@ async function prepareCalendarAppointmentWithWorkspace(input: {
   startTime: string;
   endTime?: string;
   customerName: string;
+  customerNameFallback?: string;
   customerPhone: string;
   serviceName: string;
   notes: string;
@@ -1092,7 +1093,7 @@ async function prepareCalendarAppointmentWithWorkspace(input: {
         getDefaultDuration(service?.name ?? serviceName, service ? [...workspace.services, service] : workspace.services)
       ),
     kind: "appointment",
-    customerName: input.customerName.trim() || "Клиент",
+    customerName: input.customerName.trim() || input.customerNameFallback?.trim() || "Client",
     customerPhone: input.customerPhone.trim(),
     serviceName: service?.name ?? serviceName,
     notes: input.notes.trim(),
@@ -1189,6 +1190,7 @@ async function createCalendarAppointmentWithWorkspace(input: {
   startTime: string;
   endTime?: string;
   customerName: string;
+  customerNameFallback?: string;
   customerPhone: string;
   serviceName: string;
   notes: string;
@@ -1244,6 +1246,7 @@ export async function createCalendarAppointmentsBatch(input: {
     startTime: string;
     endTime?: string;
     customerName: string;
+    customerNameFallback?: string;
     customerPhone: string;
     serviceName: string;
     notes: string;
@@ -1275,6 +1278,7 @@ export async function createCalendarAppointmentsBatch(input: {
         startTime: item.startTime,
         endTime: item.endTime,
         customerName: item.customerName,
+        customerNameFallback: item.customerNameFallback,
         customerPhone: item.customerPhone,
         serviceName: item.serviceName,
         notes: item.notes,
@@ -1333,6 +1337,7 @@ export async function createCalendarAppointment(input: {
   startTime: string;
   endTime?: string;
   customerName: string;
+  customerNameFallback?: string;
   customerPhone: string;
   serviceName: string;
   notes: string;
@@ -1349,6 +1354,7 @@ export async function createCalendarAppointment(input: {
         startTime: input.startTime,
         endTime: input.endTime,
         customerName: input.customerName,
+        customerNameFallback: input.customerNameFallback,
         customerPhone: input.customerPhone,
         serviceName: input.serviceName,
         notes: input.notes,

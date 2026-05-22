@@ -359,6 +359,50 @@ export async function updateClientProfile(input: {
   return client;
 }
 
+export async function deleteClientProfile(input: { professionalId: string; clientId: string }) {
+  if (!input.clientId || input.clientId.startsWith("derived_")) {
+    throw new Error("Клиента из истории записей нельзя удалить без удаления самих записей.");
+  }
+
+  if (isSupabaseConfigured()) {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      throw new Error("Supabase is not available.");
+    }
+
+    const { data, error } = await supabase
+      .from("pro_clients")
+      .delete()
+      .eq("id", input.clientId)
+      .eq("professional_id", input.professionalId)
+      .select("id")
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    if (!data) {
+      throw new Error("Клиент не найден.");
+    }
+
+    return { clientId: input.clientId };
+  }
+
+  const store = await readStore();
+  const previousLength = store.clients.length;
+  store.clients = store.clients.filter(
+    (client) => !(client.id === input.clientId && client.professionalId === input.professionalId)
+  );
+
+  if (store.clients.length === previousLength) {
+    throw new Error("Клиент не найден.");
+  }
+
+  await writeStore(store);
+  return { clientId: input.clientId };
+}
+
 export async function mergeClientsByPhone(professionalId: string) {
   const ownClients = await readManualClients(professionalId);
   const grouped = new Map<string, ClientRecord[]>();

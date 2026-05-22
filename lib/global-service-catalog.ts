@@ -393,3 +393,53 @@ export async function deleteRootCatalogItem(itemId: string) {
   await writeLocalCatalogItems(items.filter((item) => item.id !== itemId));
   return { ok: true };
 }
+
+export async function renameRootCatalogCategory(input: { fromCategory: string; toCategory: string }) {
+  const fromCategory = input.fromCategory.trim();
+  const toCategory = input.toCategory.trim();
+
+  if (!fromCategory || !toCategory) {
+    throw new Error("Укажите старое и новое название категории.");
+  }
+
+  if (fromCategory === toCategory) {
+    return { ok: true, fromCategory, toCategory, updatedCount: 0 };
+  }
+
+  if (isSupabaseConfigured()) {
+    const supabase = getSupabaseAdmin();
+    if (supabase) {
+      const { data, error } = await supabase
+        .from("global_service_catalog")
+        .update({ category: toCategory })
+        .eq("category", fromCategory)
+        .select("id");
+
+      if (!error) {
+        return {
+          ok: true,
+          fromCategory,
+          toCategory,
+          updatedCount: Array.isArray(data) ? data.length : 0
+        };
+      }
+
+      if (!isMissingTableError(error.message)) {
+        throw new Error(error.message);
+      }
+    }
+  }
+
+  const items = await getRootCatalogItems();
+  let updatedCount = 0;
+  const nextItems = items.map((item) => {
+    if (item.category !== fromCategory) {
+      return item;
+    }
+    updatedCount += 1;
+    return { ...item, category: toCategory };
+  });
+  await writeLocalCatalogItems(nextItems);
+
+  return { ok: true, fromCategory, toCategory, updatedCount };
+}

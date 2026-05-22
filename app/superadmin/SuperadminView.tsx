@@ -8,7 +8,7 @@ import type {
   SuperadminUserRecord
 } from "../../lib/admin-data";
 import type { GlobalCatalogItem } from "../../lib/global-service-catalog";
-import { categoryOptions } from "../../lib/service-templates";
+import { categoryOptions, compareServiceCategories, localizeCategoryName } from "../../lib/service-templates";
 
 type SuperadminViewProps = {
   adminEmail: string;
@@ -36,6 +36,11 @@ type ServiceCatalogMoveDraft = {
   groupKey: "topSuggestions" | "popularServices";
 };
 
+type CategoryRenameDraft = {
+  fromCategory: string;
+  toCategory: string;
+};
+
 type GroupedServices = {
   businessId: string;
   businessName: string;
@@ -59,6 +64,8 @@ const defaultCatalogDraft: CatalogDraft = {
   price: 0,
   sortOrder: 0
 };
+
+const adminExtraCategoryOptions = ["Волосы и стрижки", "Барбер и мужские стрижки"];
 
 async function readJson(response: Response) {
   return response.json().catch(() => ({}));
@@ -107,6 +114,11 @@ function getScopeLabel(scope: SuperadminUserRecord["scope"]) {
   }
 }
 
+function getAdminCategoryLabel(category: string) {
+  const localized = localizeCategoryName(category, "ru");
+  return localized === category ? category : `${localized} (${category})`;
+}
+
 export default function SuperadminView({
   adminEmail,
   initialUsers,
@@ -141,6 +153,10 @@ export default function SuperadminView({
       )
   );
   const [catalogDraft, setCatalogDraft] = useState<CatalogDraft>(defaultCatalogDraft);
+  const [categoryRenameDraft, setCategoryRenameDraft] = useState<CategoryRenameDraft>({
+    fromCategory: initialCatalog[0]?.category || defaultCatalogDraft.category,
+    toCategory: ""
+  });
   const [serviceCatalogDrafts, setServiceCatalogDrafts] = useState<Record<string, ServiceCatalogMoveDraft>>(() =>
     Object.fromEntries(
       initialServices.map((service) => [
@@ -228,6 +244,12 @@ export default function SuperadminView({
         .includes(query)
     );
   }, [catalogQuery, catalog]);
+
+  const catalogCategories = useMemo(() => {
+    return Array.from(
+      new Set([...categoryOptions, ...adminExtraCategoryOptions, ...catalog.map((item) => item.category).filter(Boolean)])
+    ).sort(compareServiceCategories);
+  }, [catalog]);
 
   async function withStatus(task: () => Promise<void>, successText: string) {
     setIsBusy(true);
@@ -492,9 +514,9 @@ export default function SuperadminView({
                 }))
               }
             >
-              {categoryOptions.map((option) => (
+              {catalogCategories.map((option) => (
                 <option key={option} value={option}>
-                  {option}
+                  {getAdminCategoryLabel(option)}
                 </option>
               ))}
             </select>
@@ -633,6 +655,51 @@ export default function SuperadminView({
       });
       setCatalogDraft(defaultCatalogDraft);
     }, "Корневой каталог обновлён.");
+  }
+
+  async function renameCatalogCategory() {
+    const fromCategory = categoryRenameDraft.fromCategory.trim();
+    const toCategory = categoryRenameDraft.toCategory.trim();
+    if (!fromCategory || !toCategory || fromCategory === toCategory) {
+      setStatus("Укажите старое и новое название категории.");
+      return;
+    }
+
+    await withStatus(async () => {
+      const response = await fetch("/api/superadmin/catalog", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "rename_category",
+          fromCategory,
+          toCategory
+        })
+      });
+      const payload = await readJson(response);
+      if (!response.ok) {
+        throw new Error(payload.error || "Не удалось переименовать категорию.");
+      }
+      if (Array.isArray(payload.items)) {
+        setCatalog(payload.items);
+      } else {
+        setCatalog((current) =>
+          current.map((item) => (item.category === fromCategory ? { ...item, category: toCategory } : item))
+        );
+      }
+      setCatalogDraft((current) => ({
+        ...current,
+        category: current.category === fromCategory ? toCategory : current.category
+      }));
+      setServiceCatalogDrafts((current) =>
+        Object.fromEntries(
+          Object.entries(current).map(([serviceId, draft]) => [
+            serviceId,
+            { ...draft, category: draft.category === fromCategory ? toCategory : draft.category }
+          ])
+        )
+      );
+      setCategoryRenameDraft({ fromCategory: toCategory, toCategory: "" });
+    }, "Категория переименована.");
   }
 
   async function seedCatalogDefaults(force = false) {
@@ -1067,6 +1134,50 @@ export default function SuperadminView({
             Новая услуга
           </button>
         </div>
+        <div className={styles.categoryRenamePanel}>
+          <div>
+            <strong>Переименовать категорию</strong>
+            <p className={styles.rowMeta}>
+              Массово меняет категорию у всех элементов root-каталога. Так можно быстро исправить названия вроде
+              «Парикмахер» или разделить похожие категории.
+            </p>
+          </div>
+          <label className={styles.field}>
+            <span>Текущая категория</span>
+            <select
+              className={styles.select}
+              value={categoryRenameDraft.fromCategory}
+              onChange={(event) =>
+                setCategoryRenameDraft((current) => ({ ...current, fromCategory: event.target.value }))
+              }
+            >
+              {catalogCategories.map((option) => (
+                <option key={option} value={option}>
+                  {getAdminCategoryLabel(option)}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className={styles.field}>
+            <span>Новое внутреннее название</span>
+            <input
+              className={styles.input}
+              value={categoryRenameDraft.toCategory}
+              placeholder="Например: Барбер и мужские стрижки"
+              onChange={(event) =>
+                setCategoryRenameDraft((current) => ({ ...current, toCategory: event.target.value }))
+              }
+            />
+          </label>
+          <button
+            type="button"
+            className={styles.secondaryButton}
+            onClick={() => void renameCatalogCategory()}
+            disabled={isBusy || !categoryRenameDraft.fromCategory.trim() || !categoryRenameDraft.toCategory.trim()}
+          >
+            Переименовать категорию
+          </button>
+        </div>
         <div className={styles.catalogComposer}>
           <label className={styles.field}>
             <span>Категория</span>
@@ -1075,9 +1186,9 @@ export default function SuperadminView({
               value={catalogDraft.category}
               onChange={(event) => setCatalogDraft((current) => ({ ...current, category: event.target.value }))}
             >
-              {categoryOptions.map((option) => (
+              {catalogCategories.map((option) => (
                 <option key={option} value={option}>
-                  {option}
+                  {getAdminCategoryLabel(option)}
                 </option>
               ))}
             </select>

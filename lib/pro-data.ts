@@ -1070,6 +1070,32 @@ async function sendTelegramDirectBestEffort(input: {
   }
 }
 
+async function syncNotificationLanguageBestEffort(input: {
+  professionalId: string;
+  language?: string;
+  timezone?: string;
+}) {
+  const language = input.language?.trim();
+  if (!language) return;
+
+  await Promise.allSettled([
+    import("./push-notifications").then(({ updateMobilePushLanguageForProfessional }) =>
+      updateMobilePushLanguageForProfessional({
+        professionalId: input.professionalId,
+        language,
+        timezone: input.timezone
+      })
+    ),
+    import("./telegram-bot").then(({ updateTelegramConnectionLanguageForProfessional }) =>
+      updateTelegramConnectionLanguageForProfessional({
+        professionalId: input.professionalId,
+        language,
+        timezone: input.timezone
+      })
+    )
+  ]);
+}
+
 async function sendTeamMailBestEffort(input: {
   to?: string;
   subject: string;
@@ -1118,6 +1144,31 @@ async function notifyInvitedProfessionalAboutInvitation(input: {
           title: "Запрошення до команди",
           body: `${input.ownerName} запрошує вас до ${input.businessName} як ${input.role}.`
         }
+      : language === "pl"
+        ? {
+            title: "Zaproszenie do zespołu",
+            body: `${input.ownerName} zaprasza Cię do ${input.businessName} jako ${input.role}.`
+          }
+        : language === "fr"
+          ? {
+              title: "Invitation à l'équipe",
+              body: `${input.ownerName} vous invite à rejoindre ${input.businessName} en tant que ${input.role}.`
+            }
+          : language === "cs"
+            ? {
+                title: "Pozvánka do týmu",
+                body: `${input.ownerName} vás zve do ${input.businessName} jako ${input.role}.`
+              }
+            : language === "es"
+              ? {
+                  title: "Invitación al equipo",
+                  body: `${input.ownerName} te invitó a ${input.businessName} como ${input.role}.`
+                }
+              : language === "de"
+                ? {
+                    title: "Teameinladung",
+                    body: `${input.ownerName} lädt Sie zu ${input.businessName} als ${input.role} ein.`
+                  }
       : language === "ru"
         ? {
             title: "Приглашение в команду",
@@ -1181,35 +1232,51 @@ async function notifyBusinessOwnersAboutInvitationResolution(input: {
   if (!ownerIds.length) return;
 
   const accepted = input.action === "accepted";
-  const title = accepted ? "Приглашение принято" : "Приглашение отклонено";
-  const body = accepted
-    ? `${input.actorName || input.actorEmail} присоединился к ${input.businessName} как ${input.role}.`
-    : `${input.actorName || input.actorEmail} отклонил приглашение в ${input.businessName}.`;
 
   await createAppNotifications(
-    ownerIds.map((ownerId) => ({
-      professionalId: ownerId,
-      businessId: input.businessId,
-      type: "team_invitation" as const,
-      title,
-      body,
-      actionUrl: "/pro/staff/members",
-      payload: {
-        invitationId: input.invitationId,
-        actorProfessionalId: input.actorProfessionalId,
+    ownerIds.map((ownerId) => {
+      const owner = directory.professionals.find((item) => item.id === ownerId) || null;
+      const copy = buildTeamInvitationResolutionCopy({
+        language: owner?.language,
+        accepted,
+        actorName: input.actorName,
         actorEmail: input.actorEmail,
-        role: input.role,
-        action: input.action
-      }
-    }))
+        businessName: input.businessName,
+        role: input.role
+      });
+      return {
+        professionalId: ownerId,
+        businessId: input.businessId,
+        type: "team_invitation" as const,
+        title: copy.title,
+        body: copy.body,
+        actionUrl: "/pro/staff/members",
+        payload: {
+          invitationId: input.invitationId,
+          actorProfessionalId: input.actorProfessionalId,
+          actorEmail: input.actorEmail,
+          role: input.role,
+          action: input.action
+        }
+      };
+    })
   ).catch(() => undefined);
 
   await Promise.allSettled(
     ownerIds.map(async (ownerId) => {
+      const owner = directory.professionals.find((item) => item.id === ownerId) || null;
+      const copy = buildTeamInvitationResolutionCopy({
+        language: owner?.language,
+        accepted,
+        actorName: input.actorName,
+        actorEmail: input.actorEmail,
+        businessName: input.businessName,
+        role: input.role
+      });
       await sendDirectPushBestEffort({
         professionalId: ownerId,
-        title,
-        body,
+        title: copy.title,
+        body: copy.body,
         data: {
           type: "team_invitation",
           invitationId: input.invitationId,
@@ -1217,12 +1284,11 @@ async function notifyBusinessOwnersAboutInvitationResolution(input: {
           action: input.action
         }
       });
-      const owner = directory.professionals.find((item) => item.id === ownerId) || null;
       await sendTeamMailBestEffort({
         to: owner?.email,
-        subject: title,
-        headline: title,
-        body
+        subject: copy.title,
+        headline: copy.title,
+        body: copy.body
       });
     })
   );
@@ -1238,15 +1304,17 @@ async function notifyProfessionalRemovedFromTeam(input: {
     return;
   }
 
-  const title = "Доступ к команде закрыт";
-  const body = `${input.ownerName || "Владелец"} удалил вас из команды ${input.businessName}. Ваш аккаунт Timviz остался самостоятельным.`;
+  const copy = buildRemovedFromTeamCopy(input.professional.language, {
+    businessName: input.businessName,
+    ownerName: input.ownerName
+  });
 
   await createAppNotification({
     professionalId: input.professional.id,
     businessId: input.businessId,
     type: "team_invitation",
-    title,
-    body,
+    title: copy.title,
+    body: copy.body,
     actionUrl: "/pro/staff/members",
     payload: {
       businessId: input.businessId,
@@ -1255,8 +1323,8 @@ async function notifyProfessionalRemovedFromTeam(input: {
   }).catch(() => undefined);
   await sendDirectPushBestEffort({
     professionalId: input.professional.id,
-    title,
-    body,
+    title: copy.title,
+    body: copy.body,
     data: {
       type: "team_invitation",
       businessId: input.businessId,
@@ -1265,9 +1333,9 @@ async function notifyProfessionalRemovedFromTeam(input: {
   });
   await sendTeamMailBestEffort({
     to: input.professional.email,
-    subject: title,
-    headline: title,
-    body
+    subject: copy.title,
+    headline: copy.title,
+    body: copy.body
   });
 }
 
@@ -1290,31 +1358,41 @@ async function notifyBusinessOwnersAboutMemberLeft(input: {
   if (!ownerIds.length) return;
 
   const memberName = getProfessionalDisplayName(input.professional) || input.professional.email;
-  const title = "Участник вышел из команды";
-  const body = `${memberName} вышел из команды ${input.businessName}.`;
 
   await createAppNotifications(
-    ownerIds.map((ownerId) => ({
-      professionalId: ownerId,
-      businessId: input.businessId,
-      type: "team_invitation" as const,
-      title,
-      body,
-      actionUrl: "/pro/staff/members",
-      payload: {
-        membershipId: input.membershipId,
-        memberProfessionalId: input.professional.id,
-        action: "left"
-      }
-    }))
+    ownerIds.map((ownerId) => {
+      const owner = directory.professionals.find((item) => item.id === ownerId) || null;
+      const copy = buildMemberLeftCopy(owner?.language, {
+        memberName,
+        businessName: input.businessName
+      });
+      return {
+        professionalId: ownerId,
+        businessId: input.businessId,
+        type: "team_invitation" as const,
+        title: copy.title,
+        body: copy.body,
+        actionUrl: "/pro/staff/members",
+        payload: {
+          membershipId: input.membershipId,
+          memberProfessionalId: input.professional.id,
+          action: "left"
+        }
+      };
+    })
   ).catch(() => undefined);
 
   await Promise.allSettled(
     ownerIds.map(async (ownerId) => {
+      const owner = directory.professionals.find((item) => item.id === ownerId) || null;
+      const copy = buildMemberLeftCopy(owner?.language, {
+        memberName,
+        businessName: input.businessName
+      });
       await sendDirectPushBestEffort({
         professionalId: ownerId,
-        title,
-        body,
+        title: copy.title,
+        body: copy.body,
         data: {
           type: "team_invitation",
           membershipId: input.membershipId,
@@ -1322,12 +1400,11 @@ async function notifyBusinessOwnersAboutMemberLeft(input: {
           action: "left"
         }
       });
-      const owner = directory.professionals.find((item) => item.id === ownerId) || null;
       await sendTeamMailBestEffort({
         to: owner?.email,
-        subject: title,
-        headline: title,
-        body
+        subject: copy.title,
+        headline: copy.title,
+        body: copy.body
       });
     })
   );
@@ -1350,39 +1427,51 @@ async function notifyBusinessOwnersAboutJoinRequest(request: CreatedJoinRequestN
 
   if (!ownerIds.length) return;
 
-  const requesterName = request.requesterName || request.requesterEmail || "Новый сотрудник";
-  const title = "Новая заявка в команду";
-  const body = `${requesterName} хочет присоединиться к ${businessName} как ${request.role}.`;
+  const requesterName = request.requesterName || request.requesterEmail || "New teammate";
   await createAppNotifications(
-    ownerIds.map((ownerId) => ({
-      professionalId: ownerId,
-      businessId: request.businessId,
-      type: "team_join_request" as const,
-      title,
-      body,
-      actionUrl: "/pro/staff",
-      payload: {
-        requestId: request.requestId,
-        requesterProfessionalId: request.requesterProfessionalId,
-        requesterEmail: request.requesterEmail,
+    ownerIds.map((ownerId) => {
+      const owner = directory.professionals.find((item) => item.id === ownerId) || null;
+      const copy = buildJoinRequestCopy(owner?.language, {
+        requesterName,
+        businessName,
         role: request.role
-      }
-    }))
+      });
+      return {
+        professionalId: ownerId,
+        businessId: request.businessId,
+        type: "team_join_request" as const,
+        title: copy.title,
+        body: copy.body,
+        actionUrl: "/pro/staff",
+        payload: {
+          requestId: request.requestId,
+          requesterProfessionalId: request.requesterProfessionalId,
+          requesterEmail: request.requesterEmail,
+          role: request.role
+        }
+      };
+    })
   ).catch(() => undefined);
 
   await Promise.allSettled(
-    ownerIds.map((ownerId) =>
-      sendDirectPushBestEffort({
+    ownerIds.map((ownerId) => {
+      const owner = directory.professionals.find((item) => item.id === ownerId) || null;
+      const copy = buildJoinRequestCopy(owner?.language, {
+        requesterName,
+        businessName,
+        role: request.role
+      });
+      return sendDirectPushBestEffort({
         professionalId: ownerId,
-        title,
-        body,
+        title: copy.title,
+        body: copy.body,
         data: {
           type: "team_join_request",
           requestId: request.requestId,
           businessId: request.businessId
         }
-      })
-    )
+      });
+    })
   );
 }
 
@@ -2274,11 +2363,179 @@ function normalizeInvitationLanguage(value = "") {
     return "ru" as const;
   }
 
+  if (normalized.includes("pl") || normalized.includes("pol") || normalized.includes("поль")) {
+    return "pl" as const;
+  }
+
+  if (normalized.includes("fr") || normalized.includes("fra") || normalized.includes("фран")) {
+    return "fr" as const;
+  }
+
+  if (normalized.includes("cs") || normalized.includes("cz") || normalized.includes("cze") || normalized.includes("чеш")) {
+    return "cs" as const;
+  }
+
+  if (normalized.includes("es") || normalized.includes("spa") || normalized.includes("испан")) {
+    return "es" as const;
+  }
+
+  if (normalized.includes("de") || normalized.includes("ger") || normalized.includes("нем")) {
+    return "de" as const;
+  }
+
   if (normalized.includes("en")) {
     return "en" as const;
   }
 
   return "en" as const;
+}
+
+function buildTeamInvitationResolutionCopy(input: {
+  language?: string;
+  accepted: boolean;
+  actorName: string;
+  actorEmail: string;
+  businessName: string;
+  role: string;
+}) {
+  const language = normalizeInvitationLanguage(input.language);
+  const actor = input.actorName || input.actorEmail;
+  if (language === "uk") {
+    return {
+      title: input.accepted ? "Запрошення прийнято" : "Запрошення відхилено",
+      body: input.accepted
+        ? `${actor} приєднався до ${input.businessName} як ${input.role}.`
+        : `${actor} відхилив запрошення до ${input.businessName}.`
+    };
+  }
+  if (language === "ru") {
+    return {
+      title: input.accepted ? "Приглашение принято" : "Приглашение отклонено",
+      body: input.accepted
+        ? `${actor} присоединился к ${input.businessName} как ${input.role}.`
+        : `${actor} отклонил приглашение в ${input.businessName}.`
+    };
+  }
+  if (language === "pl") {
+    return {
+      title: input.accepted ? "Zaproszenie przyjęte" : "Zaproszenie odrzucone",
+      body: input.accepted
+        ? `${actor} dołączył/a do ${input.businessName} jako ${input.role}.`
+        : `${actor} odrzucił/a zaproszenie do ${input.businessName}.`
+    };
+  }
+  if (language === "fr") {
+    return {
+      title: input.accepted ? "Invitation acceptée" : "Invitation refusée",
+      body: input.accepted
+        ? `${actor} a rejoint ${input.businessName} en tant que ${input.role}.`
+        : `${actor} a refusé l'invitation à ${input.businessName}.`
+    };
+  }
+  if (language === "cs") {
+    return {
+      title: input.accepted ? "Pozvánka přijata" : "Pozvánka odmítnuta",
+      body: input.accepted
+        ? `${actor} se připojil/a k ${input.businessName} jako ${input.role}.`
+        : `${actor} odmítl/a pozvánku do ${input.businessName}.`
+    };
+  }
+  if (language === "es") {
+    return {
+      title: input.accepted ? "Invitación aceptada" : "Invitación rechazada",
+      body: input.accepted
+        ? `${actor} se unió a ${input.businessName} como ${input.role}.`
+        : `${actor} rechazó la invitación a ${input.businessName}.`
+    };
+  }
+  if (language === "de") {
+    return {
+      title: input.accepted ? "Einladung angenommen" : "Einladung abgelehnt",
+      body: input.accepted
+        ? `${actor} ist ${input.businessName} als ${input.role} beigetreten.`
+        : `${actor} hat die Einladung zu ${input.businessName} abgelehnt.`
+    };
+  }
+  return {
+    title: input.accepted ? "Invitation accepted" : "Invitation declined",
+    body: input.accepted
+      ? `${actor} joined ${input.businessName} as ${input.role}.`
+      : `${actor} declined the invitation to ${input.businessName}.`
+  };
+}
+
+function buildRemovedFromTeamCopy(language: string | undefined, input: { businessName: string; ownerName: string }) {
+  const lang = normalizeInvitationLanguage(language);
+  if (lang === "uk") {
+    return {
+      title: "Доступ до команди закрито",
+      body: `${input.ownerName || "Власник"} видалив вас із команди ${input.businessName}. Ваш акаунт Timviz залишився самостійним.`
+    };
+  }
+  if (lang === "ru") {
+    return {
+      title: "Доступ к команде закрыт",
+      body: `${input.ownerName || "Владелец"} удалил вас из команды ${input.businessName}. Ваш аккаунт Timviz остался самостоятельным.`
+    };
+  }
+  if (lang === "pl") {
+    return {
+      title: "Dostęp do zespołu został zamknięty",
+      body: `${input.ownerName || "Właściciel"} usunął/usunęła Cię z zespołu ${input.businessName}. Twoje konto Timviz pozostało samodzielne.`
+    };
+  }
+  if (lang === "fr") {
+    return {
+      title: "Accès à l'équipe supprimé",
+      body: `${input.ownerName || "Le propriétaire"} vous a retiré de l'équipe ${input.businessName}. Votre compte Timviz reste indépendant.`
+    };
+  }
+  if (lang === "cs") {
+    return {
+      title: "Přístup k týmu byl odebrán",
+      body: `${input.ownerName || "Vlastník"} vás odebral/a z týmu ${input.businessName}. Váš účet Timviz zůstal samostatný.`
+    };
+  }
+  if (lang === "es") {
+    return {
+      title: "Acceso al equipo cerrado",
+      body: `${input.ownerName || "El propietario"} te eliminó del equipo ${input.businessName}. Tu cuenta Timviz sigue independiente.`
+    };
+  }
+  if (lang === "de") {
+    return {
+      title: "Teamzugriff entfernt",
+      body: `${input.ownerName || "Der Inhaber"} hat Sie aus dem Team ${input.businessName} entfernt. Ihr Timviz Konto bleibt eigenständig.`
+    };
+  }
+  return {
+    title: "Team access removed",
+    body: `${input.ownerName || "Owner"} removed you from ${input.businessName}. Your Timviz account remains independent.`
+  };
+}
+
+function buildMemberLeftCopy(language: string | undefined, input: { memberName: string; businessName: string }) {
+  const lang = normalizeInvitationLanguage(language);
+  if (lang === "uk") return { title: "Учасник вийшов із команди", body: `${input.memberName} вийшов із команди ${input.businessName}.` };
+  if (lang === "ru") return { title: "Участник вышел из команды", body: `${input.memberName} вышел из команды ${input.businessName}.` };
+  if (lang === "pl") return { title: "Uczestnik opuścił zespół", body: `${input.memberName} opuścił/a zespół ${input.businessName}.` };
+  if (lang === "fr") return { title: "Un membre a quitté l'équipe", body: `${input.memberName} a quitté l'équipe ${input.businessName}.` };
+  if (lang === "cs") return { title: "Člen opustil tým", body: `${input.memberName} opustil/a tým ${input.businessName}.` };
+  if (lang === "es") return { title: "Un miembro salió del equipo", body: `${input.memberName} salió del equipo ${input.businessName}.` };
+  if (lang === "de") return { title: "Mitglied hat das Team verlassen", body: `${input.memberName} hat das Team ${input.businessName} verlassen.` };
+  return { title: "Member left the team", body: `${input.memberName} left ${input.businessName}.` };
+}
+
+function buildJoinRequestCopy(language: string | undefined, input: { requesterName: string; businessName: string; role: string }) {
+  const lang = normalizeInvitationLanguage(language);
+  if (lang === "uk") return { title: "Нова заявка в команду", body: `${input.requesterName} хоче приєднатися до ${input.businessName} як ${input.role}.` };
+  if (lang === "ru") return { title: "Новая заявка в команду", body: `${input.requesterName} хочет присоединиться к ${input.businessName} как ${input.role}.` };
+  if (lang === "pl") return { title: "Nowa prośba o dołączenie do zespołu", body: `${input.requesterName} chce dołączyć do ${input.businessName} jako ${input.role}.` };
+  if (lang === "fr") return { title: "Nouvelle demande d'équipe", body: `${input.requesterName} souhaite rejoindre ${input.businessName} en tant que ${input.role}.` };
+  if (lang === "cs") return { title: "Nová žádost do týmu", body: `${input.requesterName} se chce připojit k ${input.businessName} jako ${input.role}.` };
+  if (lang === "es") return { title: "Nueva solicitud de equipo", body: `${input.requesterName} quiere unirse a ${input.businessName} como ${input.role}.` };
+  if (lang === "de") return { title: "Neue Teamanfrage", body: `${input.requesterName} möchte ${input.businessName} als ${input.role} beitreten.` };
+  return { title: "New team request", body: `${input.requesterName} wants to join ${input.businessName} as ${input.role}.` };
 }
 
 function escapeHtml(value: string) {
@@ -4828,6 +5085,20 @@ export async function updateWorkspaceSettingsForProfessional(
       }
     }
 
+    if (typeof nextProfessional.language === "string" || typeof nextProfessional.timezone === "string") {
+      await syncNotificationLanguageBestEffort({
+        professionalId,
+        language:
+          typeof nextProfessional.language === "string"
+            ? nextProfessional.language
+            : workspace.professional.language,
+        timezone:
+          typeof nextProfessional.timezone === "string"
+            ? nextProfessional.timezone
+            : workspace.professional.timezone
+      });
+    }
+
     // Supabase reads are served through an in-memory directory cache.
     // Drop it after any successful mutation so immediate follow-up reads
     // (including PATCH response payload) return fresh booking settings.
@@ -4892,6 +5163,13 @@ export async function updateWorkspaceSettingsForProfessional(
   }
 
   await writeStore(store);
+  if (typeof nextProfessional.language === "string" || typeof nextProfessional.timezone === "string") {
+    await syncNotificationLanguageBestEffort({
+      professionalId,
+      language: professional.language,
+      timezone: professional.timezone
+    });
+  }
   return getWorkspaceSnapshot(professionalId);
 }
 

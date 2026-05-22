@@ -3,6 +3,7 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import * as AppleAuthentication from "expo-apple-authentication";
 import Constants from "expo-constants";
 import * as Google from "expo-auth-session/providers/google";
+import * as ImageManipulator from "expo-image-manipulator";
 import * as ImagePicker from "expo-image-picker";
 import * as InAppPurchases from "expo-in-app-purchases";
 import { IAPResponseCode, InAppPurchaseState, type IAPItemDetails, type InAppPurchase } from "expo-in-app-purchases";
@@ -222,6 +223,14 @@ type ClientRecord = {
   email: string;
   visitsCount: number;
   totalSales: number;
+};
+
+type ClientDraftState = {
+  clientId?: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  email: string;
 };
 
 type WorkspaceSnapshot = {
@@ -661,7 +670,8 @@ const DEFAULT_SERVICE_CATEGORY = "Без категории";
 const SERVICE_COLORS = ["#9AD86A", "#8ED1F2", "#FF9A84", "#F7C948", "#A78BFA", "#34D399", "#F472B6", "#60A5FA"];
 const SYSTEM_SERVICE_CATEGORIES = [
   "Ногти",
-  "Волосы",
+  "Волосы и стрижки",
+  "Барбер и мужские стрижки",
   "Брови и ресницы",
   "Массаж",
   "Косметология",
@@ -677,7 +687,8 @@ const SYSTEM_SERVICE_CATEGORIES = [
 ];
 const SERVICE_CATEGORY_SORT_ORDER: Record<string, number> = {
   "Ногти": 10,
-  "Волосы": 20,
+  "Волосы и стрижки": 20,
+  "Барбер и мужские стрижки": 25,
   "Брови и ресницы": 30,
   "Массаж": 40,
   "Косметология": 50,
@@ -697,11 +708,17 @@ const SERVICE_CATALOG_CATEGORY_SORT_ORDER = new Map(
     ["Ногти", 10],
     ["Нігті", 10],
     ["Nails", 10],
+    ["Волосы и стрижки", 20],
+    ["Волосся та стрижки", 20],
+    ["Hair & Haircuts", 20],
     ["Волосы", 20],
     ["Волосся", 20],
     ["Hair", 20],
     ["Парикмахерская", 20],
-    ["Парикмахер", 20],
+    ["Барбер и мужские стрижки", 25],
+    ["Барбер і чоловічі стрижки", 25],
+    ["Barber & Men's Haircuts", 25],
+    ["Парикмахер", 25],
     ["Брови и ресницы", 30],
     ["Брови та вії", 30],
     ["Brows & Lashes", 30],
@@ -1117,6 +1134,15 @@ function mergeCalendarMemberView(previous: CalendarMemberView | undefined, incom
   };
 }
 
+function resolveCalendarMemberAvatarUrl(member: CalendarMemberView, workspace: WorkspaceSnapshot | null) {
+  const ownAvatar = safeText(member.avatarUrl).trim();
+  if (ownAvatar) return ownAvatar;
+  if (workspace?.professional.id && member.id === workspace.professional.id) {
+    return safeText(workspace.professional.avatarUrl).trim();
+  }
+  return "";
+}
+
 function mergeStaffSnapshotMedia(current: StaffSnapshot | null, incoming: StaffSnapshot | null): StaffSnapshot | null {
   if (!incoming) return current;
   if (!current?.members?.length) return incoming;
@@ -1357,10 +1383,23 @@ const baseCopy = {
     confirmBooking: "Підтвердити",
     cancelBooking: "Скасувати запис",
     companySettings: "Налаштування компанії",
-    helpSupport: "Допомога і підтримка",
+    helpSupport: "Допомога та документи",
+    profile: "Профіль",
+    subscription: "Підписка",
+    company: "Компанія",
+    support: "Підтримка",
+    timvizWebsite: "Сайт Timviz",
     privacyPolicy: "Політика конфіденційності",
     termsOfUse: "Умови використання",
+    subscriptionTerms: "Умови підписки",
+    refundPolicy: "Політика повернення",
     accountDeletion: "Видалення акаунта",
+    dangerZone: "Небезпечна зона",
+    deleteAccountIntroTitle: "Що буде видалено",
+    deleteAccountIntroText: "Це дія видалить ваш акаунт Timviz і пов'язані особисті дані, які ми не зобов'язані зберігати за законом.",
+    deleteAccountRemovedItems: "Профіль, налаштування, послуги, клієнти, записи та команда.",
+    deleteAccountKeptItems: "Платіжні записи можуть бути збережені, якщо цього вимагає закон.",
+    deletionUnderstand: "Я розумію, що дію не можна скасувати",
     deleteAccount: "Видалити акаунт",
     deleteAccountTitle: "Видалити акаунт",
     deleteAccountText: "Це видалить акаунт і пов'язані персональні дані, які ми не зобов'язані зберігати. Введіть DELETE для підтвердження.",
@@ -1422,6 +1461,10 @@ const baseCopy = {
     duration: "Хвилини",
     delete: "Видалити",
     addClient: "Додати клієнта",
+    editClient: "Редагувати клієнта",
+    deleteClient: "Видалити клієнта",
+    deleteClientConfirm: "Видалити цю картку клієнта?",
+    clientFromAppointmentsCannotDelete: "Цей клієнт створений із записів. Щоб він зник, змініть або видаліть пов'язані записи.",
     connected: "Підключено",
     notConnected: "Не підключено",
     telegramHint: "Підключення Telegram керується через налаштування кабінету. У застосунку видно поточний статус.",
@@ -1857,10 +1900,23 @@ const baseCopy = {
     confirmBooking: "Подтвердить",
     cancelBooking: "Отменить запись",
     companySettings: "Настройки компании",
-    helpSupport: "Помощь и поддержка",
+    helpSupport: "Помощь и документы",
+    profile: "Профиль",
+    subscription: "Подписка",
+    company: "Компания",
+    support: "Поддержка",
+    timvizWebsite: "Сайт Timviz",
     privacyPolicy: "Политика конфиденциальности",
     termsOfUse: "Условия использования",
+    subscriptionTerms: "Условия подписки",
+    refundPolicy: "Политика возврата",
     accountDeletion: "Удаление аккаунта",
+    dangerZone: "Опасная зона",
+    deleteAccountIntroTitle: "Что будет удалено",
+    deleteAccountIntroText: "Это действие удалит ваш аккаунт Timviz и связанные личные данные, которые мы не обязаны хранить по закону.",
+    deleteAccountRemovedItems: "Профиль, настройки, услуги, клиенты, записи и команда.",
+    deleteAccountKeptItems: "Платежные записи могут быть сохранены, если это требуется законом.",
+    deletionUnderstand: "Я понимаю, что действие нельзя отменить",
     deleteAccount: "Удалить аккаунт",
     deleteAccountTitle: "Удалить аккаунт",
     deleteAccountText: "Это удалит аккаунт и связанные персональные данные, которые мы не обязаны хранить. Введите DELETE для подтверждения.",
@@ -1922,6 +1978,10 @@ const baseCopy = {
     duration: "Минуты",
     delete: "Удалить",
     addClient: "Добавить клиента",
+    editClient: "Редактировать клиента",
+    deleteClient: "Удалить клиента",
+    deleteClientConfirm: "Удалить эту карточку клиента?",
+    clientFromAppointmentsCannotDelete: "Этот клиент создан из записей. Чтобы он исчез, измените или удалите связанные записи.",
     connected: "Подключено",
     notConnected: "Не подключено",
     telegramHint: "Подключение Telegram управляется через настройки кабинета. В приложении виден текущий статус.",
@@ -2357,10 +2417,23 @@ const baseCopy = {
     confirmBooking: "Confirm",
     cancelBooking: "Cancel booking",
     companySettings: "Company settings",
-    helpSupport: "Help and support",
+    helpSupport: "Help & Legal",
+    profile: "Profile",
+    subscription: "Subscription",
+    company: "Company",
+    support: "Support",
+    timvizWebsite: "Timviz website",
     privacyPolicy: "Privacy Policy",
     termsOfUse: "Terms of Use",
+    subscriptionTerms: "Subscription Terms",
+    refundPolicy: "Refund Policy",
     accountDeletion: "Account deletion",
+    dangerZone: "Danger zone",
+    deleteAccountIntroTitle: "What will be deleted",
+    deleteAccountIntroText: "This action will delete your Timviz account and related personal data that we are not legally required to keep.",
+    deleteAccountRemovedItems: "Profile, settings, services, clients, appointments, and team.",
+    deleteAccountKeptItems: "Payment records may be retained where required by law.",
+    deletionUnderstand: "I understand this action cannot be undone",
     deleteAccount: "Delete account",
     deleteAccountTitle: "Delete account",
     deleteAccountText: "This will delete your account and related personal data that we are not legally required to keep. Type DELETE to confirm.",
@@ -2422,6 +2495,10 @@ const baseCopy = {
     duration: "Minutes",
     delete: "Delete",
     addClient: "Add client",
+    editClient: "Edit client",
+    deleteClient: "Delete client",
+    deleteClientConfirm: "Delete this client card?",
+    clientFromAppointmentsCannotDelete: "This client is created from bookings. To remove it, edit or delete the related bookings.",
     connected: "Connected",
     notConnected: "Not connected",
     telegramHint: "Telegram connection is managed in workspace settings. The app shows the current status.",
@@ -2854,6 +2931,10 @@ const generatedMobileCopy = {
     duration: "Minutes",
     delete: "Supprimer",
     addClient: "Ajouter un client",
+    editClient: "Modifier le client",
+    deleteClient: "Supprimer le client",
+    deleteClientConfirm: "Supprimer cette fiche client ?",
+    clientFromAppointmentsCannotDelete: "Ce client vient des rendez-vous. Pour le retirer, modifiez ou supprimez les rendez-vous liés.",
     connected: "Connecté",
     notConnected: "Non connecté",
     telegramHint: "La connexion Telegram est gérée dans les paramètres de l'espace de travail. L'application affiche l'état actuel.",
@@ -3234,6 +3315,10 @@ const generatedMobileCopy = {
     duration: "Minuty",
     delete: "Usuń",
     addClient: "Dodaj klienta",
+    editClient: "Edytuj klienta",
+    deleteClient: "Usuń klienta",
+    deleteClientConfirm: "Usunąć tę kartę klienta?",
+    clientFromAppointmentsCannotDelete: "Ten klient pochodzi z wizyt. Aby go usunąć, edytuj lub usuń powiązane wizyty.",
     connected: "Połączono",
     notConnected: "Nie połączono",
     telegramHint: "Połączeniem telegramowym zarządza się w ustawieniach obszaru roboczego. Aplikacja pokazuje aktualny stan.",
@@ -3614,6 +3699,10 @@ const generatedMobileCopy = {
     duration: "Minuty",
     delete: "Smazat",
     addClient: "Přidat klienta",
+    editClient: "Upravit klienta",
+    deleteClient: "Smazat klienta",
+    deleteClientConfirm: "Smazat tuto kartu klienta?",
+    clientFromAppointmentsCannotDelete: "Tento klient vznikl ze záznamů. Chcete-li ho odebrat, upravte nebo smažte související záznamy.",
     connected: "Připojeno",
     notConnected: "Nepřipojeno",
     telegramHint: "Telegramové připojení je spravováno v nastavení pracovního prostoru. Aplikace zobrazuje aktuální stav.",
@@ -3994,6 +4083,10 @@ const generatedMobileCopy = {
     duration: "Minutos",
     delete: "Eliminar",
     addClient: "Agregar cliente",
+    editClient: "Editar cliente",
+    deleteClient: "Eliminar cliente",
+    deleteClientConfirm: "¿Eliminar esta ficha de cliente?",
+    clientFromAppointmentsCannotDelete: "Este cliente se creó desde citas. Para quitarlo, edita o elimina las citas relacionadas.",
     connected: "Conectado",
     notConnected: "No conectado",
     telegramHint: "La conexión de Telegram se administra en la configuración del espacio de trabajo. La aplicación muestra el estado actual.",
@@ -4374,6 +4467,10 @@ const generatedMobileCopy = {
     duration: "Minuten",
     delete: "Löschen",
     addClient: "Client hinzufügen",
+    editClient: "Kunde bearbeiten",
+    deleteClient: "Kunde löschen",
+    deleteClientConfirm: "Diese Kundenkarte löschen?",
+    clientFromAppointmentsCannotDelete: "Dieser Kunde wurde aus Terminen erstellt. Bearbeite oder lösche die zugehörigen Termine, um ihn zu entfernen.",
     connected: "Verbunden",
     notConnected: "Nicht verbunden",
     telegramHint: "Die Telegrammverbindung wird in den Arbeitsbereichseinstellungen verwaltet. Die App zeigt den aktuellen Status an.",
@@ -5261,9 +5358,12 @@ const COUNTRY_LABELS: Record<AppLanguage, Record<string, string>> = {
 
 const SERVICE_CATEGORY_LABELS: Record<AppLanguage, Record<string, string>> = {
   uk: {
-    "Парикмахерская": "Перукарня",
+    "Волосы и стрижки": "Волосся та стрижки",
+    "Барбер и мужские стрижки": "Барбер і чоловічі стрижки",
+    "Мужской парикмахер": "Барбер і чоловічі стрижки",
+    "Парикмахерская": "Волосся та стрижки",
     "Массаж": "Масаж",
-    "Волосы": "Волосся",
+    "Волосы": "Волосся та стрижки",
     "Ногти": "Нігті",
     "Брови и ресницы": "Брови та вії",
     "Ресницы": "Вії",
@@ -5281,7 +5381,7 @@ const SERVICE_CATEGORY_LABELS: Record<AppLanguage, Record<string, string>> = {
 	    "Без категории": "Без категорії",
     "Салон красоты": "Салон краси",
     "Медспа": "Медспа",
-    "Парикмахер": "Перукар",
+    "Парикмахер": "Барбер і чоловічі стрижки",
     "Массажный салон": "Масажний салон",
     "Спа-салон и сауна": "Спа-салон і сауна",
     "Салон депиляции": "Салон депіляції",
@@ -5292,9 +5392,12 @@ const SERVICE_CATEGORY_LABELS: Record<AppLanguage, Record<string, string>> = {
   },
   ru: {},
   en: {
-    "Парикмахерская": "Hair salon",
+    "Волосы и стрижки": "Hair & Haircuts",
+    "Барбер и мужские стрижки": "Barber & Men's Haircuts",
+    "Мужской парикмахер": "Barber & Men's Haircuts",
+    "Парикмахерская": "Hair & Haircuts",
     "Массаж": "Massage",
-    "Волосы": "Hair",
+    "Волосы": "Hair & Haircuts",
     "Ногти": "Nails",
 	    "Брови и ресницы": "Brows & Lashes",
     "Ресницы": "Lashes",
@@ -5312,7 +5415,7 @@ const SERVICE_CATEGORY_LABELS: Record<AppLanguage, Record<string, string>> = {
 	    "Без категории": "No Category",
     "Салон красоты": "Beauty salon",
     "Медспа": "Medspa",
-    "Парикмахер": "Hairdresser",
+    "Парикмахер": "Barber & Men's Haircuts",
     "Массажный салон": "Massage studio",
     "Спа-салон и сауна": "Spa and sauna",
     "Салон депиляции": "Hair removal salon",
@@ -5322,9 +5425,12 @@ const SERVICE_CATEGORY_LABELS: Record<AppLanguage, Record<string, string>> = {
     "Другая": "Other",
   },
   fr: {
-    "Парикмахерская": "Salon de coiffure",
+    "Волосы и стрижки": "Cheveux et coupes",
+    "Барбер и мужские стрижки": "Barbier et coupes homme",
+    "Мужской парикмахер": "Barbier et coupes homme",
+    "Парикмахерская": "Cheveux et coupes",
     "Массаж": "Massage",
-    "Волосы": "Cheveux",
+    "Волосы": "Cheveux et coupes",
     "Ногти": "Ongles",
     "Брови и ресницы": "Sourcils et cils",
     "Ресницы": "Cils",
@@ -5342,7 +5448,7 @@ const SERVICE_CATEGORY_LABELS: Record<AppLanguage, Record<string, string>> = {
 	    "Без категории": "Sans catégorie",
     "Салон красоты": "Institut de beauté",
     "Медспа": "Medspa",
-    "Парикмахер": "Coiffeur",
+    "Парикмахер": "Barbier et coupes homme",
     "Массажный салон": "Salon de massage",
     "Спа-салон и сауна": "Spa et sauna",
     "Салон депиляции": "Salon d'épilation",
@@ -5352,9 +5458,12 @@ const SERVICE_CATEGORY_LABELS: Record<AppLanguage, Record<string, string>> = {
     "Другая": "Autre",
   },
   pl: {
-    "Парикмахерская": "Salon fryzjerski",
+    "Волосы и стрижки": "Włosy i strzyżenia",
+    "Барбер и мужские стрижки": "Barber i strzyżenia męskie",
+    "Мужской парикмахер": "Barber i strzyżenia męskie",
+    "Парикмахерская": "Włosy i strzyżenia",
     "Массаж": "Masaż",
-    "Волосы": "Włosy",
+    "Волосы": "Włosy i strzyżenia",
     "Ногти": "Paznokcie",
     "Брови и ресницы": "Brwi i rzęsy",
     "Ресницы": "Rzęsy",
@@ -5372,7 +5481,7 @@ const SERVICE_CATEGORY_LABELS: Record<AppLanguage, Record<string, string>> = {
 	    "Без категории": "Bez kategorii",
     "Салон красоты": "Salon beauty",
     "Медспа": "Medspa",
-    "Парикмахер": "Fryzjer",
+    "Парикмахер": "Barber i strzyżenia męskie",
     "Массажный салон": "Gabinet masażu",
     "Спа-салон и сауна": "Spa i sauna",
     "Салон депиляции": "Salon depilacji",
@@ -5382,9 +5491,12 @@ const SERVICE_CATEGORY_LABELS: Record<AppLanguage, Record<string, string>> = {
     "Другая": "Inne",
   },
   cs: {
-    "Парикмахерская": "Kadeřnictví",
+    "Волосы и стрижки": "Vlasy a střihy",
+    "Барбер и мужские стрижки": "Barber a pánské střihy",
+    "Мужской парикмахер": "Barber a pánské střihy",
+    "Парикмахерская": "Vlasy a střihy",
     "Массаж": "Masáž",
-    "Волосы": "Vlasy",
+    "Волосы": "Vlasy a střihy",
     "Ногти": "Nehty",
     "Брови и ресницы": "Obočí a řasy",
     "Ресницы": "Řasy",
@@ -5402,7 +5514,7 @@ const SERVICE_CATEGORY_LABELS: Record<AppLanguage, Record<string, string>> = {
 	    "Без категории": "Bez kategorie",
     "Салон красоты": "Kosmetický salon",
     "Медспа": "Medspa",
-    "Парикмахер": "Kadeřník",
+    "Парикмахер": "Barber a pánské střihy",
     "Массажный салон": "Masážní salon",
     "Спа-салон и сауна": "Spa a sauna",
     "Салон депиляции": "Depilační salon",
@@ -5412,9 +5524,12 @@ const SERVICE_CATEGORY_LABELS: Record<AppLanguage, Record<string, string>> = {
     "Другая": "Jiné",
   },
   es: {
-    "Парикмахерская": "Peluquería",
+    "Волосы и стрижки": "Cabello y cortes",
+    "Барбер и мужские стрижки": "Barbería y cortes masculinos",
+    "Мужской парикмахер": "Barbería y cortes masculinos",
+    "Парикмахерская": "Cabello y cortes",
     "Массаж": "Masaje",
-    "Волосы": "Cabello",
+    "Волосы": "Cabello y cortes",
     "Ногти": "Uñas",
     "Брови и ресницы": "Cejas y pestañas",
     "Ресницы": "Pestañas",
@@ -5432,7 +5547,7 @@ const SERVICE_CATEGORY_LABELS: Record<AppLanguage, Record<string, string>> = {
 	    "Без категории": "Sin categoría",
     "Салон красоты": "Salón de belleza",
     "Медспа": "Medspa",
-    "Парикмахер": "Peluquero",
+    "Парикмахер": "Barbería y cortes masculinos",
     "Массажный салон": "Centro de masajes",
     "Спа-салон и сауна": "Spa y sauna",
     "Салон депиляции": "Centro de depilación",
@@ -5442,9 +5557,12 @@ const SERVICE_CATEGORY_LABELS: Record<AppLanguage, Record<string, string>> = {
     "Другая": "Otra",
   },
   de: {
-    "Парикмахерская": "Friseursalon",
+    "Волосы и стрижки": "Haare und Haarschnitte",
+    "Барбер и мужские стрижки": "Barber und Herrenhaarschnitte",
+    "Мужской парикмахер": "Barber und Herrenhaarschnitte",
+    "Парикмахерская": "Haare und Haarschnitte",
     "Массаж": "Massage",
-    "Волосы": "Haare",
+    "Волосы": "Haare und Haarschnitte",
     "Ногти": "Nägel",
     "Брови и ресницы": "Augenbrauen und Wimpern",
     "Ресницы": "Wimpern",
@@ -5462,7 +5580,7 @@ const SERVICE_CATEGORY_LABELS: Record<AppLanguage, Record<string, string>> = {
 	    "Без категории": "Ohne Kategorie",
     "Салон красоты": "Kosmetikstudio",
     "Медспа": "Medspa",
-    "Парикмахер": "Friseur",
+    "Парикмахер": "Barber und Herrenhaarschnitte",
     "Массажный салон": "Massagestudio",
     "Спа-салон и сауна": "Spa und Sauna",
     "Салон депиляции": "Haarentfernungsstudio",
@@ -5755,11 +5873,24 @@ function getCanonicalServiceCategory(category: string | undefined) {
     "ногти": "Ногти",
     "нігті": "Ногти",
     nails: "Ногти",
-    "волосы": "Волосы",
-    "волосся": "Волосы",
-    hair: "Волосы",
-    "парикмахерская": "Волосы",
-    "парикмахер": "Волосы",
+    "волосы": "Волосы и стрижки",
+    "волосы и стрижки": "Волосы и стрижки",
+    "волосся": "Волосы и стрижки",
+    "волосся та стрижки": "Волосы и стрижки",
+    hair: "Волосы и стрижки",
+    "hair & haircuts": "Волосы и стрижки",
+    "hair and haircuts": "Волосы и стрижки",
+    "парикмахерская": "Волосы и стрижки",
+    "перукарня": "Волосы и стрижки",
+    "барбер": "Барбер и мужские стрижки",
+    "барбер и мужские стрижки": "Барбер и мужские стрижки",
+    "барбер і чоловічі стрижки": "Барбер и мужские стрижки",
+    "мужской парикмахер": "Барбер и мужские стрижки",
+    "чоловічий перукар": "Барбер и мужские стрижки",
+    "парикмахер": "Барбер и мужские стрижки",
+    "перукар": "Барбер и мужские стрижки",
+    "barber & men's haircuts": "Барбер и мужские стрижки",
+    "barber and men's haircuts": "Барбер и мужские стрижки",
     "брови и ресницы": "Брови и ресницы",
     "брови та вії": "Брови и ресницы",
     "brows & lashes": "Брови и ресницы",
@@ -5897,7 +6028,8 @@ function inferSystemServiceCategory(value: string) {
   if (!text) return "";
   const rules: Array<[string, RegExp]> = [
     ["Массаж", /массаж|спина|шея|воротников|релакс|тайск|лимфат|тело/],
-    ["Волосы", /стрижк|стриг|волос|окраш|фарб|уклад|hair|cut|fade|barber|барбер|перукар|kader|strih|strzyz/],
+    ["Барбер и мужские стрижки", /барбер|fade|фейд|бород|ус|брить|бритв|beard|shave|mustache/],
+    ["Волосы и стрижки", /стрижк|стриг|волос|окраш|фарб|уклад|hair|cut|перукар|kader|strih|strzyz/],
     ["Ногти", /маникюр|манікюр|ногт|нигт|nail|педикюр/],
     ["Брови и ресницы", /бров|brow/],
     ["Ресницы", /ресниц|вии|lash/],
@@ -5920,8 +6052,26 @@ function isAppointmentWithoutServiceName(value: string | undefined) {
     normalized === "без послуги" ||
     normalized === "without service" ||
     normalized === "no service" ||
+    normalized === "sans service" ||
+    normalized === "bez usługi" ||
+    normalized === "bez uslugi" ||
+    normalized === "bez služby" ||
+    normalized === "bez sluzby" ||
+    normalized === "sin servicio" ||
+    normalized === "ohne service" ||
+    normalized === "ohne dienst" ||
     normalized.includes("без услуги") ||
-    normalized.includes("без послуги")
+    normalized.includes("без послуги") ||
+    normalized.includes("without service") ||
+    normalized.includes("no service") ||
+    normalized.includes("sans service") ||
+    normalized.includes("bez usługi") ||
+    normalized.includes("bez uslugi") ||
+    normalized.includes("bez služby") ||
+    normalized.includes("bez sluzby") ||
+    normalized.includes("sin servicio") ||
+    normalized.includes("ohne service") ||
+    normalized.includes("ohne dienst")
   );
 }
 
@@ -6911,7 +7061,7 @@ export default function App() {
   const [editingAppointment, setEditingAppointment] = useState<AppointmentRecord | null>(null);
   const [timeAction, setTimeAction] = useState<{ date: string; time: string; targetProfessionalId?: string } | null>(null);
   const [serviceDraft, setServiceDraft] = useState<ServiceDraftState>({ name: "", category: DEFAULT_SERVICE_CATEGORY, durationMinutes: "60", price: "0", color: SERVICE_COLORS[0] });
-  const [clientDraft, setClientDraft] = useState({ firstName: "", lastName: "", phone: "", email: "" });
+  const [clientDraft, setClientDraft] = useState<ClientDraftState>({ firstName: "", lastName: "", phone: "", email: "" });
   const pendingServiceSavesRef = useRef<Map<string, PendingServiceSave>>(new Map());
   const pendingServiceDeletesRef = useRef<Set<string>>(new Set());
   const pendingServicePatchesRef = useRef<Map<string, Partial<ServiceRecord>>>(new Map());
@@ -8057,7 +8207,7 @@ export default function App() {
 
     const appointmentDate = visitDraft.appointmentDate || selectedDate;
     const hadAppointmentsBefore = (calendar?.appointments || []).filter((appointment) => appointment.kind !== "blocked").length > 0;
-    const customerName = safeText(visitDraft.customerName).trim();
+    const customerName = safeText(visitDraft.customerName).trim() || t.customer;
     const customerPhone = safeText(visitDraft.customerPhone).trim();
     const notes = safeText(visitDraft.notes).trim();
     const optimisticAppointments = items.map((item) =>
@@ -8090,6 +8240,7 @@ export default function App() {
             startTime: item.startTime,
             endTime: item.endTime,
             customerName,
+            customerNameFallback: t.customer,
             customerPhone,
             serviceName: item.serviceName,
             priceAmount: item.priceAmount,
@@ -8122,7 +8273,7 @@ export default function App() {
     const primaryItem = items[0];
     const extraItems = items.slice(1);
     const appointmentDate = visitDraft.appointmentDate || editingAppointment.appointmentDate || selectedDate;
-    const customerName = safeText(visitDraft.customerName).trim();
+    const customerName = safeText(visitDraft.customerName).trim() || t.customer;
     const customerPhone = safeText(visitDraft.customerPhone).trim();
     const notes = safeText(visitDraft.notes).trim();
     const updatedAppointment: AppointmentRecord = {
@@ -8165,6 +8316,7 @@ export default function App() {
           targetProfessionalId: editingAppointment.professionalId || visitDraft.targetProfessionalId,
           appointmentId: editingAppointment.id,
           customerName,
+          customerNameFallback: t.customer,
           customerPhone,
           startTime: primaryItem.startTime,
           endTime: primaryItem.endTime,
@@ -8188,6 +8340,7 @@ export default function App() {
               startTime: item.startTime,
               endTime: item.endTime,
               customerName,
+              customerNameFallback: t.customer,
               customerPhone,
               serviceName: item.serviceName,
               priceAmount: item.priceAmount,
@@ -8636,6 +8789,77 @@ export default function App() {
       });
   }
 
+  async function updateClient() {
+    if (!clientDraft.clientId) return;
+    if (!clientDraft.firstName.trim() && !clientDraft.phone.trim()) {
+      Alert.alert(t.requiredTitle, t.requiredText);
+      return;
+    }
+
+    const previousClients = clients;
+    const updatedClient: ClientRecord = {
+      id: clientDraft.clientId,
+      fullName: [clientDraft.firstName.trim(), clientDraft.lastName.trim()].filter(Boolean).join(" ") || clientDraft.phone.trim(),
+      firstName: clientDraft.firstName.trim(),
+      lastName: clientDraft.lastName.trim(),
+      phone: clientDraft.phone.trim(),
+      email: clientDraft.email.trim(),
+      visitsCount: clients.find((client) => client.id === clientDraft.clientId)?.visitsCount || 0,
+      totalSales: clients.find((client) => client.id === clientDraft.clientId)?.totalSales || 0,
+    };
+    setClients((current) => current.map((client) => (client.id === updatedClient.id ? { ...client, ...updatedClient } : client)));
+    setClientDraft({ firstName: "", lastName: "", phone: "", email: "" });
+    const isDerivedClient = updatedClient.id.startsWith("derived_");
+    void apiFetch("/api/mobile/pro/clients", {
+        method: isDerivedClient ? "POST" : "PATCH",
+        body: JSON.stringify({
+          clientId: isDerivedClient ? undefined : updatedClient.id,
+          firstName: updatedClient.firstName,
+          lastName: updatedClient.lastName,
+          phone: updatedClient.phone,
+          email: updatedClient.email,
+          notificationsTelegram: true,
+          marketingTelegram: false,
+        }),
+      })
+      .then(async () => {
+        await refreshAll(session, selectedDate, { silent: true });
+      })
+      .catch((error) => {
+        setClients(previousClients);
+        Alert.alert(t.editClient || t.addClient, error instanceof Error ? error.message : t.editClient || t.addClient);
+        revalidateWorkspace();
+      });
+  }
+
+  async function deleteClient(client: ClientRecord) {
+    if (client.id.startsWith("derived_")) {
+      Alert.alert(t.deleteClient || t.delete, t.clientFromAppointmentsCannotDelete || t.delete);
+      return;
+    }
+
+    Alert.alert(t.deleteClient || t.delete, t.deleteClientConfirm || client.fullName || client.phone, [
+      { text: t.cancel, style: "cancel" },
+      {
+        text: t.delete,
+        style: "destructive",
+        onPress: () => {
+          const previousClients = clients;
+          setClients((current) => current.filter((item) => item.id !== client.id));
+          void apiFetch(`/api/mobile/pro/clients?clientId=${encodeURIComponent(client.id)}`, { method: "DELETE" })
+            .then(async () => {
+              await refreshAll(session, selectedDate, { silent: true });
+            })
+            .catch((error) => {
+              setClients(previousClients);
+              Alert.alert(t.deleteClient || t.delete, error instanceof Error ? error.message : t.delete);
+              revalidateWorkspace();
+            });
+        },
+      },
+    ]);
+  }
+
   if (loadingSession) {
     return (
       <SafeAreaView style={styles.loadingScreen}>
@@ -8736,6 +8960,8 @@ export default function App() {
                 draft={clientDraft}
                 setDraft={setClientDraft}
                 onCreate={createClient}
+                onUpdate={updateClient}
+                onDelete={deleteClient}
                 onCreateVisit={() => {
                   if (!workspace?.services.length) {
                     openServicesCatalog();
@@ -9116,7 +9342,14 @@ function CalendarTab({
       const name = member.isViewer && displayName && (isGenericCalendarMemberName(member.name, member.role) || member.name.includes("@"))
         ? displayName
         : member.name;
-      map.set(member.id, mergeCalendarMemberView(map.get(member.id), { ...member, name }, masterFallback));
+      map.set(
+        member.id,
+        mergeCalendarMemberView(
+          map.get(member.id),
+          { ...member, name, avatarUrl: resolveCalendarMemberAvatarUrl(member, workspace) },
+          masterFallback
+        )
+      );
     };
     for (const member of makeStaffMembers(staff, workspace, t)) {
       addMember({
@@ -9420,6 +9653,7 @@ function CalendarTab({
   }
 
   function getLocalizedAppointmentServiceName(appointment: Pick<AppointmentRecord, "serviceName">) {
+    if (isAppointmentWithoutServiceName(appointment.serviceName)) return t.withoutService;
     const matchedService = services.find((service) => serviceNameMatches(service, appointment.serviceName));
     return getServiceDisplayName(matchedService, language) || appointment.serviceName;
   }
@@ -9590,7 +9824,8 @@ function CalendarTab({
   }
 
   function openAppointmentEditor(appointment: AppointmentRecord) {
-    const matchedService = services.find((service) => serviceNameMatches(service, appointment.serviceName)) || services[0];
+    const withoutService = isAppointmentWithoutServiceName(appointment.serviceName);
+    const matchedService = withoutService ? undefined : services.find((service) => serviceNameMatches(service, appointment.serviceName)) || services[0];
     const matchedClient = clients.find((client) => {
       const samePhone = appointment.customerPhone && client.phone === appointment.customerPhone;
       const sameName = appointment.customerName && client.fullName === appointment.customerName;
@@ -9611,7 +9846,7 @@ function CalendarTab({
         {
           id: appointment.id,
           serviceId: matchedService?.id || "",
-          serviceName: getServiceDisplayName(matchedService, language) || appointment.serviceName,
+          serviceName: withoutService ? t.withoutService : getServiceDisplayName(matchedService, language) || appointment.serviceName,
           startTime: appointment.startTime,
           endTime: appointment.endTime,
           priceAmount: Number(appointment.priceAmount || matchedService?.price || 0),
@@ -10483,6 +10718,7 @@ function CalendarOverview({
 }) {
   const { width: screenWidth } = useWindowDimensions();
   const formatServiceName = (appointment: Pick<AppointmentRecord, "serviceName">) => {
+    if (isAppointmentWithoutServiceName(appointment.serviceName)) return t.withoutService;
     const matchedService = (workspace?.services || []).find((service) => serviceNameMatches(service, appointment.serviceName));
     return getServiceDisplayName(matchedService, language) || appointment.serviceName;
   };
@@ -11023,8 +11259,10 @@ function WorkspaceHeader({
   onSignOut: () => void;
 }) {
   const title = activeTab === "calendar" ? t.calendarHeaderTitle : t[activeTab];
-  const [panel, setPanel] = useState<"setup" | "share" | "support" | "notifications" | "account" | "deleteAccount" | null>(null);
+  const [panel, setPanel] = useState<"setup" | "share" | "support" | "notifications" | "account" | "profile" | "subscription" | "language" | "help" | "deleteAccount" | null>(null);
   const [supportMessage, setSupportMessage] = useState("");
+  const [deleteAccountStep, setDeleteAccountStep] = useState<"intro" | "confirm">("intro");
+  const [deleteAccountUnderstood, setDeleteAccountUnderstood] = useState(false);
   const [deleteAccountConfirm, setDeleteAccountConfirm] = useState("");
   const [supportTicketId, setSupportTicketId] = useState("");
   const [supportStatus, setSupportStatus] = useState("");
@@ -11041,6 +11279,11 @@ function WorkspaceHeader({
   const publicBookingUrl = workspace?.business.publicBookingUrl || "";
   const onlineBookingEnabled = workspace?.business.allowOnlineBooking === true;
   const headerHasPremium = isPremiumActive(workspace?.professional);
+  const premiumStatusLabel = getPremiumStatusLabel(workspace?.professional, t);
+  const accountDisplayName = getCalendarMemberDisplayName(workspace?.professional || session, session.displayName);
+  const accountInitial = accountDisplayName.slice(0, 1).toUpperCase() || "T";
+  const accountAvatarUrl = safeText(workspace?.professional.avatarUrl).trim();
+  const appVersion = Constants.expoConfig?.version || Constants.manifest2?.extra?.expoClient?.version || "1.0.0";
   const headerBookingCredits = workspace?.bookingCredits || {
     total: 100,
     used: 0,
@@ -11073,6 +11316,19 @@ function WorkspaceHeader({
     (notifications.pendingOnlineBookings?.length || 0) +
     (notifications.pendingJoinRequests?.length || 0) +
     unreadAppNotificationCount;
+
+  const panelTitles: Record<NonNullable<typeof panel>, string> = {
+    setup: setupComplete ? t.setupCompleteTitle : t.setupAssistant,
+    share: t.bookingPage,
+    support: t.support || t.supportTitle,
+    notifications: t.reminders,
+    account: t.accountMenu || t.settings,
+    profile: t.profile || "Profile",
+    subscription: t.subscription || t.premiumSubscription || "Subscription",
+    language: t.language || "Language",
+    help: t.helpSupport || "Help & Legal",
+    deleteAccount: t.deleteAccountTitle || "Delete account",
+  };
 
   function mergeSupportMessages(current: SupportChatMessage[], incoming: SupportChatMessage[]) {
     const seen = new Set(current.map((message) => message.id));
@@ -11299,8 +11555,15 @@ function WorkspaceHeader({
     await Linking.openURL(`${API_BASE_URL}${pathname}`).catch(() => undefined);
   }
 
+  function openDeleteAccountFlow() {
+    setDeleteAccountStep("intro");
+    setDeleteAccountUnderstood(false);
+    setDeleteAccountConfirm("");
+    setPanel("deleteAccount");
+  }
+
   async function deleteAccount() {
-    if (deleteAccountConfirm.trim() !== "DELETE" || busy) return;
+    if (!deleteAccountUnderstood || deleteAccountConfirm.trim() !== "DELETE" || busy) return;
     setBusy(true);
     try {
       await apiFetch("/api/mobile/pro/account", { method: "DELETE" });
@@ -11310,6 +11573,20 @@ function WorkspaceHeader({
     } finally {
       setBusy(false);
     }
+  }
+
+  function confirmSignOut() {
+    Alert.alert(t.signOut || "Log out", t.signOutConfirm || "Выйти из аккаунта?", [
+      { text: t.cancel || "Cancel", style: "cancel" },
+      {
+        text: t.signOut || "Log out",
+        style: "default",
+        onPress: () => {
+          setPanel(null);
+          void onSignOut();
+        },
+      },
+    ]);
   }
 
   function openAppNotification(item: MobileAppNotificationRecord) {
@@ -11402,7 +11679,7 @@ function WorkspaceHeader({
               <View style={styles.headerPanelTitleStack}>
                 <Text style={styles.headerPanelEyebrow}>Timviz</Text>
                 <Text style={styles.headerPanelTitle} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.82}>
-                  {panel === "setup" ? (setupComplete ? t.setupCompleteTitle : t.setupAssistant) : panel === "share" ? t.bookingPage : panel === "support" ? t.supportTitle : panel === "notifications" ? t.reminders : panel === "deleteAccount" ? t.deleteAccountTitle || "Delete account" : t.accountMenu || t.settings}
+                  {panel ? panelTitles[panel] : t.settings}
                 </Text>
               </View>
               <Pressable style={styles.headerPanelClose} onPress={close}>
@@ -11588,14 +11865,19 @@ function WorkspaceHeader({
             ) : null}
 
             {panel === "account" ? (
-              <View style={styles.headerPanelBody}>
+              <ScrollView style={styles.headerPanelBody} showsVerticalScrollIndicator={false}>
                 <View style={styles.accountMenuHeader}>
                   <View style={styles.accountAvatarLarge}>
-                    <Text style={styles.accountAvatarLargeText}>{session.displayName.slice(0, 1).toUpperCase()}</Text>
+                    {accountAvatarUrl ? (
+                      <Image source={{ uri: accountAvatarUrl }} style={styles.accountAvatarLargeImage} />
+                    ) : (
+                      <Text style={styles.accountAvatarLargeText}>{accountInitial}</Text>
+                    )}
                   </View>
                   <View>
-                    <Text style={styles.accountName}>{session.displayName}</Text>
+                    <Text style={styles.accountName}>{accountDisplayName}</Text>
                     <Text style={styles.clientOptionCaption}>{workspace?.business.name || session.email}</Text>
+                    <Text style={styles.accountPlanText}>{headerHasPremium ? "Premium active" : "Free"}</Text>
                   </View>
                 </View>
                 <View style={styles.accountBookingCard}>
@@ -11611,54 +11893,134 @@ function WorkspaceHeader({
                   <Text style={styles.bookingLimitHint}>
                     {headerHasPremium ? t.bookingLimitPremiumText || "Premium does not spend appointment credits." : t.bookingLimitFreeText || "Free includes 100 appointments per month."}
                   </Text>
+                  {!headerHasPremium ? (
+                    <Pressable style={styles.accountUpgradeButton} onPress={() => { close(); setActiveTab("settings"); onOpenSettingsSection("general"); }}>
+                      <Text style={styles.accountUpgradeText}>{t.upgradePlan || t.premiumSubscribe || "Upgrade"}</Text>
+                    </Pressable>
+                  ) : null}
                 </View>
-                <Pressable style={styles.accountMenuItem} onPress={() => { close(); onOpenSettingsSection("general"); }}>
-                  <Text style={styles.accountMenuItemText}>{t.companySettings || t.settingsGeneral}</Text>
-                </Pressable>
-                <Pressable style={styles.accountMenuItem} onPress={() => setPanel("support")}>
-                  <Text style={styles.accountMenuItemText}>{t.helpSupport}</Text>
-                </Pressable>
-                <Pressable style={styles.accountMenuItem} onPress={() => void openLegalPage("/privacy")}>
-                  <Text style={styles.accountMenuItemText}>{t.privacyPolicy || "Privacy Policy"}</Text>
-                </Pressable>
-                <Pressable style={styles.accountMenuItem} onPress={() => void openLegalPage("/terms")}>
-                  <Text style={styles.accountMenuItemText}>{t.termsOfUse || "Terms of Use"}</Text>
-                </Pressable>
-                <Pressable style={styles.accountMenuItem} onPress={() => void openLegalPage("/support")}>
-                  <Text style={styles.accountMenuItemText}>{t.supportTitle || "Support"}</Text>
-                </Pressable>
-                <Pressable style={styles.accountMenuItem} onPress={() => void openLegalPage("/account-deletion")}>
-                  <Text style={styles.accountMenuItemText}>{t.accountDeletion || "Account deletion"}</Text>
-                </Pressable>
-                <Text style={styles.accountMenuLabel}>{t.language}</Text>
-                <LanguageSwitch language={language} setLanguage={setLanguage} />
-                <Pressable style={styles.accountMenuItem} onPress={() => { setDeleteAccountConfirm(""); setPanel("deleteAccount"); }}>
-                  <Text style={styles.accountDangerText}>{t.deleteAccount || "Delete account"}</Text>
-                </Pressable>
-                <Pressable style={styles.accountLogout} onPress={() => { close(); void onSignOut(); }}>
+                <AccountMenuRow icon="person-outline" title={t.profile || "Profile"} onPress={() => setPanel("profile")} />
+                <AccountMenuRow icon="card-outline" title={t.subscription || t.premiumSubscription || "Subscription"} onPress={() => setPanel("subscription")} />
+                <AccountMenuRow icon="business-outline" title={t.company || t.companySettings || "Company"} onPress={() => { close(); setActiveTab("settings"); onOpenSettingsSection("general"); }} />
+                <AccountMenuRow icon="language-outline" title={t.language || "Language"} value={languageDisplayNames[language]} onPress={() => setPanel("language")} />
+                <AccountMenuRow icon="help-circle-outline" title={t.helpSupport || "Help & Legal"} onPress={() => setPanel("help")} />
+                <Pressable style={styles.accountLogout} onPress={confirmSignOut}>
+                  <Ionicons name="log-out-outline" size={20} color="#64748B" />
                   <Text style={styles.accountLogoutText}>{t.signOut}</Text>
                 </Pressable>
+                <Text style={styles.accountVersionText}>Timviz v{appVersion}</Text>
+              </ScrollView>
+            ) : null}
+
+            {panel === "profile" ? (
+              <ScrollView style={styles.headerPanelBody} showsVerticalScrollIndicator={false}>
+                <View style={styles.accountMenuHeader}>
+                  <View style={styles.accountAvatarLarge}>
+                    {accountAvatarUrl ? <Image source={{ uri: accountAvatarUrl }} style={styles.accountAvatarLargeImage} /> : <Text style={styles.accountAvatarLargeText}>{accountInitial}</Text>}
+                  </View>
+                  <View style={styles.accountHeaderText}>
+                    <Text style={styles.accountName}>{accountDisplayName}</Text>
+                    <Text style={styles.clientOptionCaption}>{session.email}</Text>
+                    {workspace?.professional.phone ? <Text style={styles.clientOptionCaption}>{workspace.professional.phone}</Text> : null}
+                  </View>
+                </View>
+                <AccountInfoRow label={t.firstName || "Name"} value={workspace?.professional.firstName || accountDisplayName} />
+                <AccountInfoRow label={t.email || "Email"} value={workspace?.professional.email || session.email} />
+                {workspace?.professional.phone ? <AccountInfoRow label={t.phone || "Phone"} value={workspace.professional.phone} /> : null}
+                <AccountMenuRow icon="create-outline" title={t.companySettings || t.settingsGeneral} onPress={() => { close(); setActiveTab("settings"); onOpenSettingsSection("general"); }} />
+                <Text style={styles.accountMenuLabel}>{t.dangerZone || "Danger zone"}</Text>
+                <AccountMenuRow icon="trash-outline" title={t.deleteAccount || "Delete account"} danger onPress={openDeleteAccountFlow} />
+              </ScrollView>
+            ) : null}
+
+            {panel === "subscription" ? (
+              <View style={styles.headerPanelBody}>
+                <View style={styles.accountBookingCard}>
+                  <Text style={styles.bookingLimitTitle}>{headerHasPremium ? "PRO active" : t.premiumSubscription || "Timviz Premium"}</Text>
+                  <Text style={styles.bookingLimitHint}>{premiumStatusLabel || (headerHasPremium ? "Your PRO plan is active." : t.premiumFeatureOnlineText || "")}</Text>
+                  {!headerHasPremium ? (
+                    <Pressable style={styles.headerPrimaryButton} onPress={() => { close(); setActiveTab("settings"); onOpenSettingsSection("general"); }}>
+                      <Text style={styles.headerPrimaryButtonText}>{t.premiumSubscribe || t.upgradePlan || "Subscribe"}</Text>
+                    </Pressable>
+                  ) : null}
+                </View>
+              </View>
+            ) : null}
+
+            {panel === "language" ? (
+              <View style={styles.headerPanelBody}>
+                {SUPPORTED_APP_LANGUAGES.map((item) => (
+                  <Pressable
+                    key={item}
+                    style={[styles.accountLanguageListItem, language === item && styles.accountLanguageListItemActive]}
+                    onPress={() => {
+                      setLanguage(item);
+                      setPanel("account");
+                    }}
+                  >
+                    <Text style={[styles.accountLanguageText, language === item && styles.accountLanguageTextActive]}>{languageDisplayNames[item]}</Text>
+                    {language === item ? <Ionicons name="checkmark" size={20} color="#6D4AFF" /> : null}
+                  </Pressable>
+                ))}
+              </View>
+            ) : null}
+
+            {panel === "help" ? (
+              <View style={styles.headerPanelBody}>
+                <AccountMenuRow icon="chatbubble-ellipses-outline" title={t.support || t.supportTitle || "Support"} onPress={() => setPanel("support")} />
+                <AccountMenuRow icon="globe-outline" title={t.timvizWebsite || "Timviz website"} value="timviz.com" onPress={() => void Linking.openURL(API_BASE_URL)} />
+                <AccountMenuRow icon="shield-checkmark-outline" title={t.privacyPolicy || "Privacy Policy"} onPress={() => void openLegalPage("/privacy")} />
+                <AccountMenuRow icon="document-text-outline" title={t.termsOfUse || "Terms of Use"} onPress={() => void openLegalPage("/terms")} />
+                <AccountMenuRow icon="receipt-outline" title={t.subscriptionTerms || "Subscription Terms"} onPress={() => void openLegalPage("/subscription-terms")} />
+                <AccountMenuRow icon="return-down-back-outline" title={t.refundPolicy || "Refund Policy"} onPress={() => void openLegalPage("/refund-policy")} />
+                <AccountMenuRow icon="trash-outline" title={t.accountDeletion || "Account deletion"} danger onPress={openDeleteAccountFlow} />
               </View>
             ) : null}
 
             {panel === "deleteAccount" ? (
-              <View style={styles.headerPanelBody}>
-                <Text style={styles.panelHint}>{t.deleteAccountText || "This will delete your account and related personal data that we are not legally required to keep. Type DELETE to confirm."}</Text>
-                <TextInput
-                  value={deleteAccountConfirm}
-                  onChangeText={setDeleteAccountConfirm}
-                  placeholder={t.deleteAccountConfirmPlaceholder || "DELETE"}
-                  autoCapitalize="characters"
-                  style={styles.supportInput}
-                />
-                <Pressable
-                  style={[styles.headerPrimaryButton, styles.headerPrimaryButtonFull, deleteAccountConfirm.trim() !== "DELETE" && styles.disabled]}
-                  onPress={() => void deleteAccount()}
-                  disabled={deleteAccountConfirm.trim() !== "DELETE" || busy}
-                >
-                  <Text style={styles.headerPrimaryButtonText}>{t.deleteAccountConfirm || "Confirm deletion"}</Text>
-                </Pressable>
-              </View>
+              <ScrollView style={styles.headerPanelBody} showsVerticalScrollIndicator={false}>
+                {deleteAccountStep === "intro" ? (
+                  <>
+                    <Text style={styles.panelHint}>{t.deleteAccountIntroText || t.deleteAccountText}</Text>
+                    <View style={styles.deleteAccountInfoCard}>
+                      <Text style={styles.deleteAccountInfoTitle}>{t.deleteAccountIntroTitle || "What will be deleted"}</Text>
+                      <Text style={styles.panelHint}>{t.deleteAccountRemovedItems || ""}</Text>
+                      <Text style={styles.panelHint}>{t.deleteAccountKeptItems || ""}</Text>
+                    </View>
+                    <View style={styles.headerPanelActions}>
+                      <Pressable style={styles.headerGhostButton} onPress={() => setPanel("profile")}>
+                        <Text style={styles.headerGhostButtonText}>{t.cancel}</Text>
+                      </Pressable>
+                      <Pressable style={styles.headerPrimaryButton} onPress={() => setDeleteAccountStep("confirm")}>
+                        <Text style={styles.headerPrimaryButtonText}>{t.continue || "Continue"}</Text>
+                      </Pressable>
+                    </View>
+                  </>
+                ) : (
+                  <>
+                    <Pressable style={styles.deleteCheckRow} onPress={() => setDeleteAccountUnderstood((value) => !value)}>
+                      <View style={[styles.deleteCheckbox, deleteAccountUnderstood && styles.deleteCheckboxActive]}>
+                        {deleteAccountUnderstood ? <Ionicons name="checkmark" size={15} color="#FFFFFF" /> : null}
+                      </View>
+                      <Text style={styles.deleteCheckText}>{t.deletionUnderstand || "I understand this action cannot be undone"}</Text>
+                    </Pressable>
+                    <TextInput
+                      value={deleteAccountConfirm}
+                      onChangeText={setDeleteAccountConfirm}
+                      placeholder={t.deleteAccountConfirmPlaceholder || "DELETE"}
+                      autoCapitalize="characters"
+                      style={styles.supportInput}
+                    />
+                    <Pressable
+                      style={[styles.headerPrimaryButton, styles.headerPrimaryButtonFull, styles.deleteConfirmButton, (!deleteAccountUnderstood || deleteAccountConfirm.trim() !== "DELETE") && styles.disabled]}
+                      onPress={() => void deleteAccount()}
+                      disabled={!deleteAccountUnderstood || deleteAccountConfirm.trim() !== "DELETE" || busy}
+                    >
+                      <Text style={styles.headerPrimaryButtonText}>{t.deleteAccount || "Delete account"}</Text>
+                    </Pressable>
+                  </>
+                )}
+              </ScrollView>
             ) : null}
           </View>
     );
@@ -11688,22 +12050,61 @@ function WorkspaceHeader({
         </Text>
       </View>
       <View style={styles.nativeHeaderActions}>
-        <AppIconButton icon={setupMissingCount ? "rocket" : "checkmark"} active={panel === "setup"} badge={setupMissingCount} badgeTone="red" onPress={() => void openPanel("setup")} />
-        {activeTab !== "calendar" ? (
-          <>
-            <AppIconButton icon="cloud-upload-outline" active={panel === "share"} onPress={() => void openPanel("share")} />
-            <AppIconButton icon="chatbubble-ellipses-outline" tone="cyan" active={panel === "support"} onPress={() => void openPanel("support")} />
-          </>
+        {setupMissingCount ? (
+          <AppIconButton icon="rocket" active={panel === "setup"} badge={setupMissingCount} badgeTone="red" onPress={() => void openPanel("setup")} />
         ) : null}
+        <AppIconButton icon="cloud-upload-outline" active={panel === "share"} onPress={() => void openPanel("share")} />
+        <AppIconButton icon="chatbubble-ellipses-outline" tone="cyan" active={panel === "support"} onPress={() => void openPanel("support")} />
         <AppIconButton icon="notifications-outline" active={panel === "notifications"} badge={pendingCount} onPress={() => void openPanel("notifications")} />
         <Pressable style={styles.profilePill} onPress={() => void openPanel("account")}>
           <View style={styles.smallAvatar}>
-            <Text style={styles.smallAvatarText}>{session.displayName.slice(0, 1).toUpperCase()}</Text>
+            {accountAvatarUrl ? (
+              <Image source={{ uri: accountAvatarUrl }} style={styles.smallAvatarImage} />
+            ) : (
+              <Text style={styles.smallAvatarText}>{accountInitial}</Text>
+            )}
           </View>
           <Ionicons name="chevron-down" size={12} color="#64748B" />
         </Pressable>
       </View>
       {renderPanel()}
+    </View>
+  );
+}
+
+function AccountMenuRow({
+  icon,
+  title,
+  value,
+  danger,
+  onPress,
+}: {
+  icon: ComponentProps<typeof Ionicons>["name"];
+  title: string;
+  value?: string;
+  danger?: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable style={({ pressed }) => [styles.accountMenuItem, pressed && styles.pressablePressed]} onPress={onPress}>
+      <View style={styles.accountMenuItemLeft}>
+        <Ionicons name={icon} size={21} color={danger ? "#E11D48" : "#64748B"} />
+        <Text style={[styles.accountMenuItemText, danger && styles.accountDangerText]}>{title}</Text>
+      </View>
+      <View style={styles.accountMenuItemRight}>
+        {value ? <Text style={styles.accountMenuItemValue} numberOfLines={1}>{value}</Text> : null}
+        <Ionicons name="chevron-forward" size={18} color="#94A3B8" />
+      </View>
+    </Pressable>
+  );
+}
+
+function AccountInfoRow({ label, value }: { label: string; value: string }) {
+  if (!value) return null;
+  return (
+    <View style={styles.accountInfoRow}>
+      <Text style={styles.accountInfoLabel}>{label}</Text>
+      <Text style={styles.accountInfoValue} numberOfLines={2}>{value}</Text>
     </View>
   );
 }
@@ -11819,7 +12220,9 @@ function NotificationCard({
   actionBusy?: boolean;
 }) {
   const statusText = item.status === "cancelled" ? t.statusCancelled : item.status === "confirmed" ? t.statusConfirmed : t.statusPending;
-  const serviceName = getServiceDisplayName(services.find((service) => serviceNameMatches(service, item.serviceName)), language) || item.serviceName;
+  const serviceName = isAppointmentWithoutServiceName(item.serviceName)
+    ? t.withoutService
+    : getServiceDisplayName(services.find((service) => serviceNameMatches(service, item.serviceName)), language) || item.serviceName;
   const showActions = item.status === "pending" && (onConfirm || onCancel);
   return (
     <Pressable style={styles.notificationCard} onPress={onPress} disabled={!onPress}>
@@ -12637,25 +13040,47 @@ function ClientsTab({
   draft,
   setDraft,
   onCreate,
+  onUpdate,
+  onDelete,
   onCreateVisit,
   busy,
 }: {
   t: Record<string, string>;
   clients: ClientRecord[];
-  draft: { firstName: string; lastName: string; phone: string; email: string };
-  setDraft: (draft: { firstName: string; lastName: string; phone: string; email: string }) => void;
+  draft: ClientDraftState;
+  setDraft: (draft: ClientDraftState) => void;
   onCreate: () => void;
+  onUpdate: () => void;
+  onDelete: (client: ClientRecord) => void;
   onCreateVisit: () => void;
   busy: boolean;
 }) {
   const [clientFormOpen, setClientFormOpen] = useState(false);
+  const editingClient = draft.clientId ? clients.find((client) => client.id === draft.clientId) ?? null : null;
+  const canDeleteEditingClient = Boolean(editingClient && !editingClient.id.startsWith("derived_"));
 
-  function handleCreateClient() {
+  function openCreateClientForm() {
+    setDraft({ firstName: "", lastName: "", phone: "", email: "" });
+    setClientFormOpen(true);
+  }
+
+  function openEditClientForm(client: ClientRecord) {
+    setDraft({
+      clientId: client.id,
+      firstName: client.firstName || client.fullName || "",
+      lastName: client.lastName || "",
+      phone: client.phone || "",
+      email: client.email || "",
+    });
+    setClientFormOpen(true);
+  }
+
+  function handleSaveClient() {
     if (!draft.firstName.trim() && !draft.phone.trim()) {
-      onCreate();
+      draft.clientId ? onUpdate() : onCreate();
       return;
     }
-    onCreate();
+    draft.clientId ? onUpdate() : onCreate();
     setClientFormOpen(false);
   }
 
@@ -12663,7 +13088,7 @@ function ClientsTab({
     <View style={styles.sectionStack}>
       <Panel title={t.clients}>
         {clients.length ? (
-          <Pressable style={styles.compactAddRow} onPress={() => setClientFormOpen(true)}>
+          <Pressable style={styles.compactAddRow} onPress={openCreateClientForm}>
             <View style={styles.compactAddIcon}>
               <Ionicons name="add" size={18} color="#6D4AFF" />
             </View>
@@ -12672,13 +13097,16 @@ function ClientsTab({
         ) : null}
         {clients.length ? (
           clients.map((client) => (
-            <View key={client.id} style={styles.listItem}>
+            <Pressable key={client.id} style={({ pressed }) => [styles.listItem, pressed && styles.pressablePressed]} onPress={() => openEditClientForm(client)}>
               <View>
                 <Text style={styles.listTitle} numberOfLines={1}>{client.fullName || client.phone}</Text>
                 <Text style={styles.listCaption} numberOfLines={1}>{client.phone || client.email}</Text>
               </View>
-              <Text style={styles.badgeText}>{client.visitsCount}</Text>
-            </View>
+              <View style={styles.clientListActions}>
+                <Text style={styles.badgeText}>{client.visitsCount}</Text>
+                <Ionicons name="create-outline" size={18} color="#64748B" />
+              </View>
+            </Pressable>
           ))
         ) : (
           <View style={styles.firstRunCard}>
@@ -12688,7 +13116,7 @@ function ClientsTab({
             <Text style={styles.firstRunTitle}>{t.clientsEmptyTitle}</Text>
             <Text style={styles.firstRunText}>{t.clientsEmptyText}</Text>
             <View style={styles.firstRunActions}>
-              <Pressable style={styles.firstRunPrimaryButton} onPress={() => setClientFormOpen(true)}>
+              <Pressable style={styles.firstRunPrimaryButton} onPress={openCreateClientForm}>
                 <Text style={styles.firstRunPrimaryText}>{t.addClient}</Text>
               </Pressable>
               <Pressable style={styles.firstRunSecondaryButton} onPress={onCreateVisit}>
@@ -12698,7 +13126,7 @@ function ClientsTab({
           </View>
         )}
       </Panel>
-      <Pressable style={styles.screenFabMini} onPress={() => setClientFormOpen(true)}>
+      <Pressable style={styles.screenFabMini} onPress={openCreateClientForm}>
         <Ionicons name="add" size={22} color="#FFFFFF" />
       </Pressable>
       <Modal transparent visible={clientFormOpen} animationType="slide" onRequestClose={() => setClientFormOpen(false)}>
@@ -12707,7 +13135,7 @@ function ClientsTab({
             <View style={styles.visitSheet}>
               <View style={styles.sheetHandle} />
               <View style={styles.sheetHeader}>
-                <Text style={styles.sheetTitle}>{t.addClient}</Text>
+                <Text style={styles.sheetTitle}>{draft.clientId ? t.editClient : t.addClient}</Text>
                 <Pressable style={styles.sheetClose} onPress={() => setClientFormOpen(false)}>
                   <Ionicons name="close" size={22} color="#0F172A" />
                 </Pressable>
@@ -12723,7 +13151,20 @@ function ClientsTab({
                 <Field label={t.lastName} value={draft.lastName} onChangeText={(value) => setDraft({ ...draft, lastName: value })} />
                 <Field label={t.phone} value={draft.phone} onChangeText={(value) => setDraft({ ...draft, phone: value })} keyboardType="phone-pad" />
                 <Field label={t.email} value={draft.email} onChangeText={(value) => setDraft({ ...draft, email: value })} keyboardType="email-address" autoCapitalize="none" />
-                <PrimaryButton label={t.addClient} onPress={handleCreateClient} disabled={busy} />
+                <PrimaryButton label={draft.clientId ? t.save : t.addClient} onPress={handleSaveClient} disabled={busy} />
+                {canDeleteEditingClient && editingClient ? (
+                  <Pressable
+                    style={({ pressed }) => [styles.clientDeleteButton, pressed && styles.pressablePressed]}
+                    onPress={() => {
+                      setClientFormOpen(false);
+                      onDelete(editingClient);
+                    }}
+                    disabled={busy}
+                  >
+                    <Ionicons name="trash-outline" size={18} color="#E11D48" />
+                    <Text style={styles.clientDeleteButtonText}>{t.deleteClient || t.delete}</Text>
+                  </Pressable>
+                ) : null}
               </ScrollView>
             </View>
           </KeyboardAvoidingView>
@@ -14064,13 +14505,36 @@ function SettingsTab({
     return url;
   }
 
-  async function imageAssetToDataUrl(asset: ImagePicker.ImagePickerAsset) {
-    if (asset.base64) {
-      return `data:${asset.mimeType || "image/jpeg"};base64,${asset.base64}`;
+  function getUploadImageMimeType(value?: string | null) {
+    const mimeType = String(value || "").trim().toLowerCase();
+    if (mimeType === "image/png" || mimeType === "image/webp" || mimeType === "image/gif") {
+      return mimeType;
+    }
+    return "image/jpeg";
+  }
+
+  async function imageAssetToDataUrl(asset: ImagePicker.ImagePickerAsset, options: { compress?: number } = {}) {
+    if (!asset.uri) {
+      if (asset.base64) {
+        return `data:${getUploadImageMimeType(asset.mimeType)};base64,${asset.base64}`;
+      }
+      throw new Error(t.settingsSaveError);
     }
 
-    if (!asset.uri) {
+    if (Platform.OS !== "web") {
+      const result = await ImageManipulator.manipulateAsync(asset.uri, [], {
+        compress: options.compress ?? 0.72,
+        format: ImageManipulator.SaveFormat.JPEG,
+        base64: true,
+      });
+      if (result.base64) {
+        return `data:image/jpeg;base64,${result.base64}`;
+      }
       throw new Error(t.settingsSaveError);
+    }
+
+    if (asset.base64) {
+      return `data:${getUploadImageMimeType(asset.mimeType)};base64,${asset.base64}`;
     }
 
     const response = await fetch(asset.uri);
@@ -14450,15 +14914,24 @@ function SettingsTab({
       allowsEditing: true,
       aspect: [1, 1],
       quality: 0.45,
-      base64: true,
+      base64: false,
     });
 
     if (result.canceled || !result.assets?.[0]) return;
     const asset = result.assets[0];
     setIsAvatarUploading(true);
     try {
-      const avatarUrl = await uploadMediaDataUrl(await imageAssetToDataUrl(asset), "avatar");
+      const avatarUrl = await uploadMediaDataUrl(await imageAssetToDataUrl(asset, { compress: 0.72 }), "avatar");
       updateDraft("avatarUrl", avatarUrl);
+      if (workspace) {
+        onWorkspaceUpdated({
+          ...workspace,
+          professional: {
+            ...workspace.professional,
+            avatarUrl,
+          },
+        });
+      }
       queueSettingsPatch({ professional: { avatarUrl } }, 80);
     } catch (error) {
       Alert.alert(t.avatarLink, error instanceof Error ? error.message : t.settingsSaveError);
@@ -14551,8 +15024,9 @@ function SettingsTab({
     const pickerOptions: ImagePicker.ImagePickerOptions = {
       mediaTypes: "images",
       allowsEditing: true,
-      quality: 0.28,
-      base64: true,
+      aspect: [4, 3],
+      quality: 0.42,
+      base64: false,
     };
     const result = source === "camera"
       ? await ImagePicker.launchCameraAsync(pickerOptions)
@@ -14563,7 +15037,7 @@ function SettingsTab({
     setSaving(true);
       setPhotoUploadStatus(t.photoUploading);
     try {
-      await addBusinessPhotoFromDataUrl(await imageAssetToDataUrl(asset));
+      await addBusinessPhotoFromDataUrl(await imageAssetToDataUrl(asset, { compress: 0.68 }));
     } catch (error) {
       Alert.alert(t.businessPhotos, error instanceof Error ? error.message : t.settingsSaveError);
     } finally {
@@ -16863,6 +17337,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#9A7A72",
+    overflow: "hidden",
+  },
+  smallAvatarImage: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    resizeMode: "cover",
   },
   smallAvatarText: {
     color: "#FFFFFF",
@@ -17341,6 +17822,16 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#E2E8F0",
   },
+  accountHeaderText: {
+    flex: 1,
+    minWidth: 0,
+  },
+  accountPlanText: {
+    marginTop: 3,
+    color: "#6D4AFF",
+    fontSize: 13,
+    fontWeight: "900",
+  },
   accountBookingCard: {
     gap: 8,
     marginTop: 10,
@@ -17350,6 +17841,19 @@ const styles = StyleSheet.create({
     borderColor: "#E2E8F0",
     backgroundColor: "#F8FAFF",
   },
+  accountUpgradeButton: {
+    minHeight: 40,
+    marginTop: 4,
+    alignItems: "center",
+    justifyContent: "center",
+    borderRadius: 14,
+    backgroundColor: "#6D4AFF",
+  },
+  accountUpgradeText: {
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "900",
+  },
   accountAvatarLarge: {
     width: 56,
     height: 56,
@@ -17357,6 +17861,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "#EC4899",
+    overflow: "hidden",
+  },
+  accountAvatarLargeImage: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    resizeMode: "cover",
   },
   accountAvatarLargeText: {
     color: "#FFFFFF",
@@ -17369,20 +17880,40 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
   accountMenuItem: {
-    minHeight: 54,
-    justifyContent: "center",
+    minHeight: 56,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 12,
     borderBottomWidth: 1,
     borderBottomColor: "#EEF2F7",
   },
+  accountMenuItemLeft: {
+    flex: 1,
+    minWidth: 0,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+  },
+  accountMenuItemRight: {
+    maxWidth: "46%",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
   accountMenuItemText: {
     color: "#0F172A",
-    fontSize: 15,
-    fontWeight: "900",
+    fontSize: 17,
+    fontWeight: "700",
+  },
+  accountMenuItemValue: {
+    color: "#64748B",
+    fontSize: 14,
+    fontWeight: "700",
   },
   accountDangerText: {
     color: "#E11D48",
-    fontSize: 15,
-    fontWeight: "900",
+    fontWeight: "800",
   },
   accountMenuLabel: {
     marginTop: 14,
@@ -17423,12 +17954,104 @@ const styles = StyleSheet.create({
   },
   accountLogout: {
     minHeight: 54,
+    marginTop: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
     justifyContent: "center",
   },
   accountLogoutText: {
-    color: "#E11D48",
-    fontSize: 15,
+    color: "#64748B",
+    fontSize: 17,
+    fontWeight: "700",
+  },
+  accountVersionText: {
+    marginTop: 8,
+    marginBottom: 8,
+    textAlign: "center",
+    color: "#94A3B8",
+    fontSize: 12,
+    fontWeight: "700",
+  },
+  accountInfoRow: {
+    minHeight: 54,
+    justifyContent: "center",
+    borderBottomWidth: 1,
+    borderBottomColor: "#EEF2F7",
+  },
+  accountInfoLabel: {
+    color: "#94A3B8",
+    fontSize: 12,
     fontWeight: "900",
+    textTransform: "uppercase",
+  },
+  accountInfoValue: {
+    marginTop: 3,
+    color: "#0F172A",
+    fontSize: 16,
+    lineHeight: 20,
+    fontWeight: "800",
+  },
+  accountLanguageListItem: {
+    minHeight: 56,
+    paddingHorizontal: 12,
+    marginBottom: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    backgroundColor: "#FFFFFF",
+  },
+  accountLanguageListItemActive: {
+    borderColor: "#C4B5FD",
+    backgroundColor: "#F5F3FF",
+  },
+  deleteAccountInfoCard: {
+    gap: 8,
+    marginTop: 14,
+    padding: 14,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: "#FFE4E6",
+    backgroundColor: "#FFF7F8",
+  },
+  deleteAccountInfoTitle: {
+    color: "#0F172A",
+    fontSize: 16,
+    fontWeight: "900",
+  },
+  deleteCheckRow: {
+    minHeight: 58,
+    marginBottom: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  deleteCheckbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 7,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "#CBD5E1",
+    backgroundColor: "#FFFFFF",
+  },
+  deleteCheckboxActive: {
+    borderColor: "#E11D48",
+    backgroundColor: "#E11D48",
+  },
+  deleteCheckText: {
+    flex: 1,
+    color: "#334155",
+    fontSize: 14,
+    lineHeight: 19,
+    fontWeight: "700",
+  },
+  deleteConfirmButton: {
+    backgroundColor: "#E11D48",
   },
   calendarScreen: {
     flex: 1,
@@ -18973,6 +19596,24 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingBottom: 220,
   },
+  clientDeleteButton: {
+    minHeight: 50,
+    marginTop: 2,
+    borderRadius: 17,
+    borderWidth: 1,
+    borderColor: "#FECACA",
+    backgroundColor: "#FFF1F2",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingHorizontal: 16,
+  },
+  clientDeleteButtonText: {
+    color: "#E11D48",
+    fontSize: 15,
+    fontWeight: "900",
+  },
   servicePickerSearchBar: {
     zIndex: 2,
     paddingBottom: 8,
@@ -19651,6 +20292,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(226, 232, 240, 0.74)",
     backgroundColor: DESIGN.colors.surfaceSoft,
+  },
+  clientListActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
   },
   serviceManageCard: {
     borderRadius: 18,

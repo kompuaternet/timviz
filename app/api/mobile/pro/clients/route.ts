@@ -3,6 +3,7 @@ import { createApiTimer } from "../../../../../lib/api-timing";
 import { getMobileProfessionalId } from "../_auth";
 import {
   createClientProfile,
+  deleteClientProfile,
   getClientsList,
   mergeClientsByPhone,
   updateClientProfile
@@ -84,6 +85,26 @@ export async function PATCH(request: Request) {
     return NextResponse.json({ client });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to update client.";
+    return NextResponse.json({ error: message }, { status: 400 });
+  }
+}
+
+export async function DELETE(request: Request) {
+  try {
+    const professionalId = getMobileProfessionalId(request);
+    if (!professionalId) {
+      return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+    }
+
+    const { searchParams } = new URL(request.url);
+    const result = await deleteClientProfile({
+      professionalId,
+      clientId: searchParams.get("clientId") ?? ""
+    });
+
+    return NextResponse.json({ ok: true, ...result });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Failed to delete client.";
     return NextResponse.json({ error: message }, { status: 400 });
   }
 }

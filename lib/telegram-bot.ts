@@ -4,7 +4,7 @@ import { getPublicAppUrl } from "./app-url";
 import { getAppointmentsForBusiness, type CalendarAppointment } from "./pro-calendar";
 import { getSupabaseAdmin, isSupabaseConfigured } from "./supabase";
 
-export type TelegramLanguage = "ru" | "uk" | "en";
+export type TelegramLanguage = "ru" | "uk" | "en" | "fr" | "pl" | "cs" | "es" | "de";
 
 export type TelegramConnection = {
   id: string;
@@ -446,6 +446,361 @@ const textByLanguage: Record<TelegramLanguage, TelegramText> = {
       "💬 Send your question in one message — I will forward it to Timviz support.\n\nYou can simply reply with text to this message.",
     botUpdatedAllOn: "✅ All notifications are now enabled.",
     botUpdatedAllOff: "✅ All notifications are now disabled."
+  },
+  pl: {
+    connected:
+      "✅ Telegram połączony!\nOd teraz będziesz otrzymywać nowe rezerwacje i przypomnienia w tym czacie.",
+    invalidToken:
+      "⚠️ Ten link połączenia nie jest już aktywny.\nWygeneruj nowy link w panelu Timviz i połącz bota ponownie.",
+    connectHint: "Otwórz Timviz i połącz Telegram w ustawieniach profilu.",
+    help: "Wybierz działanie poniżej — wszystko można zrobić przyciskami.",
+    mainMenuTitle: "🏠 Menu główne Timviz",
+    mainMenuHint: "Zarządzaj rezerwacjami i powiadomieniami jednym dotknięciem.",
+    menuToday: "📅 Wizyty na dziś",
+    menuSettings: "⚙️ Ustawienia",
+    menuHome: "🏠 Menu",
+    menuSupport: "💬 Wsparcie",
+    menuApp: "🚀 Timviz App",
+    menuShare: "🔗 Udostępnij",
+    shareAppText: "Timviz do rezerwacji online i kalendarza",
+    botDescription:
+      "Timviz pomaga specjalistom i salonom przyjmować rezerwacje online, prowadzić kalendarz i otrzymywać powiadomienia w Telegramie.",
+    botShortDescription: "Rezerwacje online i kalendarz Timviz",
+    todayEmpty: "📭 Na dziś nie ma wizyt.",
+    todayHeader: "📅 Wizyty na dziś",
+    settingsTitle: "⚙️ Ustawienia powiadomień",
+    settingsSectionsHint: "Wybierz sekcję ustawień:",
+    settingsNotificationsSection: "🔔 Powiadomienia o wizytach",
+    settingsRemindersSection: "⏰ Przypomnienia i podsumowanie",
+    settingsSupportSection: "💬 Wsparcie i przekazywanie",
+    settingsBotSection: "🤖 Zarządzanie botem Telegram",
+    settingsBack: "⬅️ Wróć do sekcji",
+    settingsBotHint: "Zarządzaj botem: szybko włącz lub wyłącz wszystkie powiadomienia.",
+    settingsBotEnableAll: "🔔 Włącz wszystko",
+    settingsBotDisableAll: "🔕 Wyłącz wszystko",
+    settingsSupportHint: "Skonfiguruj przekazywanie do wsparcia i wyślij zgłoszenie jednym dotknięciem.",
+    settingsNotificationsHint: "Włącz tylko te powiadomienia, których naprawdę potrzebujesz.",
+    settingsRemindersHint: "Ustaw czas przypomnienia i podsumowanie dnia.",
+    noConnection: "🔌 Ten czat nie jest jeszcze połączony z Timviz.",
+    onlineBookingCreated: "🆕 Nowa rezerwacja online",
+    cabinetBookingCreated: "📌 Nowa wizyta z panelu",
+    bookingRescheduled: "🕒 Zmieniono czas wizyty",
+    bookingCancelled: "❌ Wizyta anulowana",
+    joinRequestCreated: "👥 Nowa prośba o dołączenie do firmy",
+    reminderPrefix: "⏰ Przypomnienie",
+    confirm: "✅ Potwierdź",
+    cancel: "❌ Anuluj",
+    openBooking: "🔎 Otwórz wizytę",
+    openDashboard: "🗂 Otwórz panel",
+    onlineBookingsLabel: "Nowe rezerwacje online",
+    cabinetBookingsLabel: "Nowe wizyty z panelu",
+    rescheduledLabel: "Zmiany terminu wizyty",
+    cancelledLabel: "Anulowane wizyty",
+    remindersLabel: "Przypomnienia",
+    reminderLeadLabel: "Kiedy przypomnieć",
+    reminderLeadUpdated: "✅ Czas przypomnienia zaktualizowany.",
+    todayLabel: "Podsumowanie na dziś",
+    forwardingLabel: "Przekazywanie do wsparcia",
+    unknownClient: "Klient",
+    fromLabel: "Było",
+    toLabel: "Jest",
+    roleLabel: "Rola",
+    enabled: "🟢 Wł.",
+    disabled: "⚪️ Wył.",
+    settingUpdated: "✅ Ustawienie zaktualizowane.",
+    forwardSuccess: "✅ Wiadomość wysłana do wsparcia.",
+    forwardDisabled: "⚠️ Przekazywanie do wsparcia jest teraz wyłączone.",
+    actionDoneConfirm: "✅ Wizyta potwierdzona.",
+    actionDoneCancel: "❌ Wizyta anulowana.",
+    actionNotFound: "⚠️ Wizyta została już obsłużona albo nie została znaleziona.",
+    supportPrompt:
+      "💬 Napisz swoje pytanie w jednej wiadomości — przekażę je do wsparcia Timviz.\n\nMożesz po prostu odpowiedzieć tekstem na tę wiadomość.",
+    botUpdatedAllOn: "✅ Wszystkie powiadomienia są włączone.",
+    botUpdatedAllOff: "✅ Wszystkie powiadomienia są wyłączone."
+  },
+  fr: {
+    connected:
+      "✅ Telegram est connecté !\nVous recevrez désormais les nouvelles réservations et les rappels dans ce chat.",
+    invalidToken:
+      "⚠️ Ce lien de connexion n'est plus actif.\nGénérez un nouveau lien dans Timviz et reconnectez le bot.",
+    connectHint: "Ouvrez Timviz et connectez Telegram dans les paramètres du profil.",
+    help: "Choisissez une action ci-dessous — tout se fait avec les boutons.",
+    mainMenuTitle: "🏠 Menu principal Timviz",
+    mainMenuHint: "Gérez vos réservations et notifications en un geste.",
+    menuToday: "📅 Rendez-vous du jour",
+    menuSettings: "⚙️ Paramètres",
+    menuHome: "🏠 Menu",
+    menuSupport: "💬 Support",
+    menuApp: "🚀 App Timviz",
+    menuShare: "🔗 Partager",
+    shareAppText: "Timviz pour les réservations en ligne et le calendrier",
+    botDescription:
+      "Timviz aide les professionnels et salons à accepter les réservations en ligne, gérer leur calendrier et recevoir des alertes Telegram.",
+    botShortDescription: "Réservations en ligne et calendrier Timviz",
+    todayEmpty: "📭 Aucun rendez-vous aujourd'hui.",
+    todayHeader: "📅 Rendez-vous du jour",
+    settingsTitle: "⚙️ Paramètres des notifications",
+    settingsSectionsHint: "Choisissez une section de paramètres :",
+    settingsNotificationsSection: "🔔 Notifications de rendez-vous",
+    settingsRemindersSection: "⏰ Rappels et résumé",
+    settingsSupportSection: "💬 Support et transfert",
+    settingsBotSection: "🤖 Gestion du bot Telegram",
+    settingsBack: "⬅️ Retour aux sections",
+    settingsBotHint: "Gérez le bot : activez ou désactivez rapidement toutes les notifications.",
+    settingsBotEnableAll: "🔔 Tout activer",
+    settingsBotDisableAll: "🔕 Tout désactiver",
+    settingsSupportHint: "Configurez le transfert vers le support et envoyez une demande en un geste.",
+    settingsNotificationsHint: "Activez uniquement les notifications dont vous avez besoin.",
+    settingsRemindersHint: "Définissez le délai de rappel et le résumé du jour.",
+    noConnection: "🔌 Ce chat n'est pas encore connecté à Timviz.",
+    onlineBookingCreated: "🆕 Nouvelle réservation en ligne",
+    cabinetBookingCreated: "📌 Nouveau rendez-vous depuis le tableau de bord",
+    bookingRescheduled: "🕒 L'heure du rendez-vous a changé",
+    bookingCancelled: "❌ Rendez-vous annulé",
+    joinRequestCreated: "👥 Nouvelle demande pour rejoindre l'entreprise",
+    reminderPrefix: "⏰ Rappel",
+    confirm: "✅ Confirmer",
+    cancel: "❌ Annuler",
+    openBooking: "🔎 Ouvrir le rendez-vous",
+    openDashboard: "🗂 Ouvrir le tableau de bord",
+    onlineBookingsLabel: "Nouvelles réservations en ligne",
+    cabinetBookingsLabel: "Nouveaux rendez-vous du tableau de bord",
+    rescheduledLabel: "Rendez-vous déplacés",
+    cancelledLabel: "Rendez-vous annulés",
+    remindersLabel: "Rappels",
+    reminderLeadLabel: "Délai de rappel",
+    reminderLeadUpdated: "✅ Délai de rappel mis à jour.",
+    todayLabel: "Résumé du jour",
+    forwardingLabel: "Transfert au support",
+    unknownClient: "Client",
+    fromLabel: "Avant",
+    toLabel: "Après",
+    roleLabel: "Rôle",
+    enabled: "🟢 Activé",
+    disabled: "⚪️ Désactivé",
+    settingUpdated: "✅ Paramètre mis à jour.",
+    forwardSuccess: "✅ Message envoyé au support.",
+    forwardDisabled: "⚠️ Le transfert au support est désactivé.",
+    actionDoneConfirm: "✅ Rendez-vous confirmé.",
+    actionDoneCancel: "❌ Rendez-vous annulé.",
+    actionNotFound: "⚠️ Le rendez-vous est déjà traité ou introuvable.",
+    supportPrompt:
+      "💬 Envoyez votre question en un seul message — je la transmettrai au support Timviz.\n\nVous pouvez simplement répondre à ce message.",
+    botUpdatedAllOn: "✅ Toutes les notifications sont activées.",
+    botUpdatedAllOff: "✅ Toutes les notifications sont désactivées."
+  },
+  cs: {
+    connected:
+      "✅ Telegram je připojen!\nOdteď budete v tomto chatu dostávat nové rezervace a připomenutí.",
+    invalidToken:
+      "⚠️ Tento odkaz pro připojení už není aktivní.\nVygenerujte nový odkaz v Timviz a připojte bota znovu.",
+    connectHint: "Otevřete Timviz a připojte Telegram v nastavení profilu.",
+    help: "Vyberte akci níže — vše lze ovládat tlačítky.",
+    mainMenuTitle: "🏠 Hlavní menu Timviz",
+    mainMenuHint: "Spravujte rezervace a oznámení jedním klepnutím.",
+    menuToday: "📅 Dnešní rezervace",
+    menuSettings: "⚙️ Nastavení",
+    menuHome: "🏠 Menu",
+    menuSupport: "💬 Podpora",
+    menuApp: "🚀 Aplikace Timviz",
+    menuShare: "🔗 Sdílet",
+    shareAppText: "Timviz pro online rezervace a kalendář",
+    botDescription:
+      "Timviz pomáhá profesionálům a salonům přijímat online rezervace, spravovat kalendář a dostávat oznámení v Telegramu.",
+    botShortDescription: "Online rezervace a kalendář Timviz",
+    todayEmpty: "📭 Na dnes nejsou žádné rezervace.",
+    todayHeader: "📅 Dnešní rezervace",
+    settingsTitle: "⚙️ Nastavení oznámení",
+    settingsSectionsHint: "Vyberte sekci nastavení:",
+    settingsNotificationsSection: "🔔 Oznámení o rezervacích",
+    settingsRemindersSection: "⏰ Připomenutí a přehled",
+    settingsSupportSection: "💬 Podpora a přeposílání",
+    settingsBotSection: "🤖 Správa Telegram bota",
+    settingsBack: "⬅️ Zpět na sekce",
+    settingsBotHint: "Spravujte bota: rychle zapněte nebo vypněte všechna oznámení.",
+    settingsBotEnableAll: "🔔 Zapnout vše",
+    settingsBotDisableAll: "🔕 Vypnout vše",
+    settingsSupportHint: "Nastavte přeposílání na podporu a odešlete dotaz jedním klepnutím.",
+    settingsNotificationsHint: "Zapněte jen oznámení, která opravdu potřebujete.",
+    settingsRemindersHint: "Nastavte čas připomenutí a denní přehled.",
+    noConnection: "🔌 Tento chat ještě není připojen k Timviz.",
+    onlineBookingCreated: "🆕 Nová online rezervace",
+    cabinetBookingCreated: "📌 Nová rezervace z panelu",
+    bookingRescheduled: "🕒 Čas rezervace byl změněn",
+    bookingCancelled: "❌ Rezervace zrušena",
+    joinRequestCreated: "👥 Nová žádost o připojení k firmě",
+    reminderPrefix: "⏰ Připomenutí",
+    confirm: "✅ Potvrdit",
+    cancel: "❌ Zrušit",
+    openBooking: "🔎 Otevřít rezervaci",
+    openDashboard: "🗂 Otevřít panel",
+    onlineBookingsLabel: "Nové online rezervace",
+    cabinetBookingsLabel: "Nové rezervace z panelu",
+    rescheduledLabel: "Přesunuté rezervace",
+    cancelledLabel: "Zrušené rezervace",
+    remindersLabel: "Připomenutí",
+    reminderLeadLabel: "Kdy připomenout",
+    reminderLeadUpdated: "✅ Čas připomenutí aktualizován.",
+    todayLabel: "Dnešní přehled",
+    forwardingLabel: "Přeposílání na podporu",
+    unknownClient: "Klient",
+    fromLabel: "Původně",
+    toLabel: "Nově",
+    roleLabel: "Role",
+    enabled: "🟢 Zap.",
+    disabled: "⚪️ Vyp.",
+    settingUpdated: "✅ Nastavení aktualizováno.",
+    forwardSuccess: "✅ Zpráva odeslána podpoře.",
+    forwardDisabled: "⚠️ Přeposílání na podporu je vypnuté.",
+    actionDoneConfirm: "✅ Rezervace potvrzena.",
+    actionDoneCancel: "❌ Rezervace zrušena.",
+    actionNotFound: "⚠️ Rezervace už byla zpracována nebo nebyla nalezena.",
+    supportPrompt:
+      "💬 Napište svůj dotaz v jedné zprávě — předám ho podpoře Timviz.\n\nStačí odpovědět textem na tuto zprávu.",
+    botUpdatedAllOn: "✅ Všechna oznámení jsou zapnutá.",
+    botUpdatedAllOff: "✅ Všechna oznámení jsou vypnutá."
+  },
+  es: {
+    connected:
+      "✅ Telegram conectado.\nAhora recibirás nuevas reservas y recordatorios en este chat.",
+    invalidToken:
+      "⚠️ Este enlace de conexión ya no está activo.\nGenera un enlace nuevo en Timviz y vuelve a conectar el bot.",
+    connectHint: "Abre Timviz y conecta Telegram en los ajustes del perfil.",
+    help: "Elige una acción abajo; todo se puede hacer con botones.",
+    mainMenuTitle: "🏠 Menú principal de Timviz",
+    mainMenuHint: "Gestiona reservas y notificaciones con un toque.",
+    menuToday: "📅 Reservas de hoy",
+    menuSettings: "⚙️ Ajustes",
+    menuHome: "🏠 Menú",
+    menuSupport: "💬 Soporte",
+    menuApp: "🚀 App Timviz",
+    menuShare: "🔗 Compartir",
+    shareAppText: "Timviz para reservas online y calendario",
+    botDescription:
+      "Timviz ayuda a profesionales y salones a aceptar reservas online, gestionar el calendario y recibir avisos en Telegram.",
+    botShortDescription: "Reservas online y calendario Timviz",
+    todayEmpty: "📭 No hay reservas para hoy.",
+    todayHeader: "📅 Reservas de hoy",
+    settingsTitle: "⚙️ Ajustes de notificaciones",
+    settingsSectionsHint: "Elige una sección de ajustes:",
+    settingsNotificationsSection: "🔔 Notificaciones de reservas",
+    settingsRemindersSection: "⏰ Recordatorios y resumen",
+    settingsSupportSection: "💬 Soporte y reenvío",
+    settingsBotSection: "🤖 Control del bot de Telegram",
+    settingsBack: "⬅️ Volver a secciones",
+    settingsBotHint: "Gestiona el bot: activa o desactiva todas las notificaciones rápidamente.",
+    settingsBotEnableAll: "🔔 Activar todo",
+    settingsBotDisableAll: "🔕 Desactivar todo",
+    settingsSupportHint: "Configura el reenvío al soporte y envía una consulta con un toque.",
+    settingsNotificationsHint: "Activa solo las notificaciones que realmente necesitas.",
+    settingsRemindersHint: "Configura el tiempo de recordatorio y el resumen de hoy.",
+    noConnection: "🔌 Este chat aún no está conectado a Timviz.",
+    onlineBookingCreated: "🆕 Nueva reserva online",
+    cabinetBookingCreated: "📌 Nueva reserva desde el panel",
+    bookingRescheduled: "🕒 La hora de la reserva cambió",
+    bookingCancelled: "❌ Reserva cancelada",
+    joinRequestCreated: "👥 Nueva solicitud para unirse a la empresa",
+    reminderPrefix: "⏰ Recordatorio",
+    confirm: "✅ Confirmar",
+    cancel: "❌ Cancelar",
+    openBooking: "🔎 Abrir reserva",
+    openDashboard: "🗂 Abrir panel",
+    onlineBookingsLabel: "Nuevas reservas online",
+    cabinetBookingsLabel: "Nuevas reservas del panel",
+    rescheduledLabel: "Reservas reprogramadas",
+    cancelledLabel: "Reservas canceladas",
+    remindersLabel: "Recordatorios",
+    reminderLeadLabel: "Antelación del recordatorio",
+    reminderLeadUpdated: "✅ Tiempo de recordatorio actualizado.",
+    todayLabel: "Resumen de hoy",
+    forwardingLabel: "Reenviar al soporte",
+    unknownClient: "Cliente",
+    fromLabel: "Antes",
+    toLabel: "Ahora",
+    roleLabel: "Rol",
+    enabled: "🟢 Act.",
+    disabled: "⚪️ Desact.",
+    settingUpdated: "✅ Ajuste actualizado.",
+    forwardSuccess: "✅ Mensaje enviado al soporte.",
+    forwardDisabled: "⚠️ El reenvío al soporte está desactivado.",
+    actionDoneConfirm: "✅ Reserva confirmada.",
+    actionDoneCancel: "❌ Reserva cancelada.",
+    actionNotFound: "⚠️ La reserva ya fue procesada o no se encontró.",
+    supportPrompt:
+      "💬 Envía tu pregunta en un solo mensaje; la reenviaré al soporte de Timviz.\n\nPuedes responder con texto a este mensaje.",
+    botUpdatedAllOn: "✅ Todas las notificaciones están activadas.",
+    botUpdatedAllOff: "✅ Todas las notificaciones están desactivadas."
+  },
+  de: {
+    connected:
+      "✅ Telegram ist verbunden!\nAb jetzt erhalten Sie neue Buchungen und Erinnerungen in diesem Chat.",
+    invalidToken:
+      "⚠️ Dieser Verbindungslink ist nicht mehr aktiv.\nErstellen Sie in Timviz einen neuen Link und verbinden Sie den Bot erneut.",
+    connectHint: "Öffnen Sie Timviz und verbinden Sie Telegram in den Profileinstellungen.",
+    help: "Wählen Sie unten eine Aktion — alles funktioniert über Buttons.",
+    mainMenuTitle: "🏠 Timviz Hauptmenü",
+    mainMenuHint: "Verwalten Sie Buchungen und Benachrichtigungen mit einem Tipp.",
+    menuToday: "📅 Termine heute",
+    menuSettings: "⚙️ Einstellungen",
+    menuHome: "🏠 Menü",
+    menuSupport: "💬 Support",
+    menuApp: "🚀 Timviz App",
+    menuShare: "🔗 Teilen",
+    shareAppText: "Timviz für Online-Buchungen und Kalender",
+    botDescription:
+      "Timviz hilft Dienstleistern und Salons, Online-Buchungen anzunehmen, Kalender zu verwalten und Telegram-Benachrichtigungen zu erhalten.",
+    botShortDescription: "Online-Buchung und Kalender von Timviz",
+    todayEmpty: "📭 Keine Termine für heute.",
+    todayHeader: "📅 Termine heute",
+    settingsTitle: "⚙️ Benachrichtigungseinstellungen",
+    settingsSectionsHint: "Wählen Sie einen Einstellungsbereich:",
+    settingsNotificationsSection: "🔔 Buchungsbenachrichtigungen",
+    settingsRemindersSection: "⏰ Erinnerungen und Übersicht",
+    settingsSupportSection: "💬 Support und Weiterleitung",
+    settingsBotSection: "🤖 Telegram-Bot verwalten",
+    settingsBack: "⬅️ Zurück zu Bereichen",
+    settingsBotHint: "Bot verwalten: alle Benachrichtigungen schnell ein- oder ausschalten.",
+    settingsBotEnableAll: "🔔 Alles aktivieren",
+    settingsBotDisableAll: "🔕 Alles deaktivieren",
+    settingsSupportHint: "Richten Sie die Weiterleitung an den Support ein und senden Sie eine Anfrage mit einem Tipp.",
+    settingsNotificationsHint: "Aktivieren Sie nur die Benachrichtigungen, die Sie wirklich brauchen.",
+    settingsRemindersHint: "Legen Sie Erinnerungszeit und Tagesübersicht fest.",
+    noConnection: "🔌 Dieser Chat ist noch nicht mit Timviz verbunden.",
+    onlineBookingCreated: "🆕 Neue Online-Buchung",
+    cabinetBookingCreated: "📌 Neue Buchung aus dem Dashboard",
+    bookingRescheduled: "🕒 Buchungszeit geändert",
+    bookingCancelled: "❌ Buchung storniert",
+    joinRequestCreated: "👥 Neue Anfrage zum Beitritt zum Unternehmen",
+    reminderPrefix: "⏰ Erinnerung",
+    confirm: "✅ Bestätigen",
+    cancel: "❌ Stornieren",
+    openBooking: "🔎 Buchung öffnen",
+    openDashboard: "🗂 Dashboard öffnen",
+    onlineBookingsLabel: "Neue Online-Buchungen",
+    cabinetBookingsLabel: "Neue Dashboard-Buchungen",
+    rescheduledLabel: "Verschobene Buchungen",
+    cancelledLabel: "Stornierte Buchungen",
+    remindersLabel: "Erinnerungen",
+    reminderLeadLabel: "Erinnerungszeit",
+    reminderLeadUpdated: "✅ Erinnerungszeit aktualisiert.",
+    todayLabel: "Tagesübersicht",
+    forwardingLabel: "An Support weiterleiten",
+    unknownClient: "Kunde",
+    fromLabel: "Vorher",
+    toLabel: "Jetzt",
+    roleLabel: "Rolle",
+    enabled: "🟢 Ein",
+    disabled: "⚪️ Aus",
+    settingUpdated: "✅ Einstellung aktualisiert.",
+    forwardSuccess: "✅ Nachricht an den Support gesendet.",
+    forwardDisabled: "⚠️ Weiterleitung an den Support ist deaktiviert.",
+    actionDoneConfirm: "✅ Buchung bestätigt.",
+    actionDoneCancel: "❌ Buchung storniert.",
+    actionNotFound: "⚠️ Buchung wurde bereits bearbeitet oder nicht gefunden.",
+    supportPrompt:
+      "💬 Senden Sie Ihre Frage in einer Nachricht — ich leite sie an den Timviz Support weiter.\n\nSie können einfach auf diese Nachricht antworten.",
+    botUpdatedAllOn: "✅ Alle Benachrichtigungen sind aktiviert.",
+    botUpdatedAllOff: "✅ Alle Benachrichtigungen sind deaktiviert."
   }
 };
 
@@ -467,6 +822,36 @@ const commandsByLanguage: Record<TelegramLanguage, TelegramBotCommand[]> = {
     { command: "today", description: "Today bookings" },
     { command: "settings", description: "Notification settings" },
     { command: "app", description: "Open Timviz app" }
+  ],
+  pl: [
+    { command: "menu", description: "Menu główne" },
+    { command: "today", description: "Wizyty na dziś" },
+    { command: "settings", description: "Ustawienia powiadomień" },
+    { command: "app", description: "Otwórz aplikację Timviz" }
+  ],
+  fr: [
+    { command: "menu", description: "Menu principal" },
+    { command: "today", description: "Rendez-vous du jour" },
+    { command: "settings", description: "Paramètres des notifications" },
+    { command: "app", description: "Ouvrir l'app Timviz" }
+  ],
+  cs: [
+    { command: "menu", description: "Hlavní menu" },
+    { command: "today", description: "Dnešní rezervace" },
+    { command: "settings", description: "Nastavení oznámení" },
+    { command: "app", description: "Otevřít aplikaci Timviz" }
+  ],
+  es: [
+    { command: "menu", description: "Menú principal" },
+    { command: "today", description: "Reservas de hoy" },
+    { command: "settings", description: "Ajustes de notificaciones" },
+    { command: "app", description: "Abrir app Timviz" }
+  ],
+  de: [
+    { command: "menu", description: "Hauptmenü" },
+    { command: "today", description: "Termine heute" },
+    { command: "settings", description: "Benachrichtigungseinstellungen" },
+    { command: "app", description: "Timviz App öffnen" }
   ]
 };
 
@@ -475,7 +860,16 @@ function nowIso() {
 }
 
 function normalizeLanguage(input: string | null | undefined): TelegramLanguage {
-  if (input === "ru" || input === "uk" || input === "en") {
+  if (
+    input === "ru" ||
+    input === "uk" ||
+    input === "en" ||
+    input === "fr" ||
+    input === "pl" ||
+    input === "cs" ||
+    input === "es" ||
+    input === "de"
+  ) {
     return input;
   }
   return "en";
@@ -497,6 +891,26 @@ export function normalizeTelegramUserLanguage(
 
   if (normalized.startsWith("en")) {
     return "en";
+  }
+
+  if (normalized.startsWith("pl")) {
+    return "pl";
+  }
+
+  if (normalized.startsWith("fr")) {
+    return "fr";
+  }
+
+  if (normalized.startsWith("cs") || normalized.startsWith("cz")) {
+    return "cs";
+  }
+
+  if (normalized.startsWith("es")) {
+    return "es";
+  }
+
+  if (normalized.startsWith("de")) {
+    return "de";
   }
 
   return normalizeLanguage(fallbackLanguage);
@@ -1237,10 +1651,7 @@ export async function linkTelegramIdentityToProfessional(input: {
     telegramUsername: input.telegramUsername?.trim() || base?.telegramUsername || "",
     telegramFirstName: input.telegramFirstName?.trim() || base?.telegramFirstName || "",
     telegramLastName: input.telegramLastName?.trim() || base?.telegramLastName || "",
-    language: normalizeTelegramUserLanguage(
-      input.telegramLanguageCode,
-      base?.language || input.language
-    ),
+    language: normalizeLanguage(input.language || base?.language || input.telegramLanguageCode),
     timezone: (input.timezone || base?.timezone || "UTC").trim() || "UTC",
     notificationsNewBooking: base?.notificationsNewBooking ?? false,
     notificationsCabinetBooking: base?.notificationsCabinetBooking ?? false,
@@ -1375,7 +1786,7 @@ export async function connectTelegramChatByToken(input: {
     telegramUsername: input.telegramUsername?.trim() || connection.telegramUsername,
     telegramFirstName: input.telegramFirstName?.trim() || connection.telegramFirstName,
     telegramLastName: input.telegramLastName?.trim() || connection.telegramLastName,
-    language: normalizeTelegramUserLanguage(input.telegramLanguageCode, connection.language),
+    language: normalizeLanguage(connection.language),
     connectedAt: connection.connectedAt || now,
     lastInteractionAt: now,
     updatedAt: now
@@ -1386,20 +1797,32 @@ export async function connectTelegramChatByToken(input: {
 
 export async function touchTelegramConnection(
   connection: TelegramConnection,
-  languageCode?: string
+  _languageCode?: string
 ) {
-  const nextLanguage = languageCode
-    ? normalizeTelegramUserLanguage(languageCode, connection.language)
-    : connection.language;
-
   const next: TelegramConnection = {
     ...connection,
-    language: nextLanguage,
+    language: normalizeLanguage(connection.language),
     lastInteractionAt: nowIso(),
     updatedAt: nowIso()
   };
 
   return upsertConnection(next);
+}
+
+export async function updateTelegramConnectionLanguageForProfessional(input: {
+  professionalId: string;
+  language: string;
+  timezone?: string;
+}) {
+  const connection = await getTelegramConnectionByProfessionalId(input.professionalId);
+  if (!connection) return null;
+
+  return upsertConnection({
+    ...connection,
+    language: normalizeLanguage(input.language),
+    timezone: input.timezone?.trim() || connection.timezone,
+    updatedAt: nowIso()
+  });
 }
 
 export async function toggleTelegramConnectionSetting(
@@ -1668,6 +2091,21 @@ function formatReminderLeadLabel(language: TelegramLanguage, minutes: number) {
     if (language === "ru") {
       return hours === 1 ? "за 1 час" : `за ${hours} ч`;
     }
+    if (language === "pl") {
+      return hours === 1 ? "1 godz. przed" : `${hours} godz. przed`;
+    }
+    if (language === "fr") {
+      return hours === 1 ? "1 h avant" : `${hours} h avant`;
+    }
+    if (language === "cs") {
+      return hours === 1 ? "1 hod. předem" : `${hours} hod. předem`;
+    }
+    if (language === "es") {
+      return hours === 1 ? "1 h antes" : `${hours} h antes`;
+    }
+    if (language === "de") {
+      return hours === 1 ? "1 Std. vorher" : `${hours} Std. vorher`;
+    }
     return hours === 1 ? "1 hour before" : `${hours} hours before`;
   }
 
@@ -1677,16 +2115,35 @@ function formatReminderLeadLabel(language: TelegramLanguage, minutes: number) {
   if (language === "ru") {
     return `за ${minutes} мин`;
   }
+  if (language === "pl") {
+    return `${minutes} min przed`;
+  }
+  if (language === "fr") {
+    return `${minutes} min avant`;
+  }
+  if (language === "cs") {
+    return `${minutes} min předem`;
+  }
+  if (language === "es") {
+    return `${minutes} min antes`;
+  }
+  if (language === "de") {
+    return `${minutes} Min. vorher`;
+  }
   return `${minutes} min before`;
 }
 
 function formatReminderLeadCompact(language: TelegramLanguage, minutes: number) {
   if (minutes % 60 === 0) {
     const hours = minutes / 60;
-    return language === "en" ? `${hours}h` : `${hours}ч`;
+    if (language === "ru" || language === "uk") return `${hours}ч`;
+    if (language === "de") return `${hours} Std.`;
+    return `${hours}h`;
   }
 
-  return language === "en" ? `${minutes}m` : `${minutes}м`;
+  if (language === "ru" || language === "uk") return `${minutes}м`;
+  if (language === "de") return `${minutes} Min.`;
+  return `${minutes}m`;
 }
 
 export async function setTelegramConnectionSettings(
@@ -1983,12 +2440,67 @@ export function buildSettingsMessage(
 
 function mapAttendanceLabel(attendance: string, language: TelegramLanguage) {
   if (attendance === "confirmed" || attendance === "arrived") {
-    return language === "uk" ? "підтверджено" : language === "ru" ? "подтверждено" : "confirmed";
+    if (language === "uk") return "підтверджено";
+    if (language === "ru") return "подтверждено";
+    if (language === "pl") return "potwierdzono";
+    if (language === "fr") return "confirmé";
+    if (language === "cs") return "potvrzeno";
+    if (language === "es") return "confirmado";
+    if (language === "de") return "bestätigt";
+    return "confirmed";
   }
   if (attendance === "no_show") {
-    return language === "uk" ? "не прийшов" : language === "ru" ? "не пришел" : "no-show";
+    if (language === "uk") return "не прийшов";
+    if (language === "ru") return "не пришел";
+    if (language === "pl") return "nie przyszedł";
+    if (language === "fr") return "absent";
+    if (language === "cs") return "nepřišel";
+    if (language === "es") return "no asistió";
+    if (language === "de") return "nicht erschienen";
+    return "no-show";
   }
-  return language === "uk" ? "очікує" : language === "ru" ? "ожидает" : "pending";
+  if (language === "uk") return "очікує";
+  if (language === "ru") return "ожидает";
+  if (language === "pl") return "oczekuje";
+  if (language === "fr") return "en attente";
+  if (language === "cs") return "čeká";
+  if (language === "es") return "pendiente";
+  if (language === "de") return "ausstehend";
+  return "pending";
+}
+
+function isWithoutServiceName(value: string) {
+  const normalized = value.trim().toLowerCase();
+  return (
+    !normalized ||
+    normalized === "без услуги" ||
+    normalized === "без послуги" ||
+    normalized === "without service" ||
+    normalized === "no service" ||
+    normalized === "sans service" ||
+    normalized === "bez usługi" ||
+    normalized === "bez uslugi" ||
+    normalized === "bez služby" ||
+    normalized === "bez sluzby" ||
+    normalized === "sin servicio" ||
+    normalized === "ohne service" ||
+    normalized === "ohne dienst"
+  );
+}
+
+function getTelegramWithoutServiceLabel(language: TelegramLanguage) {
+  if (language === "uk") return "Без послуги";
+  if (language === "ru") return "Без услуги";
+  if (language === "pl") return "Bez usługi";
+  if (language === "fr") return "Sans service";
+  if (language === "cs") return "Bez služby";
+  if (language === "es") return "Sin servicio";
+  if (language === "de") return "Ohne Service";
+  return "Without service";
+}
+
+function getTelegramServiceName(serviceName: string, language: TelegramLanguage) {
+  return isWithoutServiceName(serviceName) ? getTelegramWithoutServiceLabel(language) : serviceName.trim();
 }
 
 function formatNowInTimezone(timezone: string) {
@@ -2096,7 +2608,7 @@ export function formatTodayBookingsMessage(connection: TelegramConnection, booki
     .map((item) => {
       const status = mapAttendanceLabel(item.attendance, connection.language);
       const name = item.customerName.trim() || text.unknownClient;
-      const service = item.serviceName.trim() || "-";
+      const service = getTelegramServiceName(item.serviceName, connection.language);
       return `• ${item.startTime} — ${name} — ${service} — ${status}`;
     });
 
@@ -2372,6 +2884,7 @@ function canSendBookingEvent(connection: TelegramConnection, eventType: Telegram
 
 function buildBookingEventMessage(input: {
   text: TelegramText;
+  language: TelegramLanguage;
   eventType: TelegramBookingEventType;
   appointmentDate: string;
   appointmentTime: string;
@@ -2394,7 +2907,7 @@ function buildBookingEventMessage(input: {
   }
 
   lines.push(`👤 ${input.customerName.trim() || input.text.unknownClient}`);
-  lines.push(`🧾 ${input.serviceName.trim() || "-"}`);
+  lines.push(`🧾 ${getTelegramServiceName(input.serviceName, input.language)}`);
 
   return lines.join("\n");
 }
@@ -2423,6 +2936,7 @@ async function sendBookingEventTelegramNotification(input: {
   const text = getTelegramText(connection.language);
   const message = buildBookingEventMessage({
     text,
+    language: connection.language,
     eventType: input.eventType,
     appointmentDate: input.appointmentDate,
     appointmentTime: input.appointmentTime,
@@ -2575,7 +3089,7 @@ export async function processTelegramReminders() {
           `${text.reminderPrefix}: ${formatReminderLeadLabel(connection.language, reminderLeadMinutes)}`,
           `${appointment.appointmentDate} ${appointment.startTime}`,
           `${appointment.customerName.trim() || text.unknownClient}`,
-          `${appointment.serviceName.trim() || "-"}`
+          `${getTelegramServiceName(appointment.serviceName, connection.language)}`
         ].join("\n");
 
         await sendTelegramTextMessage({
