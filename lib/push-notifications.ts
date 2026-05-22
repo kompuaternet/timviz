@@ -330,6 +330,46 @@ function mapPushToken(row: Record<string, any>): PushTokenRecord {
   };
 }
 
+async function getProfessionalPushPreferences(professionalId: string) {
+  const id = professionalId.trim();
+  if (!id || !isSupabaseConfigured()) {
+    return null;
+  }
+
+  const supabase = getSupabaseAdmin();
+  if (!supabase) {
+    return null;
+  }
+
+  const { data, error } = await supabase
+    .from("professionals")
+    .select("language, timezone")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error || !data) {
+    return null;
+  }
+
+  return {
+    language: normalizeLanguage((data as { language?: unknown }).language),
+    timezone: String((data as { timezone?: unknown }).timezone ?? "").trim()
+  };
+}
+
+async function applyProfessionalPushPreferences(record: PushTokenRecord) {
+  const preferences = await getProfessionalPushPreferences(record.professionalId);
+  if (!preferences) {
+    return record;
+  }
+
+  return {
+    ...record,
+    language: preferences.language,
+    timezone: preferences.timezone || record.timezone
+  };
+}
+
 function canSendBookingEvent(record: PushTokenRecord, eventType: PushBookingEventType) {
   if (eventType === "online_created") return record.notificationsNewBooking;
   if (eventType === "cabinet_created") return record.notificationsCabinetBooking;
@@ -611,7 +651,7 @@ export async function getMobilePushTokensForProfessional(professionalId: string)
 
   if (isMissingPushStorageError(error)) return getLocalMobilePushTokensForProfessional(professionalId);
   if (error) return [];
-  return (data || []).map(mapPushToken);
+  return Promise.all((data || []).map((row) => applyProfessionalPushPreferences(mapPushToken(row))));
 }
 
 export async function getMobilePushState(professionalId: string) {
@@ -916,7 +956,8 @@ export async function processPushReminders() {
     return stats;
   }
 
-  return processPushRemindersForRecords((data || []).map(mapPushToken), stats);
+  const records = await Promise.all((data || []).map((row) => applyProfessionalPushPreferences(mapPushToken(row))));
+  return processPushRemindersForRecords(records, stats);
 }
 
 async function getAllLocalMobilePushTokens() {
