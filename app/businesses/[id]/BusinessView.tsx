@@ -156,7 +156,7 @@ const businessCopy: Record<SiteLanguage, BusinessCopy> = {
     openUntil: "Открыто до",
     route: "Проложить маршрут",
     services: "Услуги",
-    team: "Команда",
+    team: "Специалисты",
     details: "Общие сведения",
     bookNow: "Забронировать",
     onlineBookingOff: "Онлайн-запись выключена",
@@ -168,7 +168,7 @@ const businessCopy: Record<SiteLanguage, BusinessCopy> = {
     timeStep: "Время",
     confirmStep: "Подтверждение",
     noPreference: "Нет предпочтений",
-    noPreferenceText: "Подберём первое свободное окно у команды",
+    noPreferenceText: "Подберём ближайшее свободное время у команды",
     select: "Выбрать",
     selected: "Выбрано",
     chooseSpecialist: "Выберите специалиста",
@@ -189,7 +189,7 @@ const businessCopy: Record<SiteLanguage, BusinessCopy> = {
     signInHint: "Сначала войдите через Google, затем добавьте телефон и подтвердите запись.",
     phoneTitle: "Телефон для подтверждения",
     phonePlaceholder: "Ваш номер",
-    confirmBooking: "Подтвердить запись",
+    confirmBooking: "Записаться",
     confirmBookingSubmitting: "Отправляем…",
     pendingHint: "После отправки запись появится в календаре владельца и будет ждать подтверждения.",
     workingHours: "График работы",
@@ -226,7 +226,7 @@ const businessCopy: Record<SiteLanguage, BusinessCopy> = {
     openUntil: "Відкрито до",
     route: "Прокласти маршрут",
     services: "Послуги",
-    team: "Команда",
+    team: "Спеціалісти",
     details: "Загальна інформація",
     bookNow: "Забронювати",
     onlineBookingOff: "Онлайн-запис вимкнено",
@@ -238,7 +238,7 @@ const businessCopy: Record<SiteLanguage, BusinessCopy> = {
     timeStep: "Час",
     confirmStep: "Підтвердження",
     noPreference: "Без побажань",
-    noPreferenceText: "Підберемо перше вільне вікно в команди",
+    noPreferenceText: "Підберемо найближчий вільний час у команди",
     select: "Обрати",
     selected: "Обрано",
     chooseSpecialist: "Оберіть спеціаліста",
@@ -259,7 +259,7 @@ const businessCopy: Record<SiteLanguage, BusinessCopy> = {
     signInHint: "Спершу увійдіть через Google, потім додайте телефон і підтвердьте запис.",
     phoneTitle: "Телефон для підтвердження",
     phonePlaceholder: "Ваш номер",
-    confirmBooking: "Підтвердити запис",
+    confirmBooking: "Записатися",
     confirmBookingSubmitting: "Надсилаємо…",
     pendingHint: "Після відправлення запис з’явиться в календарі власника й чекатиме підтвердження.",
     workingHours: "Графік роботи",
@@ -296,7 +296,7 @@ const businessCopy: Record<SiteLanguage, BusinessCopy> = {
     openUntil: "Open until",
     route: "Get directions",
     services: "Services",
-    team: "Team",
+    team: "Specialists",
     details: "About",
     bookNow: "Book now",
     onlineBookingOff: "Online booking is turned off",
@@ -308,7 +308,7 @@ const businessCopy: Record<SiteLanguage, BusinessCopy> = {
     timeStep: "Time",
     confirmStep: "Confirm",
     noPreference: "No preference",
-    noPreferenceText: "We’ll pick the first free time in the team schedule",
+    noPreferenceText: "We’ll find the earliest available team slot",
     select: "Select",
     selected: "Selected",
     chooseSpecialist: "Choose a specialist",
@@ -329,7 +329,7 @@ const businessCopy: Record<SiteLanguage, BusinessCopy> = {
     signInHint: "Sign in with Google first, then add your phone number and confirm the booking.",
     phoneTitle: "Phone for confirmation",
     phonePlaceholder: "Your phone number",
-    confirmBooking: "Confirm booking",
+    confirmBooking: "Book now",
     confirmBookingSubmitting: "Submitting…",
     pendingHint: "After sending, the booking request appears in the owner calendar and waits for confirmation.",
     workingHours: "Working hours",
@@ -386,6 +386,13 @@ function ConfirmBookingSubmitButton({
 }
 
 const bookingSteps: BookingStep[] = ["services", "specialists", "time", "confirm"];
+
+function getBookingStepLabel(step: BookingStep, t: BusinessCopy) {
+  if (step === "services") return t.serviceStep;
+  if (step === "specialists") return t.specialistStep;
+  if (step === "time") return t.timeStep;
+  return t.confirmStep;
+}
 
 function formatDateKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
@@ -1265,11 +1272,11 @@ export default function BusinessView({
                 <span>{businessCategoryLabel}</span>
               </div>
               <h1>{business.name}</h1>
-              <p>{t.mobileSubtitle}</p>
+              <p className="company-hero-description">{t.mobileSubtitle}</p>
               <small className="company-trust-line">{t.trustLine}</small>
               <div className="company-hero-meta">
-                <span>{t.openUntil} 18:00</span>
-                <span>{business.address}</span>
+                <span className="company-work-status">● {t.openUntil} 18:00</span>
+                <span className="company-hero-address">{business.address}</span>
                 {business.website ? (
                   <a href={business.website} target="_blank" rel="noreferrer">
                     {websiteLabel || t.website}
@@ -1460,7 +1467,7 @@ export default function BusinessView({
                         key={step}
                         className={getStepIndex(step) === getStepIndex(bookingStep) ? "active" : getStepIndex(step) < getStepIndex(bookingStep) ? "done" : ""}
                       >
-                        {t[`${step}Step` as keyof BusinessCopy] as string}
+                        {getBookingStepLabel(step, t)}
                       </span>
                     ))}
                   </div>
@@ -1794,6 +1801,8 @@ export default function BusinessView({
                         <div className="company-mobile-confirm-summary">
                           <strong>{selectedServices.map((service) => getLocalizedServiceNameLabel(service)).join(" + ")}</strong>
                           <span>{selectedDate ? formatSelectedDate(selectedDate, locale) : ""}{selectedTime ? ` · ${selectedTime}` : ""}</span>
+                          <span>{selectedProfessional ? `${t.specialist}: ${fullName(selectedProfessional)}` : `${t.specialist}: ${t.noPreference}`}</span>
+                          <span>{`${t.fromPrice} ${formatMoney(totalPrice, locale)}`}</span>
                         </div>
 
                         <ConfirmBookingSubmitButton

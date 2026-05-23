@@ -44,8 +44,8 @@ const bookingSuccessCopy: Record<SiteLanguage, BookingSuccessCopy> = {
     phone: "Телефон",
     storage: "Хранилище",
     localStorageLabel: "Локальное хранилище",
-    backToSalon: "Вернуться к салону",
-    openCatalog: "Открыть каталог"
+    backToSalon: "Вернуться на страницу компании",
+    openCatalog: "Найти ещё компанию"
   },
   uk: {
     locale: "uk-UA",
@@ -61,8 +61,8 @@ const bookingSuccessCopy: Record<SiteLanguage, BookingSuccessCopy> = {
     phone: "Телефон",
     storage: "Сховище",
     localStorageLabel: "Локальне сховище",
-    backToSalon: "Повернутися до салону",
-    openCatalog: "Відкрити каталог"
+    backToSalon: "Повернутися на сторінку компанії",
+    openCatalog: "Знайти ще компанію"
   },
   en: {
     locale: "en-US",
@@ -78,8 +78,8 @@ const bookingSuccessCopy: Record<SiteLanguage, BookingSuccessCopy> = {
     phone: "Phone",
     storage: "Storage",
     localStorageLabel: "Local storage",
-    backToSalon: "Back to salon",
-    openCatalog: "Open catalog"
+    backToSalon: "Back to business page",
+    openCatalog: "Find another business"
   }
 };
 

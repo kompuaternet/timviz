@@ -97,6 +97,8 @@ type AccountCopy = {
   signInTitle: string;
   signInText: string;
   signInGoogle: string;
+  upcomingBookings: string;
+  findBusiness: string;
   confirmed: string;
   pending: string;
   cancelled: string;
@@ -112,7 +114,7 @@ type AccountCopy = {
 const copy: Record<SiteLanguage, AccountCopy> = {
   ru: {
     profile: "Профиль",
-    activity: "Действие",
+    activity: "Записи",
     wallet: "Кошелёк",
     favorites: "Избранное",
     forms: "Анкеты",
@@ -126,7 +128,7 @@ const copy: Record<SiteLanguage, AccountCopy> = {
     addAddress: "Добавить",
     remove: "Удалить",
     empty: "Пока пусто",
-    noBookings: "Здесь появятся ваши записи после онлайн-бронирования.",
+    noBookings: "У вас пока нет предстоящих записей. Найдите компанию и выберите удобное время.",
     profileTitle: "Профиль",
     addressesTitle: "Мои адреса",
     firstName: "Имя",
@@ -168,6 +170,8 @@ const copy: Record<SiteLanguage, AccountCopy> = {
     signInTitle: "Кабинет клиента",
     signInText: "Войдите через Google, чтобы видеть свои записи, профиль и настройки.",
     signInGoogle: "Продолжить через Google",
+    upcomingBookings: "Предстоящие записи",
+    findBusiness: "Найти компанию",
     confirmed: "Подтверждено",
     pending: "Ожидает подтверждения",
     cancelled: "Отменено",
@@ -181,7 +185,7 @@ const copy: Record<SiteLanguage, AccountCopy> = {
   },
   uk: {
     profile: "Профіль",
-    activity: "Дії",
+    activity: "Записи",
     wallet: "Гаманець",
     favorites: "Обране",
     forms: "Анкети",
@@ -195,7 +199,7 @@ const copy: Record<SiteLanguage, AccountCopy> = {
     addAddress: "Додати",
     remove: "Видалити",
     empty: "Поки порожньо",
-    noBookings: "Тут з’являться ваші записи після онлайн-бронювання.",
+    noBookings: "У вас поки немає майбутніх записів. Знайдіть компанію та оберіть зручний час.",
     profileTitle: "Профіль",
     addressesTitle: "Мої адреси",
     firstName: "Ім’я",
@@ -237,6 +241,8 @@ const copy: Record<SiteLanguage, AccountCopy> = {
     signInTitle: "Кабінет клієнта",
     signInText: "Увійдіть через Google, щоб бачити свої записи, профіль і налаштування.",
     signInGoogle: "Продовжити через Google",
+    upcomingBookings: "Майбутні записи",
+    findBusiness: "Знайти компанію",
     confirmed: "Підтверджено",
     pending: "Очікує підтвердження",
     cancelled: "Скасовано",
@@ -250,7 +256,7 @@ const copy: Record<SiteLanguage, AccountCopy> = {
   },
   en: {
     profile: "Profile",
-    activity: "Activity",
+    activity: "Bookings",
     wallet: "Wallet",
     favorites: "Favorites",
     forms: "Forms",
@@ -264,7 +270,7 @@ const copy: Record<SiteLanguage, AccountCopy> = {
     addAddress: "Add",
     remove: "Remove",
     empty: "Nothing here yet",
-    noBookings: "Your online bookings will appear here.",
+    noBookings: "You don’t have any upcoming bookings yet. Find a business and choose a convenient time.",
     profileTitle: "Profile",
     addressesTitle: "My addresses",
     firstName: "First name",
@@ -306,6 +312,8 @@ const copy: Record<SiteLanguage, AccountCopy> = {
     signInTitle: "Customer account",
     signInText: "Sign in with Google to see your bookings, profile and preferences.",
     signInGoogle: "Continue with Google",
+    upcomingBookings: "Upcoming bookings",
+    findBusiness: "Find a business",
     confirmed: "Confirmed",
     pending: "Waiting for confirmation",
     cancelled: "Cancelled",
@@ -364,7 +372,7 @@ export default function CustomerAccountView({
   searchIndex: PublicSearchIndex;
 }) {
   const t = copy[language];
-  const [activeSection, setActiveSection] = useState<AccountSection>("profile");
+  const [activeSection, setActiveSection] = useState<AccountSection>("activity");
   const [activityFilter, setActivityFilter] = useState<ActivityFilter>("upcoming");
   const [account, setAccount] = useState<CustomerAccountRecord | null>(initialAccount);
   const [bookings] = useState<CustomerBookingSummary[]>(initialBookings);
@@ -658,6 +666,9 @@ export default function CustomerAccountView({
               </button>
             ))}
           </nav>
+          <button type="button" className={styles.sidebarLogout} onClick={() => void logout()}>
+            {t.signOut}
+          </button>
         </aside>
 
         <section className={styles.main}>
@@ -939,7 +950,7 @@ export default function CustomerAccountView({
 
           {activeSection === "activity" ? (
             <>
-              <h1 className={styles.sectionTitle}>{t.activity}</h1>
+              <h1 className={styles.sectionTitle}>{activityFilter === "upcoming" ? t.upcomingBookings : t.activity}</h1>
               <div className={styles.activityTabs}>
                 {([
                   ["upcoming", t.upcoming],
@@ -982,6 +993,9 @@ export default function CustomerAccountView({
                     <div className={`${styles.card} ${styles.emptyCard}`}>
                       <strong>{t.empty}</strong>
                       <span>{t.noBookings}</span>
+                      <Link href={getLocalizedPath(language, "/catalog")} className={styles.saveButton}>
+                        {t.findBusiness}
+                      </Link>
                     </div>
                   )}
                 </div>

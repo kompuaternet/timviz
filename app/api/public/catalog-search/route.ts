@@ -58,7 +58,7 @@ export async function GET(request: Request) {
     const searchIndex = await getPublicSearchIndex(publicParams);
     const filteredResults = filterPublicSearchResults(searchIndex, publicParams);
     const results = toPublicCatalogCardResults(filteredResults, language, {
-      maxServicesPerCard: 24,
+      maxServicesPerCard: 0,
       maxResults: 72
     });
 

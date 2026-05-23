@@ -43,7 +43,7 @@ export function toPublicCatalogCardResults(
   language: SiteLanguage,
   options: { maxServicesPerCard?: number; maxResults?: number } = {}
 ) {
-  const maxServicesPerCard = Math.max(1, options.maxServicesPerCard ?? 5);
+  const maxServicesPerCard = Math.max(0, options.maxServicesPerCard ?? 5);
   const maxResults = Math.max(1, options.maxResults ?? 72);
 
   return results.slice(0, maxResults).map((result): PublicCatalogCardResult => {

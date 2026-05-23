@@ -60,6 +60,17 @@ type CatalogCopy = {
   allTab: string;
   expandServices: string;
   collapseServices: string;
+  showAllServices: string;
+  resultSummaryTitle: (count: number) => string;
+  companiesForBooking: string;
+  listTab: string;
+  mapTab: string;
+  nearYou: string;
+  useMap: string;
+  watchCompanies: (count: number) => string;
+  onlineBookingShort: string;
+  freeTimeShort: string;
+  resetFilters: string;
   moreInProfile: (count: number) => string;
   goToProfile: string;
   minutes: string;
@@ -78,15 +89,15 @@ const catalogCopy: Record<SiteLanguage, CatalogCopy> = {
     withoutGeolocation: "Без геолокации",
     sortedByDistance: "Сортировка по расстоянию",
     pricePending: "Цена уточняется",
-    chooseTime: "Можно выбрать время",
-    emptyTitle: "Свободных вариантов не найдено",
-    emptyText: "Попробуйте выбрать другое время, убрать тип результата или искать по более короткому названию услуги.",
+    chooseTime: "Есть свободное время",
+    emptyTitle: "Пока ничего не найдено",
+    emptyText: "Попробуйте изменить время, город или категорию.",
     backToSearch: "Вернуться к поиску",
     action: "Открыть и записаться",
     viewProfile: "Открыть карточку",
-    onlineBookingEnabled: "Онлайн-запись доступна",
+    onlineBookingEnabled: "Запись онлайн",
     onlineBookingDisabled: "Онлайн-запись выключена",
-    distanceUnknown: "Расстояние после геолокации",
+    distanceUnknown: "Геолокация не выбрана",
     distanceUnderOne: "Меньше 1 км от вас",
     kindLabel: (kind) =>
       kind === "business"
@@ -116,8 +127,19 @@ const catalogCopy: Record<SiteLanguage, CatalogCopy> = {
     venuesTab: "Заведения",
     prosTab: "Профессионалы",
     allTab: "Все",
-    expandServices: "Развернуть",
-    collapseServices: "Свернуть",
+    expandServices: "Показать услуги",
+    collapseServices: "Скрыть услуги",
+    showAllServices: "Показать все",
+    resultSummaryTitle: (count) => `${count} ${getSlavicPlural(count, ["компания найдена", "компании найдено", "компаний найдено"])}`,
+    companiesForBooking: "Компании для записи",
+    listTab: "Список",
+    mapTab: "Карта",
+    nearYou: "Рядом с вами",
+    useMap: "Использовать карту",
+    watchCompanies: (count) => `↓ Смотреть ${count} ${getSlavicPlural(count, ["компанию", "компании", "компаний"])}`,
+    onlineBookingShort: "Запись онлайн",
+    freeTimeShort: "Есть свободное время",
+    resetFilters: "Сбросить фильтры",
     moreInProfile: (count) => `Ещё ${count} в профиле`,
     goToProfile: "Перейти",
     minutes: "мин",
@@ -134,15 +156,15 @@ const catalogCopy: Record<SiteLanguage, CatalogCopy> = {
     withoutGeolocation: "Без геолокації",
     sortedByDistance: "Сортування за відстанню",
     pricePending: "Ціну уточнюємо",
-    chooseTime: "Можна вибрати час",
-    emptyTitle: "Вільних варіантів не знайдено",
-    emptyText: "Спробуйте вибрати інший час, прибрати тип результату або шукати за коротшою назвою послуги.",
+    chooseTime: "Є вільний час",
+    emptyTitle: "Поки нічого не знайдено",
+    emptyText: "Спробуйте змінити час, місто або категорію.",
     backToSearch: "Повернутися до пошуку",
     action: "Відкрити і записатися",
     viewProfile: "Відкрити картку",
-    onlineBookingEnabled: "Онлайн-запис доступний",
+    onlineBookingEnabled: "Онлайн-запис",
     onlineBookingDisabled: "Онлайн-запис вимкнено",
-    distanceUnknown: "Відстань після геолокації",
+    distanceUnknown: "Геолокацію не вибрано",
     distanceUnderOne: "Менше 1 км від вас",
     kindLabel: (kind) =>
       kind === "business"
@@ -172,8 +194,19 @@ const catalogCopy: Record<SiteLanguage, CatalogCopy> = {
     venuesTab: "Заклади",
     prosTab: "Професіонали",
     allTab: "Усі",
-    expandServices: "Розгорнути",
-    collapseServices: "Згорнути",
+    expandServices: "Показати послуги",
+    collapseServices: "Сховати послуги",
+    showAllServices: "Показати всі",
+    resultSummaryTitle: (count) => `${count} ${getSlavicPlural(count, ["компанію знайдено", "компанії знайдено", "компаній знайдено"])}`,
+    companiesForBooking: "Компанії для запису",
+    listTab: "Список",
+    mapTab: "Карта",
+    nearYou: "Поруч з вами",
+    useMap: "Використовувати карту",
+    watchCompanies: (count) => `↓ Дивитися ${count} ${getSlavicPlural(count, ["компанію", "компанії", "компаній"])}`,
+    onlineBookingShort: "Онлайн-запис",
+    freeTimeShort: "Є вільний час",
+    resetFilters: "Скинути фільтри",
     moreInProfile: (count) => `Ще ${count} у профілі`,
     goToProfile: "Перейти",
     minutes: "хв",
@@ -190,15 +223,15 @@ const catalogCopy: Record<SiteLanguage, CatalogCopy> = {
     withoutGeolocation: "No geolocation",
     sortedByDistance: "Sorted by distance",
     pricePending: "Price on request",
-    chooseTime: "Choose a time",
-    emptyTitle: "No available matches found",
-    emptyText: "Try another time, remove the result type, or search with a shorter service name.",
+    chooseTime: "Free time available",
+    emptyTitle: "Nothing found yet",
+    emptyText: "Try changing the time, city, or category.",
     backToSearch: "Back to search",
     action: "Open and book",
     viewProfile: "Open profile",
-    onlineBookingEnabled: "Online booking available",
+    onlineBookingEnabled: "Online booking",
     onlineBookingDisabled: "Online booking is off",
-    distanceUnknown: "Distance after geolocation",
+    distanceUnknown: "Geolocation not selected",
     distanceUnderOne: "Less than 1 km away",
     kindLabel: (kind) =>
       kind === "business"
@@ -228,8 +261,19 @@ const catalogCopy: Record<SiteLanguage, CatalogCopy> = {
     venuesTab: "Venues",
     prosTab: "Professionals",
     allTab: "All",
-    expandServices: "Expand",
-    collapseServices: "Collapse",
+    expandServices: "Show services",
+    collapseServices: "Hide services",
+    showAllServices: "Show all",
+    resultSummaryTitle: (count) => `${count} compan${count === 1 ? "y" : "ies"} found`,
+    companiesForBooking: "Companies to book",
+    listTab: "List",
+    mapTab: "Map",
+    nearYou: "Near you",
+    useMap: "Use map",
+    watchCompanies: (count) => `↓ View ${count} compan${count === 1 ? "y" : "ies"}`,
+    onlineBookingShort: "Online booking",
+    freeTimeShort: "Free time available",
+    resetFilters: "Reset filters",
     moreInProfile: (count) => `${count} more in profile`,
     goToProfile: "Open",
     minutes: "min",
@@ -450,7 +494,8 @@ function CatalogResultsMap({
   searchLat,
   searchLon,
   normalizedQuery,
-  onSelect
+  onSelect,
+  onScrollToList
 }: {
   language: SiteLanguage;
   results: PublicCatalogCardResult[];
@@ -459,8 +504,11 @@ function CatalogResultsMap({
   searchLon: number | null;
   normalizedQuery: string;
   onSelect: (id: string) => void;
+  onScrollToList: () => void;
 }) {
   const mapHostRef = useRef<HTMLDivElement | null>(null);
+  const [mobileMapInteractive, setMobileMapInteractive] = useState(false);
+  const [mapReady, setMapReady] = useState(false);
   const mapStateRef = useRef<{
     L: typeof import("leaflet");
     map: import("leaflet").Map;
@@ -510,6 +558,16 @@ function CatalogResultsMap({
         markersById: new Map(),
         fittedKey: ""
       };
+
+      if (window.matchMedia("(max-width: 768px)").matches) {
+        map.dragging.disable();
+        map.touchZoom.disable();
+        map.scrollWheelZoom.disable();
+        map.doubleClickZoom.disable();
+        map.boxZoom.disable();
+        map.keyboard.disable();
+      }
+      setMapReady(true);
     }
 
     void initMap();
@@ -520,8 +578,35 @@ function CatalogResultsMap({
         mapStateRef.current.map.remove();
         mapStateRef.current = null;
       }
+      setMapReady(false);
     };
   }, []);
+
+  useEffect(() => {
+    const state = mapStateRef.current;
+    if (!state || typeof window === "undefined") {
+      return;
+    }
+
+    const isMobile = window.matchMedia("(max-width: 768px)").matches;
+    const shouldDisable = isMobile && !mobileMapInteractive;
+    const interactionHandlers = [
+      state.map.dragging,
+      state.map.touchZoom,
+      state.map.scrollWheelZoom,
+      state.map.doubleClickZoom,
+      state.map.boxZoom,
+      state.map.keyboard
+    ];
+
+    for (const handler of interactionHandlers) {
+      if (shouldDisable) {
+        handler.disable();
+      } else {
+        handler.enable();
+      }
+    }
+  }, [mapReady, mobileMapInteractive, results.length]);
 
   useEffect(() => {
     const state = mapStateRef.current;
@@ -558,6 +643,7 @@ function CatalogResultsMap({
                   )}${topService.price > 0 ? ` · ${escapeHtml(formatPrice(topService.price, language))}` : ""}</span></div>`
                 : `<div class="catalog-map-popup-service"><b>${escapeHtml(formatServicesCount(servicesCount, language))}</b></div>`
             }
+            <span class="catalog-map-popup-open">${escapeHtml(catalogCopy[language].goToProfile)}</span>
           </div>
         </a>
       `;
@@ -598,7 +684,7 @@ function CatalogResultsMap({
       marker.addTo(state.map);
       state.userMarker = marker;
     }
-  }, [language, mapPoints, normalizedQuery, onSelect, searchLat, searchLon]);
+  }, [language, mapPoints, mapReady, normalizedQuery, onSelect, searchLat, searchLon]);
 
   useEffect(() => {
     const state = mapStateRef.current;
@@ -612,7 +698,8 @@ function CatalogResultsMap({
       if (selectedMarker) {
         selectedMarker.openPopup();
       }
-      state.map.setView([selected.lat as number, selected.lon as number], Math.max(state.map.getZoom(), 13), {
+      const currentZoom = state.map.getZoom();
+      state.map.setView([selected.lat as number, selected.lon as number], Math.max(Number.isFinite(currentZoom) ? currentZoom : 13, 13), {
         animate: true
       });
       return;
@@ -643,11 +730,21 @@ function CatalogResultsMap({
       padding: [24, 24],
       animate: false
     });
-  }, [datasetKey, mapPoints, results, searchLat, searchLon, selectedId]);
+  }, [datasetKey, mapPoints, mapReady, results, searchLat, searchLon, selectedId]);
 
   return (
     <aside className="catalog-map-full">
       <div ref={mapHostRef} className="catalog-map-canvas" aria-label={catalogCopy[language].mapHint} />
+      {!mobileMapInteractive ? (
+        <button type="button" className="catalog-map-use-button" onClick={() => setMobileMapInteractive(true)}>
+          {catalogCopy[language].useMap}
+        </button>
+      ) : null}
+      {results.length > 0 ? (
+        <button type="button" className="catalog-map-list-button" onClick={onScrollToList}>
+          {catalogCopy[language].watchCompanies(results.length)}
+        </button>
+      ) : null}
     </aside>
   );
 }
@@ -665,7 +762,11 @@ export default function CatalogView({
   const [loadFailed, setLoadFailed] = useState(false);
   const [selectedResultId, setSelectedResultId] = useState("");
   const [expandedServicesById, setExpandedServicesById] = useState<Record<string, boolean>>({});
+  const [servicesByResultId, setServicesByResultId] = useState<Record<string, PublicCatalogCardResult["services"]>>({});
+  const [loadingServicesById, setLoadingServicesById] = useState<Record<string, boolean>>({});
   const cardRefs = useRef<Record<string, HTMLElement | null>>({});
+  const listRef = useRef<HTMLDivElement | null>(null);
+  const mapSectionRef = useRef<HTMLDivElement | null>(null);
 
   const query = useMemo(() => searchParams.get("query")?.trim() ?? "", [searchParams]);
   const kind = useMemo(() => searchParams.get("kind")?.trim() ?? "", [searchParams]);
@@ -785,6 +886,8 @@ export default function CatalogView({
 
   useEffect(() => {
     setExpandedServicesById({});
+    setServicesByResultId({});
+    setLoadingServicesById({});
   }, [results]);
 
   useEffect(() => {
@@ -827,17 +930,59 @@ export default function CatalogView({
     }
   }
 
+  function scrollToList() {
+    listRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function scrollToMap() {
+    mapSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
   const catalogLabel = language === "en" ? "Profiles" : language === "uk" ? "Профілі" : "Профили";
   const menuLabel = language === "en" ? "Menu" : "Меню";
   const menuSearchLabel = language === "en" ? "Search and filters" : language === "uk" ? "Пошук і фільтри" : "Поиск и фильтры";
   const menuResultsLabel = language === "en" ? "Results" : language === "uk" ? "Результати" : "Результаты";
   const menuMapLabel = language === "en" ? "Map" : language === "uk" ? "Карта" : "Карта";
   const navLabel = language === "en" ? "Profile search navigation" : language === "uk" ? "Навігація пошуку профілів" : "Навигация поиска профилей";
-  function toggleServices(id: string) {
+  async function toggleServices(result: PublicCatalogCardResult) {
+    const id = result.id;
     selectResult(id);
+
+    if (expandedServicesById[id]) {
+      setExpandedServicesById((current) => ({
+        ...current,
+        [id]: false
+      }));
+      return;
+    }
+
+    if (!servicesByResultId[id]) {
+      setLoadingServicesById((current) => ({ ...current, [id]: true }));
+      try {
+        const response = await fetch(
+          `/api/public/catalog-services?id=${encodeURIComponent(resolveBusinessPathId(result))}&lang=${language}`
+        );
+        if (!response.ok) {
+          throw new Error("Services request failed");
+        }
+        const payload = (await response.json()) as { services?: PublicCatalogCardResult["services"] };
+        setServicesByResultId((current) => ({
+          ...current,
+          [id]: Array.isArray(payload.services) ? payload.services : []
+        }));
+      } catch {
+        setServicesByResultId((current) => ({
+          ...current,
+          [id]: []
+        }));
+      } finally {
+        setLoadingServicesById((current) => ({ ...current, [id]: false }));
+      }
+    }
+
     setExpandedServicesById((current) => ({
       ...current,
-      [id]: !current[id]
+      [id]: true
     }));
   }
 
@@ -887,19 +1032,49 @@ export default function CatalogView({
               <span>{hasCoords ? t.sortedByDistance : location || t.withoutGeolocation}</span>
             </div>
           </div>
+
+          <div className="catalog-mobile-summary">
+            <div>
+              <strong>{t.resultSummaryTitle(results.length)}</strong>
+              <span>{hasCoords ? t.nearYou : t.distanceUnknown}</span>
+            </div>
+            <div className="catalog-mobile-switch" aria-label={menuResultsLabel}>
+              <button type="button" className="is-active" onClick={scrollToList}>{t.listTab}</button>
+              <button type="button" onClick={scrollToMap}>{t.mapTab}</button>
+            </div>
+          </div>
+
+          <div className="catalog-mobile-sticky">
+            <strong>{t.resultSummaryTitle(results.length)}</strong>
+            <div className="catalog-mobile-switch" aria-label={menuResultsLabel}>
+              <button type="button" className="is-active" onClick={scrollToList}>{t.listTab}</button>
+              <button type="button" onClick={scrollToMap}>{t.mapTab}</button>
+            </div>
+          </div>
         </section>
 
         <section id="catalog-results" className="catalog-results-layout">
-          <div className="catalog-results-column">
+          <div className="catalog-results-column" ref={listRef}>
             <div className="catalog-results-toolbar">
-              <strong>{t.resultCount(results.length)}</strong>
+              <div>
+                <strong>{t.companiesForBooking}</strong>
+                <span>{`${t.resultCount(results.length)}${hasCoords ? "" : ` · ${t.distanceUnknown.toLowerCase()}`}`}</span>
+              </div>
             </div>
 
 	            {loading ? (
-	              <div className="catalog-empty">
-	                <h2>{t.loading}</h2>
-	                <p>{t.loadingText}</p>
-	              </div>
+	              <div className="catalog-loading-list" aria-label={t.loading}>
+                  {[0, 1, 2].map((item) => (
+                    <div key={item} className="catalog-card-skeleton">
+                      <span />
+                      <div>
+                        <b />
+                        <i />
+                        <i />
+                      </div>
+                    </div>
+                  ))}
+                </div>
 	            ) : null}
 	            {loadFailed ? (
 	              <div className="catalog-empty">
@@ -914,7 +1089,7 @@ export default function CatalogView({
 	                  <div className="catalog-empty">
 	                    <h2>{t.emptyTitle}</h2>
 	                    <p>{t.emptyText}</p>
-	                    <Link href={getLocalizedPath(language)} className="primary-button">{t.backToSearch}</Link>
+	                    <Link href={getLocalizedPath(language, "/catalog")} className="primary-button">{t.resetFilters}</Link>
 	                  </div>
                 ) : (
                   <div className="catalog-results-grid">
@@ -929,57 +1104,55 @@ export default function CatalogView({
                         }`}
                         onMouseEnter={() => selectResult(result.id)}
                       >
-                        <div className="catalog-result-main">
-                          <img className="catalog-card-image" src={result.image} alt={result.title} />
-                          <div className="catalog-result-copy">
-                            <div className="catalog-result-head">
-                              <h2>{result.title}</h2>
-                              <strong>{`${result.rating} · ${t.reviewCount(result.reviews)}`}</strong>
-                            </div>
-                            <p className="catalog-description">{`${formatDistance(result.distanceKm, language)} · ${compactAddress(result.address, language)}`}</p>
-                            <div className="chip-row compact">
-                              {shouldShowAvailabilityChip(result, language) ? (
-                                <span className={`chip ${result.available ? "chip-success" : "chip-muted"}`}>
-                                  {result.availabilityLabel || (time ? t.availableAt(time) : t.chooseTime)}
-                                </span>
-                              ) : null}
-                              <span className={`chip ${result.onlineBookingEnabled ? "chip-success" : "chip-muted"}`}>
-                                {result.onlineBookingEnabled ? t.onlineBookingEnabled : t.onlineBookingDisabled}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-
                         {(() => {
                           const isExpanded = Boolean(expandedServicesById[result.id]);
-                          const totalServices = result.services.length + result.extraServicesCount;
+                          const hasLoadedServices = Object.prototype.hasOwnProperty.call(servicesByResultId, result.id);
+                          const loadedServices = hasLoadedServices ? servicesByResultId[result.id] ?? [] : result.services;
+                          const isLoadingServices = Boolean(loadingServicesById[result.id]);
+                          const totalServices = hasLoadedServices ? loadedServices.length : loadedServices.length + result.extraServicesCount;
                           const matchedServices = normalizedQuery
-                            ? result.services.filter((service) =>
+                            ? loadedServices.filter((service) =>
                                 normalizeServiceName(service.name).includes(normalizedQuery)
                               )
-                            : result.services;
+                            : loadedServices;
                           const previewLimit = 3;
-                          const isCompactSummaryMode = !normalizedQuery;
-                          const hiddenCount = normalizedQuery
-                            ? Math.max(0, matchedServices.length - previewLimit)
-                            : isExpanded
-                              ? 0
-                              : Math.max(0, totalServices);
+                          const canToggleServices = totalServices > 0;
                           const servicesToRender = isExpanded
                             ? matchedServices
-                            : matchedServices.slice(0, previewLimit);
+                            : normalizedQuery
+                              ? matchedServices.slice(0, previewLimit)
+                              : [];
+                          const servicesLabel = formatServicesCount(totalServices, language);
 
                           return (
                             <>
-                        <div className="catalog-result-services compact">
-                          {!isExpanded && isCompactSummaryMode ? (
-                            <div className="catalog-result-service-row">
-                              <div>
-                                <strong>{formatServicesCount(totalServices, language)}</strong>
-                              </div>
+                        <div className="catalog-result-head">
+                          <h2 className="company-name">{result.title}</h2>
+                          <strong className="catalog-rating-badge">
+                            <span aria-hidden="true">★</span>
+                            {`${result.rating} · ${result.reviews}`}
+                          </strong>
+                        </div>
+
+                        <div className="catalog-result-main">
+                          <img className="catalog-card-image company-image" src={result.image} alt={result.title} />
+                          <div className="catalog-result-copy">
+                            <p className="catalog-description address">{compactAddress(result.address, language) || formatDistance(result.distanceKm, language)}</p>
+                            <div className="catalog-card-facts">
+                              <span>{servicesLabel}</span>
+                              <span className={result.onlineBookingEnabled ? "catalog-online-status" : "catalog-offline-status"}>
+                                {result.onlineBookingEnabled ? `● ${t.onlineBookingShort}` : t.onlineBookingDisabled}
+                              </span>
                             </div>
-                          ) : (
-                            servicesToRender.map((service) => (
+                            {shouldShowAvailabilityChip(result, language) && result.available ? (
+                              <span className="catalog-free-time">{t.freeTimeShort}</span>
+                            ) : null}
+                          </div>
+                        </div>
+
+                        {servicesToRender.length > 0 ? (
+                          <div className="catalog-result-services compact">
+                            {servicesToRender.map((service) => (
                                   <div key={service.id} className="catalog-result-service-row">
                                     <div>
                                       <strong>{service.name}</strong>
@@ -987,32 +1160,35 @@ export default function CatalogView({
 	                                  </div>
                                     <span>{service.price > 0 ? formatPrice(service.price, language) : t.pricePending}</span>
                                   </div>
-                                ))
-                          )}
-                        </div>
+                                ))}
+                          </div>
+                        ) : isExpanded && !isLoadingServices ? (
+                          <div className="catalog-result-services compact">
+                            <div className="catalog-result-service-row catalog-result-service-note">
+                              <div>
+                                <strong>{t.emptyTitle}</strong>
+                              </div>
+                            </div>
+                          </div>
+                        ) : null}
 
                         <div className="catalog-result-actions">
                           <Link
                             href={getLocalizedPath(language, `/businesses/${resolveBusinessPathId(result)}`)}
                             className="catalog-expand-button"
                           >
-                            {t.goToProfile}
+                            {result.onlineBookingEnabled ? t.action : t.viewProfile}
                           </Link>
-                          {hiddenCount > 0 ? (
+                          {canToggleServices ? (
                             <button
                               type="button"
                               className="catalog-result-more catalog-result-more-button"
-                              onClick={() => toggleServices(result.id)}
+                              disabled={isLoadingServices}
+                              onClick={() => void toggleServices(result)}
                             >
-                              {isExpanded ? t.collapseServices : t.moreInProfile(hiddenCount)}
+                              {isLoadingServices ? t.loading : isExpanded ? t.collapseServices : t.expandServices}
                             </button>
                           ) : null}
-                          <Link
-                            href={getLocalizedPath(language, `/businesses/${resolveBusinessPathId(result)}`)}
-                            className="catalog-open-link"
-                          >
-                            {result.onlineBookingEnabled ? t.action : t.viewProfile}
-                          </Link>
                         </div>
                             </>
                           );
@@ -1025,17 +1201,24 @@ export default function CatalogView({
 	            ) : null}
           </div>
 
-          <div id="catalog-map" className="catalog-map-column">
-            <CatalogResultsMap
-              language={language}
-              results={results}
-              selectedId={selectedResultId}
-              searchLat={lat}
-              searchLon={lon}
-              normalizedQuery={normalizedQuery}
-              onSelect={(id) => selectResult(id, true)}
-            />
-          </div>
+          {loading || results.length > 0 ? (
+            <div id="catalog-map" className="catalog-map-column" ref={mapSectionRef}>
+              {loading ? (
+                <div className="catalog-map-full catalog-map-skeleton" aria-label={t.loading} />
+              ) : (
+                <CatalogResultsMap
+                  language={language}
+                  results={results}
+                  selectedId={selectedResultId}
+                  searchLat={lat}
+                  searchLon={lon}
+                  normalizedQuery={normalizedQuery}
+                  onSelect={(id) => selectResult(id, true)}
+                  onScrollToList={scrollToList}
+                />
+              )}
+            </div>
+          ) : null}
         </section>
       </section>
     </main>
