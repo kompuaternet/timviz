@@ -5,7 +5,7 @@ import { useState } from "react";
 import BrandLogo from "./BrandLogo";
 import GlobalLanguageSwitcher from "./GlobalLanguageSwitcher";
 import PublicHeaderAuthMenu from "./PublicHeaderAuthMenu";
-import { getLocalizedPath, type SiteLanguage , withEnglishFallback } from "../lib/site-language";
+import { getLocalizedPath, publicFooterLabels, type SiteLanguage , withEnglishFallback } from "../lib/site-language";
 import type { PricingCopy, PricingPlanKey } from "../lib/pricing";
 
 type PricingViewProps = {
@@ -57,6 +57,15 @@ const footerCopy = withEnglishFallback<Record<string, string>>({
     support: "Support"
   }
 }) satisfies Record<SiteLanguage, Record<string, string>>;
+
+for (const language of Object.keys(publicFooterLabels) as SiteLanguage[]) {
+  footerCopy[language] = {
+    ...footerCopy[language],
+    pricing: publicFooterLabels[language].pricing,
+    refund: publicFooterLabels[language].refund,
+    contact: publicFooterLabels[language].contact
+  };
+}
 
 export default function PricingView({ language, copy, user }: PricingViewProps) {
   const footer = footerCopy[language];

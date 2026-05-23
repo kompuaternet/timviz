@@ -421,6 +421,99 @@ export const pricingCopy: Record<SiteLanguage, PricingCopy> = withEnglishFallbac
   }
 });
 
+Object.assign(pricingCopy, {
+  fr: {
+    ...pricingCopy.en,
+    seoTitle: "Tarifs Timviz — réservation en ligne pour professionnels",
+    seoDescription: "Tarif gratuit et Premium Timviz pour gérer réservations, calendrier, clients, notifications et analytics.",
+    title: "Des offres pour développer votre activité",
+    subtitle: "Commencez gratuitement, puis passez à Premium quand vous avez besoin de plus d’automatisation.",
+    trialBadge: "14 jours gratuits",
+    cancelAnytime: "Annulation à tout moment",
+    buttons: { free: "Commencer gratuitement", monthly: "Essayer Premium", yearly: "Premium annuel" },
+    plans: {
+      ...pricingCopy.en.plans,
+      free: { ...pricingCopy.en.plans.free, tagline: "Pour commencer", billing: "pour toujours" },
+      monthly: { ...pricingCopy.en.plans.monthly, tagline: "Pour automatiser votre activité", billing: "par mois", badge: "14 jours gratuits" },
+      yearly: { ...pricingCopy.en.plans.yearly, tagline: "Meilleure offre", billing: "par an", savings: "2 mois offerts" }
+    },
+    features: { ...pricingCopy.en.features, calendar: "Calendrier", services: "Services", clients: "Base clients", onlineBooking: "Réservation en ligne", telegram: "Notifications Telegram", reminders: "Rappels clients", analytics: "Statistiques / analytics", cancelAnytime: "Annulation à tout moment" },
+    faqTitle: "FAQ"
+  },
+  pl: {
+    ...pricingCopy.en,
+    seoTitle: "Cennik Timviz — rezerwacje online dla specjalistów",
+    seoDescription: "Darmowy plan i Premium Timviz do rezerwacji online, kalendarza, klientów, powiadomień i analityki.",
+    title: "Plany dla rozwoju Twojej usługi",
+    subtitle: "Zacznij za darmo, a Premium włącz wtedy, gdy potrzebujesz większej automatyzacji.",
+    trialBadge: "14 dni za darmo",
+    cancelAnytime: "Anuluj w dowolnym momencie",
+    buttons: { free: "Zacznij za darmo", monthly: "Rozpocznij okres próbny", yearly: "Premium roczne" },
+    plans: {
+      ...pricingCopy.en.plans,
+      free: { ...pricingCopy.en.plans.free, tagline: "Na start", billing: "na zawsze" },
+      monthly: { ...pricingCopy.en.plans.monthly, tagline: "Dla specjalistów z automatyzacją", billing: "miesięcznie", badge: "14 dni za darmo" },
+      yearly: { ...pricingCopy.en.plans.yearly, tagline: "Najlepsza oferta", billing: "rocznie", savings: "2 miesiące gratis" }
+    },
+    features: { ...pricingCopy.en.features, calendar: "Kalendarz", services: "Usługi", clients: "Baza klientów", onlineBooking: "Rezerwacje online", telegram: "Powiadomienia Telegram", reminders: "Przypomnienia klientom", analytics: "Statystyki / analityka", cancelAnytime: "Anulowanie w dowolnym momencie" },
+    faqTitle: "FAQ"
+  },
+  cs: {
+    ...pricingCopy.en,
+    seoTitle: "Ceník Timviz — online rezervace pro profesionály",
+    seoDescription: "Bezplatný tarif a Premium Timviz pro online rezervace, kalendář, klienty, upozornění a analytiku.",
+    title: "Tarify pro růst vašeho podnikání",
+    subtitle: "Začněte zdarma a Premium zapněte, až budete potřebovat více automatizace.",
+    trialBadge: "14 dní zdarma",
+    cancelAnytime: "Zrušení kdykoliv",
+    buttons: { free: "Začít zdarma", monthly: "Spustit zkušební období", yearly: "Roční Premium" },
+    plans: {
+      ...pricingCopy.en.plans,
+      free: { ...pricingCopy.en.plans.free, tagline: "Pro začátek", billing: "navždy" },
+      monthly: { ...pricingCopy.en.plans.monthly, tagline: "Pro profesionály s automatizací", billing: "měsíčně", badge: "14 dní zdarma" },
+      yearly: { ...pricingCopy.en.plans.yearly, tagline: "Nejlepší nabídka", billing: "ročně", savings: "2 měsíce zdarma" }
+    },
+    features: { ...pricingCopy.en.features, calendar: "Kalendář", services: "Služby", clients: "Klientská databáze", onlineBooking: "Online rezervace", telegram: "Telegram upozornění", reminders: "Připomenutí klientům", analytics: "Statistiky / analytika", cancelAnytime: "Zrušení kdykoliv" },
+    faqTitle: "FAQ"
+  },
+  es: {
+    ...pricingCopy.en,
+    seoTitle: "Precios Timviz — reservas online para profesionales",
+    seoDescription: "Plan gratuito y Premium Timviz para reservas online, calendario, clientes, notificaciones y analítica.",
+    title: "Planes para hacer crecer tu negocio",
+    subtitle: "Empieza gratis y pasa a Premium cuando necesites más automatización.",
+    trialBadge: "14 días gratis",
+    cancelAnytime: "Cancela cuando quieras",
+    buttons: { free: "Empezar gratis", monthly: "Iniciar prueba", yearly: "Premium anual" },
+    plans: {
+      ...pricingCopy.en.plans,
+      free: { ...pricingCopy.en.plans.free, tagline: "Para empezar", billing: "para siempre" },
+      monthly: { ...pricingCopy.en.plans.monthly, tagline: "Para profesionales que quieren automatizar", billing: "al mes", badge: "14 días gratis" },
+      yearly: { ...pricingCopy.en.plans.yearly, tagline: "Mejor oferta", billing: "al año", savings: "2 meses gratis" }
+    },
+    features: { ...pricingCopy.en.features, calendar: "Calendario", services: "Servicios", clients: "Base de clientes", onlineBooking: "Reserva online", telegram: "Notificaciones Telegram", reminders: "Recordatorios a clientes", analytics: "Estadísticas / analítica", cancelAnytime: "Cancelar en cualquier momento" },
+    faqTitle: "FAQ"
+  },
+  de: {
+    ...pricingCopy.en,
+    seoTitle: "Timviz Preise — Online-Buchung für Dienstleister",
+    seoDescription: "Kostenloser Tarif und Timviz Premium für Online-Buchungen, Kalender, Kunden, Benachrichtigungen und Analytics.",
+    title: "Tarife für das Wachstum deines Geschäfts",
+    subtitle: "Starte kostenlos und wechsle zu Premium, wenn du mehr Automatisierung brauchst.",
+    trialBadge: "14 Tage kostenlos",
+    cancelAnytime: "Jederzeit kündbar",
+    buttons: { free: "Kostenlos starten", monthly: "Test starten", yearly: "Jährliches Premium" },
+    plans: {
+      ...pricingCopy.en.plans,
+      free: { ...pricingCopy.en.plans.free, tagline: "Für den Start", billing: "für immer" },
+      monthly: { ...pricingCopy.en.plans.monthly, tagline: "Für Profis mit Automatisierung", billing: "pro Monat", badge: "14 Tage kostenlos" },
+      yearly: { ...pricingCopy.en.plans.yearly, tagline: "Bestes Angebot", billing: "pro Jahr", savings: "2 Monate kostenlos" }
+    },
+    features: { ...pricingCopy.en.features, calendar: "Kalender", services: "Leistungen", clients: "Kundendatenbank", onlineBooking: "Online-Buchung", telegram: "Telegram-Benachrichtigungen", reminders: "Kundenerinnerungen", analytics: "Statistiken / Analytics", cancelAnytime: "Jederzeit kündbar" },
+    faqTitle: "FAQ"
+  }
+});
+
 export function buildPricingMetadata(language: SiteLanguage): Metadata {
   return {
     ...buildMetadata(`/${language}/pricing`, {

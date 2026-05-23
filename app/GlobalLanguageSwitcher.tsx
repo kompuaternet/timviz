@@ -2,18 +2,23 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { getLanguageFromPathname, isSiteLanguage, switchLocalizedPath, type SiteLanguage } from "../lib/site-language";
+import { getLanguageFromPathname, isSiteLanguage, siteLanguages, switchLocalizedPath, type SiteLanguage } from "../lib/site-language";
 
-const languages: Array<{ code: SiteLanguage; short: string; label: string }> = [
-  { code: "ru", short: "RU", label: "Русский" },
-  { code: "uk", short: "UA", label: "Українська" },
-  { code: "en", short: "EN", label: "English" },
-  { code: "fr", short: "FR", label: "Français" },
-  { code: "pl", short: "PL", label: "Polski" },
-  { code: "cs", short: "CS", label: "Čeština" },
-  { code: "es", short: "ES", label: "Español" },
-  { code: "de", short: "DE", label: "Deutsch" }
-];
+const languageLabels: Record<SiteLanguage, { short: string; label: string }> = {
+  ru: { short: "RU", label: "Русский" },
+  uk: { short: "UA", label: "Українська" },
+  en: { short: "EN", label: "English" },
+  fr: { short: "FR", label: "Français" },
+  pl: { short: "PL", label: "Polski" },
+  cs: { short: "CS", label: "Čeština" },
+  es: { short: "ES", label: "Español" },
+  de: { short: "DE", label: "Deutsch" }
+};
+
+const languages: Array<{ code: SiteLanguage; short: string; label: string }> = siteLanguages.map((code) => ({
+  code,
+  ...languageLabels[code]
+}));
 
 const switcherLabels: Record<SiteLanguage, string> = {
   ru: "Выбор языка интерфейса",
@@ -24,6 +29,28 @@ const switcherLabels: Record<SiteLanguage, string> = {
   cs: "Výběr jazyka rozhraní",
   es: "Elegir idioma de la interfaz",
   de: "Sprache der Oberfläche wählen"
+};
+
+const chooseLanguageLabels: Record<SiteLanguage, string> = {
+  ru: "Выберите язык",
+  uk: "Оберіть мову",
+  en: "Choose language",
+  fr: "Choisissez la langue",
+  pl: "Wybierz język",
+  cs: "Vyberte jazyk",
+  es: "Elige idioma",
+  de: "Sprache wählen"
+};
+
+const closeLabels: Record<SiteLanguage, string> = {
+  ru: "Закрыть",
+  uk: "Закрити",
+  en: "Close",
+  fr: "Fermer",
+  pl: "Zamknij",
+  cs: "Zavřít",
+  es: "Cerrar",
+  de: "Schließen"
 };
 
 function getBrowserLanguage(): SiteLanguage {
@@ -120,7 +147,8 @@ export default function GlobalLanguageSwitcher({ mode = "fixed" }: GlobalLanguag
     }
   }
 
-  const activeLanguage = languages.find((item) => item.code === language) ?? languages[0];
+  const displayLanguage = routeLanguage ?? language;
+  const activeLanguage = languages.find((item) => item.code === displayLanguage) ?? languages[0];
   const isInline = mode === "inline";
   const publicPathname = pathname?.replace(/^\/(ru|uk|en|fr|pl|cs|es|de)(?=\/|$)/, "") || pathname;
   const normalizedPublicPathname = publicPathname === "" ? "/" : publicPathname;
@@ -170,7 +198,7 @@ export default function GlobalLanguageSwitcher({ mode = "fixed" }: GlobalLanguag
       <button
         type="button"
         className="global-language-trigger"
-        aria-label={switcherLabels[language]}
+        aria-label={switcherLabels[displayLanguage]}
         aria-expanded={isOpen}
         onClick={() => setIsOpen((value) => !value)}
       >
@@ -179,11 +207,17 @@ export default function GlobalLanguageSwitcher({ mode = "fixed" }: GlobalLanguag
       </button>
       {isOpen ? (
         <div className="global-language-menu">
+          <div className="global-language-menu-head">
+            <strong>{chooseLanguageLabels[displayLanguage]}</strong>
+            <button type="button" aria-label={closeLabels[displayLanguage]} onClick={() => setIsOpen(false)}>
+              ×
+            </button>
+          </div>
           {languages.map((item) => (
             <button
               key={item.code}
               type="button"
-              className={item.code === language ? "global-language-option-active" : ""}
+              className={item.code === displayLanguage ? "global-language-option-active" : ""}
               onClick={() => changeLanguage(item.code)}
             >
               <strong>{item.short}</strong>

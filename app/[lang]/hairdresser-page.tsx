@@ -3,7 +3,7 @@ import BrandLogo from "../BrandLogo";
 import GlobalLanguageSwitcher from "../GlobalLanguageSwitcher";
 import { getNicheUxContent } from "../../lib/niche-ux";
 import { buildMetadata } from "../../lib/seo";
-import { getLocalizedPath, type SiteLanguage , withEnglishFallback } from "../../lib/site-language";
+import { getLocalizedPath, publicFooterLabels, type SiteLanguage , withEnglishFallback } from "../../lib/site-language";
 
 type InfoCard = {
   title: string;
@@ -459,6 +459,7 @@ export function buildHairdresserMetadata(lang: SiteLanguage, pathname: string): 
 
 export default function HairdresserLanding({ language }: { language: SiteLanguage }) {
   const t = copy[language];
+  const footerLabels = publicFooterLabels[language];
   const ux = getNicheUxContent(language, "hairdressers");
   const screenshots = screenshotsByLanguage[language];
   const faqSchema = {
@@ -576,7 +577,7 @@ export default function HairdresserLanding({ language }: { language: SiteLanguag
 
       <section className="business-feature-section"><div className="business-section-head"><h2>{t.linksTitle}</h2></div><div className="business-footer-links">{t.links.map((link) => <a key={link.href} href={getLocalizedPath(language, link.href)}>{link.label}</a>)}</div></section>
 
-      <footer className="business-footer"><a className="public-logo" href={getLocalizedPath(language)}><BrandLogo /></a><span>{t.footerText}</span><div className="business-footer-links"><a href={getLocalizedPath(language, "/for-business")}>{t.forBusiness}</a><a href={getLocalizedPath(language, "/pricing")}>{language === "uk" ? "Тарифи" : language === "en" ? "Pricing" : "Тарифы"}</a><a href={getLocalizedPath(language, "/privacy")}>{t.privacy}</a><a href={getLocalizedPath(language, "/terms")}>{t.terms}</a><a href={getLocalizedPath(language, "/refund-policy")}>{language === "uk" ? "Політика повернень" : language === "en" ? "Refund policy" : "Политика возвратов"}</a><a href={getLocalizedPath(language, "/contact")}>{language === "uk" ? "Контакти" : language === "en" ? "Contact" : "Контакты"}</a><a href="mailto:adm@timviz.com">adm@timviz.com</a></div></footer>
+      <footer className="business-footer"><a className="public-logo" href={getLocalizedPath(language)}><BrandLogo /></a><span>{t.footerText}</span><div className="business-footer-links"><a href={getLocalizedPath(language, "/for-business")}>{t.forBusiness}</a><a href={getLocalizedPath(language, "/pricing")}>{footerLabels.pricing}</a><a href={getLocalizedPath(language, "/privacy")}>{t.privacy}</a><a href={getLocalizedPath(language, "/terms")}>{t.terms}</a><a href={getLocalizedPath(language, "/refund-policy")}>{footerLabels.refund}</a><a href={getLocalizedPath(language, "/contact")}>{footerLabels.contact}</a><a href="mailto:adm@timviz.com">adm@timviz.com</a></div></footer>
     </main>
   );
 }

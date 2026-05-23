@@ -2,7 +2,7 @@ import Link from "next/link";
 import BrandLogo from "./BrandLogo";
 import GlobalLanguageSwitcher from "./GlobalLanguageSwitcher";
 import PublicHeaderAuthMenu from "./PublicHeaderAuthMenu";
-import { getLocalizedPath, type SiteLanguage , withEnglishFallback } from "../lib/site-language";
+import { getLocalizedPath, publicFooterLabels, type SiteLanguage , withEnglishFallback } from "../lib/site-language";
 import type { legalCopy } from "../lib/legal";
 
 type LegalCopy = (typeof legalCopy)[keyof typeof legalCopy]["ru"];
@@ -76,6 +76,15 @@ const chromeCopy = withEnglishFallback<Record<string, string>>({
   }
 }) satisfies Record<SiteLanguage, Record<string, string>>;
 
+for (const language of Object.keys(publicFooterLabels) as SiteLanguage[]) {
+  chromeCopy[language] = {
+    ...chromeCopy[language],
+    pricing: publicFooterLabels[language].pricing,
+    refund: publicFooterLabels[language].refund,
+    contact: publicFooterLabels[language].contact
+  };
+}
+
 type PublicLegalPageProps = {
   copy: LegalCopy;
   language: SiteLanguage;
@@ -107,7 +116,7 @@ export default function PublicLegalPage({ copy, language, iosSafe }: PublicLegal
           <PublicHeaderAuthMenu language={language} />
           <Link href={getLocalizedPath(language, "/for-business")} className="public-company-button">{t.create}</Link>
           <details className="public-menu">
-            <summary>
+            <summary aria-label={t.menu} title={t.menu}>
               <span>{t.menu}</span>
               <span className="public-burger" aria-hidden="true" />
             </summary>

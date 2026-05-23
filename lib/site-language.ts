@@ -150,6 +150,28 @@ export function withNestedExtraLanguageFallbacks<Key extends string, T>(
   ) as Record<Key, Record<SiteLanguage, T>>;
 }
 
+export const publicFooterLabels: Record<SiteLanguage, { pricing: string; refund: string; contact: string }> = {
+  ru: { pricing: "Тарифы", refund: "Политика возвратов", contact: "Контакты" },
+  uk: { pricing: "Тарифи", refund: "Політика повернень", contact: "Контакти" },
+  en: { pricing: "Pricing", refund: "Refund policy", contact: "Contact" },
+  fr: { pricing: "Tarifs", refund: "Politique de remboursement", contact: "Contact" },
+  pl: { pricing: "Cennik", refund: "Polityka zwrotów", contact: "Kontakt" },
+  cs: { pricing: "Ceník", refund: "Zásady vrácení peněz", contact: "Kontakt" },
+  es: { pricing: "Precios", refund: "Política de reembolso", contact: "Contacto" },
+  de: { pricing: "Preise", refund: "Rückerstattungsrichtlinie", contact: "Kontakt" }
+};
+
+export const localeBySiteLanguage: Record<SiteLanguage, string> = {
+  ru: "ru-RU",
+  uk: "uk-UA",
+  en: "en-US",
+  fr: "fr-FR",
+  pl: "pl-PL",
+  cs: "cs-CZ",
+  es: "es-ES",
+  de: "de-DE"
+};
+
 export function getLocalizedPath(language: SiteLanguage, pathname = "/") {
   const normalized = pathname === "/" ? "" : pathname.replace(/^\/+/, "");
   return `/${language}${normalized ? `/${normalized}` : ""}`;

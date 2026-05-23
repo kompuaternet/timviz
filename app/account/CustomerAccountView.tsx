@@ -22,7 +22,7 @@ import {
   onlyPhoneDigits,
   phoneCountries
 } from "../../lib/phone-format";
-import { getLocalizedPath, type SiteLanguage , withEnglishFallback } from "../../lib/site-language";
+import { getLocalizedPath, localeBySiteLanguage, type SiteLanguage , withEnglishFallback } from "../../lib/site-language";
 import styles from "./customer-account.module.css";
 
 type AccountSection = "profile" | "activity" | "wallet" | "favorites" | "forms" | "settings";
@@ -327,13 +327,21 @@ const copy: Record<SiteLanguage, AccountCopy> = withEnglishFallback<AccountCopy>
   }
 });
 
+Object.assign(copy, {
+  fr: { ...copy.en, profile: "Profil", activity: "Réservations", settings: "Paramètres", allServices: "Tous les services", currentLocation: "Position actuelle", anyTime: "N’importe quand", search: "Rechercher", edit: "Modifier", save: "Enregistrer", empty: "Rien ici pour le moment", noBookings: "Vous n’avez pas encore de réservations à venir. Trouvez une entreprise et choisissez un horaire.", profileTitle: "Profil", addressesTitle: "Mes adresses", firstName: "Prénom", lastName: "Nom", phone: "Téléphone mobile", birthday: "Date de naissance", gender: "Genre", addAddress: "Ajouter", remove: "Supprimer", upcoming: "À venir", bookingHistory: "Historique", bookingDetails: "Détails de la réservation", service: "Service", date: "Date", time: "Heure", status: "Statut", openVenue: "Ouvrir l’entreprise", route: "Itinéraire", signOut: "Se déconnecter", signInTitle: "Compte client", signInGoogle: "Continuer avec Google", upcomingBookings: "Réservations à venir", findBusiness: "Trouver une entreprise", confirmed: "Confirmé", pending: "En attente de confirmation", cancelled: "Annulé", completed: "Terminé", pageTitle: "Mon compte", saved: "Enregistré." },
+  pl: { ...copy.en, profile: "Profil", activity: "Rezerwacje", settings: "Ustawienia", allServices: "Wszystkie usługi", currentLocation: "Aktualna lokalizacja", anyTime: "Dowolny termin", search: "Szukaj", edit: "Edytuj", save: "Zapisz", empty: "Na razie nic tu nie ma", noBookings: "Nie masz jeszcze nadchodzących rezerwacji. Znajdź firmę i wybierz termin.", profileTitle: "Profil", addressesTitle: "Moje adresy", firstName: "Imię", lastName: "Nazwisko", phone: "Telefon komórkowy", birthday: "Data urodzenia", gender: "Płeć", addAddress: "Dodaj", remove: "Usuń", upcoming: "Nadchodzące", bookingHistory: "Historia", bookingDetails: "Szczegóły rezerwacji", service: "Usługa", date: "Data", time: "Godzina", status: "Status", openVenue: "Otwórz firmę", route: "Wyznacz trasę", signOut: "Wyloguj", signInTitle: "Konto klienta", signInGoogle: "Kontynuuj z Google", upcomingBookings: "Nadchodzące rezerwacje", findBusiness: "Znajdź firmę", confirmed: "Potwierdzone", pending: "Oczekuje na potwierdzenie", cancelled: "Anulowane", completed: "Zakończone", pageTitle: "Moje konto", saved: "Zapisano." },
+  cs: { ...copy.en, profile: "Profil", activity: "Rezervace", settings: "Nastavení", allServices: "Všechny služby", currentLocation: "Aktuální poloha", anyTime: "Kdykoliv", search: "Hledat", edit: "Upravit", save: "Uložit", empty: "Zatím tu nic není", noBookings: "Zatím nemáte žádné nadcházející rezervace. Najděte firmu a vyberte čas.", profileTitle: "Profil", addressesTitle: "Moje adresy", firstName: "Jméno", lastName: "Příjmení", phone: "Mobilní telefon", birthday: "Datum narození", gender: "Pohlaví", addAddress: "Přidat", remove: "Odebrat", upcoming: "Nadcházející", bookingHistory: "Historie", bookingDetails: "Detaily rezervace", service: "Služba", date: "Datum", time: "Čas", status: "Stav", openVenue: "Otevřít firmu", route: "Navigovat", signOut: "Odhlásit se", signInTitle: "Účet klienta", signInGoogle: "Pokračovat přes Google", upcomingBookings: "Nadcházející rezervace", findBusiness: "Najít firmu", confirmed: "Potvrzeno", pending: "Čeká na potvrzení", cancelled: "Zrušeno", completed: "Dokončeno", pageTitle: "Můj účet", saved: "Uloženo." },
+  es: { ...copy.en, profile: "Perfil", activity: "Reservas", settings: "Ajustes", allServices: "Todos los servicios", currentLocation: "Ubicación actual", anyTime: "Cualquier hora", search: "Buscar", edit: "Editar", save: "Guardar", empty: "Nada aquí todavía", noBookings: "Aún no tienes reservas próximas. Encuentra una empresa y elige una hora.", profileTitle: "Perfil", addressesTitle: "Mis direcciones", firstName: "Nombre", lastName: "Apellido", phone: "Teléfono móvil", birthday: "Fecha de nacimiento", gender: "Género", addAddress: "Añadir", remove: "Eliminar", upcoming: "Próximas", bookingHistory: "Historial", bookingDetails: "Detalles de reserva", service: "Servicio", date: "Fecha", time: "Hora", status: "Estado", openVenue: "Abrir empresa", route: "Cómo llegar", signOut: "Cerrar sesión", signInTitle: "Cuenta de cliente", signInGoogle: "Continuar con Google", upcomingBookings: "Reservas próximas", findBusiness: "Encontrar empresa", confirmed: "Confirmada", pending: "Pendiente de confirmación", cancelled: "Cancelada", completed: "Completada", pageTitle: "Mi cuenta", saved: "Guardado." },
+  de: { ...copy.en, profile: "Profil", activity: "Buchungen", settings: "Einstellungen", allServices: "Alle Leistungen", currentLocation: "Aktueller Standort", anyTime: "Beliebige Zeit", search: "Suchen", edit: "Bearbeiten", save: "Speichern", empty: "Hier ist noch nichts", noBookings: "Du hast noch keine kommenden Buchungen. Finde ein Unternehmen und wähle eine Zeit.", profileTitle: "Profil", addressesTitle: "Meine Adressen", firstName: "Vorname", lastName: "Nachname", phone: "Mobiltelefon", birthday: "Geburtstag", gender: "Geschlecht", addAddress: "Hinzufügen", remove: "Entfernen", upcoming: "Bevorstehend", bookingHistory: "Verlauf", bookingDetails: "Buchungsdetails", service: "Leistung", date: "Datum", time: "Zeit", status: "Status", openVenue: "Unternehmen öffnen", route: "Route anzeigen", signOut: "Abmelden", signInTitle: "Kundenkonto", signInGoogle: "Mit Google fortfahren", upcomingBookings: "Bevorstehende Buchungen", findBusiness: "Unternehmen finden", confirmed: "Bestätigt", pending: "Wartet auf Bestätigung", cancelled: "Storniert", completed: "Abgeschlossen", pageTitle: "Mein Konto", saved: "Gespeichert." }
+});
+
 function getInitials(value: string) {
   const parts = value.trim().split(/\s+/).filter(Boolean);
   return (parts[0]?.[0] || "T") + (parts[1]?.[0] || "");
 }
 
 function formatBookingDate(date: string, time: string, language: SiteLanguage) {
-  const locale = language === "uk" ? "uk-UA" : language === "en" ? "en-US" : "ru-RU";
+  const locale = localeBySiteLanguage[language];
   return new Intl.DateTimeFormat(locale, {
     weekday: "short",
     day: "numeric",
@@ -612,6 +620,9 @@ export default function CustomerAccountView({
           <Link href={getLocalizedPath(language)} className={styles.brand}>
             <BrandLogo />
           </Link>
+          <div className={styles.headerActions}>
+            <GlobalLanguageSwitcher mode="inline" />
+          </div>
         </header>
         <section className={`${styles.card} ${styles.signInCard}`}>
           <h1 className={styles.sectionTitle}>{t.signInTitle}</h1>

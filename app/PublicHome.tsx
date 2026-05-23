@@ -6,7 +6,7 @@ import type { PublicHomeStats } from "../lib/public-home-stats";
 import { areMobileAppsAvailable, mobileApps } from "../lib/mobile-apps";
 import type { PublicSearchIndex } from "../lib/public-search";
 import { getNicheSlug, nicheCards } from "../lib/niche-pages";
-import { getLocalizedPath, isSiteLanguage, type SiteLanguage, withEnglishFallback } from "../lib/site-language";
+import { getLocalizedPath, isSiteLanguage, publicFooterLabels, type SiteLanguage, withEnglishFallback } from "../lib/site-language";
 import BrandLogo from "./BrandLogo";
 import GlobalLanguageSwitcher from "./GlobalLanguageSwitcher";
 import NicheLinksSection from "./NicheLinksSection";
@@ -105,44 +105,44 @@ function getInitialLanguage(): PublicLanguage {
 const businesses = [
   {
     name: "SORRY FOR MY HAIR",
-    location: { ru: "Подольский район, Киев", uk: "Подільський район, Київ", en: "Podil district, Kyiv" },
-    category: { ru: "Парикмахерская", uk: "Перукарня", en: "Hair salon" },
+    location: { ru: "Подольский район, Киев", uk: "Подільський район, Київ", en: "Podil district, Kyiv", fr: "Quartier Podil, Kyiv", pl: "Dzielnica Podil, Kijów", cs: "Čtvrť Podil, Kyjev", es: "Distrito Podil, Kyiv", de: "Bezirk Podil, Kyjiw" },
+    category: { ru: "Парикмахерская", uk: "Перукарня", en: "Hair salon", fr: "Salon de coiffure", pl: "Salon fryzjerski", cs: "Kadeřnictví", es: "Peluquería", de: "Friseursalon" },
     rating: "5,0",
     reviews: "132",
     image: "https://images.unsplash.com/photo-1521590832167-7bcbfaa6381f?auto=format&fit=crop&w=900&q=80"
   },
   {
     name: "Soulmates Massage",
-    location: { ru: "Печерск, Киев", uk: "Печерськ, Київ", en: "Pechersk, Kyiv" },
-    category: { ru: "Массажный салон", uk: "Масажний салон", en: "Massage studio" },
+    location: { ru: "Печерск, Киев", uk: "Печерськ, Київ", en: "Pechersk, Kyiv", fr: "Petchersk, Kyiv", pl: "Peczersk, Kijów", cs: "Pečersk, Kyjev", es: "Pechersk, Kyiv", de: "Petschersk, Kyjiw" },
+    category: { ru: "Массажный салон", uk: "Масажний салон", en: "Massage studio", fr: "Salon de massage", pl: "Gabinet masażu", cs: "Masážní studio", es: "Centro de masajes", de: "Massagestudio" },
     rating: "4,9",
     reviews: "86",
     image: "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=900&q=80"
   },
   {
     name: "Beauty.Que",
-    location: { ru: "Центр, Львов", uk: "Центр, Львів", en: "City center, Lviv" },
-    category: { ru: "Ногти и ресницы", uk: "Нігті та вії", en: "Nails and lashes" },
+    location: { ru: "Центр, Львов", uk: "Центр, Львів", en: "City center, Lviv", fr: "Centre-ville, Lviv", pl: "Centrum, Lwów", cs: "Centrum, Lvov", es: "Centro, Lviv", de: "Innenstadt, Lwiw" },
+    category: { ru: "Ногти и ресницы", uk: "Нігті та вії", en: "Nails and lashes", fr: "Ongles et cils", pl: "Paznokcie i rzęsy", cs: "Nehty a řasy", es: "Uñas y pestañas", de: "Nägel und Wimpern" },
     rating: "5,0",
     reviews: "241",
     image: "https://images.unsplash.com/photo-1600948836101-f9ffda59d250?auto=format&fit=crop&w=900&q=80"
   },
   {
     name: "La Duette",
-    location: { ru: "Оболонь, Киев", uk: "Оболонь, Київ", en: "Obolon, Kyiv" },
-    category: { ru: "Салон красоты", uk: "Салон краси", en: "Beauty salon" },
+    location: { ru: "Оболонь, Киев", uk: "Оболонь, Київ", en: "Obolon, Kyiv", fr: "Obolon, Kyiv", pl: "Obołoń, Kijów", cs: "Oboloň, Kyjev", es: "Obolon, Kyiv", de: "Obolon, Kyjiw" },
+    category: { ru: "Салон красоты", uk: "Салон краси", en: "Beauty salon", fr: "Institut de beauté", pl: "Salon kosmetyczny", cs: "Kosmetický salon", es: "Salón de belleza", de: "Kosmetikstudio" },
     rating: "5,0",
     reviews: "48",
     image: "https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&w=900&q=80"
   }
 ];
 
-function localizePublicValue(localized: Record<"ru" | "uk" | "en", string>, language: PublicLanguage) {
-  return localized[language as "ru" | "uk" | "en"] ?? localized.en;
+function localizePublicValue(localized: Partial<Record<PublicLanguage, string>> & { en: string }, language: PublicLanguage) {
+  return localized[language] ?? localized.en;
 }
 
-function localizePublicList(localized: Record<"ru" | "uk" | "en", string[]>, language: PublicLanguage) {
-  return localized[language as "ru" | "uk" | "en"] ?? localized.en;
+function localizePublicList(localized: Partial<Record<PublicLanguage, string[]>> & { en: string[] }, language: PublicLanguage) {
+  return localized[language] ?? localized.en;
 }
 
 const copy = withEnglishFallback<Record<string, string | string[][]>>({
@@ -347,9 +347,32 @@ Object.assign(copy, {
     features: "Fonctionnalités business",
     heroTitle: "Réservez des services près de vous",
     heroText: "Tous les services du quotidien au même endroit.",
+    bookedToday: "réservations effectuées aujourd’hui",
     recommended: "Recommandés",
     seeAll: "Voir tout →",
+    appKicker: "Disponible pour les clients",
+    appTitle: "Téléchargez l’application Timviz",
+    appText: "Réservez vos professionnels favoris, découvrez de nouveaux lieux, déplacez vos rendez-vous et recevez des rappels dans une seule application.",
+    appButton: "Télécharger l’application",
+    appSoon: "Les applications iOS et Android arrivent bientôt",
+    comingSoon: "Bientôt disponible",
+    mobileAppsFooter: "Applications mobiles bientôt disponibles",
+    appCardMeta: "5.0 ★★★★★ · Londres",
+    appCardButton: "Réserver",
+    reviewTitle: "Avis",
+    reviewsList: [
+      ["Le meilleur système de réservation", "Une expérience fluide et une réservation simple. Les rappels m’aident à ne manquer aucun rendez-vous.", "Lucy", "Londres"],
+      ["Recherche et réservation faciles", "Je trouve rapidement un bon professionnel près de moi et je choisis l’heure sans messages.", "Dan", "New York"],
+      ["Parfait pour les barbiers", "J’ai comparé plusieurs salons, vérifié les avis et réservé en quelques clics.", "Dale", "Sydney"]
+    ],
+    statsTitle: "Une meilleure plateforme pour les services sur rendez-vous",
+    statsText: "Une solution pour les clients, les professionnels et les propriétaires.",
+    statsLabel: "réservations effectuées sur Timviz",
+    partners: "entreprises partenaires",
+    countries: "pays utilisent Timviz",
+    users: "utilisateurs Timviz",
     businessTitle: "Timviz pour les entreprises",
+    businessText: "Gérez les réservations, les services, les clients, les plannings d’équipe et le support depuis un seul espace.",
     more: "En savoir plus →",
     about: "À propos de Timviz",
     catalog: "Catalogue",
@@ -376,9 +399,32 @@ Object.assign(copy, {
     features: "Funkcje biznesowe",
     heroTitle: "Rezerwuj usługi w pobliżu",
     heroText: "Codzienne usługi w jednym miejscu.",
+    bookedToday: "rezerwacji dokonano dzisiaj",
     recommended: "Polecane",
     seeAll: "Zobacz wszystkie →",
+    appKicker: "Dostępne dla klientów",
+    appTitle: "Pobierz aplikację Timviz",
+    appText: "Rezerwuj ulubionych specjalistów, odkrywaj nowe miejsca, zmieniaj wizyty i otrzymuj przypomnienia w jednej prostej aplikacji.",
+    appButton: "Pobierz aplikację",
+    appSoon: "Aplikacje iOS i Android będą dostępne wkrótce",
+    comingSoon: "Wkrótce",
+    mobileAppsFooter: "Aplikacje mobilne już wkrótce",
+    appCardMeta: "5.0 ★★★★★ · Londyn",
+    appCardButton: "Zarezerwuj",
+    reviewTitle: "Opinie",
+    reviewsList: [
+      ["Najlepszy system rezerwacji", "Płynne doświadczenie i łatwa rezerwacja. Przypomnienia pomagają mi nie przegapić wizyty.", "Lucy", "Londyn"],
+      ["Łatwe wyszukiwanie i rezerwacja", "Szybko znajduję dobrego specjalistę w pobliżu i wybieram termin bez pisania wiadomości.", "Dan", "Nowy Jork"],
+      ["Idealne dla barberów", "Porównałem kilka barber shopów, sprawdziłem opinie i zarezerwowałem w kilka kliknięć.", "Dale", "Sydney"]
+    ],
+    statsTitle: "Lepsza platforma dla usług umawianych na wizyty",
+    statsText: "Jedno rozwiązanie dla klientów, specjalistów i właścicieli firm.",
+    statsLabel: "rezerwacji dokonano w Timviz",
+    partners: "firm partnerskich",
+    countries: "krajów używa Timviz",
+    users: "użytkowników Timviz",
     businessTitle: "Timviz dla biznesu",
+    businessText: "Zarządzaj rezerwacjami, usługami, klientami, grafikami zespołu i obsługą z jednego miejsca.",
     more: "Dowiedz się więcej →",
     about: "O Timviz",
     catalog: "Katalog",
@@ -405,9 +451,32 @@ Object.assign(copy, {
     features: "Funkce pro firmy",
     heroTitle: "Rezervujte služby poblíž",
     heroText: "Každodenní služby na jednom místě.",
+    bookedToday: "rezervací dnes vytvořeno",
     recommended: "Doporučené",
     seeAll: "Zobrazit vše →",
+    appKicker: "Dostupné pro klienty",
+    appTitle: "Stáhněte si aplikaci Timviz",
+    appText: "Rezervujte oblíbené profesionály, objevujte nová místa, přesouvejte návštěvy a dostávejte připomenutí v jedné aplikaci.",
+    appButton: "Stáhnout aplikaci",
+    appSoon: "Aplikace pro iOS a Android budou brzy",
+    comingSoon: "Již brzy",
+    mobileAppsFooter: "Mobilní aplikace již brzy",
+    appCardMeta: "5.0 ★★★★★ · Londýn",
+    appCardButton: "Rezervovat",
+    reviewTitle: "Recenze",
+    reviewsList: [
+      ["Nejlepší rezervační systém", "Plynulé používání a snadná rezervace. Připomenutí mi pomáhají nezmeškat návštěvu.", "Lucy", "Londýn"],
+      ["Snadné hledání a rezervace", "Rychle najdu dobrého profesionála poblíž a vyberu čas bez psaní zpráv.", "Dan", "New York"],
+      ["Perfektní pro barbery", "Porovnal jsem několik barber shopů, zkontroloval recenze a rezervoval na pár kliknutí.", "Dale", "Sydney"]
+    ],
+    statsTitle: "Lepší platforma pro služby na objednávku",
+    statsText: "Jedno řešení pro klienty, profesionály a majitele firem.",
+    statsLabel: "rezervací vytvořeno v Timviz",
+    partners: "partnerských firem",
+    countries: "zemí používá Timviz",
+    users: "uživatelů Timviz",
     businessTitle: "Timviz pro firmy",
+    businessText: "Spravujte rezervace, služby, klienty, rozvrhy týmu a podporu z jednoho prostoru.",
     more: "Zjistit více →",
     about: "O Timviz",
     catalog: "Katalog",
@@ -434,9 +503,32 @@ Object.assign(copy, {
     features: "Funciones para negocios",
     heroTitle: "Reserva servicios cerca",
     heroText: "Servicios diarios, todos en un solo lugar.",
+    bookedToday: "reservas hechas hoy",
     recommended: "Recomendados",
     seeAll: "Ver todo →",
+    appKicker: "Disponible para clientes",
+    appTitle: "Descarga la app Timviz",
+    appText: "Reserva con tus profesionales favoritos, descubre nuevos lugares, cambia visitas y recibe recordatorios en una sola app.",
+    appButton: "Descargar app",
+    appSoon: "Las apps para iOS y Android llegarán pronto",
+    comingSoon: "Próximamente",
+    mobileAppsFooter: "Apps móviles próximamente",
+    appCardMeta: "5.0 ★★★★★ · Londres",
+    appCardButton: "Reservar",
+    reviewTitle: "Reseñas",
+    reviewsList: [
+      ["El mejor sistema de reservas", "Una experiencia fluida y una reserva sencilla. Los recordatorios me ayudan a no perder ninguna visita.", "Lucy", "Londres"],
+      ["Búsqueda y reserva fáciles", "Encuentro rápido un buen profesional cerca y elijo la hora sin mensajes.", "Dan", "Nueva York"],
+      ["Perfecto para barberos", "Comparé varias barberías, revisé reseñas y reservé en pocos clics.", "Dale", "Sídney"]
+    ],
+    statsTitle: "Una mejor plataforma para servicios con cita",
+    statsText: "Una solución para clientes, profesionales y dueños de negocios.",
+    statsLabel: "reservas realizadas en Timviz",
+    partners: "empresas asociadas",
+    countries: "países usan Timviz",
+    users: "usuarios de Timviz",
     businessTitle: "Timviz para negocios",
+    businessText: "Gestiona reservas, servicios, clientes, horarios del equipo y soporte desde un solo espacio.",
     more: "Más información →",
     about: "Sobre Timviz",
     catalog: "Catálogo",
@@ -463,9 +555,32 @@ Object.assign(copy, {
     features: "Business-Funktionen",
     heroTitle: "Services in deiner Nähe buchen",
     heroText: "Alltägliche Services an einem Ort.",
+    bookedToday: "Buchungen heute erstellt",
     recommended: "Empfohlen",
     seeAll: "Alle ansehen →",
+    appKicker: "Für Kunden verfügbar",
+    appTitle: "Timviz App herunterladen",
+    appText: "Buchen Sie Ihre Lieblingsprofis, entdecken Sie neue Orte, verschieben Sie Termine und erhalten Sie Erinnerungen in einer einfachen App.",
+    appButton: "App herunterladen",
+    appSoon: "iOS- und Android-Apps kommen bald",
+    comingSoon: "Demnächst",
+    mobileAppsFooter: "Mobile Apps kommen bald",
+    appCardMeta: "5.0 ★★★★★ · London",
+    appCardButton: "Buchen",
+    reviewTitle: "Bewertungen",
+    reviewsList: [
+      ["Das beste Buchungssystem", "Eine reibungslose Erfahrung und einfache Buchung. Erinnerungen helfen mir, keinen Termin zu verpassen.", "Lucy", "London"],
+      ["Einfache Suche und Buchung", "Ich finde schnell einen guten Profi in der Nähe und wähle die passende Zeit ohne Nachrichten.", "Dan", "New York"],
+      ["Perfekt für Barber", "Ich habe mehrere Barbershops verglichen, Bewertungen geprüft und in wenigen Klicks gebucht.", "Dale", "Sydney"]
+    ],
+    statsTitle: "Eine bessere Plattform für Terminservices",
+    statsText: "Eine Lösung für Kunden, Profis und Unternehmensinhaber.",
+    statsLabel: "Buchungen auf Timviz erstellt",
+    partners: "Partnerunternehmen",
+    countries: "Länder nutzen Timviz",
+    users: "Timviz Nutzer",
     businessTitle: "Timviz für Unternehmen",
+    businessText: "Verwalten Sie Buchungen, Leistungen, Kunden, Teampläne und Support in einem Arbeitsbereich.",
     more: "Mehr erfahren →",
     about: "Über Timviz",
     catalog: "Katalog",
@@ -481,19 +596,29 @@ Object.assign(copy, {
 
 const cities = [
   {
-    city: { ru: "Киев", uk: "Київ", en: "Kyiv" },
+    city: { ru: "Киев", uk: "Київ", en: "Kyiv", fr: "Kyiv", pl: "Kijów", cs: "Kyjev", es: "Kyiv", de: "Kyjiw" },
     links: {
       ru: ["Парикмахерские", "Ногти", "Брови и ресницы", "Массаж", "Спа и сауна"],
       uk: ["Перукарні", "Нігті", "Брови та вії", "Масаж", "Спа і сауна"],
-      en: ["Hair salons", "Nails", "Brows and lashes", "Massage", "Spa and sauna"]
+      en: ["Hair salons", "Nails", "Brows and lashes", "Massage", "Spa and sauna"],
+      fr: ["Coiffure", "Ongles", "Sourcils et cils", "Massage", "Spa et sauna"],
+      pl: ["Fryzjerzy", "Paznokcie", "Brwi i rzęsy", "Masaż", "Spa i sauna"],
+      cs: ["Kadeřnictví", "Nehty", "Obočí a řasy", "Masáž", "Spa a sauna"],
+      es: ["Peluquerías", "Uñas", "Cejas y pestañas", "Masaje", "Spa y sauna"],
+      de: ["Friseursalons", "Nägel", "Augenbrauen und Wimpern", "Massage", "Spa und Sauna"]
     }
   },
   {
-    city: { ru: "Львов", uk: "Львів", en: "Lviv" },
+    city: { ru: "Львов", uk: "Львів", en: "Lviv", fr: "Lviv", pl: "Lwów", cs: "Lvov", es: "Lviv", de: "Lwiw" },
     links: {
       ru: ["Салоны красоты", "Барберы", "Макияж", "Косметология", "Депиляция"],
       uk: ["Салони краси", "Барбери", "Макіяж", "Косметологія", "Депіляція"],
-      en: ["Beauty salons", "Barbers", "Makeup", "Cosmetology", "Waxing"]
+      en: ["Beauty salons", "Barbers", "Makeup", "Cosmetology", "Waxing"],
+      fr: ["Instituts de beauté", "Barbiers", "Maquillage", "Cosmétologie", "Épilation"],
+      pl: ["Salony kosmetyczne", "Barberzy", "Makijaż", "Kosmetologia", "Depilacja"],
+      cs: ["Kosmetické salony", "Barbeři", "Make-up", "Kosmetologie", "Depilace"],
+      es: ["Salones de belleza", "Barberos", "Maquillaje", "Cosmetología", "Depilación"],
+      de: ["Kosmetikstudios", "Barber", "Make-up", "Kosmetik", "Waxing"]
     }
   }
 ];
@@ -504,11 +629,38 @@ const countryTabs = withEnglishFallback<string[]>({
   en: ["Ukraine", "Poland", "Germany", "France", "Italy", "Canada", "USA", "Spain"]
 }) satisfies Record<PublicLanguage, string[]>;
 
+Object.assign(countryTabs, {
+  fr: ["Ukraine", "Pologne", "Allemagne", "France", "Italie", "Canada", "États-Unis", "Espagne"],
+  pl: ["Ukraina", "Polska", "Niemcy", "Francja", "Włochy", "Kanada", "USA", "Hiszpania"],
+  cs: ["Ukrajina", "Polsko", "Německo", "Francie", "Itálie", "Kanada", "USA", "Španělsko"],
+  es: ["Ucrania", "Polonia", "Alemania", "Francia", "Italia", "Canadá", "EE. UU.", "España"],
+  de: ["Ukraine", "Polen", "Deutschland", "Frankreich", "Italien", "Kanada", "USA", "Spanien"]
+});
+
 const dashboardServices = withEnglishFallback<string[]>({
   ru: ["Стрижка", "Окрашивание", "Массаж", "Маникюр"],
   uk: ["Стрижка", "Фарбування", "Масаж", "Манікюр"],
   en: ["Haircut", "Color", "Massage", "Manicure"]
 }) satisfies Record<PublicLanguage, string[]>;
+
+Object.assign(dashboardServices, {
+  fr: ["Coupe", "Coloration", "Massage", "Manucure"],
+  pl: ["Strzyżenie", "Koloryzacja", "Masaż", "Manicure"],
+  cs: ["Střih", "Barvení", "Masáž", "Manikúra"],
+  es: ["Corte", "Coloración", "Masaje", "Manicura"],
+  de: ["Haarschnitt", "Farbe", "Massage", "Maniküre"]
+});
+
+const appDemoCity: Record<PublicLanguage, string> = {
+  ru: "Лондон",
+  uk: "Лондон",
+  en: "London",
+  fr: "Londres",
+  pl: "Londyn",
+  cs: "Londýn",
+  es: "Londres",
+  de: "London"
+};
 
 export default function PublicHome({ searchIndex, stats, initialLanguage = "ru" }: PublicHomeProps) {
   const [language, setLanguage] = useState<PublicLanguage>(initialLanguage);
@@ -536,6 +688,7 @@ export default function PublicHome({ searchIndex, stats, initialLanguage = "ru" 
 
   const reviews = t.reviewsList as string[][];
   const mobileAppsAvailable = areMobileAppsAvailable();
+  const footerLabels = publicFooterLabels[language];
 
   return (
     <main className="public-home">
@@ -545,7 +698,7 @@ export default function PublicHome({ searchIndex, stats, initialLanguage = "ru" 
           <PublicHeaderAuthMenu language={language} />
           <Link href={getLocalizedPath(language, "/for-business")} className="public-company-button">{String(t.create)}</Link>
           <details className="public-menu">
-            <summary>
+            <summary aria-label={String(t.menu)} title={String(t.menu)}>
               <span>{String(t.menu)}</span>
               <span className="public-burger" aria-hidden="true" />
             </summary>
@@ -635,7 +788,7 @@ export default function PublicHome({ searchIndex, stats, initialLanguage = "ru" 
             <button>{String(t.appCardButton)}</button>
           </div>
           <div className="public-map-card">
-            <span>{language === "en" ? "London" : "Лондон"}</span>
+            <span>{appDemoCity[language]}</span>
             <i />
             <i />
             <i />
@@ -761,11 +914,11 @@ export default function PublicHome({ searchIndex, stats, initialLanguage = "ru" 
         </div>
         <div>
           <h3>{String(t.legal)}</h3>
-          <Link href={getLocalizedPath(language, "/pricing")}>{language === "uk" ? "Тарифи" : language === "en" ? "Pricing" : "Тарифы"}</Link>
+          <Link href={getLocalizedPath(language, "/pricing")}>{footerLabels.pricing}</Link>
           <Link href={getLocalizedPath(language, "/privacy")}>{String(t.privacy)}</Link>
           <Link href={getLocalizedPath(language, "/terms")}>{String(t.terms)}</Link>
-          <Link href={getLocalizedPath(language, "/refund-policy")}>{language === "uk" ? "Політика повернень" : language === "en" ? "Refund policy" : "Политика возвратов"}</Link>
-          <Link href={getLocalizedPath(language, "/contact")}>{language === "uk" ? "Контакти" : language === "en" ? "Contact" : "Контакты"}</Link>
+          <Link href={getLocalizedPath(language, "/refund-policy")}>{footerLabels.refund}</Link>
+          <Link href={getLocalizedPath(language, "/contact")}>{footerLabels.contact}</Link>
           <a href="mailto:adm@timviz.com">adm@timviz.com</a>
         </div>
       </footer>

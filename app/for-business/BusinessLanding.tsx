@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { getNicheSlug } from "../../lib/niche-pages";
-import { getLocalizedPath, isSiteLanguage, type SiteLanguage, withEnglishFallback } from "../../lib/site-language";
+import { getLocalizedPath, isSiteLanguage, publicFooterLabels, type SiteLanguage, withEnglishFallback } from "../../lib/site-language";
 import BrandLogo from "../BrandLogo";
 import BusinessIcon from "../BusinessIcon";
 import GlobalLanguageSwitcher from "../GlobalLanguageSwitcher";
@@ -466,6 +466,7 @@ export default function BusinessLanding({ initialLanguage = "ru" }: BusinessLand
   const t = copy[language];
   const assets = screenAssets[language];
   const createProfileLink = "/pro/create-account";
+  const footerLabels = publicFooterLabels[language];
   const capability = capabilityLabels[language];
   const useful = usefulLabels[language];
   const capabilitiesLinks: Array<{ label: string; href: string }> = [
@@ -550,7 +551,7 @@ export default function BusinessLanding({ initialLanguage = "ru" }: BusinessLand
           <PublicHeaderAuthMenu language={language} />
           <a href={createProfileLink} className="public-company-button">{t.create}</a>
           <details className="public-menu">
-            <summary>
+            <summary aria-label={t.menu} title={t.menu}>
               <span>{t.menu}</span>
               <span className="public-burger" aria-hidden="true" />
             </summary>
@@ -728,11 +729,11 @@ export default function BusinessLanding({ initialLanguage = "ru" }: BusinessLand
           {usefulLinks.map((link) => (
             <a href={link.href} key={link.href}>{link.label}</a>
           ))}
-          <a href={getLocalizedPath(language, "/pricing")}>{language === "uk" ? "Тарифи" : language === "en" ? "Pricing" : "Тарифы"}</a>
+          <a href={getLocalizedPath(language, "/pricing")}>{footerLabels.pricing}</a>
           <a href={getLocalizedPath(language, "/privacy")}>{t.privacy}</a>
           <a href={getLocalizedPath(language, "/terms")}>{t.terms}</a>
-          <a href={getLocalizedPath(language, "/refund-policy")}>{language === "uk" ? "Політика повернень" : language === "en" ? "Refund policy" : "Политика возвратов"}</a>
-          <a href={getLocalizedPath(language, "/contact")}>{language === "uk" ? "Контакти" : language === "en" ? "Contact" : "Контакты"}</a>
+          <a href={getLocalizedPath(language, "/refund-policy")}>{footerLabels.refund}</a>
+          <a href={getLocalizedPath(language, "/contact")}>{footerLabels.contact}</a>
           <a href="mailto:adm@timviz.com">adm@timviz.com</a>
         </div>
       </footer>

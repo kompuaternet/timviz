@@ -17,7 +17,7 @@ import {
 } from "../../../lib/phone-format";
 import { getPublicBookingSlots } from "../../../lib/public-booking";
 import { localizeCategoryName, localizeServiceName } from "../../../lib/service-templates";
-import { getLocalizedPath, type SiteLanguage , withEnglishFallback } from "../../../lib/site-language";
+import { getLocalizedPath, localeBySiteLanguage, type SiteLanguage , withEnglishFallback } from "../../../lib/site-language";
 import {
   addMinutesToTime,
   getDayScheduleForMode,
@@ -362,6 +362,349 @@ const businessCopy: Record<SiteLanguage, BusinessCopy> = withEnglishFallback<Bus
   }
 });
 
+Object.assign(businessCopy, {
+  fr: {
+    ...businessCopy.en,
+    breadcrumbHome: "Accueil",
+    breadcrumbCatalog: "Catalogue",
+    openUntil: "Ouvert jusqu’à",
+    route: "Itinéraire",
+    services: "Services",
+    team: "Spécialistes",
+    details: "À propos",
+    bookNow: "Réserver",
+    bookingFlowTitle: "Réservation",
+    serviceStep: "Services",
+    specialistStep: "Spécialiste",
+    timeStep: "Heure",
+    confirmStep: "Confirmation",
+    noPreference: "Sans préférence",
+    noPreferenceText: "Nous trouverons le premier créneau disponible dans l’équipe",
+    select: "Choisir",
+    selected: "Sélectionné",
+    chooseSpecialist: "Choisissez un spécialiste",
+    chooseTime: "Choisissez une heure",
+    continue: "Continuer",
+    goToConfirm: "Passer à la confirmation",
+    total: "Total",
+    close: "Fermer",
+    back: "Retour",
+    duration: "Durée",
+    minuteShort: "min",
+    date: "Date",
+    time: "Heure",
+    specialist: "Spécialiste",
+    selectedServices: "Services du rendez-vous",
+    addAnother: "Ajouter un autre service",
+    signInGoogle: "Continuer avec Google",
+    signInHint: "Connectez-vous avec Google, ajoutez votre téléphone puis confirmez la réservation.",
+    phoneTitle: "Téléphone de confirmation",
+    phonePlaceholder: "Votre numéro",
+    confirmBooking: "Réserver",
+    confirmBookingSubmitting: "Envoi…",
+    pendingHint: "Après l’envoi, la demande apparaîtra dans le calendrier du propriétaire et attendra confirmation.",
+    workingHours: "Horaires",
+    noTimeForDay: "Aucun créneau disponible ce jour-là.",
+    noFreeDays: "Aucun créneau libre dans les prochains jours.",
+    freeTime: "Créneaux disponibles",
+    freeDay: "Disponible",
+    closedDay: "Fermé",
+    fullyBooked: "Complet",
+    dayAvailable: "Jour ouvré",
+    summary: "Votre visite",
+    chooseService: "Choisissez au moins un service",
+    fromPrice: "à partir de",
+    reviews: "Réservation en ligne",
+    verifiedRequest: "La demande sera envoyée au propriétaire pour confirmation",
+    companyInfo: "Informations sur l’entreprise",
+    address: "Adresse",
+    website: "Site web",
+    signInAs: "Connecté en tant que",
+    phoneError: "Vérifiez le numéro de téléphone.",
+    photosTitle: "Photos",
+    mobileSubtitle: "Choisissez un service et un créneau disponible",
+    trustLine: "Sans appels ni messages — vous choisissez seulement un créneau libre",
+    morning: "Matin",
+    afternoon: "Après-midi",
+    evening: "Soir",
+    comment: "Commentaire",
+    commentPlaceholder: "Par exemple : Telegram est plus pratique",
+    bookCta: "Réserver"
+  },
+  pl: {
+    ...businessCopy.en,
+    breadcrumbHome: "Strona główna",
+    breadcrumbCatalog: "Katalog",
+    openUntil: "Otwarte do",
+    route: "Wyznacz trasę",
+    services: "Usługi",
+    team: "Specjaliści",
+    details: "O firmie",
+    bookNow: "Zarezerwuj",
+    bookingFlowTitle: "Rezerwacja",
+    serviceStep: "Usługi",
+    specialistStep: "Specjalista",
+    timeStep: "Godzina",
+    confirmStep: "Potwierdzenie",
+    noPreference: "Bez preferencji",
+    noPreferenceText: "Znajdziemy najbliższy wolny termin u zespołu",
+    select: "Wybierz",
+    selected: "Wybrano",
+    chooseSpecialist: "Wybierz specjalistę",
+    chooseTime: "Wybierz godzinę",
+    continue: "Kontynuuj",
+    goToConfirm: "Przejdź do potwierdzenia",
+    total: "Razem",
+    close: "Zamknij",
+    back: "Wstecz",
+    duration: "Czas trwania",
+    minuteShort: "min",
+    date: "Data",
+    time: "Godzina",
+    specialist: "Specjalista",
+    selectedServices: "Usługi wizyty",
+    addAnother: "Dodaj kolejną usługę",
+    signInGoogle: "Kontynuuj z Google",
+    signInHint: "Najpierw zaloguj się przez Google, potem dodaj telefon i potwierdź rezerwację.",
+    phoneTitle: "Telefon do potwierdzenia",
+    phonePlaceholder: "Twój numer",
+    confirmBooking: "Zarezerwuj",
+    confirmBookingSubmitting: "Wysyłanie…",
+    pendingHint: "Po wysłaniu prośba pojawi się w kalendarzu właściciela i będzie czekać na potwierdzenie.",
+    workingHours: "Godziny pracy",
+    noTimeForDay: "Tego dnia nie ma wolnych terminów.",
+    noFreeDays: "W najbliższych dniach nie ma wolnych terminów.",
+    freeTime: "Dostępne terminy",
+    freeDay: "Dostępne",
+    closedDay: "Zamknięte",
+    fullyBooked: "Zajęte",
+    dayAvailable: "Dzień roboczy",
+    summary: "Twoja wizyta",
+    chooseService: "Wybierz co najmniej jedną usługę",
+    fromPrice: "od",
+    reviews: "Rezerwacja online",
+    verifiedRequest: "Prośba zostanie wysłana do właściciela do potwierdzenia",
+    companyInfo: "Informacje o firmie",
+    address: "Adres",
+    website: "Strona internetowa",
+    signInAs: "Zalogowano jako",
+    phoneError: "Sprawdź numer telefonu.",
+    photosTitle: "Zdjęcia",
+    mobileSubtitle: "Wybierz usługę i wygodny wolny termin",
+    trustLine: "Bez telefonów i wiadomości — wybierasz tylko dostępny czas",
+    morning: "Rano",
+    afternoon: "Dzień",
+    evening: "Wieczór",
+    comment: "Komentarz",
+    commentPlaceholder: "Na przykład: wygodniej pisać na Telegramie",
+    bookCta: "Rezerwuj"
+  },
+  cs: {
+    ...businessCopy.en,
+    breadcrumbHome: "Domů",
+    breadcrumbCatalog: "Katalog",
+    openUntil: "Otevřeno do",
+    route: "Navigovat",
+    services: "Služby",
+    team: "Specialisté",
+    details: "O firmě",
+    bookNow: "Rezervovat",
+    bookingFlowTitle: "Rezervace",
+    serviceStep: "Služby",
+    specialistStep: "Specialista",
+    timeStep: "Čas",
+    confirmStep: "Potvrzení",
+    noPreference: "Bez preference",
+    noPreferenceText: "Najdeme nejbližší volný čas u týmu",
+    select: "Vybrat",
+    selected: "Vybráno",
+    chooseSpecialist: "Vyberte specialistu",
+    chooseTime: "Vyberte čas",
+    continue: "Pokračovat",
+    goToConfirm: "Přejít k potvrzení",
+    total: "Celkem",
+    close: "Zavřít",
+    back: "Zpět",
+    duration: "Délka",
+    minuteShort: "min",
+    date: "Datum",
+    time: "Čas",
+    specialist: "Specialista",
+    selectedServices: "Služby návštěvy",
+    addAnother: "Přidat další službu",
+    signInGoogle: "Pokračovat přes Google",
+    signInHint: "Nejprve se přihlaste přes Google, potom přidejte telefon a potvrďte rezervaci.",
+    phoneTitle: "Telefon pro potvrzení",
+    phonePlaceholder: "Vaše číslo",
+    confirmBooking: "Rezervovat",
+    confirmBookingSubmitting: "Odesíláme…",
+    pendingHint: "Po odeslání se rezervace zobrazí v kalendáři majitele a bude čekat na potvrzení.",
+    workingHours: "Pracovní doba",
+    noTimeForDay: "Na tento den není volný čas.",
+    noFreeDays: "V nejbližších dnech nejsou volné termíny.",
+    freeTime: "Volné časy",
+    freeDay: "Volno",
+    closedDay: "Zavřeno",
+    fullyBooked: "Obsazeno",
+    dayAvailable: "Pracovní den",
+    summary: "Vaše návštěva",
+    chooseService: "Vyberte alespoň jednu službu",
+    fromPrice: "od",
+    reviews: "Online rezervace",
+    verifiedRequest: "Žádost bude odeslána majiteli k potvrzení",
+    companyInfo: "Informace o firmě",
+    address: "Adresa",
+    website: "Web",
+    signInAs: "Přihlášeni jako",
+    phoneError: "Zkontrolujte telefonní číslo.",
+    photosTitle: "Fotografie",
+    mobileSubtitle: "Vyberte službu a vhodný volný čas",
+    trustLine: "Bez telefonů a zpráv — vybíráte jen volný čas",
+    morning: "Ráno",
+    afternoon: "Den",
+    evening: "Večer",
+    comment: "Komentář",
+    commentPlaceholder: "Například: pohodlnější je napsat na Telegram",
+    bookCta: "Rezervovat"
+  },
+  es: {
+    ...businessCopy.en,
+    breadcrumbHome: "Inicio",
+    breadcrumbCatalog: "Catálogo",
+    openUntil: "Abierto hasta",
+    route: "Cómo llegar",
+    services: "Servicios",
+    team: "Especialistas",
+    details: "Información",
+    bookNow: "Reservar",
+    bookingFlowTitle: "Reserva",
+    serviceStep: "Servicios",
+    specialistStep: "Especialista",
+    timeStep: "Hora",
+    confirmStep: "Confirmación",
+    noPreference: "Sin preferencia",
+    noPreferenceText: "Buscaremos el primer horario libre del equipo",
+    select: "Elegir",
+    selected: "Seleccionado",
+    chooseSpecialist: "Elige especialista",
+    chooseTime: "Elige hora",
+    continue: "Continuar",
+    goToConfirm: "Ir a confirmación",
+    total: "Total",
+    close: "Cerrar",
+    back: "Atrás",
+    duration: "Duración",
+    minuteShort: "min",
+    date: "Fecha",
+    time: "Hora",
+    specialist: "Especialista",
+    selectedServices: "Servicios de la visita",
+    addAnother: "Añadir otro servicio",
+    signInGoogle: "Continuar con Google",
+    signInHint: "Primero inicia sesión con Google, añade tu teléfono y confirma la reserva.",
+    phoneTitle: "Teléfono para confirmar",
+    phonePlaceholder: "Tu número",
+    confirmBooking: "Reservar",
+    confirmBookingSubmitting: "Enviando…",
+    pendingHint: "Después de enviarla, la solicitud aparecerá en el calendario del propietario y esperará confirmación.",
+    workingHours: "Horario",
+    noTimeForDay: "No hay horarios libres para este día.",
+    noFreeDays: "No hay turnos libres en los próximos días.",
+    freeTime: "Horas disponibles",
+    freeDay: "Disponible",
+    closedDay: "Cerrado",
+    fullyBooked: "Completo",
+    dayAvailable: "Día laboral",
+    summary: "Tu visita",
+    chooseService: "Elige al menos un servicio",
+    fromPrice: "desde",
+    reviews: "Reserva online",
+    verifiedRequest: "La solicitud se enviará al propietario para confirmación",
+    companyInfo: "Información de la empresa",
+    address: "Dirección",
+    website: "Sitio web",
+    signInAs: "Has iniciado sesión como",
+    phoneError: "Comprueba el número de teléfono.",
+    photosTitle: "Fotos",
+    mobileSubtitle: "Elige un servicio y un horario libre cómodo",
+    trustLine: "Sin llamadas ni mensajes — solo eliges un horario disponible",
+    morning: "Mañana",
+    afternoon: "Día",
+    evening: "Tarde",
+    comment: "Comentario",
+    commentPlaceholder: "Por ejemplo: es más cómodo escribir por Telegram",
+    bookCta: "Reservar"
+  },
+  de: {
+    ...businessCopy.en,
+    breadcrumbHome: "Startseite",
+    breadcrumbCatalog: "Katalog",
+    openUntil: "Geöffnet bis",
+    route: "Route anzeigen",
+    services: "Leistungen",
+    team: "Spezialisten",
+    details: "Über uns",
+    bookNow: "Buchen",
+    bookingFlowTitle: "Buchung",
+    serviceStep: "Leistungen",
+    specialistStep: "Spezialist",
+    timeStep: "Zeit",
+    confirmStep: "Bestätigung",
+    noPreference: "Keine Präferenz",
+    noPreferenceText: "Wir finden den frühesten freien Termin im Team",
+    select: "Auswählen",
+    selected: "Ausgewählt",
+    chooseSpecialist: "Spezialisten wählen",
+    chooseTime: "Zeit wählen",
+    continue: "Weiter",
+    goToConfirm: "Zur Bestätigung",
+    total: "Gesamt",
+    close: "Schließen",
+    back: "Zurück",
+    duration: "Dauer",
+    minuteShort: "Min.",
+    date: "Datum",
+    time: "Zeit",
+    specialist: "Spezialist",
+    selectedServices: "Leistungen des Besuchs",
+    addAnother: "Weitere Leistung hinzufügen",
+    signInGoogle: "Mit Google fortfahren",
+    signInHint: "Melden Sie sich zuerst mit Google an, fügen Sie Ihre Telefonnummer hinzu und bestätigen Sie die Buchung.",
+    phoneTitle: "Telefon zur Bestätigung",
+    phonePlaceholder: "Ihre Nummer",
+    confirmBooking: "Buchen",
+    confirmBookingSubmitting: "Wird gesendet…",
+    pendingHint: "Nach dem Senden erscheint die Anfrage im Kalender des Inhabers und wartet auf Bestätigung.",
+    workingHours: "Öffnungszeiten",
+    noTimeForDay: "An diesem Tag gibt es keine freien Zeiten.",
+    noFreeDays: "In den nächsten Tagen gibt es keine freien Termine.",
+    freeTime: "Verfügbare Zeiten",
+    freeDay: "Frei",
+    closedDay: "Geschlossen",
+    fullyBooked: "Ausgebucht",
+    dayAvailable: "Arbeitstag",
+    summary: "Dein Besuch",
+    chooseService: "Wähle mindestens eine Leistung",
+    fromPrice: "ab",
+    reviews: "Online-Buchung",
+    verifiedRequest: "Die Anfrage wird zur Bestätigung an den Inhaber gesendet",
+    companyInfo: "Unternehmensdetails",
+    address: "Adresse",
+    website: "Website",
+    signInAs: "Angemeldet als",
+    phoneError: "Prüfen Sie die Telefonnummer.",
+    photosTitle: "Fotos",
+    mobileSubtitle: "Wählen Sie eine Leistung und eine passende freie Zeit",
+    trustLine: "Ohne Anrufe und Nachrichten — Sie wählen nur freie Zeiten",
+    morning: "Morgen",
+    afternoon: "Tag",
+    evening: "Abend",
+    comment: "Kommentar",
+    commentPlaceholder: "Zum Beispiel: Telegram ist bequemer",
+    bookCta: "Buchen"
+  }
+});
+
 function ConfirmBookingSubmitButton({
   disabled,
   label,
@@ -575,7 +918,7 @@ export default function BusinessView({
 }: BusinessViewProps) {
   const language = initialLanguage;
   const t = businessCopy[language];
-  const locale = language === "uk" ? "uk-UA" : language === "en" ? "en-US" : "ru-RU";
+  const locale = localeBySiteLanguage[language];
   const normalizedWorkSchedule = useMemo(() => normalizeWorkSchedule(business.workSchedule), [business.workSchedule]);
   const normalizedCustomSchedule = useMemo(
     () => normalizeCustomSchedule(business.customSchedule),
@@ -621,7 +964,22 @@ export default function BusinessView({
             id: business.ownerProfessionalId,
             firstName: business.name,
             lastName: "",
-            role: language === "en" ? "Owner" : language === "uk" ? "Власник" : "Владелец",
+            role:
+              language === "uk"
+                ? "Власник"
+                : language === "ru"
+                  ? "Владелец"
+                  : language === "fr"
+                    ? "Propriétaire"
+                    : language === "pl"
+                      ? "Właściciel"
+                      : language === "cs"
+                        ? "Majitel"
+                        : language === "es"
+                          ? "Propietario"
+                          : language === "de"
+                            ? "Inhaber"
+                            : "Owner",
             scope: "owner" as const,
             workScheduleMode: business.workScheduleMode,
             workSchedule: business.workSchedule,
@@ -1228,7 +1586,7 @@ export default function BusinessView({
             {t.breadcrumbCatalog}
           </a>
           <details className="public-menu">
-            <summary>
+            <summary aria-label={publicMenuLabel[language]} title={publicMenuLabel[language]}>
               <span>{publicMenuLabel[language]}</span>
               <span className="public-burger" aria-hidden="true" />
             </summary>
@@ -1461,15 +1819,15 @@ export default function BusinessView({
       </section>
 
       {bookingOpen ? (
-        <div className="company-booking-modal">
+        <div className="company-booking-modal" role="dialog" aria-modal="true" aria-label={t.bookingFlowTitle}>
           <div className="company-booking-modal-shell">
-            <button type="button" className="company-modal-close" onClick={closeBookingFlow}>
+            <button type="button" className="company-modal-close" onClick={closeBookingFlow} aria-label={t.close}>
               ×
             </button>
             <div className="company-booking-modal-content">
               <div className="company-booking-flow">
                 <div className="company-booking-topbar">
-                  <button type="button" className="company-modal-back" onClick={goBack}>
+                  <button type="button" className="company-modal-back" onClick={goBack} aria-label={t.back}>
                     ←
                   </button>
                   <div className="company-booking-progress">
@@ -1484,9 +1842,9 @@ export default function BusinessView({
                   </div>
                 </div>
 
-                {bookingStep === "services" ? (
-                  <section className="company-booking-step">
-                    <header className="company-booking-step-head">
+                    {bookingStep === "services" ? (
+                      <section className="company-booking-step">
+                        <header className="company-booking-step-head">
                       <h2>{t.selectedServices}</h2>
                       <p>{t.addAnother}</p>
                     </header>
@@ -1592,7 +1950,7 @@ export default function BusinessView({
                   <section className="company-booking-step">
                     <header className="company-booking-step-head">
                       <h2>{t.chooseTime}</h2>
-                      <button type="button" className="company-calendar-toggle" onClick={() => setMonthPickerOpen((value) => !value)}>
+                      <button type="button" className="company-calendar-toggle" onClick={() => setMonthPickerOpen((value) => !value)} aria-label={t.date}>
                         🗓
                       </button>
                     </header>
@@ -1831,14 +2189,14 @@ export default function BusinessView({
             </div>
 
             <div className="company-booking-modal-footer">
-              {bookingStep !== "confirm" && bookingStep !== "time" ? (
+              {bookingStep !== "confirm" ? (
                 <button
                   type="button"
                   className="primary-button company-booking-gradient-button company-modal-next"
                   onClick={goNext}
                   disabled={!canGoToNextStep()}
                 >
-                  {t.continue}
+                  {bookingStep === "time" ? t.goToConfirm : t.continue}
                 </button>
               ) : null}
             </div>

@@ -77,6 +77,69 @@ const salonCopy: Record<SiteLanguage, SalonCopy> = withEnglishFallback<SalonCopy
   }
 });
 
+Object.assign(salonCopy, {
+  fr: {
+    bookingTitle: "Choisissez un service et un créneau",
+    date: "Date",
+    name: "Nom",
+    phone: "Téléphone",
+    comment: "Commentaire",
+    namePlaceholder: "Par exemple, Anna",
+    commentPlaceholder: "Ajoutez des remarques pour la visite",
+    submit: "Confirmer la réservation",
+    noSlots: "Aucun créneau disponible pour la date choisie.",
+    chooseTimeError: "Choisissez une heure de réservation."
+  },
+  pl: {
+    bookingTitle: "Wybierz usługę i termin",
+    date: "Data",
+    name: "Imię",
+    phone: "Telefon",
+    comment: "Komentarz",
+    namePlaceholder: "Na przykład Anna",
+    commentPlaceholder: "Dodaj uwagi do wizyty",
+    submit: "Potwierdź rezerwację",
+    noSlots: "Brak wolnych terminów w wybranym dniu.",
+    chooseTimeError: "Wybierz godzinę rezerwacji."
+  },
+  cs: {
+    bookingTitle: "Vyberte službu a čas",
+    date: "Datum",
+    name: "Jméno",
+    phone: "Telefon",
+    comment: "Komentář",
+    namePlaceholder: "Například Anna",
+    commentPlaceholder: "Přidejte poznámky k návštěvě",
+    submit: "Potvrdit rezervaci",
+    noSlots: "Pro vybrané datum nejsou volné časy.",
+    chooseTimeError: "Vyberte čas rezervace."
+  },
+  es: {
+    bookingTitle: "Elige un servicio y una hora",
+    date: "Fecha",
+    name: "Nombre",
+    phone: "Teléfono",
+    comment: "Comentario",
+    namePlaceholder: "Por ejemplo, Anna",
+    commentPlaceholder: "Añade notas para la visita",
+    submit: "Confirmar reserva",
+    noSlots: "No hay horarios libres para la fecha seleccionada.",
+    chooseTimeError: "Elige una hora de reserva."
+  },
+  de: {
+    bookingTitle: "Leistung und Termin wählen",
+    date: "Datum",
+    name: "Name",
+    phone: "Telefon",
+    comment: "Kommentar",
+    namePlaceholder: "Zum Beispiel Anna",
+    commentPlaceholder: "Fügen Sie Hinweise zum Besuch hinzu",
+    submit: "Buchung bestätigen",
+    noSlots: "Für das ausgewählte Datum gibt es keine freien Zeiten.",
+    chooseTimeError: "Wählen Sie eine Buchungszeit."
+  }
+});
+
 function getTodayDateKey() {
   const now = new Date();
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
@@ -91,6 +154,26 @@ function getPhoneErrorText(language: SiteLanguage, country: string) {
 
   if (language === "en") {
     return `Check the number: ${digits} digits are required without the country code.`;
+  }
+
+  if (language === "fr") {
+    return `Vérifiez le numéro : ${digits} chiffres sont requis sans l’indicatif du pays.`;
+  }
+
+  if (language === "pl") {
+    return `Sprawdź numer: wymagane jest ${digits} cyfr bez kodu kraju.`;
+  }
+
+  if (language === "cs") {
+    return `Zkontrolujte číslo: je potřeba ${digits} číslic bez kódu země.`;
+  }
+
+  if (language === "es") {
+    return `Comprueba el número: se requieren ${digits} dígitos sin el código de país.`;
+  }
+
+  if (language === "de") {
+    return `Prüfen Sie die Nummer: ${digits} Ziffern ohne Ländervorwahl sind erforderlich.`;
   }
 
   return getPhoneValidationMessage(country);

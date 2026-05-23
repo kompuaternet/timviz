@@ -31,6 +31,29 @@ const accountSeoCopy: Record<SiteLanguage, { title: string; description: string 
   }
 });
 
+Object.assign(accountSeoCopy, {
+  fr: {
+    title: "Compte client Timviz",
+    description: "Gérez vos réservations en ligne, votre profil et vos préférences de notification dans votre compte client Timviz."
+  },
+  pl: {
+    title: "Konto klienta Timviz",
+    description: "Zarządzaj rezerwacjami online, profilem i ustawieniami powiadomień w koncie klienta Timviz."
+  },
+  cs: {
+    title: "Zákaznický účet Timviz",
+    description: "Spravujte své online rezervace, profil a nastavení oznámení v zákaznickém účtu Timviz."
+  },
+  es: {
+    title: "Cuenta de cliente Timviz",
+    description: "Gestiona tus reservas online, tu perfil y las preferencias de notificación en tu cuenta de cliente Timviz."
+  },
+  de: {
+    title: "Timviz Kundenkonto",
+    description: "Verwalten Sie Ihre Online-Buchungen, Ihr Profil und Ihre Benachrichtigungseinstellungen im Timviz Kundenkonto."
+  }
+});
+
 export async function generateMetadata({
   params
 }: LocalizedAccountPageProps): Promise<Metadata> {

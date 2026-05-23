@@ -20,7 +20,7 @@ import {
   isFeatureSlug
 } from "../../../lib/for-business-seo-pages";
 import { buildMetadata } from "../../../lib/seo";
-import { getLocalizedPath, isSiteLanguage, siteLanguages, type SiteLanguage, withEnglishFallback } from "../../../lib/site-language";
+import { getLocalizedPath, isSiteLanguage, publicFooterLabels, siteLanguages, type SiteLanguage, withEnglishFallback } from "../../../lib/site-language";
 import { siteUrl } from "../../../lib/seo";
 
 type LocalizedSeoPageProps = {
@@ -62,6 +62,64 @@ const pageCopy = withEnglishFallback<Record<string, string>>({
     footerText: "Timviz for business · online client booking and service management"
   }
 }) satisfies Record<SiteLanguage, Record<string, string>>;
+
+Object.assign(pageCopy, {
+  fr: {
+    home: "Accueil",
+    forBusiness: "Pour les pros",
+    ctaTitle: "Lancez la réservation en ligne avec Timviz",
+    ctaText: "Créez votre profil, ajoutez vos services et acceptez les réservations avec moins d'administration manuelle.",
+    ctaButton: "Créer un profil d'entreprise",
+    otherTitle: "Autres secteurs",
+    privacy: "Politique de confidentialité",
+    terms: "Conditions d'utilisation",
+    footerText: "Timviz pour les pros · réservation client en ligne et gestion des services"
+  },
+  pl: {
+    home: "Strona główna",
+    forBusiness: "Dla firm",
+    ctaTitle: "Uruchom rezerwacje online z Timviz",
+    ctaText: "Utwórz profil, dodaj usługi i przyjmuj rezerwacje bez chaosu w komunikatorach.",
+    ctaButton: "Utwórz profil firmy",
+    otherTitle: "Inne branże",
+    privacy: "Polityka prywatności",
+    terms: "Warunki korzystania",
+    footerText: "Timviz dla firm · rezerwacje klientów online i zarządzanie usługami"
+  },
+  cs: {
+    home: "Domů",
+    forBusiness: "Pro firmy",
+    ctaTitle: "Spusťte online rezervace s Timviz",
+    ctaText: "Vytvořte profil, přidejte služby a přijímejte rezervace bez chaosu ve zprávách.",
+    ctaButton: "Vytvořit profil firmy",
+    otherTitle: "Další obory",
+    privacy: "Zásady ochrany osobních údajů",
+    terms: "Podmínky použití",
+    footerText: "Timviz pro firmy · online rezervace klientů a správa služeb"
+  },
+  es: {
+    home: "Inicio",
+    forBusiness: "Para empresas",
+    ctaTitle: "Activa las reservas online con Timviz",
+    ctaText: "Crea tu perfil, añade servicios y recibe reservas con menos gestión manual.",
+    ctaButton: "Crear perfil de empresa",
+    otherTitle: "Otros sectores",
+    privacy: "Política de privacidad",
+    terms: "Condiciones de uso",
+    footerText: "Timviz para empresas · reservas online y gestión de servicios"
+  },
+  de: {
+    home: "Startseite",
+    forBusiness: "Für Unternehmen",
+    ctaTitle: "Starten Sie Online-Buchungen mit Timviz",
+    ctaText: "Erstellen Sie Ihr Profil, fügen Sie Leistungen hinzu und nehmen Sie Buchungen ohne Nachrichtenchaos an.",
+    ctaButton: "Unternehmensprofil erstellen",
+    otherTitle: "Weitere Bereiche",
+    privacy: "Datenschutz",
+    terms: "Nutzungsbedingungen",
+    footerText: "Timviz für Unternehmen · Online-Kundenbuchung und Leistungsverwaltung"
+  }
+});
 
 export async function generateStaticParams() {
   return siteLanguages.flatMap((lang) => [
@@ -113,6 +171,7 @@ export default async function LocalizedNichePage({ params }: LocalizedSeoPagePro
 
   const language = lang as SiteLanguage;
   const t = pageCopy[language];
+  const footerLabels = publicFooterLabels[language];
   const isNichePage = Boolean(nicheKey);
   const content = nicheKey ? nicheContent[nicheKey][language] : getFeaturePageCopy(featurePage!, language);
   const related = nicheKey ? nicheKeys.filter((key) => key !== nicheKey) : [];
@@ -175,11 +234,11 @@ export default async function LocalizedNichePage({ params }: LocalizedSeoPagePro
         <span>{t.footerText}</span>
         <div className="business-footer-links">
           <a href={getLocalizedPath(language, "/for-business")}>{t.forBusiness}</a>
-          <a href={getLocalizedPath(language, "/pricing")}>{language === "uk" ? "Тарифи" : language === "en" ? "Pricing" : "Тарифы"}</a>
+          <a href={getLocalizedPath(language, "/pricing")}>{footerLabels.pricing}</a>
           <a href={getLocalizedPath(language, "/privacy")}>{t.privacy}</a>
           <a href={getLocalizedPath(language, "/terms")}>{t.terms}</a>
-          <a href={getLocalizedPath(language, "/refund-policy")}>{language === "uk" ? "Політика повернень" : language === "en" ? "Refund policy" : "Политика возвратов"}</a>
-          <a href={getLocalizedPath(language, "/contact")}>{language === "uk" ? "Контакти" : language === "en" ? "Contact" : "Контакты"}</a>
+          <a href={getLocalizedPath(language, "/refund-policy")}>{footerLabels.refund}</a>
+          <a href={getLocalizedPath(language, "/contact")}>{footerLabels.contact}</a>
           <a href="mailto:adm@timviz.com">adm@timviz.com</a>
         </div>
       </footer>

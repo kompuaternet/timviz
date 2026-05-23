@@ -36,6 +36,49 @@ const copy: Record<SiteLanguage, PreviewCopy> = withEnglishFallback<PreviewCopy>
   }
 });
 
+Object.assign(copy, {
+  fr: { title: "Cette section arrive bientôt", text: "Cette page de ville est encore une page temporaire. La version indexable sera activée après ajout du contenu.", backCatalog: "Aller au catalogue", backHome: "Accueil" },
+  pl: { title: "Ta sekcja pojawi się wkrótce", text: "Ta strona miasta jest na razie wersją tymczasową. Wersję indeksowaną włączymy po uzupełnieniu treści.", backCatalog: "Przejdź do katalogu", backHome: "Strona główna" },
+  cs: { title: "Tato sekce bude brzy otevřena", text: "Tato městská stránka je zatím dočasná. Indexovatelnou verzi zapneme po doplnění obsahu.", backCatalog: "Přejít do katalogu", backHome: "Domů" },
+  es: { title: "Esta sección estará disponible pronto", text: "Esta página de ciudad es temporal. Activaremos la versión indexable cuando el contenido esté listo.", backCatalog: "Ir al catálogo", backHome: "Inicio" },
+  de: { title: "Dieser Bereich kommt bald", text: "Diese Stadtseite ist derzeit ein Platzhalter. Die indexierbare Version wird nach dem Befüllen aktiviert.", backCatalog: "Zum Katalog", backHome: "Startseite" }
+});
+
+const cityPreviewSeoCopy: Record<SiteLanguage, { title: string; description: string }> = {
+  ru: {
+    title: "Городская страница в разработке | Timviz",
+    description: "Временная заглушка. Страница закрыта от индексации до публикации полного контента."
+  },
+  uk: {
+    title: "Міська сторінка в розробці | Timviz",
+    description: "Тимчасова заглушка. Сторінка закрита від індексації до публікації повного контенту."
+  },
+  en: {
+    title: "City page in progress | Timviz",
+    description: "Temporary placeholder. This page is set to noindex until full content is published."
+  },
+  fr: {
+    title: "Page de ville en préparation | Timviz",
+    description: "Page temporaire. Elle reste en noindex jusqu'à la publication du contenu complet."
+  },
+  pl: {
+    title: "Strona miasta w przygotowaniu | Timviz",
+    description: "Tymczasowa strona. Pozostaje wyłączona z indeksowania do publikacji pełnej treści."
+  },
+  cs: {
+    title: "Městská stránka se připravuje | Timviz",
+    description: "Dočasná stránka. Do zveřejnění plného obsahu je nastavena jako noindex."
+  },
+  es: {
+    title: "Página de ciudad en preparación | Timviz",
+    description: "Página temporal. Está marcada como noindex hasta publicar el contenido completo."
+  },
+  de: {
+    title: "Stadtseite in Vorbereitung | Timviz",
+    description: "Vorübergehender Platzhalter. Die Seite bleibt bis zur Veröffentlichung vollständiger Inhalte auf noindex."
+  }
+};
+
 function getParam(params: Record<string, string | string[] | undefined>, key: string) {
   const value = params[key];
   return Array.isArray(value) ? value[0] : value;
@@ -45,19 +88,7 @@ export async function generateMetadata({ params }: CityPreviewPageProps): Promis
   const { lang } = await params;
   if (!isSiteLanguage(lang)) return {};
 
-  const title =
-    lang === "ru"
-      ? "Городская страница в разработке | Timviz"
-      : lang === "uk"
-        ? "Міська сторінка в розробці | Timviz"
-        : "City page in progress | Timviz";
-
-  const description =
-    lang === "ru"
-      ? "Временная заглушка. Страница закрыта от индексации до публикации полного контента."
-      : lang === "uk"
-        ? "Тимчасова заглушка. Сторінка закрита від індексації до публікації повного контенту."
-        : "Temporary placeholder. This page is set to noindex until full content is published.";
+  const { title, description } = cityPreviewSeoCopy[lang];
 
   return {
     title,

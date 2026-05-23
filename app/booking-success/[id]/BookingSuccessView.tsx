@@ -83,6 +83,84 @@ const bookingSuccessCopy: Record<SiteLanguage, BookingSuccessCopy> = withEnglish
   }
 });
 
+Object.assign(bookingSuccessCopy, {
+  fr: {
+    ...bookingSuccessCopy.en,
+    locale: "fr-FR",
+    eyebrow: "Réservation confirmée",
+    pendingEyebrow: "Demande envoyée",
+    pendingHeroText: "Votre demande a été envoyée au professionnel. Après confirmation, la visite deviendra active.",
+    bookingNumber: "Numéro de réservation",
+    service: "Service",
+    date: "Date",
+    time: "Heure",
+    client: "Client",
+    phone: "Téléphone",
+    backToSalon: "Retour à la page de l’entreprise",
+    openCatalog: "Trouver une autre entreprise"
+  },
+  pl: {
+    ...bookingSuccessCopy.en,
+    locale: "pl-PL",
+    eyebrow: "Rezerwacja potwierdzona",
+    pendingEyebrow: "Prośba wysłana",
+    pendingHeroText: "Prośba o rezerwację została wysłana. Po potwierdzeniu wizyta stanie się aktywna.",
+    bookingNumber: "Numer rezerwacji",
+    service: "Usługa",
+    date: "Data",
+    time: "Godzina",
+    client: "Klient",
+    phone: "Telefon",
+    backToSalon: "Wróć na stronę firmy",
+    openCatalog: "Znajdź inną firmę"
+  },
+  cs: {
+    ...bookingSuccessCopy.en,
+    locale: "cs-CZ",
+    eyebrow: "Rezervace potvrzena",
+    pendingEyebrow: "Žádost odeslána",
+    pendingHeroText: "Žádost o rezervaci byla odeslána. Po potvrzení bude návštěva aktivní.",
+    bookingNumber: "Číslo rezervace",
+    service: "Služba",
+    date: "Datum",
+    time: "Čas",
+    client: "Klient",
+    phone: "Telefon",
+    backToSalon: "Zpět na stránku firmy",
+    openCatalog: "Najít další firmu"
+  },
+  es: {
+    ...bookingSuccessCopy.en,
+    locale: "es-ES",
+    eyebrow: "Reserva confirmada",
+    pendingEyebrow: "Solicitud enviada",
+    pendingHeroText: "Tu solicitud de reserva fue enviada. Cuando se confirme, la visita estará activa.",
+    bookingNumber: "Número de reserva",
+    service: "Servicio",
+    date: "Fecha",
+    time: "Hora",
+    client: "Cliente",
+    phone: "Teléfono",
+    backToSalon: "Volver a la página de la empresa",
+    openCatalog: "Encontrar otra empresa"
+  },
+  de: {
+    ...bookingSuccessCopy.en,
+    locale: "de-DE",
+    eyebrow: "Buchung bestätigt",
+    pendingEyebrow: "Anfrage gesendet",
+    pendingHeroText: "Deine Buchungsanfrage wurde gesendet. Nach Bestätigung wird der Besuch aktiv.",
+    bookingNumber: "Buchungsnummer",
+    service: "Leistung",
+    date: "Datum",
+    time: "Zeit",
+    client: "Kunde",
+    phone: "Telefon",
+    backToSalon: "Zur Unternehmensseite zurück",
+    openCatalog: "Weiteres Unternehmen finden"
+  }
+});
+
 function formatAppointmentDate(value: string, language: SiteLanguage) {
   return new Intl.DateTimeFormat(bookingSuccessCopy[language].locale, {
     day: "numeric",

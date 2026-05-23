@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import GoogleTag, { getGoogleTagManagerId } from "./GoogleTag";
-import GlobalLanguageSwitcher from "./GlobalLanguageSwitcher";
 import { buildMetadata, seoCopy, siteUrl } from "../lib/seo";
 import { defaultSiteLanguage } from "../lib/site-language";
 import "./globals.css";
@@ -56,7 +55,6 @@ export default async function RootLayout({
       </head>
       <body>
         <GoogleTag />
-        <GlobalLanguageSwitcher />
         {children}
       </body>
     </html>

@@ -726,6 +726,70 @@ export const legalCopy: Record<
   }
 });
 
+const legalExtraCopy: Partial<
+  Record<LegalPageType, Partial<Record<Exclude<SiteLanguage, "ru" | "uk" | "en">, Omit<LegalCopy, "sections"> & { sections?: LegalCopy["sections"] }>>>
+> = {
+  privacy: {
+    fr: { title: "Politique de confidentialité Timviz", description: "Comment Timviz collecte, utilise et protège les données des utilisateurs, clients, entreprises et réservations.", eyebrow: "Confidentialité Timviz", heading: "Politique de confidentialité", intro: "Timviz aide les entreprises à gérer les réservations en ligne, les clients, les plannings et les pages publiques. Cette page explique quelles données nous utilisons et pourquoi." },
+    pl: { title: "Polityka prywatności Timviz", description: "Jak Timviz zbiera, wykorzystuje i chroni dane użytkowników, klientów, firm oraz rezerwacji online.", eyebrow: "Prywatność Timviz", heading: "Polityka prywatności", intro: "Timviz pomaga firmom zarządzać rezerwacjami online, klientami, grafikami i publicznymi stronami firm. Ta strona wyjaśnia, jakich danych używamy i dlaczego." },
+    cs: { title: "Zásady ochrany osobních údajů Timviz", description: "Jak Timviz shromažďuje, používá a chrání data uživatelů, klientů, firem a online rezervací.", eyebrow: "Soukromí Timviz", heading: "Zásady ochrany osobních údajů", intro: "Timviz pomáhá firmám spravovat online rezervace, klienty, rozvrhy a veřejné stránky. Tato stránka vysvětluje, jaká data používáme a proč." },
+    es: { title: "Política de privacidad de Timviz", description: "Cómo Timviz recopila, utiliza y protege datos de usuarios, clientes, empresas y reservas online.", eyebrow: "Privacidad de Timviz", heading: "Política de privacidad", intro: "Timviz ayuda a las empresas a gestionar reservas online, clientes, horarios y páginas públicas. Esta página explica qué datos usamos y por qué." },
+    de: { title: "Timviz Datenschutzrichtlinie", description: "Wie Timviz Daten von Nutzern, Kunden, Unternehmen und Online-Buchungen erhebt, verwendet und schützt.", eyebrow: "Timviz Datenschutz", heading: "Datenschutzrichtlinie", intro: "Timviz hilft Unternehmen, Online-Buchungen, Kunden, Zeitpläne und öffentliche Seiten zu verwalten. Diese Seite erklärt, welche Daten wir verwenden und warum." }
+  },
+  terms: {
+    fr: { title: "Conditions d’utilisation Timviz", description: "Règles d’utilisation de Timviz pour les entreprises, les équipes et les clients qui réservent en ligne.", eyebrow: "Conditions Timviz", heading: "Conditions d’utilisation", intro: "Ces conditions décrivent les règles de base pour utiliser Timviz comme propriétaire, membre d’équipe ou client." },
+    pl: { title: "Warunki korzystania z Timviz", description: "Zasady korzystania z Timviz dla właścicieli firm, zespołów i klientów rezerwujących online.", eyebrow: "Warunki Timviz", heading: "Warunki korzystania", intro: "Te warunki opisują podstawowe zasady korzystania z Timviz przez właścicieli firm, zespoły i klientów." },
+    cs: { title: "Podmínky použití Timviz", description: "Pravidla používání Timviz pro firmy, týmy a klienty, kteří se objednávají online.", eyebrow: "Podmínky Timviz", heading: "Podmínky použití", intro: "Tyto podmínky popisují základní pravidla používání Timviz pro majitele firem, týmy a klienty." },
+    es: { title: "Términos de uso de Timviz", description: "Reglas de uso de Timviz para empresas, equipos y clientes que reservan online.", eyebrow: "Términos de Timviz", heading: "Términos de uso", intro: "Estos términos describen las reglas básicas para usar Timviz como propietario, equipo o cliente." },
+    de: { title: "Timviz Nutzungsbedingungen", description: "Regeln für die Nutzung von Timviz durch Unternehmen, Teams und Kunden, die online buchen.", eyebrow: "Timviz Bedingungen", heading: "Nutzungsbedingungen", intro: "Diese Bedingungen beschreiben die Grundregeln für die Nutzung von Timviz durch Inhaber, Teams und Kunden." }
+  },
+  "subscription-terms": {
+    fr: { title: "Conditions d’abonnement Timviz", description: "Conditions des abonnements Timviz Premium, essai gratuit, renouvellement et annulation.", eyebrow: "Abonnement Timviz", heading: "Conditions d’abonnement", intro: "Cette page décrit le fonctionnement des abonnements Timviz Premium, de l’essai gratuit, du renouvellement et de l’annulation." },
+    pl: { title: "Warunki subskrypcji Timviz", description: "Warunki Timviz Premium, okresu próbnego, odnowienia i anulowania.", eyebrow: "Subskrypcja Timviz", heading: "Warunki subskrypcji", intro: "Ta strona opisuje działanie subskrypcji Timviz Premium, okresu próbnego, odnowienia i anulowania." },
+    cs: { title: "Podmínky předplatného Timviz", description: "Podmínky Timviz Premium, zkušební doby, obnovení a zrušení.", eyebrow: "Předplatné Timviz", heading: "Podmínky předplatného", intro: "Tato stránka popisuje, jak funguje Timviz Premium, zkušební doba, obnovení a zrušení." },
+    es: { title: "Condiciones de suscripción de Timviz", description: "Condiciones de Timviz Premium, prueba gratuita, renovación y cancelación.", eyebrow: "Suscripción Timviz", heading: "Condiciones de suscripción", intro: "Esta página describe cómo funcionan Timviz Premium, la prueba gratuita, la renovación y la cancelación." },
+    de: { title: "Timviz Abonnementbedingungen", description: "Bedingungen für Timviz Premium, Testphase, Verlängerung und Kündigung.", eyebrow: "Timviz Abonnement", heading: "Abonnementbedingungen", intro: "Diese Seite beschreibt, wie Timviz Premium, Testphase, Verlängerung und Kündigung funktionieren." }
+  },
+  "refund-policy": {
+    fr: { title: "Politique de remboursement Timviz", description: "Règles de remboursement pour les abonnements et services numériques Timviz.", eyebrow: "Remboursements Timviz", heading: "Politique de remboursement", intro: "Cette page explique comment Timviz traite les demandes de remboursement liées aux abonnements et aux services numériques." },
+    pl: { title: "Polityka zwrotów Timviz", description: "Zasady zwrotów dla subskrypcji i usług cyfrowych Timviz.", eyebrow: "Zwroty Timviz", heading: "Polityka zwrotów", intro: "Ta strona wyjaśnia, jak Timviz obsługuje prośby o zwrot dotyczące subskrypcji i usług cyfrowych." },
+    cs: { title: "Zásady vrácení peněz Timviz", description: "Pravidla vrácení peněz pro předplatné a digitální služby Timviz.", eyebrow: "Vrácení peněz Timviz", heading: "Zásady vrácení peněz", intro: "Tato stránka vysvětluje, jak Timviz řeší žádosti o vrácení peněz za předplatné a digitální služby." },
+    es: { title: "Política de reembolso de Timviz", description: "Reglas de reembolso para suscripciones y servicios digitales de Timviz.", eyebrow: "Reembolsos Timviz", heading: "Política de reembolso", intro: "Esta página explica cómo Timviz gestiona solicitudes de reembolso relacionadas con suscripciones y servicios digitales." },
+    de: { title: "Timviz Rückerstattungsrichtlinie", description: "Regeln für Rückerstattungen bei Timviz Abonnements und digitalen Services.", eyebrow: "Timviz Rückerstattungen", heading: "Rückerstattungsrichtlinie", intro: "Diese Seite erklärt, wie Timviz Rückerstattungsanfragen zu Abonnements und digitalen Services bearbeitet." }
+  },
+  support: {
+    fr: { title: "Support Timviz", description: "Obtenez de l’aide pour votre compte Timviz, votre abonnement ou le produit.", eyebrow: "Support Timviz", heading: "Support", intro: "Contactez le support Timviz pour toute question liée au compte, à l’abonnement ou au produit." },
+    pl: { title: "Pomoc Timviz", description: "Uzyskaj pomoc dotyczącą konta Timviz, subskrypcji lub produktu.", eyebrow: "Pomoc Timviz", heading: "Pomoc", intro: "Skontaktuj się z pomocą Timviz w sprawach konta, subskrypcji lub produktu." },
+    cs: { title: "Podpora Timviz", description: "Získejte pomoc s účtem Timviz, předplatným nebo produktem.", eyebrow: "Podpora Timviz", heading: "Podpora", intro: "Kontaktujte podporu Timviz s dotazy k účtu, předplatnému nebo produktu." },
+    es: { title: "Soporte Timviz", description: "Obtén ayuda con tu cuenta Timviz, suscripción o producto.", eyebrow: "Soporte Timviz", heading: "Soporte", intro: "Contacta con soporte de Timviz para preguntas sobre cuenta, suscripción o producto." },
+    de: { title: "Timviz Support", description: "Erhalten Sie Hilfe zu Ihrem Timviz Konto, Abonnement oder Produkt.", eyebrow: "Timviz Support", heading: "Support", intro: "Kontaktieren Sie den Timviz Support bei Fragen zu Konto, Abonnement oder Produkt." }
+  },
+  "account-deletion": {
+    fr: { title: "Suppression de compte Timviz", description: "Comment demander la suppression de votre compte Timviz et des données associées.", eyebrow: "Compte Timviz", heading: "Suppression de compte", intro: "Cette page explique comment demander la suppression d’un compte Timviz et des données associées." },
+    pl: { title: "Usunięcie konta Timviz", description: "Jak poprosić o usunięcie konta Timviz i powiązanych danych.", eyebrow: "Konto Timviz", heading: "Usunięcie konta", intro: "Ta strona wyjaśnia, jak poprosić o usunięcie konta Timviz i powiązanych danych." },
+    cs: { title: "Smazání účtu Timviz", description: "Jak požádat o smazání účtu Timviz a souvisejících dat.", eyebrow: "Účet Timviz", heading: "Smazání účtu", intro: "Tato stránka vysvětluje, jak požádat o smazání účtu Timviz a souvisejících dat." },
+    es: { title: "Eliminación de cuenta Timviz", description: "Cómo solicitar la eliminación de tu cuenta Timviz y los datos asociados.", eyebrow: "Cuenta Timviz", heading: "Eliminación de cuenta", intro: "Esta página explica cómo solicitar la eliminación de una cuenta Timviz y los datos asociados." },
+    de: { title: "Timviz Konto löschen", description: "So beantragen Sie die Löschung Ihres Timviz Kontos und der zugehörigen Daten.", eyebrow: "Timviz Konto", heading: "Konto löschen", intro: "Diese Seite erklärt, wie Sie die Löschung eines Timviz Kontos und der zugehörigen Daten beantragen." }
+  },
+  contact: {
+    fr: { title: "Contacter Timviz", description: "Contactez le support Timviz pour les questions de compte, d’abonnement et de produit.", eyebrow: "Contact Timviz", heading: "Contact", intro: "Contactez-nous au sujet du logiciel de réservation Timviz, de votre compte, de votre abonnement ou d’une demande de support.", sections: [{ title: "Support", paragraphs: ["Email : adm@timviz.com", "Délai de réponse habituel : 1 à 2 jours ouvrés."] }, { title: "Produit", paragraphs: ["Produit : logiciel de réservation Timviz.", "Nom légal de l’entreprise : [LEGAL_BUSINESS_NAME]."] }] },
+    pl: { title: "Kontakt z Timviz", description: "Skontaktuj się z pomocą Timviz w sprawach konta, subskrypcji i produktu.", eyebrow: "Kontakt Timviz", heading: "Kontakt", intro: "Skontaktuj się z nami w sprawie oprogramowania Timviz, konta, subskrypcji lub prośby o pomoc.", sections: [{ title: "Pomoc", paragraphs: ["Email: adm@timviz.com", "Typowy czas odpowiedzi: 1–2 dni robocze."] }, { title: "Produkt", paragraphs: ["Produkt: oprogramowanie do rezerwacji Timviz.", "Nazwa prawna firmy: [LEGAL_BUSINESS_NAME]."] }] },
+    cs: { title: "Kontakt Timviz", description: "Kontaktujte podporu Timviz s dotazy k účtu, předplatnému a produktu.", eyebrow: "Kontakt Timviz", heading: "Kontakt", intro: "Kontaktujte nás ohledně rezervačního softwaru Timviz, účtu, předplatného nebo podpory.", sections: [{ title: "Podpora", paragraphs: ["Email: adm@timviz.com", "Obvyklá doba odpovědi: 1–2 pracovní dny."] }, { title: "Produkt", paragraphs: ["Produkt: rezervační software Timviz.", "Právní název firmy: [LEGAL_BUSINESS_NAME]."] }] },
+    es: { title: "Contactar con Timviz", description: "Contacta con soporte de Timviz para preguntas sobre cuenta, suscripción y producto.", eyebrow: "Contacto Timviz", heading: "Contacto", intro: "Contacta con nosotros sobre el software de reservas Timviz, tu cuenta, suscripción o solicitud de soporte.", sections: [{ title: "Soporte", paragraphs: ["Email: adm@timviz.com", "Tiempo habitual de respuesta: 1–2 días laborables."] }, { title: "Producto", paragraphs: ["Producto: software de reservas Timviz.", "Nombre legal de la empresa: [LEGAL_BUSINESS_NAME]."] }] },
+    de: { title: "Timviz kontaktieren", description: "Kontaktieren Sie den Timviz Support bei Fragen zu Konto, Abonnement und Produkt.", eyebrow: "Timviz Kontakt", heading: "Kontakt", intro: "Kontaktieren Sie uns zum Timviz Buchungssystem, Ihrem Konto, Abonnement oder einer Supportanfrage.", sections: [{ title: "Support", paragraphs: ["E-Mail: adm@timviz.com", "Übliche Antwortzeit: 1–2 Werktage."] }, { title: "Produkt", paragraphs: ["Produkt: Timviz Buchungssoftware.", "Rechtlicher Firmenname: [LEGAL_BUSINESS_NAME]."] }] }
+  }
+};
+
+for (const [type, translations] of Object.entries(legalExtraCopy) as Array<[LegalPageType, NonNullable<(typeof legalExtraCopy)[LegalPageType]>]>) {
+  for (const [language, patch] of Object.entries(translations) as Array<[Exclude<SiteLanguage, "ru" | "uk" | "en">, NonNullable<(typeof translations)[Exclude<SiteLanguage, "ru" | "uk" | "en">]>]>) {
+    legalCopy[type][language] = {
+      ...legalCopy[type].en,
+      ...patch,
+      sections: patch.sections ?? legalCopy[type].en.sections
+    };
+  }
+}
+
 export function buildLegalMetadata(type: LegalPageType, language: SiteLanguage): Metadata {
   const copy = legalCopy[type][language];
   const pathname = `/${language}/${type}`;

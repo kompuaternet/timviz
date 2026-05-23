@@ -10,78 +10,105 @@ type PublicHeaderAuthMenuProps = {
 
 type AuthMenuCopy = {
   login: string;
+  logout: string;
   myAccount: string;
   customerLogin: string;
   customerCabinet: string;
   masterLogin: string;
   masterCabinet: string;
+  profile: string;
+  openMenu: string;
 };
 
 const authMenuCopy: Record<SiteLanguage, AuthMenuCopy> = withExtraLanguageFallbacks<AuthMenuCopy>({
   ru: {
     login: "Войти",
+    logout: "Выйти",
     myAccount: "Мой кабинет",
     customerLogin: "Вход для клиента",
     customerCabinet: "Кабинет клиента",
     masterLogin: "Вход для мастера",
-    masterCabinet: "Кабинет мастера"
+    masterCabinet: "Кабинет мастера",
+    profile: "Профиль",
+    openMenu: "Открыть меню аккаунта"
   },
   uk: {
     login: "Увійти",
+    logout: "Вийти",
     myAccount: "Мій кабінет",
     customerLogin: "Вхід для клієнта",
     customerCabinet: "Кабінет клієнта",
     masterLogin: "Вхід для майстра",
-    masterCabinet: "Кабінет майстра"
+    masterCabinet: "Кабінет майстра",
+    profile: "Профіль",
+    openMenu: "Відкрити меню акаунта"
   },
   en: {
     login: "Log in",
+    logout: "Log out",
     myAccount: "My account",
     customerLogin: "Client sign in",
     customerCabinet: "Customer account",
     masterLogin: "Master sign in",
-    masterCabinet: "Master dashboard"
+    masterCabinet: "Master dashboard",
+    profile: "Profile",
+    openMenu: "Open account menu"
   }
 }, {
   fr: {
     login: "Connexion",
+    logout: "Déconnexion",
     myAccount: "Mon compte",
     customerLogin: "Connexion client",
     customerCabinet: "Compte client",
     masterLogin: "Connexion pro",
-    masterCabinet: "Tableau de bord pro"
+    masterCabinet: "Tableau de bord pro",
+    profile: "Profil",
+    openMenu: "Ouvrir le menu du compte"
   },
   pl: {
     login: "Zaloguj się",
+    logout: "Wyloguj",
     myAccount: "Moje konto",
     customerLogin: "Logowanie klienta",
     customerCabinet: "Konto klienta",
     masterLogin: "Logowanie specjalisty",
-    masterCabinet: "Panel specjalisty"
+    masterCabinet: "Panel specjalisty",
+    profile: "Profil",
+    openMenu: "Otwórz menu konta"
   },
   cs: {
     login: "Přihlásit se",
+    logout: "Odhlásit se",
     myAccount: "Můj účet",
     customerLogin: "Přihlášení klienta",
     customerCabinet: "Účet klienta",
     masterLogin: "Přihlášení profesionála",
-    masterCabinet: "Panel profesionála"
+    masterCabinet: "Panel profesionála",
+    profile: "Profil",
+    openMenu: "Otevřít menu účtu"
   },
   es: {
     login: "Iniciar sesión",
+    logout: "Cerrar sesión",
     myAccount: "Mi cuenta",
     customerLogin: "Acceso de cliente",
     customerCabinet: "Cuenta de cliente",
     masterLogin: "Acceso profesional",
-    masterCabinet: "Panel profesional"
+    masterCabinet: "Panel profesional",
+    profile: "Perfil",
+    openMenu: "Abrir menú de cuenta"
   },
   de: {
     login: "Einloggen",
+    logout: "Abmelden",
     myAccount: "Mein Konto",
     customerLogin: "Kundenlogin",
     customerCabinet: "Kundenkonto",
     masterLogin: "Profi-Login",
-    masterCabinet: "Profi-Dashboard"
+    masterCabinet: "Profi-Dashboard",
+    profile: "Profil",
+    openMenu: "Kontomenü öffnen"
   }
 });
 
@@ -190,7 +217,7 @@ export default function PublicHeaderAuthMenu({ language }: PublicHeaderAuthMenuP
 
   return (
     <details className="public-menu public-entry-menu">
-      <summary className="public-login-entry">
+      <summary className="public-login-entry" aria-label={isAuthenticated ? t.openMenu : t.login} title={isAuthenticated ? t.profile : t.login}>
         {isAuthenticated ? (
           <span className="public-login-auth">
             {proAvatarUrl ? (
@@ -201,7 +228,10 @@ export default function PublicHeaderAuthMenu({ language }: PublicHeaderAuthMenuP
             <span className="public-login-name">{authMenuLabel}</span>
           </span>
         ) : (
-          authMenuLabel
+          <span className="public-login-auth">
+            <span className="public-login-icon" aria-hidden="true" />
+            <span className="public-login-name">{authMenuLabel}</span>
+          </span>
         )}
       </summary>
       <div className="public-menu-panel public-entry-panel">

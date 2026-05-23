@@ -281,6 +281,144 @@ const catalogCopy: Record<SiteLanguage, CatalogCopy> = withEnglishFallback<Catal
   }
 });
 
+Object.assign(catalogCopy, {
+  fr: {
+    ...catalogCopy.en,
+    locale: "fr-FR",
+    defaultTitle: "Rechercher des profils disponibles",
+    searchTitle: (query: string) => `Recherche : ${query}`,
+    anyTime: "N’importe quand",
+    withoutGeolocation: "Sans géolocalisation",
+    emptyTitle: "Aucun résultat",
+    emptyText: "Essayez de changer l’heure, la ville ou la catégorie.",
+    action: "Ouvrir et réserver",
+    onlineBookingEnabled: "Réservation en ligne",
+    distanceUnknown: "Géolocalisation non sélectionnée",
+    priceFrom: (price: string) => `à partir de ${price}`,
+    resultCount: (count: number) => `${count} résultat${count === 1 ? "" : "s"}`,
+    loading: "Chargement des résultats",
+    searchButton: "Rechercher",
+    expandServices: "Afficher les services",
+    collapseServices: "Masquer les services",
+    showAllServices: "Tout afficher",
+    resultSummaryTitle: (count: number) => `${count} entreprise${count === 1 ? "" : "s"} trouvée${count === 1 ? "" : "s"}`,
+    companiesForBooking: "Entreprises à réserver",
+    listTab: "Liste",
+    mapTab: "Carte",
+    useMap: "Utiliser la carte",
+    watchCompanies: (count: number) => `↓ Voir ${count} entreprise${count === 1 ? "" : "s"}`,
+    resetFilters: "Réinitialiser"
+  },
+  pl: {
+    ...catalogCopy.en,
+    locale: "pl-PL",
+    defaultTitle: "Szukaj dostępnych profili",
+    searchTitle: (query: string) => `Szukaj: ${query}`,
+    anyTime: "Dowolny termin",
+    withoutGeolocation: "Bez geolokalizacji",
+    emptyTitle: "Nic nie znaleziono",
+    emptyText: "Zmień godzinę, miasto lub kategorię.",
+    action: "Otwórz i zarezerwuj",
+    onlineBookingEnabled: "Rezerwacja online",
+    distanceUnknown: "Nie wybrano geolokalizacji",
+    priceFrom: (price: string) => `od ${price}`,
+    resultCount: (count: number) => `${count} wynik${count === 1 ? "" : "ów"}`,
+    loading: "Ładowanie wyników",
+    searchButton: "Szukaj",
+    expandServices: "Pokaż usługi",
+    collapseServices: "Ukryj usługi",
+    showAllServices: "Pokaż wszystkie",
+    resultSummaryTitle: (count: number) => `${count} firm znaleziono`,
+    companiesForBooking: "Firmy do rezerwacji",
+    listTab: "Lista",
+    mapTab: "Mapa",
+    useMap: "Użyj mapy",
+    watchCompanies: (count: number) => `↓ Zobacz ${count} firm`,
+    resetFilters: "Wyczyść filtry"
+  },
+  cs: {
+    ...catalogCopy.en,
+    locale: "cs-CZ",
+    defaultTitle: "Hledat dostupné profily",
+    searchTitle: (query: string) => `Hledat: ${query}`,
+    anyTime: "Kdykoliv",
+    withoutGeolocation: "Bez geolokace",
+    emptyTitle: "Nic nenalezeno",
+    emptyText: "Změňte čas, město nebo kategorii.",
+    action: "Otevřít a rezervovat",
+    onlineBookingEnabled: "Online rezervace",
+    distanceUnknown: "Geolokace není vybrána",
+    priceFrom: (price: string) => `od ${price}`,
+    resultCount: (count: number) => `${count} výsledků`,
+    loading: "Načítáme výsledky",
+    searchButton: "Hledat",
+    expandServices: "Zobrazit služby",
+    collapseServices: "Skrýt služby",
+    showAllServices: "Zobrazit vše",
+    resultSummaryTitle: (count: number) => `${count} firem nalezeno`,
+    companiesForBooking: "Firmy k rezervaci",
+    listTab: "Seznam",
+    mapTab: "Mapa",
+    useMap: "Použít mapu",
+    watchCompanies: (count: number) => `↓ Zobrazit ${count} firem`,
+    resetFilters: "Resetovat filtry"
+  },
+  es: {
+    ...catalogCopy.en,
+    locale: "es-ES",
+    defaultTitle: "Buscar perfiles disponibles",
+    searchTitle: (query: string) => `Buscar: ${query}`,
+    anyTime: "Cualquier hora",
+    withoutGeolocation: "Sin geolocalización",
+    emptyTitle: "No se encontró nada",
+    emptyText: "Prueba cambiar la hora, ciudad o categoría.",
+    action: "Abrir y reservar",
+    onlineBookingEnabled: "Reserva online",
+    distanceUnknown: "Geolocalización no seleccionada",
+    priceFrom: (price: string) => `desde ${price}`,
+    resultCount: (count: number) => `${count} resultado${count === 1 ? "" : "s"}`,
+    loading: "Cargando resultados",
+    searchButton: "Buscar",
+    expandServices: "Mostrar servicios",
+    collapseServices: "Ocultar servicios",
+    showAllServices: "Mostrar todo",
+    resultSummaryTitle: (count: number) => `${count} empresa${count === 1 ? "" : "s"} encontrada${count === 1 ? "" : "s"}`,
+    companiesForBooking: "Empresas para reservar",
+    listTab: "Lista",
+    mapTab: "Mapa",
+    useMap: "Usar mapa",
+    watchCompanies: (count: number) => `↓ Ver ${count} empresa${count === 1 ? "" : "s"}`,
+    resetFilters: "Restablecer filtros"
+  },
+  de: {
+    ...catalogCopy.en,
+    locale: "de-DE",
+    defaultTitle: "Verfügbare Profile suchen",
+    searchTitle: (query: string) => `Suche: ${query}`,
+    anyTime: "Beliebige Zeit",
+    withoutGeolocation: "Ohne Standort",
+    emptyTitle: "Nichts gefunden",
+    emptyText: "Ändere Zeit, Stadt oder Kategorie.",
+    action: "Öffnen und buchen",
+    onlineBookingEnabled: "Online-Buchung",
+    distanceUnknown: "Standort nicht ausgewählt",
+    priceFrom: (price: string) => `ab ${price}`,
+    resultCount: (count: number) => `${count} Ergebnis${count === 1 ? "" : "se"}`,
+    loading: "Ergebnisse werden geladen",
+    searchButton: "Suchen",
+    expandServices: "Leistungen anzeigen",
+    collapseServices: "Leistungen ausblenden",
+    showAllServices: "Alle anzeigen",
+    resultSummaryTitle: (count: number) => `${count} Unternehmen gefunden`,
+    companiesForBooking: "Unternehmen zum Buchen",
+    listTab: "Liste",
+    mapTab: "Karte",
+    useMap: "Karte nutzen",
+    watchCompanies: (count: number) => `↓ ${count} Unternehmen ansehen`,
+    resetFilters: "Filter zurücksetzen"
+  }
+});
+
 function getSlavicPlural(value: number, forms: [string, string, string]) {
   const mod10 = value % 10;
   const mod100 = value % 100;
@@ -1009,7 +1147,7 @@ export default function CatalogView({
             {catalogLabel}
           </Link>
 	          <details className="public-menu">
-	            <summary>
+	            <summary aria-label={menuLabel} title={menuLabel}>
 	              <span>{menuLabel}</span>
 	              <span className="public-burger" aria-hidden="true" />
 	            </summary>
