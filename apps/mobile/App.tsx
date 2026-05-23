@@ -664,6 +664,20 @@ const SUPPORT_TICKET_KEY_PREFIX = "timviz_mobile_support_ticket_v1:";
 const PUSH_PROJECT_ID_ERROR = "push_project_id_missing";
 const WORKSPACE_CACHE_KEY = "timviz_mobile_workspace_cache_v2";
 const API_BASE_URL = (process.env.EXPO_PUBLIC_API_BASE_URL || "https://timviz.com").replace(/\/+$/, "");
+const APPLE_STANDARD_EULA_URL = "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/";
+const LEGAL_URLS = {
+  support: `${API_BASE_URL}/support?source=ios`,
+  privacy: `${API_BASE_URL}/privacy?source=ios`,
+  terms: APPLE_STANDARD_EULA_URL,
+  subscriptionTerms: `${API_BASE_URL}/subscription-terms?source=ios`,
+  refundPolicy: `${API_BASE_URL}/refund-policy?source=ios`,
+  accountDeletion: `${API_BASE_URL}/account-deletion?source=ios`,
+};
+
+function openLegalUrl(url: string) {
+  return Linking.openURL(url).catch(() => undefined);
+}
+
 const WORDMARK = require("./assets/timviz-wordmark.png");
 const DEFAULT_SERVICE_CATEGORY = "Без категории";
 const SERVICE_COLORS = ["#9AD86A", "#8ED1F2", "#FF9A84", "#F7C948", "#A78BFA", "#34D399", "#F472B6", "#60A5FA"];
@@ -5264,15 +5278,106 @@ Object.assign(generatedMobileCopy.de, {
   supportSent: "Nachricht gesendet.",
 });
 
+const legalCopy = {
+  uk: {
+    legalSubscriptionIntro: "Оформлюючи підписку, ви погоджуєтесь з:",
+    termsOfUse: "Умови використання",
+    privacyPolicy: "Політика конфіденційності",
+    premiumRestore: "Відновити покупки",
+    helpSupport: "Допомога та документи",
+    support: "Підтримка",
+    subscriptionTerms: "Умови підписки",
+    refundPolicy: "Політика повернення",
+    accountDeletion: "Видалення акаунта",
+  },
+  ru: {
+    legalSubscriptionIntro: "Оформляя подписку, вы соглашаетесь с:",
+    termsOfUse: "Условия использования",
+    privacyPolicy: "Политика конфиденциальности",
+    premiumRestore: "Восстановить покупки",
+    helpSupport: "Помощь и документы",
+    support: "Поддержка",
+    subscriptionTerms: "Условия подписки",
+    refundPolicy: "Политика возврата",
+    accountDeletion: "Удаление аккаунта",
+  },
+  en: {
+    legalSubscriptionIntro: "By subscribing, you agree to:",
+    termsOfUse: "Terms of Use",
+    privacyPolicy: "Privacy Policy",
+    premiumRestore: "Restore purchases",
+    helpSupport: "Help & Legal",
+    support: "Support",
+    subscriptionTerms: "Subscription Terms",
+    refundPolicy: "Refund Policy",
+    accountDeletion: "Account deletion",
+  },
+  fr: {
+    legalSubscriptionIntro: "En vous abonnant, vous acceptez :",
+    termsOfUse: "Conditions d’utilisation",
+    privacyPolicy: "Politique de confidentialité",
+    premiumRestore: "Restaurer les achats",
+    helpSupport: "Aide et documents légaux",
+    support: "Assistance",
+    subscriptionTerms: "Conditions d’abonnement",
+    refundPolicy: "Politique de remboursement",
+    accountDeletion: "Suppression du compte",
+  },
+  pl: {
+    legalSubscriptionIntro: "Subskrybując, akceptujesz:",
+    termsOfUse: "Warunki korzystania",
+    privacyPolicy: "Polityka prywatności",
+    premiumRestore: "Przywróć zakupy",
+    helpSupport: "Pomoc i dokumenty prawne",
+    support: "Wsparcie",
+    subscriptionTerms: "Warunki subskrypcji",
+    refundPolicy: "Polityka zwrotów",
+    accountDeletion: "Usunięcie konta",
+  },
+  cs: {
+    legalSubscriptionIntro: "Přihlášením k odběru souhlasíte s:",
+    termsOfUse: "Podmínky použití",
+    privacyPolicy: "Zásady ochrany osobních údajů",
+    premiumRestore: "Obnovit nákupy",
+    helpSupport: "Nápověda a právní dokumenty",
+    support: "Podpora",
+    subscriptionTerms: "Podmínky předplatného",
+    refundPolicy: "Zásady vrácení peněz",
+    accountDeletion: "Smazání účtu",
+  },
+  es: {
+    legalSubscriptionIntro: "Al suscribirte, aceptas:",
+    termsOfUse: "Términos de uso",
+    privacyPolicy: "Política de privacidad",
+    premiumRestore: "Restaurar compras",
+    helpSupport: "Ayuda y documentos legales",
+    support: "Soporte",
+    subscriptionTerms: "Términos de suscripción",
+    refundPolicy: "Política de reembolso",
+    accountDeletion: "Eliminación de cuenta",
+  },
+  de: {
+    legalSubscriptionIntro: "Mit dem Abonnement akzeptierst du:",
+    termsOfUse: "Nutzungsbedingungen",
+    privacyPolicy: "Datenschutzrichtlinie",
+    premiumRestore: "Käufe wiederherstellen",
+    helpSupport: "Hilfe & Rechtliches",
+    support: "Support",
+    subscriptionTerms: "Abonnementbedingungen",
+    refundPolicy: "Rückerstattungsrichtlinie",
+    accountDeletion: "Konto löschen",
+  },
+} satisfies Record<AppLanguage, Record<string, string>>;
+
 const copy = {
-  uk: baseCopy.uk,
-  ru: baseCopy.ru,
-  en: baseCopy.en,
-  fr: { ...baseCopy.en, ...generatedMobileCopy.fr },
-  pl: { ...baseCopy.en, ...generatedMobileCopy.pl },
-  cs: { ...baseCopy.en, ...generatedMobileCopy.cs },
-  es: { ...baseCopy.en, ...generatedMobileCopy.es },
-  de: { ...baseCopy.en, ...generatedMobileCopy.de },
+  uk: { ...baseCopy.uk, ...legalCopy.uk },
+  ru: { ...baseCopy.ru, ...legalCopy.ru },
+  en: { ...baseCopy.en, ...legalCopy.en },
+  fr: { ...baseCopy.en, ...generatedMobileCopy.fr, ...legalCopy.fr },
+  pl: { ...baseCopy.en, ...generatedMobileCopy.pl, ...legalCopy.pl },
+  cs: { ...baseCopy.en, ...generatedMobileCopy.cs, ...legalCopy.cs },
+  es: { ...baseCopy.en, ...generatedMobileCopy.es, ...legalCopy.es },
+  de: { ...baseCopy.en, ...generatedMobileCopy.de, ...legalCopy.de },
 } satisfies Record<AppLanguage, Record<keyof typeof baseCopy.en, string>>;
 
 function detectLanguage(): AppLanguage {
@@ -11569,8 +11674,9 @@ function WorkspaceHeader({
     }
   }
 
-  async function openLegalPage(pathname: string) {
-    await Linking.openURL(`${API_BASE_URL}/${language}${pathname}?source=ios`).catch(() => undefined);
+  async function openLegalPage(target: string) {
+    const url = target.startsWith("http") ? target : `${API_BASE_URL}/${language}${target}?source=ios`;
+    await openLegalUrl(url);
   }
 
   function openDeleteAccountFlow() {
@@ -11983,10 +12089,10 @@ function WorkspaceHeader({
             {panel === "help" ? (
               <View style={styles.headerPanelBody}>
                 <AccountMenuRow icon="chatbubble-ellipses-outline" title={t.support || t.supportTitle || "Support"} onPress={() => setPanel("support")} />
-                <AccountMenuRow icon="shield-checkmark-outline" title={t.privacyPolicy || "Privacy Policy"} onPress={() => void openLegalPage("/privacy")} />
-                <AccountMenuRow icon="document-text-outline" title={t.termsOfUse || "Terms of Use"} onPress={() => void openLegalPage("/terms")} />
-                <AccountMenuRow icon="receipt-outline" title={t.subscriptionTerms || "Subscription Terms"} onPress={() => void openLegalPage("/subscription-terms")} />
-                <AccountMenuRow icon="return-down-back-outline" title={t.refundPolicy || "Refund Policy"} onPress={() => void openLegalPage("/refund-policy")} />
+                <AccountMenuRow icon="document-text-outline" title={t.termsOfUse || "Terms of Use"} onPress={() => void openLegalPage(LEGAL_URLS.terms)} />
+                <AccountMenuRow icon="shield-checkmark-outline" title={t.privacyPolicy || "Privacy Policy"} onPress={() => void openLegalPage(LEGAL_URLS.privacy)} />
+                <AccountMenuRow icon="receipt-outline" title={t.subscriptionTerms || "Subscription Terms"} onPress={() => void openLegalPage(LEGAL_URLS.subscriptionTerms)} />
+                <AccountMenuRow icon="return-down-back-outline" title={t.refundPolicy || "Refund Policy"} onPress={() => void openLegalPage(LEGAL_URLS.refundPolicy)} />
                 <AccountMenuRow icon="trash-outline" title={t.accountDeletion || "Account deletion"} danger onPress={openDeleteAccountFlow} />
               </View>
             ) : null}
@@ -15571,10 +15677,17 @@ function SettingsTab({
               {t.subscriptionAutoRenewText ||
                 "Subscription renews automatically unless cancelled at least 24 hours before the end of the current period. You can manage or cancel your subscription in your Apple ID settings."}
             </Text>
-            <View style={styles.settingsActionRow}>
-              <SecondaryButton label={t.privacyPolicy || "Privacy Policy"} onPress={() => Linking.openURL(`${API_BASE_URL}/${language}/privacy?source=ios`).catch(() => undefined)} />
-              <SecondaryButton label={t.termsOfUse || "Terms of Use"} onPress={() => Linking.openURL(`${API_BASE_URL}/${language}/terms?source=ios`).catch(() => undefined)} />
-            </View>
+            <Text style={styles.premiumLegalText}>
+              {t.legalSubscriptionIntro || "By subscribing, you agree to:"}
+              {"\n"}
+              <Text style={styles.premiumLegalLink} onPress={() => void openLegalUrl(LEGAL_URLS.terms)}>
+                {t.termsOfUse || "Terms of Use"}
+              </Text>
+              <Text> · </Text>
+              <Text style={styles.premiumLegalLink} onPress={() => void openLegalUrl(LEGAL_URLS.privacy)}>
+                {t.privacyPolicy || "Privacy Policy"}
+              </Text>
+            </Text>
             {isPremiumLoading ? <ActivityIndicator color="#6D4AFF" /> : null}
             {premiumMessage ? <Text style={styles.settingsMutedNotice}>{premiumMessage}</Text> : null}
           </Panel>
@@ -21552,6 +21665,17 @@ const styles = StyleSheet.create({
     color: DESIGN.colors.primaryDark,
     fontSize: 11,
     fontWeight: "900",
+  },
+  premiumLegalText: {
+    color: "#64748B",
+    fontSize: 12,
+    lineHeight: 17,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  premiumLegalLink: {
+    color: "#2563EB",
+    fontWeight: "800",
   },
   premiumGate: {
     gap: 13,
