@@ -1181,25 +1181,6 @@ export default function CatalogView({
               <span>{hasCoords ? t.sortedByDistance : location || t.withoutGeolocation}</span>
             </div>
           </div>
-
-          <div className="catalog-mobile-summary">
-            <div>
-              <strong>{t.resultSummaryTitle(results.length)}</strong>
-              <span>{hasCoords ? t.nearYou : t.distanceUnknown}</span>
-            </div>
-            <div className="catalog-mobile-switch" aria-label={menuResultsLabel}>
-              <button type="button" className="is-active" onClick={scrollToList}>{t.listTab}</button>
-              <button type="button" onClick={scrollToMap}>{t.mapTab}</button>
-            </div>
-          </div>
-
-          <div className="catalog-mobile-sticky">
-            <strong>{t.resultSummaryTitle(results.length)}</strong>
-            <div className="catalog-mobile-switch" aria-label={menuResultsLabel}>
-              <button type="button" className="is-active" onClick={scrollToList}>{t.listTab}</button>
-              <button type="button" onClick={scrollToMap}>{t.mapTab}</button>
-            </div>
-          </div>
         </section>
 
         <section id="catalog-results" className="catalog-results-layout">
