@@ -406,6 +406,34 @@ const screenAssets: Record<LandingLanguage, string[]> = withEnglishFallback<stri
   en: ["/for-business/en-day.png", "/for-business/en-week.png", "/for-business/en-month.png", "/for-business/en-schedule.png"]
 });
 
+const capabilityLabels: Record<LandingLanguage, string[]> = withEnglishFallback<string[]>({
+  ru: ["Онлайн-запись клиентов", "Календарь записей", "Telegram-уведомления", "CRM для салона", "Программа для записи клиентов"],
+  uk: ["Онлайн-запис клієнтів", "Календар записів", "Telegram-сповіщення", "CRM для салону", "Програма для запису клієнтів"],
+  en: ["Online client booking", "Booking calendar", "Telegram notifications", "Salon CRM", "Client booking software"]
+});
+
+Object.assign(capabilityLabels, {
+  fr: ["Réservation client en ligne", "Calendrier de réservations", "Notifications Telegram", "CRM salon", "Logiciel de réservation client"],
+  pl: ["Rezerwacje klientów online", "Kalendarz rezerwacji", "Powiadomienia Telegram", "CRM dla salonu", "Program do rezerwacji klientów"],
+  cs: ["Online rezervace klientů", "Rezervační kalendář", "Telegram upozornění", "CRM pro salon", "Software pro rezervace klientů"],
+  es: ["Reservas online de clientes", "Calendario de reservas", "Notificaciones Telegram", "CRM para salón", "Software de reservas de clientes"],
+  de: ["Online-Kundenbuchung", "Buchungskalender", "Telegram-Benachrichtigungen", "Salon-CRM", "Software für Kundenbuchungen"]
+});
+
+const usefulLabels: Record<LandingLanguage, string[]> = withEnglishFallback<string[]>({
+  ru: ["Онлайн-запись для мастеров", "Для мастеров маникюра", "Для парикмахеров", "Для барберов", "Для косметологов", "Для массажистов"],
+  uk: ["Онлайн-запис для майстрів", "Для майстрів манікюру", "Для перукарів", "Для барберів", "Для косметологів", "Для масажистів"],
+  en: ["Online booking for professionals", "For nail artists", "For hairdressers", "For barbers", "For cosmetologists", "For massage therapists"]
+});
+
+Object.assign(usefulLabels, {
+  fr: ["Réservation pour professionnels", "Pour prothésistes ongulaires", "Pour coiffeurs", "Pour barbiers", "Pour esthéticiennes", "Pour masseurs"],
+  pl: ["Rezerwacje dla specjalistów", "Dla stylistek paznokci", "Dla fryzjerów", "Dla barberów", "Dla kosmetologów", "Dla masażystów"],
+  cs: ["Rezervace pro profesionály", "Pro nehtové specialisty", "Pro kadeřníky", "Pro barbery", "Pro kosmetology", "Pro maséry"],
+  es: ["Reservas para profesionales", "Para especialistas en uñas", "Para peluqueros", "Para barberos", "Para cosmetólogos", "Para masajistas"],
+  de: ["Buchung für Profis", "Für Nagelprofis", "Für Friseure", "Für Barber", "Für Kosmetiker", "Für Masseure"]
+});
+
 function getInitialLanguage(): LandingLanguage {
   if (typeof window === "undefined") return "ru";
   let saved: string | null = null;
@@ -438,20 +466,22 @@ export default function BusinessLanding({ initialLanguage = "ru" }: BusinessLand
   const t = copy[language];
   const assets = screenAssets[language];
   const createProfileLink = "/pro/create-account";
+  const capability = capabilityLabels[language];
+  const useful = usefulLabels[language];
   const capabilitiesLinks: Array<{ label: string; href: string }> = [
-    { label: language === "uk" ? "Онлайн-запис клієнтів" : language === "ru" ? "Онлайн-запись клиентов" : "Online client booking", href: getLocalizedPath(language, "/for-business") },
-    { label: language === "uk" ? "Календар записів" : language === "ru" ? "Календарь записей" : "Booking calendar", href: getLocalizedPath(language, "/kalendar-zapisey") },
-    { label: language === "uk" ? "Telegram-сповіщення" : language === "ru" ? "Telegram-уведомления" : "Telegram notifications", href: getLocalizedPath(language, "/telegram-bot-dlya-zapisey") },
-    { label: language === "uk" ? "CRM для салону" : language === "ru" ? "CRM для салона" : "Salon CRM", href: getLocalizedPath(language, "/crm-dlya-salona") },
-    { label: language === "uk" ? "Програма для запису клієнтів" : language === "ru" ? "Программа для записи клиентов" : "Client booking software", href: getLocalizedPath(language, "/programma-dlya-zapisi-klientov") }
+    { label: capability[0], href: getLocalizedPath(language, "/for-business") },
+    { label: capability[1], href: getLocalizedPath(language, "/kalendar-zapisey") },
+    { label: capability[2], href: getLocalizedPath(language, "/telegram-bot-dlya-zapisey") },
+    { label: capability[3], href: getLocalizedPath(language, "/crm-dlya-salona") },
+    { label: capability[4], href: getLocalizedPath(language, "/programma-dlya-zapisi-klientov") }
   ];
   const usefulLinks: Array<{ label: string; href: string }> = [
-    { label: language === "uk" ? "Онлайн-запис для майстрів" : language === "ru" ? "Онлайн-запись для мастеров" : "Online booking for professionals", href: getLocalizedPath(language, "/for-business") },
-    { label: language === "uk" ? "Для майстрів манікюру" : language === "ru" ? "Для мастеров маникюра" : "For nail artists", href: getLocalizedPath(language, `/${getNicheSlug(language, "manicure")}`) },
-    { label: language === "uk" ? "Для перукарів" : language === "ru" ? "Для парикмахеров" : "For hairdressers", href: getLocalizedPath(language, `/${getNicheSlug(language, "hairdressers")}`) },
-    { label: language === "uk" ? "Для барберів" : language === "ru" ? "Для барберов" : "For barbers", href: getLocalizedPath(language, `/${getNicheSlug(language, "barbers")}`) },
-    { label: language === "uk" ? "Для косметологів" : language === "ru" ? "Для косметологов" : "For cosmetologists", href: getLocalizedPath(language, `/${getNicheSlug(language, "cosmetologists")}`) },
-    { label: language === "uk" ? "Для масажистів" : language === "ru" ? "Для массажистов" : "For massage therapists", href: getLocalizedPath(language, `/${getNicheSlug(language, "massage")}`) }
+    { label: useful[0], href: getLocalizedPath(language, "/for-business") },
+    { label: useful[1], href: getLocalizedPath(language, `/${getNicheSlug(language, "manicure")}`) },
+    { label: useful[2], href: getLocalizedPath(language, `/${getNicheSlug(language, "hairdressers")}`) },
+    { label: useful[3], href: getLocalizedPath(language, `/${getNicheSlug(language, "barbers")}`) },
+    { label: useful[4], href: getLocalizedPath(language, `/${getNicheSlug(language, "cosmetologists")}`) },
+    { label: useful[5], href: getLocalizedPath(language, `/${getNicheSlug(language, "massage")}`) }
   ];
 
   useEffect(() => {

@@ -938,12 +938,23 @@ export default function CatalogView({
     mapSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  const catalogLabel = language === "en" ? "Profiles" : language === "uk" ? "Профілі" : "Профили";
-  const menuLabel = language === "en" ? "Menu" : "Меню";
-  const menuSearchLabel = language === "en" ? "Search and filters" : language === "uk" ? "Пошук і фільтри" : "Поиск и фильтры";
-  const menuResultsLabel = language === "en" ? "Results" : language === "uk" ? "Результати" : "Результаты";
-  const menuMapLabel = language === "en" ? "Map" : language === "uk" ? "Карта" : "Карта";
-  const navLabel = language === "en" ? "Profile search navigation" : language === "uk" ? "Навігація пошуку профілів" : "Навигация поиска профилей";
+  const catalogNavigationCopy: Record<SiteLanguage, { catalog: string; menu: string; search: string; results: string; map: string; nav: string }> = {
+    ru: { catalog: "Профили", menu: "Меню", search: "Поиск и фильтры", results: "Результаты", map: "Карта", nav: "Навигация поиска профилей" },
+    uk: { catalog: "Профілі", menu: "Меню", search: "Пошук і фільтри", results: "Результати", map: "Карта", nav: "Навігація пошуку профілів" },
+    en: { catalog: "Profiles", menu: "Menu", search: "Search and filters", results: "Results", map: "Map", nav: "Profile search navigation" },
+    fr: { catalog: "Profils", menu: "Menu", search: "Recherche et filtres", results: "Résultats", map: "Carte", nav: "Navigation de recherche de profils" },
+    pl: { catalog: "Profile", menu: "Menu", search: "Wyszukiwanie i filtry", results: "Wyniki", map: "Mapa", nav: "Nawigacja wyszukiwania profili" },
+    cs: { catalog: "Profily", menu: "Menu", search: "Vyhledávání a filtry", results: "Výsledky", map: "Mapa", nav: "Navigace vyhledávání profilů" },
+    es: { catalog: "Perfiles", menu: "Menú", search: "Búsqueda y filtros", results: "Resultados", map: "Mapa", nav: "Navegación de búsqueda de perfiles" },
+    de: { catalog: "Profile", menu: "Menü", search: "Suche und Filter", results: "Ergebnisse", map: "Karte", nav: "Navigation der Profilsuche" }
+  };
+  const navigationCopy = catalogNavigationCopy[language];
+  const catalogLabel = navigationCopy.catalog;
+  const menuLabel = navigationCopy.menu;
+  const menuSearchLabel = navigationCopy.search;
+  const menuResultsLabel = navigationCopy.results;
+  const menuMapLabel = navigationCopy.map;
+  const navLabel = navigationCopy.nav;
   async function toggleServices(result: PublicCatalogCardResult) {
     const id = result.id;
     selectResult(id);

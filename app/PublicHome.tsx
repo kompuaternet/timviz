@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import type { PublicHomeStats } from "../lib/public-home-stats";
 import { areMobileAppsAvailable, mobileApps } from "../lib/mobile-apps";
 import type { PublicSearchIndex } from "../lib/public-search";
-import { getNicheSlug } from "../lib/niche-pages";
+import { getNicheSlug, nicheCards } from "../lib/niche-pages";
 import { getLocalizedPath, isSiteLanguage, type SiteLanguage, withEnglishFallback } from "../lib/site-language";
 import BrandLogo from "./BrandLogo";
 import GlobalLanguageSwitcher from "./GlobalLanguageSwitcher";
@@ -331,6 +331,154 @@ const copy = withEnglishFallback<Record<string, string | string[][]>>({
   }
 }) satisfies Record<PublicLanguage, Record<string, string | string[][]>>;
 
+Object.assign(copy, {
+  fr: {
+    ...copy.en,
+    navAria: "Menu principal",
+    login: "Connexion",
+    clientLogin: "Connexion client",
+    create: "Créer un profil d’entreprise",
+    menu: "Menu",
+    clients: "Pour les clients",
+    browse: "Voir les entreprises",
+    business: "Pour les entreprises",
+    dashboard: "Ouvrir le tableau de bord",
+    businessLogin: "Connexion entreprise",
+    features: "Fonctionnalités business",
+    heroTitle: "Réservez des services près de vous",
+    heroText: "Tous les services du quotidien au même endroit.",
+    recommended: "Recommandés",
+    seeAll: "Voir tout →",
+    businessTitle: "Timviz pour les entreprises",
+    more: "En savoir plus →",
+    about: "À propos de Timviz",
+    catalog: "Catalogue",
+    legal: "Mentions légales",
+    privacy: "Politique de confidentialité",
+    terms: "Conditions d’utilisation",
+    cityIn: "à",
+    nichesTitle: "Pour qui est Timviz",
+    nichesSubtitle: "Timviz est conçu pour les professionnels et salons qui travaillent sur rendez-vous",
+    prosFooter: "Pour les professionnels"
+  },
+  pl: {
+    ...copy.en,
+    navAria: "Menu główne",
+    login: "Zaloguj się",
+    clientLogin: "Logowanie klienta",
+    create: "Utwórz profil firmy",
+    menu: "Menu",
+    clients: "Dla klientów",
+    browse: "Zobacz firmy",
+    business: "Dla biznesu",
+    dashboard: "Otwórz panel",
+    businessLogin: "Logowanie firmy",
+    features: "Funkcje biznesowe",
+    heroTitle: "Rezerwuj usługi w pobliżu",
+    heroText: "Codzienne usługi w jednym miejscu.",
+    recommended: "Polecane",
+    seeAll: "Zobacz wszystkie →",
+    businessTitle: "Timviz dla biznesu",
+    more: "Dowiedz się więcej →",
+    about: "O Timviz",
+    catalog: "Katalog",
+    legal: "Informacje prawne",
+    privacy: "Polityka prywatności",
+    terms: "Warunki korzystania",
+    cityIn: "w",
+    nichesTitle: "Dla kogo jest Timviz",
+    nichesSubtitle: "Timviz jest dla specjalistów i salonów pracujących na zapisy",
+    prosFooter: "Dla specjalistów"
+  },
+  cs: {
+    ...copy.en,
+    navAria: "Hlavní menu",
+    login: "Přihlásit se",
+    clientLogin: "Přihlášení klienta",
+    create: "Vytvořit profil firmy",
+    menu: "Menu",
+    clients: "Pro klienty",
+    browse: "Zobrazit podniky",
+    business: "Pro firmy",
+    dashboard: "Otevřít panel",
+    businessLogin: "Přihlášení firmy",
+    features: "Funkce pro firmy",
+    heroTitle: "Rezervujte služby poblíž",
+    heroText: "Každodenní služby na jednom místě.",
+    recommended: "Doporučené",
+    seeAll: "Zobrazit vše →",
+    businessTitle: "Timviz pro firmy",
+    more: "Zjistit více →",
+    about: "O Timviz",
+    catalog: "Katalog",
+    legal: "Právní informace",
+    privacy: "Zásady ochrany osobních údajů",
+    terms: "Podmínky použití",
+    cityIn: "v",
+    nichesTitle: "Pro koho je Timviz",
+    nichesSubtitle: "Timviz je pro profesionály a salony pracující na objednávky",
+    prosFooter: "Pro profesionály"
+  },
+  es: {
+    ...copy.en,
+    navAria: "Menú principal",
+    login: "Iniciar sesión",
+    clientLogin: "Acceso de cliente",
+    create: "Crear perfil de empresa",
+    menu: "Menú",
+    clients: "Para clientes",
+    browse: "Ver empresas",
+    business: "Para negocios",
+    dashboard: "Abrir panel",
+    businessLogin: "Acceso de negocio",
+    features: "Funciones para negocios",
+    heroTitle: "Reserva servicios cerca",
+    heroText: "Servicios diarios, todos en un solo lugar.",
+    recommended: "Recomendados",
+    seeAll: "Ver todo →",
+    businessTitle: "Timviz para negocios",
+    more: "Más información →",
+    about: "Sobre Timviz",
+    catalog: "Catálogo",
+    legal: "Legal",
+    privacy: "Política de privacidad",
+    terms: "Términos de uso",
+    cityIn: "en",
+    nichesTitle: "Para quién es Timviz",
+    nichesSubtitle: "Timviz está creado para profesionales y salones que trabajan con cita previa",
+    prosFooter: "Para profesionales"
+  },
+  de: {
+    ...copy.en,
+    navAria: "Hauptmenü",
+    login: "Einloggen",
+    clientLogin: "Kundenlogin",
+    create: "Firmenprofil erstellen",
+    menu: "Menü",
+    clients: "Für Kunden",
+    browse: "Unternehmen ansehen",
+    business: "Für Unternehmen",
+    dashboard: "Dashboard öffnen",
+    businessLogin: "Business-Login",
+    features: "Business-Funktionen",
+    heroTitle: "Services in deiner Nähe buchen",
+    heroText: "Alltägliche Services an einem Ort.",
+    recommended: "Empfohlen",
+    seeAll: "Alle ansehen →",
+    businessTitle: "Timviz für Unternehmen",
+    more: "Mehr erfahren →",
+    about: "Über Timviz",
+    catalog: "Katalog",
+    legal: "Rechtliches",
+    privacy: "Datenschutzrichtlinie",
+    terms: "Nutzungsbedingungen",
+    cityIn: "in",
+    nichesTitle: "Für wen Timviz ist",
+    nichesSubtitle: "Timviz ist für Profis und Salons, die mit Terminen arbeiten",
+    prosFooter: "Für Profis"
+  }
+});
+
 const cities = [
   {
     city: { ru: "Киев", uk: "Київ", en: "Kyiv" },
@@ -605,11 +753,11 @@ export default function PublicHome({ searchIndex, stats, initialLanguage = "ru" 
         </div>
         <div>
           <h3>{String(t.prosFooter)}</h3>
-          <Link href={getLocalizedPath(language, `/${getNicheSlug(language, "manicure")}`)}>{language === "uk" ? "Майстри манікюру" : language === "ru" ? "Мастера маникюра" : "Nail artists"}</Link>
-          <Link href={getLocalizedPath(language, `/${getNicheSlug(language, "hairdressers")}`)}>{language === "uk" ? "Перукарі" : language === "ru" ? "Парикмахеры" : "Hairdressers"}</Link>
-          <Link href={getLocalizedPath(language, `/${getNicheSlug(language, "barbers")}`)}>{language === "uk" ? "Барбери" : language === "ru" ? "Барберы" : "Barbers"}</Link>
-          <Link href={getLocalizedPath(language, `/${getNicheSlug(language, "cosmetologists")}`)}>{language === "uk" ? "Косметологи" : language === "ru" ? "Косметологи" : "Cosmetologists"}</Link>
-          <Link href={getLocalizedPath(language, `/${getNicheSlug(language, "massage")}`)}>{language === "uk" ? "Масажисти" : language === "ru" ? "Массажисты" : "Massage therapists"}</Link>
+          <Link href={getLocalizedPath(language, `/${getNicheSlug(language, "manicure")}`)}>{nicheCards.manicure[language].shortTitle}</Link>
+          <Link href={getLocalizedPath(language, `/${getNicheSlug(language, "hairdressers")}`)}>{nicheCards.hairdressers[language].shortTitle}</Link>
+          <Link href={getLocalizedPath(language, `/${getNicheSlug(language, "barbers")}`)}>{nicheCards.barbers[language].shortTitle}</Link>
+          <Link href={getLocalizedPath(language, `/${getNicheSlug(language, "cosmetologists")}`)}>{nicheCards.cosmetologists[language].shortTitle}</Link>
+          <Link href={getLocalizedPath(language, `/${getNicheSlug(language, "massage")}`)}>{nicheCards.massage[language].shortTitle}</Link>
         </div>
         <div>
           <h3>{String(t.legal)}</h3>

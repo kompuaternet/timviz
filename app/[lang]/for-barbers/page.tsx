@@ -1,16 +1,19 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import BarberLanding, { buildBarberMetadata } from "../barber-page";
-import { isSiteLanguage } from "../../../lib/site-language";
+import LocalizedNichePage, { generateMetadata as generateLocalizedNicheMetadata } from "../[niche]/page";
+import { isEnglishSlugLanguage, isSiteLanguage } from "../../../lib/site-language";
 
 export async function generateMetadata({ params }: { params: Promise<{ lang: string }> }): Promise<Metadata> {
   const { lang } = await params;
-  if (!isSiteLanguage(lang) || lang !== "en") return {};
-  return buildBarberMetadata(lang, "/en/for-barbers");
+  if (!isSiteLanguage(lang) || !isEnglishSlugLanguage(lang)) return {};
+  if (lang !== "en") return generateLocalizedNicheMetadata({ params: Promise.resolve({ lang, niche: "for-barbers" }) });
+  return buildBarberMetadata(lang, `/${lang}/for-barbers`);
 }
 
 export default async function BarberEnRoute({ params }: { params: Promise<{ lang: string }> }) {
   const { lang } = await params;
-  if (!isSiteLanguage(lang) || lang !== "en") notFound();
+  if (!isSiteLanguage(lang) || !isEnglishSlugLanguage(lang)) notFound();
+  if (lang !== "en") return <LocalizedNichePage params={Promise.resolve({ lang, niche: "for-barbers" })} />;
   return <BarberLanding language={lang} />;
 }

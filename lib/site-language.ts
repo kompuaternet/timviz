@@ -100,6 +100,10 @@ export function isBaseSiteLanguage(value: string | null | undefined): value is B
   return typeof value === "string" && (baseSiteLanguages as string[]).includes(value);
 }
 
+export function isEnglishSlugLanguage(value: string | null | undefined): value is "en" | ExtraSiteLanguage {
+  return value === "en" || (typeof value === "string" && (extraSiteLanguages as string[]).includes(value));
+}
+
 export function getContentLanguage(language: SiteLanguage): BaseSiteLanguage {
   return isBaseSiteLanguage(language) ? language : "en";
 }
@@ -131,6 +135,18 @@ export function withNestedEnglishFallback<Key extends string, T>(
 ): Record<Key, Record<SiteLanguage, T>> {
   return Object.fromEntries(
     Object.entries(record).map(([key, value]) => [key, withEnglishFallback(value as Record<BaseSiteLanguage, T>)])
+  ) as Record<Key, Record<SiteLanguage, T>>;
+}
+
+export function withNestedExtraLanguageFallbacks<Key extends string, T>(
+  record: Record<Key, Record<BaseSiteLanguage, T>>,
+  extra: Partial<Record<Key, Partial<Record<ExtraSiteLanguage, Partial<T>>>>>
+): Record<Key, Record<SiteLanguage, T>> {
+  return Object.fromEntries(
+    Object.entries(record).map(([key, value]) => [
+      key,
+      withExtraLanguageFallbacks(value as Record<BaseSiteLanguage, T>, extra[key as Key] ?? {})
+    ])
   ) as Record<Key, Record<SiteLanguage, T>>;
 }
 

@@ -15,10 +15,13 @@ import {
 import {
   forBusinessFeatureBySlug,
   forBusinessFeaturePages,
+  getFeaturePageCopy,
+  getFeaturePageSeo,
   isFeatureSlug
 } from "../../../lib/for-business-seo-pages";
 import { buildMetadata } from "../../../lib/seo";
-import { getContentLanguage, getLocalizedPath, isSiteLanguage, siteLanguages, type SiteLanguage, withEnglishFallback } from "../../../lib/site-language";
+import { getLocalizedPath, isSiteLanguage, siteLanguages, type SiteLanguage, withEnglishFallback } from "../../../lib/site-language";
+import { siteUrl } from "../../../lib/seo";
 
 type LocalizedSeoPageProps = {
   params: Promise<{ lang: string; niche: string }>;
@@ -78,19 +81,21 @@ export async function generateMetadata({ params }: LocalizedSeoPageProps): Promi
   }
 
   const pathname = `/${lang}/${niche}`;
-  const contentLanguage = getContentLanguage(lang);
-  const seoCopy = nicheKey ? nicheSeo[nicheKey][lang] : featurePage!.seo[contentLanguage];
+  const seoCopy = nicheKey ? nicheSeo[nicheKey][lang] : getFeaturePageSeo(featurePage!, lang);
   const metadata = buildMetadata(pathname, seoCopy, lang);
   return {
     ...metadata,
     alternates: nicheKey
       ? {
-          canonical: `https://timviz.com${pathname}`,
+          canonical: `${siteUrl}${pathname}`,
           languages: {
-            uk: `https://timviz.com/uk/${getNicheSlug("uk", nicheKey)}`,
-            ru: `https://timviz.com/ru/${getNicheSlug("ru", nicheKey)}`,
-            en: `https://timviz.com/en/${getNicheSlug("en", nicheKey)}`,
-            "x-default": `https://timviz.com/en/${getNicheSlug("en", nicheKey)}`
+            ...Object.fromEntries(
+              siteLanguages.map((language) => [
+                language,
+                `${siteUrl}${getLocalizedPath(language, `/${getNicheSlug(language, nicheKey)}`)}`
+              ])
+            ),
+            "x-default": `${siteUrl}${getLocalizedPath("en", `/${getNicheSlug("en", nicheKey)}`)}`
           }
         }
       : metadata.alternates
@@ -107,10 +112,9 @@ export default async function LocalizedNichePage({ params }: LocalizedSeoPagePro
   }
 
   const language = lang as SiteLanguage;
-  const contentLanguage = getContentLanguage(language);
   const t = pageCopy[language];
   const isNichePage = Boolean(nicheKey);
-  const content = nicheKey ? nicheContent[nicheKey][language] : featurePage!.copy[contentLanguage];
+  const content = nicheKey ? nicheContent[nicheKey][language] : getFeaturePageCopy(featurePage!, language);
   const related = nicheKey ? nicheKeys.filter((key) => key !== nicheKey) : [];
   const iconName = nicheKey ?? "default";
 

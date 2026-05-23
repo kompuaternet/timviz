@@ -387,6 +387,17 @@ function ConfirmBookingSubmitButton({
 
 const bookingSteps: BookingStep[] = ["services", "specialists", "time", "confirm"];
 
+const publicMenuLabel: Record<SiteLanguage, string> = {
+  ru: "Меню",
+  uk: "Меню",
+  en: "Menu",
+  fr: "Menu",
+  pl: "Menu",
+  cs: "Menu",
+  es: "Menú",
+  de: "Menü"
+};
+
 function getBookingStepLabel(step: BookingStep, t: BusinessCopy) {
   if (step === "services") return t.serviceStep;
   if (step === "specialists") return t.specialistStep;
@@ -1218,7 +1229,7 @@ export default function BusinessView({
           </a>
           <details className="public-menu">
             <summary>
-              <span>{language === "en" ? "Menu" : language === "uk" ? "Меню" : "Меню"}</span>
+              <span>{publicMenuLabel[language]}</span>
               <span className="public-burger" aria-hidden="true" />
             </summary>
             <div className="public-menu-panel">
