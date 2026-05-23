@@ -31,28 +31,6 @@ const switcherLabels: Record<SiteLanguage, string> = {
   de: "Sprache der Oberfläche wählen"
 };
 
-const chooseLanguageLabels: Record<SiteLanguage, string> = {
-  ru: "Выберите язык",
-  uk: "Оберіть мову",
-  en: "Choose language",
-  fr: "Choisissez la langue",
-  pl: "Wybierz język",
-  cs: "Vyberte jazyk",
-  es: "Elige idioma",
-  de: "Sprache wählen"
-};
-
-const closeLabels: Record<SiteLanguage, string> = {
-  ru: "Закрыть",
-  uk: "Закрити",
-  en: "Close",
-  fr: "Fermer",
-  pl: "Zamknij",
-  cs: "Zavřít",
-  es: "Cerrar",
-  de: "Schließen"
-};
-
 function getBrowserLanguage(): SiteLanguage {
   if (typeof window === "undefined") return "ru";
 
@@ -207,16 +185,12 @@ export default function GlobalLanguageSwitcher({ mode = "fixed" }: GlobalLanguag
       </button>
       {isOpen ? (
         <div className="global-language-menu">
-          <div className="global-language-menu-head">
-            <strong>{chooseLanguageLabels[displayLanguage]}</strong>
-            <button type="button" aria-label={closeLabels[displayLanguage]} onClick={() => setIsOpen(false)}>
-              ×
-            </button>
-          </div>
           {languages.map((item) => (
             <button
               key={item.code}
               type="button"
+              aria-label={item.label}
+              title={item.label}
               className={item.code === displayLanguage ? "global-language-option-active" : ""}
               onClick={() => changeLanguage(item.code)}
             >
