@@ -6,7 +6,7 @@ import { getCustomerDashboard } from "../../../lib/customer-account";
 import { getPublicSearchIndex } from "../../../lib/public-search";
 import { verifyPublicCustomerSession, getPublicCustomerCookieName } from "../../../lib/public-customer-auth";
 import { buildLanguageAlternates, buildMetadata } from "../../../lib/seo";
-import { isSiteLanguage, type SiteLanguage } from "../../../lib/site-language";
+import { isSiteLanguage, type SiteLanguage , withEnglishFallback } from "../../../lib/site-language";
 
 export const dynamic = "force-dynamic";
 
@@ -16,7 +16,7 @@ type LocalizedAccountPageProps = {
   }>;
 };
 
-const accountSeoCopy: Record<SiteLanguage, { title: string; description: string }> = {
+const accountSeoCopy: Record<SiteLanguage, { title: string; description: string }> = withEnglishFallback<{ title: string; description: string }>({
   ru: {
     title: "Личный кабинет клиента Timviz",
     description: "Управляйте своими онлайн-записями, профилем и настройками уведомлений в личном кабинете клиента Timviz."
@@ -29,7 +29,7 @@ const accountSeoCopy: Record<SiteLanguage, { title: string; description: string 
     title: "Timviz customer account",
     description: "Manage your online bookings, profile and notification preferences in your Timviz customer account."
   }
-};
+});
 
 export async function generateMetadata({
   params

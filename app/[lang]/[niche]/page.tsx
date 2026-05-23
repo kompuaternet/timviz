@@ -18,13 +18,13 @@ import {
   isFeatureSlug
 } from "../../../lib/for-business-seo-pages";
 import { buildMetadata } from "../../../lib/seo";
-import { getLocalizedPath, isSiteLanguage, siteLanguages, type SiteLanguage } from "../../../lib/site-language";
+import { getContentLanguage, getLocalizedPath, isSiteLanguage, siteLanguages, type SiteLanguage, withEnglishFallback } from "../../../lib/site-language";
 
 type LocalizedSeoPageProps = {
   params: Promise<{ lang: string; niche: string }>;
 };
 
-const pageCopy = {
+const pageCopy = withEnglishFallback<Record<string, string>>({
   ru: {
     home: "Главная",
     forBusiness: "Бизнесу",
@@ -58,7 +58,7 @@ const pageCopy = {
     terms: "Terms of use",
     footerText: "Timviz for business · online client booking and service management"
   }
-} satisfies Record<SiteLanguage, Record<string, string>>;
+}) satisfies Record<SiteLanguage, Record<string, string>>;
 
 export async function generateStaticParams() {
   return siteLanguages.flatMap((lang) => [
@@ -78,7 +78,8 @@ export async function generateMetadata({ params }: LocalizedSeoPageProps): Promi
   }
 
   const pathname = `/${lang}/${niche}`;
-  const seoCopy = nicheKey ? nicheSeo[nicheKey][lang] : featurePage!.seo[lang];
+  const contentLanguage = getContentLanguage(lang);
+  const seoCopy = nicheKey ? nicheSeo[nicheKey][lang] : featurePage!.seo[contentLanguage];
   const metadata = buildMetadata(pathname, seoCopy, lang);
   return {
     ...metadata,
@@ -106,9 +107,10 @@ export default async function LocalizedNichePage({ params }: LocalizedSeoPagePro
   }
 
   const language = lang as SiteLanguage;
+  const contentLanguage = getContentLanguage(language);
   const t = pageCopy[language];
   const isNichePage = Boolean(nicheKey);
-  const content = nicheKey ? nicheContent[nicheKey][language] : featurePage!.copy[language];
+  const content = nicheKey ? nicheContent[nicheKey][language] : featurePage!.copy[contentLanguage];
   const related = nicheKey ? nicheKeys.filter((key) => key !== nicheKey) : [];
   const iconName = nicheKey ?? "default";
 

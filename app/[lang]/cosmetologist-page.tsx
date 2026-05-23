@@ -4,7 +4,7 @@ import GlobalLanguageSwitcher from "../GlobalLanguageSwitcher";
 import { getNicheSlug, nicheCards, nicheKeys } from "../../lib/niche-pages";
 import { getNicheUxContent } from "../../lib/niche-ux";
 import { buildMetadata } from "../../lib/seo";
-import { getLocalizedPath, type SiteLanguage } from "../../lib/site-language";
+import { getLocalizedPath, type SiteLanguage , withEnglishFallback } from "../../lib/site-language";
 
 type InfoCard = {
   title: string;
@@ -74,19 +74,19 @@ const ukSeoParagraphs = [
   "У підсумку Timviz допомагає перетворити хаотичні переписки на керовану систему роботи. Ви отримуєте онлайн запис косметолог, структурований календар записів, прозорі послуги з форматом послуги і тривалістю, а також інструменти для повторних візитів. Запис клієнтів онлайн стає передбачуваним процесом, який легко підтримувати щодня. Саме так програма для косметолога дає реальний результат: більше порядку в розкладі, менше втрат заявок і вищу якість сервісу для клієнтів, які очікують зручності, швидкості та професійного підходу до запису."
 ];
 
-const screenshotsByLanguage: Record<SiteLanguage, { day: string; week: string; month: string }> = {
+const screenshotsByLanguage: Record<SiteLanguage, { day: string; week: string; month: string }> = withEnglishFallback<{ day: string; week: string; month: string }>({
   ru: { day: "/for-business/ru-day.png", week: "/for-business/ru-week.png", month: "/for-business/ru-month.png" },
   uk: { day: "/for-business/uk-day.png", week: "/for-business/uk-week.png", month: "/for-business/uk-month.png" },
   en: { day: "/for-business/en-day.png", week: "/for-business/en-week.png", month: "/for-business/en-month.png" }
-};
+});
 
-const cosmetologistPathByLanguage: Record<SiteLanguage, string> = {
+const cosmetologistPathByLanguage: Record<SiteLanguage, string> = withEnglishFallback<string>({
   uk: "/uk/dlya-kosmetologiv",
   ru: "/ru/dlya-kosmetologov",
   en: "/en/for-cosmetologists"
-};
+});
 
-const copy: Record<SiteLanguage, Copy> = {
+const copy: Record<SiteLanguage, Copy> = withEnglishFallback<Copy>({
   uk: {
     home: "Головна",
     forBusiness: "Бізнесу",
@@ -386,7 +386,7 @@ const copy: Record<SiteLanguage, Copy> = {
     altServices: "Cosmetologist services and service setup in Timviz",
     altTelegram: "Telegram booking notifications for cosmetologists in Timviz"
   }
-};
+});
 
 export function buildCosmetologistMetadata(lang: SiteLanguage, pathname: string): Metadata {
   const title =

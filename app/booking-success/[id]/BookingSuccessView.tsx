@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import type { BookingRecord } from "../../../lib/bookings";
-import type { SiteLanguage } from "../../../lib/site-language";
+import { type SiteLanguage, withEnglishFallback } from "../../../lib/site-language";
 import { useSiteLanguage } from "../../useSiteLanguage";
 
 type BookingSuccessViewProps = {
@@ -29,7 +29,7 @@ type BookingSuccessCopy = {
   openCatalog: string;
 };
 
-const bookingSuccessCopy: Record<SiteLanguage, BookingSuccessCopy> = {
+const bookingSuccessCopy: Record<SiteLanguage, BookingSuccessCopy> = withEnglishFallback<BookingSuccessCopy>({
   ru: {
     locale: "ru-RU",
     eyebrow: "Запись подтверждена",
@@ -81,7 +81,7 @@ const bookingSuccessCopy: Record<SiteLanguage, BookingSuccessCopy> = {
     backToSalon: "Back to business page",
     openCatalog: "Find another business"
   }
-};
+});
 
 function formatAppointmentDate(value: string, language: SiteLanguage) {
   return new Intl.DateTimeFormat(bookingSuccessCopy[language].locale, {

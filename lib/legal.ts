@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { buildLanguageAlternates, buildMetadata } from "./seo";
-import type { SiteLanguage } from "./site-language";
+import { withNestedEnglishFallback, type SiteLanguage } from "./site-language";
 
 type LegalCopy = {
   title: string;
@@ -19,7 +19,7 @@ export type LegalPageType = "privacy" | "terms" | "subscription-terms" | "refund
 export const legalCopy: Record<
   LegalPageType,
   Record<SiteLanguage, LegalCopy>
-> = {
+> = withNestedEnglishFallback<LegalPageType, LegalCopy>({
   privacy: {
     ru: {
       title: "Политика конфиденциальности Timviz",
@@ -724,7 +724,7 @@ export const legalCopy: Record<
       ]
     }
   }
-};
+});
 
 export function buildLegalMetadata(type: LegalPageType, language: SiteLanguage): Metadata {
   const copy = legalCopy[type][language];

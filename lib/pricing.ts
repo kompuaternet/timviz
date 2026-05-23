@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { buildLanguageAlternates, buildMetadata } from "./seo";
-import type { SiteLanguage } from "./site-language";
+import { withEnglishFallback, type SiteLanguage } from "./site-language";
 
 export type PricingPlanKey = "free" | "monthly" | "yearly";
 
@@ -55,7 +55,7 @@ export type PricingCopy = {
   faq: Array<{ question: string; answer: string }>;
 };
 
-export const pricingCopy: Record<SiteLanguage, PricingCopy> = {
+export const pricingCopy: Record<SiteLanguage, PricingCopy> = withEnglishFallback<PricingCopy>({
   ru: {
     seoTitle: "Тарифы Timviz — онлайн-запись для мастеров",
     seoDescription:
@@ -419,7 +419,7 @@ export const pricingCopy: Record<SiteLanguage, PricingCopy> = {
       }
     ]
   }
-};
+});
 
 export function buildPricingMetadata(language: SiteLanguage): Metadata {
   return {

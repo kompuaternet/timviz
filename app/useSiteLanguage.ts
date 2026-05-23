@@ -29,6 +29,26 @@ function detectSiteLanguage(defaultLanguage: SiteLanguage) {
     return "uk";
   }
 
+  if (candidates.some((value) => value.startsWith("fr"))) {
+    return "fr";
+  }
+
+  if (candidates.some((value) => value.startsWith("pl"))) {
+    return "pl";
+  }
+
+  if (candidates.some((value) => value.startsWith("cs") || value.startsWith("cz"))) {
+    return "cs";
+  }
+
+  if (candidates.some((value) => value.startsWith("es"))) {
+    return "es";
+  }
+
+  if (candidates.some((value) => value.startsWith("de"))) {
+    return "de";
+  }
+
   if (candidates.some((value) => value.startsWith("en"))) {
     return "en";
   }

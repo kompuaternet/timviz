@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { getNicheSlug } from "../../lib/niche-pages";
-import { getLocalizedPath, type SiteLanguage } from "../../lib/site-language";
+import { getLocalizedPath, isSiteLanguage, type SiteLanguage, withEnglishFallback } from "../../lib/site-language";
 import BrandLogo from "../BrandLogo";
 import BusinessIcon from "../BusinessIcon";
 import GlobalLanguageSwitcher from "../GlobalLanguageSwitcher";
@@ -66,7 +66,7 @@ type LocalCopy = {
   nicheLinksTitle: string;
 };
 
-const copy: Record<LandingLanguage, LocalCopy> = {
+const copy: Record<LandingLanguage, LocalCopy> = withEnglishFallback<LocalCopy>({
   uk: {
     logo: "timviz",
     login: "Увійти",
@@ -398,13 +398,13 @@ const copy: Record<LandingLanguage, LocalCopy> = {
     mastersColumn: "For professionals",
     nicheLinksTitle: "Who Timviz is for"
   }
-};
+});
 
-const screenAssets: Record<LandingLanguage, string[]> = {
+const screenAssets: Record<LandingLanguage, string[]> = withEnglishFallback<string[]>({
   ru: ["/for-business/ru-day.png", "/for-business/ru-week.png", "/for-business/ru-month.png", "/for-business/ru-schedule-wide.png"],
   uk: ["/for-business/uk-day.png", "/for-business/uk-week.png", "/for-business/uk-month.png", "/for-business/ru-schedule-wide.png"],
   en: ["/for-business/en-day.png", "/for-business/en-week.png", "/for-business/en-month.png", "/for-business/en-schedule.png"]
-};
+});
 
 function getInitialLanguage(): LandingLanguage {
   if (typeof window === "undefined") return "ru";
@@ -417,9 +417,14 @@ function getInitialLanguage(): LandingLanguage {
   } catch {
     saved = null;
   }
-  if (saved === "uk" || saved === "en" || saved === "ru") return saved;
+  if (isSiteLanguage(saved)) return saved;
   const browserLanguage = window.navigator.language.toLowerCase();
   if (browserLanguage.startsWith("uk") || browserLanguage.startsWith("ua")) return "uk";
+  if (browserLanguage.startsWith("fr")) return "fr";
+  if (browserLanguage.startsWith("pl")) return "pl";
+  if (browserLanguage.startsWith("cs") || browserLanguage.startsWith("cz")) return "cs";
+  if (browserLanguage.startsWith("es")) return "es";
+  if (browserLanguage.startsWith("de")) return "de";
   if (browserLanguage.startsWith("en")) return "en";
   return "ru";
 }

@@ -17,7 +17,7 @@ import {
 } from "../../../lib/phone-format";
 import { getPublicBookingSlots } from "../../../lib/public-booking";
 import { localizeCategoryName, localizeServiceName } from "../../../lib/service-templates";
-import { getLocalizedPath, type SiteLanguage } from "../../../lib/site-language";
+import { getLocalizedPath, type SiteLanguage , withEnglishFallback } from "../../../lib/site-language";
 import {
   addMinutesToTime,
   getDayScheduleForMode,
@@ -149,7 +149,7 @@ type BusinessCopy = {
   bookCta: string;
 };
 
-const businessCopy: Record<SiteLanguage, BusinessCopy> = {
+const businessCopy: Record<SiteLanguage, BusinessCopy> = withEnglishFallback<BusinessCopy>({
   ru: {
     breadcrumbHome: "Главная",
     breadcrumbCatalog: "Каталог",
@@ -360,7 +360,7 @@ const businessCopy: Record<SiteLanguage, BusinessCopy> = {
     commentPlaceholder: "For example: Telegram is easier",
     bookCta: "Book"
   }
-};
+});
 
 function ConfirmBookingSubmitButton({
   disabled,

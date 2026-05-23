@@ -4,7 +4,7 @@ import GlobalLanguageSwitcher from "../GlobalLanguageSwitcher";
 import { getNicheSlug, nicheCards, nicheKeys } from "../../lib/niche-pages";
 import { getNicheUxContent } from "../../lib/niche-ux";
 import { buildMetadata } from "../../lib/seo";
-import { getLocalizedPath, type SiteLanguage } from "../../lib/site-language";
+import { getLocalizedPath, type SiteLanguage , withEnglishFallback } from "../../lib/site-language";
 
 type InfoCard = {
   title: string;
@@ -76,19 +76,19 @@ const ukSeoParagraphs = [
   "Підсумовуючи, Timviz закриває ключові задачі масажного сервісу: онлайн запис масаж, контроль тривалості сеансів, структурований календар записів, швидкі Telegram-сповіщення і зручний запис клієнтів онлайн. Це інструмент, який легко впровадити сьогодні і відчути результат уже в перші дні: менше плутанини, менше накладок, більше порядку у графіку. Саме так програма для масажиста допомагає перейти від хаосу в месенджерах до системної моделі роботи, де клієнтам зручно бронювати, а вам зручно планувати, рости та стабільно приймати нові записи щодня."
 ];
 
-const screenshotsByLanguage: Record<SiteLanguage, { day: string; week: string; month: string }> = {
+const screenshotsByLanguage: Record<SiteLanguage, { day: string; week: string; month: string }> = withEnglishFallback<{ day: string; week: string; month: string }>({
   ru: { day: "/for-business/ru-day.png", week: "/for-business/ru-week.png", month: "/for-business/ru-month.png" },
   uk: { day: "/for-business/uk-day.png", week: "/for-business/uk-week.png", month: "/for-business/uk-month.png" },
   en: { day: "/for-business/en-day.png", week: "/for-business/en-week.png", month: "/for-business/en-month.png" }
-};
+});
 
-const massagePathByLanguage: Record<SiteLanguage, string> = {
+const massagePathByLanguage: Record<SiteLanguage, string> = withEnglishFallback<string>({
   uk: "/uk/dlya-masazhu",
   ru: "/ru/dlya-massazhistov",
   en: "/en/for-massage-therapists"
-};
+});
 
-const copy: Record<SiteLanguage, Copy> = {
+const copy: Record<SiteLanguage, Copy> = withEnglishFallback<Copy>({
   uk: {
     home: "Головна",
     forBusiness: "Бізнесу",
@@ -394,7 +394,7 @@ const copy: Record<SiteLanguage, Copy> = {
     altServices: "Massage services and service setup in Timviz",
     altTelegram: "Telegram booking notifications for massage therapists in Timviz"
   }
-};
+});
 
 export function buildMassageMetadata(lang: SiteLanguage, pathname: string): Metadata {
   const title =

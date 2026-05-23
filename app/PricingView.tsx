@@ -5,7 +5,7 @@ import { useState } from "react";
 import BrandLogo from "./BrandLogo";
 import GlobalLanguageSwitcher from "./GlobalLanguageSwitcher";
 import PublicHeaderAuthMenu from "./PublicHeaderAuthMenu";
-import { getLocalizedPath, type SiteLanguage } from "../lib/site-language";
+import { getLocalizedPath, type SiteLanguage , withEnglishFallback } from "../lib/site-language";
 import type { PricingCopy, PricingPlanKey } from "../lib/pricing";
 
 type PricingViewProps = {
@@ -19,7 +19,7 @@ type PricingViewProps = {
 
 const planOrder: PricingPlanKey[] = ["free", "monthly", "yearly"];
 
-const footerCopy = {
+const footerCopy = withEnglishFallback<Record<string, string>>({
   ru: {
     about: "Timviz",
     catalog: "Поиск профилей",
@@ -56,7 +56,7 @@ const footerCopy = {
     contact: "Contact",
     support: "Support"
   }
-} satisfies Record<SiteLanguage, Record<string, string>>;
+}) satisfies Record<SiteLanguage, Record<string, string>>;
 
 export default function PricingView({ language, copy, user }: PricingViewProps) {
   const footer = footerCopy[language];

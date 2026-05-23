@@ -15,7 +15,7 @@ import {
   phoneCountries
 } from "../../../lib/phone-format";
 import { findNextPublicBookingDate, getPublicBookingSlots } from "../../../lib/public-booking";
-import { type SiteLanguage } from "../../../lib/site-language";
+import { getContentLanguage, type SiteLanguage, withEnglishFallback } from "../../../lib/site-language";
 import { createBookingAction } from "./actions";
 import { useSiteLanguage } from "../../useSiteLanguage";
 
@@ -38,7 +38,7 @@ type SalonCopy = {
   chooseTimeError: string;
 };
 
-const salonCopy: Record<SiteLanguage, SalonCopy> = {
+const salonCopy: Record<SiteLanguage, SalonCopy> = withEnglishFallback<SalonCopy>({
   ru: {
     bookingTitle: "Выбери услугу и удобное окно",
     date: "Дата",
@@ -75,7 +75,7 @@ const salonCopy: Record<SiteLanguage, SalonCopy> = {
     noSlots: "No free slots for the selected date.",
     chooseTimeError: "Choose a booking time."
   }
-};
+});
 
 function getTodayDateKey() {
   const now = new Date();
@@ -99,7 +99,7 @@ function getPhoneErrorText(language: SiteLanguage, country: string) {
 export default function SalonView({ salon, bookings, initialLanguage = "ru" }: SalonViewProps) {
   const language = useSiteLanguage(initialLanguage, true);
   const t = salonCopy[language];
-  const localizedSalon = getLocalizedSalon(salon, language);
+  const localizedSalon = getLocalizedSalon(salon, getContentLanguage(language));
   const [selectedServiceName, setSelectedServiceName] = useState(salon.services[0]?.name ?? "");
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedTime, setSelectedTime] = useState("");

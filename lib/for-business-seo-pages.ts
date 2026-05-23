@@ -1,5 +1,5 @@
 import type { SeoCopy } from "./seo";
-import type { SiteLanguage } from "./site-language";
+import type { BaseSiteLanguage } from "./site-language";
 
 export type FeatureSlug =
   | "kalendar-zapisey"
@@ -10,8 +10,8 @@ export type FeatureSlug =
 
 type FeaturePage = {
   slug: FeatureSlug;
-  copy: Record<SiteLanguage, { h1: string; lead: string; body: string[] }>;
-  seo: Record<SiteLanguage, SeoCopy>;
+  copy: Record<BaseSiteLanguage, { h1: string; lead: string; body: string[] }>;
+  seo: Record<BaseSiteLanguage, SeoCopy>;
 };
 
 export const forBusinessFeaturePages: FeaturePage[] = [

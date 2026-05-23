@@ -6,7 +6,7 @@ import type { PublicHomeStats } from "../lib/public-home-stats";
 import { areMobileAppsAvailable, mobileApps } from "../lib/mobile-apps";
 import type { PublicSearchIndex } from "../lib/public-search";
 import { getNicheSlug } from "../lib/niche-pages";
-import { getLocalizedPath, isSiteLanguage, type SiteLanguage } from "../lib/site-language";
+import { getLocalizedPath, isSiteLanguage, type SiteLanguage, withEnglishFallback } from "../lib/site-language";
 import BrandLogo from "./BrandLogo";
 import GlobalLanguageSwitcher from "./GlobalLanguageSwitcher";
 import NicheLinksSection from "./NicheLinksSection";
@@ -28,6 +28,11 @@ const HOME_COUNTER_BASE = {
 
 function getLanguageLocale(language: PublicLanguage) {
   if (language === "uk") return "uk-UA";
+  if (language === "fr") return "fr-FR";
+  if (language === "pl") return "pl-PL";
+  if (language === "cs") return "cs-CZ";
+  if (language === "es") return "es-ES";
+  if (language === "de") return "de-DE";
   if (language === "en") return "en-US";
   return "ru-RU";
 }
@@ -49,6 +54,9 @@ function formatCompactThousands(value: number, language: PublicLanguage) {
   if (language === "en") {
     return `${formatNumber(thousands, language)}K`;
   }
+  if (language !== "ru") {
+    return `${formatNumber(thousands, language)}K`;
+  }
 
   return `${formatNumber(thousands, language)} к`;
 }
@@ -59,6 +67,9 @@ function formatStatsBig(totalBookings: number, language: PublicLanguage) {
     return `Понад ${compact}`;
   }
   if (language === "en") {
+    return `Over ${compact}`;
+  }
+  if (language !== "ru") {
     return `Over ${compact}`;
   }
   return `Более ${compact}`;
@@ -82,6 +93,11 @@ function getInitialLanguage(): PublicLanguage {
     .map((value) => value.toLowerCase());
 
   if (candidates.some((value) => value.startsWith("uk") || value.includes("-ua"))) return "uk";
+  if (candidates.some((value) => value.startsWith("fr"))) return "fr";
+  if (candidates.some((value) => value.startsWith("pl"))) return "pl";
+  if (candidates.some((value) => value.startsWith("cs") || value.startsWith("cz"))) return "cs";
+  if (candidates.some((value) => value.startsWith("es"))) return "es";
+  if (candidates.some((value) => value.startsWith("de"))) return "de";
   if (candidates.some((value) => value.startsWith("en"))) return "en";
   return "ru";
 }
@@ -121,7 +137,15 @@ const businesses = [
   }
 ];
 
-const copy = {
+function localizePublicValue(localized: Record<"ru" | "uk" | "en", string>, language: PublicLanguage) {
+  return localized[language as "ru" | "uk" | "en"] ?? localized.en;
+}
+
+function localizePublicList(localized: Record<"ru" | "uk" | "en", string[]>, language: PublicLanguage) {
+  return localized[language as "ru" | "uk" | "en"] ?? localized.en;
+}
+
+const copy = withEnglishFallback<Record<string, string | string[][]>>({
   ru: {
     navAria: "Главное меню",
     login: "Войти",
@@ -305,7 +329,7 @@ const copy = {
     nichesSubtitle: "Timviz is built for professionals and salons who work by appointment",
     prosFooter: "For professionals"
   }
-} satisfies Record<PublicLanguage, Record<string, string | string[][]>>;
+}) satisfies Record<PublicLanguage, Record<string, string | string[][]>>;
 
 const cities = [
   {
@@ -326,17 +350,17 @@ const cities = [
   }
 ];
 
-const countryTabs = {
+const countryTabs = withEnglishFallback<string[]>({
   ru: ["Украина", "Польша", "Германия", "Франция", "Италия", "Канада", "США", "Испания"],
   uk: ["Україна", "Польща", "Німеччина", "Франція", "Італія", "Канада", "США", "Іспанія"],
   en: ["Ukraine", "Poland", "Germany", "France", "Italy", "Canada", "USA", "Spain"]
-} satisfies Record<PublicLanguage, string[]>;
+}) satisfies Record<PublicLanguage, string[]>;
 
-const dashboardServices = {
+const dashboardServices = withEnglishFallback<string[]>({
   ru: ["Стрижка", "Окрашивание", "Массаж", "Маникюр"],
   uk: ["Стрижка", "Фарбування", "Масаж", "Манікюр"],
   en: ["Haircut", "Color", "Massage", "Manicure"]
-} satisfies Record<PublicLanguage, string[]>;
+}) satisfies Record<PublicLanguage, string[]>;
 
 export default function PublicHome({ searchIndex, stats, initialLanguage = "ru" }: PublicHomeProps) {
   const [language, setLanguage] = useState<PublicLanguage>(initialLanguage);
@@ -419,8 +443,8 @@ export default function PublicHome({ searchIndex, stats, initialLanguage = "ru" 
                 <h3>{business.name}</h3>
                 <span className="public-rating">★ {business.rating} <small>({business.reviews})</small></span>
               </div>
-              <p>{business.location[language]}</p>
-              <small>{business.category[language]}</small>
+              <p>{localizePublicValue(business.location, language)}</p>
+              <small>{localizePublicValue(business.category, language)}</small>
             </Link>
           ))}
         </div>
@@ -547,14 +571,14 @@ export default function PublicHome({ searchIndex, stats, initialLanguage = "ru" 
         <div className="public-city-grid">
           {cities.map((city) => (
             <div key={city.city.en}>
-              <h3>{city.city[language]}</h3>
-              {city.links[language].map((link) => (
+              <h3>{localizePublicValue(city.city, language)}</h3>
+              {localizePublicList(city.links, language).map((link) => (
                 <a
-                  href={`${getLocalizedPath(language, "/city-preview")}?city=${encodeURIComponent(city.city[language])}&category=${encodeURIComponent(link)}`}
+                  href={`${getLocalizedPath(language, "/city-preview")}?city=${encodeURIComponent(localizePublicValue(city.city, language))}&category=${encodeURIComponent(link)}`}
                   rel="nofollow"
                   key={link}
                 >
-                  {link} {String(t.cityIn)} {city.city[language]}
+                  {link} {String(t.cityIn)} {localizePublicValue(city.city, language)}
                 </a>
               ))}
             </div>

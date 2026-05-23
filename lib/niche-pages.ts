@@ -1,9 +1,9 @@
 import type { SeoCopy } from "./seo";
-import type { SiteLanguage } from "./site-language";
+import { withEnglishFallback, withNestedEnglishFallback, type SiteLanguage } from "./site-language";
 
 export type NicheKey = "manicure" | "hairdressers" | "barbers" | "cosmetologists" | "massage";
 
-export const nicheSlugMap: Record<SiteLanguage, Record<NicheKey, string>> = {
+export const nicheSlugMap: Record<SiteLanguage, Record<NicheKey, string>> = withEnglishFallback<Record<NicheKey, string>>({
   uk: {
     manicure: "dlya-manikyuru",
     hairdressers: "dlya-perukariv",
@@ -25,7 +25,7 @@ export const nicheSlugMap: Record<SiteLanguage, Record<NicheKey, string>> = {
     cosmetologists: "for-cosmetologists",
     massage: "for-massage-therapists"
   }
-};
+});
 
 export const nicheKeys: NicheKey[] = ["manicure", "hairdressers", "barbers", "cosmetologists", "massage"];
 
@@ -46,7 +46,7 @@ export function getAllNicheParams() {
 type NicheCardCopy = { shortTitle: string; description: string };
 type NichePageCopy = { h1: string; lead: string; body: string[] };
 
-export const nicheCards: Record<NicheKey, Record<SiteLanguage, NicheCardCopy>> = {
+export const nicheCards: Record<NicheKey, Record<SiteLanguage, NicheCardCopy>> = withNestedEnglishFallback<NicheKey, NicheCardCopy>({
   manicure: {
     uk: { shortTitle: "Для майстрів манікюру", description: "Онлайн-запис, послуги, ціни та календар для майстрів нігтьового сервісу." },
     ru: { shortTitle: "Для мастеров маникюра", description: "Онлайн-запись, услуги, цены и календарь для мастеров ногтевого сервиса." },
@@ -72,9 +72,9 @@ export const nicheCards: Record<NicheKey, Record<SiteLanguage, NicheCardCopy>> =
     ru: { shortTitle: "Для массажистов", description: "Гибкое расписание сессий разной длительности и удобная онлайн-запись." },
     en: { shortTitle: "For massage therapists", description: "Flexible scheduling for sessions of different durations." }
   }
-};
+});
 
-export const nicheContent: Record<NicheKey, Record<SiteLanguage, NichePageCopy>> = {
+export const nicheContent: Record<NicheKey, Record<SiteLanguage, NichePageCopy>> = withNestedEnglishFallback<NicheKey, NichePageCopy>({
   manicure: {
     uk: { h1: "Timviz для майстрів манікюру", lead: "Приймайте онлайн-запис 24/7 і керуйте послугами без хаосу в месенджерах.", body: ["Timviz допомагає майстрам манікюру зібрати запис, прайс і календар в одному місці.", "Клієнти самі обирають послугу й час, а ви отримуєте передбачуваний графік дня."] },
     ru: { h1: "Timviz для мастеров маникюра", lead: "Принимайте онлайн-запись 24/7 и управляйте услугами без хаоса в мессенджерах.", body: ["Timviz помогает мастерам маникюра собрать запись, прайс и календарь в одном кабинете.", "Клиенты выбирают услугу и время сами, а вы работаете с прозрачным расписанием."] },
@@ -100,9 +100,9 @@ export const nicheContent: Record<NicheKey, Record<SiteLanguage, NichePageCopy>>
     ru: { h1: "Timviz для массажистов", lead: "Управляйте короткими и длинными сессиями в одном календаре.", body: ["Настройте длительность каждой услуги и работайте с прозрачным расписанием.", "Клиенты бронируют свободное время онлайн без лишних согласований."] },
     en: { h1: "Timviz for massage therapists", lead: "Manage short and long sessions in one calendar.", body: ["Set duration per service and keep a clear schedule every day.", "Clients book available slots online with less manual coordination."] }
   }
-};
+});
 
-export const nicheSeo: Record<NicheKey, Record<SiteLanguage, SeoCopy>> = {
+export const nicheSeo: Record<NicheKey, Record<SiteLanguage, SeoCopy>> = withNestedEnglishFallback<NicheKey, SeoCopy>({
   manicure: {
     uk: { title: "Timviz для майстрів манікюру — онлайн-запис і календар", description: "Онлайн-запис для майстрів манікюру: календар, послуги, ціни та керування вільними вікнами в Timviz." },
     ru: { title: "Timviz для мастеров маникюра — онлайн-запись и календарь", description: "Онлайн-запись для мастеров маникюра: календарь, услуги, цены и управление свободными окнами в Timviz." },
@@ -128,4 +128,4 @@ export const nicheSeo: Record<NicheKey, Record<SiteLanguage, SeoCopy>> = {
     ru: { title: "Timviz для массажистов — онлайн-запись и график сессий", description: "Онлайн-запись для массажистов: гибкий календарь, услуги разной длительности и управление расписанием." },
     en: { title: "Timviz for massage therapists — online booking and scheduling", description: "Online booking for massage therapists with flexible session durations and calendar management." }
   }
-};
+});

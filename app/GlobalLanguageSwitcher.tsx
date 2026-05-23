@@ -7,13 +7,23 @@ import { getLanguageFromPathname, isSiteLanguage, switchLocalizedPath, type Site
 const languages: Array<{ code: SiteLanguage; short: string; label: string }> = [
   { code: "ru", short: "RU", label: "Русский" },
   { code: "uk", short: "UA", label: "Українська" },
-  { code: "en", short: "EN", label: "English" }
+  { code: "en", short: "EN", label: "English" },
+  { code: "fr", short: "FR", label: "Français" },
+  { code: "pl", short: "PL", label: "Polski" },
+  { code: "cs", short: "CS", label: "Čeština" },
+  { code: "es", short: "ES", label: "Español" },
+  { code: "de", short: "DE", label: "Deutsch" }
 ];
 
 const switcherLabels: Record<SiteLanguage, string> = {
   ru: "Выбор языка интерфейса",
   uk: "Вибір мови інтерфейсу",
-  en: "Choose interface language"
+  en: "Choose interface language",
+  fr: "Choisir la langue de l’interface",
+  pl: "Wybór języka interfejsu",
+  cs: "Výběr jazyka rozhraní",
+  es: "Elegir idioma de la interfaz",
+  de: "Sprache der Oberfläche wählen"
 };
 
 function getBrowserLanguage(): SiteLanguage {
@@ -35,6 +45,11 @@ function getBrowserLanguage(): SiteLanguage {
     .map((value) => value.toLowerCase());
 
   if (candidates.some((value) => value.startsWith("uk") || value.includes("-ua"))) return "uk";
+  if (candidates.some((value) => value.startsWith("fr"))) return "fr";
+  if (candidates.some((value) => value.startsWith("pl"))) return "pl";
+  if (candidates.some((value) => value.startsWith("cs") || value.startsWith("cz"))) return "cs";
+  if (candidates.some((value) => value.startsWith("es"))) return "es";
+  if (candidates.some((value) => value.startsWith("de"))) return "de";
   if (candidates.some((value) => value.startsWith("en"))) return "en";
   return "ru";
 }
@@ -107,63 +122,25 @@ export default function GlobalLanguageSwitcher({ mode = "fixed" }: GlobalLanguag
 
   const activeLanguage = languages.find((item) => item.code === language) ?? languages[0];
   const isInline = mode === "inline";
+  const publicPathname = pathname?.replace(/^\/(ru|uk|en|fr|pl|cs|es|de)(?=\/|$)/, "") || pathname;
+  const normalizedPublicPathname = publicPathname === "" ? "/" : publicPathname;
   const hasInlinePublicHeader =
-    pathname === "/" ||
-    pathname === "/catalog" ||
-    pathname === "/for-business" ||
-    pathname === "/privacy" ||
-    pathname === "/terms" ||
-    pathname === "/pricing" ||
-    pathname === "/refund-policy" ||
-    pathname === "/contact" ||
-    pathname === "/ru" ||
-    pathname === "/uk" ||
-    pathname === "/en" ||
-    pathname === "/ru/catalog" ||
-    pathname === "/uk/catalog" ||
-    pathname === "/en/catalog" ||
-    pathname === "/ru/for-business" ||
-    pathname === "/uk/for-business" ||
-    pathname === "/en/for-business" ||
-    pathname === "/ru/privacy" ||
-    pathname === "/uk/privacy" ||
-    pathname === "/en/privacy" ||
-    pathname === "/ru/terms" ||
-    pathname === "/uk/terms" ||
-    pathname === "/en/terms" ||
-    pathname === "/ru/pricing" ||
-    pathname === "/uk/pricing" ||
-    pathname === "/en/pricing" ||
-    pathname === "/ru/refund-policy" ||
-    pathname === "/uk/refund-policy" ||
-    pathname === "/en/refund-policy" ||
-    pathname === "/ru/contact" ||
-    pathname === "/uk/contact" ||
-    pathname === "/en/contact" ||
-    pathname?.startsWith("/ru/dlya-") ||
-    pathname?.startsWith("/uk/dlya-") ||
-    pathname?.startsWith("/en/for-") ||
-    pathname?.startsWith("/ru/kalendar-zapisey") ||
-    pathname?.startsWith("/uk/kalendar-zapisey") ||
-    pathname?.startsWith("/en/kalendar-zapisey") ||
-    pathname?.startsWith("/ru/telegram-bot-dlya-zapisey") ||
-    pathname?.startsWith("/uk/telegram-bot-dlya-zapisey") ||
-    pathname?.startsWith("/en/telegram-bot-dlya-zapisey") ||
-    pathname?.startsWith("/ru/crm-dlya-salona") ||
-    pathname?.startsWith("/uk/crm-dlya-salona") ||
-    pathname?.startsWith("/en/crm-dlya-salona") ||
-    pathname?.startsWith("/ru/programma-dlya-zapisi-klientov") ||
-    pathname?.startsWith("/uk/programma-dlya-zapisi-klientov") ||
-    pathname?.startsWith("/en/programma-dlya-zapisi-klientov") ||
-    pathname?.startsWith("/en/for-hairdressers") ||
-    pathname?.startsWith("/businesses/") ||
-    pathname?.startsWith("/ru/businesses/") ||
-    pathname?.startsWith("/uk/businesses/") ||
-    pathname?.startsWith("/en/businesses/") ||
-    pathname?.startsWith("/account") ||
-    pathname?.startsWith("/ru/account") ||
-    pathname?.startsWith("/uk/account") ||
-    pathname?.startsWith("/en/account") ||
+    normalizedPublicPathname === "/" ||
+    normalizedPublicPathname === "/catalog" ||
+    normalizedPublicPathname === "/for-business" ||
+    normalizedPublicPathname === "/privacy" ||
+    normalizedPublicPathname === "/terms" ||
+    normalizedPublicPathname === "/pricing" ||
+    normalizedPublicPathname === "/refund-policy" ||
+    normalizedPublicPathname === "/contact" ||
+    normalizedPublicPathname?.startsWith("/dlya-") ||
+    normalizedPublicPathname?.startsWith("/for-") ||
+    normalizedPublicPathname?.startsWith("/kalendar-zapisey") ||
+    normalizedPublicPathname?.startsWith("/telegram-bot-dlya-zapisey") ||
+    normalizedPublicPathname?.startsWith("/crm-dlya-salona") ||
+    normalizedPublicPathname?.startsWith("/programma-dlya-zapisi-klientov") ||
+    normalizedPublicPathname?.startsWith("/businesses/") ||
+    normalizedPublicPathname?.startsWith("/account") ||
     pathname?.startsWith("/pro/create-account") ||
     pathname?.startsWith("/pro/setup");
   const useEmbeddedCalendarLanguageMenu = pathname?.startsWith("/pro/calendar");

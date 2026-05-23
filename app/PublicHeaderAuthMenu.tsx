@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { getLocalizedPath, type SiteLanguage } from "../lib/site-language";
+import { getLocalizedPath, type SiteLanguage, withExtraLanguageFallbacks } from "../lib/site-language";
 
 type PublicHeaderAuthMenuProps = {
   language: SiteLanguage;
@@ -17,7 +17,7 @@ type AuthMenuCopy = {
   masterCabinet: string;
 };
 
-const authMenuCopy: Record<SiteLanguage, AuthMenuCopy> = {
+const authMenuCopy: Record<SiteLanguage, AuthMenuCopy> = withExtraLanguageFallbacks<AuthMenuCopy>({
   ru: {
     login: "Войти",
     myAccount: "Мой кабинет",
@@ -42,7 +42,48 @@ const authMenuCopy: Record<SiteLanguage, AuthMenuCopy> = {
     masterLogin: "Master sign in",
     masterCabinet: "Master dashboard"
   }
-};
+}, {
+  fr: {
+    login: "Connexion",
+    myAccount: "Mon compte",
+    customerLogin: "Connexion client",
+    customerCabinet: "Compte client",
+    masterLogin: "Connexion pro",
+    masterCabinet: "Tableau de bord pro"
+  },
+  pl: {
+    login: "Zaloguj się",
+    myAccount: "Moje konto",
+    customerLogin: "Logowanie klienta",
+    customerCabinet: "Konto klienta",
+    masterLogin: "Logowanie specjalisty",
+    masterCabinet: "Panel specjalisty"
+  },
+  cs: {
+    login: "Přihlásit se",
+    myAccount: "Můj účet",
+    customerLogin: "Přihlášení klienta",
+    customerCabinet: "Účet klienta",
+    masterLogin: "Přihlášení profesionála",
+    masterCabinet: "Panel profesionála"
+  },
+  es: {
+    login: "Iniciar sesión",
+    myAccount: "Mi cuenta",
+    customerLogin: "Acceso de cliente",
+    customerCabinet: "Cuenta de cliente",
+    masterLogin: "Acceso profesional",
+    masterCabinet: "Panel profesional"
+  },
+  de: {
+    login: "Einloggen",
+    myAccount: "Mein Konto",
+    customerLogin: "Kundenlogin",
+    customerCabinet: "Kundenkonto",
+    masterLogin: "Profi-Login",
+    masterCabinet: "Profi-Dashboard"
+  }
+});
 
 export default function PublicHeaderAuthMenu({ language }: PublicHeaderAuthMenuProps) {
   const t = authMenuCopy[language];

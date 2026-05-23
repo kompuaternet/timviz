@@ -4,7 +4,7 @@ import GlobalLanguageSwitcher from "../GlobalLanguageSwitcher";
 import { getNicheSlug, nicheCards, nicheKeys } from "../../lib/niche-pages";
 import { getNicheUxContent } from "../../lib/niche-ux";
 import { buildMetadata } from "../../lib/seo";
-import { getLocalizedPath, type SiteLanguage } from "../../lib/site-language";
+import { getLocalizedPath, type SiteLanguage , withEnglishFallback } from "../../lib/site-language";
 
 type InfoCard = {
   title: string;
@@ -74,19 +74,19 @@ const ukSeoParagraphs = [
   "У щоденній роботі важлива не тільки кількість бронювань, а й комфортний ритм зміни. Коли інструмент правильно налаштований, майстер бачить, де є резерв часу, де потрібно додати буфер і які послуги краще ставити в конкретні години. Timviz допомагає зробити графік більш керованим і рівним: клієнти не чекають зайве, а майстер не працює в постійному авралі. Програма для барбершопу у такому форматі підтримує і сервіс, і бізнес-показники. Тому запис клієнтів онлайн перестає бути хаотичним набором повідомлень та перетворюється на повноцінну систему зростання для барбера або команди."
 ];
 
-const screenshotsByLanguage: Record<SiteLanguage, { day: string; week: string; month: string }> = {
+const screenshotsByLanguage: Record<SiteLanguage, { day: string; week: string; month: string }> = withEnglishFallback<{ day: string; week: string; month: string }>({
   ru: { day: "/for-business/ru-day.png", week: "/for-business/ru-week.png", month: "/for-business/ru-month.png" },
   uk: { day: "/for-business/uk-day.png", week: "/for-business/uk-week.png", month: "/for-business/uk-month.png" },
   en: { day: "/for-business/en-day.png", week: "/for-business/en-week.png", month: "/for-business/en-month.png" }
-};
+});
 
-const barberPathByLanguage: Record<SiteLanguage, string> = {
+const barberPathByLanguage: Record<SiteLanguage, string> = withEnglishFallback<string>({
   uk: "/uk/dlya-barberiv",
   ru: "/ru/dlya-barberov",
   en: "/en/for-barbers"
-};
+});
 
-const copy: Record<SiteLanguage, Copy> = {
+const copy: Record<SiteLanguage, Copy> = withEnglishFallback<Copy>({
   uk: {
     home: "Головна",
     forBusiness: "Бізнесу",
@@ -387,7 +387,7 @@ const copy: Record<SiteLanguage, Copy> = {
     altServices: "Barber services and service setup in Timviz",
     altTelegram: "Telegram booking notifications for barbers in Timviz"
   }
-};
+});
 
 export function buildBarberMetadata(lang: SiteLanguage, pathname: string): Metadata {
   const title =

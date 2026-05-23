@@ -22,7 +22,7 @@ import {
   onlyPhoneDigits,
   phoneCountries
 } from "../../lib/phone-format";
-import { getLocalizedPath, type SiteLanguage } from "../../lib/site-language";
+import { getLocalizedPath, type SiteLanguage , withEnglishFallback } from "../../lib/site-language";
 import styles from "./customer-account.module.css";
 
 type AccountSection = "profile" | "activity" | "wallet" | "favorites" | "forms" | "settings";
@@ -111,7 +111,7 @@ type AccountCopy = {
   genderUnspecified: string;
 };
 
-const copy: Record<SiteLanguage, AccountCopy> = {
+const copy: Record<SiteLanguage, AccountCopy> = withEnglishFallback<AccountCopy>({
   ru: {
     profile: "Профиль",
     activity: "Записи",
@@ -325,7 +325,7 @@ const copy: Record<SiteLanguage, AccountCopy> = {
     genderMale: "Male",
     genderUnspecified: "Not specified"
   }
-};
+});
 
 function getInitials(value: string) {
   const parts = value.trim().split(/\s+/).filter(Boolean);

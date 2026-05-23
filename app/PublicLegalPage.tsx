@@ -2,12 +2,12 @@ import Link from "next/link";
 import BrandLogo from "./BrandLogo";
 import GlobalLanguageSwitcher from "./GlobalLanguageSwitcher";
 import PublicHeaderAuthMenu from "./PublicHeaderAuthMenu";
-import { getLocalizedPath, type SiteLanguage } from "../lib/site-language";
+import { getLocalizedPath, type SiteLanguage , withEnglishFallback } from "../lib/site-language";
 import type { legalCopy } from "../lib/legal";
 
 type LegalCopy = (typeof legalCopy)[keyof typeof legalCopy]["ru"];
 
-const chromeCopy = {
+const chromeCopy = withEnglishFallback<Record<string, string>>({
   ru: {
     navAria: "Главное меню",
     login: "Войти",
@@ -74,7 +74,7 @@ const chromeCopy = {
     contact: "Contact",
     support: "Support"
   }
-} satisfies Record<SiteLanguage, Record<string, string>>;
+}) satisfies Record<SiteLanguage, Record<string, string>>;
 
 type PublicLegalPageProps = {
   copy: LegalCopy;

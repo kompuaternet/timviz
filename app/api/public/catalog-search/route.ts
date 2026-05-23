@@ -6,7 +6,7 @@ import {
   getPublicSearchIndex,
   type PublicSearchParams
 } from "../../../../lib/public-search";
-import { isSiteLanguage } from "../../../../lib/site-language";
+import { getContentLanguage, isSiteLanguage } from "../../../../lib/site-language";
 
 const DEFAULT_CACHE_HEADER = "public, s-maxage=30, stale-while-revalidate=300";
 const HOT_CACHE_HEADER = "public, s-maxage=15, stale-while-revalidate=120";
@@ -36,9 +36,10 @@ export async function GET(request: Request) {
     let lat = toNumberOrNull(getParam(searchParams, "lat"));
     let lon = toNumberOrNull(getParam(searchParams, "lon"));
     const language = isSiteLanguage(requestedLanguage) ? requestedLanguage : "ru";
+    const contentLanguage = getContentLanguage(language);
 
     if ((lat === null || lon === null) && location) {
-      const resolved = await resolveLocationPoint(location, language);
+      const resolved = await resolveLocationPoint(location, contentLanguage);
       if (resolved) {
         lat = resolved.lat;
         lon = resolved.lon;

@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import type { PublicCatalogCardResult } from "../../lib/public-catalog";
 import type { PublicSearchIndex } from "../../lib/public-search";
-import { getLocalizedPath, type SiteLanguage } from "../../lib/site-language";
+import { getLocalizedPath, type SiteLanguage , withEnglishFallback } from "../../lib/site-language";
 import BrandLogo from "../BrandLogo";
 import GlobalLanguageSwitcher from "../GlobalLanguageSwitcher";
 import PublicSearch from "../PublicSearch";
@@ -77,7 +77,7 @@ type CatalogCopy = {
   hours: string;
 };
 
-const catalogCopy: Record<SiteLanguage, CatalogCopy> = {
+const catalogCopy: Record<SiteLanguage, CatalogCopy> = withEnglishFallback<CatalogCopy>({
   ru: {
     locale: "ru-RU",
     eyebrow: "Открытые профили Timviz",
@@ -279,7 +279,7 @@ const catalogCopy: Record<SiteLanguage, CatalogCopy> = {
     minutes: "min",
     hours: "h"
   }
-};
+});
 
 function getSlavicPlural(value: number, forms: [string, string, string]) {
   const mod10 = value % 10;

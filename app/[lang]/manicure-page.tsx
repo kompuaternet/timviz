@@ -4,7 +4,7 @@ import GlobalLanguageSwitcher from "../GlobalLanguageSwitcher";
 import { getNicheSlug, nicheCards, nicheKeys } from "../../lib/niche-pages";
 import { getNicheUxContent } from "../../lib/niche-ux";
 import { buildMetadata } from "../../lib/seo";
-import { getLocalizedPath, type SiteLanguage } from "../../lib/site-language";
+import { getLocalizedPath, type SiteLanguage , withEnglishFallback } from "../../lib/site-language";
 
 type InfoCard = {
   title: string;
@@ -84,7 +84,7 @@ const ukSeoParagraphs = [
   "Якщо узагальнити, Timviz закриває ключові задачі майстра: онлайн запис манікюр, структурований запис клієнтів манікюр, гнучкий календар записів, зрозуміла CRM для майстра манікюру та швидкий старт без технічних складнощів. Це не складна корпоративна система, а практичний інструмент для щоденної роботи. Програма для манікюру допомагає навести порядок, скоротити хаос у переписках і підвищити конверсію в реальні візити. Саме тому все більше майстрів переходять на такий формат і отримують стабільніший, більш контрольований робочий процес."
 ];
 
-const copy: Record<SiteLanguage, Copy> = {
+const copy: Record<SiteLanguage, Copy> = withEnglishFallback<Copy>({
   ru: {
     home: "Главная",
     forBusiness: "Бизнесу",
@@ -691,19 +691,19 @@ const copy: Record<SiteLanguage, Copy> = {
     screenshotAltServices: "Nail technician services and service setup in Timviz",
     screenshotAltTelegram: "Telegram notifications for new Timviz bookings"
   }
-};
+});
 
-const screenshotByLanguage: Record<SiteLanguage, { day: string; week: string; month: string }> = {
+const screenshotByLanguage: Record<SiteLanguage, { day: string; week: string; month: string }> = withEnglishFallback<{ day: string; week: string; month: string }>({
   ru: { day: "/for-business/ru-day.png", week: "/for-business/ru-week.png", month: "/for-business/ru-month.png" },
   uk: { day: "/for-business/uk-day.png", week: "/for-business/uk-week.png", month: "/for-business/uk-month.png" },
   en: { day: "/for-business/en-day.png", week: "/for-business/en-week.png", month: "/for-business/en-month.png" }
-};
+});
 
-const manicurePathByLanguage: Record<SiteLanguage, string> = {
+const manicurePathByLanguage: Record<SiteLanguage, string> = withEnglishFallback<string>({
   ru: "/ru/dlya-manikyura",
   uk: "/uk/dlya-manikyuru",
   en: "/en/for-nail-technicians"
-};
+});
 
 export function buildManicureMetadata(lang: SiteLanguage, pathname: string): Metadata {
   const title =

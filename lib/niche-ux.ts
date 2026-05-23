@@ -1,4 +1,4 @@
-import type { SiteLanguage } from "./site-language";
+import { withEnglishFallback, type SiteLanguage } from "./site-language";
 
 export type NicheUxKey =
   | "manicure"
@@ -23,7 +23,7 @@ type NicheUxContent = {
   seoOutro: string;
 };
 
-const byLanguage: Record<SiteLanguage, Record<NicheUxKey, NicheUxContent>> = {
+const byLanguage: Record<SiteLanguage, Record<NicheUxKey, NicheUxContent>> = withEnglishFallback<Record<NicheUxKey, NicheUxContent>>({
   uk: {
     manicure: {
       cta: "Почати приймати записи за 2 хвилини",
@@ -420,7 +420,7 @@ const byLanguage: Record<SiteLanguage, Record<NicheUxKey, NicheUxContent>> = {
         "You reduce overlaps, improve slot utilization and keep bookings predictable even in dense schedules."
     }
   }
-};
+});
 
 export function getNicheUxContent(language: SiteLanguage, key: NicheUxKey): NicheUxContent {
   return byLanguage[language][key];

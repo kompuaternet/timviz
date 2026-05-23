@@ -35,7 +35,7 @@ function localize(
   localized: Partial<Record<SiteLanguage, string>> | undefined,
   language: SiteLanguage
 ) {
-  return localized?.[language]?.trim() || value;
+  return localized?.[language]?.trim() || localized?.en?.trim() || value;
 }
 
 export function toPublicCatalogCardResults(

@@ -1,5 +1,5 @@
 import { getSupabaseAdmin, isSupabaseConfigured } from "./supabase";
-import type { SiteLanguage } from "./site-language";
+import { withEnglishFallback, type SiteLanguage } from "./site-language";
 
 export type TimvizPlan = "free" | "premium";
 export type PremiumStatus = "inactive" | "trialing" | "active" | "past_due" | "canceled";
@@ -17,11 +17,11 @@ export type UserAccess = {
 export const FREE_APPOINTMENTS_PER_MONTH = 100;
 export const PREMIUM_TRIAL_DAYS = 14;
 
-const freeLimitMessages: Record<SiteLanguage, string> = {
+const freeLimitMessages: Record<SiteLanguage, string> = withEnglishFallback<string>({
   ru: "В этом месяце бесплатные записи закончились. Premium откроет новые записи без ограничений.",
   uk: "Цього місяця безкоштовні записи закінчилися. Premium відкриє нові записи без обмежень.",
   en: "Free appointments are used up for this month. Premium unlocks unlimited appointments."
-};
+});
 
 export function normalizePlan(value: unknown): TimvizPlan {
   return value === "premium" ? "premium" : "free";

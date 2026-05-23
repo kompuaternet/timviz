@@ -10,7 +10,7 @@ function getParam(searchParams: URLSearchParams, key: string) {
 }
 
 function localize(value: string, localized: Partial<Record<SiteLanguage, string>> | LocalizedText | undefined, language: SiteLanguage) {
-  return localized?.[language]?.trim() || value;
+  return localized?.[language as keyof typeof localized]?.trim() || localized?.en?.trim() || value;
 }
 
 export async function GET(request: Request) {

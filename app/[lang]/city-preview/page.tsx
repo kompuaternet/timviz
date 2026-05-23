@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import BrandLogo from "../../BrandLogo";
-import { getLocalizedPath, isSiteLanguage, type SiteLanguage } from "../../../lib/site-language";
+import { getLocalizedPath, isSiteLanguage, type SiteLanguage , withEnglishFallback } from "../../../lib/site-language";
 
 type CityPreviewPageProps = {
   params: Promise<{ lang: string }>;
@@ -15,7 +15,7 @@ type PreviewCopy = {
   backHome: string;
 };
 
-const copy: Record<SiteLanguage, PreviewCopy> = {
+const copy: Record<SiteLanguage, PreviewCopy> = withEnglishFallback<PreviewCopy>({
   ru: {
     title: "Раздел скоро откроется",
     text: "Эта городская страница пока в режиме заглушки. Мы откроем индексируемую версию после наполнения.",
@@ -34,7 +34,7 @@ const copy: Record<SiteLanguage, PreviewCopy> = {
     backCatalog: "Go to catalog",
     backHome: "Go to homepage"
   }
-};
+});
 
 function getParam(params: Record<string, string | string[] | undefined>, key: string) {
   const value = params[key];

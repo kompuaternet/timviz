@@ -3,11 +3,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { PublicSearchIndex, PublicSearchSuggestion } from "../lib/public-search";
-import { getLocalizedPath } from "../lib/site-language";
+import { getLocalizedPath, type SiteLanguage, withEnglishFallback, withExtraLanguageFallbacks } from "../lib/site-language";
 
 type SearchKind = "all" | "procedure" | "business" | "professional";
 type ActivePanel = "search" | "location" | "time" | null;
-type PublicLanguage = "ru" | "uk" | "en";
+type PublicLanguage = SiteLanguage;
 
 type PublicSearchProps = {
   index: PublicSearchIndex;
@@ -28,7 +28,7 @@ type AddressSuggestion = {
   lon: number;
 };
 
-const searchCopy = {
+const searchCopy = withExtraLanguageFallbacks({
   ru: {
     allServices: "Все услуги",
     searchAria: "Услуга, заведение или профессионал",
@@ -137,7 +137,183 @@ const searchCopy = {
     weekdays: ["mon", "tue", "wed", "thu", "fri", "sat", "sun"],
     locale: "en-US"
   }
-} satisfies Record<PublicLanguage, {
+}, {
+  fr: {
+    allServices: "Tous les services",
+    searchAria: "Service, lieu ou professionnel",
+    currentLocation: "Position actuelle",
+    myLocation: "Ma position actuelle",
+    anyTime: "N’importe quand",
+    search: "Rechercher",
+    all: "Tout",
+    procedures: "Services",
+    businesses: "Lieux",
+    professionals: "Professionnels",
+    byDistance: "par distance",
+    nothingFound: "Aucun résultat. Essayez un service, un professionnel ou un lieu.",
+    locating: "Localisation...",
+    geoSorted: "Les résultats seront triés par distance",
+    where: "Où chercher ?",
+    whereText: "Utilisez votre position ou indiquez une ville.",
+    useLocation: "Utiliser ma position",
+    useLocationHint: "Si le navigateur l’autorise, nous trierons par distance.",
+    cityLabel: "Ville ou quartier",
+    cityPlaceholder: "Par exemple, Kyiv ou Varsovie",
+    searchingAddress: "Recherche d’adresse...",
+    pickAddress: "Choisir l’adresse",
+    choose: "Choisir",
+    anyDay: "N’importe quel jour",
+    today: "Aujourd’hui",
+    tomorrow: "Demain",
+    chooseTime: "Choisir l’heure",
+    morning: "Matin",
+    day: "Journée",
+    evening: "Soir",
+    distanceKm: (value: number) => `${value} km`,
+    weekdays: ["lun", "mar", "mer", "jeu", "ven", "sam", "dim"],
+    locale: "fr-FR"
+  },
+  pl: {
+    allServices: "Wszystkie usługi",
+    searchAria: "Usługa, miejsce lub specjalista",
+    currentLocation: "Aktualna lokalizacja",
+    myLocation: "Moja aktualna lokalizacja",
+    anyTime: "Dowolny termin",
+    search: "Szukaj",
+    all: "Wszystko",
+    procedures: "Usługi",
+    businesses: "Miejsca",
+    professionals: "Specjaliści",
+    byDistance: "według odległości",
+    nothingFound: "Brak wyników. Spróbuj wpisać usługę, specjalistę lub miejsce.",
+    locating: "Ustalanie lokalizacji...",
+    geoSorted: "Wyniki posortujemy według odległości",
+    where: "Gdzie szukać?",
+    whereText: "Użyj aktualnej lokalizacji albo wpisz miasto.",
+    useLocation: "Użyj mojej lokalizacji",
+    useLocationHint: "Jeśli przeglądarka pozwoli, posortujemy według odległości.",
+    cityLabel: "Miasto lub dzielnica",
+    cityPlaceholder: "Na przykład Kyiv albo Warszawa",
+    searchingAddress: "Szukamy adresu...",
+    pickAddress: "Wybierz adres",
+    choose: "Wybierz",
+    anyDay: "Dowolny dzień",
+    today: "Dzisiaj",
+    tomorrow: "Jutro",
+    chooseTime: "Wybierz godzinę",
+    morning: "Rano",
+    day: "Dzień",
+    evening: "Wieczór",
+    distanceKm: (value: number) => `${value} km`,
+    weekdays: ["pon", "wt", "śr", "czw", "pt", "sob", "nd"],
+    locale: "pl-PL"
+  },
+  cs: {
+    allServices: "Všechny služby",
+    searchAria: "Služba, podnik nebo profesionál",
+    currentLocation: "Aktuální poloha",
+    myLocation: "Moje aktuální poloha",
+    anyTime: "Kdykoliv",
+    search: "Hledat",
+    all: "Vše",
+    procedures: "Služby",
+    businesses: "Podniky",
+    professionals: "Profesionálové",
+    byDistance: "podle vzdálenosti",
+    nothingFound: "Nic jsme nenašli. Zkuste službu, profesionála nebo název podniku.",
+    locating: "Zjišťujeme polohu...",
+    geoSorted: "Výsledky se seřadí podle vzdálenosti",
+    where: "Kde hledat?",
+    whereText: "Použijte aktuální polohu nebo zadejte město.",
+    useLocation: "Použít moji polohu",
+    useLocationHint: "Pokud prohlížeč povolí přístup, seřadíme podle vzdálenosti.",
+    cityLabel: "Město nebo čtvrť",
+    cityPlaceholder: "Například Kyjev nebo Praha",
+    searchingAddress: "Hledáme adresu...",
+    pickAddress: "Vybrat adresu",
+    choose: "Vybrat",
+    anyDay: "Libovolný den",
+    today: "Dnes",
+    tomorrow: "Zítra",
+    chooseTime: "Vyberte čas",
+    morning: "Ráno",
+    day: "Den",
+    evening: "Večer",
+    distanceKm: (value: number) => `${value} km`,
+    weekdays: ["po", "út", "st", "čt", "pá", "so", "ne"],
+    locale: "cs-CZ"
+  },
+  es: {
+    allServices: "Todos los servicios",
+    searchAria: "Servicio, local o profesional",
+    currentLocation: "Ubicación actual",
+    myLocation: "Mi ubicación actual",
+    anyTime: "Cualquier hora",
+    search: "Buscar",
+    all: "Todo",
+    procedures: "Servicios",
+    businesses: "Locales",
+    professionals: "Profesionales",
+    byDistance: "por distancia",
+    nothingFound: "No hay resultados. Prueba con un servicio, profesional o local.",
+    locating: "Localizando...",
+    geoSorted: "Ordenaremos los resultados por distancia",
+    where: "¿Dónde buscar?",
+    whereText: "Usa tu ubicación actual o escribe una ciudad.",
+    useLocation: "Usar mi ubicación",
+    useLocationHint: "Si el navegador lo permite, ordenaremos por distancia.",
+    cityLabel: "Ciudad o zona",
+    cityPlaceholder: "Por ejemplo, Kyiv o Madrid",
+    searchingAddress: "Buscando dirección...",
+    pickAddress: "Elegir dirección",
+    choose: "Elegir",
+    anyDay: "Cualquier día",
+    today: "Hoy",
+    tomorrow: "Mañana",
+    chooseTime: "Elegir hora",
+    morning: "Mañana",
+    day: "Día",
+    evening: "Tarde",
+    distanceKm: (value: number) => `${value} km`,
+    weekdays: ["lun", "mar", "mié", "jue", "vie", "sáb", "dom"],
+    locale: "es-ES"
+  },
+  de: {
+    allServices: "Alle Leistungen",
+    searchAria: "Leistung, Ort oder Profi",
+    currentLocation: "Aktueller Standort",
+    myLocation: "Mein aktueller Standort",
+    anyTime: "Beliebige Zeit",
+    search: "Suchen",
+    all: "Alle",
+    procedures: "Leistungen",
+    businesses: "Orte",
+    professionals: "Profis",
+    byDistance: "nach Entfernung",
+    nothingFound: "Keine Ergebnisse. Suche nach Leistung, Profi oder Ort.",
+    locating: "Standort wird ermittelt...",
+    geoSorted: "Ergebnisse werden nach Entfernung sortiert",
+    where: "Wo suchen?",
+    whereText: "Nutze deinen Standort oder gib eine Stadt ein.",
+    useLocation: "Meinen Standort nutzen",
+    useLocationHint: "Wenn der Browser es erlaubt, sortieren wir nach Entfernung.",
+    cityLabel: "Stadt oder Bezirk",
+    cityPlaceholder: "Zum Beispiel Kyiv oder Berlin",
+    searchingAddress: "Adresse wird gesucht...",
+    pickAddress: "Adresse wählen",
+    choose: "Wählen",
+    anyDay: "Beliebiger Tag",
+    today: "Heute",
+    tomorrow: "Morgen",
+    chooseTime: "Zeit wählen",
+    morning: "Morgen",
+    day: "Tag",
+    evening: "Abend",
+    distanceKm: (value: number) => `${value} km`,
+    weekdays: ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"],
+    locale: "de-DE"
+  }
+}) satisfies Record<PublicLanguage, {
   allServices: string;
   searchAria: string;
   currentLocation: string;
@@ -211,7 +387,7 @@ function getLocalizedText(
   localized: Partial<Record<PublicLanguage, string>> | undefined,
   language: PublicLanguage
 ) {
-  return localized?.[language] ?? value ?? "";
+  return localized?.[language] ?? localized?.en ?? value ?? "";
 }
 
 function getSearchableText(
@@ -289,11 +465,11 @@ function monthTitle(date: Date, locale: string) {
   }).format(date).replace(".", "");
 }
 
-const locationSuggestions: Record<PublicLanguage, string[]> = {
+const locationSuggestions: Record<PublicLanguage, string[]> = withEnglishFallback<string[]>({
   ru: ["Киев", "Днепр", "Кривой Рог", "Львов", "Одесса", "Харьков"],
   uk: ["Київ", "Дніпро", "Кривий Ріг", "Львів", "Одеса", "Харків"],
   en: ["Kyiv", "Dnipro", "Kryvyi Rih", "Lviv", "Odesa", "Kharkiv"]
-};
+});
 
 export default function PublicSearch({
   index,

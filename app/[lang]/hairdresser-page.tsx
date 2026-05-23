@@ -3,7 +3,7 @@ import BrandLogo from "../BrandLogo";
 import GlobalLanguageSwitcher from "../GlobalLanguageSwitcher";
 import { getNicheUxContent } from "../../lib/niche-ux";
 import { buildMetadata } from "../../lib/seo";
-import { getLocalizedPath, type SiteLanguage } from "../../lib/site-language";
+import { getLocalizedPath, type SiteLanguage , withEnglishFallback } from "../../lib/site-language";
 
 type InfoCard = {
   title: string;
@@ -97,13 +97,13 @@ const ukSeoParagraphs = [
   "Якщо підсумувати, Timviz дає перукарю саме те, що впливає на результат: календар записів, структуровану CRM для перукаря, контроль цін і тривалості послуг, швидкі сповіщення та простий старт без технічних бар’єрів. Це не перевантажена система, а практичний сервіс, який закриває щоденні задачі майстра. Програма для запису клієнтів допомагає не лише навести порядок, а й підвищити конверсію у реальні візити. Тому онлайн запис клієнтів стає не просто зручністю для клієнта, а повноцінним інструментом росту для вашої перукарської практики. Усе працює в єдиному ритмі: від першого кліку клієнта до підтвердженого візиту у вашому календарі."
 ];
 
-const screenshotsByLanguage: Record<SiteLanguage, { day: string; week: string; month: string }> = {
+const screenshotsByLanguage: Record<SiteLanguage, { day: string; week: string; month: string }> = withEnglishFallback<{ day: string; week: string; month: string }>({
   ru: { day: "/for-business/ru-day.png", week: "/for-business/ru-week.png", month: "/for-business/ru-month.png" },
   uk: { day: "/for-business/uk-day.png", week: "/for-business/uk-week.png", month: "/for-business/uk-month.png" },
   en: { day: "/for-business/en-day.png", week: "/for-business/en-week.png", month: "/for-business/en-month.png" }
-};
+});
 
-const copy: Record<SiteLanguage, HairCopy> = {
+const copy: Record<SiteLanguage, HairCopy> = withEnglishFallback<HairCopy>({
   ru: {
     home: "Главная",
     forBusiness: "Бизнесу",
@@ -425,7 +425,7 @@ const copy: Record<SiteLanguage, HairCopy> = {
     altService: "Hairdresser services and service details in Timviz",
     altTelegram: "Telegram booking notifications for hairdressers in Timviz"
   }
-};
+});
 
 export function buildHairdresserMetadata(lang: SiteLanguage, pathname: string): Metadata {
   const title =

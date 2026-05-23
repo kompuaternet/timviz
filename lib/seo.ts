@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import type { SiteLanguage } from "./site-language";
-import { defaultSiteLanguage, getLocalizedPath, siteLanguages } from "./site-language";
+import { defaultSiteLanguage, getLocalizedPath, siteLanguages, withNestedEnglishFallback } from "./site-language";
 
 export const siteUrl = "https://timviz.com";
 export const siteName = "Timviz";
@@ -14,7 +14,12 @@ export type SeoCopy = {
 const localeMap: Record<SiteLanguage, string> = {
   ru: "ru_RU",
   uk: "uk_UA",
-  en: "en_US"
+  en: "en_US",
+  fr: "fr_FR",
+  pl: "pl_PL",
+  cs: "cs_CZ",
+  es: "es_ES",
+  de: "de_DE"
 };
 
 const defaultImage = "/brand/timviz-logo-web.png";
@@ -55,7 +60,7 @@ export function buildMetadata(
   }
 ): Metadata {
   const canonical = buildCanonical(pathname);
-  const localizedMatch = pathname.match(/^\/(ru|uk|en)(\/.*)?$/i);
+  const localizedMatch = pathname.match(/^\/(ru|uk|en|fr|pl|cs|es|de)(\/.*)?$/i);
   const localizedAlternates = localizedMatch
     ? buildLanguageAlternates(localizedMatch[2] || "/", localizedMatch[1].toLowerCase() as SiteLanguage)
     : null;
@@ -113,7 +118,7 @@ export function buildMetadata(
   };
 }
 
-export const seoCopy = {
+export const seoCopy = withNestedEnglishFallback<string, SeoCopy>({
   home: {
     ru: {
       title: "Timviz — онлайн-запись и календарь для мастеров",
@@ -278,4 +283,4 @@ export const seoCopy = {
       ]
     }
   }
-} satisfies Record<string, Record<SiteLanguage, SeoCopy>>;
+}) satisfies Record<string, Record<SiteLanguage, SeoCopy>>;

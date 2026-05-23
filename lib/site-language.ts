@@ -1,9 +1,21 @@
-export type SiteLanguage = "ru" | "uk" | "en";
+export type BaseSiteLanguage = "ru" | "uk" | "en";
+export type ExtraSiteLanguage = "fr" | "pl" | "cs" | "es" | "de";
+export type SiteLanguage = BaseSiteLanguage | ExtraSiteLanguage;
 
-export const siteLanguages: SiteLanguage[] = ["ru", "uk", "en"];
+export const baseSiteLanguages: BaseSiteLanguage[] = ["ru", "uk", "en"];
+export const extraSiteLanguages: ExtraSiteLanguage[] = ["fr", "pl", "cs", "es", "de"];
+export const siteLanguages: SiteLanguage[] = [...baseSiteLanguages, ...extraSiteLanguages];
 export const defaultSiteLanguage: SiteLanguage = "ru";
 
 type NicheKey = "manicure" | "hairdressers" | "barbers" | "cosmetologists" | "massage";
+
+const englishNicheSlugs: Record<NicheKey, string> = {
+  manicure: "for-nail-technicians",
+  hairdressers: "for-hairdressers",
+  barbers: "for-barbers",
+  cosmetologists: "for-cosmetologists",
+  massage: "for-massage-therapists"
+};
 
 const nicheSlugMap: Record<SiteLanguage, Record<NicheKey, string>> = {
   ru: {
@@ -20,13 +32,27 @@ const nicheSlugMap: Record<SiteLanguage, Record<NicheKey, string>> = {
     cosmetologists: "dlya-kosmetologiv",
     massage: "dlya-masazhu"
   },
-  en: {
-    manicure: "for-nail-technicians",
-    hairdressers: "for-hairdressers",
-    barbers: "for-barbers",
-    cosmetologists: "for-cosmetologists",
-    massage: "for-massage-therapists"
-  }
+  en: englishNicheSlugs,
+  fr: englishNicheSlugs,
+  pl: englishNicheSlugs,
+  cs: englishNicheSlugs,
+  es: englishNicheSlugs,
+  de: englishNicheSlugs
+};
+
+const latinNicheAliases: Record<string, NicheKey> = {
+  "dlya-manikyura": "manicure",
+  "dlya-manikyuru": "manicure",
+  "dlya-parikmaherov": "hairdressers",
+  "dlya-perukariv": "hairdressers",
+  "dlya-barberov": "barbers",
+  "dlya-barberiv": "barbers",
+  "dlya-kosmetologov": "cosmetologists",
+  "dlya-kosmetologiv": "cosmetologists",
+  "dlya-massazha": "massage",
+  "dlya-massazhu": "massage",
+  "dlya-massazhistov": "massage",
+  "dlya-masazhistiv": "massage"
 };
 
 const nicheSlugAliases: Record<SiteLanguage, Record<string, NicheKey>> = {
@@ -58,24 +84,54 @@ const nicheSlugAliases: Record<SiteLanguage, Record<string, NicheKey>> = {
     "for-cosmetologists": "cosmetologists",
     "for-massage-therapists": "massage"
   },
-  en: {
-    "dlya-manikyura": "manicure",
-    "dlya-manikyuru": "manicure",
-    "dlya-parikmaherov": "hairdressers",
-    "dlya-perukariv": "hairdressers",
-    "dlya-barberov": "barbers",
-    "dlya-barberiv": "barbers",
-    "dlya-kosmetologov": "cosmetologists",
-    "dlya-kosmetologiv": "cosmetologists",
-    "dlya-massazha": "massage",
-    "dlya-massazhu": "massage",
-    "dlya-massazhistov": "massage",
-    "dlya-masazhistiv": "massage"
-  }
+  en: latinNicheAliases,
+  fr: latinNicheAliases,
+  pl: latinNicheAliases,
+  cs: latinNicheAliases,
+  es: latinNicheAliases,
+  de: latinNicheAliases
 };
 
 export function isSiteLanguage(value: string | null | undefined): value is SiteLanguage {
-  return value === "ru" || value === "uk" || value === "en";
+  return typeof value === "string" && (siteLanguages as string[]).includes(value);
+}
+
+export function isBaseSiteLanguage(value: string | null | undefined): value is BaseSiteLanguage {
+  return typeof value === "string" && (baseSiteLanguages as string[]).includes(value);
+}
+
+export function getContentLanguage(language: SiteLanguage): BaseSiteLanguage {
+  return isBaseSiteLanguage(language) ? language : "en";
+}
+
+export function withEnglishFallback<T>(record: Record<BaseSiteLanguage, T>): Record<SiteLanguage, T> {
+  return {
+    ...record,
+    fr: record.en,
+    pl: record.en,
+    cs: record.en,
+    es: record.en,
+    de: record.en
+  };
+}
+
+export function withExtraLanguageFallbacks<T>(
+  record: Record<BaseSiteLanguage, T>,
+  extra: Partial<Record<ExtraSiteLanguage, Partial<T>>>
+): Record<SiteLanguage, T> {
+  const fallback = withEnglishFallback(record);
+  for (const language of extraSiteLanguages) {
+    fallback[language] = { ...(fallback.en as T & object), ...(extra[language] as object | undefined) } as T;
+  }
+  return fallback;
+}
+
+export function withNestedEnglishFallback<Key extends string, T>(
+  record: Record<Key, Record<BaseSiteLanguage, T>>
+): Record<Key, Record<SiteLanguage, T>> {
+  return Object.fromEntries(
+    Object.entries(record).map(([key, value]) => [key, withEnglishFallback(value as Record<BaseSiteLanguage, T>)])
+  ) as Record<Key, Record<SiteLanguage, T>>;
 }
 
 export function getLocalizedPath(language: SiteLanguage, pathname = "/") {

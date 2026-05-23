@@ -4,7 +4,7 @@ import { getSalonBySlug, getLocalizedText } from "../../../../data/mock-data";
 import { getAllBookings } from "../../../../lib/bookings";
 import { getPublicBusinessProfile } from "../../../../lib/public-business";
 import { buildLanguageAlternates, buildMetadata } from "../../../../lib/seo";
-import { getLocalizedPath, isSiteLanguage, type SiteLanguage } from "../../../../lib/site-language";
+import { getContentLanguage, getLocalizedPath, isSiteLanguage, type SiteLanguage } from "../../../../lib/site-language";
 import SalonView from "../../../salons/[slug]/SalonView";
 
 export const dynamic = "force-dynamic";
@@ -38,9 +38,10 @@ export async function generateMetadata({
     );
   }
 
-  const city = getLocalizedText(salon.city, lang);
-  const category = getLocalizedText(salon.category, lang);
-  const description = getLocalizedText(salon.description, lang);
+  const contentLanguage = getContentLanguage(lang);
+  const city = getLocalizedText(salon.city, contentLanguage);
+  const category = getLocalizedText(salon.category, contentLanguage);
+  const description = getLocalizedText(salon.description, contentLanguage);
 
   const metadata = buildMetadata(
     `/${lang}/salons/${slug}`,
