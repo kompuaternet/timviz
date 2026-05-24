@@ -10,7 +10,7 @@ import ProSidebar from "../ProSidebar";
 import SupportWidget from "../SupportWidget";
 import { getPostLogoutRedirectPath } from "../telegram-context";
 import { isProPremiumActive } from "../premium-status";
-import { isProLanguage, languageFromProfile, languageShortLabels, profileLanguageFromCode, proLanguageOptions, type BaseProLanguage, type ProLanguage } from "../i18n";
+import { isProLanguage, languageFromProfile, languageShortLabels, profileLanguageFromCode, proLanguageOptions, type ProLanguage } from "../i18n";
 import type { OnboardingCtaState, OnboardingStepId } from "../../../lib/pro-onboarding";
 import { localeBySiteLanguage } from "../../../lib/site-language";
 import {
@@ -291,7 +291,7 @@ function getCalendarStorage() {
   }
 }
 
-const BASE_CALENDAR_TEXT: Record<BaseProLanguage, {
+type CalendarCopy = {
   today: string;
   day: string;
   threeDays: string;
@@ -452,7 +452,9 @@ const BASE_CALENDAR_TEXT: Record<BaseProLanguage, {
   onlineBookingStatusPending: string;
   onlineBookingStatusConfirmed: string;
   onlineBookingStatusCancelled: string;
-}> = {
+};
+
+const BASE_CALENDAR_TEXT = {
   ru: {
     today: "Сегодня",
     day: "День",
@@ -939,7 +941,7 @@ const BASE_CALENDAR_TEXT: Record<BaseProLanguage, {
     onlineBookingStatusConfirmed: "Confirmed",
     onlineBookingStatusCancelled: "Cancelled"
   }
-};
+} satisfies Partial<Record<ProLanguage, CalendarCopy>>;
 
 const CALENDAR_AUX_TEXT = {
   ru: {
@@ -1223,8 +1225,6 @@ const CALENDAR_AUX_TEXT = {
     newService: "Neue Leistung"
   }
 } as const;
-type CalendarCopy = (typeof BASE_CALENDAR_TEXT)[keyof typeof BASE_CALENDAR_TEXT];
-
 const CALENDAR_TEXT: Record<AppLanguage, CalendarCopy> = {
   ru: BASE_CALENDAR_TEXT.ru,
   uk: BASE_CALENDAR_TEXT.uk,

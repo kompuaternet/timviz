@@ -36,6 +36,11 @@ type DraftService = {
 
 const colorPalette = ["#8bd7e8", "#ffd166", "#7ed6bd", "#b794f4", "#f6729a", "#a5d76e", "#ff9f80", "#90cdf4"];
 const ALL_CATEGORIES_KEY = "__all_categories__";
+const CANONICAL_SERVICE_LANGUAGE: ProLanguage = "ru";
+
+function isCanonicalServiceLanguage(language: ProLanguage) {
+  return Object.is(language, CANONICAL_SERVICE_LANGUAGE);
+}
 
 const serviceExtrasBase = {
   ru: {
@@ -437,7 +442,7 @@ export default function ServicesView({ initialWorkspace, catalog, onboardingCta 
         body: JSON.stringify({
           serviceId: editId,
           ...editDraft,
-          name: language === "ru" ? editDraft.name.trim() : originalService?.name || editDraft.name.trim(),
+          name: isCanonicalServiceLanguage(language) ? editDraft.name.trim() : originalService?.name || editDraft.name.trim(),
           localizedName
         })
       });

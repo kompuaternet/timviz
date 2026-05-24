@@ -1,7 +1,6 @@
 import { isSiteLanguage, siteLanguages, type SiteLanguage } from "../../lib/site-language";
 
 export type ProLanguage = SiteLanguage;
-export type BaseProLanguage = "ru" | "uk" | "en";
 
 export const languageLabels: Record<ProLanguage, string> = {
   ru: "русский (RU)",
@@ -83,10 +82,6 @@ export function languageFromProfile(value = ""): ProLanguage {
 
 export function profileLanguageFromCode(language: ProLanguage) {
   return languageLabels[language];
-}
-
-export function getProLocalizedRecord<T>(record: Record<BaseProLanguage, T>, language: ProLanguage): T {
-  return record[language as BaseProLanguage] ?? record.en;
 }
 
 const baseProText = {
