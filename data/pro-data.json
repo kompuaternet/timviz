@@ -1230,6 +1230,7 @@
         }
       },
       "customSchedule": {},
+      "allowOnlineBooking": true,
       "ownerProfessionalId": "pro_886a4c19-517a-451b-8b7b-e59421473403",
       "createdAt": "2026-04-20T08:16:48.967Z",
       "photos": []
