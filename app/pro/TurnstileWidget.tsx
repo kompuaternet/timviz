@@ -99,7 +99,7 @@ export default function TurnstileWidget({ onToken, onExpire }: TurnstileWidgetPr
   const tokenReceivedRef = useRef(false);
   const [status, setStatus] = useState<"loading" | "ready" | "fallback" | "unavailable">("loading");
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "";
-  const t = copy[language];
+  const t = (copy as unknown as Record<string, typeof copy.en>)[language] ?? copy.en;
 
   async function requestFallbackToken() {
     if (fallbackRequestedRef.current) return;

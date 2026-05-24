@@ -246,7 +246,7 @@ export default function WorkspaceView({ professionalId }: WorkspaceViewProps) {
   }, [professionalId]);
 
   const isOwner = snapshot?.membership.scope === "owner";
-  const copy = workspaceCopy[language];
+  const copy = (workspaceCopy as unknown as Record<string, typeof workspaceCopy.en>)[language] ?? workspaceCopy.en;
   const bookings = isOwner ? copy.bookings.owner : copy.bookings.member;
   const scheduleHref = isOwner ? "/pro/staff/schedule" : "/pro/schedule";
   const hasAddress = Boolean(snapshot?.business.address?.trim() || snapshot?.business.addressDetails?.trim());

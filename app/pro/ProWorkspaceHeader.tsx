@@ -201,8 +201,8 @@ function HelpIcon() {
   );
 }
 
-function getPageTitle(pathname: string | null, language: "ru" | "uk" | "en") {
-  const copy = headerCopy[language];
+function getPageTitle(pathname: string | null, language: ProLanguage) {
+  const copy = (headerCopy as unknown as Record<string, typeof headerCopy.en>)[language] ?? headerCopy.en;
 
   if (!pathname) return copy.workspace;
   if (pathname.startsWith("/pro/calendar")) return copy.calendar;
@@ -241,7 +241,7 @@ export default function ProWorkspaceHeader({
   const router = useRouter();
   const pathname = usePathname();
   const { language, t } = useProLanguage();
-  const copy = headerCopy[language];
+  const copy = (headerCopy as unknown as Record<string, typeof headerCopy.en>)[language] ?? headerCopy.en;
   const shareMenuButtonRef = useRef<HTMLButtonElement | null>(null);
   const accountMenuButtonRef = useRef<HTMLButtonElement | null>(null);
   const shareMenuPanelRef = useRef<HTMLDivElement | null>(null);

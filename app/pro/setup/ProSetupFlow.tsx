@@ -708,7 +708,7 @@ export default function ProSetupFlow({
   const [manualServicePrice, setManualServicePrice] = useState("");
   const [isTelegramSource, setIsTelegramSource] = useState(false);
   const [telegramStartParam, setTelegramStartParam] = useState("setup");
-  const t = setupText[language];
+  const t = (setupText as unknown as Record<string, typeof setupText.en>)[language] ?? setupText.en;
   const isInvitationFlow = invitation?.status === "pending";
 
   const totalSteps = isInvitationFlow ? 1 : draft.ownerMode === "owner" ? 5 : 3;

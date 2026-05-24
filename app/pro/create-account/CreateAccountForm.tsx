@@ -14,7 +14,7 @@ import {
   phoneCountries
 } from "../../../lib/phone-format";
 import TurnstileWidget from "../TurnstileWidget";
-import { languageLabels, type ProLanguage } from "../i18n";
+import { languageLabels, type BaseProLanguage, type ProLanguage } from "../i18n";
 import styles from "../pro.module.css";
 
 type CountryConfig = {
@@ -461,7 +461,7 @@ const formCopy = {
     resend: "Send again",
     resendWait: "You can send again in 60 seconds."
   }
-} satisfies Record<ProLanguage, Record<string, string>>;
+} satisfies Record<BaseProLanguage, Record<string, string>>;
 
 export default function CreateAccountForm() {
   const router = useRouter();
@@ -499,7 +499,7 @@ export default function CreateAccountForm() {
 
   const phoneRule = getPhoneRule(phoneCountry);
   const phoneIsValid = isPhoneValid(phoneCountry, phone);
-  const t = formCopy[language];
+  const t = (formCopy as unknown as Record<string, typeof formCopy.en>)[language] ?? formCopy.en;
   const phonePlaceholder = phoneCountry === "Ukraine" ? t.phonePlaceholder : phoneRule.placeholder;
   const captchaRequired = authProviderMode === "email";
 

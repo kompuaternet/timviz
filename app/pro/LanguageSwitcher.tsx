@@ -1,23 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { languageLabels, proText, type ProLanguage } from "./i18n";
+import { isProLanguage, languageLabels, proLanguageOptions, proText, type ProLanguage } from "./i18n";
 import styles from "./pro.module.css";
 
-const languages = [
-  { code: "ru", label: "RU", flag: "🇷🇺" },
-  { code: "uk", label: "UA", flag: "🇺🇦" },
-  { code: "en", label: "EN", flag: "🇬🇧" }
-] as const;
-
-type LanguageCode = (typeof languages)[number]["code"];
-
-function isLanguageCode(value: string | null): value is LanguageCode {
-  return value === "ru" || value === "uk" || value === "en";
-}
-
 export default function LanguageSwitcher() {
-  const [activeLanguage, setActiveLanguage] = useState<LanguageCode>("ru");
+  const [activeLanguage, setActiveLanguage] = useState<ProLanguage>("ru");
   const [isOpen, setIsOpen] = useState(false);
   const switcherRef = useRef<HTMLDivElement | null>(null);
 
@@ -31,7 +19,7 @@ export default function LanguageSwitcher() {
     } catch {
       storedLanguage = null;
     }
-    const nextLanguage = isLanguageCode(storedLanguage) ? storedLanguage : "ru";
+    const nextLanguage = isProLanguage(storedLanguage) ? storedLanguage : "ru";
     setActiveLanguage(nextLanguage);
     document.documentElement.lang = nextLanguage;
   }, []);
@@ -45,10 +33,10 @@ export default function LanguageSwitcher() {
     return () => document.removeEventListener("mousedown", closeOnOutsideClick);
   }, []);
 
-  const active = languages.find((language) => language.code === activeLanguage) ?? languages[0];
+  const active = proLanguageOptions.find((language) => language.code === activeLanguage) ?? proLanguageOptions[0];
   const t = proText[activeLanguage];
 
-  async function changeLanguage(language: LanguageCode) {
+  async function changeLanguage(language: ProLanguage) {
     setActiveLanguage(language);
     setIsOpen(false);
     try {
@@ -67,7 +55,7 @@ export default function LanguageSwitcher() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           professional: {
-            language: languageLabels[language as ProLanguage]
+            language: languageLabels[language]
           }
         })
       });
@@ -88,12 +76,13 @@ export default function LanguageSwitcher() {
         <span>{active.flag}</span>
       </button>
       <div className={styles.languageMenu}>
-        {languages.map((language) => (
+        {proLanguageOptions.map((language) => (
           <button
             key={language.code}
             type="button"
             className={activeLanguage === language.code ? styles.languageOptionActive : ""}
             onClick={() => void changeLanguage(language.code)}
+            title={language.fullLabel}
           >
             <span>{language.flag}</span>
             {language.label}

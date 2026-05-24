@@ -51,7 +51,7 @@ const copy = {
 export default function ForgotPasswordForm() {
   const { language } = useProLanguage();
   const searchParams = useSearchParams();
-  const t = copy[language];
+  const t = (copy as unknown as Record<string, typeof copy.en>)[language] ?? copy.en;
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");

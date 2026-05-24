@@ -94,7 +94,7 @@ export default function InviteAcceptView({
 }: InviteAcceptViewProps) {
   const router = useRouter();
   const { language } = useProLanguage();
-  const copy = inviteText[language];
+  const copy = (inviteText as unknown as Record<string, typeof inviteText.en>)[language] ?? inviteText.en;
   const [status, setStatus] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const normalizedCurrentEmail = currentProfessionalEmail.trim().toLowerCase();

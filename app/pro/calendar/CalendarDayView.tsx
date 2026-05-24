@@ -10,8 +10,9 @@ import ProSidebar from "../ProSidebar";
 import SupportWidget from "../SupportWidget";
 import { getPostLogoutRedirectPath } from "../telegram-context";
 import { isProPremiumActive } from "../premium-status";
-import { languageFromProfile, profileLanguageFromCode } from "../i18n";
+import { isProLanguage, languageFromProfile, languageShortLabels, profileLanguageFromCode, proLanguageOptions, type BaseProLanguage, type ProLanguage } from "../i18n";
 import type { OnboardingCtaState, OnboardingStepId } from "../../../lib/pro-onboarding";
+import { localeBySiteLanguage } from "../../../lib/site-language";
 import {
   getDayBreaks,
   getDayScheduleForMode as resolveDaySchedule,
@@ -221,8 +222,8 @@ type CalendarDayViewProps = {
   onboardingCta?: OnboardingCtaState | null;
 };
 
-type AppLanguage = "ru" | "uk" | "en";
-type AppLocale = "ru-RU" | "uk-UA" | "en-US";
+type AppLanguage = ProLanguage;
+type AppLocale = string;
 type CalendarViewMode = "day" | "threeDay" | "week" | "month";
 
 type QuickMenuState = {
@@ -290,7 +291,7 @@ function getCalendarStorage() {
   }
 }
 
-const CALENDAR_TEXT: Record<AppLanguage, {
+const CALENDAR_TEXT: Record<BaseProLanguage, {
   today: string;
   day: string;
   threeDays: string;
@@ -1034,19 +1035,11 @@ function getDateRangeKeys(dateKey: string, length: number) {
 }
 
 function isAppLanguage(value: string | null): value is AppLanguage {
-  return value === "ru" || value === "uk" || value === "en";
+  return isProLanguage(value);
 }
 
 function getLocale(language: AppLanguage): AppLocale {
-  if (language === "uk") {
-    return "uk-UA";
-  }
-
-  if (language === "en") {
-    return "en-US";
-  }
-
-  return "ru-RU";
+  return localeBySiteLanguage[language];
 }
 
 function timeToMinutes(value: string) {
@@ -2498,7 +2491,7 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
   }
 
   const todayDate = formatDateKey(new Date());
-  const t = CALENDAR_TEXT[uiLanguage];
+  const t = (CALENDAR_TEXT as unknown as Record<string, typeof CALENDAR_TEXT.en>)[uiLanguage] ?? CALENDAR_TEXT.en;
   const onboardingStepText = onboardingCta
     ? getOnboardingStepText(t, onboardingCta.step)
     : "";
@@ -5190,14 +5183,14 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
               <div className={styles.calendarAccountMenuSection}>
                 <span className={styles.calendarAccountMenuLabel}>{t.language}</span>
                 <div className={styles.calendarLanguageOptions}>
-                  {(["ru", "uk", "en"] as const).map((option) => (
+                  {proLanguageOptions.map((option) => (
                     <button
-                      key={option}
+                      key={option.code}
                       type="button"
-                      className={`${styles.calendarLanguageOption} ${uiLanguage === option ? styles.calendarLanguageOptionActive : ""}`}
-                      onClick={() => void applyLanguage(option)}
+                      className={`${styles.calendarLanguageOption} ${uiLanguage === option.code ? styles.calendarLanguageOptionActive : ""}`}
+                      onClick={() => void applyLanguage(option.code)}
                     >
-                      {option === "ru" ? "RU" : option === "uk" ? "UA" : "EN"}
+                      {languageShortLabels[option.code]}
                     </button>
                   ))}
                 </div>

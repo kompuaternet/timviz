@@ -9,6 +9,8 @@ import ProSidebar from "../ProSidebar";
 import ProWorkspaceHeader from "../ProWorkspaceHeader";
 import styles from "../pro.module.css";
 import { useProLanguage } from "../useProLanguage";
+import { localeBySiteLanguage } from "../../../lib/site-language";
+import type { ProLanguage } from "../i18n";
 import type { OnboardingCtaState } from "../../../lib/pro-onboarding";
 import type {
   BusinessStaffSnapshot,
@@ -277,10 +279,8 @@ const staffText = {
 
 type StaffCopy = (typeof staffText)[keyof typeof staffText];
 
-function getLocale(language: "ru" | "uk" | "en") {
-  if (language === "uk") return "uk-UA";
-  if (language === "en") return "en-US";
-  return "ru-RU";
+function getLocale(language: ProLanguage) {
+  return localeBySiteLanguage[language];
 }
 
 function formatDate(date: string, locale: string) {
@@ -437,7 +437,7 @@ function PendingInvitationCard({
 export default function StaffView({ professionalId, snapshot, canManageStaff = true, initialAddOpen = false, onboardingCta, header }: StaffViewProps) {
   const router = useRouter();
   const { language } = useProLanguage();
-  const copy = staffText[language];
+  const copy = (staffText as unknown as Record<string, typeof staffText.en>)[language] ?? staffText.en;
   const locale = getLocale(language);
   const [staffSnapshot, setStaffSnapshot] = useState(snapshot);
   const [query, setQuery] = useState("");

@@ -6,6 +6,8 @@ import ProSidebar from "../ProSidebar";
 import ProWorkspaceHeader from "../ProWorkspaceHeader";
 import type { ClientListItem } from "../../../lib/pro-clients";
 import type { OnboardingCtaState } from "../../../lib/pro-onboarding";
+import { localeBySiteLanguage } from "../../../lib/site-language";
+import { isProLanguage, type BaseProLanguage, type ProLanguage } from "../i18n";
 import {
   buildInternationalPhone,
   formatPhoneLocal,
@@ -47,10 +49,10 @@ type ClientForm = {
   marketingTelegram: boolean;
 };
 
-type AppLanguage = "ru" | "uk" | "en";
-type AppLocale = "ru-RU" | "uk-UA" | "en-US";
+type AppLanguage = ProLanguage;
+type AppLocale = string;
 
-const CLIENTS_TEXT: Record<AppLanguage, {
+const CLIENTS_TEXT: Record<BaseProLanguage, {
   title: string;
   count: string;
   searchPlaceholder: string;
@@ -257,19 +259,11 @@ const CLIENTS_TEXT: Record<AppLanguage, {
 };
 
 function isAppLanguage(value: string | null): value is AppLanguage {
-  return value === "ru" || value === "uk" || value === "en";
+  return isProLanguage(value);
 }
 
 function getLocale(language: AppLanguage): AppLocale {
-  if (language === "uk") {
-    return "uk-UA";
-  }
-
-  if (language === "en") {
-    return "en-US";
-  }
-
-  return "ru-RU";
+  return localeBySiteLanguage[language];
 }
 
 const emptyForm: ClientForm = {
@@ -354,8 +348,8 @@ export default function ClientsView({
   const [isRefreshingClients, setIsRefreshingClients] = useState(false);
   const [statusText, setStatusText] = useState("");
   const phoneRule = getPhoneRule(phoneCountry || accountCountry || "Ukraine");
-  const t = CLIENTS_TEXT[uiLanguage];
-  const syncLabel = uiLanguage === "en" ? "Syncing" : uiLanguage === "uk" ? "Синхронізація" : "Синхронизация";
+  const t = (CLIENTS_TEXT as unknown as Record<string, typeof CLIENTS_TEXT.en>)[uiLanguage] ?? CLIENTS_TEXT.en;
+  const syncLabel = t.saving;
   const locale = getLocale(uiLanguage);
   const prefixMenuRef = useRef<HTMLDivElement | null>(null);
 

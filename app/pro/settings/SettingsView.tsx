@@ -643,7 +643,7 @@ function localizeServiceMode(value: string, language: ProLanguage) {
     Object.values(mode).some((label) => label.toLowerCase() === value.toLowerCase())
   );
 
-  return match ? match[language] : value;
+  return match ? (match as Record<string, string>)[language] ?? match.en : value;
 }
 
 function inferCurrency(country: string) {
@@ -745,9 +745,9 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
   const router = useRouter();
   const initialLanguage = languageFromProfile(initialData.professional.language);
   const { t, language } = useProLanguage(initialLanguage);
-  const copy = settingsExtras[language];
-  const planText = planCopy[language];
-  const serviceModes = serviceModeGroups.map((mode) => mode[language]);
+  const copy = (settingsExtras as unknown as Record<string, typeof settingsExtras.en>)[language] ?? settingsExtras.en;
+  const planText = (planCopy as unknown as Record<string, typeof planCopy.en>)[language] ?? planCopy.en;
+  const serviceModes = serviceModeGroups.map((mode) => (mode as Record<string, string>)[language] ?? mode.en);
   const [data, setData] = useState(initialData);
   const premiumUntilTime = data.professional.premiumUntil ? new Date(data.professional.premiumUntil).getTime() : 0;
   const isShortTrialWindow =

@@ -100,7 +100,7 @@ type TelegramRuntime = {
 export default function LoginForm({ staleSession = false, returnTo = "" }: LoginFormProps) {
   const router = useRouter();
   const { language } = useProLanguage();
-  const copy = loginText[language];
+  const copy = (loginText as unknown as Record<string, typeof loginText.en>)[language] ?? loginText.en;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");

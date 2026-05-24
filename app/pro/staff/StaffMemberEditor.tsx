@@ -6,6 +6,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import ProfileAvatar from "../../ProfileAvatar";
 import styles from "../pro.module.css";
 import { useProLanguage } from "../useProLanguage";
+import { localeBySiteLanguage } from "../../../lib/site-language";
+import type { ProLanguage } from "../i18n";
 import type { StaffMemberEditorSnapshot, StaffMemberWorkspaceAccess } from "../../../lib/pro-staff";
 
 type StaffMemberEditorProps = {
@@ -142,10 +144,8 @@ const editorText = {
   }
 } as const;
 
-function getLocale(language: "ru" | "uk" | "en") {
-  if (language === "uk") return "uk-UA";
-  if (language === "en") return "en-US";
-  return "ru-RU";
+function getLocale(language: ProLanguage) {
+  return localeBySiteLanguage[language];
 }
 
 function formatMoney(value: number, locale: string, currency: string) {
@@ -159,7 +159,7 @@ function formatMoney(value: number, locale: string, currency: string) {
 export default function StaffMemberEditor({ snapshot, initialTab }: StaffMemberEditorProps) {
   const router = useRouter();
   const { language } = useProLanguage();
-  const copy = editorText[language];
+  const copy = (editorText as unknown as Record<string, typeof editorText.en>)[language] ?? editorText.en;
   const locale = getLocale(language);
   const member = snapshot.member;
   const [activeTab, setActiveTab] = useState(initialTab);

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { ProLanguage } from "../i18n";
+import type { BaseProLanguage, ProLanguage } from "../i18n";
 import styles from "../pro.module.css";
 
 const visualCopy = {
@@ -20,7 +20,7 @@ const visualCopy = {
     title: "Launch with bookings, calendar and clients from day one",
     text: "Your workspace opens right after signup, with bookings, schedule and company card already connected in one flow."
   }
-} satisfies Record<ProLanguage, { badge: string; title: string; text: string }>;
+} satisfies Record<BaseProLanguage, { badge: string; title: string; text: string }>;
 
 function getSavedLanguage(): ProLanguage {
   if (typeof window === "undefined") return "ru";
@@ -49,7 +49,7 @@ function getSavedLanguage(): ProLanguage {
 
 export default function CreateAccountVisual() {
   const [language, setLanguage] = useState<ProLanguage>("ru");
-  const copy = visualCopy[language];
+  const copy = (visualCopy as unknown as Record<string, typeof visualCopy.en>)[language] ?? visualCopy.en;
 
   useEffect(() => {
     setLanguage(getSavedLanguage());

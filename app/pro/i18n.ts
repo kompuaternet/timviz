@@ -1,23 +1,80 @@
-export type ProLanguage = "ru" | "uk" | "en";
+import { isSiteLanguage, siteLanguages, type SiteLanguage } from "../../lib/site-language";
+
+export type ProLanguage = SiteLanguage;
+export type BaseProLanguage = "ru" | "uk" | "en";
 
 export const languageLabels: Record<ProLanguage, string> = {
   ru: "русский (RU)",
   uk: "українська (UA)",
-  en: "English (EN)"
+  en: "English (EN)",
+  fr: "Français (FR)",
+  pl: "Polski (PL)",
+  cs: "Čeština (CS)",
+  es: "Español (ES)",
+  de: "Deutsch (DE)"
 };
 
+export const languageShortLabels: Record<ProLanguage, string> = {
+  ru: "RU",
+  uk: "UA",
+  en: "EN",
+  fr: "FR",
+  pl: "PL",
+  cs: "CS",
+  es: "ES",
+  de: "DE"
+};
+
+export const languageFlags: Record<ProLanguage, string> = {
+  ru: "RU",
+  uk: "UA",
+  en: "EN",
+  fr: "FR",
+  pl: "PL",
+  cs: "CS",
+  es: "ES",
+  de: "DE"
+};
+
+export const proLanguageOptions = siteLanguages.map((code) => ({
+  code,
+  label: languageShortLabels[code],
+  flag: languageFlags[code],
+  fullLabel: languageLabels[code]
+}));
+
 export function isProLanguage(value: string | null): value is ProLanguage {
-  return value === "ru" || value === "uk" || value === "en";
+  return isSiteLanguage(value);
 }
 
 export function languageFromProfile(value = ""): ProLanguage {
   const normalized = value.toLowerCase();
 
-  if (normalized.includes("ук") || normalized.includes("ua")) {
+  if (normalized.includes("ук") || normalized.includes("ua") || normalized.includes("ukrain")) {
     return "uk";
   }
 
-  if (normalized.includes("en")) {
+  if (normalized.includes("fr") || normalized.includes("français") || normalized.includes("francais")) {
+    return "fr";
+  }
+
+  if (normalized.includes("pl") || normalized.includes("polski") || normalized.includes("polish")) {
+    return "pl";
+  }
+
+  if (normalized.includes("cs") || normalized.includes("čeština") || normalized.includes("cestina") || normalized.includes("czech")) {
+    return "cs";
+  }
+
+  if (normalized.includes("es") || normalized.includes("español") || normalized.includes("espanol") || normalized.includes("spanish")) {
+    return "es";
+  }
+
+  if (normalized.includes("de") || normalized.includes("deutsch") || normalized.includes("german")) {
+    return "de";
+  }
+
+  if (normalized.includes("en") || normalized.includes("english")) {
     return "en";
   }
 
@@ -28,7 +85,11 @@ export function profileLanguageFromCode(language: ProLanguage) {
   return languageLabels[language];
 }
 
-export const proText = {
+export function getProLocalizedRecord<T>(record: Record<BaseProLanguage, T>, language: ProLanguage): T {
+  return record[language as BaseProLanguage] ?? record.en;
+}
+
+const baseProText = {
   ru: {
     nav: {
       home: "Главная",
@@ -641,4 +702,48 @@ export const proText = {
       weekDaysFull: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
     }
   }
-} as const;
+};
+
+type BaseProTextMap = typeof baseProText;
+type ProText = BaseProTextMap["en"];
+type ExtraProLanguage = Exclude<ProLanguage, "ru" | "uk" | "en">;
+type DeepPartial<T> = { [K in keyof T]?: T[K] extends readonly unknown[] ? T[K] : T[K] extends object ? DeepPartial<T[K]> : T[K] };
+
+function mergeProText(base: ProText, patch: DeepPartial<ProText>): ProText {
+  const result: Record<string, unknown> = { ...base };
+
+  for (const [key, value] of Object.entries(patch) as Array<[keyof ProText, unknown]>) {
+    const baseValue = base[key];
+    result[key as string] =
+      value && !Array.isArray(value) && typeof value === "object" && baseValue && !Array.isArray(baseValue) && typeof baseValue === "object"
+        ? { ...(baseValue as Record<string, unknown>), ...(value as Record<string, unknown>) }
+        : value;
+  }
+
+  return result as ProText;
+}
+
+const extraProText: Record<ExtraProLanguage, DeepPartial<ProText>> = {
+  fr: {
+    nav: { home: "Accueil", calendar: "Calendrier", services: "Services", clients: "Clients", staff: "Équipe", schedule: "Horaires", settings: "Réglages", help: "Aide", chooseLanguage: "Choisir la langue" },
+    common: { save: "Enregistrer", saving: "Enregistrement...", autosaving: "Enregistrement automatique...", savedAuto: "Modifications enregistrées", changesPending: "Modifications non enregistrées", saveNow: "Enregistrer", add: "Ajouter", cancel: "Annuler", delete: "Supprimer", edit: "Modifier", search: "Recherche", allServices: "Tous les services", allCategories: "Toutes les catégories", noCategory: "Sans catégorie", minutes: "min", hours: "h" },
+    services: { kicker: "Catalogue", title: "Menu des services", subtitle: "Services disponibles pour la réservation client. Modifiez l’ordre, le prix, la durée et la couleur.", myServices: "Vos services", count: "services", categories: "Catégories", newCategory: "Nouvelle catégorie", searchPlaceholder: "Rechercher un service", addService: "Ajouter un service", ownService: "Service personnalisé", name: "Nom", category: "Catégorie", duration: "Minutes", price: "Prix", catalogSearch: "Recherche dans le catalogue", alreadyExists: "Déjà ajouté", inMyServices: "Dans vos services", addFromCatalog: "Ajouter", removeFromCatalog: "Retirer", deleteKicker: "Suppression du service", deleteTitle: "Retirer de mes services ?", deleteText: "Ce service ne sera plus visible lors d’une réservation client. Il restera dans le catalogue global.", removeFromMine: "Retirer de mes services", enterName: "Saisissez le nom du service.", added: "Service ajouté à votre liste de travail et disponible à la réservation.", updated: "Service mis à jour.", removed: "Service retiré de votre liste. Il reste dans le catalogue global.", addBlockTitle: "Ajouter un service", addBlockText: "Les services personnalisés et du catalogue sont ajoutés uniquement à votre liste de travail.", serviceNamePlaceholder: "Par exemple, manucure complète" },
+    settings: { kicker: "Réglages du compte", title: "Profil et paramètres de l’entreprise", logout: "Déconnexion", logoutLoading: "Déconnexion...", contacts: "Coordonnées", firstName: "Prénom", lastName: "Nom", email: "E-mail", phone: "Téléphone", business: "Entreprise", businessName: "Nom de l’entreprise", website: "Site web", photos: "Photos de l’entreprise", localization: "Localisation", countryLanguageCurrency: "Pays, langue et devise", country: "Pays", timezone: "Fuseau horaire", language: "Langue de l’interface", currency: "Devise", address: "Adresse", saved: "Réglages enregistrés." },
+    schedule: { loading: "Chargement des horaires...", today: "Aujourd’hui", mySchedule: "Mes horaires", title: "Horaires de travail", modeWeek: "Semaine", modeCalendar: "Calendrier", regular: "Régulier", holiday: "Jour férié", dayOff: "Repos", workday: "Jour travaillé", selectDate: "Choisissez une date", noSlots: "Aucun créneau disponible pour cette sélection.", saveAuto: "Enregistrement automatique...", saved: "Modifications enregistrées", saveNow: "Enregistrer", autoSaved: "Modifications enregistrées", savedManual: "Horaires enregistrés", saveFailed: "Impossible d’enregistrer les horaires", jumpMore: "Plus", weekDaysShort: ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"], weekDaysFull: ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"] }
+  },
+  pl: { nav: { home: "Start", calendar: "Kalendarz", services: "Usługi", clients: "Klienci", staff: "Zespół", schedule: "Grafik", settings: "Ustawienia", help: "Pomoc", chooseLanguage: "Wybierz język" }, common: { save: "Zapisz", saving: "Zapisywanie...", autosaving: "Automatyczne zapisywanie...", savedAuto: "Zmiany zapisane", changesPending: "Są niezapisane zmiany", saveNow: "Zapisz teraz", add: "Dodaj", cancel: "Anuluj", delete: "Usuń", edit: "Edytuj", search: "Szukaj", allServices: "Wszystkie usługi", allCategories: "Wszystkie kategorie", noCategory: "Bez kategorii", minutes: "min", hours: "godz." } },
+  cs: { nav: { home: "Domů", calendar: "Kalendář", services: "Služby", clients: "Klienti", staff: "Tým", schedule: "Rozvrh", settings: "Nastavení", help: "Pomoc", chooseLanguage: "Vybrat jazyk" }, common: { save: "Uložit", saving: "Ukládání...", autosaving: "Automatické ukládání...", savedAuto: "Změny uloženy", changesPending: "Máte neuložené změny", saveNow: "Uložit nyní", add: "Přidat", cancel: "Zrušit", delete: "Smazat", edit: "Upravit", search: "Hledat", allServices: "Všechny služby", allCategories: "Všechny kategorie", noCategory: "Bez kategorie", minutes: "min", hours: "h" } },
+  es: { nav: { home: "Inicio", calendar: "Calendario", services: "Servicios", clients: "Clientes", staff: "Equipo", schedule: "Horario", settings: "Ajustes", help: "Ayuda", chooseLanguage: "Elegir idioma" }, common: { save: "Guardar", saving: "Guardando...", autosaving: "Guardando automáticamente...", savedAuto: "Cambios guardados", changesPending: "Hay cambios sin guardar", saveNow: "Guardar ahora", add: "Añadir", cancel: "Cancelar", delete: "Eliminar", edit: "Editar", search: "Buscar", allServices: "Todos los servicios", allCategories: "Todas las categorías", noCategory: "Sin categoría", minutes: "min", hours: "h" } },
+  de: { nav: { home: "Start", calendar: "Kalender", services: "Leistungen", clients: "Kunden", staff: "Team", schedule: "Arbeitszeiten", settings: "Einstellungen", help: "Hilfe", chooseLanguage: "Sprache wählen" }, common: { save: "Speichern", saving: "Speichern...", autosaving: "Automatisch speichern...", savedAuto: "Änderungen gespeichert", changesPending: "Es gibt ungespeicherte Änderungen", saveNow: "Jetzt speichern", add: "Hinzufügen", cancel: "Abbrechen", delete: "Löschen", edit: "Bearbeiten", search: "Suche", allServices: "Alle Leistungen", allCategories: "Alle Kategorien", noCategory: "Ohne Kategorie", minutes: "Min.", hours: "Std." } }
+};
+
+export const proText: Record<ProLanguage, ProText> = {
+  ru: baseProText.ru,
+  uk: baseProText.uk,
+  en: baseProText.en,
+  fr: mergeProText(baseProText.en, extraProText.fr),
+  pl: mergeProText(baseProText.en, extraProText.pl),
+  cs: mergeProText(baseProText.en, extraProText.cs),
+  es: mergeProText(baseProText.en, extraProText.es),
+  de: mergeProText(baseProText.en, extraProText.de)
+};

@@ -8,6 +8,8 @@ import ProSidebar from "../ProSidebar";
 import ProWorkspaceHeader from "../ProWorkspaceHeader";
 import styles from "../pro.module.css";
 import { useProLanguage } from "../useProLanguage";
+import { localeBySiteLanguage } from "../../../lib/site-language";
+import type { BaseProLanguage, ProLanguage } from "../i18n";
 import type { OnboardingCtaState } from "../../../lib/pro-onboarding";
 import type { BusinessStaffSnapshot, StaffMemberSnapshot } from "../../../lib/pro-staff";
 import {
@@ -171,7 +173,7 @@ const TIME_OPTIONS = Array.from({ length: 96 }, (_, index) => {
   return minutesToTime(minutes);
 });
 
-const scheduleText: Record<"ru" | "uk" | "en", ScheduleCopy> = {
+const scheduleText: Record<BaseProLanguage, ScheduleCopy> = {
   ru: {
     sectionTitle: "Команда",
     people: "Участники команды",
@@ -423,10 +425,8 @@ const scheduleText: Record<"ru" | "uk" | "en", ScheduleCopy> = {
   }
 };
 
-function getLocale(language: "ru" | "uk" | "en") {
-  if (language === "uk") return "uk-UA";
-  if (language === "en") return "en-US";
-  return "ru-RU";
+function getLocale(language: ProLanguage) {
+  return localeBySiteLanguage[language];
 }
 
 function toDateKey(date: Date) {
@@ -1618,7 +1618,7 @@ function DayScheduleModal({
 
 export default function StaffScheduleView({ professionalId, snapshot, onboardingCta, header }: StaffScheduleViewProps) {
   const { language, t } = useProLanguage();
-  const copy = scheduleText[language];
+  const copy = (scheduleText as unknown as Record<string, ScheduleCopy>)[language] ?? scheduleText.en;
   const locale = getLocale(language);
   const [members, setMembers] = useState(snapshot.members);
   const [selectedMemberId, setSelectedMemberId] = useState(() => snapshot.members[0]?.professional.id || "");

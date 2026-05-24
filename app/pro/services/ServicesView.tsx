@@ -13,9 +13,11 @@ import {
   sortCategoryTemplates,
   type CategoryTemplate
 } from "../../../lib/service-templates";
+import { localeBySiteLanguage } from "../../../lib/site-language";
 import type { OnboardingCtaState } from "../../../lib/pro-onboarding";
 import type { ServiceRecord, WorkspaceSnapshot } from "../../../lib/pro-data";
 import { useProLanguage } from "../useProLanguage";
+import type { ProLanguage } from "../i18n";
 
 type ServicesViewProps = {
   initialWorkspace: WorkspaceSnapshot;
@@ -35,7 +37,7 @@ type DraftService = {
 const colorPalette = ["#8bd7e8", "#ffd166", "#7ed6bd", "#b794f4", "#f6729a", "#a5d76e", "#ff9f80", "#90cdf4"];
 const ALL_CATEGORIES_KEY = "__all_categories__";
 
-const serviceExtras = {
+const serviceExtrasBase = {
   ru: {
     addFromCatalogFailed: "Не удалось добавить услугу из каталога.",
     removeFromCatalogFailed: "Не удалось убрать услугу из вашего списка.",
@@ -96,7 +98,115 @@ const serviceExtras = {
     categoriesLabel: "Categories",
     minutesLabel: "Duration"
   }
-} as const;
+};
+
+type ServiceExtras = typeof serviceExtrasBase.en;
+
+const serviceExtras: Record<ProLanguage, ServiceExtras> = {
+  ru: serviceExtrasBase.ru,
+  uk: serviceExtrasBase.uk,
+  en: serviceExtrasBase.en,
+  fr: {
+    addFromCatalogFailed: "Impossible d’ajouter le service depuis le catalogue.",
+    removeFromCatalogFailed: "Impossible de retirer le service de votre liste.",
+    addedNamed: (name: string) => `"${name}" a été ajouté à votre liste de travail.`,
+    removedNamed: (name: string) => `"${name}" a été retiré de votre liste de travail.`,
+    colorLabel: (color: string) => `Couleur ${color}`,
+    moveUp: "Monter",
+    moveDown: "Descendre",
+    readyTitle: "Prêt pour la réservation en ligne",
+    readyText: "Les services avec prix et durée sont disponibles dans le calendrier et la réservation en ligne.",
+    quickAddTitle: "Démarrage rapide",
+    quickAddText: "Ajoutez votre propre service ou choisissez un service prêt à l’emploi dans le catalogue.",
+    emptyTitle: "Aucun service pour le moment",
+    emptyText: "Ajoutez un premier service avec durée et prix pour que les clients puissent réserver sans messages.",
+    emptyAction: "Ajouter le premier service",
+    catalogTitle: "Catalogue des services populaires",
+    configuredLabel: "Configuré",
+    categoriesLabel: "Catégories",
+    minutesLabel: "Durée"
+  },
+  pl: {
+    addFromCatalogFailed: "Nie udało się dodać usługi z katalogu.",
+    removeFromCatalogFailed: "Nie udało się usunąć usługi z listy.",
+    addedNamed: (name: string) => `"${name}" dodano do listy roboczej.`,
+    removedNamed: (name: string) => `"${name}" usunięto z listy roboczej.`,
+    colorLabel: (color: string) => `Kolor ${color}`,
+    moveUp: "Wyżej",
+    moveDown: "Niżej",
+    readyTitle: "Gotowe do rezerwacji online",
+    readyText: "Usługi z ceną i czasem trwania są od razu dostępne w kalendarzu i rezerwacji online.",
+    quickAddTitle: "Szybki start",
+    quickAddText: "Dodaj własną usługę albo wybierz gotową z katalogu poniżej.",
+    emptyTitle: "Nie masz jeszcze usług",
+    emptyText: "Dodaj pierwszą usługę z czasem trwania i ceną, aby klienci mogli rezerwować bez wiadomości.",
+    emptyAction: "Dodaj pierwszą usługę",
+    catalogTitle: "Katalog popularnych usług",
+    configuredLabel: "Skonfigurowano",
+    categoriesLabel: "Kategorie",
+    minutesLabel: "Czas trwania"
+  },
+  cs: {
+    addFromCatalogFailed: "Službu z katalogu se nepodařilo přidat.",
+    removeFromCatalogFailed: "Službu se nepodařilo odebrat z vašeho seznamu.",
+    addedNamed: (name: string) => `"${name}" byla přidána do pracovního seznamu.`,
+    removedNamed: (name: string) => `"${name}" byla odebrána z pracovního seznamu.`,
+    colorLabel: (color: string) => `Barva ${color}`,
+    moveUp: "Výše",
+    moveDown: "Níže",
+    readyTitle: "Připraveno pro online rezervace",
+    readyText: "Služby s cenou a délkou jsou ihned dostupné v kalendáři a online rezervacích.",
+    quickAddTitle: "Rychlý start",
+    quickAddText: "Přidejte vlastní službu nebo vyberte hotovou službu z katalogu níže.",
+    emptyTitle: "Zatím žádné služby",
+    emptyText: "Přidejte první službu s délkou a cenou, aby si klienti mohli rezervovat bez zpráv.",
+    emptyAction: "Přidat první službu",
+    catalogTitle: "Katalog oblíbených služeb",
+    configuredLabel: "Nastaveno",
+    categoriesLabel: "Kategorie",
+    minutesLabel: "Délka"
+  },
+  es: {
+    addFromCatalogFailed: "No se pudo añadir el servicio desde el catálogo.",
+    removeFromCatalogFailed: "No se pudo quitar el servicio de tu lista.",
+    addedNamed: (name: string) => `"${name}" se añadió a tu lista de trabajo.`,
+    removedNamed: (name: string) => `"${name}" se quitó de tu lista de trabajo.`,
+    colorLabel: (color: string) => `Color ${color}`,
+    moveUp: "Subir",
+    moveDown: "Bajar",
+    readyTitle: "Listo para reservas online",
+    readyText: "Los servicios con precio y duración aparecen de inmediato en el calendario y en la reserva online.",
+    quickAddTitle: "Inicio rápido",
+    quickAddText: "Añade tu propio servicio o elige uno preparado del catálogo inferior.",
+    emptyTitle: "Aún no hay servicios",
+    emptyText: "Añade el primer servicio con duración y precio para que los clientes puedan reservar sin mensajes.",
+    emptyAction: "Añadir primer servicio",
+    catalogTitle: "Catálogo de servicios populares",
+    configuredLabel: "Configurado",
+    categoriesLabel: "Categorías",
+    minutesLabel: "Duración"
+  },
+  de: {
+    addFromCatalogFailed: "Die Leistung konnte nicht aus dem Katalog hinzugefügt werden.",
+    removeFromCatalogFailed: "Die Leistung konnte nicht aus deiner Liste entfernt werden.",
+    addedNamed: (name: string) => `"${name}" wurde deiner Arbeitsliste hinzugefügt.`,
+    removedNamed: (name: string) => `"${name}" wurde aus deiner Arbeitsliste entfernt.`,
+    colorLabel: (color: string) => `Farbe ${color}`,
+    moveUp: "Nach oben",
+    moveDown: "Nach unten",
+    readyTitle: "Bereit für Online-Buchungen",
+    readyText: "Leistungen mit Preis und Dauer sind sofort im Kalender und in der Online-Buchung verfügbar.",
+    quickAddTitle: "Schneller Start",
+    quickAddText: "Füge eine eigene Leistung hinzu oder wähle unten eine fertige aus dem Katalog.",
+    emptyTitle: "Noch keine Leistungen",
+    emptyText: "Füge die erste Leistung mit Dauer und Preis hinzu, damit Kunden ohne Nachrichten buchen können.",
+    emptyAction: "Erste Leistung hinzufügen",
+    catalogTitle: "Katalog beliebter Leistungen",
+    configuredLabel: "Eingerichtet",
+    categoriesLabel: "Kategorien",
+    minutesLabel: "Dauer"
+  }
+};
 
 const emptyDraft = (category = "Без категории"): DraftService => ({
   name: "",
@@ -123,20 +233,8 @@ function normalizeServices(services: ServiceRecord[]) {
   });
 }
 
-function getLocale(language: "ru" | "uk" | "en") {
-  if (language === "uk") {
-    return "uk-UA";
-  }
-
-  if (language === "en") {
-    return "en-US";
-  }
-
-  return "ru-RU";
-}
-
-function formatServicePrice(value: number, language: "ru" | "uk" | "en", currency?: string) {
-  return new Intl.NumberFormat(getLocale(language), {
+function formatServicePrice(value: number, language: ProLanguage, currency?: string) {
+  return new Intl.NumberFormat(localeBySiteLanguage[language], {
     style: "currency",
     currency: currency || "USD",
     maximumFractionDigits: 0
@@ -146,7 +244,7 @@ function formatServicePrice(value: number, language: "ru" | "uk" | "en", currenc
 export default function ServicesView({ initialWorkspace, catalog, onboardingCta }: ServicesViewProps) {
   const { t, language } = useProLanguage();
   const copy = serviceExtras[language];
-  const syncLabel = language === "en" ? "Syncing" : language === "uk" ? "Синхронізація" : "Синхронизация";
+  const syncLabel = t.common.autosaving;
   const accountCurrency = initialWorkspace.professional.currency || "USD";
   const [services, setServices] = useState<ServiceRecord[]>(() => normalizeServices(initialWorkspace.services));
   const [activeCategory, setActiveCategory] = useState<string>(ALL_CATEGORIES_KEY);

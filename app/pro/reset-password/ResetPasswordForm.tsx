@@ -89,7 +89,7 @@ export default function ResetPasswordForm() {
   const params = useSearchParams();
   const requestedLanguage = getResetPasswordLanguage(params.get("lang"));
   const { language } = useProLanguage(requestedLanguage);
-  const t = copy[language];
+  const t = (copy as unknown as Record<string, typeof copy.en>)[language] ?? copy.en;
   const token = params.get("token") || "";
   const returnToApp = params.get("source") === "mobile" ? getSafeAppReturnTo(params.get("return_to") || "") : null;
   const [password, setPassword] = useState("");
