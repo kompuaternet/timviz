@@ -1,7 +1,7 @@
 module.exports = {
   ci: {
     collect: {
-      startServerCommand: "NODE_OPTIONS=--no-experimental-webstorage npm run dev",
+      startServerCommand: "NODE_OPTIONS=--localstorage-file=/tmp/timviz-lighthouse-localstorage npm run dev",
       startServerReadyPattern: "Ready",
       url: [
         "http://127.0.0.1:3000/ru",
@@ -16,7 +16,6 @@ module.exports = {
       }
     },
     assert: {
-      preset: "lighthouse:no-pwa",
       assertions: {
         "categories:performance": ["warn", { minScore: 0.7 }],
         "categories:accessibility": ["warn", { minScore: 0.9 }],

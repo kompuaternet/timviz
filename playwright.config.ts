@@ -5,10 +5,10 @@ const isCi = Boolean(process.env.CI);
 
 export default defineConfig({
   testDir: "./tests",
-  fullyParallel: true,
+  fullyParallel: false,
   forbidOnly: isCi,
   retries: isCi ? 2 : 0,
-  workers: isCi ? 2 : undefined,
+  workers: isCi ? 1 : undefined,
   reporter: [["list"], ["html", { open: "never" }]],
   timeout: 60_000,
   expect: {
@@ -23,7 +23,8 @@ export default defineConfig({
     navigationTimeout: 30_000
   },
   webServer: {
-    command: "npm run dev -- --hostname 127.0.0.1 --port 3000",
+    command:
+      "NODE_OPTIONS=--localstorage-file=/tmp/timviz-playwright-localstorage npm run dev -- --hostname 127.0.0.1 --port 3000",
     url: baseURL,
     reuseExistingServer: !isCi,
     timeout: 120_000
