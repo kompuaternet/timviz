@@ -8601,6 +8601,57 @@ a {
   }
 }
 
+@media (max-width: 768px) {
+  .company-page,
+  .company-shell,
+  .company-panel,
+  .company-service-list,
+  .company-service-card {
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+  }
+
+  .company-service-list {
+    width: 100%;
+    overflow-x: hidden;
+  }
+
+  .company-service-card {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+    overflow: hidden;
+  }
+
+  .company-service-card > div {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .company-service-card > .company-book-button {
+    display: inline-flex;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin: 8px 0 0;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+  }
+
+  .company-category-tabs {
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+
+  .company-category-tabs button {
+    flex: 0 0 auto;
+    max-width: calc(100vw - 64px);
+  }
+}
+
 @media (max-width: 360px) {
   .company-booking-flow {
     padding-left: 12px;
