@@ -213,13 +213,17 @@ function getCategoryIcon(category: string) {
 
 function getCategoryServicesMeta(category: string, catalog: CategoryTemplate[], language: ProLanguage) {
   const count = getServicesForCategories([category], catalog).length;
-  if (language === "uk") {
-    return `${count} типових послуг`;
-  }
-  if (language === "en") {
-    return `${count} starter services`;
-  }
-  return `${count} типовых услуг`;
+  const labels: Record<ProLanguage, string> = {
+    ru: "типовых услуг",
+    uk: "типових послуг",
+    en: "starter services",
+    fr: "services de départ",
+    pl: "typowych usług",
+    cs: "typických služeb",
+    es: "servicios iniciales",
+    de: "Start-Leistungen"
+  };
+  return `${count} ${labels[language] ?? labels.en}`;
 }
 
 const setupText = {
@@ -268,7 +272,8 @@ const setupText = {
       acceptInviteText: "Бизнес уже пригласил вас в команду. После завершения регистрации вы сразу получите доступ к рабочему кабинету.",
       acceptInviteButton: "Принять приглашение",
       acceptInviteNotice: "Приглашение закреплено за этим email. После подтверждения вы сразу попадёте в кабинет сотрудника.",
-      noResults: "Ничего не найдено. Попробуйте другое название, email или телефон."
+      noResults: "Ничего не найдено. Попробуйте другое название, email или телефон.",
+      specialistRole: "Мастер"
     },
     categories: {
       eyebrow: "Категория бизнеса",
@@ -395,7 +400,8 @@ const setupText = {
       acceptInviteText: "Бізнес уже запросив вас до команди. Після завершення реєстрації ви одразу отримаєте доступ до робочого кабінету.",
       acceptInviteButton: "Прийняти запрошення",
       acceptInviteNotice: "Запрошення закріплене за цим email. Після підтвердження ви одразу потрапите до кабінету співробітника.",
-      noResults: "Нічого не знайдено. Спробуйте іншу назву, email або телефон."
+      noResults: "Нічого не знайдено. Спробуйте іншу назву, email або телефон.",
+      specialistRole: "Майстер"
     },
     categories: {
       eyebrow: "Категорія бізнесу",
@@ -522,7 +528,8 @@ const setupText = {
       acceptInviteText: "This business already invited you to the team. After registration, you will get access to the workspace right away.",
       acceptInviteButton: "Accept invitation",
       acceptInviteNotice: "This invitation is locked to this email. After confirmation, you will go straight to the staff workspace.",
-      noResults: "No businesses found. Try another name, email or phone."
+      noResults: "No businesses found. Try another name, email or phone.",
+      specialistRole: "Specialist"
     },
     categories: {
       eyebrow: "Business category",
@@ -603,8 +610,352 @@ const setupText = {
       price: "Price",
       add: "Add"
     }
+  },
+  fr: {
+    close: "Fermer",
+    continue: "Continuer →",
+    saving: "Enregistrement...",
+    stepProgress: (current: number, total: number) => `Étape ${current} sur ${total}`,
+    skipToCabinet: "Passer et ouvrir le cabinet",
+    openCabinet: "Ouvrir le cabinet",
+    ownerSetup: {
+      eyebrow: "Configuration du compte",
+      title: "Comment voulez-vous configurer votre compte professionnel ?",
+      text: "Créez un compte propriétaire ou rejoignez un salon existant comme spécialiste ou employé.",
+      ownerTitle: "Créer un compte entreprise",
+      ownerText: "Le propriétaire gère les services, l’équipe, les horaires et toutes les réservations.",
+      memberTitle: "Rejoindre une entreprise existante",
+      memberText: "Vous rejoignez un salon et gérez vos propres réservations et votre planning dans l’équipe."
+    },
+    businessName: {
+      eyebrow: "Configuration de l’entreprise",
+      title: "Quel est le nom de votre entreprise ?",
+      text: "Les clients et les employés verront ce nom dans Timviz.",
+      name: "Nom de l’entreprise",
+      website: "Site web",
+      namePlaceholder: "Nom de l’entreprise"
+    },
+    join: {
+      eyebrow: "Rejoindre un salon",
+      title: "Quelle entreprise voulez-vous rejoindre ?",
+      text: "Pour un spécialiste ou un employé, c’est un parcours séparé : pas de compte entreprise propre, mais un planning personnel.",
+      searchPlaceholder: "Rechercher par nom, email ou téléphone",
+      searchLabel: "Recherche d’entreprise",
+      searching: "Recherche d’entreprises...",
+      searchHint: "Trouvez une entreprise et sélectionnez-la pour envoyer une demande au propriétaire.",
+      owner: "Propriétaire",
+      ownerContact: "Contact",
+      selectProfile: "Profil",
+      requestTitle: "Vérifiez et envoyez la demande",
+      requestText: "Nous enverrons au propriétaire une demande pour rejoindre l’entreprise.",
+      requestButton: "Envoyer la demande",
+      selectedBusiness: "Entreprise sélectionnée",
+      selectedRole: "Rôle après validation",
+      requestNotice: "Après l’envoi, vous verrez une page d’attente. Le propriétaire confirmera la demande dans les réglages.",
+      acceptInviteTitle: "Confirmez l’invitation",
+      acceptInviteText: "Cette entreprise vous a déjà invité dans l’équipe.",
+      acceptInviteButton: "Accepter l’invitation",
+      acceptInviteNotice: "L’invitation est liée à cet email.",
+      noResults: "Aucune entreprise trouvée. Essayez un autre nom, email ou téléphone.",
+      specialistRole: "Spécialiste"
+    },
+    categories: {
+      eyebrow: "Catégorie d’entreprise",
+      title: "Que faites-vous ?",
+      text: "Nous préparerons automatiquement les services pour votre profil",
+      primary: "Principale",
+      categoryHint: "Les services seront proposés automatiquement à l’étape suivante.",
+      deleteService: "Supprimer le service"
+    },
+    servicesReview: {
+      eyebrow: "Préparation des services",
+      title: "Votre profil est presque prêt",
+      text: "Nous avons préparé des services pour vous — vérifiez et continuez",
+      selectOnly: "Gardez uniquement les services que vous proposez",
+      continue: "Continuer",
+      addManual: "Ajouter votre service",
+      showMore: "+ {count} services",
+      showLess: "Réduire la liste",
+      empty: "La liste des services est vide. Vous pourrez la configurer plus tard dans le cabinet.",
+      trustLead: "Ensuite vous pourrez :",
+      trustPoints: ["définir les prix", "ajouter un planning", "commencer à recevoir des clients"]
+    },
+    format: {
+      eyebrow: "Format de l’entreprise",
+      title: "Combien de spécialistes travailleront dans ce compte ?",
+      text: "Un compte solo est plus simple. Une équipe débloque les employés, rôles, plannings et réservations partagées.",
+      solo: "Un spécialiste",
+      soloText: "Cabinet simple : services, horaires, réservations et clients.",
+      team: "Équipe de spécialistes",
+      teamText: "Cabinet propriétaire avancé : équipe, plannings, réservations partagées et gestion du salon."
+    },
+    place: {
+      eyebrow: "Lieu du service",
+      title: "Ajoutez une adresse pour que les clients vous trouvent",
+      text: "Votre profil apparaîtra sur la carte et dans la recherche à proximité",
+      helper: "Cela prend moins de 30 secondes",
+      addAddress: "📍 Ajouter l’adresse",
+      skip: "Passer →",
+      withoutAddressTitle: "Sans adresse",
+      withoutAddressText: "vous n’apparaissez pas sur la carte",
+      withAddressTitle: "Avec adresse",
+      withAddressText: "les clients vous trouvent à proximité",
+      findAddress: "Trouver l’adresse sur la carte",
+      addressPlaceholder: "Commencez à saisir une adresse réelle",
+      searching: "Recherche de l’adresse...",
+      selectAddress: "Choisir l’adresse",
+      preview: "Aperçu de la première adresse trouvée. Cliquez sur un résultat pour l’enregistrer.",
+      warning: "Entrez une adresse et choisissez un résultat pour enregistrer les coordonnées.",
+      openGoogle: "Ouvrir dans Google Maps"
+    },
+    serviceModes: {
+      "Клиенты приходят в мое физическое заведение": "Les clients viennent dans mon établissement",
+      "Я работаю с выездом к клиенту": "Je me déplace chez le client",
+      "Я предоставляю услуги онлайн": "Je propose des services en ligne"
+    },
+    modal: {
+      chooseServices: "Choisir les services",
+      templateText: "Modèle pour",
+      templateSuffix: "créé à partir des suggestions de votre catalogue.",
+      best: "Meilleures suggestions",
+      bestText: "80 % des entreprises similaires commencent généralement par ces services.",
+      popular: "Autres services populaires",
+      selected: "Sélectionné",
+      choose: "+ Choisir",
+      addServices: "Ajouter les services",
+      addService: "Ajouter un service",
+      addServiceText: "Ajoutez les informations principales maintenant. Les détails pourront être réglés plus tard.",
+      serviceName: "Nom du service",
+      serviceType: "Type de service",
+      otherCategory: "Autre",
+      hours: "Heures",
+      minutes: "Minutes",
+      price: "Prix",
+      add: "Ajouter"
+    }
+  },
+  pl: {
+    close: "Zamknij",
+    continue: "Kontynuuj →",
+    saving: "Zapisywanie...",
+    stepProgress: (current: number, total: number) => `Krok ${current} z ${total}`,
+    skipToCabinet: "Pomiń i otwórz panel",
+    openCabinet: "Otwórz panel",
+    ownerSetup: {
+      eyebrow: "Konfiguracja konta",
+      title: "Jak chcesz skonfigurować konto profesjonalne?",
+      text: "Utwórz konto właściciela albo dołącz do istniejącego salonu jako specjalista lub pracownik.",
+      ownerTitle: "Utwórz konto firmy",
+      ownerText: "Właściciel zarządza usługami, zespołem, grafikami i wszystkimi rezerwacjami.",
+      memberTitle: "Dołącz do istniejącej firmy",
+      memberText: "Dołączasz do salonu i zarządzasz własnymi rezerwacjami oraz grafikiem w zespole."
+    },
+    businessName: {
+      eyebrow: "Konfiguracja firmy",
+      title: "Jak nazywa się Twoja firma?",
+      text: "Klienci i zespół zobaczą tę nazwę w systemie.",
+      name: "Nazwa firmy",
+      website: "Strona firmy",
+      namePlaceholder: "Nazwa firmy"
+    },
+    join: {
+      eyebrow: "Dołączenie do salonu",
+      title: "Do której firmy chcesz dołączyć?",
+      text: "Dla specjalisty to osobna ścieżka: bez własnej firmy, ale z osobistym grafikiem i rezerwacjami.",
+      searchPlaceholder: "Szukaj po nazwie, emailu lub telefonie",
+      searchLabel: "Szukaj firmy",
+      searching: "Szukamy pasujących firm...",
+      searchHint: "Znajdź firmę i wybierz ją z listy, aby wysłać prośbę właścicielowi.",
+      owner: "Właściciel",
+      ownerContact: "Kontakt",
+      selectProfile: "Profil",
+      requestTitle: "Sprawdź i wyślij prośbę",
+      requestText: "Wyślemy właścicielowi firmy prośbę o dołączenie.",
+      requestButton: "Wyślij prośbę",
+      selectedBusiness: "Wybrana firma",
+      selectedRole: "Rola po zatwierdzeniu",
+      requestNotice: "Po wysłaniu trafisz na stronę oczekiwania. Właściciel zatwierdzi prośbę w ustawieniach panelu.",
+      acceptInviteTitle: "Potwierdź zaproszenie",
+      acceptInviteText: "Ta firma już zaprosiła Cię do zespołu.",
+      acceptInviteButton: "Akceptuj zaproszenie",
+      acceptInviteNotice: "Zaproszenie jest przypisane do tego emaila.",
+      noResults: "Nic nie znaleziono. Spróbuj innej nazwy, emaila lub telefonu.",
+      specialistRole: "Specjalista"
+    },
+    categories: {
+      eyebrow: "Kategoria firmy",
+      title: "Czym się zajmujesz?",
+      text: "Automatycznie przygotujemy usługi dla Twojego profilu",
+      primary: "Główna",
+      categoryHint: "Usługi zostaną zaproponowane automatycznie w kolejnym kroku.",
+      deleteService: "Usuń usługę"
+    },
+    servicesReview: {
+      eyebrow: "Przygotowanie usług",
+      title: "Twój profil jest prawie gotowy",
+      text: "Przygotowaliśmy usługi — sprawdź i kontynuuj",
+      selectOnly: "Zostaw tylko usługi, które wykonujesz",
+      continue: "Kontynuuj",
+      addManual: "Dodaj własną usługę",
+      showMore: "+ jeszcze {count} usług",
+      showLess: "Zwiń listę",
+      empty: "Lista usług jest pusta. Możesz kontynuować i skonfigurować ją później w panelu.",
+      trustLead: "Dalej możesz:",
+      trustPoints: ["ustawić ceny", "dodać grafik", "zacząć przyjmować klientów"]
+    },
+    format: {
+      eyebrow: "Format firmy",
+      title: "Ilu specjalistów będzie pracować na tym koncie?",
+      text: "Konto solo jest prostsze. Zespół odblokowuje pracowników, role, grafiki i wspólne rezerwacje.",
+      solo: "Jeden specjalista",
+      soloText: "Prosty panel: usługi, godziny pracy, własne rezerwacje i klienci.",
+      team: "Zespół specjalistów",
+      teamText: "Rozszerzony panel właściciela: zespół, grafiki, wspólne rezerwacje i zarządzanie salonem."
+    },
+    place: {
+      eyebrow: "Miejsce świadczenia usług",
+      title: "Dodaj adres, aby klienci mogli Cię znaleźć",
+      text: "Profil pojawi się na mapie i w wyszukiwaniu w pobliżu",
+      helper: "To zajmie mniej niż 30 sekund",
+      addAddress: "📍 Dodaj adres",
+      skip: "Pomiń →",
+      withoutAddressTitle: "Bez adresu",
+      withoutAddressText: "nie widać Cię na mapie",
+      withAddressTitle: "Z adresem",
+      withAddressText: "klienci znajdują Cię w pobliżu",
+      findAddress: "Znajdź adres na mapie",
+      addressPlaceholder: "Zacznij wpisywać prawdziwy adres",
+      searching: "Szukamy adresu...",
+      selectAddress: "Wybierz adres",
+      preview: "Podgląd pierwszego znalezionego adresu. Kliknij wynik, aby zapisać go na koncie.",
+      warning: "Wpisz adres i wybierz wynik, aby zapisać współrzędne firmy.",
+      openGoogle: "Otwórz w Google Maps"
+    },
+    serviceModes: {
+      "Клиенты приходят в мое физическое заведение": "Klienci przychodzą do mojej lokalizacji",
+      "Я работаю с выездом к клиенту": "Pracuję u klienta",
+      "Я предоставляю услуги онлайн": "Świadczę usługi online"
+    },
+    modal: {
+      chooseServices: "Wybierz usługi",
+      templateText: "Szablon dla",
+      templateSuffix: "zbudowany z sugestii katalogu usług.",
+      best: "Najlepsze sugestie",
+      bestText: "80% podobnych firm zwykle zaczyna od tych usług.",
+      popular: "Inne popularne usługi",
+      selected: "Wybrano",
+      choose: "+ Wybierz",
+      addServices: "Dodaj usługi",
+      addService: "Dodaj usługę",
+      addServiceText: "Dodaj podstawowe informacje teraz. Szczegóły ustawisz później.",
+      serviceName: "Nazwa usługi",
+      serviceType: "Typ usługi",
+      otherCategory: "Inna",
+      hours: "Godziny",
+      minutes: "Minuty",
+      price: "Cena",
+      add: "Dodaj"
+    }
+  },
+  cs: {
+    close: "Zavřít",
+    continue: "Pokračovat →",
+    saving: "Ukládání...",
+    stepProgress: (current: number, total: number) => `Krok ${current} z ${total}`,
+    skipToCabinet: "Přeskočit a otevřít kabinet",
+    openCabinet: "Otevřít kabinet",
+    ownerSetup: { title: "Jak chcete nastavit profesionální účet?", ownerTitle: "Vytvořit firemní účet", memberTitle: "Připojit se k existující firmě" },
+    businessName: { title: "Jak se jmenuje vaše firma?", name: "Název firmy", website: "Web firmy", namePlaceholder: "Název firmy" },
+    join: { title: "Ke které firmě se chcete připojit?", searchPlaceholder: "Hledat podle názvu, emailu nebo telefonu", requestButton: "Odeslat žádost", acceptInviteButton: "Přijmout pozvánku", noResults: "Nic nenalezeno.", specialistRole: "Specialista" },
+    categories: { title: "Čemu se věnujete?", primary: "Hlavní", deleteService: "Odstranit službu" },
+    servicesReview: { title: "Váš profil je skoro připraven", continue: "Pokračovat", addManual: "Přidat vlastní službu", showMore: "+ dalších {count} služeb", showLess: "Skrýt seznam" },
+    format: { title: "Kolik specialistů bude v účtu pracovat?", solo: "Jeden specialista", team: "Tým specialistů" },
+    place: { title: "Přidejte adresu, aby vás klienti našli", addAddress: "📍 Přidat adresu", skip: "Přeskočit →", findAddress: "Najít adresu na mapě", addressPlaceholder: "Začněte psát skutečnou adresu", selectAddress: "Vybrat adresu" },
+    serviceModes: {
+      "Клиенты приходят в мое физическое заведение": "Klienti chodí na mou provozovnu",
+      "Я работаю с выездом к клиенту": "Pracuji u klienta",
+      "Я предоставляю услуги онлайн": "Poskytuji služby online"
+    },
+    modal: { chooseServices: "Vyberte služby", selected: "Vybráno", choose: "+ Vybrat", addServices: "Přidat služby", serviceName: "Název služby", price: "Cena", add: "Přidat" }
+  },
+  es: {
+    close: "Cerrar",
+    continue: "Continuar →",
+    saving: "Guardando...",
+    stepProgress: (current: number, total: number) => `Paso ${current} de ${total}`,
+    skipToCabinet: "Omitir y abrir panel",
+    openCabinet: "Abrir panel",
+    ownerSetup: { title: "¿Cómo quieres configurar tu cuenta profesional?", ownerTitle: "Crear cuenta de empresa", memberTitle: "Unirse a una empresa existente" },
+    businessName: { title: "¿Cómo se llama tu empresa?", name: "Nombre de la empresa", website: "Sitio web", namePlaceholder: "Nombre de la empresa" },
+    join: { title: "¿A qué empresa quieres unirte?", searchPlaceholder: "Buscar por nombre, email o teléfono", requestButton: "Enviar solicitud", acceptInviteButton: "Aceptar invitación", noResults: "No se encontraron resultados.", specialistRole: "Especialista" },
+    categories: { title: "¿A qué te dedicas?", primary: "Principal", deleteService: "Eliminar servicio" },
+    servicesReview: { title: "Tu perfil está casi listo", continue: "Continuar", addManual: "Añadir servicio propio", showMore: "+ {count} servicios más", showLess: "Ocultar lista" },
+    format: { title: "¿Cuántos especialistas trabajarán en esta cuenta?", solo: "Un especialista", team: "Equipo de especialistas" },
+    place: { title: "Añade una dirección para que los clientes te encuentren", addAddress: "📍 Añadir dirección", skip: "Omitir →", findAddress: "Buscar dirección en el mapa", addressPlaceholder: "Empieza a escribir una dirección real", selectAddress: "Elegir dirección" },
+    serviceModes: {
+      "Клиенты приходят в мое физическое заведение": "Los clientes vienen a mi local",
+      "Я работаю с выездом к клиенту": "Trabajo en la ubicación del cliente",
+      "Я предоставляю услуги онлайн": "Presto servicios online"
+    },
+    modal: { chooseServices: "Elegir servicios", selected: "Seleccionado", choose: "+ Elegir", addServices: "Añadir servicios", serviceName: "Nombre del servicio", price: "Precio", add: "Añadir" }
+  },
+  de: {
+    close: "Schließen",
+    continue: "Weiter →",
+    saving: "Speichern...",
+    stepProgress: (current: number, total: number) => `Schritt ${current} von ${total}`,
+    skipToCabinet: "Überspringen und Arbeitsbereich öffnen",
+    openCabinet: "Arbeitsbereich öffnen",
+    ownerSetup: { title: "Wie möchtest du dein Profi-Konto einrichten?", ownerTitle: "Unternehmenskonto erstellen", memberTitle: "Einem bestehenden Unternehmen beitreten" },
+    businessName: { title: "Wie heißt dein Unternehmen?", name: "Unternehmensname", website: "Website", namePlaceholder: "Unternehmensname" },
+    join: { title: "Welchem Unternehmen möchtest du beitreten?", searchPlaceholder: "Nach Name, E-Mail oder Telefon suchen", requestButton: "Anfrage senden", acceptInviteButton: "Einladung annehmen", noResults: "Keine Ergebnisse gefunden.", specialistRole: "Spezialist" },
+    categories: { title: "Was machst du?", primary: "Hauptkategorie", deleteService: "Leistung entfernen" },
+    servicesReview: { title: "Dein Profil ist fast fertig", continue: "Weiter", addManual: "Eigene Leistung hinzufügen", showMore: "+ {count} weitere Leistungen", showLess: "Liste ausblenden" },
+    format: { title: "Wie viele Spezialisten arbeiten in diesem Konto?", solo: "Ein Spezialist", team: "Team von Spezialisten" },
+    place: { title: "Adresse hinzufügen, damit Kunden dich finden", addAddress: "📍 Adresse hinzufügen", skip: "Überspringen →", findAddress: "Adresse auf Karte finden", addressPlaceholder: "Beginne mit einer echten Adresse", selectAddress: "Adresse wählen" },
+    serviceModes: {
+      "Клиенты приходят в мое физическое заведение": "Kunden kommen an meinen Standort",
+      "Я работаю с выездом к клиенту": "Ich arbeite vor Ort beim Kunden",
+      "Я предоставляю услуги онлайн": "Ich biete Online-Leistungen an"
+    },
+    modal: { chooseServices: "Leistungen wählen", selected: "Ausgewählt", choose: "+ Wählen", addServices: "Leistungen hinzufügen", serviceName: "Leistungsname", price: "Preis", add: "Hinzufügen" }
   }
 };
+
+type SetupCopy = typeof setupText.en;
+type DeepPartial<T> = {
+  [Key in keyof T]?: T[Key] extends Array<infer Item>
+    ? Item[]
+    : T[Key] extends (...args: never[]) => unknown
+      ? T[Key]
+      : T[Key] extends object
+        ? DeepPartial<T[Key]>
+        : T[Key];
+};
+
+function mergeSetupText(base: SetupCopy, patch: DeepPartial<SetupCopy>): SetupCopy {
+  const result: Record<string, unknown> = { ...base };
+
+  for (const [key, value] of Object.entries(patch) as Array<[keyof SetupCopy, unknown]>) {
+    if (
+      value &&
+      typeof value === "object" &&
+      !Array.isArray(value) &&
+      typeof base[key] === "object" &&
+      base[key] !== null &&
+      !Array.isArray(base[key])
+    ) {
+      result[key as string] = {
+        ...(base[key] as Record<string, unknown>),
+        ...(value as Record<string, unknown>)
+      };
+    } else if (value !== undefined) {
+      result[key as string] = value;
+    }
+  }
+
+  return result as SetupCopy;
+}
 
 function getInitialSetupLanguage(): ProLanguage {
   if (typeof window === "undefined") return "ru";
@@ -617,6 +968,11 @@ function getInitialSetupLanguage(): ProLanguage {
     .map((value) => value.toLowerCase());
 
   if (candidates.some((value) => value.startsWith("uk") || value.includes("-ua"))) return "uk";
+  if (candidates.some((value) => value.startsWith("fr"))) return "fr";
+  if (candidates.some((value) => value.startsWith("pl"))) return "pl";
+  if (candidates.some((value) => value.startsWith("cs") || value.startsWith("cz"))) return "cs";
+  if (candidates.some((value) => value.startsWith("es"))) return "es";
+  if (candidates.some((value) => value.startsWith("de"))) return "de";
   if (candidates.some((value) => value.startsWith("en"))) return "en";
   return "ru";
 }
@@ -708,7 +1064,10 @@ export default function ProSetupFlow({
   const [manualServicePrice, setManualServicePrice] = useState("");
   const [isTelegramSource, setIsTelegramSource] = useState(false);
   const [telegramStartParam, setTelegramStartParam] = useState("setup");
-  const t = (setupText as unknown as Record<string, typeof setupText.en>)[language] ?? setupText.en;
+  const t = mergeSetupText(
+    setupText.en,
+    (setupText as unknown as Record<string, DeepPartial<SetupCopy>>)[language] ?? {}
+  );
   const isInvitationFlow = invitation?.status === "pending";
 
   const totalSteps = isInvitationFlow ? 1 : draft.ownerMode === "owner" ? 5 : 3;
@@ -1101,7 +1460,7 @@ export default function ProSetupFlow({
       ...current,
       joinBusinessId: item.businessId,
       joinBusinessName: item.businessName,
-      joinBusinessRole: language === "en" ? "Specialist" : language === "uk" ? "Майстер" : "Мастер"
+      joinBusinessRole: t.join.specialistRole
     }));
     setJoinQuery(item.businessName);
   }

@@ -2,7 +2,18 @@ import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { getSessionCookieName, verifySessionValue } from "../../../lib/pro-auth";
 import { getPendingJoinRequestForProfessional, getWorkspaceSnapshot } from "../../../lib/pro-data";
+import { isProLanguage, type ProLanguage } from "../i18n";
 import styles from "../pro.module.css";
+
+function languageFromAcceptHeader(value: string): ProLanguage {
+  const normalized = value.toLowerCase();
+  const firstCode = normalized
+    .split(",")
+    .map((item) => item.trim().split(";")[0]?.split("-")[0] || "")
+    .find((code) => isProLanguage(code));
+
+  return firstCode ?? "en";
+}
 
 export default async function ProPendingPage() {
   const cookieStore = await cookies();
@@ -26,12 +37,7 @@ export default async function ProPendingPage() {
     redirect("/pro/login");
   }
 
-  const languageHeader = headerStore.get("accept-language")?.toLowerCase() || "";
-  const language = languageHeader.includes("uk")
-    ? "uk"
-    : languageHeader.includes("en")
-      ? "en"
-      : "ru";
+  const language = languageFromAcceptHeader(headerStore.get("accept-language") || "");
 
   const copy = {
     ru: {
@@ -51,6 +57,36 @@ export default async function ProPendingPage() {
       title: "Waiting for the business owner to approve access",
       text: "We have sent a request to join",
       tail: "As soon as the owner approves it, you will be able to enter the workspace and start working."
+    },
+    fr: {
+      eyebrow: "Demande envoyée",
+      title: "En attente de validation par le propriétaire",
+      text: "Nous avons envoyé une demande pour rejoindre",
+      tail: "Dès que le propriétaire l’approuve, vous pourrez ouvrir le cabinet et commencer à travailler."
+    },
+    pl: {
+      eyebrow: "Prośba wysłana",
+      title: "Czekamy na zatwierdzenie przez właściciela firmy",
+      text: "Wysłaliśmy prośbę o dołączenie do",
+      tail: "Gdy właściciel ją zatwierdzi, uzyskasz dostęp do panelu i rozpoczniesz pracę."
+    },
+    cs: {
+      eyebrow: "Žádost odeslána",
+      title: "Čekáme na schválení vlastníkem firmy",
+      text: "Odeslali jsme žádost o připojení k",
+      tail: "Jakmile ji vlastník schválí, budete moci otevřít pracovní kabinet a začít pracovat."
+    },
+    es: {
+      eyebrow: "Solicitud enviada",
+      title: "Esperando la aprobación del propietario",
+      text: "Hemos enviado una solicitud para unirse a",
+      tail: "Cuando el propietario la apruebe, podrás entrar al panel y empezar a trabajar."
+    },
+    de: {
+      eyebrow: "Anfrage gesendet",
+      title: "Wir warten auf die Freigabe durch den Inhaber",
+      text: "Wir haben eine Anfrage zum Beitritt gesendet an",
+      tail: "Sobald der Inhaber sie bestätigt, kannst du den Arbeitsbereich öffnen und loslegen."
     }
   }[language];
 

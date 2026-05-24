@@ -15,6 +15,7 @@ import type { OnboardingCtaState } from "../../../lib/pro-onboarding";
 import type { WorkSchedule } from "../../../lib/work-schedule";
 import { categoryOptions, compareServiceCategories, localizeCategoryName } from "../../../lib/service-templates";
 import ProfileAvatar from "../../ProfileAvatar";
+import { localeBySiteLanguage } from "../../../lib/site-language";
 
 const MAX_BUSINESS_PHOTOS = 5;
 const MAX_PROFILE_AVATAR_BYTES = 2 * 1024 * 1024;
@@ -185,7 +186,7 @@ const countries = [
   "Canada",
   "International"
 ];
-const languages: ProLanguage[] = ["ru", "uk", "en"];
+const languages = Object.keys(languageLabels) as ProLanguage[];
 const currencies = ["USD", "RUB", "UAH", "EUR", "PLN", "GBP", "KZT", "GEL", "AED", "CAD"];
 const timezones = [
   { value: "Pacific/Honolulu", label: "UTC-10 · Honolulu" },
@@ -1042,7 +1043,7 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
       ? planText.premium
       : planText.free;
   const premiumDateText = data.professional.premiumUntil
-    ? new Intl.DateTimeFormat(language === "uk" ? "uk-UA" : language === "en" ? "en-US" : "ru-RU", {
+    ? new Intl.DateTimeFormat(localeBySiteLanguage[language], {
         day: "2-digit",
         month: "short",
         year: "numeric"
@@ -1235,20 +1236,32 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
 
   function formatReminderLead(minutes: number) {
     const safe = Math.max(5, Math.min(1440, Math.round(minutes / 5) * 5));
+    const minuteLabels: Record<ProLanguage, string> = {
+      ru: "мин",
+      uk: "хв",
+      en: "min",
+      fr: "min",
+      pl: "min",
+      cs: "min",
+      es: "min",
+      de: "Min."
+    };
+    const hourLabels: Record<ProLanguage, (hours: number) => string> = {
+      ru: (hours) => (hours === 1 ? "1 час" : `${hours} ч`),
+      uk: (hours) => (hours === 1 ? "1 година" : `${hours} год`),
+      en: (hours) => (hours === 1 ? "1 hour" : `${hours} hours`),
+      fr: (hours) => (hours === 1 ? "1 heure" : `${hours} h`),
+      pl: (hours) => (hours === 1 ? "1 godzina" : `${hours} godz.`),
+      cs: (hours) => (hours === 1 ? "1 hodina" : `${hours} h`),
+      es: (hours) => (hours === 1 ? "1 hora" : `${hours} h`),
+      de: (hours) => (hours === 1 ? "1 Stunde" : `${hours} Std.`)
+    };
     if (safe % 60 === 0) {
       const hours = safe / 60;
-      if (language === "uk") {
-        return hours === 1 ? "1 година" : `${hours} год`;
-      }
-      if (language === "ru") {
-        return hours === 1 ? "1 час" : `${hours} ч`;
-      }
-      return hours === 1 ? "1 hour" : `${hours} hours`;
+      return hourLabels[language](hours);
     }
 
-    if (language === "uk") return `${safe} хв`;
-    if (language === "ru") return `${safe} мин`;
-    return `${safe} min`;
+    return `${safe} ${minuteLabels[language]}`;
   }
 
   function openPhotoUploader() {

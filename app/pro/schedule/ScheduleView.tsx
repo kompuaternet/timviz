@@ -8,6 +8,7 @@ import LogoutButton from "../workspace/LogoutButton";
 import ProSidebar from "../ProSidebar";
 import { useProLanguage } from "../useProLanguage";
 import WorkScheduleCard from "../workspace/WorkScheduleCard";
+import { localeBySiteLanguage } from "../../../lib/site-language";
 import type { CustomSchedule, WorkSchedule, WorkScheduleMode } from "../../../lib/work-schedule";
 
 type WorkspaceSnapshot = {
@@ -52,7 +53,7 @@ export default function ScheduleView({ professionalId }: ScheduleViewProps) {
   const [snapshot, setSnapshot] = useState<WorkspaceSnapshot | null>(null);
   const todayLabel = useMemo(
     () =>
-      new Date().toLocaleDateString(language === "uk" ? "uk-UA" : language === "en" ? "en-US" : "ru-RU", {
+      new Date().toLocaleDateString(localeBySiteLanguage[language], {
         weekday: "short",
         day: "numeric",
         month: "short"

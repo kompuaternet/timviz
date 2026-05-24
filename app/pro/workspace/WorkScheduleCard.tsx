@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import styles from "../pro.module.css";
 import { useProLanguage } from "../useProLanguage";
+import { localeBySiteLanguage } from "../../../lib/site-language";
 import {
   defaultWorkTemplate,
   getDayBreaks,
@@ -348,7 +349,7 @@ export default function WorkScheduleCard({
   targetProfessionalId
 }: WorkScheduleCardProps) {
   const { t, language } = useProLanguage();
-  const locale = language === "uk" ? "uk-UA" : language === "en" ? "en-US" : "ru-RU";
+  const locale = localeBySiteLanguage[language];
   const availableMonths = useMemo(() => buildAvailableMonths(locale), [locale]);
   const localizedWorkDays = useMemo(
     () =>

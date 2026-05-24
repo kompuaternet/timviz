@@ -84,6 +84,106 @@ const inviteText = {
     loginToAccept: "Sign in with this email to confirm the invitation.",
     wrongAccount: "You are currently signed in with a different email. Sign in with the invited account instead.",
     openWorkspace: "Open workspace"
+  },
+  fr: {
+    invalidTitle: "Invitation introuvable",
+    invalidText: "Ce lien est invalide ou expiré. Demandez au propriétaire d’envoyer une nouvelle invitation.",
+    revokedTitle: "Invitation révoquée",
+    revokedText: "Le propriétaire a déjà annulé cette invitation. Si l’accès est toujours nécessaire, demandez un nouvel email.",
+    acceptedTitle: "Invitation déjà acceptée",
+    acceptedText: "Cet email est déjà connecté à l’entreprise. Vous pouvez ouvrir le cabinet.",
+    pendingTitle: "Vous êtes invité dans l’équipe",
+    pendingText: "Confirmez cette invitation avec le même email pour accéder au cabinet de l’équipe.",
+    business: "Entreprise",
+    role: "Rôle",
+    email: "Email",
+    accept: "Confirmer l’invitation",
+    accepting: "Confirmation...",
+    login: "Se connecter",
+    create: "Créer un compte",
+    loginToAccept: "Connectez-vous avec cet email pour confirmer l’invitation.",
+    wrongAccount: "Vous êtes connecté avec un autre email. Connectez-vous au compte invité.",
+    openWorkspace: "Ouvrir le cabinet"
+  },
+  pl: {
+    invalidTitle: "Nie znaleziono zaproszenia",
+    invalidText: "Ten link jest nieprawidłowy albo wygasł. Poproś właściciela o nowe zaproszenie.",
+    revokedTitle: "Zaproszenie cofnięte",
+    revokedText: "Właściciel firmy anulował to zaproszenie. Jeśli nadal potrzebujesz dostępu, poproś o nowy email.",
+    acceptedTitle: "Zaproszenie już zaakceptowane",
+    acceptedText: "Ten email jest już połączony z firmą. Możesz przejść do panelu.",
+    pendingTitle: "Masz zaproszenie do zespołu",
+    pendingText: "Potwierdź zaproszenie tym samym adresem email i uzyskaj dostęp do panelu pracownika.",
+    business: "Firma",
+    role: "Rola",
+    email: "Email",
+    accept: "Potwierdź zaproszenie",
+    accepting: "Potwierdzamy...",
+    login: "Zaloguj się",
+    create: "Utwórz konto",
+    loginToAccept: "Zaloguj się tym adresem email, aby potwierdzić zaproszenie.",
+    wrongAccount: "Jesteś zalogowany innym adresem email. Zaloguj się na zaproszone konto.",
+    openWorkspace: "Otwórz panel"
+  },
+  cs: {
+    invalidTitle: "Pozvánka nenalezena",
+    invalidText: "Tento odkaz je neplatný nebo vypršel. Požádejte vlastníka firmy o novou pozvánku.",
+    revokedTitle: "Pozvánka byla odvolána",
+    revokedText: "Vlastník firmy už tuto pozvánku zrušil. Pokud stále potřebujete přístup, požádejte o nový email.",
+    acceptedTitle: "Pozvánka už byla přijata",
+    acceptedText: "Tento email je už připojený k firmě. Můžete přejít do kabinetu.",
+    pendingTitle: "Jste pozváni do týmu",
+    pendingText: "Potvrďte pozvánku stejným emailem a získejte přístup do pracovního kabinetu.",
+    business: "Firma",
+    role: "Role",
+    email: "Email",
+    accept: "Potvrdit pozvánku",
+    accepting: "Potvrzujeme...",
+    login: "Přihlásit se",
+    create: "Vytvořit účet",
+    loginToAccept: "Přihlaste se tímto emailem pro potvrzení pozvánky.",
+    wrongAccount: "Nyní jste přihlášeni jiným emailem. Přihlaste se pozvaným účtem.",
+    openWorkspace: "Otevřít kabinet"
+  },
+  es: {
+    invalidTitle: "Invitación no encontrada",
+    invalidText: "Este enlace no es válido o ha caducado. Pide al propietario que envíe una nueva invitación.",
+    revokedTitle: "Invitación revocada",
+    revokedText: "El propietario ya canceló esta invitación. Si aún necesitas acceso, pide un nuevo email.",
+    acceptedTitle: "Invitación ya aceptada",
+    acceptedText: "Este email ya está conectado a la empresa. Puedes ir al panel.",
+    pendingTitle: "Te han invitado al equipo",
+    pendingText: "Confirma esta invitación con el mismo email para acceder al panel del equipo.",
+    business: "Empresa",
+    role: "Rol",
+    email: "Email",
+    accept: "Confirmar invitación",
+    accepting: "Confirmando...",
+    login: "Iniciar sesión",
+    create: "Crear cuenta",
+    loginToAccept: "Inicia sesión con este email para confirmar la invitación.",
+    wrongAccount: "Has iniciado sesión con otro email. Entra con la cuenta invitada.",
+    openWorkspace: "Abrir panel"
+  },
+  de: {
+    invalidTitle: "Einladung nicht gefunden",
+    invalidText: "Dieser Link ist ungültig oder abgelaufen. Bitte den Inhaber um eine neue Einladung.",
+    revokedTitle: "Einladung widerrufen",
+    revokedText: "Der Inhaber hat diese Einladung bereits storniert. Wenn du Zugriff brauchst, bitte um eine neue E-Mail.",
+    acceptedTitle: "Einladung bereits bestätigt",
+    acceptedText: "Diese E-Mail ist bereits mit dem Unternehmen verbunden. Du kannst direkt zum Arbeitsbereich gehen.",
+    pendingTitle: "Du bist ins Team eingeladen",
+    pendingText: "Bestätige diese Einladung mit derselben E-Mail und erhalte Zugriff auf den Team-Arbeitsbereich.",
+    business: "Unternehmen",
+    role: "Rolle",
+    email: "Email",
+    accept: "Einladung bestätigen",
+    accepting: "Bestätigung...",
+    login: "Anmelden",
+    create: "Konto erstellen",
+    loginToAccept: "Melde dich mit dieser E-Mail an, um die Einladung zu bestätigen.",
+    wrongAccount: "Du bist mit einer anderen E-Mail angemeldet. Melde dich mit dem eingeladenen Konto an.",
+    openWorkspace: "Arbeitsbereich öffnen"
   }
 } as const;
 
@@ -94,7 +194,10 @@ export default function InviteAcceptView({
 }: InviteAcceptViewProps) {
   const router = useRouter();
   const { language } = useProLanguage();
-  const copy = (inviteText as unknown as Record<string, typeof inviteText.en>)[language] ?? inviteText.en;
+  const copy = {
+    ...inviteText.en,
+    ...((inviteText as unknown as Record<string, Partial<typeof inviteText.en>>)[language] ?? {})
+  } as typeof inviteText.en;
   const [status, setStatus] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const normalizedCurrentEmail = currentProfessionalEmail.trim().toLowerCase();

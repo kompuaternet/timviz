@@ -14,7 +14,7 @@ import {
   phoneCountries
 } from "../../../lib/phone-format";
 import TurnstileWidget from "../TurnstileWidget";
-import { languageLabels, type BaseProLanguage, type ProLanguage } from "../i18n";
+import { isProLanguage, languageLabels, type ProLanguage } from "../i18n";
 import styles from "../pro.module.css";
 
 type CountryConfig = {
@@ -55,7 +55,7 @@ const countryConfigs: CountryConfig[] = [
 ];
 
 const countries = countryConfigs.map((item) => item.country);
-const languages: ProLanguage[] = ["ru", "uk", "en"];
+const languages = Object.keys(languageLabels) as ProLanguage[];
 const currencies = ["USD", "RUB", "UAH", "EUR", "PLN", "GBP", "KZT", "GEL", "AED", "CAD", "CZK", "MDL", "RON", "AMD", "TRY"];
 const liveDraftKey = "rezervo-pro-create-account-draft";
 const setupDraftKey = "rezervo-pro-account-draft";
@@ -112,6 +112,11 @@ function getBrowserLanguage(): ProLanguage {
     .map((value) => value.toLowerCase());
 
   if (browserLanguages.some((value) => value.startsWith("uk") || value.includes("-ua"))) return "uk";
+  if (browserLanguages.some((value) => value.startsWith("fr"))) return "fr";
+  if (browserLanguages.some((value) => value.startsWith("pl"))) return "pl";
+  if (browserLanguages.some((value) => value.startsWith("cs") || value.startsWith("cz"))) return "cs";
+  if (browserLanguages.some((value) => value.startsWith("es"))) return "es";
+  if (browserLanguages.some((value) => value.startsWith("de"))) return "de";
   if (browserLanguages.some((value) => value.startsWith("en"))) return "en";
   return "ru";
 }
@@ -460,8 +465,185 @@ const formCopy = {
     checkEmailText: "We sent a confirmation link. Open it to activate your account.",
     resend: "Send again",
     resendWait: "You can send again in 60 seconds."
+  },
+  fr: {
+    introEyebrow: "Timviz pour les pros",
+    introTitle: "Créer un compte pro",
+    introText: "Commencez avec email ou Google. Les réglages de l’entreprise pourront être ajoutés plus tard.",
+    introEmailPlaceholder: "Entrez votre email",
+    introContinue: "Continuer l’inscription",
+    introOr: "ou",
+    introGoogle: "Continuer avec Google",
+    introApple: "Continuer avec Apple",
+    introChecking: "Vérification...",
+    introHelper: "Vous êtes client et voulez réserver un service ?",
+    introHelperLink: "Aller au catalogue client",
+    detailsTitle: "Créer un compte pro",
+    detailsText: "Ajoutez les informations essentielles. Votre calendrier s’ouvrira juste après l’inscription.",
+    firstName: "Prénom",
+    firstNamePlaceholder: "Entrez votre prénom",
+    lastName: "Nom",
+    lastNamePlaceholder: "Entrez votre nom",
+    password: "Mot de passe",
+    passwordPlaceholder: "Créez un mot de passe",
+    confirmPassword: "Répéter le mot de passe",
+    passwordHint: "Au moins 8 caractères, une lettre et un chiffre",
+    email: "Email",
+    phone: "Téléphone mobile",
+    phonePlaceholder: "Par exemple : 67 123 45 67",
+    phoneHelper: "Le téléphone sert aux notifications et au contact client.",
+    optionalDetails: "Informations supplémentaires",
+    prefixAria: "Choisir l’indicatif téléphonique",
+    prefixSearch: "Recherche par pays ou code",
+    country: "Pays",
+    currency: "Devise",
+    timezone: "Fuseau horaire",
+    timezonePlaceholder: "Choisissez un fuseau horaire",
+    cabinetLanguage: "Langue du cabinet",
+    terms: "J’accepte la politique de confidentialité, les conditions d’utilisation et les conditions de coopération.",
+    submit: "Créer le compte pro",
+    login: "Vous avez déjà un compte ?",
+    loginLink: "Se connecter",
+    accountExistsTitle: "Cet email est déjà enregistré",
+    accountExistsText: "Vous pouvez vous connecter ou réinitialiser le mot de passe sans créer un second compte.",
+    forgotPassword: "Réinitialiser le mot de passe",
+    googleNotice: "Compte introuvable. Terminez l’inscription professionnelle avec Google.",
+    mobileRequired: "Entrez le numéro de téléphone",
+    nameRequired: "Entrez le prénom",
+    emailRequired: "Entrez l’email",
+    passwordRequired: "Créez un mot de passe",
+    termsRequired: "Acceptez les conditions pour continuer",
+    passwordWeak: "Mot de passe : au moins 8 caractères, une lettre et un chiffre",
+    passwordMismatch: "Les mots de passe ne correspondent pas.",
+    checkEmailTitle: "Vérifiez votre email",
+    checkEmailText: "Nous avons envoyé un lien de confirmation. Ouvrez-le pour activer le compte.",
+    resend: "Renvoyer",
+    resendWait: "Vous pourrez renvoyer dans 60 secondes."
+  },
+  pl: {
+    introEyebrow: "Timviz dla profesjonalistów",
+    introTitle: "Utwórz konto specjalisty",
+    introText: "Zacznij od emaila lub Google. Ustawienia firmy można dodać później.",
+    introEmailPlaceholder: "Wpisz email",
+    introContinue: "Kontynuuj rejestrację",
+    introOr: "lub",
+    introGoogle: "Kontynuuj z Google",
+    introApple: "Kontynuuj z Apple",
+    introChecking: "Sprawdzamy...",
+    introHelper: "Jesteś klientem i chcesz zarezerwować usługę?",
+    introHelperLink: "Przejdź do katalogu",
+    detailsTitle: "Utwórz konto specjalisty",
+    detailsText: "Dodaj podstawowe dane. Kalendarz otworzy się zaraz po rejestracji.",
+    firstName: "Imię",
+    firstNamePlaceholder: "Wpisz imię",
+    lastName: "Nazwisko",
+    lastNamePlaceholder: "Wpisz nazwisko",
+    password: "Hasło",
+    passwordPlaceholder: "Utwórz hasło",
+    confirmPassword: "Powtórz hasło",
+    passwordHint: "Minimum 8 znaków, litera i cyfra",
+    email: "Email",
+    phone: "Numer telefonu",
+    phonePlaceholder: "Na przykład: 67 123 45 67",
+    phoneHelper: "Telefon jest potrzebny do powiadomień i kontaktu z klientami.",
+    optionalDetails: "Dodatkowo",
+    prefixAria: "Wybierz prefiks telefonu",
+    prefixSearch: "Szukaj po kraju lub kodzie",
+    country: "Kraj",
+    currency: "Waluta",
+    timezone: "Strefa czasowa",
+    timezonePlaceholder: "Wybierz strefę czasową",
+    cabinetLanguage: "Język panelu",
+    terms: "Akceptuję politykę prywatności, regulamin usług i warunki współpracy.",
+    submit: "Utwórz konto specjalisty",
+    login: "Masz już konto?",
+    loginLink: "Zaloguj się",
+    accountExistsTitle: "Ten email jest już zarejestrowany",
+    accountExistsText: "Możesz od razu się zalogować albo odzyskać hasło zamiast tworzyć drugie konto.",
+    forgotPassword: "Odzyskaj hasło",
+    googleNotice: "Nie znaleziono konta. Dokończ rejestrację firmy przez Google.",
+    mobileRequired: "Wpisz numer telefonu",
+    nameRequired: "Wpisz imię",
+    emailRequired: "Wpisz email",
+    passwordRequired: "Utwórz hasło",
+    termsRequired: "Zaakceptuj warunki, aby kontynuować",
+    passwordWeak: "Hasło: minimum 8 znaków, litera i cyfra",
+    passwordMismatch: "Hasła nie są takie same.",
+    checkEmailTitle: "Sprawdź email",
+    checkEmailText: "Wysłaliśmy link potwierdzający. Otwórz go, aby aktywować konto.",
+    resend: "Wyślij ponownie",
+    resendWait: "Ponownie można wysłać za 60 sekund."
+  },
+  cs: {
+    introEyebrow: "Timviz pro profesionály",
+    introTitle: "Vytvořit účet specialisty",
+    introContinue: "Pokračovat v registraci",
+    introGoogle: "Pokračovat přes Google",
+    introApple: "Pokračovat přes Apple",
+    detailsTitle: "Vytvořit účet specialisty",
+    firstName: "Jméno",
+    lastName: "Příjmení",
+    password: "Heslo",
+    confirmPassword: "Zopakujte heslo",
+    phone: "Mobilní číslo",
+    country: "Země",
+    currency: "Měna",
+    timezone: "Časové pásmo",
+    cabinetLanguage: "Jazyk kabinetu",
+    submit: "Vytvořit účet specialisty",
+    login: "Už máte účet?",
+    loginLink: "Přihlásit se",
+    forgotPassword: "Obnovit heslo",
+    checkEmailTitle: "Zkontrolujte email",
+    resend: "Odeslat znovu"
+  },
+  es: {
+    introEyebrow: "Timviz para profesionales",
+    introTitle: "Crear cuenta profesional",
+    introContinue: "Continuar registro",
+    introGoogle: "Continuar con Google",
+    introApple: "Continuar con Apple",
+    detailsTitle: "Crear cuenta profesional",
+    firstName: "Nombre",
+    lastName: "Apellido",
+    password: "Contraseña",
+    confirmPassword: "Repetir contraseña",
+    phone: "Teléfono móvil",
+    country: "País",
+    currency: "Moneda",
+    timezone: "Zona horaria",
+    cabinetLanguage: "Idioma del panel",
+    submit: "Crear cuenta profesional",
+    login: "¿Ya tienes cuenta?",
+    loginLink: "Iniciar sesión",
+    forgotPassword: "Restablecer contraseña",
+    checkEmailTitle: "Revisa tu email",
+    resend: "Enviar de nuevo"
+  },
+  de: {
+    introEyebrow: "Timviz für Profis",
+    introTitle: "Profi-Konto erstellen",
+    introContinue: "Registrierung fortsetzen",
+    introGoogle: "Mit Google fortfahren",
+    introApple: "Mit Apple fortfahren",
+    detailsTitle: "Profi-Konto erstellen",
+    firstName: "Vorname",
+    lastName: "Nachname",
+    password: "Passwort",
+    confirmPassword: "Passwort wiederholen",
+    phone: "Mobilnummer",
+    country: "Land",
+    currency: "Währung",
+    timezone: "Zeitzone",
+    cabinetLanguage: "Sprache des Arbeitsbereichs",
+    submit: "Profi-Konto erstellen",
+    login: "Schon ein Konto?",
+    loginLink: "Anmelden",
+    forgotPassword: "Passwort zurücksetzen",
+    checkEmailTitle: "E-Mail prüfen",
+    resend: "Erneut senden"
   }
-} satisfies Record<BaseProLanguage, Record<string, string>>;
+} as const;
 
 export default function CreateAccountForm() {
   const router = useRouter();
@@ -499,7 +681,10 @@ export default function CreateAccountForm() {
 
   const phoneRule = getPhoneRule(phoneCountry);
   const phoneIsValid = isPhoneValid(phoneCountry, phone);
-  const t = (formCopy as unknown as Record<string, typeof formCopy.en>)[language] ?? formCopy.en;
+  const t = {
+    ...formCopy.en,
+    ...((formCopy as unknown as Record<string, Partial<typeof formCopy.en>>)[language] ?? {})
+  } as typeof formCopy.en;
   const phonePlaceholder = phoneCountry === "Ukraine" ? t.phonePlaceholder : phoneRule.placeholder;
   const captchaRequired = authProviderMode === "email";
 
@@ -603,8 +788,8 @@ export default function CreateAccountForm() {
     logFunnelStep("visited_create_account");
     const localStorage = getSafeLocalStorage();
     const savedLanguage = localStorage?.getItem("rezervo-pro-language") ?? null;
-    const initialLanguage = languages.includes(savedLanguage as ProLanguage)
-      ? (savedLanguage as ProLanguage)
+    const initialLanguage = isProLanguage(savedLanguage)
+      ? savedLanguage
       : getBrowserLanguage();
     const browserCountry = getBrowserCountry();
     const browserTimezone = getBrowserTimezone();
@@ -743,7 +928,7 @@ export default function CreateAccountForm() {
   useEffect(() => {
     const handleLanguageChange = (event: Event) => {
       const nextLanguage = (event as CustomEvent<ProLanguage>).detail;
-      if (languages.includes(nextLanguage)) setLanguage(nextLanguage);
+      if (isProLanguage(nextLanguage)) setLanguage(nextLanguage);
     };
     window.addEventListener("rezervo-language-change", handleLanguageChange);
     return () => window.removeEventListener("rezervo-language-change", handleLanguageChange);

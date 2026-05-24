@@ -45,13 +45,81 @@ const copy = {
     failed: "Could not send the request. Please try again.",
     back: "Back to sign in",
     success: "If an account with this email exists, we sent a password reset link."
+  },
+  fr: {
+    eyebrow: "Récupération d’accès",
+    title: "Réinitialisez votre mot de passe par email",
+    subtitle: "Entrez l’email de votre compte professionnel. S’il existe, nous enverrons un lien de réinitialisation.",
+    email: "Email",
+    placeholder: "vous@example.com",
+    submit: "Envoyer le lien",
+    loading: "Envoi...",
+    timeout: "La demande prend trop de temps. Réessayez dans quelques secondes.",
+    failed: "Impossible d’envoyer la demande. Réessayez.",
+    back: "Retour à la connexion",
+    success: "Si un compte existe avec cet email, nous avons envoyé un lien de réinitialisation."
+  },
+  pl: {
+    eyebrow: "Odzyskiwanie dostępu",
+    title: "Zresetuj hasło przez email",
+    subtitle: "Wpisz email konta firmowego. Jeśli istnieje, wyślemy link do resetu.",
+    email: "Email",
+    placeholder: "ty@example.com",
+    submit: "Wyślij link",
+    loading: "Wysyłamy...",
+    timeout: "Żądanie trwa zbyt długo. Spróbuj ponownie za kilka sekund.",
+    failed: "Nie udało się wysłać żądania. Spróbuj ponownie.",
+    back: "Wróć do logowania",
+    success: "Jeśli konto z tym emailem istnieje, wysłaliśmy link do resetu hasła."
+  },
+  cs: {
+    eyebrow: "Obnovení přístupu",
+    title: "Obnovte heslo emailem",
+    subtitle: "Zadejte email firemního účtu. Pokud existuje, pošleme odkaz pro obnovu.",
+    email: "Email",
+    placeholder: "vy@example.com",
+    submit: "Odeslat odkaz",
+    loading: "Odesíláme...",
+    timeout: "Požadavek trvá příliš dlouho. Zkuste to za pár sekund znovu.",
+    failed: "Požadavek se nepodařilo odeslat. Zkuste to znovu.",
+    back: "Zpět k přihlášení",
+    success: "Pokud účet s tímto emailem existuje, poslali jsme odkaz pro obnovu hesla."
+  },
+  es: {
+    eyebrow: "Recuperación de acceso",
+    title: "Restablece tu contraseña por email",
+    subtitle: "Introduce el email de tu cuenta profesional. Si existe, enviaremos un enlace.",
+    email: "Email",
+    placeholder: "tu@example.com",
+    submit: "Enviar enlace",
+    loading: "Enviando...",
+    timeout: "La solicitud tarda demasiado. Inténtalo de nuevo en unos segundos.",
+    failed: "No se pudo enviar la solicitud. Inténtalo de nuevo.",
+    back: "Volver al inicio de sesión",
+    success: "Si existe una cuenta con este email, hemos enviado un enlace de restablecimiento."
+  },
+  de: {
+    eyebrow: "Zugriff wiederherstellen",
+    title: "Passwort per E-Mail zurücksetzen",
+    subtitle: "Gib die E-Mail deines Geschäftskontos ein. Falls sie existiert, senden wir einen Link.",
+    email: "Email",
+    placeholder: "du@example.com",
+    submit: "Link senden",
+    loading: "Senden...",
+    timeout: "Die Anfrage dauert zu lange. Bitte in ein paar Sekunden erneut versuchen.",
+    failed: "Die Anfrage konnte nicht gesendet werden. Bitte erneut versuchen.",
+    back: "Zurück zur Anmeldung",
+    success: "Falls ein Konto mit dieser E-Mail existiert, haben wir einen Link zum Zurücksetzen gesendet."
   }
 } as const;
 
 export default function ForgotPasswordForm() {
   const { language } = useProLanguage();
   const searchParams = useSearchParams();
-  const t = (copy as unknown as Record<string, typeof copy.en>)[language] ?? copy.en;
+  const t = {
+    ...copy.en,
+    ...((copy as unknown as Record<string, Partial<typeof copy.en>>)[language] ?? {})
+  } as typeof copy.en;
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");

@@ -31,7 +31,8 @@ const loginText = {
     noAccount: "Нет аккаунта?",
     createProfile: "Создать профессиональный профиль",
     createMaster: "Создать аккаунт мастера",
-    createMasterSubtitle: "1 минута — и вы сможете открыть календарь."
+    createMasterSubtitle: "1 минута — и вы сможете открыть календарь.",
+    staleSessionCleared: "Предыдущая сессия очищена. Войдите снова."
   },
   uk: {
     googleConfigError: "Google вхід тимчасово недоступний: ключі не налаштовані.",
@@ -57,7 +58,8 @@ const loginText = {
     noAccount: "Немає акаунта?",
     createProfile: "Створити професійний профіль",
     createMaster: "Створити акаунт майстра",
-    createMasterSubtitle: "1 хвилина — і ви зможете відкрити календар."
+    createMasterSubtitle: "1 хвилина — і ви зможете відкрити календар.",
+    staleSessionCleared: "Попередню сесію очищено. Увійдіть знову."
   },
   en: {
     googleConfigError: "Google sign-in is temporarily unavailable: keys are not configured.",
@@ -83,7 +85,110 @@ const loginText = {
     noAccount: "No account yet?",
     createProfile: "Create a professional profile",
     createMaster: "Create master account",
-    createMasterSubtitle: "1 minute — and you can open your calendar."
+    createMasterSubtitle: "1 minute — and you can open your calendar.",
+    staleSessionCleared: "Your previous session was cleared. Please sign in again."
+  },
+  fr: {
+    googleConfigError: "La connexion Google est temporairement indisponible : les clés ne sont pas configurées.",
+    appleConfigError: "La connexion Apple est temporairement indisponible : les clés ne sont pas configurées.",
+    googleLoginError: "Impossible de se connecter avec Google. Réessayez.",
+    loginFailed: "Impossible de se connecter.",
+    eyebrow: "Timviz",
+    title: "Timviz pour les pros",
+    subtitle: "Calendrier, services, clients et réservation en ligne au même endroit.",
+    password: "Mot de passe",
+    passwordPlaceholder: "Entrez le mot de passe",
+    google: "Continuer avec Google",
+    apple: "Continuer avec Apple",
+    divider: "ou",
+    forgotPassword: "Mot de passe oublié ?",
+    confirmTitle: "Confirmez votre email",
+    confirmText: "Pour protéger Timviz du spam, confirmez votre adresse email.",
+    resend: "Renvoyer",
+    resendWait: "Vous pourrez renvoyer dans 60 secondes.",
+    changeEmail: "Changer l’email",
+    loading: "Connexion...",
+    submit: "Se connecter",
+    noAccount: "Pas encore de compte ?",
+    createProfile: "Créer un profil professionnel",
+    createMaster: "Créer un compte pro",
+    createMasterSubtitle: "1 minute et vous ouvrez votre calendrier.",
+    staleSessionCleared: "Votre session précédente a été supprimée. Connectez-vous à nouveau."
+  },
+  pl: {
+    googleConfigError: "Logowanie Google jest tymczasowo niedostępne: klucze nie są skonfigurowane.",
+    appleConfigError: "Logowanie Apple jest tymczasowo niedostępne: klucze nie są skonfigurowane.",
+    googleLoginError: "Nie udało się zalogować przez Google. Spróbuj ponownie.",
+    loginFailed: "Nie udało się zalogować.",
+    eyebrow: "Timviz",
+    title: "Timviz dla specjalistów",
+    subtitle: "Kalendarz, usługi, klienci i rezerwacje online w jednym miejscu.",
+    password: "Hasło",
+    passwordPlaceholder: "Wpisz hasło",
+    google: "Kontynuuj z Google",
+    apple: "Kontynuuj z Apple",
+    divider: "lub",
+    forgotPassword: "Nie pamiętasz hasła?",
+    confirmTitle: "Potwierdź email",
+    confirmText: "Aby chronić Timviz przed spamem, potwierdź swój adres email.",
+    resend: "Wyślij ponownie",
+    resendWait: "Ponownie można wysłać za 60 sekund.",
+    changeEmail: "Zmień email",
+    loading: "Logowanie...",
+    submit: "Zaloguj się",
+    noAccount: "Nie masz konta?",
+    createProfile: "Utwórz profil profesjonalny",
+    createMaster: "Utwórz konto specjalisty",
+    createMasterSubtitle: "1 minuta i możesz otworzyć kalendarz.",
+    staleSessionCleared: "Poprzednia sesja została wyczyszczona. Zaloguj się ponownie."
+  },
+  cs: {
+    title: "Timviz pro profesionály",
+    subtitle: "Kalendář, služby, klienti a online rezervace na jednom místě.",
+    password: "Heslo",
+    passwordPlaceholder: "Zadejte heslo",
+    google: "Pokračovat přes Google",
+    apple: "Pokračovat přes Apple",
+    divider: "nebo",
+    forgotPassword: "Zapomněli jste heslo?",
+    loading: "Přihlašování...",
+    submit: "Přihlásit se",
+    noAccount: "Nemáte účet?",
+    createProfile: "Vytvořit profesionální profil",
+    createMaster: "Vytvořit účet specialisty",
+    staleSessionCleared: "Předchozí relace byla vymazána. Přihlaste se znovu."
+  },
+  es: {
+    title: "Timviz para profesionales",
+    subtitle: "Calendario, servicios, clientes y reservas online en un solo lugar.",
+    password: "Contraseña",
+    passwordPlaceholder: "Introduce la contraseña",
+    google: "Continuar con Google",
+    apple: "Continuar con Apple",
+    divider: "o",
+    forgotPassword: "¿Olvidaste la contraseña?",
+    loading: "Iniciando sesión...",
+    submit: "Iniciar sesión",
+    noAccount: "¿No tienes cuenta?",
+    createProfile: "Crear perfil profesional",
+    createMaster: "Crear cuenta profesional",
+    staleSessionCleared: "La sesión anterior se cerró. Inicia sesión de nuevo."
+  },
+  de: {
+    title: "Timviz für Profis",
+    subtitle: "Kalender, Leistungen, Kunden und Online-Buchung an einem Ort.",
+    password: "Passwort",
+    passwordPlaceholder: "Passwort eingeben",
+    google: "Mit Google fortfahren",
+    apple: "Mit Apple fortfahren",
+    divider: "oder",
+    forgotPassword: "Passwort vergessen?",
+    loading: "Anmeldung...",
+    submit: "Anmelden",
+    noAccount: "Noch kein Konto?",
+    createProfile: "Professionelles Profil erstellen",
+    createMaster: "Profi-Konto erstellen",
+    staleSessionCleared: "Die vorherige Sitzung wurde gelöscht. Bitte erneut anmelden."
   }
 } as const;
 
@@ -100,7 +205,10 @@ type TelegramRuntime = {
 export default function LoginForm({ staleSession = false, returnTo = "" }: LoginFormProps) {
   const router = useRouter();
   const { language } = useProLanguage();
-  const copy = (loginText as unknown as Record<string, typeof loginText.en>)[language] ?? loginText.en;
+  const copy = {
+    ...loginText.en,
+    ...((loginText as unknown as Record<string, Partial<typeof loginText.en>>)[language] ?? {})
+  } as typeof loginText.en;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -134,19 +242,13 @@ export default function LoginForm({ staleSession = false, returnTo = "" }: Login
         return;
       }
 
-      setStaleSessionMessage(
-        language === "uk"
-          ? "Попередню сесію очищено. Увійдіть знову."
-          : language === "en"
-            ? "Your previous session was cleared. Please sign in again."
-            : "Предыдущая сессия очищена. Войдите снова."
-      );
+      setStaleSessionMessage(copy.staleSessionCleared);
     });
 
     return () => {
       isCancelled = true;
     };
-  }, [language, staleSession]);
+  }, [copy.staleSessionCleared, staleSession]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);

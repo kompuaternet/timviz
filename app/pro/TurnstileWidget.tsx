@@ -45,6 +45,31 @@ const copy = {
     loading: "Security check is loading...",
     fallback: "Finishing the security check...",
     unavailable: "Could not load the security check. Refresh the page."
+  },
+  fr: {
+    loading: "Chargement de la vérification de sécurité...",
+    fallback: "Finalisation de la vérification...",
+    unavailable: "Impossible de charger la vérification. Actualisez la page."
+  },
+  pl: {
+    loading: "Ładowanie kontroli bezpieczeństwa...",
+    fallback: "Kończymy kontrolę bezpieczeństwa...",
+    unavailable: "Nie udało się załadować kontroli. Odśwież stronę."
+  },
+  cs: {
+    loading: "Načítá se bezpečnostní kontrola...",
+    fallback: "Dokončujeme kontrolu...",
+    unavailable: "Kontrolu se nepodařilo načíst. Obnovte stránku."
+  },
+  es: {
+    loading: "Cargando verificación de seguridad...",
+    fallback: "Finalizando verificación...",
+    unavailable: "No se pudo cargar la verificación. Actualiza la página."
+  },
+  de: {
+    loading: "Sicherheitsprüfung wird geladen...",
+    fallback: "Sicherheitsprüfung wird abgeschlossen...",
+    unavailable: "Sicherheitsprüfung konnte nicht geladen werden. Seite aktualisieren."
   }
 } as const;
 
@@ -99,7 +124,10 @@ export default function TurnstileWidget({ onToken, onExpire }: TurnstileWidgetPr
   const tokenReceivedRef = useRef(false);
   const [status, setStatus] = useState<"loading" | "ready" | "fallback" | "unavailable">("loading");
   const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "";
-  const t = (copy as unknown as Record<string, typeof copy.en>)[language] ?? copy.en;
+  const t = {
+    ...copy.en,
+    ...((copy as unknown as Record<string, Partial<typeof copy.en>>)[language] ?? {})
+  } as typeof copy.en;
 
   async function requestFallbackToken() {
     if (fallbackRequestedRef.current) return;

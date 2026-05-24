@@ -4,6 +4,7 @@ import {
   readEmailFromConfirmationToken,
   verifyEmailConfirmationToken
 } from "../../../lib/pro-email-confirmation";
+import { isProLanguage } from "../i18n";
 import styles from "../pro.module.css";
 
 export const dynamic = "force-dynamic";
@@ -36,13 +37,54 @@ const copy = {
     badText: "Request a new email or sign in to continue.",
     login: "Sign in",
     resend: "Send again"
+  },
+  fr: {
+    okTitle: "Email confirmé",
+    okText: "Votre compte est actif. Vous pouvez maintenant vous connecter à Timviz.",
+    badTitle: "Lien invalide",
+    badText: "Demandez un nouvel email ou connectez-vous pour continuer.",
+    login: "Se connecter",
+    resend: "Renvoyer"
+  },
+  pl: {
+    okTitle: "Email potwierdzony",
+    okText: "Konto jest aktywne. Możesz teraz zalogować się do Timviz.",
+    badTitle: "Nieprawidłowy link",
+    badText: "Poproś o nowy email albo zaloguj się, aby kontynuować.",
+    login: "Zaloguj się",
+    resend: "Wyślij ponownie"
+  },
+  cs: {
+    okTitle: "Email potvrzen",
+    okText: "Účet je aktivní. Nyní se můžete přihlásit do Timviz.",
+    badTitle: "Neplatný odkaz",
+    badText: "Požádejte o nový email nebo se přihlaste a pokračujte.",
+    login: "Přihlásit se",
+    resend: "Odeslat znovu"
+  },
+  es: {
+    okTitle: "Email confirmado",
+    okText: "Tu cuenta está activa. Ya puedes iniciar sesión en Timviz.",
+    badTitle: "Enlace no válido",
+    badText: "Solicita un nuevo email o inicia sesión para continuar.",
+    login: "Iniciar sesión",
+    resend: "Enviar de nuevo"
+  },
+  de: {
+    okTitle: "E-Mail bestätigt",
+    okText: "Dein Konto ist aktiv. Du kannst dich jetzt bei Timviz anmelden.",
+    badTitle: "Ungültiger Link",
+    badText: "Fordere eine neue E-Mail an oder melde dich an, um fortzufahren.",
+    login: "Anmelden",
+    resend: "Erneut senden"
   }
 } as const;
 
 export default async function ConfirmEmailPage({ searchParams }: ConfirmEmailPageProps) {
   const params = searchParams ? await searchParams : {};
-  const lang = params?.lang === "ru" || params?.lang === "en" ? params.lang : "uk";
-  const t = copy[lang];
+  const requestedLanguage = params?.lang ?? null;
+  const lang = isProLanguage(requestedLanguage) ? requestedLanguage : "en";
+  const t = copy[lang] ?? copy.en;
   const token = String(params?.token || "").trim();
   const email = readEmailFromConfirmationToken(token);
   let confirmed = false;
