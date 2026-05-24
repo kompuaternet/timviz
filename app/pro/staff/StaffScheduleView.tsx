@@ -9,7 +9,7 @@ import ProWorkspaceHeader from "../ProWorkspaceHeader";
 import styles from "../pro.module.css";
 import { useProLanguage } from "../useProLanguage";
 import { localeBySiteLanguage } from "../../../lib/site-language";
-import type { BaseProLanguage, ProLanguage } from "../i18n";
+import type { ProLanguage } from "../i18n";
 import type { OnboardingCtaState } from "../../../lib/pro-onboarding";
 import type { BusinessStaffSnapshot, StaffMemberSnapshot } from "../../../lib/pro-staff";
 import {
@@ -173,7 +173,7 @@ const TIME_OPTIONS = Array.from({ length: 96 }, (_, index) => {
   return minutesToTime(minutes);
 });
 
-const scheduleText: Record<BaseProLanguage, ScheduleCopy> = {
+const scheduleText = {
   ru: {
     sectionTitle: "Команда",
     people: "Участники команды",
@@ -422,8 +422,166 @@ const scheduleText: Record<BaseProLanguage, ScheduleCopy> = {
     resetDay: "Delete day override",
     weekOf: "Week",
     notSelected: "Not selected"
+  },
+  fr: {
+    sectionTitle: "Équipe",
+    people: "Membres de l’équipe",
+    schedule: "Planning d’équipe",
+    title: "Planning d’équipe",
+    text: "Choisissez un spécialiste et configurez ses jours de travail.",
+    sort: "Tri",
+    sortByName: "Par nom",
+    sortByHoursDesc: "Plus d’heures d’abord",
+    sortByHoursAsc: "Moins d’heures d’abord",
+    master: "Spécialiste",
+    scheduleMode: "Mode d’horaire",
+    weeklyMode: "Hebdomadaire",
+    flexibleMode: "Flexible",
+    month: "Mois",
+    today: "Cette semaine",
+    options: "Options",
+    add: "Ajouter",
+    addMember: "Nouveau membre",
+    membersList: "Membres de l’équipe",
+    noWork: "Ne travaille pas",
+    hours: "h",
+    empty: "Ajoutez d’abord des employés à l’équipe.",
+    editDay: "Modifier ce jour",
+    repeatingShifts: "Définir des shifts récurrents",
+    addFreeTime: "Ajouter du temps de travail",
+    deleteShift: "Supprimer ce shift",
+    saved: "Planning enregistré.",
+    failed: "Impossible d’enregistrer le planning.",
+    close: "Fermer",
+    save: "Enregistrer",
+    saving: "Enregistrement...",
+    workingDay: "Jour travaillé",
+    workFrom: "De",
+    workTo: "À",
+    addBreak: "Ajouter du temps",
+    removeBreak: "Supprimer l’intervalle",
+    weekOf: "Semaine",
+    notSelected: "Non sélectionné"
+  },
+  pl: {
+    sectionTitle: "Zespół",
+    people: "Członkowie zespołu",
+    schedule: "Grafik zmian",
+    title: "Grafik zmian",
+    text: "Wybierz specjalistę i ustaw jego dni pracy.",
+    sort: "Sortowanie",
+    sortByName: "Według nazwy",
+    sortByHoursDesc: "Najwięcej godzin",
+    sortByHoursAsc: "Najmniej godzin",
+    master: "Specjalista",
+    scheduleMode: "Tryb grafiku",
+    weeklyMode: "Tygodniowy",
+    flexibleMode: "Elastyczny",
+    month: "Miesiąc",
+    today: "Ten tydzień",
+    options: "Opcje",
+    add: "Dodaj",
+    addMember: "Nowy członek zespołu",
+    membersList: "Członkowie zespołu",
+    noWork: "Nie pracuje",
+    hours: "godz.",
+    empty: "Najpierw dodaj pracowników do zespołu.",
+    editDay: "Edytuj ten dzień",
+    repeatingShifts: "Ustaw powtarzalne zmiany",
+    addFreeTime: "Dodaj czas pracy",
+    deleteShift: "Usuń tę zmianę",
+    saved: "Grafik zapisany.",
+    failed: "Nie udało się zapisać grafiku.",
+    close: "Zamknij",
+    save: "Zapisz",
+    saving: "Zapisywanie...",
+    workingDay: "Dzień pracy",
+    workFrom: "Od",
+    workTo: "Do",
+    addBreak: "Dodaj czas",
+    removeBreak: "Usuń przedział pracy",
+    weekOf: "Tydzień",
+    notSelected: "Nie wybrano"
+  },
+  cs: {
+    sectionTitle: "Tým",
+    people: "Členové týmu",
+    schedule: "Rozvrh směn",
+    title: "Rozvrh směn",
+    text: "Vyberte specialistu a nastavte jeho pracovní dny.",
+    sort: "Řazení",
+    sortByName: "Podle jména",
+    master: "Specialista",
+    scheduleMode: "Režim rozvrhu",
+    weeklyMode: "Týdenní",
+    flexibleMode: "Flexibilní",
+    month: "Měsíc",
+    today: "Tento týden",
+    options: "Možnosti",
+    add: "Přidat",
+    noWork: "Nepracuje",
+    hours: "h",
+    saved: "Rozvrh uložen.",
+    failed: "Rozvrh se nepodařilo uložit.",
+    close: "Zavřít",
+    save: "Uložit",
+    saving: "Ukládání...",
+    weekOf: "Týden",
+    notSelected: "Nevybráno"
+  },
+  es: {
+    sectionTitle: "Equipo",
+    people: "Miembros del equipo",
+    schedule: "Horario de turnos",
+    title: "Horario de turnos",
+    text: "Elige un especialista y configura sus días de trabajo.",
+    sort: "Ordenar",
+    sortByName: "Por nombre",
+    master: "Especialista",
+    scheduleMode: "Modo de horario",
+    weeklyMode: "Semanal",
+    flexibleMode: "Flexible",
+    month: "Mes",
+    today: "Esta semana",
+    options: "Opciones",
+    add: "Añadir",
+    noWork: "No trabaja",
+    hours: "h",
+    saved: "Horario guardado.",
+    failed: "No se pudo guardar el horario.",
+    close: "Cerrar",
+    save: "Guardar",
+    saving: "Guardando...",
+    weekOf: "Semana",
+    notSelected: "No seleccionado"
+  },
+  de: {
+    sectionTitle: "Team",
+    people: "Teammitglieder",
+    schedule: "Schichtplan",
+    title: "Schichtplan",
+    text: "Wähle einen Spezialisten und richte seine Arbeitstage ein.",
+    sort: "Sortierung",
+    sortByName: "Nach Name",
+    master: "Spezialist",
+    scheduleMode: "Zeitplanmodus",
+    weeklyMode: "Wöchentlich",
+    flexibleMode: "Flexibel",
+    month: "Monat",
+    today: "Diese Woche",
+    options: "Optionen",
+    add: "Hinzufügen",
+    noWork: "Arbeitet nicht",
+    hours: "Std.",
+    saved: "Zeitplan gespeichert.",
+    failed: "Zeitplan konnte nicht gespeichert werden.",
+    close: "Schließen",
+    save: "Speichern",
+    saving: "Speichern...",
+    weekOf: "Woche",
+    notSelected: "Nicht ausgewählt"
   }
-};
+} satisfies Record<string, Partial<ScheduleCopy>>;
 
 function getLocale(language: ProLanguage) {
   return localeBySiteLanguage[language];
@@ -1618,7 +1776,10 @@ function DayScheduleModal({
 
 export default function StaffScheduleView({ professionalId, snapshot, onboardingCta, header }: StaffScheduleViewProps) {
   const { language, t } = useProLanguage();
-  const copy = (scheduleText as unknown as Record<string, ScheduleCopy>)[language] ?? scheduleText.en;
+  const copy = {
+    ...scheduleText.en,
+    ...((scheduleText as unknown as Record<string, Partial<ScheduleCopy>>)[language] ?? {})
+  } as ScheduleCopy;
   const locale = getLocale(language);
   const [members, setMembers] = useState(snapshot.members);
   const [selectedMemberId, setSelectedMemberId] = useState(() => snapshot.members[0]?.professional.id || "");

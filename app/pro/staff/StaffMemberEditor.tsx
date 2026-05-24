@@ -141,6 +141,125 @@ const editorText = {
     scheduleHint:
       "The employee personal schedule is now managed only from the shared team shift schedule screen.",
     openTeamSchedule: "Open team shift schedule"
+  },
+  fr: {
+    back: "Fermer",
+    save: "Enregistrer",
+    saving: "Enregistrement...",
+    titlePrefix: "Modifier",
+    profileTab: "Profil",
+    scheduleTab: "Planning",
+    accessTab: "Accès",
+    personalTitle: "Informations personnelles",
+    workTitle: "Zone de travail",
+    profileTitle: "Profil",
+    profileText: "Gérez le profil de l’employé et son affichage dans l’équipe.",
+    firstName: "Prénom",
+    lastName: "Nom",
+    role: "Rôle",
+    phone: "Téléphone",
+    statsTitle: "Statistiques de l’employé",
+    servicesVisible: "Services visibles",
+    bookings: "Réservations",
+    revenue: "Revenu",
+    accessTitle: "Accès au cabinet",
+    invite: "Envoyer l’invitation",
+    resend: "Renvoyer",
+    revoke: "Révoquer",
+    inviteSent: "Invitation envoyée",
+    noEmail: "Ajoutez d’abord un e-mail dans le profil.",
+    state: { owner: "Propriétaire", active: "Accès activé", invited: "Invitation envoyée", offline: "Pas d’accès" } satisfies Record<StaffMemberWorkspaceAccess, string>,
+    saved: "Modifications enregistrées.",
+    failed: "Impossible d’enregistrer les modifications.",
+    openTeamSchedule: "Ouvrir le planning d’équipe"
+  },
+  pl: {
+    back: "Zamknij",
+    save: "Zapisz",
+    saving: "Zapisywanie...",
+    titlePrefix: "Edytuj",
+    profileTab: "Profil",
+    scheduleTab: "Grafik",
+    accessTab: "Dostęp",
+    personalTitle: "Dane osobowe",
+    workTitle: "Obszar pracy",
+    profileTitle: "Profil",
+    profileText: "Zarządzaj profilem pracownika i jego widocznością w zespole.",
+    firstName: "Imię",
+    lastName: "Nazwisko",
+    role: "Rola",
+    phone: "Telefon",
+    statsTitle: "Statystyki pracownika",
+    servicesVisible: "Widoczne usługi",
+    bookings: "Rezerwacje",
+    revenue: "Przychód",
+    accessTitle: "Dostęp do panelu",
+    invite: "Wyślij zaproszenie",
+    resend: "Wyślij ponownie",
+    revoke: "Cofnij",
+    inviteSent: "Zaproszenie wysłane",
+    noEmail: "Najpierw dodaj e-mail w profilu.",
+    state: { owner: "Właściciel przestrzeni", active: "Dostęp aktywny", invited: "Zaproszenie wysłane", offline: "Brak dostępu" } satisfies Record<StaffMemberWorkspaceAccess, string>,
+    saved: "Zmiany zapisane.",
+    failed: "Nie udało się zapisać zmian.",
+    openTeamSchedule: "Otwórz grafik zmian"
+  },
+  cs: {
+    back: "Zavřít",
+    save: "Uložit",
+    saving: "Ukládání...",
+    titlePrefix: "Upravit",
+    profileTab: "Profil",
+    scheduleTab: "Rozvrh",
+    accessTab: "Přístup",
+    firstName: "Jméno",
+    lastName: "Příjmení",
+    role: "Role",
+    phone: "Telefon",
+    invite: "Poslat pozvánku",
+    resend: "Poslat znovu",
+    revoke: "Odvolat",
+    state: { owner: "Vlastník prostoru", active: "Přístup aktivní", invited: "Pozvánka odeslána", offline: "Bez přístupu" } satisfies Record<StaffMemberWorkspaceAccess, string>,
+    saved: "Změny uloženy.",
+    failed: "Změny se nepodařilo uložit."
+  },
+  es: {
+    back: "Cerrar",
+    save: "Guardar",
+    saving: "Guardando...",
+    titlePrefix: "Editar",
+    profileTab: "Perfil",
+    scheduleTab: "Horario",
+    accessTab: "Acceso",
+    firstName: "Nombre",
+    lastName: "Apellido",
+    role: "Rol",
+    phone: "Teléfono",
+    invite: "Enviar invitación",
+    resend: "Reenviar",
+    revoke: "Revocar",
+    state: { owner: "Propietario", active: "Acceso activado", invited: "Invitación enviada", offline: "Sin acceso" } satisfies Record<StaffMemberWorkspaceAccess, string>,
+    saved: "Cambios guardados.",
+    failed: "No se pudieron guardar los cambios."
+  },
+  de: {
+    back: "Schließen",
+    save: "Speichern",
+    saving: "Speichern...",
+    titlePrefix: "Bearbeiten",
+    profileTab: "Profil",
+    scheduleTab: "Zeitplan",
+    accessTab: "Zugriff",
+    firstName: "Vorname",
+    lastName: "Nachname",
+    role: "Rolle",
+    phone: "Telefon",
+    invite: "Einladung senden",
+    resend: "Erneut senden",
+    revoke: "Widerrufen",
+    state: { owner: "Arbeitsbereich-Inhaber", active: "Zugriff aktiviert", invited: "Einladung gesendet", offline: "Kein Zugriff" } satisfies Record<StaffMemberWorkspaceAccess, string>,
+    saved: "Änderungen gespeichert.",
+    failed: "Änderungen konnten nicht gespeichert werden."
   }
 } as const;
 
@@ -159,7 +278,10 @@ function formatMoney(value: number, locale: string, currency: string) {
 export default function StaffMemberEditor({ snapshot, initialTab }: StaffMemberEditorProps) {
   const router = useRouter();
   const { language } = useProLanguage();
-  const copy = (editorText as unknown as Record<string, typeof editorText.en>)[language] ?? editorText.en;
+  const copy = {
+    ...editorText.en,
+    ...((editorText as unknown as Record<string, Partial<typeof editorText.en>>)[language] ?? {})
+  } as typeof editorText.en;
   const locale = getLocale(language);
   const member = snapshot.member;
   const [activeTab, setActiveTab] = useState(initialTab);
