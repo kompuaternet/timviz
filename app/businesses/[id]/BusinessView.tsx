@@ -92,6 +92,7 @@ type BusinessCopy = {
   onlineBookingOff: string;
   onlineBookingOffText: string;
   bookingFlowTitle: string;
+  stepCounter: string;
   serviceStep: string;
   specialistStep: string;
   timeStep: string;
@@ -164,6 +165,7 @@ const businessCopy: Record<SiteLanguage, BusinessCopy> = withEnglishFallback<Bus
     onlineBookingOffText:
       "Владелец компании пока не принимает онлайн-записи с сайта. Страница компании остаётся доступной для просмотра.",
     bookingFlowTitle: "Запись",
+    stepCounter: "Шаг {current} из {total}",
     serviceStep: "Услуги",
     specialistStep: "Специалист",
     timeStep: "Время",
@@ -234,6 +236,7 @@ const businessCopy: Record<SiteLanguage, BusinessCopy> = withEnglishFallback<Bus
     onlineBookingOffText:
       "Власник компанії поки що не приймає онлайн-записи із сайту. Сторінка компанії лишається доступною для перегляду.",
     bookingFlowTitle: "Запис",
+    stepCounter: "Крок {current} з {total}",
     serviceStep: "Послуги",
     specialistStep: "Спеціаліст",
     timeStep: "Час",
@@ -304,6 +307,7 @@ const businessCopy: Record<SiteLanguage, BusinessCopy> = withEnglishFallback<Bus
     onlineBookingOffText:
       "The owner is not accepting public bookings from the site yet. The company page is still available for viewing.",
     bookingFlowTitle: "Appointment",
+    stepCounter: "Step {current} of {total}",
     serviceStep: "Services",
     specialistStep: "Specialist",
     timeStep: "Time",
@@ -378,6 +382,7 @@ Object.assign(businessCopy, {
     onlineBookingOffText:
       "Le propriétaire n’accepte pas encore les rendez-vous publics depuis le site. La page de l’entreprise reste disponible.",
     bookingFlowTitle: "Rendez-vous",
+    stepCounter: "Étape {current} sur {total}",
     serviceStep: "Services",
     specialistStep: "Spécialiste",
     timeStep: "Heure",
@@ -449,6 +454,7 @@ Object.assign(businessCopy, {
     onlineBookingOffText:
       "Właściciel firmy nie przyjmuje jeszcze publicznych zapisów ze strony. Strona firmy pozostaje dostępna do przeglądania.",
     bookingFlowTitle: "Wizyta",
+    stepCounter: "Krok {current} z {total}",
     serviceStep: "Usługi",
     specialistStep: "Specjalista",
     timeStep: "Godzina",
@@ -520,6 +526,7 @@ Object.assign(businessCopy, {
     onlineBookingOffText:
       "Majitel firmy zatím nepřijímá veřejná objednání ze stránky. Stránka firmy zůstává dostupná k prohlížení.",
     bookingFlowTitle: "Objednání",
+    stepCounter: "Krok {current} z {total}",
     serviceStep: "Služby",
     specialistStep: "Specialista",
     timeStep: "Čas",
@@ -591,6 +598,7 @@ Object.assign(businessCopy, {
     onlineBookingOffText:
       "El propietario aún no acepta citas públicas desde el sitio. La página de la empresa sigue disponible para verla.",
     bookingFlowTitle: "Cita",
+    stepCounter: "Paso {current} de {total}",
     serviceStep: "Servicios",
     specialistStep: "Especialista",
     timeStep: "Hora",
@@ -662,6 +670,7 @@ Object.assign(businessCopy, {
     onlineBookingOffText:
       "Der Inhaber nimmt noch keine öffentlichen Termine über die Website an. Die Unternehmensseite bleibt sichtbar.",
     bookingFlowTitle: "Termin",
+    stepCounter: "Schritt {current} von {total}",
     serviceStep: "Leistungen",
     specialistStep: "Spezialist",
     timeStep: "Zeit",
@@ -764,6 +773,12 @@ function getBookingStepLabel(step: BookingStep, t: BusinessCopy) {
   return t.confirmStep;
 }
 
+function formatStepCounter(t: BusinessCopy, current: number, total: number) {
+  return t.stepCounter
+    .replace("{current}", String(current))
+    .replace("{total}", String(total));
+}
+
 function formatDateKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
@@ -854,6 +869,14 @@ function getInitials(member: TeamMember) {
 
 function getDraftStorageKey(businessId: string) {
   return `timviz-public-booking-${businessId}`;
+}
+
+function getBookingDraftStorage() {
+  if (typeof window === "undefined" || typeof window.localStorage?.getItem !== "function") {
+    return null;
+  }
+
+  return window.localStorage;
 }
 
 function formatWebsiteLabel(value: string) {
@@ -1098,11 +1121,12 @@ export default function BusinessView({
   }, [companyPhoneCountry]);
 
   useEffect(() => {
-    if (typeof window === "undefined") {
+    const storage = getBookingDraftStorage();
+    if (!storage) {
       return;
     }
 
-    const draft = parseBookingDraft(window.localStorage.getItem(getDraftStorageKey(business.id)));
+    const draft = parseBookingDraft(storage.getItem(getDraftStorageKey(business.id)));
 
     if (!draft) {
       return;
@@ -1127,16 +1151,17 @@ export default function BusinessView({
   }, [business.id, servicesById]);
 
   useEffect(() => {
-    if (typeof window === "undefined") {
+    const storage = getBookingDraftStorage();
+    if (!storage) {
       return;
     }
 
     if (!selectedServiceIds.length && !selectedDate && !selectedTime) {
-      window.localStorage.removeItem(getDraftStorageKey(business.id));
+      storage.removeItem(getDraftStorageKey(business.id));
       return;
     }
 
-    window.localStorage.setItem(
+    storage.setItem(
       getDraftStorageKey(business.id),
       JSON.stringify({
         selectedServiceIds,
@@ -1586,17 +1611,6 @@ export default function BusinessView({
             </div>
           )}
 
-          {mode === "modal" && bookingStep === "time" ? (
-            <button
-              type="button"
-              className="primary-button company-booking-gradient-button company-summary-action"
-              onClick={goNext}
-              disabled={!canGoToNextStep()}
-            >
-              {t.goToConfirm}
-            </button>
-          ) : null}
-
           {mode === "page" ? (
             <button
               type="button"
@@ -1611,6 +1625,40 @@ export default function BusinessView({
       </aside>
     );
   }
+
+  function renderMobileBookingSummary() {
+    const serviceLabel = selectedServices.length
+      ? selectedServices.map((service) => getLocalizedServiceNameLabel(service)).join(" + ")
+      : t.chooseService;
+    const timeLabel =
+      selectedDate && selectedTime
+        ? `${formatSelectedDate(selectedDate, locale)} · ${selectedTime} - ${addMinutesToTime(selectedTime, totalDurationMinutes)}`
+        : selectedDate
+          ? formatSelectedDate(selectedDate, locale)
+          : t.chooseTime;
+    const specialistLabel = selectedProfessional ? fullName(selectedProfessional) : t.noPreference;
+
+    return (
+      <div className="company-booking-mobile-summary" aria-label={t.summary}>
+        <div>
+          <span>{t.selected}</span>
+          <strong>{serviceLabel}</strong>
+        </div>
+        <small>{selectedServices.length ? formatMoney(totalPrice, locale) : t.verifiedRequest}</small>
+        {bookingStep === "confirm" ? (
+          <>
+            <span>{timeLabel}</span>
+            <span>
+              {t.specialist}: {specialistLabel}
+            </span>
+          </>
+        ) : null}
+      </div>
+    );
+  }
+
+  const currentStepNumber = getStepIndex(bookingStep) + 1;
+  const currentStepLabel = getBookingStepLabel(bookingStep, t);
 
   return (
     <main className="company-page">
@@ -1857,28 +1905,54 @@ export default function BusinessView({
       </section>
 
       {bookingOpen ? (
-        <div className="company-booking-modal" role="dialog" aria-modal="true" aria-label={t.bookingFlowTitle}>
+        <div
+          className="company-booking-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="company-booking-title"
+        >
           <div className="company-booking-modal-shell">
-            <button type="button" className="company-modal-close" onClick={closeBookingFlow} aria-label={t.close}>
-              ×
-            </button>
+            <div className="company-booking-topbar">
+              <button type="button" className="company-modal-back" onClick={goBack} aria-label={t.back}>
+                ←
+              </button>
+              <div className="company-booking-mobile-step">
+                <strong id="company-booking-title">{currentStepLabel}</strong>
+                <span>{formatStepCounter(t, currentStepNumber, bookingSteps.length)}</span>
+                <div
+                  className="company-booking-mobile-progress"
+                  role="progressbar"
+                  aria-valuemin={1}
+                  aria-valuemax={bookingSteps.length}
+                  aria-valuenow={currentStepNumber}
+                  aria-label={t.bookingFlowTitle}
+                >
+                  <span style={{ width: `${(currentStepNumber / bookingSteps.length) * 100}%` }} />
+                </div>
+              </div>
+              <div className="company-booking-progress" role="group" tabIndex={0} aria-label={t.bookingFlowTitle}>
+                {bookingSteps.map((step) => {
+                  const index = getStepIndex(step);
+                  const currentIndex = getStepIndex(bookingStep);
+                  return (
+                    <span
+                      key={step}
+                      className={index === currentIndex ? "active" : index < currentIndex ? "done" : ""}
+                      aria-current={index === currentIndex ? "step" : undefined}
+                    >
+                      <small>{index < currentIndex ? "✓" : index + 1}</small>
+                      {getBookingStepLabel(step, t)}
+                    </span>
+                  );
+                })}
+              </div>
+              <button type="button" className="company-modal-close" onClick={closeBookingFlow} aria-label={t.close}>
+                ×
+              </button>
+            </div>
             <div className="company-booking-modal-content">
               <div className="company-booking-flow">
-                <div className="company-booking-topbar">
-                  <button type="button" className="company-modal-back" onClick={goBack} aria-label={t.back}>
-                    ←
-                  </button>
-                  <div className="company-booking-progress" role="group" tabIndex={0} aria-label={t.bookingFlowTitle}>
-                    {bookingSteps.map((step) => (
-                      <span
-                        key={step}
-                        className={getStepIndex(step) === getStepIndex(bookingStep) ? "active" : getStepIndex(step) < getStepIndex(bookingStep) ? "done" : ""}
-                      >
-                        {getBookingStepLabel(step, t)}
-                      </span>
-                    ))}
-                  </div>
-                </div>
+                {bookingStep !== "confirm" ? renderMobileBookingSummary() : null}
 
                     {bookingStep === "services" ? (
                       <section className="company-booking-step">
@@ -2079,14 +2153,6 @@ export default function BusinessView({
                       </div>
                     ) : null}
 
-                    <button
-                      type="button"
-                      className="primary-button company-booking-gradient-button company-time-cta"
-                      onClick={goNext}
-                      disabled={!canGoToNextStep()}
-                    >
-                      {t.goToConfirm}
-                    </button>
                   </section>
                 ) : null}
 
@@ -2136,8 +2202,9 @@ export default function BusinessView({
                             timeSelected: Boolean(selectedTime)
                           });
 
-                          if (typeof window !== "undefined") {
-                            window.localStorage.removeItem(getDraftStorageKey(business.id));
+                          const storage = getBookingDraftStorage();
+                          if (storage) {
+                            storage.removeItem(getDraftStorageKey(business.id));
                           }
                         }}
                       >
