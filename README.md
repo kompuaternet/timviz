@@ -68,7 +68,7 @@ npx playwright show-report
 3. После booking-задач запускать `npm run quality:booking`.
 4. После небольших не-UI правок минимум запускать `npm run quality:fast`.
 5. Если GitHub Actions красный, не деплоить и не мержить до исправления.
-6. Pre-push hook запускает `npm run quality:fast`; GitHub Actions запускает `npm run test:e2e:ci` с критичными mobile-сценариями, а полный `npm run test:e2e` доступен для ручного полного аудита по всем проектам Playwright.
+6. Pre-push hook запускает `npm run quality:fast`; GitHub Actions запускает `npm run test:e2e:ci` как быстрый критичный mobile-smoke, а полный `npm run test:e2e` доступен для ручного полного аудита по всем языкам, ширинам и проектам Playwright.
 
 Lighthouse CI пишет отчёты в `.lighthouseci/`. На первом этапе пороги настроены как warning, чтобы видеть performance/accessibility/SEO отчёт без блокировки деплоя.
 
