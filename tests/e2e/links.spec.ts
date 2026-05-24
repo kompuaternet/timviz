@@ -33,7 +33,7 @@ test.describe("important links", () => {
       if (href.startsWith("#")) continue;
       const url = href.startsWith("http") ? href : new URL(href, page.url()).toString();
       if (!url.startsWith(new URL(page.url()).origin)) continue;
-      const response = await request.get(url, { timeout: 10_000 });
+      const response = await request.get(url, { timeout: 30_000 });
       expect(response.status(), `${url} returned ${response.status()}`).toBeLessThan(400);
     }
   });

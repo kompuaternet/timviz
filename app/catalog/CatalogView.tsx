@@ -815,6 +815,19 @@ function buildMapPoints(results: PublicCatalogCardResult[], selectedId: string):
   });
 }
 
+async function importLeafletWithRetry() {
+  try {
+    return await import("leaflet");
+  } catch (error) {
+    await new Promise((resolve) => window.setTimeout(resolve, 250));
+    try {
+      return await import("leaflet");
+    } catch {
+      throw error;
+    }
+  }
+}
+
 function CatalogResultsMap({
   language,
   results,
@@ -860,7 +873,7 @@ function CatalogResultsMap({
         return;
       }
 
-      const L = await import("leaflet");
+      const L = await importLeafletWithRetry();
       if (cancelled || !mapHostRef.current) {
         return;
       }
@@ -898,7 +911,11 @@ function CatalogResultsMap({
       setMapReady(true);
     }
 
-    void initMap();
+    void initMap().catch(() => {
+      if (!cancelled) {
+        setMapReady(false);
+      }
+    });
 
     return () => {
       cancelled = true;
@@ -1295,6 +1312,11 @@ export default function CatalogView({
       return;
     }
 
+    setExpandedServicesById((current) => ({
+      ...current,
+      [id]: true
+    }));
+
     if (!servicesByResultId[id]) {
       setLoadingServicesById((current) => ({ ...current, [id]: true }));
       try {
@@ -1318,11 +1340,6 @@ export default function CatalogView({
         setLoadingServicesById((current) => ({ ...current, [id]: false }));
       }
     }
-
-    setExpandedServicesById((current) => ({
-      ...current,
-      [id]: true
-    }));
   }
 
   return (
@@ -1470,7 +1487,15 @@ export default function CatalogView({
                           </div>
                         </div>
 
-                        {servicesToRender.length > 0 ? (
+                        {isExpanded && isLoadingServices ? (
+                          <div className="catalog-result-services compact">
+                            <div className="catalog-result-service-row catalog-result-service-note">
+                              <div>
+                                <strong>{t.loading}</strong>
+                              </div>
+                            </div>
+                          </div>
+                        ) : servicesToRender.length > 0 ? (
                           <div className="catalog-result-services compact">
                             {servicesToRender.map((service) => (
                                   <div key={service.id} className="catalog-result-service-row">

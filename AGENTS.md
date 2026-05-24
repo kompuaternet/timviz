@@ -77,10 +77,10 @@ npm run test:e2e
 Before final push:
 
 ```bash
-npm run quality
+npm run quality:ci
 ```
 
-If full quality cannot run, run the closest relevant checks and state the reason clearly.
+Run full `npm run quality` for a complete local audit when the task needs every configured Playwright project. If full quality cannot run in a reasonable time, run `npm run quality:ci` plus the closest relevant checks and state the reason clearly.
 
 ## When Playwright Fails
 
@@ -96,6 +96,7 @@ If full quality cannot run, run the closest relevant checks and state the reason
 
 ```bash
 npm run quality:fast
+npm run quality:ci
 npm run quality:ui
 npm run quality:booking
 npm run quality

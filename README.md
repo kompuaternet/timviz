@@ -23,11 +23,13 @@ npm run dev -- --hostname 127.0.0.1 --port 3005
 ```bash
 npm run typecheck
 npm run quality:fast
+npm run quality:ci
 npm run quality:ui
 npm run quality:booking
 npm run quality
 npm run test:i18n
 npm run test:e2e
+npm run test:e2e:ci
 npm run test:e2e:mobile
 npm run test:e2e:localization
 npm run test:e2e:booking
@@ -66,7 +68,7 @@ npx playwright show-report
 3. После booking-задач запускать `npm run quality:booking`.
 4. После небольших не-UI правок минимум запускать `npm run quality:fast`.
 5. Если GitHub Actions красный, не деплоить и не мержить до исправления.
-6. Pre-push hook запускает `npm run quality:fast`; полный Playwright запускается вручную для UI-задач и в GitHub Actions.
+6. Pre-push hook запускает `npm run quality:fast`; GitHub Actions запускает `npm run test:e2e:ci` с критичными mobile/desktop сценариями, а полный `npm run test:e2e` доступен для ручного полного аудита.
 
 Lighthouse CI пишет отчёты в `.lighthouseci/`. На первом этапе пороги настроены как warning, чтобы видеть performance/accessibility/SEO отчёт без блокировки деплоя.
 
