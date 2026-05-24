@@ -593,11 +593,11 @@ const BASE_CALENDAR_TEXT: Record<BaseProLanguage, {
     logout: "Выйти",
     language: "Язык",
     onboardingDone: "✔ Готово",
-    onboardingServices: "Додати послуги",
-    onboardingSchedule: "Налаштувати графік",
-    onboardingBooking: "Увімкнути запис",
-    onboardingPhoto: "Додати фото",
-    onboardingTelegram: "Підключити Telegram",
+    onboardingServices: "Добавить услуги",
+    onboardingSchedule: "Настроить график",
+    onboardingBooking: "Включить запись",
+    onboardingPhoto: "Добавить фото",
+    onboardingTelegram: "Подключить Telegram",
     publicLink: "Публичная ссылка",
     publicLinkTitle: "Ссылка для онлайн-записи",
     publicLinkHint: "Отправляйте ссылку клиентам, публикуйте в соцсетях или копируйте в один тап.",
@@ -940,6 +940,289 @@ const BASE_CALENDAR_TEXT: Record<BaseProLanguage, {
     onlineBookingStatusCancelled: "Cancelled"
   }
 };
+
+const CALENDAR_AUX_TEXT = {
+  ru: {
+    mobile: {
+      emptyTitle: "Сегодня записей нет",
+      emptyText: "Добавьте первую запись или откройте онлайн-запись для клиентов.",
+      addBooking: "Добавить запись",
+      setupOnlineBooking: "Настроить онлайн-запись",
+      firstHintTitle: "Клиенты могут записываться сами",
+      firstHintText: "Свободные окна в календаре становятся доступными онлайн, меньше переписок и без двойных записей.",
+      firstHintAction: "Создать первую запись",
+      shareTitle: "Клиенты смогут записываться сами",
+      shareAction: "Включить онлайн-запись",
+      checklistTitle: "Чеклист запуска",
+      checklistProgress: (done: number, total: number) => `${done} из ${total}`,
+      checklistServices: "Добавить услугу",
+      checklistSchedule: "Настроить график",
+      checklistBooking: "Включить онлайн-запись",
+      checklistShare: "Поделиться ссылкой",
+      collapse: "Свернуть",
+      expand: "Развернуть",
+      dismiss: "Скрыть",
+      servicesEmptyTitle: "Услуг пока нет",
+      servicesEmptyText: "Добавьте услуги с длительностью и ценой, чтобы быстрее создавать записи.",
+      servicesEmptyAction: "Добавить услугу",
+      clientsEmptyAction: "Добавить клиента"
+    },
+    date: "Дата",
+    previousPeriod: "Предыдущий период",
+    nextPeriod: "Следующий период",
+    edit: "Редактировать",
+    compact: "Сжатый",
+    normal: "Обычный",
+    phoneCopied: "Телефон скопирован",
+    copyPhone: "Скопировать телефон",
+    newService: "Новая услуга"
+  },
+  uk: {
+    mobile: {
+      emptyTitle: "Сьогодні записів немає",
+      emptyText: "Додайте перший запис або відкрийте онлайн-запис для клієнтів.",
+      addBooking: "Додати запис",
+      setupOnlineBooking: "Налаштувати онлайн-запис",
+      firstHintTitle: "Клієнти можуть записуватися самі",
+      firstHintText: "Вільні слоти в календарі стають доступними онлайн, тож менше повідомлень і жодних подвійних записів.",
+      firstHintAction: "Створити перший запис",
+      shareTitle: "Клієнти зможуть записуватися самі",
+      shareAction: "Увімкнути онлайн-запис",
+      checklistTitle: "Чеклист запуску",
+      checklistProgress: (done: number, total: number) => `${done} з ${total}`,
+      checklistServices: "Додати послугу",
+      checklistSchedule: "Налаштувати графік",
+      checklistBooking: "Увімкнути онлайн-запис",
+      checklistShare: "Поділитися посиланням",
+      collapse: "Згорнути",
+      expand: "Розгорнути",
+      dismiss: "Сховати",
+      servicesEmptyTitle: "Послуг ще немає",
+      servicesEmptyText: "Додайте послуги з тривалістю та ціною, щоб створювати записи швидше.",
+      servicesEmptyAction: "Додати послугу",
+      clientsEmptyAction: "Додати клієнта"
+    },
+    date: "Дата",
+    previousPeriod: "Попередній період",
+    nextPeriod: "Наступний період",
+    edit: "Редагувати",
+    compact: "Стиснутий",
+    normal: "Звичайний",
+    phoneCopied: "Телефон скопійовано",
+    copyPhone: "Скопіювати телефон",
+    newService: "Нова послуга"
+  },
+  en: {
+    mobile: {
+      emptyTitle: "No bookings today",
+      emptyText: "Add the first appointment or open online booking for clients.",
+      addBooking: "Add appointment",
+      setupOnlineBooking: "Set up online booking",
+      firstHintTitle: "Clients can book themselves",
+      firstHintText: "Free slots in your calendar become available online, so there are fewer messages and no double bookings.",
+      firstHintAction: "Create first appointment",
+      shareTitle: "Clients will be able to book themselves",
+      shareAction: "Enable online booking",
+      checklistTitle: "Setup checklist",
+      checklistProgress: (done: number, total: number) => `${done} of ${total}`,
+      checklistServices: "Add service",
+      checklistSchedule: "Set schedule",
+      checklistBooking: "Enable online booking",
+      checklistShare: "Share link",
+      collapse: "Collapse",
+      expand: "Expand",
+      dismiss: "Dismiss",
+      servicesEmptyTitle: "No services yet",
+      servicesEmptyText: "Add services with duration and price so bookings are created faster.",
+      servicesEmptyAction: "Add service",
+      clientsEmptyAction: "Add client"
+    },
+    date: "Date",
+    previousPeriod: "Previous period",
+    nextPeriod: "Next period",
+    edit: "Edit",
+    compact: "Compact",
+    normal: "Normal",
+    phoneCopied: "Phone copied",
+    copyPhone: "Copy phone",
+    newService: "New service"
+  },
+  fr: {
+    mobile: {
+      emptyTitle: "Aucune réservation aujourd’hui",
+      emptyText: "Ajoutez le premier rendez-vous ou activez la réservation en ligne.",
+      addBooking: "Ajouter un rendez-vous",
+      setupOnlineBooking: "Configurer la réservation",
+      firstHintTitle: "Les clients peuvent réserver seuls",
+      firstHintText: "Les créneaux libres deviennent disponibles en ligne, avec moins de messages et sans doublons.",
+      firstHintAction: "Créer le premier rendez-vous",
+      shareTitle: "Les clients pourront réserver seuls",
+      shareAction: "Activer la réservation",
+      checklistTitle: "Checklist de lancement",
+      checklistProgress: (done: number, total: number) => `${done} sur ${total}`,
+      checklistServices: "Ajouter un service",
+      checklistSchedule: "Configurer le planning",
+      checklistBooking: "Activer la réservation",
+      checklistShare: "Partager le lien",
+      collapse: "Réduire",
+      expand: "Développer",
+      dismiss: "Masquer",
+      servicesEmptyTitle: "Aucun service",
+      servicesEmptyText: "Ajoutez des services avec durée et prix pour créer des réservations plus vite.",
+      servicesEmptyAction: "Ajouter un service",
+      clientsEmptyAction: "Ajouter un client"
+    },
+    date: "Date",
+    previousPeriod: "Période précédente",
+    nextPeriod: "Période suivante",
+    edit: "Modifier",
+    compact: "Compact",
+    normal: "Normal",
+    phoneCopied: "Téléphone copié",
+    copyPhone: "Copier le téléphone",
+    newService: "Nouveau service"
+  },
+  pl: {
+    mobile: {
+      emptyTitle: "Brak rezerwacji na dziś",
+      emptyText: "Dodaj pierwszą wizytę albo włącz rezerwacje online dla klientów.",
+      addBooking: "Dodaj wizytę",
+      setupOnlineBooking: "Skonfiguruj rezerwacje online",
+      firstHintTitle: "Klienci mogą rezerwować sami",
+      firstHintText: "Wolne terminy z kalendarza są dostępne online, więc jest mniej wiadomości i brak podwójnych rezerwacji.",
+      firstHintAction: "Utwórz pierwszą wizytę",
+      shareTitle: "Klienci będą mogli rezerwować sami",
+      shareAction: "Włącz rezerwacje online",
+      checklistTitle: "Lista startowa",
+      checklistProgress: (done: number, total: number) => `${done} z ${total}`,
+      checklistServices: "Dodaj usługę",
+      checklistSchedule: "Ustaw grafik",
+      checklistBooking: "Włącz rezerwacje",
+      checklistShare: "Udostępnij link",
+      collapse: "Zwiń",
+      expand: "Rozwiń",
+      dismiss: "Ukryj",
+      servicesEmptyTitle: "Brak usług",
+      servicesEmptyText: "Dodaj usługi z czasem trwania i ceną, aby szybciej tworzyć rezerwacje.",
+      servicesEmptyAction: "Dodaj usługę",
+      clientsEmptyAction: "Dodaj klienta"
+    },
+    date: "Data",
+    previousPeriod: "Poprzedni okres",
+    nextPeriod: "Następny okres",
+    edit: "Edytuj",
+    compact: "Kompaktowy",
+    normal: "Zwykły",
+    phoneCopied: "Telefon skopiowany",
+    copyPhone: "Kopiuj telefon",
+    newService: "Nowa usługa"
+  },
+  cs: {
+    mobile: {
+      emptyTitle: "Dnes nejsou žádné rezervace",
+      emptyText: "Přidejte první návštěvu nebo zapněte online rezervace pro klienty.",
+      addBooking: "Přidat návštěvu",
+      setupOnlineBooking: "Nastavit online rezervace",
+      firstHintTitle: "Klienti se mohou objednat sami",
+      firstHintText: "Volné časy v kalendáři budou dostupné online, méně zpráv a žádné dvojité rezervace.",
+      firstHintAction: "Vytvořit první návštěvu",
+      shareTitle: "Klienti se budou moci objednat sami",
+      shareAction: "Zapnout online rezervace",
+      checklistTitle: "Startovní checklist",
+      checklistProgress: (done: number, total: number) => `${done} z ${total}`,
+      checklistServices: "Přidat službu",
+      checklistSchedule: "Nastavit rozvrh",
+      checklistBooking: "Zapnout rezervace",
+      checklistShare: "Sdílet odkaz",
+      collapse: "Sbalit",
+      expand: "Rozbalit",
+      dismiss: "Skrýt",
+      servicesEmptyTitle: "Zatím žádné služby",
+      servicesEmptyText: "Přidejte služby s délkou a cenou pro rychlejší vytváření rezervací.",
+      servicesEmptyAction: "Přidat službu",
+      clientsEmptyAction: "Přidat klienta"
+    },
+    date: "Datum",
+    previousPeriod: "Předchozí období",
+    nextPeriod: "Další období",
+    edit: "Upravit",
+    compact: "Kompaktní",
+    normal: "Normální",
+    phoneCopied: "Telefon zkopírován",
+    copyPhone: "Kopírovat telefon",
+    newService: "Nová služba"
+  },
+  es: {
+    mobile: {
+      emptyTitle: "No hay reservas hoy",
+      emptyText: "Añade la primera cita o activa la reserva online para clientes.",
+      addBooking: "Añadir cita",
+      setupOnlineBooking: "Configurar reserva online",
+      firstHintTitle: "Los clientes pueden reservar solos",
+      firstHintText: "Los huecos libres del calendario aparecen online, con menos mensajes y sin reservas duplicadas.",
+      firstHintAction: "Crear primera cita",
+      shareTitle: "Los clientes podrán reservar solos",
+      shareAction: "Activar reserva online",
+      checklistTitle: "Lista de inicio",
+      checklistProgress: (done: number, total: number) => `${done} de ${total}`,
+      checklistServices: "Añadir servicio",
+      checklistSchedule: "Configurar horario",
+      checklistBooking: "Activar reservas",
+      checklistShare: "Compartir enlace",
+      collapse: "Contraer",
+      expand: "Expandir",
+      dismiss: "Ocultar",
+      servicesEmptyTitle: "Aún no hay servicios",
+      servicesEmptyText: "Añade servicios con duración y precio para crear reservas más rápido.",
+      servicesEmptyAction: "Añadir servicio",
+      clientsEmptyAction: "Añadir cliente"
+    },
+    date: "Fecha",
+    previousPeriod: "Periodo anterior",
+    nextPeriod: "Periodo siguiente",
+    edit: "Editar",
+    compact: "Compacto",
+    normal: "Normal",
+    phoneCopied: "Teléfono copiado",
+    copyPhone: "Copiar teléfono",
+    newService: "Nuevo servicio"
+  },
+  de: {
+    mobile: {
+      emptyTitle: "Heute keine Buchungen",
+      emptyText: "Füge den ersten Termin hinzu oder aktiviere Online-Buchung für Kunden.",
+      addBooking: "Termin hinzufügen",
+      setupOnlineBooking: "Online-Buchung einrichten",
+      firstHintTitle: "Kunden können selbst buchen",
+      firstHintText: "Freie Zeiten im Kalender werden online verfügbar, mit weniger Nachrichten und ohne Doppelbuchungen.",
+      firstHintAction: "Ersten Termin erstellen",
+      shareTitle: "Kunden können selbst buchen",
+      shareAction: "Online-Buchung aktivieren",
+      checklistTitle: "Start-Checkliste",
+      checklistProgress: (done: number, total: number) => `${done} von ${total}`,
+      checklistServices: "Leistung hinzufügen",
+      checklistSchedule: "Zeitplan einrichten",
+      checklistBooking: "Buchung aktivieren",
+      checklistShare: "Link teilen",
+      collapse: "Einklappen",
+      expand: "Ausklappen",
+      dismiss: "Ausblenden",
+      servicesEmptyTitle: "Noch keine Leistungen",
+      servicesEmptyText: "Füge Leistungen mit Dauer und Preis hinzu, um Buchungen schneller zu erstellen.",
+      servicesEmptyAction: "Leistung hinzufügen",
+      clientsEmptyAction: "Kunden hinzufügen"
+    },
+    date: "Datum",
+    previousPeriod: "Vorheriger Zeitraum",
+    nextPeriod: "Nächster Zeitraum",
+    edit: "Bearbeiten",
+    compact: "Kompakt",
+    normal: "Normal",
+    phoneCopied: "Telefon kopiert",
+    copyPhone: "Telefon kopieren",
+    newService: "Neue Leistung"
+  }
+} as const;
 type CalendarCopy = (typeof BASE_CALENDAR_TEXT)[keyof typeof BASE_CALENDAR_TEXT];
 
 const CALENDAR_TEXT: Record<AppLanguage, CalendarCopy> = {
@@ -3070,86 +3353,8 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
       ),
     [memberCalendars]
   );
-  const mobileOnboardingCopy = useMemo(() => {
-    if (uiLanguage === "en") {
-      return {
-        emptyTitle: "No bookings today",
-        emptyText: "Add the first appointment or open online booking for clients.",
-        addBooking: "Add appointment",
-        setupOnlineBooking: "Set up online booking",
-        firstHintTitle: "Clients can book themselves",
-        firstHintText: "Free slots in your calendar become available online, so there are fewer messages and no double bookings.",
-        firstHintAction: "Create first appointment",
-        shareTitle: "Clients will be able to book themselves",
-        shareAction: "Enable online booking",
-        checklistTitle: "Setup checklist",
-        checklistProgress: (done: number, total: number) => `${done} of ${total}`,
-        checklistServices: "Add service",
-        checklistSchedule: "Set schedule",
-        checklistBooking: "Enable online booking",
-        checklistShare: "Share link",
-        collapse: "Collapse",
-        expand: "Expand",
-        dismiss: "Dismiss",
-        servicesEmptyTitle: "No services yet",
-        servicesEmptyText: "Add services with duration and price so bookings are created faster.",
-        servicesEmptyAction: "Add service",
-        clientsEmptyAction: "Add client"
-      };
-    }
-
-    if (uiLanguage === "uk") {
-      return {
-        emptyTitle: "Сьогодні записів немає",
-        emptyText: "Додайте перший запис або відкрийте онлайн-запис для клієнтів.",
-        addBooking: "Додати запис",
-        setupOnlineBooking: "Налаштувати онлайн-запис",
-        firstHintTitle: "Клієнти можуть записуватися самі",
-        firstHintText: "Вільні слоти в календарі стають доступними онлайн, тож менше повідомлень і жодних подвійних записів.",
-        firstHintAction: "Створити перший запис",
-        shareTitle: "Клієнти зможуть записуватися самі",
-        shareAction: "Увімкнути онлайн-запис",
-        checklistTitle: "Чеклист запуску",
-        checklistProgress: (done: number, total: number) => `${done} з ${total}`,
-        checklistServices: "Додати послугу",
-        checklistSchedule: "Налаштувати графік",
-        checklistBooking: "Увімкнути онлайн-запис",
-        checklistShare: "Поділитися посиланням",
-        collapse: "Згорнути",
-        expand: "Розгорнути",
-        dismiss: "Сховати",
-        servicesEmptyTitle: "Послуг ще немає",
-        servicesEmptyText: "Додайте послуги з тривалістю та ціною, щоб створювати записи швидше.",
-        servicesEmptyAction: "Додати послугу",
-        clientsEmptyAction: "Додати клієнта"
-      };
-    }
-
-    return {
-      emptyTitle: "Сегодня записей нет",
-      emptyText: "Добавьте первую запись или откройте онлайн-запись для клиентов.",
-      addBooking: "Добавить запись",
-      setupOnlineBooking: "Настроить онлайн-запись",
-      firstHintTitle: "Клиенты могут записываться сами",
-      firstHintText: "Свободные окна в календаре становятся доступными онлайн, меньше переписок и без двойных записей.",
-      firstHintAction: "Создать первую запись",
-      shareTitle: "Клиенты смогут записываться сами",
-      shareAction: "Включить онлайн-запись",
-      checklistTitle: "Чеклист запуска",
-      checklistProgress: (done: number, total: number) => `${done} из ${total}`,
-      checklistServices: "Добавить услугу",
-      checklistSchedule: "Настроить график",
-      checklistBooking: "Включить онлайн-запись",
-      checklistShare: "Поделиться ссылкой",
-      collapse: "Свернуть",
-      expand: "Развернуть",
-      dismiss: "Скрыть",
-      servicesEmptyTitle: "Услуг пока нет",
-      servicesEmptyText: "Добавьте услуги с длительностью и ценой, чтобы быстрее создавать записи.",
-      servicesEmptyAction: "Добавить услугу",
-      clientsEmptyAction: "Добавить клиента"
-    };
-  }, [uiLanguage]);
+  const auxText = CALENDAR_AUX_TEXT[uiLanguage] ?? CALENDAR_AUX_TEXT.en;
+  const mobileOnboardingCopy = auxText.mobile;
   const mobileChecklistItems = useMemo(
     () => [
       { key: "services", label: mobileOnboardingCopy.checklistServices, done: workspaceServices.length > 0 },
@@ -3354,14 +3559,11 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
   const selectedMonthLabel = new Date(`${selectedDate}T00:00:00`).toLocaleDateString(locale, {
     month: "long"
   });
-  const datePickerButtonLabel = uiLanguage === "en" ? "Date" : "Дата";
-  const datePickerTodayLabel = uiLanguage === "en" ? "Today" : uiLanguage === "uk" ? "Сьогодні" : "Сегодня";
-  const previousPeriodLabel =
-    uiLanguage === "en" ? "Previous period" : uiLanguage === "uk" ? "Попередній період" : "Предыдущий период";
-  const nextPeriodLabel =
-    uiLanguage === "en" ? "Next period" : uiLanguage === "uk" ? "Наступний період" : "Следующий период";
-  const editBookingLabel =
-    uiLanguage === "en" ? "Edit" : uiLanguage === "uk" ? "Редагувати" : "Редактировать";
+  const datePickerButtonLabel = auxText.date;
+  const datePickerTodayLabel = t.today;
+  const previousPeriodLabel = auxText.previousPeriod;
+  const nextPeriodLabel = auxText.nextPeriod;
+  const editBookingLabel = auxText.edit;
   const datePickerMonthLabel = new Date(`${datePickerMonth}T00:00:00`).toLocaleDateString(locale, {
     month: "long",
     year: "numeric"
@@ -3383,18 +3585,7 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
         : viewMode === "threeDay"
           ? selectedThreeDayLabel
           : selectedDateLong;
-  const densityToggleLabel =
-    uiLanguage === "uk"
-      ? isOffHoursCompressed
-        ? "Стиснутий"
-        : "Звичайний"
-      : uiLanguage === "en"
-        ? isOffHoursCompressed
-          ? "Compact"
-          : "Normal"
-        : isOffHoursCompressed
-          ? "Сжатый"
-          : "Обычный";
+  const densityToggleLabel = isOffHoursCompressed ? auxText.compact : auxText.normal;
   const viewModeOptions: Array<{ value: CalendarViewMode; label: string }> = [
     { value: "day", label: t.day },
     { value: "threeDay", label: t.threeDays },
@@ -4136,16 +4327,9 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
       return;
     }
 
-    const copiedLabel =
-      uiLanguage === "en"
-        ? "Phone copied"
-        : uiLanguage === "uk"
-          ? "Телефон скопійовано"
-          : "Телефон скопирован";
-
     try {
       await navigator.clipboard.writeText(phone);
-      showToast(copiedLabel, "success");
+      showToast(auxText.phoneCopied, "success");
     } catch {
       showToast(phone, "info");
     }
@@ -6270,7 +6454,7 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
                 <span>{t.clients}</span>
               </button>
               <button type="button" onClick={openMobileNewService}>
-                <strong>{uiLanguage === "en" ? "New service" : uiLanguage === "uk" ? "Нова послуга" : "Новая услуга"}</strong>
+                <strong>{auxText.newService}</strong>
                 <span>{t.services}</span>
               </button>
             </div>
@@ -7484,8 +7668,8 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
                       className={`${styles.calendarContactAction} ${styles.calendarContactActionCopy}`}
                       onClick={() => void copySelectedAppointmentPhone()}
                       disabled={!selectedAppointmentContactPhone && !detailsCustomerPhoneDraft.trim()}
-                      aria-label={uiLanguage === "en" ? "Copy phone" : uiLanguage === "uk" ? "Скопіювати телефон" : "Скопировать телефон"}
-                      title={uiLanguage === "en" ? "Copy phone" : uiLanguage === "uk" ? "Скопіювати телефон" : "Скопировать телефон"}
+                      aria-label={auxText.copyPhone}
+                      title={auxText.copyPhone}
                     >
                       <span className={styles.calendarContactActionIcon}>⧉</span>
                     </button>

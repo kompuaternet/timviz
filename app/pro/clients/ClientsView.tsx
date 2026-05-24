@@ -7,7 +7,7 @@ import ProWorkspaceHeader from "../ProWorkspaceHeader";
 import type { ClientListItem } from "../../../lib/pro-clients";
 import type { OnboardingCtaState } from "../../../lib/pro-onboarding";
 import { localeBySiteLanguage } from "../../../lib/site-language";
-import { isProLanguage, type BaseProLanguage, type ProLanguage } from "../i18n";
+import { isProLanguage, type ProLanguage } from "../i18n";
 import {
   buildInternationalPhone,
   formatPhoneLocal,
