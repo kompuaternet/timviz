@@ -23,8 +23,10 @@ export function localizedPath(language: SiteLanguage, pathname = "/") {
   return `/${language}${normalized ? `/${normalized}` : ""}`;
 }
 
+export const testCompanySlug = "google-runo";
+
 export function companyPath(language: SiteLanguage) {
-  return localizedPath(language, "/businesses/google-runo");
+  return localizedPath(language, `/businesses/${testCompanySlug}`);
 }
 
 export function catalogPath(language: SiteLanguage) {

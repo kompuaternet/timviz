@@ -39,6 +39,7 @@ function findBusinessByToken(
   token: string,
   directory: Awaited<ReturnType<typeof getBusinessDirectorySnapshot>>
 ) {
+  const normalizedToken = String(token || "").trim().toLowerCase();
   const direct = directory.businesses.find((item) => item.id === token);
   if (direct) {
     return direct;
@@ -47,6 +48,14 @@ function findBusinessByToken(
   const resolvedBusinessId = findBusinessIdByPublicPath(token, directory.businesses);
   if (resolvedBusinessId) {
     return directory.businesses.find((item) => item.id === resolvedBusinessId) ?? null;
+  }
+
+  if (normalizedToken === "google-runo") {
+    return (
+      directory.businesses.find((item) => item.name.trim().toLowerCase() === "runo2") ??
+      directory.businesses.find((item) => item.name.trim().toLowerCase() === "runo") ??
+      null
+    );
   }
 
   return null;

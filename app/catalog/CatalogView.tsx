@@ -1382,7 +1382,13 @@ export default function CatalogView({
           />
 
           <div className="catalog-top-meta">
-            <div className="catalog-filters inline">
+            <div
+              className="catalog-filters inline"
+              tabIndex={0}
+              aria-label={`${t.resultCount(results.length)} · ${formatDateTime(date, time, language)} · ${
+                hasCoords ? t.sortedByDistance : location || t.withoutGeolocation
+              }`}
+            >
               <span>{t.resultCount(results.length)}</span>
               <span>{formatDateTime(date, time, language)}</span>
               <span>{hasCoords ? t.sortedByDistance : location || t.withoutGeolocation}</span>

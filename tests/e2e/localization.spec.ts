@@ -9,6 +9,7 @@ import {
   openAndSettle,
   setupPageGuards,
   successPath,
+  testCompanySlug,
   type TestLanguage
 } from "./helpers/site";
 import {
@@ -131,7 +132,7 @@ test.describe("localization browser QA", () => {
       const option = menu.locator("button").filter({ hasText: shortLabel }).first();
       await expect(option, `Language option ${language}`).toBeVisible();
       await option.click();
-      await expect(page).toHaveURL(new RegExp(`/${language}/businesses/google-runo`));
+      await expect(page).toHaveURL(new RegExp(`/${language}/businesses/${testCompanySlug}`));
       await assertHtmlLang(page, language);
       await assertLanguagePersisted(page, language);
       await page.reload({ waitUntil: "domcontentloaded" });
