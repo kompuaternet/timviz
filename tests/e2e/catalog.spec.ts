@@ -23,32 +23,30 @@ test.describe("catalog", () => {
     await page.locator(".public-search input").first().fill("маникюр");
     await page.locator(".public-search button[type='submit']").click();
     await page.waitForLoadState("networkidle").catch(() => undefined);
-    await page.waitForSelector(".catalog-result-card, .catalog-empty", { timeout: 20_000 });
-
     const cards = page.locator(".catalog-result-card");
-    if ((await cards.count()) > 0) {
-      await expect(cards.first()).toBeVisible();
-      await expect(cards.first().locator(".company-name")).toBeVisible();
-      await expect(cards.first().locator(".catalog-card-image")).toBeVisible();
-      await expect(cards.first().locator(".catalog-result-actions a").first()).toBeVisible();
+    await expect
+      .poll(() => cards.count(), { timeout: 20_000, message: "catalog search should render company cards" })
+      .toBeGreaterThan(0);
 
-      const addressLineHeight = await cards.first().locator(".address").evaluate((element) => {
-        const style = getComputedStyle(element);
-        const lineHeight = Number.parseFloat(style.lineHeight);
-        return {
-          height: element.getBoundingClientRect().height,
-          maxExpected: Number.isFinite(lineHeight) ? lineHeight * 2.5 : 60
-        };
-      });
-      expect(addressLineHeight.height).toBeLessThanOrEqual(addressLineHeight.maxExpected);
+    await expect(cards.first()).toBeVisible();
+    await expect(cards.first().locator(".company-name")).toBeVisible();
+    await expect(cards.first().locator(".catalog-card-image")).toBeVisible();
+    await expect(cards.first().locator(".catalog-result-actions a").first()).toBeVisible();
 
-      const moreButton = cards.first().locator(".catalog-result-more-button");
-      if (await moreButton.isVisible().catch(() => false)) {
-        await moreButton.click();
-        await expect(cards.first().locator(".catalog-result-services")).toBeVisible();
-      }
-    } else {
-      await expect(page.locator(".catalog-empty")).toBeVisible();
+    const addressLineHeight = await cards.first().locator(".address").evaluate((element) => {
+      const style = getComputedStyle(element);
+      const lineHeight = Number.parseFloat(style.lineHeight);
+      return {
+        height: element.getBoundingClientRect().height,
+        maxExpected: Number.isFinite(lineHeight) ? lineHeight * 2.5 : 60
+      };
+    });
+    expect(addressLineHeight.height).toBeLessThanOrEqual(addressLineHeight.maxExpected);
+
+    const moreButton = cards.first().locator(".catalog-result-more-button");
+    if (await moreButton.isVisible().catch(() => false)) {
+      await moreButton.click();
+      await expect(cards.first().locator(".catalog-result-services")).toBeVisible();
     }
 
     if (await page.locator(".catalog-map-full").isVisible().catch(() => false)) {

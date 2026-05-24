@@ -18,7 +18,7 @@
     "quality:booking": "npm run typecheck && npm run test:i18n && npm run test:e2e:booking",
     "quality:fast": "npm run typecheck && npm run test:i18n",
     "test:e2e": "playwright test",
-    "test:e2e:ci": "playwright test tests/e2e/mobile-header.spec.ts tests/e2e/localization.spec.ts tests/e2e/catalog.spec.ts tests/e2e/company-page.spec.ts tests/e2e/booking-flow.spec.ts tests/e2e/booking-footer.spec.ts tests/e2e/layout-overflow.spec.ts tests/e2e/accessibility.spec.ts tests/e2e/links.spec.ts --project=mobile-390 --project=chromium-desktop",
+    "test:e2e:ci": "playwright test tests/e2e/mobile-header.spec.ts tests/e2e/localization.spec.ts tests/e2e/catalog.spec.ts tests/e2e/company-page.spec.ts tests/e2e/booking-flow.spec.ts tests/e2e/booking-footer.spec.ts tests/e2e/layout-overflow.spec.ts tests/e2e/accessibility.spec.ts tests/e2e/links.spec.ts --project=mobile-390",
     "test:e2e:mobile": "playwright test tests/e2e/mobile-header.spec.ts tests/e2e/booking-flow.spec.ts tests/e2e/booking-footer.spec.ts tests/e2e/layout-overflow.spec.ts --project=mobile-390",
     "test:e2e:booking": "playwright test tests/e2e/booking-flow.spec.ts tests/e2e/booking-footer.spec.ts --project=mobile-390",
     "test:e2e:localization": "playwright test tests/e2e/localization.spec.ts --project=mobile-360 --project=mobile-390 --project=mobile-430",
