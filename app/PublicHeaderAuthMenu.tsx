@@ -49,8 +49,8 @@ const authMenuCopy: Record<SiteLanguage, AuthMenuCopy> = withExtraLanguageFallba
     myAccount: "My account",
     customerLogin: "Client sign in",
     customerCabinet: "Customer account",
-    masterLogin: "Master sign in",
-    masterCabinet: "Master dashboard",
+    masterLogin: "Professional sign in",
+    masterCabinet: "Professional dashboard",
     profile: "Profile",
     openMenu: "Open account menu"
   }

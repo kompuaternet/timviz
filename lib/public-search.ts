@@ -128,11 +128,11 @@ const genericCopy = {
     ru: "Онлайн-запись выключена",
     uk: "Онлайн-запис вимкнено",
     en: "Online booking is off",
-    fr: "Réservation en ligne désactivée",
-    pl: "Rezerwacja online wyłączona",
-    cs: "Online rezervace vypnutá",
-    es: "Reserva online desactivada",
-    de: "Online-Buchung deaktiviert"
+    fr: "RDV en ligne désactivé",
+    pl: "Zapisy online wyłączone",
+    cs: "Online objednání vypnuté",
+    es: "Cita online desactivada",
+    de: "Online-Termin deaktiviert"
   },
   noWorkingHours: { ru: "Нет рабочего времени", uk: "Немає робочого часу", en: "No working hours", fr: "Aucun horaire de travail", pl: "Brak godzin pracy", cs: "Žádná pracovní doba", es: "Sin horario de trabajo", de: "Keine Arbeitszeiten" },
   busyAtTime: { ru: "На это время занято", uk: "На цей час зайнято", en: "Busy at this time", fr: "Occupé à cette heure", pl: "Zajęte o tej godzinie", cs: "V tento čas obsazeno", es: "Ocupado a esa hora", de: "Zu dieser Zeit belegt" }

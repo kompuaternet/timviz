@@ -10,3 +10,6 @@ backups
 logs
 .tmp.driveupload
 apps/mobile/build-local/
+playwright-report/
+test-results/
+.lighthouseci/

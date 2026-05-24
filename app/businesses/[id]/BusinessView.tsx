@@ -31,6 +31,7 @@ import {
 import BrandLogo from "../../BrandLogo";
 import GlobalLanguageSwitcher from "../../GlobalLanguageSwitcher";
 import PublicHeaderAuthMenu from "../../PublicHeaderAuthMenu";
+import { addBookingBreadcrumb } from "../../sentry-breadcrumbs";
 import { createBusinessBookingAction } from "./actions";
 
 type TeamMember = {
@@ -158,11 +159,11 @@ const businessCopy: Record<SiteLanguage, BusinessCopy> = withEnglishFallback<Bus
     services: "Услуги",
     team: "Специалисты",
     details: "Общие сведения",
-    bookNow: "Забронировать",
+    bookNow: "Записаться",
     onlineBookingOff: "Онлайн-запись выключена",
     onlineBookingOffText:
       "Владелец компании пока не принимает онлайн-записи с сайта. Страница компании остаётся доступной для просмотра.",
-    bookingFlowTitle: "Бронирование",
+    bookingFlowTitle: "Запись",
     serviceStep: "Услуги",
     specialistStep: "Специалист",
     timeStep: "Время",
@@ -174,7 +175,7 @@ const businessCopy: Record<SiteLanguage, BusinessCopy> = withEnglishFallback<Bus
     chooseSpecialist: "Выберите специалиста",
     chooseTime: "Выберите время",
     continue: "Продолжить",
-    goToConfirm: "Перейти к подтверждению",
+    goToConfirm: "К подтверждению",
     total: "Всего к оплате",
     close: "Закрыть",
     back: "Назад",
@@ -228,11 +229,11 @@ const businessCopy: Record<SiteLanguage, BusinessCopy> = withEnglishFallback<Bus
     services: "Послуги",
     team: "Спеціалісти",
     details: "Загальна інформація",
-    bookNow: "Забронювати",
+    bookNow: "Записатися",
     onlineBookingOff: "Онлайн-запис вимкнено",
     onlineBookingOffText:
       "Власник компанії поки що не приймає онлайн-записи із сайту. Сторінка компанії лишається доступною для перегляду.",
-    bookingFlowTitle: "Бронювання",
+    bookingFlowTitle: "Запис",
     serviceStep: "Послуги",
     specialistStep: "Спеціаліст",
     timeStep: "Час",
@@ -244,7 +245,7 @@ const businessCopy: Record<SiteLanguage, BusinessCopy> = withEnglishFallback<Bus
     chooseSpecialist: "Оберіть спеціаліста",
     chooseTime: "Оберіть час",
     continue: "Продовжити",
-    goToConfirm: "Перейти до підтвердження",
+    goToConfirm: "До підтвердження",
     total: "Усього до оплати",
     close: "Закрити",
     back: "Назад",
@@ -302,7 +303,7 @@ const businessCopy: Record<SiteLanguage, BusinessCopy> = withEnglishFallback<Bus
     onlineBookingOff: "Online booking is turned off",
     onlineBookingOffText:
       "The owner is not accepting public bookings from the site yet. The company page is still available for viewing.",
-    bookingFlowTitle: "Booking",
+    bookingFlowTitle: "Appointment",
     serviceStep: "Services",
     specialistStep: "Specialist",
     timeStep: "Time",
@@ -314,7 +315,7 @@ const businessCopy: Record<SiteLanguage, BusinessCopy> = withEnglishFallback<Bus
     chooseSpecialist: "Choose a specialist",
     chooseTime: "Choose a time",
     continue: "Continue",
-    goToConfirm: "Go to confirmation",
+    goToConfirm: "Review details",
     total: "Total",
     close: "Close",
     back: "Back",
@@ -326,12 +327,12 @@ const businessCopy: Record<SiteLanguage, BusinessCopy> = withEnglishFallback<Bus
     selectedServices: "Visit services",
     addAnother: "Add another service",
     signInGoogle: "Continue with Google",
-    signInHint: "Sign in with Google first, then add your phone number and confirm the booking.",
+    signInHint: "Sign in with Google first, then add your phone number and confirm the appointment.",
     phoneTitle: "Phone for confirmation",
     phonePlaceholder: "Your phone number",
     confirmBooking: "Book now",
     confirmBookingSubmitting: "Submitting…",
-    pendingHint: "After sending, the booking request appears in the owner calendar and waits for confirmation.",
+    pendingHint: "After sending, the appointment request appears in the owner calendar and waits for confirmation.",
     workingHours: "Working hours",
     noTimeForDay: "No free time on this day.",
     noFreeDays: "There are no free slots in the coming days.",
@@ -343,7 +344,7 @@ const businessCopy: Record<SiteLanguage, BusinessCopy> = withEnglishFallback<Bus
     summary: "Your visit",
     chooseService: "Choose at least one service",
     fromPrice: "from",
-    reviews: "Online booking",
+    reviews: "Online appointment",
     verifiedRequest: "The request will be sent to the owner for confirmation",
     companyInfo: "Company details",
     address: "Address",
@@ -372,11 +373,11 @@ Object.assign(businessCopy, {
     services: "Services",
     team: "Spécialistes",
     details: "À propos",
-    bookNow: "Réserver",
-    onlineBookingOff: "Réservation en ligne désactivée",
+    bookNow: "Prendre RDV",
+    onlineBookingOff: "RDV en ligne désactivé",
     onlineBookingOffText:
-      "Le propriétaire n’accepte pas encore les réservations publiques depuis le site. La page de l’entreprise reste disponible.",
-    bookingFlowTitle: "Réservation",
+      "Le propriétaire n’accepte pas encore les rendez-vous publics depuis le site. La page de l’entreprise reste disponible.",
+    bookingFlowTitle: "Rendez-vous",
     serviceStep: "Services",
     specialistStep: "Spécialiste",
     timeStep: "Heure",
@@ -388,7 +389,7 @@ Object.assign(businessCopy, {
     chooseSpecialist: "Choisissez un spécialiste",
     chooseTime: "Choisissez une heure",
     continue: "Continuer",
-    goToConfirm: "Passer à la confirmation",
+    goToConfirm: "Vérifier",
     total: "Total",
     close: "Fermer",
     back: "Retour",
@@ -400,12 +401,12 @@ Object.assign(businessCopy, {
     selectedServices: "Services du rendez-vous",
     addAnother: "Ajouter un autre service",
     signInGoogle: "Continuer avec Google",
-    signInHint: "Connectez-vous avec Google, ajoutez votre téléphone puis confirmez la réservation.",
+    signInHint: "Connectez-vous avec Google, ajoutez votre téléphone puis confirmez le rendez-vous.",
     phoneTitle: "Téléphone de confirmation",
     phonePlaceholder: "Votre numéro",
-    confirmBooking: "Réserver",
+    confirmBooking: "Demander le RDV",
     confirmBookingSubmitting: "Envoi…",
-    pendingHint: "Après l’envoi, la demande apparaîtra dans le calendrier du propriétaire et attendra confirmation.",
+    pendingHint: "Après l’envoi, la demande de rendez-vous apparaîtra dans le calendrier du propriétaire et attendra confirmation.",
     workingHours: "Horaires",
     noTimeForDay: "Aucun créneau disponible ce jour-là.",
     noFreeDays: "Aucun créneau libre dans les prochains jours.",
@@ -417,7 +418,7 @@ Object.assign(businessCopy, {
     summary: "Votre visite",
     chooseService: "Choisissez au moins un service",
     fromPrice: "à partir de",
-    reviews: "Réservation en ligne",
+    reviews: "RDV en ligne",
     verifiedRequest: "La demande sera envoyée au propriétaire pour confirmation",
     companyInfo: "Informations sur l’entreprise",
     address: "Adresse",
@@ -432,7 +433,7 @@ Object.assign(businessCopy, {
     evening: "Soir",
     comment: "Commentaire",
     commentPlaceholder: "Par exemple : Telegram est plus pratique",
-    bookCta: "Réserver"
+    bookCta: "Prendre RDV"
   },
   pl: {
     ...businessCopy.en,
@@ -443,11 +444,11 @@ Object.assign(businessCopy, {
     services: "Usługi",
     team: "Specjaliści",
     details: "O firmie",
-    bookNow: "Zarezerwuj",
-    onlineBookingOff: "Rezerwacje online są wyłączone",
+    bookNow: "Umów wizytę",
+    onlineBookingOff: "Zapisy online są wyłączone",
     onlineBookingOffText:
-      "Właściciel firmy nie przyjmuje jeszcze publicznych rezerwacji ze strony. Strona firmy pozostaje dostępna do przeglądania.",
-    bookingFlowTitle: "Rezerwacja",
+      "Właściciel firmy nie przyjmuje jeszcze publicznych zapisów ze strony. Strona firmy pozostaje dostępna do przeglądania.",
+    bookingFlowTitle: "Wizyta",
     serviceStep: "Usługi",
     specialistStep: "Specjalista",
     timeStep: "Godzina",
@@ -459,7 +460,7 @@ Object.assign(businessCopy, {
     chooseSpecialist: "Wybierz specjalistę",
     chooseTime: "Wybierz godzinę",
     continue: "Kontynuuj",
-    goToConfirm: "Przejdź do potwierdzenia",
+    goToConfirm: "Sprawdź szczegóły",
     total: "Razem",
     close: "Zamknij",
     back: "Wstecz",
@@ -471,12 +472,12 @@ Object.assign(businessCopy, {
     selectedServices: "Usługi wizyty",
     addAnother: "Dodaj kolejną usługę",
     signInGoogle: "Kontynuuj z Google",
-    signInHint: "Najpierw zaloguj się przez Google, potem dodaj telefon i potwierdź rezerwację.",
+    signInHint: "Najpierw zaloguj się przez Google, potem dodaj telefon i potwierdź wizytę.",
     phoneTitle: "Telefon do potwierdzenia",
     phonePlaceholder: "Twój numer",
-    confirmBooking: "Zarezerwuj",
+    confirmBooking: "Umów wizytę",
     confirmBookingSubmitting: "Wysyłanie…",
-    pendingHint: "Po wysłaniu prośba pojawi się w kalendarzu właściciela i będzie czekać na potwierdzenie.",
+    pendingHint: "Po wysłaniu zgłoszenie wizyty pojawi się w kalendarzu właściciela i poczeka na potwierdzenie.",
     workingHours: "Godziny pracy",
     noTimeForDay: "Tego dnia nie ma wolnych terminów.",
     noFreeDays: "W najbliższych dniach nie ma wolnych terminów.",
@@ -488,7 +489,7 @@ Object.assign(businessCopy, {
     summary: "Twoja wizyta",
     chooseService: "Wybierz co najmniej jedną usługę",
     fromPrice: "od",
-    reviews: "Rezerwacja online",
+    reviews: "Zapisy online",
     verifiedRequest: "Prośba zostanie wysłana do właściciela do potwierdzenia",
     companyInfo: "Informacje o firmie",
     address: "Adres",
@@ -503,7 +504,7 @@ Object.assign(businessCopy, {
     evening: "Wieczór",
     comment: "Komentarz",
     commentPlaceholder: "Na przykład: wygodniej pisać na Telegramie",
-    bookCta: "Rezerwuj"
+    bookCta: "Umów wizytę"
   },
   cs: {
     ...businessCopy.en,
@@ -514,11 +515,11 @@ Object.assign(businessCopy, {
     services: "Služby",
     team: "Specialisté",
     details: "O firmě",
-    bookNow: "Rezervovat",
-    onlineBookingOff: "Online rezervace jsou vypnuté",
+    bookNow: "Objednat se",
+    onlineBookingOff: "Online objednání je vypnuté",
     onlineBookingOffText:
-      "Majitel firmy zatím nepřijímá veřejné rezervace ze stránky. Stránka firmy zůstává dostupná k prohlížení.",
-    bookingFlowTitle: "Rezervace",
+      "Majitel firmy zatím nepřijímá veřejná objednání ze stránky. Stránka firmy zůstává dostupná k prohlížení.",
+    bookingFlowTitle: "Objednání",
     serviceStep: "Služby",
     specialistStep: "Specialista",
     timeStep: "Čas",
@@ -530,7 +531,7 @@ Object.assign(businessCopy, {
     chooseSpecialist: "Vyberte specialistu",
     chooseTime: "Vyberte čas",
     continue: "Pokračovat",
-    goToConfirm: "Přejít k potvrzení",
+    goToConfirm: "Zkontrolovat",
     total: "Celkem",
     close: "Zavřít",
     back: "Zpět",
@@ -542,12 +543,12 @@ Object.assign(businessCopy, {
     selectedServices: "Služby návštěvy",
     addAnother: "Přidat další službu",
     signInGoogle: "Pokračovat přes Google",
-    signInHint: "Nejprve se přihlaste přes Google, potom přidejte telefon a potvrďte rezervaci.",
+    signInHint: "Nejprve se přihlaste přes Google, potom přidejte telefon a potvrďte objednání.",
     phoneTitle: "Telefon pro potvrzení",
     phonePlaceholder: "Vaše číslo",
-    confirmBooking: "Rezervovat",
+    confirmBooking: "Objednat se",
     confirmBookingSubmitting: "Odesíláme…",
-    pendingHint: "Po odeslání se rezervace zobrazí v kalendáři majitele a bude čekat na potvrzení.",
+    pendingHint: "Po odeslání se žádost o objednání zobrazí v kalendáři majitele a bude čekat na potvrzení.",
     workingHours: "Pracovní doba",
     noTimeForDay: "Na tento den není volný čas.",
     noFreeDays: "V nejbližších dnech nejsou volné termíny.",
@@ -559,7 +560,7 @@ Object.assign(businessCopy, {
     summary: "Vaše návštěva",
     chooseService: "Vyberte alespoň jednu službu",
     fromPrice: "od",
-    reviews: "Online rezervace",
+    reviews: "Online objednání",
     verifiedRequest: "Žádost bude odeslána majiteli k potvrzení",
     companyInfo: "Informace o firmě",
     address: "Adresa",
@@ -574,7 +575,7 @@ Object.assign(businessCopy, {
     evening: "Večer",
     comment: "Komentář",
     commentPlaceholder: "Například: pohodlnější je napsat na Telegram",
-    bookCta: "Rezervovat"
+    bookCta: "Objednat se"
   },
   es: {
     ...businessCopy.en,
@@ -585,11 +586,11 @@ Object.assign(businessCopy, {
     services: "Servicios",
     team: "Especialistas",
     details: "Información",
-    bookNow: "Reservar",
-    onlineBookingOff: "La reserva online está desactivada",
+    bookNow: "Pedir cita",
+    onlineBookingOff: "La cita online está desactivada",
     onlineBookingOffText:
-      "El propietario aún no acepta reservas públicas desde el sitio. La página de la empresa sigue disponible para verla.",
-    bookingFlowTitle: "Reserva",
+      "El propietario aún no acepta citas públicas desde el sitio. La página de la empresa sigue disponible para verla.",
+    bookingFlowTitle: "Cita",
     serviceStep: "Servicios",
     specialistStep: "Especialista",
     timeStep: "Hora",
@@ -601,7 +602,7 @@ Object.assign(businessCopy, {
     chooseSpecialist: "Elige especialista",
     chooseTime: "Elige hora",
     continue: "Continuar",
-    goToConfirm: "Ir a confirmación",
+    goToConfirm: "Revisar",
     total: "Total",
     close: "Cerrar",
     back: "Atrás",
@@ -613,12 +614,12 @@ Object.assign(businessCopy, {
     selectedServices: "Servicios de la visita",
     addAnother: "Añadir otro servicio",
     signInGoogle: "Continuar con Google",
-    signInHint: "Primero inicia sesión con Google, añade tu teléfono y confirma la reserva.",
+    signInHint: "Primero inicia sesión con Google, añade tu teléfono y confirma la cita.",
     phoneTitle: "Teléfono para confirmar",
     phonePlaceholder: "Tu número",
-    confirmBooking: "Reservar",
+    confirmBooking: "Pedir cita",
     confirmBookingSubmitting: "Enviando…",
-    pendingHint: "Después de enviarla, la solicitud aparecerá en el calendario del propietario y esperará confirmación.",
+    pendingHint: "Después de enviarla, la solicitud de cita aparecerá en el calendario del propietario y esperará confirmación.",
     workingHours: "Horario",
     noTimeForDay: "No hay horarios libres para este día.",
     noFreeDays: "No hay turnos libres en los próximos días.",
@@ -630,7 +631,7 @@ Object.assign(businessCopy, {
     summary: "Tu visita",
     chooseService: "Elige al menos un servicio",
     fromPrice: "desde",
-    reviews: "Reserva online",
+    reviews: "Cita online",
     verifiedRequest: "La solicitud se enviará al propietario para confirmación",
     companyInfo: "Información de la empresa",
     address: "Dirección",
@@ -645,7 +646,7 @@ Object.assign(businessCopy, {
     evening: "Tarde",
     comment: "Comentario",
     commentPlaceholder: "Por ejemplo: es más cómodo escribir por Telegram",
-    bookCta: "Reservar"
+    bookCta: "Pedir cita"
   },
   de: {
     ...businessCopy.en,
@@ -656,11 +657,11 @@ Object.assign(businessCopy, {
     services: "Leistungen",
     team: "Spezialisten",
     details: "Über uns",
-    bookNow: "Buchen",
-    onlineBookingOff: "Online-Buchung ist deaktiviert",
+    bookNow: "Termin buchen",
+    onlineBookingOff: "Online-Termin ist deaktiviert",
     onlineBookingOffText:
-      "Der Inhaber nimmt noch keine öffentlichen Buchungen über die Website an. Die Unternehmensseite bleibt sichtbar.",
-    bookingFlowTitle: "Buchung",
+      "Der Inhaber nimmt noch keine öffentlichen Termine über die Website an. Die Unternehmensseite bleibt sichtbar.",
+    bookingFlowTitle: "Termin",
     serviceStep: "Leistungen",
     specialistStep: "Spezialist",
     timeStep: "Zeit",
@@ -684,12 +685,12 @@ Object.assign(businessCopy, {
     selectedServices: "Leistungen des Besuchs",
     addAnother: "Weitere Leistung hinzufügen",
     signInGoogle: "Mit Google fortfahren",
-    signInHint: "Melden Sie sich zuerst mit Google an, fügen Sie Ihre Telefonnummer hinzu und bestätigen Sie die Buchung.",
+    signInHint: "Melden Sie sich zuerst mit Google an, fügen Sie Ihre Telefonnummer hinzu und bestätigen Sie den Termin.",
     phoneTitle: "Telefon zur Bestätigung",
     phonePlaceholder: "Ihre Nummer",
-    confirmBooking: "Buchen",
+    confirmBooking: "Termin buchen",
     confirmBookingSubmitting: "Wird gesendet…",
-    pendingHint: "Nach dem Senden erscheint die Anfrage im Kalender des Inhabers und wartet auf Bestätigung.",
+    pendingHint: "Nach dem Senden erscheint die Terminanfrage im Kalender des Inhabers und wartet auf Bestätigung.",
     workingHours: "Öffnungszeiten",
     noTimeForDay: "An diesem Tag gibt es keine freien Zeiten.",
     noFreeDays: "In den nächsten Tagen gibt es keine freien Termine.",
@@ -701,7 +702,7 @@ Object.assign(businessCopy, {
     summary: "Dein Besuch",
     chooseService: "Wähle mindestens eine Leistung",
     fromPrice: "ab",
-    reviews: "Online-Buchung",
+    reviews: "Online-Termin",
     verifiedRequest: "Die Anfrage wird zur Bestätigung an den Inhaber gesendet",
     companyInfo: "Unternehmensdetails",
     address: "Adresse",
@@ -716,7 +717,7 @@ Object.assign(businessCopy, {
     evening: "Abend",
     comment: "Kommentar",
     commentPlaceholder: "Zum Beispiel: Telegram ist bequemer",
-    bookCta: "Buchen"
+    bookCta: "Termin buchen"
   }
 });
 
@@ -783,7 +784,9 @@ function formatSelectedDate(dateKey: string, locale: string) {
 }
 
 function formatWeekday(dateKey: string, locale: string) {
-  return new Intl.DateTimeFormat(locale, { weekday: "short" }).format(new Date(`${dateKey}T00:00:00`));
+  return new Intl.DateTimeFormat(locale, { weekday: "short" })
+    .format(new Date(`${dateKey}T00:00:00`))
+    .toLocaleLowerCase(locale);
 }
 
 function addDays(dateKey: string, amount: number) {
@@ -826,11 +829,7 @@ function buildMonthDays(month: Date) {
 }
 
 function formatMoney(value: number, locale: string) {
-  return new Intl.NumberFormat(locale, {
-    style: "currency",
-    currency: "UAH",
-    maximumFractionDigits: 0
-  }).format(value);
+  return `${new Intl.NumberFormat(locale, { maximumFractionDigits: 0 }).format(value)}\u00A0₴`;
 }
 
 function getStepIndex(step: BookingStep) {
@@ -1393,6 +1392,11 @@ export default function BusinessView({
       setSelectedServiceIds([serviceId]);
     }
 
+    addBookingBreadcrumb("booking modal opened", {
+      language,
+      businessId: business.id,
+      serviceId
+    });
     setBookingStep("services");
     setBookingOpen(true);
   }
@@ -1406,10 +1410,20 @@ export default function BusinessView({
     setSelectedServiceIds((current) => {
       const currentIds = new Set(current);
       if (currentIds.has(serviceId)) {
-        return current.filter((item) => item !== serviceId);
+        const next = current.filter((item) => item !== serviceId);
+        addBookingBreadcrumb("booking service removed", {
+          businessId: business.id,
+          serviceIds: next
+        });
+        return next;
       }
 
-      return [...current, serviceId];
+      const next = [...current, serviceId];
+      addBookingBreadcrumb("booking service selected", {
+        businessId: business.id,
+        serviceIds: next
+      });
+      return next;
     });
   }
 
@@ -1432,7 +1446,16 @@ export default function BusinessView({
   function goNext() {
     const currentIndex = getStepIndex(bookingStep);
     if (currentIndex < bookingSteps.length - 1 && canGoToNextStep()) {
-      setBookingStep(bookingSteps[currentIndex + 1]);
+      const nextStep = bookingSteps[currentIndex + 1];
+      addBookingBreadcrumb("booking step changed", {
+        businessId: business.id,
+        step: nextStep,
+        serviceIds: selectedServiceIds,
+        specialistId: selectedProfessionalId,
+        dateSelected: Boolean(selectedDate),
+        timeSelected: Boolean(selectedTime)
+      });
+      setBookingStep(nextStep);
     }
   }
 
@@ -1845,7 +1868,7 @@ export default function BusinessView({
                   <button type="button" className="company-modal-back" onClick={goBack} aria-label={t.back}>
                     ←
                   </button>
-                  <div className="company-booking-progress">
+                  <div className="company-booking-progress" role="group" tabIndex={0} aria-label={t.bookingFlowTitle}>
                     {bookingSteps.map((step) => (
                       <span
                         key={step}
@@ -2031,7 +2054,15 @@ export default function BusinessView({
                                 key={slot}
                                 type="button"
                                 className={`company-slot-item ${selectedTime === slot ? "active" : ""}`}
-                                onClick={() => setSelectedTime(slot)}
+                                onClick={() => {
+                                  addBookingBreadcrumb("booking time selected", {
+                                    businessId: business.id,
+                                    dateSelected: Boolean(selectedDate),
+                                    timeSelected: true,
+                                    specialistId: selectedProfessionalId
+                                  });
+                                  setSelectedTime(slot);
+                                }}
                               >
                                 {slot}
                               </button>
@@ -2096,6 +2127,14 @@ export default function BusinessView({
                             setPhoneError(t.phoneError);
                             return;
                           }
+
+                          addBookingBreadcrumb("booking submit started", {
+                            businessId: business.id,
+                            serviceIds: selectedServiceIds,
+                            specialistId: selectedProfessionalId,
+                            dateSelected: Boolean(selectedDate),
+                            timeSelected: Boolean(selectedTime)
+                          });
 
                           if (typeof window !== "undefined") {
                             window.localStorage.removeItem(getDraftStorageKey(business.id));

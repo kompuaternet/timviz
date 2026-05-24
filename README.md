@@ -14,6 +14,69 @@ npm install
 npm run dev -- --hostname 127.0.0.1 --port 3005
 ```
 
+## Quality / Testing
+
+В проект добавлен автоматический слой качества для публичного сайта, каталога, страницы компании, бронирования, локализации и мобильной верстки.
+
+Локальный запуск:
+
+```bash
+npm run typecheck
+npm run quality:fast
+npm run quality:ui
+npm run quality:booking
+npm run quality
+npm run test:i18n
+npm run test:e2e
+npm run test:e2e:mobile
+npm run test:e2e:localization
+npm run test:e2e:booking
+npm run test:e2e:catalog
+npm run test:e2e:company
+npm run test:e2e:ui
+npm run test:e2e:headed
+npm run test:e2e:report
+npm run test:lighthouse
+```
+
+Что проверяется:
+
+1. Playwright e2e: каталог, страница компании, mobile header, смена языка, процесс бронирования, sticky footer, основные ссылки.
+2. Layout helpers: горизонтальный overflow и элементы, которые вылезают за viewport.
+3. Runtime guards: `console.error`, uncaught `pageerror`, неожиданные `500` и битые статические ресурсы.
+4. Локализация без браузера: `npm run test:i18n` автоматически определяет языки из `lib/site-language.ts`, разбирает TS-словари, сравнивает вложенные ключи, ловит пустые значения, `TODO/FIXME`, `undefined`, `null`, `NaN`, `[object Object]` и печатает отчёт по языкам, словарям, ключам, missing/invalid и fallback warnings.
+5. Локализация в браузере: `npm run test:e2e:localization` проверяет главную, каталог, страницу компании, аккаунт, success page при доступном fixture booking, mobile menu, booking dialog и LanguageSwitcher на ширинах 360/390/430.
+6. Accessibility: axe-core для главной, каталога, страницы компании, аккаунта и booking dialog.
+7. Visual regression: подготовлены snapshots для ключевых mobile-экранов. Запускать отдельно:
+
+```bash
+PLAYWRIGHT_VISUAL=1 npm run test:e2e -- tests/visual
+```
+
+HTML-отчёт Playwright:
+
+```bash
+npx playwright show-report
+```
+
+Рабочее правило для Codex и разработчиков:
+
+1. Перед push запускать релевантную quality-команду.
+2. После UI/mobile/i18n/header задач запускать `npm run quality:ui`.
+3. После booking-задач запускать `npm run quality:booking`.
+4. После небольших не-UI правок минимум запускать `npm run quality:fast`.
+5. Если GitHub Actions красный, не деплоить и не мержить до исправления.
+6. Pre-push hook запускает `npm run quality:fast`; полный Playwright запускается вручную для UI-задач и в GitHub Actions.
+
+Lighthouse CI пишет отчёты в `.lighthouseci/`. На первом этапе пороги настроены как warning, чтобы видеть performance/accessibility/SEO отчёт без блокировки деплоя.
+
+Production runtime errors:
+
+1. Sentry подключается только если задан `SENTRY_DSN` или `NEXT_PUBLIC_SENTRY_DSN`.
+2. Для sourcemaps можно добавить `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT`.
+3. Перед отправкой события очищаются email, телефоны, токены, cookies и другие персональные поля.
+4. В booking-flow добавлены breadcrumbs: открыт modal, выбраны услуги, шаг, время и старт отправки заявки. Персональные данные клиента не логируются.
+
 ## Что дальше
 
 Следующие логичные экраны для разработки:

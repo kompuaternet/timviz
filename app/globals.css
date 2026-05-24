@@ -1275,7 +1275,8 @@
   margin-right: 18px;
 }
 
-.public-phone-card button {
+.public-phone-card button,
+.public-phone-button {
   margin: 180px 16px 16px;
   width: calc(100% - 32px);
   height: 46px;
@@ -1284,6 +1285,9 @@
   background: #111;
   color: #fff;
   font-weight: 900;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .public-map-card {
@@ -2477,7 +2481,7 @@
   }
 
   .company-slot-list {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 8px;
   }
 
@@ -4432,13 +4436,13 @@
   }
 
   .public-menu-panel {
-    position: absolute;
-    left: auto;
-    right: 0;
+    position: fixed;
+    left: 12px;
+    right: 12px;
     bottom: auto;
-    top: calc(100% + 10px);
+    top: 66px;
     z-index: 90;
-    width: min(286px, calc(100vw - 24px));
+    width: auto;
     max-height: min(72dvh, 520px);
     overflow-y: auto;
     overflow-x: hidden;
@@ -6955,7 +6959,8 @@ a {
     min-height: auto;
   }
 
-  .public-phone-card button {
+  .public-phone-card button,
+  .public-phone-button {
     margin: 24px 16px 16px;
   }
 
