@@ -23,6 +23,14 @@ const freeLimitMessages: Record<SiteLanguage, string> = withEnglishFallback<stri
   en: "Free appointments are used up for this month. Premium unlocks unlimited appointments."
 });
 
+Object.assign(freeLimitMessages, {
+  fr: "Les réservations gratuites de ce mois sont épuisées. Premium débloque les réservations illimitées.",
+  pl: "Darmowe rezerwacje w tym miesiącu zostały wykorzystane. Premium odblokowuje rezerwacje bez limitów.",
+  cs: "Bezplatné rezervace na tento měsíc jsou vyčerpány. Premium odemkne neomezené rezervace.",
+  es: "Las reservas gratuitas de este mes se han agotado. Premium desbloquea reservas ilimitadas.",
+  de: "Die kostenlosen Buchungen für diesen Monat sind aufgebraucht. Premium schaltet unbegrenzte Buchungen frei."
+});
+
 export function normalizePlan(value: unknown): TimvizPlan {
   return value === "premium" ? "premium" : "free";
 }
@@ -37,7 +45,7 @@ export function normalizePremiumStatus(value: unknown): PremiumStatus {
 }
 
 export function getFreePlanLimitMessage(language: unknown) {
-  return freeLimitMessages[language === "uk" || language === "en" || language === "ru" ? language : "ru"];
+  return freeLimitMessages[typeof language === "string" && language in freeLimitMessages ? (language as SiteLanguage) : "ru"];
 }
 
 export function isPremiumAccessActive(input: {

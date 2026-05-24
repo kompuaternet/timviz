@@ -471,6 +471,14 @@ const locationSuggestions: Record<PublicLanguage, string[]> = withEnglishFallbac
   en: ["Kyiv", "Dnipro", "Kryvyi Rih", "Lviv", "Odesa", "Kharkiv"]
 });
 
+Object.assign(locationSuggestions, {
+  fr: ["Kyiv", "Dnipro", "Kryvyï Rih", "Lviv", "Odessa", "Kharkiv"],
+  pl: ["Kijów", "Dnipro", "Krzywy Róg", "Lwów", "Odessa", "Charków"],
+  cs: ["Kyjev", "Dnipro", "Kryvyj Rih", "Lvov", "Oděsa", "Charkov"],
+  es: ["Kyiv", "Dnipro", "Kryvyi Rih", "Lviv", "Odesa", "Járkiv"],
+  de: ["Kyjiw", "Dnipro", "Krywyj Rih", "Lwiw", "Odessa", "Charkiw"]
+});
+
 export default function PublicSearch({
   index,
   language = "ru",

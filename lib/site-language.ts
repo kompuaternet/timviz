@@ -17,6 +17,44 @@ const englishNicheSlugs: Record<NicheKey, string> = {
   massage: "for-massage-therapists"
 };
 
+const localizedExtraNicheSlugs: Record<ExtraSiteLanguage, Record<NicheKey, string>> = {
+  fr: {
+    manicure: "pour-prothesistes-ongulaires",
+    hairdressers: "pour-coiffeurs",
+    barbers: "pour-barbiers",
+    cosmetologists: "pour-estheticiennes",
+    massage: "pour-masseurs"
+  },
+  pl: {
+    manicure: "dla-stylistek-paznokci",
+    hairdressers: "dla-fryzjerow",
+    barbers: "dla-barberow",
+    cosmetologists: "dla-kosmetologow",
+    massage: "dla-masazystow"
+  },
+  cs: {
+    manicure: "pro-nehtove-specialisty",
+    hairdressers: "pro-kaderniky",
+    barbers: "pro-barbery",
+    cosmetologists: "pro-kosmetology",
+    massage: "pro-masery"
+  },
+  es: {
+    manicure: "para-especialistas-en-unas",
+    hairdressers: "para-peluqueros",
+    barbers: "para-barberos",
+    cosmetologists: "para-cosmetologos",
+    massage: "para-masajistas"
+  },
+  de: {
+    manicure: "fuer-nagelprofis",
+    hairdressers: "fuer-friseure",
+    barbers: "fuer-barber",
+    cosmetologists: "fuer-kosmetiker",
+    massage: "fuer-masseure"
+  }
+};
+
 const nicheSlugMap: Record<SiteLanguage, Record<NicheKey, string>> = {
   ru: {
     manicure: "dlya-manikyura",
@@ -33,26 +71,65 @@ const nicheSlugMap: Record<SiteLanguage, Record<NicheKey, string>> = {
     massage: "dlya-masazhu"
   },
   en: englishNicheSlugs,
-  fr: englishNicheSlugs,
-  pl: englishNicheSlugs,
-  cs: englishNicheSlugs,
-  es: englishNicheSlugs,
-  de: englishNicheSlugs
+  ...localizedExtraNicheSlugs
 };
 
 const latinNicheAliases: Record<string, NicheKey> = {
+  "for-nail-technicians": "manicure",
+  "for-hairdressers": "hairdressers",
+  "for-barbers": "barbers",
+  "for-cosmetologists": "cosmetologists",
+  "for-massage-therapists": "massage",
   "dlya-manikyura": "manicure",
   "dlya-manikyuru": "manicure",
+  "dlia-manikyura": "manicure",
+  "dlia-manikyuru": "manicure",
+  "dlj-manikyura": "manicure",
+  "dlj-manikyuru": "manicure",
+  "dli-manikyura": "manicure",
+  "dli-manikyuru": "manicure",
   "dlya-parikmaherov": "hairdressers",
   "dlya-perukariv": "hairdressers",
+  "dlia-parikmaherov": "hairdressers",
+  "dlia-perukariv": "hairdressers",
+  "dlj-parikmaherov": "hairdressers",
+  "dlj-perukariv": "hairdressers",
+  "dlj-perukoriv": "hairdressers",
+  "dli-parikmaherov": "hairdressers",
+  "dli-perukariv": "hairdressers",
+  "dli-perukoriv": "hairdressers",
   "dlya-barberov": "barbers",
   "dlya-barberiv": "barbers",
+  "dlia-barberov": "barbers",
+  "dlia-barberiv": "barbers",
+  "dlj-barberov": "barbers",
+  "dlj-barberiv": "barbers",
+  "dli-barberov": "barbers",
+  "dli-barberiv": "barbers",
   "dlya-kosmetologov": "cosmetologists",
   "dlya-kosmetologiv": "cosmetologists",
+  "dlia-kosmetologov": "cosmetologists",
+  "dlia-kosmetologiv": "cosmetologists",
+  "dlj-kosmetologov": "cosmetologists",
+  "dlj-kosmetologiv": "cosmetologists",
+  "dli-kosmetologov": "cosmetologists",
+  "dli-kosmetologiv": "cosmetologists",
   "dlya-massazha": "massage",
   "dlya-massazhu": "massage",
   "dlya-massazhistov": "massage",
-  "dlya-masazhistiv": "massage"
+  "dlya-masazhistiv": "massage",
+  "dlia-massazha": "massage",
+  "dlia-massazhu": "massage",
+  "dlia-massazhistov": "massage",
+  "dlia-masazhistiv": "massage",
+  "dlj-massazha": "massage",
+  "dlj-massazhu": "massage",
+  "dlj-massazhistov": "massage",
+  "dlj-masazhistiv": "massage",
+  "dli-massazha": "massage",
+  "dli-massazhu": "massage",
+  "dli-massazhistov": "massage",
+  "dli-masazhistiv": "massage"
 };
 
 const nicheSlugAliases: Record<SiteLanguage, Record<string, NicheKey>> = {

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import BrandLogo from "../BrandLogo";
 import GlobalLanguageSwitcher from "../GlobalLanguageSwitcher";
-import { getNicheSlug, nicheCards, nicheKeys } from "../../lib/niche-pages";
+import { buildNicheAlternates, getNichePath, getNicheSlug, nicheCards, nicheKeys } from "../../lib/niche-pages";
 import { getNicheUxContent } from "../../lib/niche-ux";
 import { buildMetadata } from "../../lib/seo";
 import { getLocalizedPath, publicFooterLabels, type SiteLanguage , withEnglishFallback } from "../../lib/site-language";
@@ -699,12 +699,6 @@ const screenshotByLanguage: Record<SiteLanguage, { day: string; week: string; mo
   en: { day: "/for-business/en-day.png", week: "/for-business/en-week.png", month: "/for-business/en-month.png" }
 });
 
-const manicurePathByLanguage: Record<SiteLanguage, string> = withEnglishFallback<string>({
-  ru: "/ru/dlya-manikyura",
-  uk: "/uk/dlya-manikyuru",
-  en: "/en/for-nail-technicians"
-});
-
 export function buildManicureMetadata(lang: SiteLanguage, pathname: string): Metadata {
   const title =
     lang === "ru"
@@ -739,15 +733,7 @@ export function buildManicureMetadata(lang: SiteLanguage, pathname: string): Met
 
   return {
     ...metadata,
-    alternates: {
-      canonical: `https://timviz.com${pathname}`,
-      languages: {
-        ru: `https://timviz.com${manicurePathByLanguage.ru}`,
-        uk: `https://timviz.com${manicurePathByLanguage.uk}`,
-        en: `https://timviz.com${manicurePathByLanguage.en}`,
-        "x-default": `https://timviz.com${manicurePathByLanguage.en}`
-      }
-    }
+    alternates: buildNicheAlternates("manicure", lang)
   };
 }
 
@@ -791,7 +777,7 @@ export default function ManicureLanding({ language }: { language: SiteLanguage }
         "@type": "ListItem",
         position: 3,
         name: t.title,
-        item: `https://timviz.com${manicurePathByLanguage[language]}`
+        item: `https://timviz.com${getNichePath(language, "manicure")}`
       }
     ]
   };

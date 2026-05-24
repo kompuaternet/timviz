@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import BrandLogo from "../BrandLogo";
 import GlobalLanguageSwitcher from "../GlobalLanguageSwitcher";
+import { buildNicheAlternates } from "../../lib/niche-pages";
 import { getNicheUxContent } from "../../lib/niche-ux";
 import { buildMetadata } from "../../lib/seo";
 import { getLocalizedPath, publicFooterLabels, type SiteLanguage , withEnglishFallback } from "../../lib/site-language";
@@ -445,15 +446,7 @@ export function buildHairdresserMetadata(lang: SiteLanguage, pathname: string): 
   const metadata = buildMetadata(pathname, { title, description }, lang);
   return {
     ...metadata,
-    alternates: {
-      canonical: `https://timviz.com${pathname}`,
-      languages: {
-        uk: "https://timviz.com/uk/dlya-perukariv",
-        ru: "https://timviz.com/ru/dlya-parikmaherov",
-        en: "https://timviz.com/en/for-hairdressers",
-        "x-default": "https://timviz.com/en/for-hairdressers"
-      }
-    }
+    alternates: buildNicheAlternates("hairdressers", lang)
   };
 }
 

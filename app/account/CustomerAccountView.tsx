@@ -75,6 +75,7 @@ type AccountCopy = {
   chooseAddress: string;
   saveAddress: string;
   openMap: string;
+  addressMapTitle: string;
   addressHint: string;
   addressWarning: string;
   upcoming: string;
@@ -93,6 +94,8 @@ type AccountCopy = {
   signOut: string;
   marketing: string;
   reminders: string;
+  smsMarketing: string;
+  whatsappMarketing: string;
   soon: string;
   signInTitle: string;
   signInText: string;
@@ -148,6 +151,7 @@ const copy: Record<SiteLanguage, AccountCopy> = withEnglishFallback<AccountCopy>
     chooseAddress: "Выбрать адрес",
     saveAddress: "Сохранить адрес",
     openMap: "Открыть на карте",
+    addressMapTitle: "Карта адреса",
     addressHint: "Выберите найденный адрес и сохраните его в кабинет.",
     addressWarning: "Введите адрес и выберите подходящий вариант из поиска.",
     upcoming: "Предстоящие",
@@ -166,6 +170,8 @@ const copy: Record<SiteLanguage, AccountCopy> = withEnglishFallback<AccountCopy>
     signOut: "Выйти",
     marketing: "Маркетинговые уведомления",
     reminders: "Напоминания о записях",
+    smsMarketing: "SMS-маркетинг",
+    whatsappMarketing: "WhatsApp-маркетинг",
     soon: "Этот раздел подготовим следующим этапом.",
     signInTitle: "Кабинет клиента",
     signInText: "Войдите через Google, чтобы видеть свои записи, профиль и настройки.",
@@ -219,6 +225,7 @@ const copy: Record<SiteLanguage, AccountCopy> = withEnglishFallback<AccountCopy>
     chooseAddress: "Обрати адресу",
     saveAddress: "Зберегти адресу",
     openMap: "Відкрити на карті",
+    addressMapTitle: "Карта адреси",
     addressHint: "Оберіть знайдену адресу та збережіть її в кабінеті.",
     addressWarning: "Введіть адресу та оберіть відповідний варіант із пошуку.",
     upcoming: "Майбутні",
@@ -237,6 +244,8 @@ const copy: Record<SiteLanguage, AccountCopy> = withEnglishFallback<AccountCopy>
     signOut: "Вийти",
     marketing: "Маркетингові сповіщення",
     reminders: "Нагадування про записи",
+    smsMarketing: "SMS-маркетинг",
+    whatsappMarketing: "WhatsApp-маркетинг",
     soon: "Цей розділ підготуємо наступним етапом.",
     signInTitle: "Кабінет клієнта",
     signInText: "Увійдіть через Google, щоб бачити свої записи, профіль і налаштування.",
@@ -290,6 +299,7 @@ const copy: Record<SiteLanguage, AccountCopy> = withEnglishFallback<AccountCopy>
     chooseAddress: "Choose address",
     saveAddress: "Save address",
     openMap: "Open on map",
+    addressMapTitle: "Address map",
     addressHint: "Choose a found address and save it to your account.",
     addressWarning: "Enter an address and choose a matching search result.",
     upcoming: "Upcoming",
@@ -308,6 +318,8 @@ const copy: Record<SiteLanguage, AccountCopy> = withEnglishFallback<AccountCopy>
     signOut: "Log out",
     marketing: "Marketing notifications",
     reminders: "Booking reminders",
+    smsMarketing: "SMS marketing",
+    whatsappMarketing: "WhatsApp marketing",
     soon: "We’ll build this section next.",
     signInTitle: "Customer account",
     signInText: "Sign in with Google to see your bookings, profile and preferences.",
@@ -328,11 +340,119 @@ const copy: Record<SiteLanguage, AccountCopy> = withEnglishFallback<AccountCopy>
 });
 
 Object.assign(copy, {
-  fr: { ...copy.en, profile: "Profil", activity: "Réservations", settings: "Paramètres", allServices: "Tous les services", currentLocation: "Position actuelle", anyTime: "N’importe quand", search: "Rechercher", edit: "Modifier", save: "Enregistrer", empty: "Rien ici pour le moment", noBookings: "Vous n’avez pas encore de réservations à venir. Trouvez une entreprise et choisissez un horaire.", profileTitle: "Profil", addressesTitle: "Mes adresses", firstName: "Prénom", lastName: "Nom", phone: "Téléphone mobile", birthday: "Date de naissance", gender: "Genre", addAddress: "Ajouter", remove: "Supprimer", upcoming: "À venir", bookingHistory: "Historique", bookingDetails: "Détails de la réservation", service: "Service", date: "Date", time: "Heure", status: "Statut", openVenue: "Ouvrir l’entreprise", route: "Itinéraire", signOut: "Se déconnecter", signInTitle: "Compte client", signInGoogle: "Continuer avec Google", upcomingBookings: "Réservations à venir", findBusiness: "Trouver une entreprise", confirmed: "Confirmé", pending: "En attente de confirmation", cancelled: "Annulé", completed: "Terminé", pageTitle: "Mon compte", saved: "Enregistré." },
-  pl: { ...copy.en, profile: "Profil", activity: "Rezerwacje", settings: "Ustawienia", allServices: "Wszystkie usługi", currentLocation: "Aktualna lokalizacja", anyTime: "Dowolny termin", search: "Szukaj", edit: "Edytuj", save: "Zapisz", empty: "Na razie nic tu nie ma", noBookings: "Nie masz jeszcze nadchodzących rezerwacji. Znajdź firmę i wybierz termin.", profileTitle: "Profil", addressesTitle: "Moje adresy", firstName: "Imię", lastName: "Nazwisko", phone: "Telefon komórkowy", birthday: "Data urodzenia", gender: "Płeć", addAddress: "Dodaj", remove: "Usuń", upcoming: "Nadchodzące", bookingHistory: "Historia", bookingDetails: "Szczegóły rezerwacji", service: "Usługa", date: "Data", time: "Godzina", status: "Status", openVenue: "Otwórz firmę", route: "Wyznacz trasę", signOut: "Wyloguj", signInTitle: "Konto klienta", signInGoogle: "Kontynuuj z Google", upcomingBookings: "Nadchodzące rezerwacje", findBusiness: "Znajdź firmę", confirmed: "Potwierdzone", pending: "Oczekuje na potwierdzenie", cancelled: "Anulowane", completed: "Zakończone", pageTitle: "Moje konto", saved: "Zapisano." },
-  cs: { ...copy.en, profile: "Profil", activity: "Rezervace", settings: "Nastavení", allServices: "Všechny služby", currentLocation: "Aktuální poloha", anyTime: "Kdykoliv", search: "Hledat", edit: "Upravit", save: "Uložit", empty: "Zatím tu nic není", noBookings: "Zatím nemáte žádné nadcházející rezervace. Najděte firmu a vyberte čas.", profileTitle: "Profil", addressesTitle: "Moje adresy", firstName: "Jméno", lastName: "Příjmení", phone: "Mobilní telefon", birthday: "Datum narození", gender: "Pohlaví", addAddress: "Přidat", remove: "Odebrat", upcoming: "Nadcházející", bookingHistory: "Historie", bookingDetails: "Detaily rezervace", service: "Služba", date: "Datum", time: "Čas", status: "Stav", openVenue: "Otevřít firmu", route: "Navigovat", signOut: "Odhlásit se", signInTitle: "Účet klienta", signInGoogle: "Pokračovat přes Google", upcomingBookings: "Nadcházející rezervace", findBusiness: "Najít firmu", confirmed: "Potvrzeno", pending: "Čeká na potvrzení", cancelled: "Zrušeno", completed: "Dokončeno", pageTitle: "Můj účet", saved: "Uloženo." },
-  es: { ...copy.en, profile: "Perfil", activity: "Reservas", settings: "Ajustes", allServices: "Todos los servicios", currentLocation: "Ubicación actual", anyTime: "Cualquier hora", search: "Buscar", edit: "Editar", save: "Guardar", empty: "Nada aquí todavía", noBookings: "Aún no tienes reservas próximas. Encuentra una empresa y elige una hora.", profileTitle: "Perfil", addressesTitle: "Mis direcciones", firstName: "Nombre", lastName: "Apellido", phone: "Teléfono móvil", birthday: "Fecha de nacimiento", gender: "Género", addAddress: "Añadir", remove: "Eliminar", upcoming: "Próximas", bookingHistory: "Historial", bookingDetails: "Detalles de reserva", service: "Servicio", date: "Fecha", time: "Hora", status: "Estado", openVenue: "Abrir empresa", route: "Cómo llegar", signOut: "Cerrar sesión", signInTitle: "Cuenta de cliente", signInGoogle: "Continuar con Google", upcomingBookings: "Reservas próximas", findBusiness: "Encontrar empresa", confirmed: "Confirmada", pending: "Pendiente de confirmación", cancelled: "Cancelada", completed: "Completada", pageTitle: "Mi cuenta", saved: "Guardado." },
-  de: { ...copy.en, profile: "Profil", activity: "Buchungen", settings: "Einstellungen", allServices: "Alle Leistungen", currentLocation: "Aktueller Standort", anyTime: "Beliebige Zeit", search: "Suchen", edit: "Bearbeiten", save: "Speichern", empty: "Hier ist noch nichts", noBookings: "Du hast noch keine kommenden Buchungen. Finde ein Unternehmen und wähle eine Zeit.", profileTitle: "Profil", addressesTitle: "Meine Adressen", firstName: "Vorname", lastName: "Nachname", phone: "Mobiltelefon", birthday: "Geburtstag", gender: "Geschlecht", addAddress: "Hinzufügen", remove: "Entfernen", upcoming: "Bevorstehend", bookingHistory: "Verlauf", bookingDetails: "Buchungsdetails", service: "Leistung", date: "Datum", time: "Zeit", status: "Status", openVenue: "Unternehmen öffnen", route: "Route anzeigen", signOut: "Abmelden", signInTitle: "Kundenkonto", signInGoogle: "Mit Google fortfahren", upcomingBookings: "Bevorstehende Buchungen", findBusiness: "Unternehmen finden", confirmed: "Bestätigt", pending: "Wartet auf Bestätigung", cancelled: "Storniert", completed: "Abgeschlossen", pageTitle: "Mein Konto", saved: "Gespeichert." }
+  fr: {
+    profile: "Profil", activity: "Réservations", wallet: "Portefeuille", favorites: "Favoris", forms: "Formulaires", settings: "Paramètres",
+    allServices: "Tous les services", currentLocation: "Position actuelle", anyTime: "N’importe quand", search: "Rechercher",
+    edit: "Modifier", save: "Enregistrer", addAddress: "Ajouter", remove: "Supprimer", empty: "Rien ici pour le moment",
+    noBookings: "Vous n’avez pas encore de réservations à venir. Trouvez une entreprise et choisissez un horaire.",
+    profileTitle: "Profil", addressesTitle: "Mes adresses", firstName: "Prénom", lastName: "Nom", phone: "Téléphone mobile",
+    email: "E-mail", birthday: "Date de naissance", gender: "Genre", home: "Domicile", work: "Travail", other: "Autre",
+    title: "Titre", address: "Adresse", findAddress: "Trouver l’adresse sur la carte", addressPlaceholder: "Saisissez une adresse",
+    searchingAddress: "Recherche d’adresse…", chooseAddress: "Choisir l’adresse", saveAddress: "Enregistrer l’adresse",
+    openMap: "Ouvrir sur la carte", addressMapTitle: "Carte de l’adresse",
+    addressHint: "Choisissez une adresse trouvée et enregistrez-la dans votre compte.",
+    addressWarning: "Saisissez une adresse et choisissez le résultat correspondant.",
+    upcoming: "À venir", bookingHistory: "Historique", all: "Toutes", bookingDetails: "Détails de la réservation",
+    service: "Service", total: "Total", date: "Date", time: "Heure", status: "Statut", openVenue: "Ouvrir l’entreprise",
+    route: "Itinéraire", linkedGoogle: "Compte Google", connected: "Connecté", signOut: "Se déconnecter",
+    marketing: "Notifications marketing", reminders: "Rappels de réservation", smsMarketing: "Marketing SMS",
+    whatsappMarketing: "Marketing WhatsApp", soon: "Cette section sera préparée à l’étape suivante.",
+    signInTitle: "Compte client", signInText: "Connectez-vous avec Google pour voir vos réservations, votre profil et vos paramètres.",
+    signInGoogle: "Continuer avec Google", upcomingBookings: "Réservations à venir", findBusiness: "Trouver une entreprise",
+    confirmed: "Confirmé", pending: "En attente de confirmation", cancelled: "Annulé", completed: "Terminé",
+    pageTitle: "Mon compte", couldNotSave: "Impossible d’enregistrer les modifications.", saved: "Enregistré.",
+    genderFemale: "Femme", genderMale: "Homme", genderUnspecified: "Non indiqué"
+  },
+  pl: {
+    profile: "Profil", activity: "Rezerwacje", wallet: "Portfel", favorites: "Ulubione", forms: "Formularze", settings: "Ustawienia",
+    allServices: "Wszystkie usługi", currentLocation: "Aktualna lokalizacja", anyTime: "Dowolny termin", search: "Szukaj",
+    edit: "Edytuj", save: "Zapisz", addAddress: "Dodaj", remove: "Usuń", empty: "Na razie nic tu nie ma",
+    noBookings: "Nie masz jeszcze nadchodzących rezerwacji. Znajdź firmę i wybierz termin.",
+    profileTitle: "Profil", addressesTitle: "Moje adresy", firstName: "Imię", lastName: "Nazwisko", phone: "Telefon komórkowy",
+    email: "E-mail", birthday: "Data urodzenia", gender: "Płeć", home: "Dom", work: "Praca", other: "Inne",
+    title: "Nazwa", address: "Adres", findAddress: "Znajdź adres na mapie", addressPlaceholder: "Wpisz adres",
+    searchingAddress: "Szukamy adresu…", chooseAddress: "Wybierz adres", saveAddress: "Zapisz adres", openMap: "Otwórz na mapie",
+    addressMapTitle: "Mapa adresu", addressHint: "Wybierz znaleziony adres i zapisz go na koncie.",
+    addressWarning: "Wpisz adres i wybierz pasujący wynik wyszukiwania.",
+    upcoming: "Nadchodzące", bookingHistory: "Historia", all: "Wszystkie", bookingDetails: "Szczegóły rezerwacji",
+    service: "Usługa", total: "Razem", date: "Data", time: "Godzina", status: "Status", openVenue: "Otwórz firmę",
+    route: "Wyznacz trasę", linkedGoogle: "Konto Google", connected: "Połączone", signOut: "Wyloguj",
+    marketing: "Powiadomienia marketingowe", reminders: "Przypomnienia o rezerwacjach", smsMarketing: "Marketing SMS",
+    whatsappMarketing: "Marketing WhatsApp", soon: "Ten dział przygotujemy w kolejnym etapie.",
+    signInTitle: "Konto klienta", signInText: "Zaloguj się przez Google, aby zobaczyć rezerwacje, profil i ustawienia.",
+    signInGoogle: "Kontynuuj z Google", upcomingBookings: "Nadchodzące rezerwacje", findBusiness: "Znajdź firmę",
+    confirmed: "Potwierdzone", pending: "Oczekuje na potwierdzenie", cancelled: "Anulowane", completed: "Zakończone",
+    pageTitle: "Moje konto", couldNotSave: "Nie udało się zapisać zmian.", saved: "Zapisano.",
+    genderFemale: "Kobieta", genderMale: "Mężczyzna", genderUnspecified: "Nie podano"
+  },
+  cs: {
+    profile: "Profil", activity: "Rezervace", wallet: "Peněženka", favorites: "Oblíbené", forms: "Formuláře", settings: "Nastavení",
+    allServices: "Všechny služby", currentLocation: "Aktuální poloha", anyTime: "Kdykoliv", search: "Hledat",
+    edit: "Upravit", save: "Uložit", addAddress: "Přidat", remove: "Odebrat", empty: "Zatím tu nic není",
+    noBookings: "Zatím nemáte žádné nadcházející rezervace. Najděte firmu a vyberte čas.",
+    profileTitle: "Profil", addressesTitle: "Moje adresy", firstName: "Jméno", lastName: "Příjmení", phone: "Mobilní telefon",
+    email: "E-mail", birthday: "Datum narození", gender: "Pohlaví", home: "Domov", work: "Práce", other: "Jiné",
+    title: "Název", address: "Adresa", findAddress: "Najít adresu na mapě", addressPlaceholder: "Zadejte adresu",
+    searchingAddress: "Hledáme adresu…", chooseAddress: "Vybrat adresu", saveAddress: "Uložit adresu", openMap: "Otevřít na mapě",
+    addressMapTitle: "Mapa adresy", addressHint: "Vyberte nalezenou adresu a uložte ji do účtu.",
+    addressWarning: "Zadejte adresu a vyberte odpovídající výsledek hledání.",
+    upcoming: "Nadcházející", bookingHistory: "Historie", all: "Vše", bookingDetails: "Detaily rezervace",
+    service: "Služba", total: "Celkem", date: "Datum", time: "Čas", status: "Stav", openVenue: "Otevřít firmu",
+    route: "Navigovat", linkedGoogle: "Účet Google", connected: "Připojeno", signOut: "Odhlásit se",
+    marketing: "Marketingová oznámení", reminders: "Připomenutí rezervací", smsMarketing: "SMS marketing",
+    whatsappMarketing: "WhatsApp marketing", soon: "Tuto sekci připravíme v další etapě.",
+    signInTitle: "Účet klienta", signInText: "Přihlaste se přes Google a uvidíte své rezervace, profil a nastavení.",
+    signInGoogle: "Pokračovat přes Google", upcomingBookings: "Nadcházející rezervace", findBusiness: "Najít firmu",
+    confirmed: "Potvrzeno", pending: "Čeká na potvrzení", cancelled: "Zrušeno", completed: "Dokončeno",
+    pageTitle: "Můj účet", couldNotSave: "Změny se nepodařilo uložit.", saved: "Uloženo.",
+    genderFemale: "Žena", genderMale: "Muž", genderUnspecified: "Neuvedeno"
+  },
+  es: {
+    profile: "Perfil", activity: "Reservas", wallet: "Cartera", favorites: "Favoritos", forms: "Formularios", settings: "Ajustes",
+    allServices: "Todos los servicios", currentLocation: "Ubicación actual", anyTime: "Cualquier hora", search: "Buscar",
+    edit: "Editar", save: "Guardar", addAddress: "Añadir", remove: "Eliminar", empty: "Nada aquí todavía",
+    noBookings: "Aún no tienes reservas próximas. Encuentra una empresa y elige una hora.",
+    profileTitle: "Perfil", addressesTitle: "Mis direcciones", firstName: "Nombre", lastName: "Apellido", phone: "Teléfono móvil",
+    email: "Correo electrónico", birthday: "Fecha de nacimiento", gender: "Género", home: "Casa", work: "Trabajo", other: "Otro",
+    title: "Título", address: "Dirección", findAddress: "Buscar dirección en el mapa", addressPlaceholder: "Introduce una dirección",
+    searchingAddress: "Buscando dirección…", chooseAddress: "Elegir dirección", saveAddress: "Guardar dirección",
+    openMap: "Abrir en el mapa", addressMapTitle: "Mapa de dirección",
+    addressHint: "Elige una dirección encontrada y guárdala en tu cuenta.",
+    addressWarning: "Introduce una dirección y elige un resultado de búsqueda.",
+    upcoming: "Próximas", bookingHistory: "Historial", all: "Todas", bookingDetails: "Detalles de reserva",
+    service: "Servicio", total: "Total", date: "Fecha", time: "Hora", status: "Estado", openVenue: "Abrir empresa",
+    route: "Cómo llegar", linkedGoogle: "Cuenta de Google", connected: "Conectado", signOut: "Cerrar sesión",
+    marketing: "Notificaciones de marketing", reminders: "Recordatorios de reservas", smsMarketing: "Marketing SMS",
+    whatsappMarketing: "Marketing WhatsApp", soon: "Prepararemos esta sección en la siguiente etapa.",
+    signInTitle: "Cuenta de cliente", signInText: "Inicia sesión con Google para ver tus reservas, perfil y ajustes.",
+    signInGoogle: "Continuar con Google", upcomingBookings: "Reservas próximas", findBusiness: "Encontrar empresa",
+    confirmed: "Confirmada", pending: "Pendiente de confirmación", cancelled: "Cancelada", completed: "Completada",
+    pageTitle: "Mi cuenta", couldNotSave: "No se pudieron guardar los cambios.", saved: "Guardado.",
+    genderFemale: "Mujer", genderMale: "Hombre", genderUnspecified: "No indicado"
+  },
+  de: {
+    profile: "Profil", activity: "Buchungen", wallet: "Geldbörse", favorites: "Favoriten", forms: "Formulare", settings: "Einstellungen",
+    allServices: "Alle Leistungen", currentLocation: "Aktueller Standort", anyTime: "Beliebige Zeit", search: "Suchen",
+    edit: "Bearbeiten", save: "Speichern", addAddress: "Hinzufügen", remove: "Entfernen", empty: "Hier ist noch nichts",
+    noBookings: "Du hast noch keine kommenden Buchungen. Finde ein Unternehmen und wähle eine Zeit.",
+    profileTitle: "Profil", addressesTitle: "Meine Adressen", firstName: "Vorname", lastName: "Nachname", phone: "Mobiltelefon",
+    email: "E-Mail", birthday: "Geburtstag", gender: "Geschlecht", home: "Zuhause", work: "Arbeit", other: "Andere",
+    title: "Titel", address: "Adresse", findAddress: "Adresse auf der Karte suchen", addressPlaceholder: "Adresse eingeben",
+    searchingAddress: "Adresse wird gesucht…", chooseAddress: "Adresse auswählen", saveAddress: "Adresse speichern",
+    openMap: "Auf Karte öffnen", addressMapTitle: "Adresskarte",
+    addressHint: "Wähle eine gefundene Adresse und speichere sie im Konto.",
+    addressWarning: "Gib eine Adresse ein und wähle ein passendes Suchergebnis.",
+    upcoming: "Bevorstehend", bookingHistory: "Verlauf", all: "Alle", bookingDetails: "Buchungsdetails",
+    service: "Leistung", total: "Gesamt", date: "Datum", time: "Zeit", status: "Status", openVenue: "Unternehmen öffnen",
+    route: "Route anzeigen", linkedGoogle: "Google-Konto", connected: "Verbunden", signOut: "Abmelden",
+    marketing: "Marketing-Benachrichtigungen", reminders: "Buchungserinnerungen", smsMarketing: "SMS-Marketing",
+    whatsappMarketing: "WhatsApp-Marketing", soon: "Diesen Bereich bereiten wir im nächsten Schritt vor.",
+    signInTitle: "Kundenkonto", signInText: "Melde dich mit Google an, um Buchungen, Profil und Einstellungen zu sehen.",
+    signInGoogle: "Mit Google fortfahren", upcomingBookings: "Bevorstehende Buchungen", findBusiness: "Unternehmen finden",
+    confirmed: "Bestätigt", pending: "Wartet auf Bestätigung", cancelled: "Storniert", completed: "Abgeschlossen",
+    pageTitle: "Mein Konto", couldNotSave: "Änderungen konnten nicht gespeichert werden.", saved: "Gespeichert.",
+    genderFemale: "Weiblich", genderMale: "Männlich", genderUnspecified: "Nicht angegeben"
+  }
 });
 
 function getInitials(value: string) {
@@ -885,7 +1005,7 @@ export default function CustomerAccountView({
                           {addressPreviewById[address.id] ? (
                             <div className={styles.addressPreview}>
                               <iframe
-                                title={`${t.address} map`}
+                                title={t.addressMapTitle}
                                 className={styles.addressMapFrame}
                                 src={buildMapEmbedUrl(addressPreviewById[address.id]!.lat, addressPreviewById[address.id]!.lon)}
                               />
@@ -1101,8 +1221,8 @@ export default function CustomerAccountView({
                       ["bookingSms", "SMS"],
                       ["bookingWhatsapp", "WhatsApp"],
                       ["marketingEmail", "Email"],
-                      ["marketingSms", "SMS marketing"],
-                      ["marketingWhatsapp", "WhatsApp marketing"]
+                      ["marketingSms", t.smsMarketing],
+                      ["marketingWhatsapp", t.whatsappMarketing]
                     ] as Array<[keyof CustomerNotifications, string]>).map(([key, label]) => (
                       <div key={key} className={styles.toggleRow}>
                         <div className={styles.toggleLabel}>

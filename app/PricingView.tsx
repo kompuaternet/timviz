@@ -58,6 +58,69 @@ const footerCopy = withEnglishFallback<Record<string, string>>({
   }
 }) satisfies Record<SiteLanguage, Record<string, string>>;
 
+Object.assign(footerCopy, {
+  fr: {
+    about: "Timviz",
+    catalog: "Recherche de profils",
+    business: "Pour les entreprises",
+    pricing: "Tarifs",
+    legal: "Mentions légales",
+    privacy: "Politique de confidentialité",
+    terms: "Conditions d’utilisation",
+    refund: "Politique de remboursement",
+    contact: "Contact",
+    support: "Support"
+  },
+  pl: {
+    about: "Timviz",
+    catalog: "Wyszukiwanie profili",
+    business: "Dla biznesu",
+    pricing: "Cennik",
+    legal: "Informacje prawne",
+    privacy: "Polityka prywatności",
+    terms: "Warunki korzystania",
+    refund: "Polityka zwrotów",
+    contact: "Kontakt",
+    support: "Pomoc"
+  },
+  cs: {
+    about: "Timviz",
+    catalog: "Vyhledávání profilů",
+    business: "Pro firmy",
+    pricing: "Ceník",
+    legal: "Právní informace",
+    privacy: "Zásady ochrany osobních údajů",
+    terms: "Podmínky použití",
+    refund: "Zásady vrácení peněz",
+    contact: "Kontakt",
+    support: "Podpora"
+  },
+  es: {
+    about: "Timviz",
+    catalog: "Búsqueda de perfiles",
+    business: "Para negocios",
+    pricing: "Precios",
+    legal: "Legal",
+    privacy: "Política de privacidad",
+    terms: "Términos de uso",
+    refund: "Política de reembolso",
+    contact: "Contacto",
+    support: "Soporte"
+  },
+  de: {
+    about: "Timviz",
+    catalog: "Profilsuche",
+    business: "Für Unternehmen",
+    pricing: "Preise",
+    legal: "Rechtliches",
+    privacy: "Datenschutzrichtlinie",
+    terms: "Nutzungsbedingungen",
+    refund: "Rückerstattungsrichtlinie",
+    contact: "Kontakt",
+    support: "Support"
+  }
+});
+
 for (const language of Object.keys(publicFooterLabels) as SiteLanguage[]) {
   footerCopy[language] = {
     ...footerCopy[language],
@@ -111,7 +174,7 @@ export default function PricingView({ language, copy, user }: PricingViewProps) 
         <Link className="public-logo" href={getLocalizedPath(language)}>
           <BrandLogo />
         </Link>
-        <nav className="public-nav" aria-label="Pricing navigation">
+        <nav className="public-nav" aria-label={copy.title}>
           <PublicHeaderAuthMenu language={language} />
           <Link href={getLocalizedPath(language, "/for-business")} className="public-company-button">
             Timviz Pro
@@ -131,7 +194,7 @@ export default function PricingView({ language, copy, user }: PricingViewProps) 
         </div>
       </section>
 
-      <section className="pricing-grid" aria-label="Timviz pricing plans">
+      <section className="pricing-grid" aria-label={copy.title}>
         {planOrder.map((planKey) => {
           const plan = copy.plans[planKey];
           const isYearly = planKey === "yearly";

@@ -69,8 +69,20 @@ function formatStatsBig(totalBookings: number, language: PublicLanguage) {
   if (language === "en") {
     return `Over ${compact}`;
   }
-  if (language !== "ru") {
-    return `Over ${compact}`;
+  if (language === "fr") {
+    return `Plus de ${compact}`;
+  }
+  if (language === "pl") {
+    return `Ponad ${compact}`;
+  }
+  if (language === "cs") {
+    return `Více než ${compact}`;
+  }
+  if (language === "es") {
+    return `Más de ${compact}`;
+  }
+  if (language === "de") {
+    return `Über ${compact}`;
   }
   return `Более ${compact}`;
 }
@@ -341,6 +353,8 @@ Object.assign(copy, {
     menu: "Menu",
     clients: "Pour les clients",
     browse: "Voir les entreprises",
+    clientAuth: "Connexion ou inscription",
+    app: "Télécharger l’application",
     business: "Pour les entreprises",
     dashboard: "Ouvrir le tableau de bord",
     businessLogin: "Connexion entreprise",
@@ -357,6 +371,9 @@ Object.assign(copy, {
     appSoon: "Les applications iOS et Android arrivent bientôt",
     comingSoon: "Bientôt disponible",
     mobileAppsFooter: "Applications mobiles bientôt disponibles",
+    appStore: "App Store",
+    googlePlay: "Google Play",
+    appCardTitle: "Trendy Studio",
     appCardMeta: "5.0 ★★★★★ · Londres",
     appCardButton: "Réserver",
     reviewTitle: "Avis",
@@ -374,6 +391,10 @@ Object.assign(copy, {
     businessTitle: "Timviz pour les entreprises",
     businessText: "Gérez les réservations, les services, les clients, les plannings d’équipe et le support depuis un seul espace.",
     more: "En savoir plus →",
+    rating: "Excellent 5/5",
+    ratingText: "Premiers avis des partenaires Timviz",
+    dashboardToday: "Aujourd’hui",
+    dashboardTeam: "Équipe en service",
     about: "À propos de Timviz",
     catalog: "Catalogue",
     legal: "Mentions légales",
@@ -393,6 +414,8 @@ Object.assign(copy, {
     menu: "Menu",
     clients: "Dla klientów",
     browse: "Zobacz firmy",
+    clientAuth: "Logowanie lub rejestracja",
+    app: "Pobierz aplikację",
     business: "Dla biznesu",
     dashboard: "Otwórz panel",
     businessLogin: "Logowanie firmy",
@@ -409,6 +432,9 @@ Object.assign(copy, {
     appSoon: "Aplikacje iOS i Android będą dostępne wkrótce",
     comingSoon: "Wkrótce",
     mobileAppsFooter: "Aplikacje mobilne już wkrótce",
+    appStore: "App Store",
+    googlePlay: "Google Play",
+    appCardTitle: "Trendy Studio",
     appCardMeta: "5.0 ★★★★★ · Londyn",
     appCardButton: "Zarezerwuj",
     reviewTitle: "Opinie",
@@ -426,6 +452,10 @@ Object.assign(copy, {
     businessTitle: "Timviz dla biznesu",
     businessText: "Zarządzaj rezerwacjami, usługami, klientami, grafikami zespołu i obsługą z jednego miejsca.",
     more: "Dowiedz się więcej →",
+    rating: "Świetnie 5/5",
+    ratingText: "Pierwsze opinie partnerów Timviz",
+    dashboardToday: "Dzisiaj",
+    dashboardTeam: "Zespół w pracy",
     about: "O Timviz",
     catalog: "Katalog",
     legal: "Informacje prawne",
@@ -445,6 +475,8 @@ Object.assign(copy, {
     menu: "Menu",
     clients: "Pro klienty",
     browse: "Zobrazit podniky",
+    clientAuth: "Přihlášení nebo registrace",
+    app: "Stáhnout aplikaci",
     business: "Pro firmy",
     dashboard: "Otevřít panel",
     businessLogin: "Přihlášení firmy",
@@ -461,6 +493,9 @@ Object.assign(copy, {
     appSoon: "Aplikace pro iOS a Android budou brzy",
     comingSoon: "Již brzy",
     mobileAppsFooter: "Mobilní aplikace již brzy",
+    appStore: "App Store",
+    googlePlay: "Google Play",
+    appCardTitle: "Trendy Studio",
     appCardMeta: "5.0 ★★★★★ · Londýn",
     appCardButton: "Rezervovat",
     reviewTitle: "Recenze",
@@ -478,6 +513,10 @@ Object.assign(copy, {
     businessTitle: "Timviz pro firmy",
     businessText: "Spravujte rezervace, služby, klienty, rozvrhy týmu a podporu z jednoho prostoru.",
     more: "Zjistit více →",
+    rating: "Výborně 5/5",
+    ratingText: "První recenze od partnerů Timviz",
+    dashboardToday: "Dnes",
+    dashboardTeam: "Pracovní tým",
     about: "O Timviz",
     catalog: "Katalog",
     legal: "Právní informace",
@@ -497,6 +536,8 @@ Object.assign(copy, {
     menu: "Menú",
     clients: "Para clientes",
     browse: "Ver empresas",
+    clientAuth: "Iniciar sesión o registrarse",
+    app: "Descargar app",
     business: "Para negocios",
     dashboard: "Abrir panel",
     businessLogin: "Acceso de negocio",
@@ -513,6 +554,9 @@ Object.assign(copy, {
     appSoon: "Las apps para iOS y Android llegarán pronto",
     comingSoon: "Próximamente",
     mobileAppsFooter: "Apps móviles próximamente",
+    appStore: "App Store",
+    googlePlay: "Google Play",
+    appCardTitle: "Trendy Studio",
     appCardMeta: "5.0 ★★★★★ · Londres",
     appCardButton: "Reservar",
     reviewTitle: "Reseñas",
@@ -530,6 +574,10 @@ Object.assign(copy, {
     businessTitle: "Timviz para negocios",
     businessText: "Gestiona reservas, servicios, clientes, horarios del equipo y soporte desde un solo espacio.",
     more: "Más información →",
+    rating: "Excelente 5/5",
+    ratingText: "Primeras reseñas de socios Timviz",
+    dashboardToday: "Hoy",
+    dashboardTeam: "Equipo en servicio",
     about: "Sobre Timviz",
     catalog: "Catálogo",
     legal: "Legal",
@@ -549,6 +597,8 @@ Object.assign(copy, {
     menu: "Menü",
     clients: "Für Kunden",
     browse: "Unternehmen ansehen",
+    clientAuth: "Einloggen oder registrieren",
+    app: "App herunterladen",
     business: "Für Unternehmen",
     dashboard: "Dashboard öffnen",
     businessLogin: "Business-Login",
@@ -565,6 +615,9 @@ Object.assign(copy, {
     appSoon: "iOS- und Android-Apps kommen bald",
     comingSoon: "Demnächst",
     mobileAppsFooter: "Mobile Apps kommen bald",
+    appStore: "App Store",
+    googlePlay: "Google Play",
+    appCardTitle: "Trendy Studio",
     appCardMeta: "5.0 ★★★★★ · London",
     appCardButton: "Buchen",
     reviewTitle: "Bewertungen",
@@ -582,6 +635,10 @@ Object.assign(copy, {
     businessTitle: "Timviz für Unternehmen",
     businessText: "Verwalten Sie Buchungen, Leistungen, Kunden, Teampläne und Support in einem Arbeitsbereich.",
     more: "Mehr erfahren →",
+    rating: "Ausgezeichnet 5/5",
+    ratingText: "Erste Bewertungen von Timviz Partnern",
+    dashboardToday: "Heute",
+    dashboardTeam: "Arbeitsteam",
     about: "Über Timviz",
     catalog: "Katalog",
     legal: "Rechtliches",

@@ -1,9 +1,18 @@
 import type { SeoCopy } from "./seo";
-import { withEnglishFallback, withNestedExtraLanguageFallbacks, type SiteLanguage } from "./site-language";
+import { siteUrl } from "./seo";
+import { getLocalizedPath, siteLanguages, withNestedExtraLanguageFallbacks, type SiteLanguage } from "./site-language";
 
 export type NicheKey = "manicure" | "hairdressers" | "barbers" | "cosmetologists" | "massage";
 
-export const nicheSlugMap: Record<SiteLanguage, Record<NicheKey, string>> = withEnglishFallback<Record<NicheKey, string>>({
+const englishNicheSlugs: Record<NicheKey, string> = {
+  manicure: "for-nail-technicians",
+  hairdressers: "for-hairdressers",
+  barbers: "for-barbers",
+  cosmetologists: "for-cosmetologists",
+  massage: "for-massage-therapists"
+};
+
+export const nicheSlugMap: Record<SiteLanguage, Record<NicheKey, string>> = {
   uk: {
     manicure: "dlya-manikyuru",
     hairdressers: "dlya-perukariv",
@@ -18,14 +27,43 @@ export const nicheSlugMap: Record<SiteLanguage, Record<NicheKey, string>> = with
     cosmetologists: "dlya-kosmetologov",
     massage: "dlya-massazhistov"
   },
-  en: {
-    manicure: "for-nail-technicians",
-    hairdressers: "for-hairdressers",
-    barbers: "for-barbers",
-    cosmetologists: "for-cosmetologists",
-    massage: "for-massage-therapists"
+  en: englishNicheSlugs,
+  fr: {
+    manicure: "pour-prothesistes-ongulaires",
+    hairdressers: "pour-coiffeurs",
+    barbers: "pour-barbiers",
+    cosmetologists: "pour-estheticiennes",
+    massage: "pour-masseurs"
+  },
+  pl: {
+    manicure: "dla-stylistek-paznokci",
+    hairdressers: "dla-fryzjerow",
+    barbers: "dla-barberow",
+    cosmetologists: "dla-kosmetologow",
+    massage: "dla-masazystow"
+  },
+  cs: {
+    manicure: "pro-nehtove-specialisty",
+    hairdressers: "pro-kaderniky",
+    barbers: "pro-barbery",
+    cosmetologists: "pro-kosmetology",
+    massage: "pro-masery"
+  },
+  es: {
+    manicure: "para-especialistas-en-unas",
+    hairdressers: "para-peluqueros",
+    barbers: "para-barberos",
+    cosmetologists: "para-cosmetologos",
+    massage: "para-masajistas"
+  },
+  de: {
+    manicure: "fuer-nagelprofis",
+    hairdressers: "fuer-friseure",
+    barbers: "fuer-barber",
+    cosmetologists: "fuer-kosmetiker",
+    massage: "fuer-masseure"
   }
-});
+};
 
 export const nicheKeys: NicheKey[] = ["manicure", "hairdressers", "barbers", "cosmetologists", "massage"];
 
@@ -33,9 +71,94 @@ export function getNicheSlug(language: SiteLanguage, key: NicheKey) {
   return nicheSlugMap[language][key];
 }
 
-export function getNicheKeyBySlug(language: SiteLanguage, slug: string): NicheKey | null {
-  return nicheKeys.find((key) => nicheSlugMap[language][key] === slug) ?? null;
+export function getNichePath(language: SiteLanguage, key: NicheKey) {
+  return getLocalizedPath(language, `/${getNicheSlug(language, key)}`);
 }
+
+export function buildNicheAlternates(key: NicheKey, currentLanguage: SiteLanguage) {
+  const languages = Object.fromEntries(
+    siteLanguages.map((language) => [language, `${siteUrl}${getNichePath(language, key)}`])
+  ) as Record<SiteLanguage, string>;
+
+  return {
+    canonical: languages[currentLanguage],
+    languages: {
+      ...languages,
+      "x-default": languages.en
+    }
+  };
+}
+
+export function getNicheKeyBySlug(language: SiteLanguage, slug: string): NicheKey | null {
+  const mapped = nicheKeys.find((key) => nicheSlugMap[language][key] === slug);
+  if (mapped) return mapped;
+  return nicheSlugAliases[language][slug] ?? null;
+}
+
+const sharedNicheAliases: Record<string, NicheKey> = {
+  ...Object.fromEntries(Object.entries(englishNicheSlugs).map(([key, value]) => [value, key as NicheKey])),
+  "dlya-manikyura": "manicure",
+  "dlya-manikyuru": "manicure",
+  "dlia-manikyura": "manicure",
+  "dlia-manikyuru": "manicure",
+  "dlj-manikyura": "manicure",
+  "dlj-manikyuru": "manicure",
+  "dli-manikyura": "manicure",
+  "dli-manikyuru": "manicure",
+  "dlya-parikmaherov": "hairdressers",
+  "dlya-perukariv": "hairdressers",
+  "dlia-parikmaherov": "hairdressers",
+  "dlia-perukariv": "hairdressers",
+  "dlj-parikmaherov": "hairdressers",
+  "dlj-perukariv": "hairdressers",
+  "dlj-perukoriv": "hairdressers",
+  "dli-parikmaherov": "hairdressers",
+  "dli-perukariv": "hairdressers",
+  "dli-perukoriv": "hairdressers",
+  "dlya-barberov": "barbers",
+  "dlya-barberiv": "barbers",
+  "dlia-barberov": "barbers",
+  "dlia-barberiv": "barbers",
+  "dlj-barberov": "barbers",
+  "dlj-barberiv": "barbers",
+  "dli-barberov": "barbers",
+  "dli-barberiv": "barbers",
+  "dlya-kosmetologov": "cosmetologists",
+  "dlya-kosmetologiv": "cosmetologists",
+  "dlia-kosmetologov": "cosmetologists",
+  "dlia-kosmetologiv": "cosmetologists",
+  "dlj-kosmetologov": "cosmetologists",
+  "dlj-kosmetologiv": "cosmetologists",
+  "dli-kosmetologov": "cosmetologists",
+  "dli-kosmetologiv": "cosmetologists",
+  "dlya-massazha": "massage",
+  "dlya-massazhu": "massage",
+  "dlya-massazhistov": "massage",
+  "dlya-masazhistiv": "massage",
+  "dlia-massazha": "massage",
+  "dlia-massazhu": "massage",
+  "dlia-massazhistov": "massage",
+  "dlia-masazhistiv": "massage",
+  "dlj-massazha": "massage",
+  "dlj-massazhu": "massage",
+  "dlj-massazhistov": "massage",
+  "dlj-masazhistiv": "massage",
+  "dli-massazha": "massage",
+  "dli-massazhu": "massage",
+  "dli-massazhistov": "massage",
+  "dli-masazhistiv": "massage"
+};
+
+const nicheSlugAliases: Record<SiteLanguage, Record<string, NicheKey>> = {
+  ru: sharedNicheAliases,
+  uk: sharedNicheAliases,
+  en: sharedNicheAliases,
+  fr: sharedNicheAliases,
+  pl: sharedNicheAliases,
+  cs: sharedNicheAliases,
+  es: sharedNicheAliases,
+  de: sharedNicheAliases
+};
 
 export function getAllNicheParams() {
   return (Object.keys(nicheSlugMap) as SiteLanguage[]).flatMap((lang) =>

@@ -373,6 +373,9 @@ Object.assign(businessCopy, {
     team: "Spécialistes",
     details: "À propos",
     bookNow: "Réserver",
+    onlineBookingOff: "Réservation en ligne désactivée",
+    onlineBookingOffText:
+      "Le propriétaire n’accepte pas encore les réservations publiques depuis le site. La page de l’entreprise reste disponible.",
     bookingFlowTitle: "Réservation",
     serviceStep: "Services",
     specialistStep: "Spécialiste",
@@ -441,6 +444,9 @@ Object.assign(businessCopy, {
     team: "Specjaliści",
     details: "O firmie",
     bookNow: "Zarezerwuj",
+    onlineBookingOff: "Rezerwacje online są wyłączone",
+    onlineBookingOffText:
+      "Właściciel firmy nie przyjmuje jeszcze publicznych rezerwacji ze strony. Strona firmy pozostaje dostępna do przeglądania.",
     bookingFlowTitle: "Rezerwacja",
     serviceStep: "Usługi",
     specialistStep: "Specjalista",
@@ -509,6 +515,9 @@ Object.assign(businessCopy, {
     team: "Specialisté",
     details: "O firmě",
     bookNow: "Rezervovat",
+    onlineBookingOff: "Online rezervace jsou vypnuté",
+    onlineBookingOffText:
+      "Majitel firmy zatím nepřijímá veřejné rezervace ze stránky. Stránka firmy zůstává dostupná k prohlížení.",
     bookingFlowTitle: "Rezervace",
     serviceStep: "Služby",
     specialistStep: "Specialista",
@@ -577,6 +586,9 @@ Object.assign(businessCopy, {
     team: "Especialistas",
     details: "Información",
     bookNow: "Reservar",
+    onlineBookingOff: "La reserva online está desactivada",
+    onlineBookingOffText:
+      "El propietario aún no acepta reservas públicas desde el sitio. La página de la empresa sigue disponible para verla.",
     bookingFlowTitle: "Reserva",
     serviceStep: "Servicios",
     specialistStep: "Especialista",
@@ -645,6 +657,9 @@ Object.assign(businessCopy, {
     team: "Spezialisten",
     details: "Über uns",
     bookNow: "Buchen",
+    onlineBookingOff: "Online-Buchung ist deaktiviert",
+    onlineBookingOffText:
+      "Der Inhaber nimmt noch keine öffentlichen Buchungen über die Website an. Die Unternehmensseite bleibt sichtbar.",
     bookingFlowTitle: "Buchung",
     serviceStep: "Leistungen",
     specialistStep: "Spezialist",

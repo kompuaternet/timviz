@@ -1,4 +1,4 @@
-import type { LocalizedText, SiteLanguage } from "../data/mock-data";
+import { siteLanguages, type SiteLanguage } from "./site-language";
 import {
   addMinutesToTime,
   getDayBreaks,
@@ -21,6 +21,8 @@ import {
 import { getPublicCalendarAppointments, type PublicCalendarAppointment } from "./pro-calendar";
 import { buildPublicBusinessPathMap } from "./public-business-path";
 import { getServiceLocalizedText, localizeCategoryName } from "./service-templates";
+
+type LocalizedText = Partial<Record<SiteLanguage, string>>;
 
 export type PublicSearchSuggestion = {
   id: string;
@@ -116,20 +118,40 @@ function sanitizePublicImageUrl(value: string | undefined, fallback: string) {
 }
 
 const genericCopy = {
-  venue: { ru: "Заведение", uk: "Заклад", en: "Venue" },
-  business: { ru: "Бизнес", uk: "Бізнес", en: "Business" },
-  professional: { ru: "Профессионал", uk: "Професіонал", en: "Professional" },
-  services: { ru: "Услуги", uk: "Послуги", en: "Services" },
-  noAddress: { ru: "Адрес пока не указан", uk: "Адресу ще немає", en: "Address not added yet" },
-  chooseTime: { ru: "Можно выбрать время", uk: "Можна вибрати час", en: "Choose a time" },
+  venue: { ru: "Заведение", uk: "Заклад", en: "Venue", fr: "Lieu", pl: "Miejsce", cs: "Místo", es: "Local", de: "Ort" },
+  business: { ru: "Бизнес", uk: "Бізнес", en: "Business", fr: "Entreprise", pl: "Firma", cs: "Firma", es: "Empresa", de: "Unternehmen" },
+  professional: { ru: "Профессионал", uk: "Професіонал", en: "Professional", fr: "Professionnel", pl: "Specjalista", cs: "Profesionál", es: "Profesional", de: "Profi" },
+  services: { ru: "Услуги", uk: "Послуги", en: "Services", fr: "Services", pl: "Usługi", cs: "Služby", es: "Servicios", de: "Leistungen" },
+  noAddress: { ru: "Адрес пока не указан", uk: "Адресу ще немає", en: "Address not added yet", fr: "Adresse non indiquée", pl: "Adres nie został dodany", cs: "Adresa zatím není uvedena", es: "Dirección no añadida", de: "Adresse noch nicht angegeben" },
+  chooseTime: { ru: "Есть свободное время", uk: "Є вільний час", en: "Free time available", fr: "Créneau disponible", pl: "Wolny termin dostępny", cs: "Volný čas k dispozici", es: "Horario libre disponible", de: "Freie Zeit verfügbar" },
   onlineBookingDisabled: {
     ru: "Онлайн-запись выключена",
     uk: "Онлайн-запис вимкнено",
-    en: "Online booking is off"
+    en: "Online booking is off",
+    fr: "Réservation en ligne désactivée",
+    pl: "Rezerwacja online wyłączona",
+    cs: "Online rezervace vypnutá",
+    es: "Reserva online desactivada",
+    de: "Online-Buchung deaktiviert"
   },
-  noWorkingHours: { ru: "Нет рабочего времени", uk: "Немає робочого часу", en: "No working hours" },
-  busyAtTime: { ru: "На это время занято", uk: "На цей час зайнято", en: "Busy at this time" }
+  noWorkingHours: { ru: "Нет рабочего времени", uk: "Немає робочого часу", en: "No working hours", fr: "Aucun horaire de travail", pl: "Brak godzin pracy", cs: "Žádná pracovní doba", es: "Sin horario de trabajo", de: "Keine Arbeitszeiten" },
+  busyAtTime: { ru: "На это время занято", uk: "На цей час зайнято", en: "Busy at this time", fr: "Occupé à cette heure", pl: "Zajęte o tej godzinie", cs: "V tento čas obsazeno", es: "Ocupado a esa hora", de: "Zu dieser Zeit belegt" }
 } satisfies Record<string, LocalizedText>;
+
+function buildLocalizedCategory(category: string): LocalizedText {
+  return Object.fromEntries(
+    siteLanguages.map((language) => [language, localizeCategoryName(category, language)])
+  ) as LocalizedText;
+}
+
+function buildProfessionalSubtitle(businessName: string): LocalizedText {
+  return Object.fromEntries(
+    siteLanguages.map((language) => [
+      language,
+      `${genericCopy.professional[language] ?? genericCopy.professional.en} · ${businessName}`
+    ])
+  ) as LocalizedText;
+}
 
 type PublicSearchCacheEntry = {
   value: PublicSearchIndex;
@@ -250,15 +272,16 @@ function matchesLocation(looseHaystack: string, location: string) {
 }
 
 function localizedTimeLabel(template: LocalizedText, time: string) {
-  return {
-    ru: template.ru.replace("{time}", time),
-    uk: template.uk.replace("{time}", time),
-    en: template.en.replace("{time}", time)
-  } satisfies LocalizedText;
+  return Object.fromEntries(
+    siteLanguages.map((language) => [
+      language,
+      (template[language] ?? template.en ?? "").replace("{time}", time)
+    ])
+  ) as LocalizedText;
 }
 
 function getLocalizedValues(text?: LocalizedText) {
-  return text ? [text.ru, text.uk, text.en] : [];
+  return text ? siteLanguages.map((language) => text[language]).filter(Boolean) : [];
 }
 
 function getSearchableText(parts: Array<string | undefined>, localizedParts: Array<LocalizedText | undefined> = []) {
@@ -494,21 +517,13 @@ async function loadPublicSearchIndex(params: PublicSearchParams = {}): Promise<P
 
     const fallbackCategory = normalizedBusiness.categories[0] || genericCopy.services.ru;
     const localizedCategory = normalizedBusiness.categories[0]
-      ? {
-          ru: localizeCategoryName(normalizedBusiness.categories[0], "ru"),
-          uk: localizeCategoryName(normalizedBusiness.categories[0], "uk"),
-          en: localizeCategoryName(normalizedBusiness.categories[0], "en")
-        }
+      ? buildLocalizedCategory(normalizedBusiness.categories[0])
       : genericCopy.services;
     const localizedSubtitle =
       type === "professional"
         ? normalizedBusiness.categories[0]
           ? undefined
-          : {
-              ru: `${genericCopy.professional.ru} · ${normalizedBusiness.name}`,
-              uk: `${genericCopy.professional.uk} · ${normalizedBusiness.name}`,
-              en: `${genericCopy.professional.en} · ${normalizedBusiness.name}`
-            }
+          : buildProfessionalSubtitle(normalizedBusiness.name)
         : normalizedBusiness.serviceMode.includes("физическое")
           ? genericCopy.venue
           : genericCopy.business;

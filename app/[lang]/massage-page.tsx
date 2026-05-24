@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import BrandLogo from "../BrandLogo";
 import GlobalLanguageSwitcher from "../GlobalLanguageSwitcher";
-import { getNicheSlug, nicheCards, nicheKeys } from "../../lib/niche-pages";
+import { buildNicheAlternates, getNichePath, getNicheSlug, nicheCards, nicheKeys } from "../../lib/niche-pages";
 import { getNicheUxContent } from "../../lib/niche-ux";
 import { buildMetadata } from "../../lib/seo";
 import { getLocalizedPath, publicFooterLabels, type SiteLanguage , withEnglishFallback } from "../../lib/site-language";
@@ -80,12 +80,6 @@ const screenshotsByLanguage: Record<SiteLanguage, { day: string; week: string; m
   ru: { day: "/for-business/ru-day.png", week: "/for-business/ru-week.png", month: "/for-business/ru-month.png" },
   uk: { day: "/for-business/uk-day.png", week: "/for-business/uk-week.png", month: "/for-business/uk-month.png" },
   en: { day: "/for-business/en-day.png", week: "/for-business/en-week.png", month: "/for-business/en-month.png" }
-});
-
-const massagePathByLanguage: Record<SiteLanguage, string> = withEnglishFallback<string>({
-  uk: "/uk/dlya-masazhu",
-  ru: "/ru/dlya-massazhistov",
-  en: "/en/for-massage-therapists"
 });
 
 const copy: Record<SiteLanguage, Copy> = withEnglishFallback<Copy>({
@@ -414,15 +408,7 @@ export function buildMassageMetadata(lang: SiteLanguage, pathname: string): Meta
   const metadata = buildMetadata(pathname, { title, description }, lang);
   return {
     ...metadata,
-    alternates: {
-      canonical: `https://timviz.com${pathname}`,
-      languages: {
-        uk: `https://timviz.com${massagePathByLanguage.uk}`,
-        ru: `https://timviz.com${massagePathByLanguage.ru}`,
-        en: `https://timviz.com${massagePathByLanguage.en}`,
-        "x-default": `https://timviz.com${massagePathByLanguage.en}`
-      }
-    }
+    alternates: buildNicheAlternates("massage", lang)
   };
 }
 
@@ -466,7 +452,7 @@ export default function MassageLanding({ language }: { language: SiteLanguage })
         "@type": "ListItem",
         position: 3,
         name: t.title,
-        item: `https://timviz.com${massagePathByLanguage[language]}`
+        item: `https://timviz.com${getNichePath(language, "massage")}`
       }
     ]
   };
