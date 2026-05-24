@@ -222,6 +222,236 @@ const workspaceCopy = {
         { start: 330, height: 74, time: "13:15 - 14:15", client: "Ira M.", service: "Pedicure" }
       ]
     }
+  },
+  fr: {
+    loading: "Chargement de l’espace de travail...",
+    dateLabel: "jeu. 9 avr.",
+    settingsPill: "Réglages",
+    ownerRole: "Propriétaire",
+    workingIn: (name: string) => `Travaille dans ${name}`,
+    ownerWorkspace: "Espace propriétaire",
+    proWorkspace: "Espace professionnel",
+    premium: "Premium",
+    personal: "Personnel",
+    ownerHeroText: "Gérez spécialistes, services, rôles et toutes les réservations dans un seul espace.",
+    memberHeroText: "Calendrier personnel du spécialiste, réservations, services et charge de travail dans le salon.",
+    team: "Équipe",
+    solo: "Solo",
+    fullAccess: "Accès complet",
+    limitedAccess: "Accès limité",
+    accountSaved: "Compte enregistré",
+    businessCreated: "Entreprise créée",
+    salonConnected: "Connexion au salon terminée",
+    setupMasters: "Configurer les spécialistes",
+    checkSchedule: "Vérifier votre horaire",
+    servicesBase: "Services dans la base",
+    businessAddress: "Adresse de l’entreprise",
+    links: "Liens",
+    openCatalog: "Ouvrir le catalogue client",
+    servicesCount: "services",
+    checklistProgress: (done: number, total: number) => `${done} sur ${total} terminé`,
+    profileReadyComplete: "Profil entièrement prêt 🚀",
+    stepServices: "Ajouter des services et fixer les prix",
+    stepSchedule: "Configurer l’horaire de travail",
+    stepBooking: "Activer la réservation en ligne",
+    stepPhoto: "Ajouter une photo de l’entreprise",
+    stepPhotoHint: "Ajoutez une photo pour rendre le profil plus professionnel et inspirer confiance",
+    stepAddress: "Ajouter l’adresse",
+    stepTelegram: "Connecter Telegram",
+    bookings: {
+      owner: [
+        { start: 165, height: 56, time: "11:00 - 11:45", client: "John Doe", service: "Coupe" },
+        { start: 318, height: 92, time: "13:00 - 14:15", client: "Jane Doe", service: "Coloration" }
+      ],
+      member: [
+        { start: 170, height: 54, time: "11:15 - 12:00", client: "Anna K.", service: "Manucure" },
+        { start: 330, height: 74, time: "13:15 - 14:15", client: "Ira M.", service: "Pédicure" }
+      ]
+    }
+  },
+  pl: {
+    loading: "Ładowanie przestrzeni roboczej...",
+    dateLabel: "czw. 9 kwi",
+    settingsPill: "Ustawienia",
+    ownerRole: "Właściciel firmy",
+    workingIn: (name: string) => `Pracuję w ${name}`,
+    ownerWorkspace: "Panel właściciela",
+    proWorkspace: "Panel specjalisty",
+    premium: "Premium",
+    personal: "Osobisty",
+    ownerHeroText: "Zarządzaj specjalistami, usługami, rolami i wszystkimi rezerwacjami w jednym miejscu.",
+    memberHeroText: "Osobisty kalendarz specjalisty, własne rezerwacje, usługi i obciążenie w salonie.",
+    team: "Zespół",
+    solo: "Solo",
+    fullAccess: "Pełny dostęp",
+    limitedAccess: "Ograniczony dostęp",
+    accountSaved: "Konto zapisane w bazie",
+    businessCreated: "Firma utworzona",
+    salonConnected: "Połączenie z salonem zakończone",
+    setupMasters: "Skonfiguruj specjalistów",
+    checkSchedule: "Sprawdź grafik",
+    servicesBase: "Usługi w bazie",
+    businessAddress: "Adres firmy",
+    links: "Linki",
+    openCatalog: "Otwórz katalog klientów",
+    servicesCount: "usług",
+    checklistProgress: (done: number, total: number) => `${done} z ${total} ukończono`,
+    profileReadyComplete: "Profil jest gotowy 🚀",
+    stepServices: "Dodaj usługi i ceny",
+    stepSchedule: "Skonfiguruj grafik pracy",
+    stepBooking: "Włącz rezerwacje online",
+    stepPhoto: "Dodaj zdjęcie firmy",
+    stepPhotoHint: "Dodaj zdjęcie, aby profil wyglądał profesjonalnie i budował zaufanie",
+    stepAddress: "Dodaj adres",
+    stepTelegram: "Połącz Telegram",
+    bookings: {
+      owner: [
+        { start: 165, height: 56, time: "11:00 - 11:45", client: "John Doe", service: "Strzyżenie" },
+        { start: 318, height: 92, time: "13:00 - 14:15", client: "Jane Doe", service: "Koloryzacja" }
+      ],
+      member: [
+        { start: 170, height: 54, time: "11:15 - 12:00", client: "Anna K.", service: "Manicure" },
+        { start: 330, height: 74, time: "13:15 - 14:15", client: "Ira M.", service: "Pedicure" }
+      ]
+    }
+  },
+  cs: {
+    loading: "Načítání pracovního prostoru...",
+    dateLabel: "čt 9. dub.",
+    settingsPill: "Nastavení",
+    ownerRole: "Majitel firmy",
+    workingIn: (name: string) => `Pracuji v ${name}`,
+    ownerWorkspace: "Prostor majitele",
+    proWorkspace: "Prostor specialisty",
+    premium: "Premium",
+    personal: "Osobní",
+    ownerHeroText: "Spravujte specialisty, služby, role a všechny rezervace firmy v jednom prostoru.",
+    memberHeroText: "Osobní kalendář specialisty, vlastní rezervace, služby a vytížení uvnitř salonu.",
+    team: "Tým",
+    solo: "Solo",
+    fullAccess: "Plný přístup",
+    limitedAccess: "Omezený přístup",
+    accountSaved: "Účet uložen v databázi",
+    businessCreated: "Firma vytvořena",
+    salonConnected: "Připojení k salonu dokončeno",
+    setupMasters: "Nastavit specialisty",
+    checkSchedule: "Zkontrolovat rozvrh",
+    servicesBase: "Služby v databázi",
+    businessAddress: "Adresa firmy",
+    links: "Odkazy",
+    openCatalog: "Otevřít klientský katalog",
+    servicesCount: "služeb",
+    checklistProgress: (done: number, total: number) => `${done} z ${total} hotovo`,
+    profileReadyComplete: "Profil je plně připraven 🚀",
+    stepServices: "Přidat služby a ceny",
+    stepSchedule: "Nastavit pracovní rozvrh",
+    stepBooking: "Zapnout online rezervace",
+    stepPhoto: "Přidat fotku firmy",
+    stepPhotoHint: "Přidejte fotku, aby profil vypadal profesionálněji a působil důvěryhodně",
+    stepAddress: "Přidat adresu",
+    stepTelegram: "Připojit Telegram",
+    bookings: {
+      owner: [
+        { start: 165, height: 56, time: "11:00 - 11:45", client: "John Doe", service: "Střih" },
+        { start: 318, height: 92, time: "13:00 - 14:15", client: "Jane Doe", service: "Barvení vlasů" }
+      ],
+      member: [
+        { start: 170, height: 54, time: "11:15 - 12:00", client: "Anna K.", service: "Manikúra" },
+        { start: 330, height: 74, time: "13:15 - 14:15", client: "Ira M.", service: "Pedikúra" }
+      ]
+    }
+  },
+  es: {
+    loading: "Cargando espacio de trabajo...",
+    dateLabel: "jue. 9 abr.",
+    settingsPill: "Ajustes",
+    ownerRole: "Propietario",
+    workingIn: (name: string) => `Trabajando en ${name}`,
+    ownerWorkspace: "Panel del propietario",
+    proWorkspace: "Panel profesional",
+    premium: "Premium",
+    personal: "Personal",
+    ownerHeroText: "Gestiona especialistas, servicios, roles y todas las reservas del negocio en un solo espacio.",
+    memberHeroText: "Calendario personal del especialista, reservas, servicios y carga de trabajo dentro del salón.",
+    team: "Equipo",
+    solo: "Solo",
+    fullAccess: "Acceso completo",
+    limitedAccess: "Acceso limitado",
+    accountSaved: "Cuenta guardada en la base",
+    businessCreated: "Empresa creada",
+    salonConnected: "Conexión con el salón completada",
+    setupMasters: "Configurar especialistas",
+    checkSchedule: "Comprobar horario",
+    servicesBase: "Servicios en la base",
+    businessAddress: "Dirección del negocio",
+    links: "Enlaces",
+    openCatalog: "Abrir catálogo de clientes",
+    servicesCount: "servicios",
+    checklistProgress: (done: number, total: number) => `${done} de ${total} completado`,
+    profileReadyComplete: "Perfil completamente listo 🚀",
+    stepServices: "Añadir servicios y precios",
+    stepSchedule: "Configurar horario de trabajo",
+    stepBooking: "Activar reserva online",
+    stepPhoto: "Añadir foto del negocio",
+    stepPhotoHint: "Añade una foto para que el perfil se vea más profesional y genere confianza",
+    stepAddress: "Añadir dirección",
+    stepTelegram: "Conectar Telegram",
+    bookings: {
+      owner: [
+        { start: 165, height: 56, time: "11:00 - 11:45", client: "John Doe", service: "Corte" },
+        { start: 318, height: 92, time: "13:00 - 14:15", client: "Jane Doe", service: "Coloración" }
+      ],
+      member: [
+        { start: 170, height: 54, time: "11:15 - 12:00", client: "Anna K.", service: "Manicura" },
+        { start: 330, height: 74, time: "13:15 - 14:15", client: "Ira M.", service: "Pedicura" }
+      ]
+    }
+  },
+  de: {
+    loading: "Arbeitsbereich wird geladen...",
+    dateLabel: "Do. 9. Apr.",
+    settingsPill: "Einstellungen",
+    ownerRole: "Inhaber",
+    workingIn: (name: string) => `Arbeitet bei ${name}`,
+    ownerWorkspace: "Inhaberbereich",
+    proWorkspace: "Profi-Arbeitsbereich",
+    premium: "Premium",
+    personal: "Persönlich",
+    ownerHeroText: "Verwalte Spezialisten, Leistungen, Rollen und alle Buchungen des Unternehmens in einem Arbeitsbereich.",
+    memberHeroText: "Persönlicher Kalender des Spezialisten, eigene Buchungen, Leistungen und Auslastung im Salon.",
+    team: "Team",
+    solo: "Solo",
+    fullAccess: "Voller Zugriff",
+    limitedAccess: "Eingeschränkter Zugriff",
+    accountSaved: "Konto in der Datenbank gespeichert",
+    businessCreated: "Unternehmen erstellt",
+    salonConnected: "Salonverbindung abgeschlossen",
+    setupMasters: "Spezialisten einrichten",
+    checkSchedule: "Zeitplan prüfen",
+    servicesBase: "Leistungen in der Datenbank",
+    businessAddress: "Firmenadresse",
+    links: "Links",
+    openCatalog: "Kundenkatalog öffnen",
+    servicesCount: "Leistungen",
+    checklistProgress: (done: number, total: number) => `${done} von ${total} erledigt`,
+    profileReadyComplete: "Profil ist vollständig bereit 🚀",
+    stepServices: "Leistungen und Preise hinzufügen",
+    stepSchedule: "Arbeitszeiten einrichten",
+    stepBooking: "Online-Buchung aktivieren",
+    stepPhoto: "Firmenfoto hinzufügen",
+    stepPhotoHint: "Füge ein Foto hinzu, damit das Profil professioneller wirkt und Vertrauen schafft",
+    stepAddress: "Adresse hinzufügen",
+    stepTelegram: "Telegram verbinden",
+    bookings: {
+      owner: [
+        { start: 165, height: 56, time: "11:00 - 11:45", client: "John Doe", service: "Haarschnitt" },
+        { start: 318, height: 92, time: "13:00 - 14:15", client: "Jane Doe", service: "Haarfarbe" }
+      ],
+      member: [
+        { start: 170, height: 54, time: "11:15 - 12:00", client: "Anna K.", service: "Maniküre" },
+        { start: 330, height: 74, time: "13:15 - 14:15", client: "Ira M.", service: "Pediküre" }
+      ]
+    }
   }
 } as const;
 
