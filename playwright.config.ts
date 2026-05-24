@@ -23,7 +23,7 @@ export default defineConfig({
     navigationTimeout: 30_000
   },
   webServer: {
-    command: "NODE_OPTIONS=--no-experimental-webstorage npm run dev -- --hostname 127.0.0.1 --port 3000",
+    command: "npm run dev -- --hostname 127.0.0.1 --port 3000",
     url: baseURL,
     reuseExistingServer: !isCi,
     timeout: 120_000

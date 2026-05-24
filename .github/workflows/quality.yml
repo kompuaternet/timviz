@@ -12,7 +12,6 @@ jobs:
     timeout-minutes: 35
 
     env:
-      NODE_OPTIONS: --no-experimental-webstorage
       PLAYWRIGHT_BASE_URL: http://127.0.0.1:3000
 
     steps:
@@ -59,9 +58,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     continue-on-error: true
-
-    env:
-      NODE_OPTIONS: --no-experimental-webstorage
 
     steps:
       - name: Checkout
