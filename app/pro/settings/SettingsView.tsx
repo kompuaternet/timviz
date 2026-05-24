@@ -7,7 +7,7 @@ import ProWorkspaceHeader from "../ProWorkspaceHeader";
 import { isProPremiumActive } from "../premium-status";
 import styles from "../pro.module.css";
 import { getPostLogoutRedirectPath } from "../telegram-context";
-import { languageFromProfile, languageLabels, type ProLanguage } from "../i18n";
+import { isProLanguage, languageFromProfile, languageLabels, type ProLanguage } from "../i18n";
 import { useProLanguage } from "../useProLanguage";
 import { uploadProMediaFile } from "../media-upload";
 import { type BusinessPhoto } from "../../../lib/pro-data";
@@ -1461,16 +1461,58 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
   }
 
   useEffect(() => {
-    window.localStorage.setItem("rezervo-pro-language", initialLanguage);
-    window.dispatchEvent(new CustomEvent("rezervo-language-change", { detail: initialLanguage }));
+    let storedLanguage: string | null = null;
+    try {
+      storedLanguage =
+        typeof window.localStorage?.getItem === "function"
+          ? window.localStorage.getItem("rezervo-pro-language")
+          : null;
+    } catch {
+      storedLanguage = null;
+    }
+
+    const nextLanguage = isProLanguage(storedLanguage) ? storedLanguage : initialLanguage;
+
+    try {
+      window.localStorage.setItem("rezervo-pro-language", nextLanguage);
+    } catch {
+      // Settings must stay usable even when localStorage is blocked.
+    }
+
+    document.documentElement.lang = nextLanguage;
+    window.dispatchEvent(new CustomEvent("rezervo-language-change", { detail: nextLanguage }));
+
+    setData((current) => {
+      if (languageFromProfile(current.professional.language) === nextLanguage) {
+        return current;
+      }
+
+      return {
+        ...current,
+        professional: {
+          ...current.professional,
+          language: languageLabels[nextLanguage]
+        }
+      };
+    });
   }, [initialLanguage]);
 
   useEffect(() => {
     void loadTelegramPanel();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function updateProfessional(field: keyof SettingsData["professional"], value: string) {
+    if (field === "language") {
+      const nextLanguage = languageFromProfile(value);
+      try {
+        window.localStorage.setItem("rezervo-pro-language", nextLanguage);
+      } catch {
+        // Language persistence should not block editing settings.
+      }
+      document.documentElement.lang = nextLanguage;
+      window.dispatchEvent(new CustomEvent("rezervo-language-change", { detail: nextLanguage }));
+    }
+
     setData((current) => ({
       ...current,
       professional: {

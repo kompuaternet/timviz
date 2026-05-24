@@ -7677,3 +7677,101 @@ a {
     min-height: 50px;
   }
 }
+
+@media (max-width: 820px) {
+  .company-booking-modal {
+    inset: 0;
+    max-width: 100dvw;
+    overflow: hidden;
+  }
+
+  .company-booking-modal-shell,
+  .company-booking-modal-content,
+  .company-booking-flow,
+  .company-booking-step,
+  .company-flow-list,
+  .company-slot-groups,
+  .company-confirm-form,
+  .company-auth-card,
+  .company-mobile-confirm-summary {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    overflow-x: hidden;
+  }
+
+  .company-booking-modal-content {
+    width: 100dvw;
+    max-width: 100dvw;
+  }
+
+  .company-booking-flow {
+    padding-left: max(12px, env(safe-area-inset-left, 0px));
+    padding-right: max(12px, env(safe-area-inset-right, 0px));
+  }
+
+  .company-booking-topbar {
+    min-width: 0;
+  }
+
+  .company-booking-progress {
+    min-width: 0;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  .company-flow-card {
+    grid-template-columns: minmax(0, 1fr) 38px;
+    overflow: hidden;
+  }
+
+  .company-flow-card > *,
+  .company-flow-member,
+  .company-flow-member > *,
+  .company-confirm-form label,
+  .company-confirm-form .field,
+  .company-mobile-confirm-summary > * {
+    min-width: 0;
+  }
+
+  .company-flow-card strong,
+  .company-flow-card span,
+  .company-flow-card small,
+  .company-mobile-confirm-summary strong,
+  .company-mobile-confirm-summary span,
+  .company-confirm-form .field span {
+    overflow-wrap: anywhere;
+    word-break: normal;
+  }
+
+  .company-week-strip {
+    max-width: 100%;
+    overflow-x: auto;
+  }
+
+  .company-slot-list {
+    width: 100%;
+    max-width: 100%;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .company-slot-item,
+  .company-booking-gradient-button,
+  .company-modal-next,
+  .company-google-button,
+  .company-confirm-form input,
+  .company-confirm-form select,
+  .company-confirm-form textarea,
+  .salon-phone-prefix,
+  .salon-phone-input {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .salon-phone-row {
+    display: grid;
+    grid-template-columns: minmax(96px, 0.36fr) minmax(0, 1fr);
+    gap: 8px;
+    width: 100%;
+  }
+}

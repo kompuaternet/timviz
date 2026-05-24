@@ -510,6 +510,42 @@ export default function ProWorkspaceHeader({
   }, [pathname, refreshNotifications]);
 
   useEffect(() => {
+    if (!activeMenu) {
+      return;
+    }
+
+    function handlePointerDown(event: PointerEvent) {
+      const target = event.target as Node | null;
+      if (!target) return;
+
+      const activeButton =
+        activeMenu === "share" ? shareMenuButtonRef.current : accountMenuButtonRef.current;
+      const activePanel =
+        activeMenu === "share" ? shareMenuPanelRef.current : accountMenuPanelRef.current;
+
+      if (activeButton?.contains(target) || activePanel?.contains(target)) {
+        return;
+      }
+
+      setActiveMenu(null);
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setActiveMenu(null);
+      }
+    }
+
+    document.addEventListener("pointerdown", handlePointerDown, true);
+    document.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown, true);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [activeMenu]);
+
+  useEffect(() => {
     function handleNotificationsRefresh() {
       refreshNotifications();
     }
@@ -685,7 +721,11 @@ export default function ProWorkspaceHeader({
       await fetch("/api/pro/settings", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ language: profileLanguageFromCode(nextLanguage) })
+        body: JSON.stringify({
+          professional: {
+            language: profileLanguageFromCode(nextLanguage)
+          }
+        })
       });
     } catch {
       return;

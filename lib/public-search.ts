@@ -144,6 +144,24 @@ function buildLocalizedCategory(category: string): LocalizedText {
   ) as LocalizedText;
 }
 
+function joinLocalizedParts(
+  first: LocalizedText | undefined,
+  second: LocalizedText | undefined,
+  fallback: string
+): LocalizedText | undefined {
+  if (!first && !second) {
+    return undefined;
+  }
+
+  return Object.fromEntries(
+    siteLanguages.map((language) => {
+      const left = first?.[language] ?? first?.en ?? "";
+      const right = second?.[language] ?? second?.en ?? "";
+      return [language, [left, right].filter(Boolean).join(" · ") || fallback];
+    })
+  ) as LocalizedText;
+}
+
 function buildProfessionalSubtitle(businessName: string): LocalizedText {
   return Object.fromEntries(
     siteLanguages.map((language) => [
@@ -465,7 +483,6 @@ async function loadPublicSearchIndex(params: PublicSearchParams = {}): Promise<P
   const needsAvailabilityCalculation = Boolean(params.date && params.time);
   const calendarAppointments = needsAvailabilityCalculation ? (await readCalendarStore()).appointments : [];
   const publicPathMap = buildPublicBusinessPathMap(store.businesses);
-  const businessesById = new Map(store.businesses.map((business) => [business.id, business]));
   const servicesByBusiness = new Map<string, ServiceRecord[]>();
   const membershipsByBusiness = new Map<string, MembershipRecord[]>();
   const lat = params.lat ?? null;
@@ -604,14 +621,11 @@ async function loadPublicSearchIndex(params: PublicSearchParams = {}): Promise<P
       image: result.image,
       category: result.category,
       localizedCategory: result.localizedCategory,
-      localizedSubtitle:
-        result.localizedCategory && result.localizedAddress
-          ? {
-              ru: `${result.localizedCategory.ru} · ${result.localizedAddress.ru}`,
-              uk: `${result.localizedCategory.uk} · ${result.localizedAddress.uk}`,
-              en: `${result.localizedCategory.en} · ${result.localizedAddress.en}`
-            }
-          : undefined
+      localizedSubtitle: joinLocalizedParts(
+        result.localizedCategory,
+        result.localizedAddress,
+        `${result.category} · ${result.address}`
+      )
     }));
 
   const professionalSuggestions = results

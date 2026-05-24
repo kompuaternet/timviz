@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import GoogleTag, { getGoogleTagManagerId } from "./GoogleTag";
+import PublicMenuAutoClose from "./PublicMenuAutoClose";
 import { buildMetadata, seoCopy, siteUrl } from "../lib/seo";
 import { defaultSiteLanguage } from "../lib/site-language";
 import "./globals.css";
@@ -55,6 +56,7 @@ export default async function RootLayout({
       </head>
       <body>
         <GoogleTag />
+        <PublicMenuAutoClose />
         {children}
       </body>
     </html>
