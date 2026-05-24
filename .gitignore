@@ -4,6 +4,9 @@ npm-debug.log*
 .env
 .env.local
 *.tsbuildinfo
+.DS_Store
+**/.DS_Store
 backups
 logs
 .tmp.driveupload
+apps/mobile/build-local/
