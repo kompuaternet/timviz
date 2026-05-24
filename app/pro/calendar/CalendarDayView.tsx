@@ -1919,22 +1919,15 @@ function formatActivityTime(createdAt: string, locale: AppLocale) {
   const created = new Date(createdAt);
   const now = Date.now();
   const diffMinutes = Math.max(0, Math.round((now - created.getTime()) / 60000));
+  const relativeTimeFormatter = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
 
   if (diffMinutes < 60) {
-    return locale === "uk-UA"
-      ? `${diffMinutes} хв тому`
-      : locale === "en-US"
-        ? `${diffMinutes} min ago`
-        : `${diffMinutes} мин назад`;
+    return relativeTimeFormatter.format(-diffMinutes, "minute");
   }
 
   const diffHours = Math.round(diffMinutes / 60);
   if (diffHours < 24) {
-    return locale === "uk-UA"
-      ? `${diffHours} год тому`
-      : locale === "en-US"
-        ? `${diffHours} hr ago`
-        : `${diffHours} ч назад`;
+    return relativeTimeFormatter.format(-diffHours, "hour");
   }
 
   return created.toLocaleDateString(locale, {
