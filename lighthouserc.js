@@ -1,7 +1,8 @@
 module.exports = {
   ci: {
     collect: {
-      startServerCommand: "NODE_OPTIONS=--localstorage-file=/tmp/timviz-lighthouse-localstorage npm run dev",
+      startServerCommand:
+        "node --localstorage-file=/tmp/timviz-lighthouse-localstorage ./node_modules/next/dist/bin/next dev",
       startServerReadyPattern: "Ready",
       url: [
         "http://127.0.0.1:3000/ru",
