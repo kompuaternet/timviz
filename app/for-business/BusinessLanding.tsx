@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { timvizMasterAppStoreUrl } from "../../lib/mobile-apps";
 import { getNicheSlug } from "../../lib/niche-pages";
 import { getLocalizedPath, isSiteLanguage, publicFooterLabels, type SiteLanguage, withEnglishFallback } from "../../lib/site-language";
 import BrandLogo from "../BrandLogo";
@@ -55,6 +56,8 @@ type LocalCopy = {
   finalTitle: string;
   finalText: string;
   finalHint: string;
+  appStoreCta: string;
+  appStoreNote: string;
   capabilitiesTitle: string;
   capabilitiesSubtitle: string;
   usefulForProsTitle: string;
@@ -181,6 +184,8 @@ const copy: Record<LandingLanguage, LocalCopy> = withEnglishFallback<LocalCopy>(
     finalText:
       "Створіть профіль, додайте послуги і налаштуйте графік. Timviz допоможе швидко перейти від хаосу в месенджерах до зручного календаря записів.",
     finalHint: "Це займе кілька хвилин",
+    appStoreCta: "Завантажити Timviz Master",
+    appStoreNote: "Доступно в App Store для iPhone",
     capabilitiesTitle: "Можливості Timviz",
     capabilitiesSubtitle: "Усі інструменти для запису клієнтів, календаря та керування послугами в одному кабінеті.",
     usefulForProsTitle: "Корисно для майстрів",
@@ -284,6 +289,8 @@ const copy: Record<LandingLanguage, LocalCopy> = withEnglishFallback<LocalCopy>(
     finalText:
       "Создайте профиль, добавьте услуги и настройте график. Timviz поможет быстро перейти от хаоса в мессенджерах к удобному календарю записей.",
     finalHint: "Это займет несколько минут",
+    appStoreCta: "Скачать Timviz Master",
+    appStoreNote: "Доступно в App Store для iPhone",
     capabilitiesTitle: "Возможности Timviz",
     capabilitiesSubtitle: "Все инструменты для записи клиентов, календаря и управления услугами в одном кабинете.",
     usefulForProsTitle: "Полезно для мастеров",
@@ -387,6 +394,8 @@ const copy: Record<LandingLanguage, LocalCopy> = withEnglishFallback<LocalCopy>(
     finalText:
       "Create your profile, add services and configure your schedule. Timviz helps you move from messenger chaos to a clear booking calendar.",
     finalHint: "It takes just a few minutes",
+    appStoreCta: "Download Timviz Master",
+    appStoreNote: "Available on the App Store for iPhone",
     capabilitiesTitle: "Timviz capabilities",
     capabilitiesSubtitle: "All tools for client booking, calendar planning and service management in one workspace.",
     usefulForProsTitle: "Useful for professionals",
@@ -477,6 +486,8 @@ Object.assign(copy, {
     finalTitle: "Commencez à recevoir des réservations aujourd’hui",
     finalText: "Créez votre profil, ajoutez vos services et configurez votre planning. Timviz vous aide à passer du chaos des messages à un calendrier clair.",
     finalHint: "Cela prend quelques minutes",
+    appStoreCta: "Télécharger Timviz Master",
+    appStoreNote: "Disponible sur l’App Store pour iPhone",
     capabilitiesTitle: "Fonctionnalités Timviz",
     capabilitiesSubtitle: "Tous les outils pour la réservation, le calendrier et la gestion des services dans un seul espace.",
     usefulForProsTitle: "Utile pour les professionnels",
@@ -563,6 +574,8 @@ Object.assign(copy, {
     finalTitle: "Zacznij przyjmować rezerwacje już dziś",
     finalText: "Utwórz profil, dodaj usługi i skonfiguruj grafik. Timviz pomaga przejść od chaosu wiadomości do jasnego kalendarza.",
     finalHint: "To zajmie kilka minut",
+    appStoreCta: "Pobierz Timviz Master",
+    appStoreNote: "Dostępne w App Store na iPhone’a",
     capabilitiesTitle: "Możliwości Timviz",
     capabilitiesSubtitle: "Wszystkie narzędzia do rezerwacji, kalendarza i usług w jednym miejscu.",
     usefulForProsTitle: "Przydatne dla specjalistów",
@@ -649,6 +662,8 @@ Object.assign(copy, {
     finalTitle: "Začněte přijímat rezervace ještě dnes",
     finalText: "Vytvořte profil, přidejte služby a nastavte rozvrh. Timviz pomáhá přejít od chaosu ve zprávách k jasnému kalendáři.",
     finalHint: "Zabere to pár minut",
+    appStoreCta: "Stáhnout Timviz Master",
+    appStoreNote: "Dostupné v App Storu pro iPhone",
     capabilitiesTitle: "Možnosti Timviz",
     capabilitiesSubtitle: "Všechny nástroje pro rezervace, kalendář a služby v jednom prostoru.",
     usefulForProsTitle: "Užitečné pro profesionály",
@@ -735,6 +750,8 @@ Object.assign(copy, {
     finalTitle: "Empieza a recibir reservas hoy",
     finalText: "Crea tu perfil, añade servicios y configura tu agenda. Timviz te ayuda a pasar del caos de mensajes a un calendario claro.",
     finalHint: "Solo toma unos minutos",
+    appStoreCta: "Descargar Timviz Master",
+    appStoreNote: "Disponible en App Store para iPhone",
     capabilitiesTitle: "Funciones de Timviz",
     capabilitiesSubtitle: "Todas las herramientas para reservas, calendario y servicios en un solo espacio.",
     usefulForProsTitle: "Útil para profesionales",
@@ -821,6 +838,8 @@ Object.assign(copy, {
     finalTitle: "Starte heute mit Buchungen",
     finalText: "Erstelle dein Profil, füge Leistungen hinzu und richte deinen Zeitplan ein. Timviz macht aus Nachrichtenchaos einen klaren Kalender.",
     finalHint: "Dauert nur wenige Minuten",
+    appStoreCta: "Timviz Master laden",
+    appStoreNote: "Im App Store für iPhone verfügbar",
     capabilitiesTitle: "Timviz Funktionen",
     capabilitiesSubtitle: "Alle Werkzeuge für Buchungen, Kalender und Leistungsverwaltung in einem Arbeitsbereich.",
     usefulForProsTitle: "Nützlich für Profis",
@@ -1010,8 +1029,11 @@ export default function BusinessLanding({ initialLanguage = "ru" }: BusinessLand
           <div className="business-hero-actions">
             <a className="business-primary" href={createProfileLink}>{t.primaryCta}</a>
             <a className="business-secondary" href="#features">{t.secondaryCta}</a>
+            <a className="business-secondary" href={timvizMasterAppStoreUrl} rel="noopener noreferrer" target="_blank">
+              {t.appStoreCta}
+            </a>
           </div>
-          <small>{t.proof}</small>
+          <small>{t.proof} · {t.appStoreNote}</small>
         </div>
         <div className="business-hero-visual">
           <img src={assets[0]} alt={t.screenshotAlt} />
@@ -1151,7 +1173,10 @@ export default function BusinessLanding({ initialLanguage = "ru" }: BusinessLand
         <h2>{t.finalTitle}</h2>
         <p>{t.finalText}</p>
         <a className="business-primary" href={createProfileLink}>{copy[language].create}</a>
-        <small>{t.finalHint}</small>
+        <a className="business-secondary" href={timvizMasterAppStoreUrl} rel="noopener noreferrer" target="_blank">
+          {t.appStoreCta}
+        </a>
+        <small>{t.finalHint} · {t.appStoreNote}</small>
       </section>
 
       <footer className="business-footer">
@@ -1167,6 +1192,7 @@ export default function BusinessLanding({ initialLanguage = "ru" }: BusinessLand
           <a href={getLocalizedPath(language, "/terms")}>{t.terms}</a>
           <a href={getLocalizedPath(language, "/refund-policy")}>{footerLabels.refund}</a>
           <a href={getLocalizedPath(language, "/contact")}>{footerLabels.contact}</a>
+          <a href={timvizMasterAppStoreUrl} rel="noopener noreferrer" target="_blank">{t.appStoreCta}</a>
           <a href="mailto:adm@timviz.com">adm@timviz.com</a>
         </div>
       </footer>
