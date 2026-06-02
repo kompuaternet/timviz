@@ -24,6 +24,8 @@ export async function POST(request: Request) {
     const email = String(body?.account?.email || "").trim().toLowerCase();
     const password = String(body?.account?.password || "");
     const authProvider = body?.account?.authProvider === "google" || body?.account?.authProvider === "apple" ? body.account.authProvider : "email";
+    const signupSource = String(body?.account?.signupSource || "").trim().toLowerCase();
+    const skipEmailConfirmation = signupSource === "for_masters";
     const language = normalizeAuthLanguage(body?.account?.language);
     const t = authApiCopy[language];
     const ip = getClientIp(request);
@@ -49,7 +51,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: t.passwordResetWeak }, { status: 400 });
     }
 
-    const shouldVerifyCaptcha = authProvider === "email" && !body?.account?.emailConfirmed;
+    const shouldVerifyCaptcha = authProvider === "email";
     if (shouldVerifyCaptcha) {
       const captchaOk = await verifyCaptchaToken(body.captchaToken, ip);
       if (!captchaOk) {
@@ -61,7 +63,7 @@ export async function POST(request: Request) {
       account: {
         ...body.account,
         authProvider,
-        emailConfirmed: authProvider !== "email"
+        emailConfirmed: authProvider !== "email" || skipEmailConfirmation
       },
       setup: body.setup,
       invitationToken: typeof body.invitationToken === "string" ? body.invitationToken : undefined
@@ -101,7 +103,7 @@ export async function POST(request: Request) {
       }).catch(() => undefined);
     }
 
-    if (authProvider === "email") {
+    if (authProvider === "email" && !skipEmailConfirmation) {
       const professional = await getProfessionalPasswordResetProfile(email);
       if (professional) {
         await sendProfessionalConfirmationEmail({

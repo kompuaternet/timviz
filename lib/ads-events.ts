@@ -49,8 +49,9 @@ export function buildAdsCarryoverUrl(pathname: string) {
     return pathname;
   }
 
+  const baseUrl = new URL(pathname, window.location.origin);
   const sourceParams = new URLSearchParams(window.location.search);
-  const nextParams = new URLSearchParams();
+  const nextParams = new URLSearchParams(baseUrl.search);
   const carryPrefixes = ["utm_"];
   const carryKeys = ["gclid", "gbraid", "wbraid", "fbclid", "ttclid"];
 
@@ -61,5 +62,5 @@ export function buildAdsCarryoverUrl(pathname: string) {
   });
 
   const query = nextParams.toString();
-  return query ? `${pathname}?${query}` : pathname;
+  return query ? `${baseUrl.pathname}?${query}` : baseUrl.pathname;
 }

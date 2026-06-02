@@ -674,6 +674,7 @@ export default function CreateAccountForm() {
   const [inviteToken, setInviteToken] = useState("");
   const [step, setStep] = useState<"entry" | "details">("entry");
   const [isTelegramSource, setIsTelegramSource] = useState(false);
+  const [signupSource, setSignupSource] = useState("");
   const [telegramStartParam, setTelegramStartParam] = useState("setup");
   const [emailConfirmationSent, setEmailConfirmationSent] = useState("");
   const [resendCooldown, setResendCooldown] = useState(0);
@@ -792,14 +793,14 @@ export default function CreateAccountForm() {
     const initialLanguage = isProLanguage(savedLanguage)
       ? savedLanguage
       : getBrowserLanguage();
-    trackAdsEvent("sign_up_start", {
-      source: "pro_create_account",
-      language: initialLanguage
-    });
     const browserCountry = getBrowserCountry();
     const browserTimezone = getBrowserTimezone();
     const params = new URLSearchParams(window.location.search);
     const sourceFromQuery = params.get("source")?.trim().toLowerCase() || "";
+    trackAdsEvent("sign_up_start", {
+      source: sourceFromQuery || "pro_create_account",
+      language: initialLanguage
+    });
     const queryStartParam =
       params.get("startapp")?.trim() ||
       params.get("start_param")?.trim() ||
@@ -883,6 +884,7 @@ export default function CreateAccountForm() {
     setInviteToken(inviteFromQuery);
     setAuthProviderMode(providerFromQuery);
     setIsTelegramSource(sourceFromQuery === "telegram" || isTelegramRuntime);
+    setSignupSource(sourceFromQuery);
     setTelegramStartParam(queryStartParam || runtimeStartParam || "setup");
     try {
       localStorage?.setItem("rezervo-pro-language", initialLanguage);
@@ -1116,6 +1118,7 @@ export default function CreateAccountForm() {
       password,
       authProvider: authProviderMode,
       emailConfirmed: authProviderMode !== "email",
+      signupSource,
       avatarUrl,
       phone: buildInternationalPhone(phoneCountry, phone),
       country,
@@ -1207,18 +1210,18 @@ export default function CreateAccountForm() {
 
     logFunnelStep("setup_completed");
     trackAdsEvent("sign_up_complete", {
-      source: "pro_create_account",
+      source: signupSource || "pro_create_account",
       language,
       workspace_ready: result.workspaceReady === true
     });
     trackAdsEvent("business_profile_created", {
-      source: "pro_create_account",
+      source: signupSource || "pro_create_account",
       language,
       owner_mode: "owner"
     });
     if (result.trialStarted === true) {
       trackAdsEvent("pro_trial_started", {
-        source: "pro_create_account",
+        source: signupSource || "pro_create_account",
         language
       });
     }
