@@ -216,6 +216,26 @@ create table if not exists public.monobank_payments (
   updated_at timestamptz not null default timezone('utc', now())
 );
 
+create table if not exists public.monobank_subscriptions (
+  id text primary key,
+  user_id text not null references public.professionals(id) on delete cascade,
+  subscription_id text not null unique,
+  plan_code text not null,
+  amount integer not null default 0,
+  currency text not null default 'UAH',
+  status text not null default 'created',
+  interval text not null default '1m',
+  period_months integer not null default 1,
+  active_from timestamptz,
+  active_until timestamptz,
+  next_charge_at timestamptz,
+  cancelled_at timestamptz,
+  mono_modified_date timestamptz,
+  raw_payload jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default timezone('utc', now()),
+  updated_at timestamptz not null default timezone('utc', now())
+);
+
 create table if not exists public.webhook_events (
   id text primary key,
   provider text not null,
@@ -444,6 +464,8 @@ create index if not exists user_entitlements_user_status_idx on public.user_enti
 create index if not exists user_entitlements_source_idx on public.user_entitlements (source, updated_at desc);
 create index if not exists apple_subscriptions_user_idx on public.apple_subscriptions (user_id, expires_at desc);
 create index if not exists monobank_payments_user_idx on public.monobank_payments (user_id, active_until desc);
+create index if not exists monobank_subscriptions_user_idx on public.monobank_subscriptions (user_id, active_until desc);
+create index if not exists monobank_subscriptions_status_idx on public.monobank_subscriptions (status, next_charge_at desc);
 create index if not exists webhook_events_provider_created_idx on public.webhook_events (provider, created_at desc);
 create index if not exists business_memberships_professional_idx on public.business_memberships (professional_id);
 create index if not exists business_memberships_business_professional_idx on public.business_memberships (business_id, professional_id);
@@ -505,6 +527,7 @@ alter table if exists public.plans enable row level security;
 alter table if exists public.user_entitlements enable row level security;
 alter table if exists public.apple_subscriptions enable row level security;
 alter table if exists public.monobank_payments enable row level security;
+alter table if exists public.monobank_subscriptions enable row level security;
 alter table if exists public.webhook_events enable row level security;
 alter table if exists public.app_notifications enable row level security;
 alter table if exists public.calendar_appointments enable row level security;

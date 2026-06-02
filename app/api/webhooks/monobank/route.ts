@@ -1,4 +1,4 @@
-import { createHash, createPublicKey, verify as verifySignature } from "crypto";
+import { createPublicKey, verify as verifySignature } from "crypto";
 import { NextResponse } from "next/server";
 import { updateProfessionalPremiumFromMonobank } from "../../../../lib/premium";
 import { getSupabaseAdmin, isSupabaseConfigured } from "../../../../lib/supabase";

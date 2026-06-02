@@ -430,6 +430,7 @@ export async function updateProfessionalPremiumFromMonobank(input: {
   premiumUntil?: string | null;
   planCode?: string | null;
   invoiceId?: string | null;
+  cancelAtPeriodEnd?: boolean;
 }) {
   if (!isSupabaseConfigured()) {
     console.info("[monobank] Supabase is not configured; skipping premium update.", {
@@ -446,10 +447,15 @@ export async function updateProfessionalPremiumFromMonobank(input: {
 
   const active = input.status === "active";
   const existing = await getProfessionalPremiumSnapshot({ professionalId: input.professionalId });
-  const premiumUntil = active ? maxIsoDate(existing?.premium_until, input.premiumUntil) : existing?.premium_until || null;
+  const premiumUntil =
+    active || input.status === "cancelled"
+      ? maxIsoDate(existing?.premium_until, input.premiumUntil)
+      : existing?.premium_until || null;
+  const cancelledWithRemainingAccess = input.status === "cancelled" && isFutureDate(premiumUntil);
+  const premiumStatus = active ? "active" : cancelledWithRemainingAccess ? "canceled" : "inactive";
   const patch: Record<string, string | null> = {
-    plan: active ? "premium" : isPremiumAccessActive({ plan: "premium", premiumStatus: existing?.premium_status, premiumUntil }) ? "premium" : "free",
-    premium_status: active ? "active" : "inactive",
+    plan: isPremiumAccessActive({ plan: "premium", premiumStatus, premiumUntil }) ? "premium" : "free",
+    premium_status: premiumStatus,
     premium_until: premiumUntil
   };
 
@@ -464,10 +470,10 @@ export async function updateProfessionalPremiumFromMonobank(input: {
   await upsertUserEntitlement({
     userId: input.professionalId,
     planCode: input.planCode || "pro_monthly",
-    status: active ? "active" : input.status,
+    status: active || cancelledWithRemainingAccess ? "active" : input.status,
     source: "monobank",
     activeUntil: premiumUntil,
-    cancelAtPeriodEnd: false
+    cancelAtPeriodEnd: input.cancelAtPeriodEnd === true
   });
 
   return data?.id

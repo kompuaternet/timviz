@@ -247,6 +247,10 @@ Env для сайта/API на Railway:
 REVENUECAT_SECRET_API_KEY=
 REVENUECAT_ENTITLEMENT_ID=premium
 REVENUECAT_WEBHOOK_SECRET=
+MONOBANK_TOKEN=
+MONOBANK_PUBLIC_KEY_BASE64=
+MONOBANK_PRICE_MONTHLY_UAH=120
+MONOBANK_PRICE_YEARLY_UAH=1160
 ```
 
 Webhook RevenueCat:
@@ -254,5 +258,16 @@ Webhook RevenueCat:
 ```text
 https://timviz.com/api/revenuecat/webhook
 ```
+
+Webhook Monobank для сайта создаётся автоматически при старте checkout через API регулярных платежей:
+
+```text
+https://timviz.com/api/webhooks/monobank/subscription/charge
+https://timviz.com/api/webhooks/monobank/subscription/status
+```
+
+Для live-базы перед включением подписок выполните SQL:
+
+- [monobank-subscriptions.sql](/Users/Vitaliy/Graviti/Rezervo/supabase/monobank-subscriptions.sql)
 
 Важно: реальные покупки и восстановление подписки работают только в native build, TestFlight или App Store build. В Expo Go RevenueCat работает в preview mode, поэтому там можно проверить экран Premium, но не настоящую оплату App Store.

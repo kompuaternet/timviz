@@ -159,7 +159,7 @@ export default function PricingView({ language, copy, user }: PricingViewProps) 
     setLoadingBilling(plan);
     setMessage(copy.startingCheckout);
     try {
-      const response = await fetch("/api/billing/monobank/create-invoice", {
+      const response = await fetch("/api/billing/monobank/create-subscription", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ billing: plan })
