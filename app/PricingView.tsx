@@ -241,16 +241,15 @@ export default function PricingView({ language, copy, user }: PricingViewProps) 
               >
                 {copy.buttons[planKey]}
               </button>
-              {planKey === "free" ? null : (
-                <p className="pricing-card-notice">
-                  {copy.checkoutNotice}{" "}
-                  <Link href={getLocalizedPath(language, "/subscription-terms")}>{footer.subscription}</Link>
-                </p>
-              )}
             </article>
           );
         })}
       </section>
+
+      <p className="pricing-checkout-notice">
+        {copy.checkoutNotice}{" "}
+        <Link href={getLocalizedPath(language, "/subscription-terms")}>{footer.subscription}</Link>
+      </p>
 
       <p className="pricing-software-notice">{copy.softwareNotice}</p>
 
@@ -285,7 +284,6 @@ export default function PricingView({ language, copy, user }: PricingViewProps) 
           <h3>{footer.legal}</h3>
           <Link href={getLocalizedPath(language, "/privacy")}>{footer.privacy}</Link>
           <Link href={getLocalizedPath(language, "/terms")}>{footer.terms}</Link>
-          <Link href={getLocalizedPath(language, "/subscription-terms")}>{footer.subscription}</Link>
           <Link href={getLocalizedPath(language, "/refund-policy")}>{footer.refund}</Link>
           <Link href={getLocalizedPath(language, "/contact")}>{footer.contact}</Link>
           <a href="mailto:adm@timviz.com">{footer.support}: adm@timviz.com</a>
