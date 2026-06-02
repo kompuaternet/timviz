@@ -4,10 +4,14 @@ import { NextResponse } from "next/server";
 import { getPublicAppUrl } from "../../../../../lib/app-url";
 import {
   getMonobankAmount,
+  getMonobankCurrencyCode,
+  getMonobankCurrencyLabel,
   getMonobankInterval,
   getMonobankPeriodMonths,
   getMonobankPlanCode,
   getMonobankToken,
+  getLatestMonobankSubscriptionForUser,
+  isActiveMonobankSubscription,
   type MonobankBilling
 } from "../../../../../lib/monobank-billing";
 import { getSessionCookieName, verifySessionValue } from "../../../../../lib/pro-auth";
@@ -33,9 +37,20 @@ export async function POST(request: Request) {
   const body = (await request.json().catch(() => ({}))) as { billing?: string };
   const billing: MonobankBilling = body.billing === "yearly" ? "yearly" : "monthly";
   const amount = getMonobankAmount(billing);
+  const currencyCode = getMonobankCurrencyCode();
+  const currencyLabel = getMonobankCurrencyLabel();
   const interval = getMonobankInterval(billing);
   const planCode = getMonobankPlanCode(billing);
   const appUrl = getPublicAppUrl(request);
+  const existingSubscription = await getLatestMonobankSubscriptionForUser(professionalId);
+  if (isActiveMonobankSubscription(existingSubscription)) {
+    return NextResponse.json({
+      ok: true,
+      existing: true,
+      paymentUrl: `${appUrl}/pro/settings?billing=active`,
+      pageUrl: `${appUrl}/pro/settings?billing=active`
+    });
+  }
 
   const response = await fetch("https://api.monobank.ua/api/merchant/subscription/create", {
     method: "POST",
@@ -47,7 +62,7 @@ export async function POST(request: Request) {
     },
     body: JSON.stringify({
       amount,
-      ccy: 980,
+      ccy: currencyCode,
       redirectUrl: `${appUrl}/pro/settings?billing=success`,
       webHookUrls: {
         chargeUrl: `${appUrl}/api/webhooks/monobank/subscription/charge`,
@@ -80,7 +95,7 @@ export async function POST(request: Request) {
       subscription_id: payload.subscriptionId,
       plan_code: planCode,
       amount,
-      currency: "UAH",
+      currency: currencyLabel,
       status: "created",
       interval,
       period_months: getMonobankPeriodMonths(interval),
@@ -100,4 +115,3 @@ export async function POST(request: Request) {
     pageUrl: payload.pageUrl
   });
 }
-

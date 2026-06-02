@@ -82,6 +82,16 @@ type SettingsData = {
     used: number;
     remaining: number;
   };
+  monobankSubscription: {
+    subscriptionId: string;
+    planCode: string;
+    amount: number;
+    currency: string;
+    status: string;
+    activeUntil: string | null;
+    nextChargeAt: string | null;
+    cancelledAt: string | null;
+  } | null;
 };
 
 type SettingsViewProps = {
@@ -712,6 +722,16 @@ const planCopy = {
     trialHintYearly: "После пробного периода подписка продолжится как Premium Yearly за $29/year. Отменить можно в любое время.",
     upgrade: "Перейти на Premium",
     manage: "Управлять подпиской",
+    cancelSubscription: "Отменить подписку",
+    cancellingSubscription: "Отменяем...",
+    cancelSubscriptionConfirm: "Отменить автопродление Premium? Доступ сохранится до конца оплаченного периода.",
+    cancelSubscriptionDone: "Автопродление отменено. Доступ сохранится до конца оплаченного периода.",
+    cancelSubscriptionFailed: "Не удалось отменить подписку. Попробуйте ещё раз или напишите в поддержку.",
+    subscriptionTerms: "Условия подписки",
+    refundPolicy: "Политика возвратов",
+    supportEmail: "Поддержка: adm@timviz.com",
+    monobankSubscriptionHint: "Подписка оплачивается через monobank в USD. Следующее списание зависит от выбранного периода.",
+    cancelledSubscriptionHint: "Автопродление отменено. Premium работает до конца оплаченного периода.",
     unknownDate: "Дата появится после первого платежа.",
     appointmentsTitle: "Записи этого месяца",
     appointmentsFreeText: "На Free доступно 100 записей в месяц. В начале месяца лимит обновится автоматически.",
@@ -748,6 +768,16 @@ const planCopy = {
     trialHintYearly: "Після пробного періоду підписка продовжиться як Premium Yearly за $29/year. Скасувати можна будь-коли.",
     upgrade: "Перейти на Premium",
     manage: "Керувати підпискою",
+    cancelSubscription: "Скасувати підписку",
+    cancellingSubscription: "Скасовуємо...",
+    cancelSubscriptionConfirm: "Скасувати автопродовження Premium? Доступ збережеться до кінця оплаченого періоду.",
+    cancelSubscriptionDone: "Автопродовження скасовано. Доступ збережеться до кінця оплаченого періоду.",
+    cancelSubscriptionFailed: "Не вдалося скасувати підписку. Спробуйте ще раз або напишіть у підтримку.",
+    subscriptionTerms: "Умови підписки",
+    refundPolicy: "Політика повернень",
+    supportEmail: "Підтримка: adm@timviz.com",
+    monobankSubscriptionHint: "Підписка оплачується через monobank у USD. Наступне списання залежить від вибраного періоду.",
+    cancelledSubscriptionHint: "Автопродовження скасовано. Premium працює до кінця оплаченого періоду.",
     unknownDate: "Дата зʼявиться після першого платежу.",
     appointmentsTitle: "Записи цього місяця",
     appointmentsFreeText: "На Free доступно 100 записів на місяць. На початку місяця ліміт оновиться автоматично.",
@@ -784,6 +814,16 @@ const planCopy = {
     trialHintYearly: "After the trial, your subscription continues as Premium Yearly for $29/year. You can cancel anytime.",
     upgrade: "Upgrade to Premium",
     manage: "Manage subscription",
+    cancelSubscription: "Cancel subscription",
+    cancellingSubscription: "Cancelling...",
+    cancelSubscriptionConfirm: "Cancel Premium auto-renewal? Access remains active until the end of the paid period.",
+    cancelSubscriptionDone: "Auto-renewal is cancelled. Access remains active until the end of the paid period.",
+    cancelSubscriptionFailed: "Could not cancel the subscription. Please try again or contact support.",
+    subscriptionTerms: "Subscription terms",
+    refundPolicy: "Refund policy",
+    supportEmail: "Support: adm@timviz.com",
+    monobankSubscriptionHint: "This subscription is paid through monobank in USD. The next charge follows the selected billing period.",
+    cancelledSubscriptionHint: "Auto-renewal is cancelled. Premium remains active until the end of the paid period.",
     unknownDate: "The date will appear after the first payment.",
     appointmentsTitle: "This month's appointments",
     appointmentsFreeText: "Free includes 100 appointments per month. The limit refreshes automatically at the start of each month.",
@@ -814,6 +854,16 @@ const planCopy = {
     trialHintYearly: "Après l'essai, l'abonnement continue en Premium Yearly pour $29/year. Vous pouvez annuler à tout moment.",
     upgrade: "Passer à Premium",
     manage: "Gérer l'abonnement",
+    cancelSubscription: "Annuler l'abonnement",
+    cancellingSubscription: "Annulation...",
+    cancelSubscriptionConfirm: "Annuler le renouvellement automatique Premium ? L'accès reste actif jusqu'à la fin de la période payée.",
+    cancelSubscriptionDone: "Le renouvellement automatique est annulé. L'accès reste actif jusqu'à la fin de la période payée.",
+    cancelSubscriptionFailed: "Impossible d'annuler l'abonnement. Réessayez ou contactez le support.",
+    subscriptionTerms: "Conditions d'abonnement",
+    refundPolicy: "Politique de remboursement",
+    supportEmail: "Support : adm@timviz.com",
+    monobankSubscriptionHint: "Cet abonnement est payé via monobank en USD. Le prochain débit suit la période choisie.",
+    cancelledSubscriptionHint: "Le renouvellement automatique est annulé. Premium reste actif jusqu'à la fin de la période payée.",
     unknownDate: "La date apparaîtra après le premier paiement.",
     appointmentsTitle: "Rendez-vous ce mois-ci",
     appointmentsFreeText: "Free inclut 100 rendez-vous par mois. La limite se renouvelle automatiquement au début de chaque mois.",
@@ -843,6 +893,16 @@ const planCopy = {
     trialHintYearly: "Po okresie próbnym subskrypcja będzie kontynuowana jako Premium Yearly za $29/year. Możesz anulować w dowolnym momencie.",
     upgrade: "Przejdź na Premium",
     manage: "Zarządzaj subskrypcją",
+    cancelSubscription: "Anuluj subskrypcję",
+    cancellingSubscription: "Anulowanie...",
+    cancelSubscriptionConfirm: "Anulować automatyczne odnowienie Premium? Dostęp pozostanie aktywny do końca opłaconego okresu.",
+    cancelSubscriptionDone: "Automatyczne odnowienie anulowane. Dostęp pozostanie aktywny do końca opłaconego okresu.",
+    cancelSubscriptionFailed: "Nie udało się anulować subskrypcji. Spróbuj ponownie lub skontaktuj się z pomocą.",
+    subscriptionTerms: "Warunki subskrypcji",
+    refundPolicy: "Polityka zwrotów",
+    supportEmail: "Pomoc: adm@timviz.com",
+    monobankSubscriptionHint: "Subskrypcja jest opłacana przez monobank w USD. Następna płatność zależy od wybranego okresu.",
+    cancelledSubscriptionHint: "Automatyczne odnowienie anulowane. Premium działa do końca opłaconego okresu.",
     unknownDate: "Data pojawi się po pierwszej płatności.",
     appointmentsTitle: "Wizyty w tym miesiącu",
     appointmentsFreeText: "Free obejmuje 100 wizyt miesięcznie. Limit odnawia się automatycznie na początku miesiąca.",
@@ -868,6 +928,16 @@ const planCopy = {
     renewsOn: "Dále",
     upgrade: "Přejít na Premium",
     manage: "Spravovat předplatné",
+    cancelSubscription: "Zrušit předplatné",
+    cancellingSubscription: "Ruší se...",
+    cancelSubscriptionConfirm: "Zrušit automatické obnovení Premium? Přístup zůstane aktivní do konce zaplaceného období.",
+    cancelSubscriptionDone: "Automatické obnovení je zrušeno. Přístup zůstane aktivní do konce zaplaceného období.",
+    cancelSubscriptionFailed: "Předplatné se nepodařilo zrušit. Zkuste to znovu nebo kontaktujte podporu.",
+    subscriptionTerms: "Podmínky předplatného",
+    refundPolicy: "Zásady vrácení peněz",
+    supportEmail: "Podpora: adm@timviz.com",
+    monobankSubscriptionHint: "Předplatné je placeno přes monobank v USD. Další platba proběhne podle zvoleného období.",
+    cancelledSubscriptionHint: "Automatické obnovení je zrušeno. Premium zůstává aktivní do konce zaplaceného období.",
     appointmentsTitle: "Rezervace tento měsíc",
     appointmentsRemaining: "Zbývá",
     appointmentsUsed: "Použito",
@@ -888,6 +958,16 @@ const planCopy = {
     renewsOn: "Después",
     upgrade: "Pasar a Premium",
     manage: "Gestionar suscripción",
+    cancelSubscription: "Cancelar suscripción",
+    cancellingSubscription: "Cancelando...",
+    cancelSubscriptionConfirm: "¿Cancelar la renovación automática de Premium? El acceso seguirá activo hasta el final del periodo pagado.",
+    cancelSubscriptionDone: "La renovación automática está cancelada. El acceso seguirá activo hasta el final del periodo pagado.",
+    cancelSubscriptionFailed: "No se pudo cancelar la suscripción. Inténtalo de nuevo o contacta con soporte.",
+    subscriptionTerms: "Condiciones de suscripción",
+    refundPolicy: "Política de reembolso",
+    supportEmail: "Soporte: adm@timviz.com",
+    monobankSubscriptionHint: "Esta suscripción se paga mediante monobank en USD. El siguiente cargo sigue el periodo elegido.",
+    cancelledSubscriptionHint: "La renovación automática está cancelada. Premium sigue activo hasta el final del periodo pagado.",
     appointmentsTitle: "Citas de este mes",
     appointmentsRemaining: "Restantes",
     appointmentsUsed: "Usadas",
@@ -908,6 +988,16 @@ const planCopy = {
     renewsOn: "Danach",
     upgrade: "Auf Premium wechseln",
     manage: "Abo verwalten",
+    cancelSubscription: "Abo kündigen",
+    cancellingSubscription: "Wird gekündigt...",
+    cancelSubscriptionConfirm: "Automatische Verlängerung von Premium kündigen? Der Zugang bleibt bis zum Ende des bezahlten Zeitraums aktiv.",
+    cancelSubscriptionDone: "Die automatische Verlängerung ist gekündigt. Der Zugang bleibt bis zum Ende des bezahlten Zeitraums aktiv.",
+    cancelSubscriptionFailed: "Das Abo konnte nicht gekündigt werden. Bitte versuche es erneut oder kontaktiere den Support.",
+    subscriptionTerms: "Abo-Bedingungen",
+    refundPolicy: "Rückerstattungsrichtlinie",
+    supportEmail: "Support: adm@timviz.com",
+    monobankSubscriptionHint: "Dieses Abo wird über monobank in USD bezahlt. Die nächste Abbuchung folgt dem gewählten Zeitraum.",
+    cancelledSubscriptionHint: "Die automatische Verlängerung ist gekündigt. Premium bleibt bis zum Ende des bezahlten Zeitraums aktiv.",
     appointmentsTitle: "Buchungen in diesem Monat",
     appointmentsRemaining: "Verbleibend",
     appointmentsUsed: "Verwendet",
@@ -1068,6 +1158,7 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
   const [status, setStatus] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isTopUpLoading, setIsTopUpLoading] = useState(false);
+  const [isCancellingSubscription, setIsCancellingSubscription] = useState(false);
   const [joinRequests, setJoinRequests] = useState(initialData.joinRequests);
   const [addressSearchValue, setAddressSearchValue] = useState(initialData.business.address ?? "");
   const [addressSuggestions, setAddressSuggestions] = useState<AddressSuggestion[]>([]);
@@ -1080,6 +1171,12 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
   const [telegramError, setTelegramError] = useState("");
   const [activeSection, setActiveSection] = useState<SettingsSectionId>(initialSection ?? "general");
   const hasPremium = isProPremiumActive(data.professional);
+  const hasActiveMonobankSubscription =
+    Boolean(data.monobankSubscription) &&
+    ["active", "success", "processing"].includes(data.monobankSubscription?.status || "") &&
+    !data.monobankSubscription?.cancelledAt;
+  const hasCancelledMonobankSubscription =
+    Boolean(data.monobankSubscription?.cancelledAt) || data.monobankSubscription?.status === "cancelled";
   const premiumLockedSectionIds = useMemo(() => new Set<SettingsSectionId>(["online-booking", "schedule", "telegram"]), []);
   const activeSectionLocked = !hasPremium && premiumLockedSectionIds.has(activeSection);
   const isHydratedRef = useRef(false);
@@ -1537,6 +1634,51 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
     }));
   }
 
+  async function handleCancelSubscription() {
+    if (isCancellingSubscription || !hasActiveMonobankSubscription) return;
+    if (!window.confirm(planText.cancelSubscriptionConfirm)) return;
+
+    setIsCancellingSubscription(true);
+    setStatus("");
+    try {
+      const response = await fetch("/api/billing/monobank/cancel-subscription", {
+        method: "POST"
+      });
+      const payload = (await response.json().catch(() => ({}))) as {
+        subscription?: NonNullable<SettingsData["monobankSubscription"]>;
+        error?: string;
+      };
+      if (!response.ok) {
+        throw new Error(payload.error || planText.cancelSubscriptionFailed);
+      }
+
+      setData((current) => ({
+        ...current,
+        professional: {
+          ...current.professional,
+          premiumStatus: "canceled"
+        },
+        monobankSubscription: payload.subscription
+          ? {
+              ...payload.subscription,
+              status: "cancelled"
+            }
+          : current.monobankSubscription
+            ? {
+                ...current.monobankSubscription,
+                status: "cancelled",
+                cancelledAt: new Date().toISOString()
+              }
+            : null
+      }));
+      setStatus(planText.cancelSubscriptionDone);
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : planText.cancelSubscriptionFailed);
+    } finally {
+      setIsCancellingSubscription(false);
+    }
+  }
+
   function toggleBusinessCategory(category: string) {
     const normalized = normalizeCategoryList([category])[0];
     if (!normalized) return;
@@ -1606,7 +1748,8 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
       membership: next.workspace.membership,
       services: Array.isArray(next.workspace.services) ? next.workspace.services : data.services,
       joinRequests,
-      bookingCredits: next.bookingCredits
+      bookingCredits: next.bookingCredits,
+      monobankSubscription: data.monobankSubscription
     };
 
     setData(nextData);
@@ -2397,11 +2540,32 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
                       </div>
                     </div>
                     <p className={styles.settingsCardHint}>
-                      {premiumHint}
+                      {hasCancelledMonobankSubscription
+                        ? planText.cancelledSubscriptionHint
+                        : hasActiveMonobankSubscription
+                          ? planText.monobankSubscriptionHint
+                          : premiumHint}
                     </p>
-                    <a className={styles.primaryButton} href="/pricing">
-                      {data.professional.plan === "premium" ? planText.manage : planText.upgrade}
-                    </a>
+                    <div className={styles.settingsPlanActions}>
+                      <a className={styles.primaryButton} href="/pricing">
+                        {data.professional.plan === "premium" ? planText.manage : planText.upgrade}
+                      </a>
+                      {hasActiveMonobankSubscription ? (
+                        <button
+                          type="button"
+                          className={styles.dangerButton}
+                          onClick={() => void handleCancelSubscription()}
+                          disabled={isCancellingSubscription}
+                        >
+                          {isCancellingSubscription ? planText.cancellingSubscription : planText.cancelSubscription}
+                        </button>
+                      ) : null}
+                    </div>
+                    <div className={styles.settingsPlanLinks}>
+                      <a href="/subscription-terms">{planText.subscriptionTerms}</a>
+                      <a href="/refund-policy">{planText.refundPolicy}</a>
+                      <a href="mailto:adm@timviz.com">{planText.supportEmail}</a>
+                    </div>
                   </section>
 
                   <section className={`${styles.settingsCard} ${styles.settingsCreditsCard}`}>

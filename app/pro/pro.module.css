@@ -11571,6 +11571,41 @@
   font-size: 1.05rem;
 }
 
+.settingsPlanActions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.settingsPlanActions .primaryButton,
+.settingsPlanActions .dangerButton {
+  min-height: 48px;
+  border-radius: 16px;
+}
+
+.settingsPlanLinks {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid #e2e7f3;
+}
+
+.settingsPlanLinks a {
+  color: #5f49dd;
+  font-size: 0.88rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.settingsPlanLinks a:hover {
+  text-decoration: underline;
+}
+
 .settingsCardHeader {
   display: flex;
   align-items: flex-start;

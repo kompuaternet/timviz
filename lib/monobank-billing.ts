@@ -1,4 +1,5 @@
 import { createPublicKey, verify as verifySignature } from "crypto";
+import { getSupabaseAdmin, isSupabaseConfigured } from "./supabase";
 
 export type MonobankBilling = "monthly" | "yearly";
 export type MonobankMappedStatus =
@@ -11,8 +12,39 @@ export type MonobankMappedStatus =
   | "cancelled"
   | "active";
 
+export type MonobankSubscriptionSummary = {
+  subscriptionId: string;
+  planCode: string;
+  amount: number;
+  currency: string;
+  status: string;
+  activeUntil: string | null;
+  nextChargeAt: string | null;
+  cancelledAt: string | null;
+};
+
+const activeSubscriptionStatuses = ["active", "success", "processing"] as const;
+
 export function getMonobankToken() {
   return process.env.MONOBANK_TOKEN?.trim() || "";
+}
+
+export function getMonobankCurrencyCode() {
+  const code = Number(process.env.MONOBANK_CURRENCY_CODE || process.env.MONOBANK_CCY || "840");
+  return Number.isFinite(code) && code > 0 ? Math.round(code) : 840;
+}
+
+export function getMonobankCurrencyLabel() {
+  return getMonobankCurrencyLabelByCode(getMonobankCurrencyCode());
+}
+
+export function getMonobankCurrencyLabelByCode(code: unknown) {
+  const numeric = typeof code === "number" ? code : Number(code);
+  if (numeric === 980) return "UAH";
+  if (numeric === 978) return "EUR";
+  if (numeric === 826) return "GBP";
+  if (numeric === 985) return "PLN";
+  return "USD";
 }
 
 export function getMonobankAmount(billing: MonobankBilling) {
@@ -20,18 +52,18 @@ export function getMonobankAmount(billing: MonobankBilling) {
     billing === "yearly"
       ? process.env.MONOBANK_AMOUNT_YEARLY
       : process.env.MONOBANK_AMOUNT_MONTHLY;
-  const uahEnv =
+  const priceEnv =
     billing === "yearly"
-      ? process.env.MONOBANK_PRICE_YEARLY_UAH
-      : process.env.MONOBANK_PRICE_MONTHLY_UAH;
+      ? process.env.MONOBANK_PRICE_YEARLY_USD || process.env.MONOBANK_PRICE_YEARLY
+      : process.env.MONOBANK_PRICE_MONTHLY_USD || process.env.MONOBANK_PRICE_MONTHLY;
 
   const minor = Number(minorEnv);
   if (Number.isFinite(minor) && minor > 0) return Math.round(minor);
 
-  const uah = Number(uahEnv);
-  if (Number.isFinite(uah) && uah > 0) return Math.round(uah * 100);
+  const price = Number(priceEnv);
+  if (Number.isFinite(price) && price > 0) return Math.round(price * 100);
 
-  return billing === "yearly" ? 116000 : 12000;
+  return billing === "yearly" ? 2900 : 300;
 }
 
 export function getMonobankPlanCode(billing: MonobankBilling) {
@@ -108,3 +140,37 @@ export async function isValidMonobankSignature(body: Buffer, signatureHeader: st
   return verifySignature("sha256", body, publicKey, signature);
 }
 
+export async function getLatestMonobankSubscriptionForUser(userId: string): Promise<MonobankSubscriptionSummary | null> {
+  if (!userId || !isSupabaseConfigured()) return null;
+
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return null;
+
+  const { data, error } = await supabase
+    .from("monobank_subscriptions")
+    .select("subscription_id, plan_code, amount, currency, status, active_until, next_charge_at, cancelled_at")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (error || !data?.subscription_id) return null;
+
+  return {
+    subscriptionId: String(data.subscription_id),
+    planCode: typeof data.plan_code === "string" ? data.plan_code : "pro_monthly",
+    amount: typeof data.amount === "number" ? data.amount : 0,
+    currency: typeof data.currency === "string" ? data.currency : "USD",
+    status: typeof data.status === "string" ? data.status : "created",
+    activeUntil: typeof data.active_until === "string" ? data.active_until : null,
+    nextChargeAt: typeof data.next_charge_at === "string" ? data.next_charge_at : null,
+    cancelledAt: typeof data.cancelled_at === "string" ? data.cancelled_at : null
+  };
+}
+
+export function isActiveMonobankSubscription(subscription: MonobankSubscriptionSummary | null) {
+  return Boolean(
+    subscription &&
+      activeSubscriptionStatuses.includes(subscription.status as (typeof activeSubscriptionStatuses)[number]) &&
+      !subscription.cancelledAt
+  );
+}

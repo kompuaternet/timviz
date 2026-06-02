@@ -1,38 +1,21 @@
 import { randomUUID } from "crypto";
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import {
+  getMonobankAmount,
+  getMonobankCurrencyCode,
+  getMonobankCurrencyLabel,
+  getMonobankPlanCode,
+  getMonobankToken,
+  type MonobankBilling
+} from "../../../../../lib/monobank-billing";
 import { getSessionCookieName, verifySessionValue } from "../../../../../lib/pro-auth";
 import { getSupabaseAdmin, isSupabaseConfigured } from "../../../../../lib/supabase";
 
 export const dynamic = "force-dynamic";
 
-type Billing = "monthly" | "yearly";
-
-function getAmount(billing: Billing) {
-  const minorEnv =
-    billing === "yearly"
-      ? process.env.MONOBANK_AMOUNT_YEARLY
-      : process.env.MONOBANK_AMOUNT_MONTHLY;
-  const uahEnv =
-    billing === "yearly"
-      ? process.env.MONOBANK_PRICE_YEARLY_UAH
-      : process.env.MONOBANK_PRICE_MONTHLY_UAH;
-
-  const minor = Number(minorEnv);
-  if (Number.isFinite(minor) && minor > 0) return Math.round(minor);
-
-  const uah = Number(uahEnv);
-  if (Number.isFinite(uah) && uah > 0) return Math.round(uah * 100);
-
-  return billing === "yearly" ? 116000 : 12000;
-}
-
-function getPlanCode(billing: Billing) {
-  return billing === "yearly" ? "pro_yearly" : "pro_monthly";
-}
-
 export async function POST(request: Request) {
-  const token = process.env.MONOBANK_TOKEN?.trim();
+  const token = getMonobankToken();
   if (!token) {
     return NextResponse.json({ error: "Monobank token is not configured." }, { status: 500 });
   }
@@ -47,9 +30,11 @@ export async function POST(request: Request) {
   }
 
   const body = (await request.json().catch(() => ({}))) as { billing?: string };
-  const billing: Billing = body.billing === "yearly" ? "yearly" : "monthly";
-  const amount = getAmount(billing);
-  const planCode = getPlanCode(billing);
+  const billing: MonobankBilling = body.billing === "yearly" ? "yearly" : "monthly";
+  const amount = getMonobankAmount(billing);
+  const currencyCode = getMonobankCurrencyCode();
+  const currencyLabel = getMonobankCurrencyLabel();
+  const planCode = getMonobankPlanCode(billing);
   const appUrl = (process.env.APP_URL || process.env.NEXT_PUBLIC_APP_URL || "https://timviz.com").replace(/\/+$/, "");
   const reference = `timviz_${professionalId}_${Date.now()}`;
 
@@ -63,7 +48,7 @@ export async function POST(request: Request) {
     },
     body: JSON.stringify({
       amount,
-      ccy: 980,
+      ccy: currencyCode,
       merchantPaymInfo: {
         reference,
         destination: billing === "yearly" ? "Timviz PRO Yearly" : "Timviz PRO Monthly"
@@ -91,7 +76,7 @@ export async function POST(request: Request) {
       invoice_id: payload.invoiceId,
       plan_code: planCode,
       amount,
-      currency: "UAH",
+      currency: currencyLabel,
       status: "created",
       period_months: billing === "yearly" ? 12 : 1,
       raw_payload: payload,

@@ -4,7 +4,7 @@ create table if not exists public.monobank_subscriptions (
   subscription_id text not null unique,
   plan_code text not null,
   amount integer not null default 0,
-  currency text not null default 'UAH',
+  currency text not null default 'USD',
   status text not null default 'created',
   interval text not null default '1m',
   period_months integer not null default 1,
@@ -25,4 +25,3 @@ create index if not exists monobank_subscriptions_status_idx
   on public.monobank_subscriptions (status, next_charge_at desc);
 
 alter table public.monobank_subscriptions enable row level security;
-

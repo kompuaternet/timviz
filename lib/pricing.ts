@@ -34,6 +34,7 @@ export type PricingCopy = {
   cancelAnytime: string;
   secureBilling: string;
   softwareNotice: string;
+  checkoutNotice: string;
   loginRequired: string;
   startingCheckout: string;
   billingError: string;
@@ -69,13 +70,14 @@ export const pricingCopy: Record<SiteLanguage, PricingCopy> = withEnglishFallbac
     secureBilling: "Безопасное управление подпиской",
     softwareNotice:
       "Timviz продаёт подписку на программное обеспечение для управления записью. Мы не являемся маркетплейсом и не обрабатываем платежи между клиентами и мастерами.",
+    checkoutNotice: "Нажимая кнопку оплаты, вы соглашаетесь с автопродлением выбранного тарифа в USD и условиями подписки. Отменить можно в кабинете.",
     loginRequired: "Сначала войдите или создайте аккаунт, чтобы запустить пробный период.",
     startingCheckout: "Готовим защищённую оплату...",
     billingError: "Не удалось открыть оплату. Попробуйте ещё раз или напишите в поддержку.",
     buttons: {
       free: "Начать бесплатно",
-      monthly: "Начать пробный период",
-      yearly: "Начать годовой Premium"
+      monthly: "Подключить Monthly",
+      yearly: "Подключить Yearly"
     },
     plans: {
       free: {
@@ -98,7 +100,7 @@ export const pricingCopy: Record<SiteLanguage, PricingCopy> = withEnglishFallbac
         tagline: "Для мастеров, которым нужна автоматизация",
         price: "$3",
         billing: "в месяц",
-        badge: "14 дней бесплатно",
+        badge: "Оплата в USD",
         features: [
           "allFree",
           "onlineBooking",
@@ -190,13 +192,14 @@ export const pricingCopy: Record<SiteLanguage, PricingCopy> = withEnglishFallbac
     secureBilling: "Безпечне керування підпискою",
     softwareNotice:
       "Timviz продає підписку на програмне забезпечення для керування записом. Ми не є маркетплейсом і не обробляємо платежі між клієнтами та майстрами.",
+    checkoutNotice: "Натискаючи кнопку оплати, ви погоджуєтеся з автопродовженням вибраного тарифу в USD та умовами підписки. Скасувати можна в кабінеті.",
     loginRequired: "Спочатку увійдіть або створіть акаунт, щоб запустити пробний період.",
     startingCheckout: "Готуємо захищену оплату...",
     billingError: "Не вдалося відкрити оплату. Спробуйте ще раз або напишіть у підтримку.",
     buttons: {
       free: "Почати безкоштовно",
-      monthly: "Почати пробний період",
-      yearly: "Почати річний Premium"
+      monthly: "Підключити Monthly",
+      yearly: "Підключити Yearly"
     },
     plans: {
       free: {
@@ -219,7 +222,7 @@ export const pricingCopy: Record<SiteLanguage, PricingCopy> = withEnglishFallbac
         tagline: "Для майстрів, яким потрібна автоматизація",
         price: "$3",
         billing: "на місяць",
-        badge: "14 днів безкоштовно",
+        badge: "Оплата в USD",
         features: [
           "allFree",
           "onlineBooking",
@@ -311,13 +314,14 @@ export const pricingCopy: Record<SiteLanguage, PricingCopy> = withEnglishFallbac
     secureBilling: "Secure subscription management",
     softwareNotice:
       "Timviz sells a software subscription for appointment management. We are not a marketplace and do not process payments between clients and service providers.",
+    checkoutNotice: "By continuing to payment, you agree to auto-renewal of the selected USD plan and the subscription terms. You can cancel in your account.",
     loginRequired: "Please sign in or create an account first to start your free trial.",
     startingCheckout: "Preparing secure checkout...",
     billingError: "Could not open checkout. Please try again or contact support.",
     buttons: {
       free: "Start free",
-      monthly: "Start monthly trial",
-      yearly: "Start yearly trial"
+      monthly: "Subscribe monthly",
+      yearly: "Subscribe yearly"
     },
     plans: {
       free: {
@@ -340,7 +344,7 @@ export const pricingCopy: Record<SiteLanguage, PricingCopy> = withEnglishFallbac
         tagline: "For professionals who want automation",
         price: "$3",
         billing: "per month",
-        badge: "14 days free",
+        badge: "USD billing",
         features: [
           "allFree",
           "onlineBooking",
@@ -433,14 +437,15 @@ Object.assign(pricingCopy, {
     cancelAnytime: "Annulation à tout moment",
     secureBilling: "Gestion sécurisée de l’abonnement",
     softwareNotice: "Timviz vend un abonnement logiciel pour gérer les rendez-vous. Nous ne sommes pas une marketplace et ne traitons pas les paiements entre clients et prestataires.",
+    checkoutNotice: "En continuant vers le paiement, vous acceptez le renouvellement automatique du forfait choisi en USD et les conditions d’abonnement. Vous pouvez annuler dans votre compte.",
     loginRequired: "Connectez-vous ou créez un compte pour démarrer l’essai gratuit.",
     startingCheckout: "Préparation du paiement sécurisé...",
     billingError: "Impossible d’ouvrir le paiement. Réessayez ou contactez le support.",
-    buttons: { free: "Commencer gratuitement", monthly: "Essayer Premium", yearly: "Premium annuel" },
+    buttons: { free: "Commencer gratuitement", monthly: "S'abonner au mensuel", yearly: "S'abonner à l'annuel" },
     plans: {
       ...pricingCopy.en.plans,
       free: { ...pricingCopy.en.plans.free, name: "Gratuit", tagline: "Pour commencer", billing: "pour toujours" },
-      monthly: { ...pricingCopy.en.plans.monthly, name: "Timviz Premium mensuel", tagline: "Pour automatiser votre activité", billing: "par mois", badge: "14 jours gratuits" },
+      monthly: { ...pricingCopy.en.plans.monthly, name: "Timviz Premium mensuel", tagline: "Pour automatiser votre activité", billing: "par mois", badge: "Paiement en USD" },
       yearly: { ...pricingCopy.en.plans.yearly, name: "Timviz Premium annuel", tagline: "Meilleure offre", billing: "par an", badge: "Meilleure offre", savings: "2 mois offerts" }
     },
     features: { basicAccess: "Accès de base", oneMaster: "1 professionnel / 1 membre d’équipe", appointmentsLimit: "Jusqu’à 100 rendez-vous par mois", onlineBooking: "Réservation en ligne", calendar: "Calendrier", services: "Services", clients: "Base clients", publicProfile: "Profil public de base", allFree: "Tout ce qui est inclus dans Gratuit", unlimitedAppointments: "Rendez-vous illimités", telegram: "Notifications Telegram", reminders: "Rappels clients", extendedCalendar: "Calendrier avancé", clientManagement: "Gestion des clients", analytics: "Statistiques / analytics", priorityCatalog: "Outils business supplémentaires", unlimitedServices: "Services et planning sans limites", cancelAnytime: "Annulation à tout moment" },
@@ -464,14 +469,15 @@ Object.assign(pricingCopy, {
     cancelAnytime: "Anuluj w dowolnym momencie",
     secureBilling: "Bezpieczne zarządzanie subskrypcją",
     softwareNotice: "Timviz sprzedaje subskrypcję oprogramowania do zarządzania rezerwacjami. Nie jesteśmy marketplace’em i nie obsługujemy płatności między klientami a usługodawcami.",
+    checkoutNotice: "Przechodząc do płatności, akceptujesz automatyczne odnawianie wybranego planu w USD oraz warunki subskrypcji. Możesz anulować w koncie.",
     loginRequired: "Najpierw zaloguj się lub utwórz konto, aby rozpocząć okres próbny.",
     startingCheckout: "Przygotowujemy bezpieczną płatność...",
     billingError: "Nie udało się otworzyć płatności. Spróbuj ponownie lub skontaktuj się z pomocą.",
-    buttons: { free: "Zacznij za darmo", monthly: "Rozpocznij okres próbny", yearly: "Premium roczne" },
+    buttons: { free: "Zacznij za darmo", monthly: "Subskrybuj miesięcznie", yearly: "Subskrybuj rocznie" },
     plans: {
       ...pricingCopy.en.plans,
       free: { ...pricingCopy.en.plans.free, name: "Darmowy", tagline: "Na start", billing: "na zawsze" },
-      monthly: { ...pricingCopy.en.plans.monthly, name: "Timviz Premium miesięczny", tagline: "Dla specjalistów z automatyzacją", billing: "miesięcznie", badge: "14 dni za darmo" },
+      monthly: { ...pricingCopy.en.plans.monthly, name: "Timviz Premium miesięczny", tagline: "Dla specjalistów z automatyzacją", billing: "miesięcznie", badge: "Płatność w USD" },
       yearly: { ...pricingCopy.en.plans.yearly, name: "Timviz Premium roczny", tagline: "Najlepsza oferta", billing: "rocznie", badge: "Najlepsza oferta", savings: "2 miesiące gratis" }
     },
     features: { basicAccess: "Podstawowy dostęp", oneMaster: "1 specjalista / 1 członek zespołu", appointmentsLimit: "Do 100 rezerwacji miesięcznie", onlineBooking: "Rezerwacje online", calendar: "Kalendarz", services: "Usługi", clients: "Baza klientów", publicProfile: "Podstawowy profil publiczny", allFree: "Wszystko z planu darmowego", unlimitedAppointments: "Nielimitowane rezerwacje", telegram: "Powiadomienia Telegram", reminders: "Przypomnienia klientom", extendedCalendar: "Rozszerzony kalendarz", clientManagement: "Zarządzanie klientami", analytics: "Statystyki / analityka", priorityCatalog: "Dodatkowe narzędzia biznesowe", unlimitedServices: "Usługi i grafik bez limitów", cancelAnytime: "Anulowanie w dowolnym momencie" },
@@ -495,14 +501,15 @@ Object.assign(pricingCopy, {
     cancelAnytime: "Zrušení kdykoliv",
     secureBilling: "Bezpečná správa předplatného",
     softwareNotice: "Timviz prodává softwarové předplatné pro správu rezervací. Nejsme marketplace a nezpracováváme platby mezi klienty a poskytovateli služeb.",
+    checkoutNotice: "Pokračováním k platbě souhlasíte s automatickým obnovováním vybraného tarifu v USD a s podmínkami předplatného. Zrušit ho můžete v účtu.",
     loginRequired: "Nejprve se přihlaste nebo vytvořte účet, abyste mohli spustit zkušební období.",
     startingCheckout: "Připravujeme bezpečnou platbu...",
     billingError: "Platbu se nepodařilo otevřít. Zkuste to znovu nebo kontaktujte podporu.",
-    buttons: { free: "Začít zdarma", monthly: "Spustit zkušební období", yearly: "Roční Premium" },
+    buttons: { free: "Začít zdarma", monthly: "Předplatit měsíčně", yearly: "Předplatit ročně" },
     plans: {
       ...pricingCopy.en.plans,
       free: { ...pricingCopy.en.plans.free, name: "Zdarma", tagline: "Pro začátek", billing: "navždy" },
-      monthly: { ...pricingCopy.en.plans.monthly, name: "Timviz Premium měsíčně", tagline: "Pro profesionály s automatizací", billing: "měsíčně", badge: "14 dní zdarma" },
+      monthly: { ...pricingCopy.en.plans.monthly, name: "Timviz Premium měsíčně", tagline: "Pro profesionály s automatizací", billing: "měsíčně", badge: "Platba v USD" },
       yearly: { ...pricingCopy.en.plans.yearly, name: "Timviz Premium ročně", tagline: "Nejlepší nabídka", billing: "ročně", badge: "Nejlepší nabídka", savings: "2 měsíce zdarma" }
     },
     features: { basicAccess: "Základní přístup", oneMaster: "1 profesionál / 1 člen týmu", appointmentsLimit: "Až 100 rezervací měsíčně", onlineBooking: "Online rezervace", calendar: "Kalendář", services: "Služby", clients: "Klientská databáze", publicProfile: "Základní veřejný profil", allFree: "Vše z tarifu Zdarma", unlimitedAppointments: "Neomezené rezervace", telegram: "Telegram upozornění", reminders: "Připomenutí klientům", extendedCalendar: "Rozšířený kalendář", clientManagement: "Správa klientů", analytics: "Statistiky / analytika", priorityCatalog: "Další obchodní nástroje", unlimitedServices: "Služby a rozvrh bez omezení", cancelAnytime: "Zrušení kdykoliv" },
@@ -526,14 +533,15 @@ Object.assign(pricingCopy, {
     cancelAnytime: "Cancela cuando quieras",
     secureBilling: "Gestión segura de suscripción",
     softwareNotice: "Timviz vende una suscripción de software para gestionar reservas. No somos un marketplace y no procesamos pagos entre clientes y proveedores.",
+    checkoutNotice: "Al continuar al pago, aceptas la renovación automática del plan elegido en USD y las condiciones de suscripción. Puedes cancelar en tu cuenta.",
     loginRequired: "Primero inicia sesión o crea una cuenta para empezar la prueba gratuita.",
     startingCheckout: "Preparando pago seguro...",
     billingError: "No se pudo abrir el pago. Inténtalo de nuevo o contacta con soporte.",
-    buttons: { free: "Empezar gratis", monthly: "Iniciar prueba", yearly: "Premium anual" },
+    buttons: { free: "Empezar gratis", monthly: "Suscribirse mensual", yearly: "Suscribirse anual" },
     plans: {
       ...pricingCopy.en.plans,
       free: { ...pricingCopy.en.plans.free, name: "Gratis", tagline: "Para empezar", billing: "para siempre" },
-      monthly: { ...pricingCopy.en.plans.monthly, name: "Timviz Premium mensual", tagline: "Para profesionales que quieren automatizar", billing: "al mes", badge: "14 días gratis" },
+      monthly: { ...pricingCopy.en.plans.monthly, name: "Timviz Premium mensual", tagline: "Para profesionales que quieren automatizar", billing: "al mes", badge: "Pago en USD" },
       yearly: { ...pricingCopy.en.plans.yearly, name: "Timviz Premium anual", tagline: "Mejor oferta", billing: "al año", badge: "Mejor oferta", savings: "2 meses gratis" }
     },
     features: { basicAccess: "Acceso básico", oneMaster: "1 profesional / 1 miembro del equipo", appointmentsLimit: "Hasta 100 reservas al mes", onlineBooking: "Reserva online", calendar: "Calendario", services: "Servicios", clients: "Base de clientes", publicProfile: "Perfil público básico", allFree: "Todo lo incluido en Gratis", unlimitedAppointments: "Reservas ilimitadas", telegram: "Notificaciones Telegram", reminders: "Recordatorios a clientes", extendedCalendar: "Calendario ampliado", clientManagement: "Gestión de clientes", analytics: "Estadísticas / analítica", priorityCatalog: "Herramientas de negocio adicionales", unlimitedServices: "Servicios y horarios sin límites", cancelAnytime: "Cancelar en cualquier momento" },
@@ -557,14 +565,15 @@ Object.assign(pricingCopy, {
     cancelAnytime: "Jederzeit kündbar",
     secureBilling: "Sichere Abo-Verwaltung",
     softwareNotice: "Timviz verkauft ein Software-Abonnement zur Terminverwaltung. Wir sind kein Marketplace und verarbeiten keine Zahlungen zwischen Kunden und Dienstleistern.",
+    checkoutNotice: "Mit dem Fortfahren zur Zahlung stimmst du der automatischen Verlängerung des gewählten USD-Tarifs und den Abo-Bedingungen zu. Du kannst im Konto kündigen.",
     loginRequired: "Bitte melde dich zuerst an oder erstelle ein Konto, um die kostenlose Testphase zu starten.",
     startingCheckout: "Sichere Zahlung wird vorbereitet...",
     billingError: "Die Zahlung konnte nicht geöffnet werden. Bitte versuche es erneut oder kontaktiere den Support.",
-    buttons: { free: "Kostenlos starten", monthly: "Test starten", yearly: "Jährliches Premium" },
+    buttons: { free: "Kostenlos starten", monthly: "Monatlich abonnieren", yearly: "Jährlich abonnieren" },
     plans: {
       ...pricingCopy.en.plans,
       free: { ...pricingCopy.en.plans.free, name: "Kostenlos", tagline: "Für den Start", billing: "für immer" },
-      monthly: { ...pricingCopy.en.plans.monthly, name: "Timviz Premium monatlich", tagline: "Für Profis mit Automatisierung", billing: "pro Monat", badge: "14 Tage kostenlos" },
+      monthly: { ...pricingCopy.en.plans.monthly, name: "Timviz Premium monatlich", tagline: "Für Profis mit Automatisierung", billing: "pro Monat", badge: "Zahlung in USD" },
       yearly: { ...pricingCopy.en.plans.yearly, name: "Timviz Premium jährlich", tagline: "Bestes Angebot", billing: "pro Jahr", badge: "Bestes Angebot", savings: "2 Monate kostenlos" }
     },
     features: { basicAccess: "Basiszugang", oneMaster: "1 Profi / 1 Teammitglied", appointmentsLimit: "Bis zu 100 Buchungen pro Monat", onlineBooking: "Online-Buchung", calendar: "Kalender", services: "Leistungen", clients: "Kundendatenbank", publicProfile: "Einfaches öffentliches Profil", allFree: "Alles aus Kostenlos", unlimitedAppointments: "Unbegrenzte Buchungen", telegram: "Telegram-Benachrichtigungen", reminders: "Kundenerinnerungen", extendedCalendar: "Erweiterter Kalender", clientManagement: "Kundenverwaltung", analytics: "Statistiken / Analytics", priorityCatalog: "Zusätzliche Business-Tools", unlimitedServices: "Leistungen und Planung ohne Limits", cancelAnytime: "Abo jederzeit kündbar" },

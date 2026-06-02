@@ -2,6 +2,7 @@ import { createHash, randomUUID } from "crypto";
 import { NextResponse } from "next/server";
 import {
   addMonobankBillingPeriod,
+  getMonobankCurrencyLabelByCode,
   getMonobankEventDate,
   isValidMonobankSignature,
   mapMonobankStatus
@@ -103,13 +104,14 @@ export async function POST(request: Request) {
   }
 
   const amount = typeof payload.amount === "number" ? payload.amount : subscription.amount;
+  const currency = getMonobankCurrencyLabelByCode(payload.ccy);
   const now = new Date().toISOString();
   const { error: updateError } = await supabase
     .from("monobank_subscriptions")
     .update({
       status: eventType,
       amount: typeof amount === "number" ? amount : undefined,
-      currency: payload.ccy === 980 ? "UAH" : "UAH",
+      currency,
       active_from: eventType === "success" ? eventDate.toISOString() : undefined,
       active_until: activeUntil || undefined,
       mono_modified_date: stringValue(payload.modifiedDate) || null,
@@ -127,7 +129,7 @@ export async function POST(request: Request) {
         invoice_id: invoiceId,
         plan_code: subscription.plan_code,
         amount: typeof amount === "number" ? amount : 0,
-        currency: "UAH",
+        currency,
         status: eventType,
         period_months: subscription.period_months || 1,
         active_from: eventType === "success" ? eventDate.toISOString() : null,

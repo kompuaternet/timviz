@@ -486,7 +486,8 @@ export const legalCopy: Record<
         {
           title: "Платежи на сайте",
           paragraphs: [
-            "На сайте Timviz подписка может оплачиваться через Monobank. Доступ активируется после успешного платежа.",
+            "На сайте Timviz подписка может оплачиваться через Monobank в USD: Premium Monthly — $3 в месяц, Premium Yearly — $29 в год. Банк или платёжная система может конвертировать сумму в валюту карты пользователя.",
+            "Подписка продлевается автоматически с выбранной периодичностью, пока пользователь не отменит автопродление. Отменить подписку Monobank можно в личном кабинете Timviz на странице Settings.",
             "Если у пользователя есть несколько активных источников доступа, Timviz применяет максимальную дату действия PRO."
           ]
         },
@@ -523,7 +524,8 @@ export const legalCopy: Record<
         {
           title: "Платежі на сайті",
           paragraphs: [
-            "На сайті Timviz підписка може оплачуватися через Monobank. Доступ активується після успішного платежу.",
+            "На сайті Timviz підписка може оплачуватися через Monobank у USD: Premium Monthly — $3 на місяць, Premium Yearly — $29 на рік. Банк або платіжна система може конвертувати суму у валюту картки користувача.",
+            "Підписка продовжується автоматично з вибраною періодичністю, доки користувач не скасує автопродовження. Скасувати підписку Monobank можна в особистому кабінеті Timviz на сторінці Settings.",
             "Якщо користувач має кілька активних джерел доступу, Timviz застосовує максимальну дату дії PRO."
           ]
         },
@@ -560,7 +562,8 @@ export const legalCopy: Record<
         {
           title: "Website payments",
           paragraphs: [
-            "On the Timviz website, subscriptions may be paid through Monobank. Access is activated after a successful payment.",
+            "On the Timviz website, subscriptions may be paid through Monobank in USD: Premium Monthly is $3 per month and Premium Yearly is $29 per year. The bank or payment system may convert the amount to the cardholder's currency.",
+            "The subscription renews automatically on the selected billing cycle until the user cancels auto-renewal. Monobank website subscriptions can be cancelled in the Timviz account on the Settings page.",
             "If a user has multiple active access sources, Timviz applies the latest PRO access end date."
           ]
         },
@@ -1227,7 +1230,8 @@ const legalExtraSections: Record<LegalPageType, Record<ExtraLegalLanguage, Legal
       {
         title: "Paiements sur le site",
         paragraphs: [
-          "Sur le site Timviz, les abonnements peuvent être payés via Monobank. L’accès est activé après un paiement réussi.",
+          "Sur le site Timviz, les abonnements peuvent être payés via Monobank en USD : Premium Monthly coûte $3 par mois et Premium Yearly $29 par an. La banque ou le système de paiement peut convertir le montant dans la devise de la carte.",
+          "L’abonnement se renouvelle automatiquement selon la période choisie jusqu’à l’annulation du renouvellement. Les abonnements Monobank du site peuvent être annulés dans le compte Timviz, page Settings.",
           "Si un utilisateur dispose de plusieurs sources d’accès actives, Timviz applique la date de fin d’accès PRO la plus éloignée."
         ]
       },
@@ -1257,7 +1261,8 @@ const legalExtraSections: Record<LegalPageType, Record<ExtraLegalLanguage, Legal
       {
         title: "Płatności na stronie",
         paragraphs: [
-          "Na stronie Timviz subskrypcje mogą być opłacane przez Monobank. Dostęp aktywuje się po udanej płatności.",
+          "Na stronie Timviz subskrypcje mogą być opłacane przez Monobank w USD: Premium Monthly kosztuje $3 miesięcznie, a Premium Yearly $29 rocznie. Bank lub system płatniczy może przeliczyć kwotę na walutę karty.",
+          "Subskrypcja odnawia się automatycznie zgodnie z wybranym okresem, dopóki użytkownik nie anuluje odnowienia. Subskrypcje Monobank na stronie można anulować w koncie Timviz na stronie Settings.",
           "Jeśli użytkownik ma kilka aktywnych źródeł dostępu, Timviz stosuje najpóźniejszą datę zakończenia dostępu PRO."
         ]
       },
@@ -1287,7 +1292,8 @@ const legalExtraSections: Record<LegalPageType, Record<ExtraLegalLanguage, Legal
       {
         title: "Platby na webu",
         paragraphs: [
-          "Na webu Timviz lze předplatné platit přes Monobank. Přístup se aktivuje po úspěšné platbě.",
+          "Na webu Timviz lze předplatné platit přes Monobank v USD: Premium Monthly stojí $3 měsíčně a Premium Yearly $29 ročně. Banka nebo platební systém může částku převést do měny karty.",
+          "Předplatné se automaticky obnovuje podle zvoleného období, dokud uživatel obnovení nezruší. Webové předplatné Monobank lze zrušit v účtu Timviz na stránce Settings.",
           "Pokud má uživatel více aktivních zdrojů přístupu, Timviz použije nejpozdější datum ukončení přístupu PRO."
         ]
       },
@@ -1317,7 +1323,8 @@ const legalExtraSections: Record<LegalPageType, Record<ExtraLegalLanguage, Legal
       {
         title: "Pagos en el sitio",
         paragraphs: [
-          "En el sitio de Timviz, las suscripciones pueden pagarse mediante Monobank. El acceso se activa tras un pago correcto.",
+          "En el sitio de Timviz, las suscripciones pueden pagarse mediante Monobank en USD: Premium Monthly cuesta $3 al mes y Premium Yearly $29 al año. El banco o el sistema de pago puede convertir el importe a la moneda de la tarjeta.",
+          "La suscripción se renueva automáticamente según el periodo elegido hasta que el usuario cancele la renovación. Las suscripciones Monobank del sitio se pueden cancelar en la cuenta Timviz, en Settings.",
           "Si un usuario tiene varias fuentes de acceso activas, Timviz aplica la fecha de finalización de acceso PRO más lejana."
         ]
       },
@@ -1347,7 +1354,8 @@ const legalExtraSections: Record<LegalPageType, Record<ExtraLegalLanguage, Legal
       {
         title: "Website-Zahlungen",
         paragraphs: [
-          "Auf der Timviz Website können Abonnements über Monobank bezahlt werden. Der Zugriff wird nach erfolgreicher Zahlung aktiviert.",
+          "Auf der Timviz Website können Abonnements über Monobank in USD bezahlt werden: Premium Monthly kostet $3 pro Monat und Premium Yearly $29 pro Jahr. Die Bank oder das Zahlungssystem kann den Betrag in die Kartenwährung umrechnen.",
+          "Das Abonnement verlängert sich automatisch im gewählten Zeitraum, bis der Nutzer die Verlängerung kündigt. Monobank Website-Abonnements können im Timviz Konto auf der Seite Settings gekündigt werden.",
           "Wenn ein Nutzer mehrere aktive Zugriffsquellen hat, verwendet Timviz das späteste PRO-Zugriffsende."
         ]
       },

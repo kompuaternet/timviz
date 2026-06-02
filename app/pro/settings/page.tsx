@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getAppointmentUsageForProfessional } from "../../../lib/pro-calendar";
+import { getLatestMonobankSubscriptionForUser } from "../../../lib/monobank-billing";
 import { getSessionCookieName, verifySessionValue } from "../../../lib/pro-auth";
 import { DEFAULT_BOOKING_CREDITS, getJoinRequestsForOwner, getWorkspaceSnapshot } from "../../../lib/pro-data";
 import { getOnboardingCtaState } from "../../../lib/pro-onboarding";
@@ -35,9 +36,10 @@ export default async function ProSettingsPage({ searchParams }: ProSettingsPageP
     redirect(loginPath);
   }
 
-  const [workspace, telegramConnection] = await Promise.all([
+  const [workspace, telegramConnection, monobankSubscription] = await Promise.all([
     getWorkspaceSnapshot(professionalId),
-    getTelegramConnectionByProfessionalId(professionalId)
+    getTelegramConnectionByProfessionalId(professionalId),
+    getLatestMonobankSubscriptionForUser(professionalId)
   ]);
 
   if (!workspace) {
@@ -88,7 +90,8 @@ export default async function ProSettingsPage({ searchParams }: ProSettingsPageP
           total: totalCredits,
           used: usedCredits,
           remaining: Math.max(0, totalCredits - usedCredits)
-        }
+        },
+        monobankSubscription
       }}
       onboardingCta={getOnboardingCtaState(workspace, Boolean(telegramConnection?.chatId))}
       initialSection={

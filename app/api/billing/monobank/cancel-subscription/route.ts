@@ -1,6 +1,10 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
-import { getMonobankToken } from "../../../../../lib/monobank-billing";
+import {
+  getLatestMonobankSubscriptionForUser,
+  getMonobankToken,
+  isActiveMonobankSubscription
+} from "../../../../../lib/monobank-billing";
 import { getSessionCookieName, verifySessionValue } from "../../../../../lib/pro-auth";
 import { updateProfessionalPremiumFromMonobank } from "../../../../../lib/premium";
 import { getSupabaseAdmin, isSupabaseConfigured } from "../../../../../lib/supabase";
@@ -27,18 +31,8 @@ export async function POST() {
     return NextResponse.json({ error: "Database is unavailable." }, { status: 500 });
   }
 
-  const { data: subscription, error: subscriptionError } = await supabase
-    .from("monobank_subscriptions")
-    .select("subscription_id, plan_code, active_until")
-    .eq("user_id", professionalId)
-    .in("status", ["created", "active", "success", "processing"])
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (subscriptionError) {
-    return NextResponse.json({ error: subscriptionError.message }, { status: 500 });
-  }
-  if (!subscription?.subscription_id) {
+  const subscription = await getLatestMonobankSubscriptionForUser(professionalId);
+  if (!subscription || !isActiveMonobankSubscription(subscription)) {
     return NextResponse.json({ error: "Active Monobank subscription was not found." }, { status: 404 });
   }
 
@@ -51,7 +45,7 @@ export async function POST() {
       "X-Cms-Version": "1.0"
     },
     body: JSON.stringify({
-      subscriptionId: subscription.subscription_id,
+      subscriptionId: subscription.subscriptionId,
       action: "cancel"
     })
   });
@@ -70,7 +64,7 @@ export async function POST() {
       raw_payload: payload,
       updated_at: now
     })
-    .eq("subscription_id", subscription.subscription_id);
+    .eq("subscription_id", subscription.subscriptionId);
   if (updateError) {
     return NextResponse.json({ error: updateError.message }, { status: 500 });
   }
@@ -78,12 +72,18 @@ export async function POST() {
   await updateProfessionalPremiumFromMonobank({
     professionalId,
     status: "cancelled",
-    premiumUntil: subscription.active_until || null,
-    planCode: subscription.plan_code,
-    invoiceId: subscription.subscription_id,
+    premiumUntil: subscription.activeUntil || null,
+    planCode: subscription.planCode,
+    invoiceId: subscription.subscriptionId,
     cancelAtPeriodEnd: true
   });
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({
+    ok: true,
+    subscription: {
+      ...subscription,
+      status: "cancelled",
+      cancelledAt: now
+    }
+  });
 }
-

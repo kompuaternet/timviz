@@ -1,5 +1,6 @@
 import { createPublicKey, verify as verifySignature } from "crypto";
 import { NextResponse } from "next/server";
+import { getMonobankCurrencyLabelByCode } from "../../../../lib/monobank-billing";
 import { updateProfessionalPremiumFromMonobank } from "../../../../lib/premium";
 import { getSupabaseAdmin, isSupabaseConfigured } from "../../../../lib/supabase";
 
@@ -116,7 +117,7 @@ export async function POST(request: Request) {
     .update({
       status: eventType,
       amount: typeof payload.amount === "number" ? payload.amount : undefined,
-      currency: payload.ccy === 980 ? "UAH" : "UAH",
+      currency: getMonobankCurrencyLabelByCode(payload.ccy),
       active_from: eventType === "success" ? paidAt.toISOString() : null,
       active_until: activeUntil,
       mono_modified_date: payload.modifiedDate || null,

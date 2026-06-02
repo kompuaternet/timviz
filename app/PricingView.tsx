@@ -29,6 +29,7 @@ const footerCopy = withEnglishFallback<Record<string, string>>({
     legal: "Юридическая информация",
     privacy: "Политика конфиденциальности",
     terms: "Условия использования",
+    subscription: "Условия подписки",
     refund: "Политика возвратов",
     contact: "Контакты",
     support: "Поддержка"
@@ -41,6 +42,7 @@ const footerCopy = withEnglishFallback<Record<string, string>>({
     legal: "Юридична інформація",
     privacy: "Політика конфіденційності",
     terms: "Умови використання",
+    subscription: "Умови підписки",
     refund: "Політика повернень",
     contact: "Контакти",
     support: "Підтримка"
@@ -53,6 +55,7 @@ const footerCopy = withEnglishFallback<Record<string, string>>({
     legal: "Legal",
     privacy: "Privacy policy",
     terms: "Terms of use",
+    subscription: "Subscription terms",
     refund: "Refund policy",
     contact: "Contact",
     support: "Support"
@@ -68,6 +71,7 @@ Object.assign(footerCopy, {
     legal: "Mentions légales",
     privacy: "Politique de confidentialité",
     terms: "Conditions d’utilisation",
+    subscription: "Conditions d’abonnement",
     refund: "Politique de remboursement",
     contact: "Contact",
     support: "Support"
@@ -80,6 +84,7 @@ Object.assign(footerCopy, {
     legal: "Informacje prawne",
     privacy: "Polityka prywatności",
     terms: "Warunki korzystania",
+    subscription: "Warunki subskrypcji",
     refund: "Polityka zwrotów",
     contact: "Kontakt",
     support: "Pomoc"
@@ -92,6 +97,7 @@ Object.assign(footerCopy, {
     legal: "Právní informace",
     privacy: "Zásady ochrany osobních údajů",
     terms: "Podmínky použití",
+    subscription: "Podmínky předplatného",
     refund: "Zásady vrácení peněz",
     contact: "Kontakt",
     support: "Podpora"
@@ -104,6 +110,7 @@ Object.assign(footerCopy, {
     legal: "Legal",
     privacy: "Política de privacidad",
     terms: "Términos de uso",
+    subscription: "Condiciones de suscripción",
     refund: "Política de reembolso",
     contact: "Contacto",
     support: "Soporte"
@@ -116,6 +123,7 @@ Object.assign(footerCopy, {
     legal: "Rechtliches",
     privacy: "Datenschutzrichtlinie",
     terms: "Nutzungsbedingungen",
+    subscription: "Abo-Bedingungen",
     refund: "Rückerstattungsrichtlinie",
     contact: "Kontakt",
     support: "Support"
@@ -233,6 +241,12 @@ export default function PricingView({ language, copy, user }: PricingViewProps) 
               >
                 {copy.buttons[planKey]}
               </button>
+              {planKey === "free" ? null : (
+                <p className="pricing-card-notice">
+                  {copy.checkoutNotice}{" "}
+                  <Link href={getLocalizedPath(language, "/subscription-terms")}>{footer.subscription}</Link>
+                </p>
+              )}
             </article>
           );
         })}
@@ -271,6 +285,7 @@ export default function PricingView({ language, copy, user }: PricingViewProps) 
           <h3>{footer.legal}</h3>
           <Link href={getLocalizedPath(language, "/privacy")}>{footer.privacy}</Link>
           <Link href={getLocalizedPath(language, "/terms")}>{footer.terms}</Link>
+          <Link href={getLocalizedPath(language, "/subscription-terms")}>{footer.subscription}</Link>
           <Link href={getLocalizedPath(language, "/refund-policy")}>{footer.refund}</Link>
           <Link href={getLocalizedPath(language, "/contact")}>{footer.contact}</Link>
           <a href="mailto:adm@timviz.com">{footer.support}: adm@timviz.com</a>
