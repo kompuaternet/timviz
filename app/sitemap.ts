@@ -30,6 +30,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.9
     },
     {
+      url: `${siteUrl}${getLocalizedPath(language, "/for-masters")}`,
+      lastModified: now,
+      changeFrequency: "weekly",
+      priority: 0.92
+    },
+    {
       url: `${siteUrl}${getLocalizedPath(language, "/pricing")}`,
       lastModified: now,
       changeFrequency: "weekly",

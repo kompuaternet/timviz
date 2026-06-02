@@ -1,0 +1,4 @@
+Campaign Name,Country,Placement,Bid Strategy,Daily Budget,End Date,Search Match,Customer Type,Initial Status,Ad Groups
+TIVZ_UA_SR_EXACT_W1,Ukraine,Search Results,Manage Bids,$6.00,"Launch date + 7 days; if launched 2026-06-02, use 2026-06-09",Off,New users,PAUSED,UA_CORE_EXACT; UA_PROFESSIONS_EXACT; RU_CORE_EXACT; RU_PROFESSIONS_EXACT; BRAND_EXACT
+TIVZ_KZ_SR_EXACT_W1,Kazakhstan,Search Results,Manage Bids,$4.00,"Launch date + 7 days; if launched 2026-06-02, use 2026-06-09",Off,New users,PAUSED,RU_CORE_EXACT; RU_PROFESSIONS_EXACT; BRAND_EXACT
+TIVZ_PL_SR_EXACT_W1,Poland,Search Results,Manage Bids,$4.00,"Launch date + 7 days; if launched 2026-06-02, use 2026-06-09",Off,New users,PAUSED,PL_CORE_EXACT; PL_PROFESSIONS_EXACT; BRAND_EXACT

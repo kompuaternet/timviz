@@ -13,6 +13,7 @@ import {
   onlyPhoneDigits,
   phoneCountries
 } from "../../../lib/phone-format";
+import { trackAdsEvent } from "../../../lib/ads-events";
 import TurnstileWidget from "../TurnstileWidget";
 import { isProLanguage, languageLabels, type ProLanguage } from "../i18n";
 import styles from "../pro.module.css";
@@ -791,6 +792,10 @@ export default function CreateAccountForm() {
     const initialLanguage = isProLanguage(savedLanguage)
       ? savedLanguage
       : getBrowserLanguage();
+    trackAdsEvent("sign_up_start", {
+      source: "pro_create_account",
+      language: initialLanguage
+    });
     const browserCountry = getBrowserCountry();
     const browserTimezone = getBrowserTimezone();
     const params = new URLSearchParams(window.location.search);
@@ -1201,6 +1206,22 @@ export default function CreateAccountForm() {
     }
 
     logFunnelStep("setup_completed");
+    trackAdsEvent("sign_up_complete", {
+      source: "pro_create_account",
+      language,
+      workspace_ready: result.workspaceReady === true
+    });
+    trackAdsEvent("business_profile_created", {
+      source: "pro_create_account",
+      language,
+      owner_mode: "owner"
+    });
+    if (result.trialStarted === true) {
+      trackAdsEvent("pro_trial_started", {
+        source: "pro_create_account",
+        language
+      });
+    }
     window.sessionStorage.removeItem(liveDraftKey);
     router.push("/pro/calendar");
     router.refresh();

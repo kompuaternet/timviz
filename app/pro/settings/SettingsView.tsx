@@ -16,6 +16,7 @@ import type { WorkSchedule } from "../../../lib/work-schedule";
 import { categoryOptions, compareServiceCategories, localizeCategoryName } from "../../../lib/service-templates";
 import ProfileAvatar from "../../ProfileAvatar";
 import { localeBySiteLanguage } from "../../../lib/site-language";
+import { trackAdsEvent } from "../../../lib/ads-events";
 
 const MAX_BUSINESS_PHOTOS = 5;
 const MAX_PROFILE_AVATAR_BYTES = 2 * 1024 * 1024;
@@ -1689,6 +1690,11 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
 
     try {
       await navigator.clipboard.writeText(publicBookingUrl);
+      trackAdsEvent("booking_link_copied", {
+        source: "settings",
+        language,
+        business_id: data.business.id
+      });
       setStatus(copy.linkCopied);
     } catch {
       selectPublicBookingUrl();

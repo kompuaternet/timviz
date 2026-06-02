@@ -1,0 +1,29 @@
+Action,Keyword ID,Keyword,Match Type,Status,Bid,Campaign ID,Ad Group ID,Campaign Name,Ad Group Name,Country
+CREATE,,aplikace pro objednávání klientů,EXACT,PAUSED,$0.15,,,TIVZ_CZ_SR_EXACT_W2_PAUSED,CS_CORE_EXACT,Czech Republic
+CREATE,,aplikace pro rezervace,EXACT,PAUSED,$0.15,,,TIVZ_CZ_SR_EXACT_W2_PAUSED,CS_CORE_EXACT,Czech Republic
+CREATE,,rezervační aplikace,EXACT,PAUSED,$0.15,,,TIVZ_CZ_SR_EXACT_W2_PAUSED,CS_CORE_EXACT,Czech Republic
+CREATE,,rezervační systém,EXACT,PAUSED,$0.15,,,TIVZ_CZ_SR_EXACT_W2_PAUSED,CS_CORE_EXACT,Czech Republic
+CREATE,,systém pro objednávání klientů,EXACT,PAUSED,$0.15,,,TIVZ_CZ_SR_EXACT_W2_PAUSED,CS_CORE_EXACT,Czech Republic
+CREATE,,kalendář rezervací,EXACT,PAUSED,$0.15,,,TIVZ_CZ_SR_EXACT_W2_PAUSED,CS_CORE_EXACT,Czech Republic
+CREATE,,kalendář objednávek,EXACT,PAUSED,$0.15,,,TIVZ_CZ_SR_EXACT_W2_PAUSED,CS_CORE_EXACT,Czech Republic
+CREATE,,kalendář klientů,EXACT,PAUSED,$0.15,,,TIVZ_CZ_SR_EXACT_W2_PAUSED,CS_CORE_EXACT,Czech Republic
+CREATE,,aplikace pro salon,EXACT,PAUSED,$0.15,,,TIVZ_CZ_SR_EXACT_W2_PAUSED,CS_CORE_EXACT,Czech Republic
+CREATE,,program pro salon,EXACT,PAUSED,$0.15,,,TIVZ_CZ_SR_EXACT_W2_PAUSED,CS_CORE_EXACT,Czech Republic
+CREATE,,crm pro salon,EXACT,PAUSED,$0.15,,,TIVZ_CZ_SR_EXACT_W2_PAUSED,CS_CORE_EXACT,Czech Republic
+CREATE,,crm pro kosmetický salon,EXACT,PAUSED,$0.15,,,TIVZ_CZ_SR_EXACT_W2_PAUSED,CS_CORE_EXACT,Czech Republic
+CREATE,,rezervace klientů,EXACT,PAUSED,$0.15,,,TIVZ_CZ_SR_EXACT_W2_PAUSED,CS_CORE_EXACT,Czech Republic
+CREATE,,správa klientů,EXACT,PAUSED,$0.15,,,TIVZ_CZ_SR_EXACT_W2_PAUSED,CS_CORE_EXACT,Czech Republic
+CREATE,,evidence klientů,EXACT,PAUSED,$0.15,,,TIVZ_CZ_SR_EXACT_W2_PAUSED,CS_CORE_EXACT,Czech Republic
+CREATE,,objednávky klientů,EXACT,PAUSED,$0.15,,,TIVZ_CZ_SR_EXACT_W2_PAUSED,CS_CORE_EXACT,Czech Republic
+CREATE,,aplikace pro kadeřníka,EXACT,PAUSED,$0.15,,,TIVZ_CZ_SR_EXACT_W2_PAUSED,CS_CORE_EXACT,Czech Republic
+CREATE,,kalendář kadeřníka,EXACT,PAUSED,$0.15,,,TIVZ_CZ_SR_EXACT_W2_PAUSED,CS_CORE_EXACT,Czech Republic
+CREATE,,aplikace pro barbera,EXACT,PAUSED,$0.15,,,TIVZ_CZ_SR_EXACT_W2_PAUSED,CS_CORE_EXACT,Czech Republic
+CREATE,,kalendář barbera,EXACT,PAUSED,$0.15,,,TIVZ_CZ_SR_EXACT_W2_PAUSED,CS_CORE_EXACT,Czech Republic
+CREATE,,aplikace pro kosmetičku,EXACT,PAUSED,$0.15,,,TIVZ_CZ_SR_EXACT_W2_PAUSED,CS_CORE_EXACT,Czech Republic
+CREATE,,kalendář kosmetičky,EXACT,PAUSED,$0.15,,,TIVZ_CZ_SR_EXACT_W2_PAUSED,CS_CORE_EXACT,Czech Republic
+CREATE,,aplikace pro maséra,EXACT,PAUSED,$0.15,,,TIVZ_CZ_SR_EXACT_W2_PAUSED,CS_CORE_EXACT,Czech Republic
+CREATE,,kalendář maséra,EXACT,PAUSED,$0.15,,,TIVZ_CZ_SR_EXACT_W2_PAUSED,CS_CORE_EXACT,Czech Republic
+CREATE,,aplikace pro nehtovou stylistku,EXACT,PAUSED,$0.15,,,TIVZ_CZ_SR_EXACT_W2_PAUSED,CS_CORE_EXACT,Czech Republic
+CREATE,,kalendář nehtové stylistky,EXACT,PAUSED,$0.15,,,TIVZ_CZ_SR_EXACT_W2_PAUSED,CS_CORE_EXACT,Czech Republic
+CREATE,,aplikace pro salon krásy,EXACT,PAUSED,$0.15,,,TIVZ_CZ_SR_EXACT_W2_PAUSED,CS_CORE_EXACT,Czech Republic
+CREATE,,program pro salon krásy,EXACT,PAUSED,$0.15,,,TIVZ_CZ_SR_EXACT_W2_PAUSED,CS_CORE_EXACT,Czech Republic

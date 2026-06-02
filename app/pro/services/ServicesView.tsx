@@ -14,6 +14,7 @@ import {
   type CategoryTemplate
 } from "../../../lib/service-templates";
 import { localeBySiteLanguage } from "../../../lib/site-language";
+import { trackAdsEvent } from "../../../lib/ads-events";
 import type { OnboardingCtaState } from "../../../lib/pro-onboarding";
 import type { ServiceRecord, WorkspaceSnapshot } from "../../../lib/pro-data";
 import { useProLanguage } from "../useProLanguage";
@@ -415,6 +416,13 @@ export default function ServicesView({ initialWorkspace, catalog, onboardingCta 
       return;
     }
 
+    if (services.length === 0) {
+      trackAdsEvent("first_service_added", {
+        source: "manual",
+        language,
+        business_id: initialWorkspace.business.id
+      });
+    }
     await reloadServices();
     setDraft(emptyDraft(draft.category));
     setStatusText(t.services.added);
@@ -547,6 +555,13 @@ export default function ServicesView({ initialWorkspace, catalog, onboardingCta 
         await reloadServices();
       }
 
+      if (services.length === 0) {
+        trackAdsEvent("first_service_added", {
+          source: "catalog",
+          language,
+          business_id: initialWorkspace.business.id
+        });
+      }
       setStatusText(copy.addedNamed(service.localizedLabel || localizeServiceName(service.name, language)));
     } catch {
       setStatusText(copy.addFromCatalogFailed);

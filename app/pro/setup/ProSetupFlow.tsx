@@ -18,6 +18,7 @@ import {
   localizeCategoryName,
   localizeServiceName
 } from "../../../lib/service-templates";
+import { trackAdsEvent } from "../../../lib/ads-events";
 
 const serviceModes = [
   "Клиенты приходят в мое физическое заведение",
@@ -1389,6 +1390,28 @@ export default function ProSetupFlow({
     if (!response.ok) {
       setIsSaving(false);
       throw new Error(result.error || "Failed to save professional setup.");
+    }
+
+    trackAdsEvent("sign_up_complete", {
+      source: "pro_setup",
+      language,
+      owner_mode: activeDraft.ownerMode,
+      workspace_ready: result.workspaceReady === true
+    });
+
+    if (activeDraft.ownerMode === "owner") {
+      trackAdsEvent("business_profile_created", {
+        source: "pro_setup",
+        language,
+        account_type: activeDraft.accountType || "solo"
+      });
+    }
+
+    if (result.trialStarted === true) {
+      trackAdsEvent("pro_trial_started", {
+        source: "pro_setup",
+        language
+      });
     }
 
     if (activeDraft.ownerMode === "owner") {

@@ -130,6 +130,19 @@ function isActiveEntitlement(status: unknown, activeUntil: unknown) {
   return isFutureDate(String(activeUntil));
 }
 
+function isMissingEntitlementsTableError(error: unknown) {
+  if (!error || typeof error !== "object") return false;
+  const details = error as { code?: unknown; message?: unknown };
+  const code = typeof details.code === "string" ? details.code : "";
+  const message = typeof details.message === "string" ? details.message : "";
+  return (
+    code === "42P01" ||
+    code === "PGRST205" ||
+    message.includes("user_entitlements") ||
+    message.includes("apple_subscriptions")
+  );
+}
+
 export async function upsertUserEntitlement(input: {
   userId: string;
   planCode: string;
@@ -160,7 +173,12 @@ export async function upsertUserEntitlement(input: {
     },
     { onConflict: "id" }
   );
-  if (error) throw new Error(error.message);
+  if (error) {
+    if (isMissingEntitlementsTableError(error)) {
+      return { updated: false, reason: "entitlements_table_missing" as const };
+    }
+    throw new Error(error.message);
+  }
   return { updated: true };
 }
 
@@ -187,6 +205,19 @@ export async function getUserAccess(userId: string): Promise<UserAccess> {
     .eq("user_id", userId);
 
   if (error) {
+    if (isMissingEntitlementsTableError(error)) {
+      const snapshot = await getProfessionalPremiumSnapshot({ professionalId: userId });
+      if (snapshot && isPremiumAccessActive({ plan: "premium", premiumStatus: snapshot.premium_status, premiumUntil: snapshot.premium_until })) {
+        return {
+          plan: "pro",
+          isPro: true,
+          source: "manual",
+          activeUntil: snapshot.premium_until || null,
+          features: PRO_FEATURES
+        };
+      }
+      return freeAccess;
+    }
     throw new Error(error.message);
   }
 
@@ -357,7 +388,7 @@ export async function updateProfessionalPremiumFromAppStore(input: {
         },
         { onConflict: "original_transaction_id" }
       );
-      if (error) throw new Error(error.message);
+      if (error && !isMissingEntitlementsTableError(error)) throw new Error(error.message);
     }
   }
 

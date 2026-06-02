@@ -1657,6 +1657,7 @@ export async function createProfessionalSetup(input: {
 }): Promise<{
   professionalId: string;
   workspaceReady: boolean;
+  trialStarted: boolean;
   joinRequest: CreatedJoinRequestNotification | null;
 }> {
   const account = {
@@ -2034,6 +2035,7 @@ export async function createProfessionalSetup(input: {
     return {
       professionalId,
       workspaceReady: input.setup.ownerMode === "owner" || Boolean(invitationPreview),
+      trialStarted: shouldStartPremiumTrial && Boolean(initialPremiumUntil),
       joinRequest: createdJoinRequest
     };
   }
@@ -2228,6 +2230,7 @@ export async function createProfessionalSetup(input: {
   return {
     professionalId,
     workspaceReady: input.setup.ownerMode === "owner" || Boolean(invitationPreview),
+    trialStarted: shouldStartPremiumTrial && Boolean(initialPremiumUntil),
     joinRequest: createdJoinRequest
   };
 }

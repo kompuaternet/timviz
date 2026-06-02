@@ -52,6 +52,7 @@ test.describe("booking flow", () => {
 
     await expect(page.locator(".company-booking-step h2")).toContainText(/подтверждение|confirmation|підтвердження/i);
     await expect(page.locator(".company-auth-card, .company-confirm-form").first()).toBeVisible();
+    await expect(page.locator(".company-google-button, .company-confirm-form").first()).toBeVisible({ timeout: 20000 });
 
     if (await page.locator(".company-confirm-form").isVisible().catch(() => false)) {
       await expect(page.locator(".salon-phone-input")).toBeVisible();

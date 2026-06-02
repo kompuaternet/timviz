@@ -29,12 +29,24 @@ test.describe("important links", () => {
 
     expect(badInternalHrefs).toEqual([]);
 
-    for (const href of Array.from(hrefs).slice(0, 50)) {
-      if (href.startsWith("#")) continue;
-      const url = href.startsWith("http") ? href : new URL(href, page.url()).toString();
-      if (!url.startsWith(new URL(page.url()).origin)) continue;
-      const response = await request.get(url, { timeout: 30_000 });
-      expect(response.status(), `${url} returned ${response.status()}`).toBeLessThan(400);
+    const origin = new URL(page.url()).origin;
+    const internalUrls = Array.from(hrefs)
+      .slice(0, 50)
+      .filter((href) => !href.startsWith("#"))
+      .map((href) => (href.startsWith("http") ? href : new URL(href, page.url()).toString()))
+      .filter((url) => url.startsWith(origin));
+
+    for (let index = 0; index < internalUrls.length; index += 8) {
+      const results = await Promise.all(
+        internalUrls.slice(index, index + 8).map(async (url) => {
+          const response = await request.get(url, { timeout: 30_000 });
+          return { status: response.status(), url };
+        })
+      );
+
+      for (const result of results) {
+        expect(result.status, `${result.url} returned ${result.status}`).toBeLessThan(400);
+      }
     }
   });
 });

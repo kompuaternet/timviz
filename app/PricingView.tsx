@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import BrandLogo from "./BrandLogo";
 import GlobalLanguageSwitcher from "./GlobalLanguageSwitcher";
 import PublicHeaderAuthMenu from "./PublicHeaderAuthMenu";
 import { getLocalizedPath, publicFooterLabels, type SiteLanguage , withEnglishFallback } from "../lib/site-language";
 import type { PricingCopy, PricingPlanKey } from "../lib/pricing";
+import { trackAdsEvent } from "../lib/ads-events";
 
 type PricingViewProps = {
   language: SiteLanguage;
@@ -134,6 +135,13 @@ export default function PricingView({ language, copy, user }: PricingViewProps) 
   const footer = footerCopy[language];
   const [message, setMessage] = useState("");
   const [loadingBilling, setLoadingBilling] = useState<Exclude<PricingPlanKey, "free"> | null>(null);
+
+  useEffect(() => {
+    trackAdsEvent("pricing_view", {
+      language,
+      signed_in: Boolean(user)
+    });
+  }, [language, user]);
 
   function goFree() {
     window.location.assign(user ? "/pro/calendar" : "/pro/create-account");

@@ -1,0 +1,17 @@
+Action,Keyword ID,Keyword,Match Type,Status,Bid,Campaign ID,Ad Group ID,Campaign Name,Ad Group Name,Country,Launch Rule
+CREATE,,booksy,EXACT,PAUSED,$0.15,,,TIVZ_COMPETITORS_SR_EXACT_PAUSED,COMPETITORS_EXACT,TBD after W1,Do not launch in week 1; max $2/day test only after activated installs from core/profession keywords.
+CREATE,,fresha,EXACT,PAUSED,$0.15,,,TIVZ_COMPETITORS_SR_EXACT_PAUSED,COMPETITORS_EXACT,TBD after W1,Do not launch in week 1; max $2/day test only after activated installs from core/profession keywords.
+CREATE,,treatwell,EXACT,PAUSED,$0.15,,,TIVZ_COMPETITORS_SR_EXACT_PAUSED,COMPETITORS_EXACT,TBD after W1,Do not launch in week 1; max $2/day test only after activated installs from core/profession keywords.
+CREATE,,simplybook,EXACT,PAUSED,$0.15,,,TIVZ_COMPETITORS_SR_EXACT_PAUSED,COMPETITORS_EXACT,TBD after W1,Do not launch in week 1; max $2/day test only after activated installs from core/profession keywords.
+CREATE,,setmore,EXACT,PAUSED,$0.15,,,TIVZ_COMPETITORS_SR_EXACT_PAUSED,COMPETITORS_EXACT,TBD after W1,Do not launch in week 1; max $2/day test only after activated installs from core/profession keywords.
+CREATE,,reservio,EXACT,PAUSED,$0.15,,,TIVZ_COMPETITORS_SR_EXACT_PAUSED,COMPETITORS_EXACT,TBD after W1,Do not launch in week 1; max $2/day test only after activated installs from core/profession keywords.
+CREATE,,calendly,EXACT,PAUSED,$0.15,,,TIVZ_COMPETITORS_SR_EXACT_PAUSED,COMPETITORS_EXACT,TBD after W1,Do not launch in week 1; max $2/day test only after activated installs from core/profession keywords.
+CREATE,,acuity scheduling,EXACT,PAUSED,$0.15,,,TIVZ_COMPETITORS_SR_EXACT_PAUSED,COMPETITORS_EXACT,TBD after W1,Do not launch in week 1; max $2/day test only after activated installs from core/profession keywords.
+CREATE,,square appointments,EXACT,PAUSED,$0.15,,,TIVZ_COMPETITORS_SR_EXACT_PAUSED,COMPETITORS_EXACT,TBD after W1,Do not launch in week 1; max $2/day test only after activated installs from core/profession keywords.
+CREATE,,timely,EXACT,PAUSED,$0.15,,,TIVZ_COMPETITORS_SR_EXACT_PAUSED,COMPETITORS_EXACT,TBD after W1,Do not launch in week 1; max $2/day test only after activated installs from core/profession keywords.
+CREATE,,versum,EXACT,PAUSED,$0.15,,,TIVZ_COMPETITORS_SR_EXACT_PAUSED,COMPETITORS_EXACT,TBD after W1,Do not launch in week 1; max $2/day test only after activated installs from core/profession keywords.
+CREATE,,moment.pl,EXACT,PAUSED,$0.15,,,TIVZ_COMPETITORS_SR_EXACT_PAUSED,COMPETITORS_EXACT,TBD after W1,Do not launch in week 1; max $2/day test only after activated installs from core/profession keywords.
+CREATE,,bookero,EXACT,PAUSED,$0.15,,,TIVZ_COMPETITORS_SR_EXACT_PAUSED,COMPETITORS_EXACT,TBD after W1,Do not launch in week 1; max $2/day test only after activated installs from core/profession keywords.
+CREATE,,altegio,EXACT,PAUSED,$0.15,,,TIVZ_COMPETITORS_SR_EXACT_PAUSED,COMPETITORS_EXACT,TBD after W1,Do not launch in week 1; max $2/day test only after activated installs from core/profession keywords.
+CREATE,,yclients,EXACT,PAUSED,$0.15,,,TIVZ_COMPETITORS_SR_EXACT_PAUSED,COMPETITORS_EXACT,TBD after W1,Do not launch in week 1; max $2/day test only after activated installs from core/profession keywords.
+CREATE,,dikidi,EXACT,PAUSED,$0.15,,,TIVZ_COMPETITORS_SR_EXACT_PAUSED,COMPETITORS_EXACT,TBD after W1,Do not launch in week 1; max $2/day test only after activated installs from core/profession keywords.
