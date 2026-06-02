@@ -8,6 +8,19 @@ export function slugifyBusinessName(value: string) {
     .slice(0, 36) || "business";
 }
 
+export function encodePublicBusinessPathId(value: string) {
+  const rawValue = String(value || "").trim();
+  if (!rawValue) {
+    return "";
+  }
+
+  try {
+    return encodeURIComponent(decodeURIComponent(rawValue));
+  } catch {
+    return encodeURIComponent(rawValue);
+  }
+}
+
 type PathBusiness = {
   id: string;
   name: string;

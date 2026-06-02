@@ -1,5 +1,6 @@
 import { permanentRedirect } from "next/navigation";
 import { getPublicBusinessProfile } from "../../../lib/public-business";
+import { encodePublicBusinessPathId } from "../../../lib/public-business-path";
 import { getRequestLanguage } from "../../../lib/request-language";
 import { getLocalizedPath } from "../../../lib/site-language";
 
@@ -17,7 +18,7 @@ export default async function SalonPage({ params }: SalonPageProps) {
   const business = await getPublicBusinessProfile(slug);
 
   if (business) {
-    permanentRedirect(getLocalizedPath(language, `/businesses/${business.publicPathId}`));
+    permanentRedirect(getLocalizedPath(language, `/businesses/${encodePublicBusinessPathId(business.publicPathId)}`));
   }
 
   permanentRedirect(getLocalizedPath(language, `/salons/${slug}`));
