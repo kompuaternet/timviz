@@ -246,11 +246,6 @@ export default function PricingView({ language, copy, user }: PricingViewProps) 
         })}
       </section>
 
-      <p className="pricing-checkout-notice">
-        {copy.checkoutNotice}{" "}
-        <Link href={getLocalizedPath(language, "/subscription-terms")}>{footer.subscription}</Link>
-      </p>
-
       <p className="pricing-software-notice">{copy.softwareNotice}</p>
 
       {message ? <p className="pricing-message">{message}</p> : null}

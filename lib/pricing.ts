@@ -34,7 +34,6 @@ export type PricingCopy = {
   cancelAnytime: string;
   secureBilling: string;
   softwareNotice: string;
-  checkoutNotice: string;
   loginRequired: string;
   startingCheckout: string;
   billingError: string;
@@ -70,7 +69,6 @@ export const pricingCopy: Record<SiteLanguage, PricingCopy> = withEnglishFallbac
     secureBilling: "Безопасное управление подпиской",
     softwareNotice:
       "Timviz продаёт подписку на программное обеспечение для управления записью. Мы не являемся маркетплейсом и не обрабатываем платежи между клиентами и мастерами.",
-    checkoutNotice: "Нажимая кнопку оплаты, вы соглашаетесь с автопродлением выбранного тарифа в USD и условиями подписки. Отменить можно в кабинете.",
     loginRequired: "Сначала войдите или создайте аккаунт, чтобы запустить пробный период.",
     startingCheckout: "Готовим защищённую оплату...",
     billingError: "Не удалось открыть оплату. Попробуйте ещё раз или напишите в поддержку.",
@@ -192,7 +190,6 @@ export const pricingCopy: Record<SiteLanguage, PricingCopy> = withEnglishFallbac
     secureBilling: "Безпечне керування підпискою",
     softwareNotice:
       "Timviz продає підписку на програмне забезпечення для керування записом. Ми не є маркетплейсом і не обробляємо платежі між клієнтами та майстрами.",
-    checkoutNotice: "Натискаючи кнопку оплати, ви погоджуєтеся з автопродовженням вибраного тарифу в USD та умовами підписки. Скасувати можна в кабінеті.",
     loginRequired: "Спочатку увійдіть або створіть акаунт, щоб запустити пробний період.",
     startingCheckout: "Готуємо захищену оплату...",
     billingError: "Не вдалося відкрити оплату. Спробуйте ще раз або напишіть у підтримку.",
@@ -314,7 +311,6 @@ export const pricingCopy: Record<SiteLanguage, PricingCopy> = withEnglishFallbac
     secureBilling: "Secure subscription management",
     softwareNotice:
       "Timviz sells a software subscription for appointment management. We are not a marketplace and do not process payments between clients and service providers.",
-    checkoutNotice: "By continuing to payment, you agree to auto-renewal of the selected USD plan and the subscription terms. You can cancel in your account.",
     loginRequired: "Please sign in or create an account first to start your free trial.",
     startingCheckout: "Preparing secure checkout...",
     billingError: "Could not open checkout. Please try again or contact support.",
@@ -437,7 +433,6 @@ Object.assign(pricingCopy, {
     cancelAnytime: "Annulation à tout moment",
     secureBilling: "Gestion sécurisée de l’abonnement",
     softwareNotice: "Timviz vend un abonnement logiciel pour gérer les rendez-vous. Nous ne sommes pas une marketplace et ne traitons pas les paiements entre clients et prestataires.",
-    checkoutNotice: "En continuant vers le paiement, vous acceptez le renouvellement automatique du forfait choisi en USD et les conditions d’abonnement. Vous pouvez annuler dans votre compte.",
     loginRequired: "Connectez-vous ou créez un compte pour démarrer l’essai gratuit.",
     startingCheckout: "Préparation du paiement sécurisé...",
     billingError: "Impossible d’ouvrir le paiement. Réessayez ou contactez le support.",
@@ -469,7 +464,6 @@ Object.assign(pricingCopy, {
     cancelAnytime: "Anuluj w dowolnym momencie",
     secureBilling: "Bezpieczne zarządzanie subskrypcją",
     softwareNotice: "Timviz sprzedaje subskrypcję oprogramowania do zarządzania rezerwacjami. Nie jesteśmy marketplace’em i nie obsługujemy płatności między klientami a usługodawcami.",
-    checkoutNotice: "Przechodząc do płatności, akceptujesz automatyczne odnawianie wybranego planu w USD oraz warunki subskrypcji. Możesz anulować w koncie.",
     loginRequired: "Najpierw zaloguj się lub utwórz konto, aby rozpocząć okres próbny.",
     startingCheckout: "Przygotowujemy bezpieczną płatność...",
     billingError: "Nie udało się otworzyć płatności. Spróbuj ponownie lub skontaktuj się z pomocą.",
@@ -501,7 +495,6 @@ Object.assign(pricingCopy, {
     cancelAnytime: "Zrušení kdykoliv",
     secureBilling: "Bezpečná správa předplatného",
     softwareNotice: "Timviz prodává softwarové předplatné pro správu rezervací. Nejsme marketplace a nezpracováváme platby mezi klienty a poskytovateli služeb.",
-    checkoutNotice: "Pokračováním k platbě souhlasíte s automatickým obnovováním vybraného tarifu v USD a s podmínkami předplatného. Zrušit ho můžete v účtu.",
     loginRequired: "Nejprve se přihlaste nebo vytvořte účet, abyste mohli spustit zkušební období.",
     startingCheckout: "Připravujeme bezpečnou platbu...",
     billingError: "Platbu se nepodařilo otevřít. Zkuste to znovu nebo kontaktujte podporu.",
@@ -533,7 +526,6 @@ Object.assign(pricingCopy, {
     cancelAnytime: "Cancela cuando quieras",
     secureBilling: "Gestión segura de suscripción",
     softwareNotice: "Timviz vende una suscripción de software para gestionar reservas. No somos un marketplace y no procesamos pagos entre clientes y proveedores.",
-    checkoutNotice: "Al continuar al pago, aceptas la renovación automática del plan elegido en USD y las condiciones de suscripción. Puedes cancelar en tu cuenta.",
     loginRequired: "Primero inicia sesión o crea una cuenta para empezar la prueba gratuita.",
     startingCheckout: "Preparando pago seguro...",
     billingError: "No se pudo abrir el pago. Inténtalo de nuevo o contacta con soporte.",
@@ -565,7 +557,6 @@ Object.assign(pricingCopy, {
     cancelAnytime: "Jederzeit kündbar",
     secureBilling: "Sichere Abo-Verwaltung",
     softwareNotice: "Timviz verkauft ein Software-Abonnement zur Terminverwaltung. Wir sind kein Marketplace und verarbeiten keine Zahlungen zwischen Kunden und Dienstleistern.",
-    checkoutNotice: "Mit dem Fortfahren zur Zahlung stimmst du der automatischen Verlängerung des gewählten USD-Tarifs und den Abo-Bedingungen zu. Du kannst im Konto kündigen.",
     loginRequired: "Bitte melde dich zuerst an oder erstelle ein Konto, um die kostenlose Testphase zu starten.",
     startingCheckout: "Sichere Zahlung wird vorbereitet...",
     billingError: "Die Zahlung konnte nicht geöffnet werden. Bitte versuche es erneut oder kontaktiere den Support.",

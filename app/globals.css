@@ -4465,25 +4465,6 @@
   box-shadow: 0 22px 45px rgba(91, 127, 255, 0.28);
 }
 
-.pricing-checkout-notice {
-  width: min(900px, calc(100% - 48px));
-  margin: 4px auto 0;
-  color: #667085;
-  font-size: 0.84rem;
-  line-height: 1.45;
-  text-align: center;
-}
-
-.pricing-checkout-notice a {
-  color: #4f46e5;
-  font-weight: 800;
-  text-decoration: none;
-}
-
-.pricing-checkout-notice a:hover {
-  text-decoration: underline;
-}
-
 .pricing-software-notice {
   width: min(980px, calc(100% - 48px));
   margin: 28px auto 0;
