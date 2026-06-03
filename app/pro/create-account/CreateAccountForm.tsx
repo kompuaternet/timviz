@@ -766,7 +766,15 @@ export default function CreateAccountForm() {
       return;
     }
 
-    const absolute = new URL(googleRegisterHref, window.location.origin).toString();
+    let targetHref = googleRegisterHref;
+    if (!isTelegramSource) {
+      const [pathname, rawQuery = ""] = googleRegisterHref.split("?");
+      const params = new URLSearchParams(rawQuery);
+      params.set("return_to", `${window.location.pathname}${window.location.search}`);
+      targetHref = `${pathname}?${params.toString()}`;
+    }
+
+    const absolute = new URL(targetHref, window.location.origin).toString();
     const telegramRuntime = (
       window as Window & {
         Telegram?: { WebApp?: TelegramRuntime };

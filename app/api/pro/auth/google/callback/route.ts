@@ -23,6 +23,8 @@ const MOBILE_GOOGLE_OAUTH_COUNTRY_COOKIE = "timviz_mobile_google_oauth_country";
 const MOBILE_GOOGLE_OAUTH_TIMEZONE_COOKIE = "timviz_mobile_google_oauth_timezone";
 const MOBILE_GOOGLE_OAUTH_CURRENCY_COOKIE = "timviz_mobile_google_oauth_currency";
 const MOBILE_GOOGLE_OAUTH_BRIDGE_COOKIE = "timviz_mobile_google_oauth_bridge";
+const adsCarryPrefixes = ["utm_"];
+const adsCarryKeys = ["gclid", "gbraid", "wbraid", "fbclid", "ttclid", "msclkid"];
 
 function normalizeReturnTo(value: string, fallback = "/pro/workspace") {
   const trimmed = value.trim();
@@ -41,6 +43,32 @@ function isTelegramSourceReturn(returnTo: string, appUrl: string) {
     return parsed.pathname.startsWith("/telegram") || parsed.searchParams.get("source") === "telegram";
   } catch {
     return false;
+  }
+}
+
+function isCreateAccountReturn(returnTo: string, appUrl: string) {
+  try {
+    const parsed = new URL(returnTo, appUrl);
+    return parsed.pathname === "/pro/create-account";
+  } catch {
+    return false;
+  }
+}
+
+function isAdsCarryKey(key: string) {
+  return adsCarryKeys.includes(key) || adsCarryPrefixes.some((prefix) => key.startsWith(prefix));
+}
+
+function copySignupAttributionFromReturnTo(target: URL, returnTo: string, appUrl: string) {
+  try {
+    const parsed = new URL(returnTo, appUrl);
+    parsed.searchParams.forEach((value, key) => {
+      if ((key === "source" || isAdsCarryKey(key)) && value && !target.searchParams.has(key)) {
+        target.searchParams.set(key, value);
+      }
+    });
+  } catch {
+    // OAuth should still complete if attribution data is malformed.
   }
 }
 
@@ -256,7 +284,7 @@ export async function GET(request: Request) {
       });
       const target = resolveFinalRedirectTarget({
         appUrl,
-        returnTo
+        returnTo: isCreateAccountReturn(returnTo, appUrl) ? "/pro/workspace" : returnTo
       });
       return NextResponse.redirect(target);
     }
@@ -288,6 +316,8 @@ export async function GET(request: Request) {
         "startapp",
         extractTelegramStartParam(returnTo, appUrl)
       );
+    } else {
+      copySignupAttributionFromReturnTo(createAccountUrl, returnTo, appUrl);
     }
     createAccountUrl.searchParams.set("google", "1");
     createAccountUrl.searchParams.set("email", profile.email);
