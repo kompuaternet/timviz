@@ -500,11 +500,6 @@ export default function WorkScheduleCard({
     });
   }
 
-  function ensureDate(dateKey: string) {
-    setSelectedDateKey(dateKey);
-    setReferenceDateKey(dateKey);
-  }
-
   function setDateType(dateKey: string, dayType: "workday" | "day-off" | "holiday", keepSelection = true) {
     setSelectedDateKey(keepSelection ? dateKey : null);
     setReferenceDateKey(dateKey);

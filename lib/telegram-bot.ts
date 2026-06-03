@@ -1008,7 +1008,7 @@ async function applyProfessionalNotificationPreferences(connection: TelegramConn
   };
 }
 
-function mapReminderRow(row: Record<string, unknown>): TelegramReminderEvent {
+function _mapReminderRow(row: Record<string, unknown>): TelegramReminderEvent {
   return {
     id: String(row.id ?? ""),
     appointmentId: String(row.appointment_id ?? ""),

@@ -987,10 +987,6 @@ function resolveMemberDaySchedule(member: StaffMemberSnapshot, dateKey: string) 
   );
 }
 
-function formatInputDate(dateKey: string) {
-  return dateKey;
-}
-
 function formatRangeLabel(weekDays: Array<{ date: Date }>, locale: string) {
   const start = weekDays[0]?.date;
   const end = weekDays[6]?.date;
@@ -1129,7 +1125,6 @@ function SchedulePlannerModal({
   localizedWorkDays,
   anchorDateKey,
   copy,
-  locale,
   onClose,
   onSave
 }: {
@@ -1137,7 +1132,6 @@ function SchedulePlannerModal({
   localizedWorkDays: LocalizedWorkDay[];
   anchorDateKey?: string;
   copy: ScheduleCopy;
-  locale: string;
   onClose: () => void;
   onSave: (payload: SaveScheduleInput) => Promise<boolean>;
 }) {
@@ -2438,7 +2432,6 @@ export default function StaffScheduleView({ professionalId, snapshot, onboarding
           localizedWorkDays={localizedWorkDays}
           anchorDateKey={plannerState.anchorDateKey}
           copy={copy}
-          locale={locale}
           onClose={() => setPlannerState(null)}
           onSave={persistMemberSchedule}
         />

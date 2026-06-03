@@ -3060,7 +3060,8 @@
 }
 
 .masters-primary,
-.masters-secondary {
+.masters-secondary,
+.masters-app-store {
   min-height: 54px;
   display: inline-flex;
   align-items: center;
@@ -3081,6 +3082,13 @@
   border: 1px solid rgba(15, 23, 42, 0.16);
   background: #ffffff;
   color: #111827;
+}
+
+.masters-app-store {
+  border: 1px solid rgba(15, 23, 42, 0.22);
+  background: #0f172a;
+  color: #ffffff;
+  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.18);
 }
 
 .masters-hero-copy small {
@@ -3315,6 +3323,11 @@
   font-weight: 900;
 }
 
+.masters-form-preview .masters-form-app-store {
+  border: 1px solid rgba(15, 23, 42, 0.16);
+  background: #0f172a;
+}
+
 .masters-faq {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -3350,6 +3363,11 @@
   padding: 48px;
   border-radius: 8px;
   background: #ecfeff;
+}
+
+.masters-final-app-store {
+  background: #ffffff;
+  color: #111827;
 }
 
 .business-hero,
@@ -4465,16 +4483,23 @@
   box-shadow: 0 22px 45px rgba(91, 127, 255, 0.28);
 }
 
-.pricing-software-notice {
+.pricing-subscription-notice {
   width: min(980px, calc(100% - 48px));
   margin: 28px auto 0;
-  padding: 18px 22px;
-  border: 1px solid rgba(17, 17, 17, 0.08);
-  border-radius: 14px;
-  background: #fff;
-  color: #4d5563;
+  color: #6b7280;
+  font-size: 0.92rem;
   line-height: 1.55;
   text-align: center;
+}
+
+.pricing-subscription-notice a {
+  color: #4f46e5;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.pricing-subscription-notice a:hover {
+  text-decoration: underline;
 }
 
 .pricing-message {
@@ -7460,7 +7485,8 @@ a {
   }
 
   .masters-primary,
-  .masters-secondary {
+  .masters-secondary,
+  .masters-app-store {
     width: 100%;
     min-width: 0;
     padding-left: 14px;

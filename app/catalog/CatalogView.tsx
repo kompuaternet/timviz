@@ -1279,10 +1279,6 @@ export default function CatalogView({
     listRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
-  function scrollToMap() {
-    mapSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
-
   const catalogNavigationCopy: Record<SiteLanguage, { catalog: string; menu: string; search: string; results: string; map: string; nav: string }> = {
     ru: { catalog: "Профили", menu: "Меню", search: "Поиск и фильтры", results: "Результаты", map: "Карта", nav: "Навигация поиска профилей" },
     uk: { catalog: "Профілі", menu: "Меню", search: "Пошук і фільтри", results: "Результати", map: "Карта", nav: "Навігація пошуку профілів" },

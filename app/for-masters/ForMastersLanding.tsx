@@ -6,6 +6,7 @@ import BrandLogo from "../BrandLogo";
 import GlobalLanguageSwitcher from "../GlobalLanguageSwitcher";
 import PublicHeaderAuthMenu from "../PublicHeaderAuthMenu";
 import { buildAdsCarryoverUrl, trackAdsEvent } from "../../lib/ads-events";
+import { mobileApps } from "../../lib/mobile-apps";
 import { getLocalizedPath, publicFooterLabels, type SiteLanguage } from "../../lib/site-language";
 
 type MastersCopy = {
@@ -17,6 +18,7 @@ type MastersCopy = {
   offer: string;
   primaryCta: string;
   secondaryCta: string;
+  appStoreCta: string;
   proof: string;
   visualTitle: string;
   visualService: string;
@@ -53,6 +55,7 @@ const copy: Record<SiteLanguage, MastersCopy> = {
     offer: "500 бесплатных записей + 14 дней PRO бесплатно",
     primaryCta: "Создать страницу записи бесплатно",
     secondaryCta: "Посмотреть, как работает",
+    appStoreCta: "Открыть в App Store",
     proof: "Запуск за несколько минут. Подходит solo-мастеру, кабинету и салону.",
     visualTitle: "Заявка клиента",
     visualService: "Маникюр с покрытием",
@@ -95,6 +98,7 @@ const copy: Record<SiteLanguage, MastersCopy> = {
     offer: "500 безкоштовних записів + 14 днів PRO безкоштовно",
     primaryCta: "Створити сторінку запису безкоштовно",
     secondaryCta: "Подивитися, як працює",
+    appStoreCta: "Відкрити в App Store",
     proof: "Запуск за кілька хвилин. Підходить solo-майстру, кабінету і салону.",
     visualTitle: "Заявка клієнта",
     visualService: "Манікюр з покриттям",
@@ -137,6 +141,7 @@ const copy: Record<SiteLanguage, MastersCopy> = {
     offer: "500 free bookings + 14 days of PRO free",
     primaryCta: "Create a booking page for free",
     secondaryCta: "See how it works",
+    appStoreCta: "Open in App Store",
     proof: "Launch in minutes. Built for solo pros, private rooms and salons.",
     visualTitle: "Client request",
     visualService: "Manicure with gel polish",
@@ -178,6 +183,7 @@ const copy: Record<SiteLanguage, MastersCopy> = {
     offer: "500 reservations gratuites + 14 jours PRO offerts",
     primaryCta: "Creer une page de reservation gratuite",
     secondaryCta: "Voir le fonctionnement",
+    appStoreCta: "Ouvrir dans l'App Store",
     proof: "Lancement en quelques minutes. Pour solo, cabinet prive et salon.",
     visualTitle: "Demande client",
     visualService: "Manucure avec vernis gel",
@@ -218,6 +224,7 @@ const copy: Record<SiteLanguage, MastersCopy> = {
     offer: "500 darmowych rezerwacji + 14 dni PRO gratis",
     primaryCta: "Utworz darmowa strone rezerwacji",
     secondaryCta: "Zobacz, jak dziala",
+    appStoreCta: "Otworz w App Store",
     proof: "Start w kilka minut. Dla solo, gabinetu i salonu.",
     visualTitle: "Zapytanie klienta",
     visualService: "Manicure hybrydowy",
@@ -258,6 +265,7 @@ const copy: Record<SiteLanguage, MastersCopy> = {
     offer: "500 rezervaci zdarma + 14 dni PRO zdarma",
     primaryCta: "Vytvorit rezervacni stranku zdarma",
     secondaryCta: "Podivat se, jak funguje",
+    appStoreCta: "Otevrit v App Store",
     proof: "Spusteni za par minut. Pro solo specialistu, kabinet i salon.",
     visualTitle: "Pozadavek klienta",
     visualService: "Manikura s gel lakem",
@@ -298,6 +306,7 @@ const copy: Record<SiteLanguage, MastersCopy> = {
     offer: "500 reservas gratis + 14 dias PRO gratis",
     primaryCta: "Crear pagina de reservas gratis",
     secondaryCta: "Ver como funciona",
+    appStoreCta: "Abrir en App Store",
     proof: "Lanzamiento en minutos. Para profesional solo, gabinete y salon.",
     visualTitle: "Solicitud de cliente",
     visualService: "Manicura con gel",
@@ -338,6 +347,7 @@ const copy: Record<SiteLanguage, MastersCopy> = {
     offer: "500 kostenlose Buchungen + 14 Tage PRO gratis",
     primaryCta: "Buchungsseite kostenlos erstellen",
     secondaryCta: "Ansehen, wie es funktioniert",
+    appStoreCta: "Im App Store offnen",
     proof: "Start in wenigen Minuten. Fuer Solo-Profi, Praxisraum und Salon.",
     visualTitle: "Kundenanfrage",
     visualService: "Manikuere mit Gel",
@@ -379,6 +389,7 @@ export default function ForMastersLanding({ language }: ForMastersLandingProps) 
   const t = copy[language];
   const footerLabels = publicFooterLabels[language];
   const [signupHref, setSignupHref] = useState("/pro/create-account");
+  const appStoreHref = mobileApps.enabled && mobileApps.ios.enabled ? mobileApps.ios.url : "";
 
   useEffect(() => {
     trackAdsEvent("landing_view", {
@@ -399,6 +410,15 @@ export default function ForMastersLanding({ language }: ForMastersLandingProps) 
     trackAdsEvent("sign_up_start", {
       source: "for_masters",
       position,
+      language
+    });
+  }
+
+  function trackAppStoreCta(position: string) {
+    trackAdsEvent("cta_click", {
+      landing: "for_masters",
+      position,
+      target: "app_store",
       language
     });
   }
@@ -431,6 +451,17 @@ export default function ForMastersLanding({ language }: ForMastersLandingProps) 
             <a className="masters-secondary" href="#how-it-works" onClick={() => trackCta("hero_secondary")}>
               {t.secondaryCta}
             </a>
+            {appStoreHref ? (
+              <a
+                className="masters-app-store"
+                href={appStoreHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => trackAppStoreCta("hero_app_store")}
+              >
+                {t.appStoreCta}
+              </a>
+            ) : null}
           </div>
           <small>{t.proof}</small>
         </div>
@@ -503,11 +534,22 @@ export default function ForMastersLanding({ language }: ForMastersLandingProps) 
           <h2>{t.formTitle}</h2>
           <p>{t.formText}</p>
         </div>
-        <div className="masters-form-preview" aria-hidden="true">
+        <div className="masters-form-preview">
           {t.formFields.map((field) => (
             <span key={field}>{field}</span>
           ))}
           <a href={signupHref} onClick={() => trackCta("form_preview")}>{t.formSubmit}</a>
+          {appStoreHref ? (
+            <a
+              className="masters-form-app-store"
+              href={appStoreHref}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => trackAppStoreCta("form_app_store")}
+            >
+              {t.appStoreCta}
+            </a>
+          ) : null}
         </div>
       </section>
 
@@ -532,6 +574,17 @@ export default function ForMastersLanding({ language }: ForMastersLandingProps) 
         <a className="masters-primary" href={signupHref} onClick={() => trackCta("final")}>
           {t.primaryCta}
         </a>
+        {appStoreHref ? (
+          <a
+            className="masters-app-store masters-final-app-store"
+            href={appStoreHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => trackAppStoreCta("final_app_store")}
+          >
+            {t.appStoreCta}
+          </a>
+        ) : null}
       </section>
 
       <footer className="public-footer masters-footer">

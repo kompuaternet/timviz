@@ -957,10 +957,6 @@ export default function BusinessView({
   const t = businessCopy[language];
   const locale = localeBySiteLanguage[language];
   const normalizedWorkSchedule = useMemo(() => normalizeWorkSchedule(business.workSchedule), [business.workSchedule]);
-  const normalizedCustomSchedule = useMemo(
-    () => normalizeCustomSchedule(business.customSchedule),
-    [business.customSchedule]
-  );
   const [activeSection, setActiveSection] = useState<StepKey>("services");
   const [bookingOpen, setBookingOpen] = useState(false);
   const [bookingStep, setBookingStep] = useState<BookingStep>("services");

@@ -20,6 +20,7 @@ import { trackAdsEvent } from "../../../lib/ads-events";
 
 const MAX_BUSINESS_PHOTOS = 5;
 const MAX_PROFILE_AVATAR_BYTES = 2 * 1024 * 1024;
+const SETTINGS_AUTOSAVE_DELAY_MS = 2000;
 
 type SettingsData = {
   professional: {
@@ -1157,6 +1158,7 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
   const [password, setPassword] = useState("");
   const [status, setStatus] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [autosaveRetryTick, setAutosaveRetryTick] = useState(0);
   const [isTopUpLoading, setIsTopUpLoading] = useState(false);
   const [isCancellingSubscription, setIsCancellingSubscription] = useState(false);
   const [joinRequests, setJoinRequests] = useState(initialData.joinRequests);
@@ -1183,6 +1185,7 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
   const autoSaveTimerRef = useRef<number | null>(null);
   const lastSavedSnapshotRef = useRef("");
   const latestSnapshotRef = useRef("");
+  const isAutoSavingRef = useRef(false);
   const photoTransitionInitializedRef = useRef(false);
   const previousPhotoReadyRef = useRef(false);
   const onlineBookingRequestIdRef = useRef(0);
@@ -1272,7 +1275,6 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
 
   const skippedOnboardingStepIdSet = useMemo(() => new Set(skippedOnboardingStepIds), [skippedOnboardingStepIds]);
   const onboardingCompletedCount = onboardingSteps.filter((step) => step.completed).length;
-  const onboardingChecklistComplete = onboardingCompletedCount === onboardingSteps.length;
   const activeOnboardingStep =
     onboardingSteps.find((step) => !step.completed && !skippedOnboardingStepIdSet.has(step.id)) ??
     onboardingSteps.find((step) => !step.completed) ??
@@ -1755,7 +1757,11 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
     setData(nextData);
     lastSavedSnapshotRef.current = JSON.stringify(buildSaveSnapshot(nextData));
     setPassword("");
-    setStatus(topUpCredits ? t.settings.creditsAdded : silent ? t.common.savedAuto : t.settings.saved);
+    if (topUpCredits) {
+      setStatus(t.settings.creditsAdded);
+    } else if (!silent) {
+      setStatus(t.settings.saved);
+    }
 
     const languageCode = languageFromProfile(nextData.professional.language);
     window.localStorage.setItem("rezervo-pro-language", languageCode);
@@ -2252,7 +2258,7 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
   }
 
   useEffect(() => {
-    if (!isHydratedRef.current || isSaving || isTopUpLoading || isOnlineBookingSaving) {
+    if (!isHydratedRef.current || isSaving || isTopUpLoading || isOnlineBookingSaving || isAutoSavingRef.current) {
       return;
     }
 
@@ -2266,7 +2272,7 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
 
     autoSaveTimerRef.current = window.setTimeout(() => {
       void saveSettings(0, true);
-    }, 700);
+    }, SETTINGS_AUTOSAVE_DELAY_MS);
 
     return () => {
       if (autoSaveTimerRef.current) {
@@ -2274,22 +2280,35 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
         autoSaveTimerRef.current = null;
       }
     };
-  }, [autosaveSnapshot, isSaving, isTopUpLoading, isOnlineBookingSaving]);
+  }, [autosaveSnapshot, isSaving, isTopUpLoading, isOnlineBookingSaving, autosaveRetryTick]);
 
   async function saveSettings(topUpCredits = 0, silent = false) {
     const snapshotAtRequestStart = latestSnapshotRef.current;
+    if (!topUpCredits && snapshotAtRequestStart === lastSavedSnapshotRef.current) {
+      return;
+    }
+
+    if (silent && isAutoSavingRef.current) {
+      return;
+    }
+
     const requestId = saveRequestIdRef.current + 1;
     saveRequestIdRef.current = requestId;
     const mutationVersion = settingsMutationVersionRef.current + 1;
     settingsMutationVersionRef.current = mutationVersion;
+    let shouldRetryAutosave = false;
 
     if (autoSaveTimerRef.current) {
       window.clearTimeout(autoSaveTimerRef.current);
       autoSaveTimerRef.current = null;
     }
 
-    setStatus("");
-    topUpCredits ? setIsTopUpLoading(true) : setIsSaving(true);
+    if (silent) {
+      isAutoSavingRef.current = true;
+    } else {
+      setStatus("");
+      topUpCredits ? setIsTopUpLoading(true) : setIsSaving(true);
+    }
 
     try {
       const response = await fetch("/api/pro/settings", {
@@ -2345,6 +2364,7 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
       }
 
       if (latestSnapshotRef.current !== snapshotAtRequestStart) {
+        shouldRetryAutosave = true;
         return;
       }
       applyWorkspacePayload(next, { topUpCredits, silent });
@@ -2355,9 +2375,16 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
       ) {
         return;
       }
-      setStatus(error instanceof Error ? error.message : copy.saveFailed);
+      if (!silent) {
+        setStatus(error instanceof Error ? error.message : copy.saveFailed);
+      }
     } finally {
-      if (saveRequestIdRef.current === requestId) {
+      if (silent) {
+        isAutoSavingRef.current = false;
+        if (shouldRetryAutosave && latestSnapshotRef.current !== lastSavedSnapshotRef.current) {
+          setAutosaveRetryTick((current) => current + 1);
+        }
+      } else if (saveRequestIdRef.current === requestId) {
         setIsSaving(false);
         setIsTopUpLoading(false);
       }

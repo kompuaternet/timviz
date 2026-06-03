@@ -79,7 +79,11 @@ export async function POST(request: Request) {
     errText?: string;
   };
   if (!response.ok || !payload.subscriptionId || !payload.pageUrl) {
-    return NextResponse.json({ error: payload.errText || "Could not create Monobank subscription." }, { status: 400 });
+    console.warn("[monobank] subscription create failed", {
+      status: response.status,
+      errText: payload.errText || null
+    });
+    return NextResponse.json({ error: "Could not open checkout. Please try again or contact support." }, { status: 400 });
   }
 
   const supabase = getSupabaseAdmin();

@@ -1841,8 +1841,14 @@ export async function createProfessionalSetup(input: {
         if (servicesError && /created_by_professional_id|is_blocked|source|moderation_status|moderated_at/i.test(servicesError.message)) {
           ({ error: servicesError } = await supabase.from("business_services").insert(
             servicesPayload.map(
-              ({ created_by_professional_id, source, moderation_status, moderated_at, is_blocked, ...service }) =>
-                service
+              ({
+                created_by_professional_id: _createdByProfessionalId,
+                source: _source,
+                moderation_status: _moderationStatus,
+                moderated_at: _moderatedAt,
+                is_blocked: _isBlocked,
+                ...service
+              }) => service
             )
           ));
         }

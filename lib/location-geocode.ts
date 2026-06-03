@@ -134,7 +134,6 @@ export async function resolveLocationPoint(query: string, language: "ru" | "uk" 
   for (const variant of variants) {
     // Nominatim public API is rate-limited. One lookup per search request.
     // We try several variants only until first successful coordinate response.
-    // eslint-disable-next-line no-await-in-loop
     resolved = await geocodeViaNominatim(variant, language);
     if (resolved) {
       break;
@@ -147,4 +146,3 @@ export async function resolveLocationPoint(query: string, language: "ru" | "uk" 
   });
   return resolved;
 }
-

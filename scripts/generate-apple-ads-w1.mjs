@@ -738,7 +738,7 @@ const negativeRows = (campaignsToUse, groupNames) => {
     "Campaign ID",
     "Ad Group ID",
   ]];
-  for (const campaign of campaignsToUse) {
+  for (const _campaign of campaignsToUse) {
     for (const groupName of groupNames) {
       const group = negativeGroups[groupName];
       for (const keyword of group.keywords) {

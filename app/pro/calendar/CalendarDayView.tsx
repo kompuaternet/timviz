@@ -2163,7 +2163,6 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
   const calendarHourHeight = isMobileViewport ? CALENDAR_MOBILE_HOUR_HEIGHT : CALENDAR_HOUR_HEIGHT;
   const minuteHeight = calendarHourHeight / 60;
   const slotHeight = minuteHeight * CALENDAR_GRID_STEP_MINUTES;
-  const calendarGridHeight = topOffset + dayEndMinutes * minuteHeight;
   const viewMenuButtonRef = useRef<HTMLButtonElement | null>(null);
   const dateMenuButtonRef = useRef<HTMLButtonElement | null>(null);
   const teamMenuButtonRef = useRef<HTMLButtonElement | null>(null);
@@ -2248,25 +2247,6 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
   function openClientSearch(returnStage: "visit" | "details") {
     setClientSearchReturnStage(returnStage);
     setDrawerStage("client-search");
-  }
-
-  function updateDraftTime(
-    nextStartTime: string,
-    nextEndTime: string,
-    setters: {
-      setStart: (value: string) => void;
-      setEnd: (value: string) => void;
-    }
-  ) {
-    const normalizedStart = nextStartTime;
-    let normalizedEnd = nextEndTime;
-
-    if (timeToMinutes(normalizedEnd) <= timeToMinutes(normalizedStart)) {
-      normalizedEnd = minutesToTime(timeToMinutes(normalizedStart) + 15);
-    }
-
-    setters.setStart(normalizedStart);
-    setters.setEnd(normalizedEnd);
   }
 
   function applySelectedClient(client: CalendarClient | null) {
@@ -4275,13 +4255,6 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
     () => allVisibleAppointments.find((appointment) => appointment.id === selectedAppointmentId) ?? null,
     [allVisibleAppointments, selectedAppointmentId]
   );
-  const selectedAppointmentMember = useMemo(
-    () =>
-      selectedAppointment
-        ? memberCalendars.find((member) => member.professionalId === selectedAppointment.professionalId) ?? null
-        : null,
-    [memberCalendars, selectedAppointment]
-  );
   const selectedAppointmentDateLabel = useMemo(() => {
     if (!selectedAppointment) {
       return selectedDateLabel;
@@ -5512,19 +5485,6 @@ export default function CalendarDayView({ professionalId, initialDate, initialPa
 
     showCachedSnapshot(nextDate, selectedProfessionalId);
     setSelectedDate(nextDate);
-  }
-
-  function jumpToCurrentTime() {
-    if (selectedDate !== todayDate) {
-      lastCalendarNavigationDirectionRef.current =
-        todayDate > selectedDate ? 1 : todayDate < selectedDate ? -1 : 0;
-      showCachedSnapshot(todayDate, selectedProfessionalId);
-      setSelectedDate(todayDate);
-      return;
-    }
-
-    const now = new Date();
-    scrollCalendarToTime(Math.max(dayStartMinutes, now.getHours() * 60 + now.getMinutes() - 30));
   }
 
   function getMemberScheduleForDate(member: CalendarSnapshot["memberCalendars"][number], dayKey: string) {

@@ -33,7 +33,13 @@ export type PricingCopy = {
   trialBadge: string;
   cancelAnytime: string;
   secureBilling: string;
-  softwareNotice: string;
+  subscriptionNotice: {
+    prefix: string;
+    subscriptionTerms: string;
+    middle: string;
+    monobankTerms: string;
+    suffix: string;
+  };
   loginRequired: string;
   startingCheckout: string;
   billingError: string;
@@ -67,8 +73,13 @@ export const pricingCopy: Record<SiteLanguage, PricingCopy> = withEnglishFallbac
     trialBadge: "14 дней бесплатно",
     cancelAnytime: "Отменить можно в любое время",
     secureBilling: "Безопасное управление подпиской",
-    softwareNotice:
-      "Timviz продаёт подписку на программное обеспечение для управления записью. Мы не являемся маркетплейсом и не обрабатываем платежи между клиентами и мастерами.",
+    subscriptionNotice: {
+      prefix: "Перед оплатой ознакомьтесь с",
+      subscriptionTerms: "условиями подписки Timviz",
+      middle: " и ",
+      monobankTerms: "условиями Monobank",
+      suffix: ". Оплата проходит через Monobank в USD; подписку можно отменить в кабинете."
+    },
     loginRequired: "Сначала войдите или создайте аккаунт, чтобы запустить пробный период.",
     startingCheckout: "Готовим защищённую оплату...",
     billingError: "Не удалось открыть оплату. Попробуйте ещё раз или напишите в поддержку.",
@@ -188,8 +199,13 @@ export const pricingCopy: Record<SiteLanguage, PricingCopy> = withEnglishFallbac
     trialBadge: "14 днів безкоштовно",
     cancelAnytime: "Скасувати можна будь-коли",
     secureBilling: "Безпечне керування підпискою",
-    softwareNotice:
-      "Timviz продає підписку на програмне забезпечення для керування записом. Ми не є маркетплейсом і не обробляємо платежі між клієнтами та майстрами.",
+    subscriptionNotice: {
+      prefix: "Перед оплатою ознайомтеся з",
+      subscriptionTerms: "умовами підписки Timviz",
+      middle: " та ",
+      monobankTerms: "умовами Monobank",
+      suffix: ". Оплата проходить через Monobank в USD; підписку можна скасувати в кабінеті."
+    },
     loginRequired: "Спочатку увійдіть або створіть акаунт, щоб запустити пробний період.",
     startingCheckout: "Готуємо захищену оплату...",
     billingError: "Не вдалося відкрити оплату. Спробуйте ще раз або напишіть у підтримку.",
@@ -309,8 +325,13 @@ export const pricingCopy: Record<SiteLanguage, PricingCopy> = withEnglishFallbac
     trialBadge: "14 days free",
     cancelAnytime: "Cancel anytime",
     secureBilling: "Secure subscription management",
-    softwareNotice:
-      "Timviz sells a software subscription for appointment management. We are not a marketplace and do not process payments between clients and service providers.",
+    subscriptionNotice: {
+      prefix: "Before payment, review the",
+      subscriptionTerms: "Timviz subscription terms",
+      middle: " and ",
+      monobankTerms: "Monobank terms",
+      suffix: ". Payment is processed by Monobank in USD; you can cancel the subscription in your account."
+    },
     loginRequired: "Please sign in or create an account first to start your free trial.",
     startingCheckout: "Preparing secure checkout...",
     billingError: "Could not open checkout. Please try again or contact support.",
@@ -432,7 +453,13 @@ Object.assign(pricingCopy, {
     trialBadge: "14 jours gratuits",
     cancelAnytime: "Annulation à tout moment",
     secureBilling: "Gestion sécurisée de l’abonnement",
-    softwareNotice: "Timviz vend un abonnement logiciel pour gérer les rendez-vous. Nous ne sommes pas une marketplace et ne traitons pas les paiements entre clients et prestataires.",
+    subscriptionNotice: {
+      prefix: "Avant de payer, consultez les",
+      subscriptionTerms: "conditions d’abonnement Timviz",
+      middle: " et les ",
+      monobankTerms: "conditions Monobank",
+      suffix: ". Le paiement est traité par Monobank en USD ; vous pouvez annuler l’abonnement dans votre compte."
+    },
     loginRequired: "Connectez-vous ou créez un compte pour démarrer l’essai gratuit.",
     startingCheckout: "Préparation du paiement sécurisé...",
     billingError: "Impossible d’ouvrir le paiement. Réessayez ou contactez le support.",
@@ -463,7 +490,13 @@ Object.assign(pricingCopy, {
     trialBadge: "14 dni za darmo",
     cancelAnytime: "Anuluj w dowolnym momencie",
     secureBilling: "Bezpieczne zarządzanie subskrypcją",
-    softwareNotice: "Timviz sprzedaje subskrypcję oprogramowania do zarządzania rezerwacjami. Nie jesteśmy marketplace’em i nie obsługujemy płatności między klientami a usługodawcami.",
+    subscriptionNotice: {
+      prefix: "Przed płatnością zapoznaj się z",
+      subscriptionTerms: "warunkami subskrypcji Timviz",
+      middle: " oraz ",
+      monobankTerms: "warunkami Monobank",
+      suffix: ". Płatność obsługuje Monobank w USD; subskrypcję można anulować w koncie."
+    },
     loginRequired: "Najpierw zaloguj się lub utwórz konto, aby rozpocząć okres próbny.",
     startingCheckout: "Przygotowujemy bezpieczną płatność...",
     billingError: "Nie udało się otworzyć płatności. Spróbuj ponownie lub skontaktuj się z pomocą.",
@@ -494,7 +527,13 @@ Object.assign(pricingCopy, {
     trialBadge: "14 dní zdarma",
     cancelAnytime: "Zrušení kdykoliv",
     secureBilling: "Bezpečná správa předplatného",
-    softwareNotice: "Timviz prodává softwarové předplatné pro správu rezervací. Nejsme marketplace a nezpracováváme platby mezi klienty a poskytovateli služeb.",
+    subscriptionNotice: {
+      prefix: "Před platbou si přečtěte",
+      subscriptionTerms: "podmínky předplatného Timviz",
+      middle: " a ",
+      monobankTerms: "podmínky Monobank",
+      suffix: ". Platbu zpracovává Monobank v USD; předplatné můžete zrušit ve svém účtu."
+    },
     loginRequired: "Nejprve se přihlaste nebo vytvořte účet, abyste mohli spustit zkušební období.",
     startingCheckout: "Připravujeme bezpečnou platbu...",
     billingError: "Platbu se nepodařilo otevřít. Zkuste to znovu nebo kontaktujte podporu.",
@@ -525,7 +564,13 @@ Object.assign(pricingCopy, {
     trialBadge: "14 días gratis",
     cancelAnytime: "Cancela cuando quieras",
     secureBilling: "Gestión segura de suscripción",
-    softwareNotice: "Timviz vende una suscripción de software para gestionar reservas. No somos un marketplace y no procesamos pagos entre clientes y proveedores.",
+    subscriptionNotice: {
+      prefix: "Antes de pagar, revisa las",
+      subscriptionTerms: "condiciones de suscripción de Timviz",
+      middle: " y las ",
+      monobankTerms: "condiciones de Monobank",
+      suffix: ". El pago lo procesa Monobank en USD; puedes cancelar la suscripción en tu cuenta."
+    },
     loginRequired: "Primero inicia sesión o crea una cuenta para empezar la prueba gratuita.",
     startingCheckout: "Preparando pago seguro...",
     billingError: "No se pudo abrir el pago. Inténtalo de nuevo o contacta con soporte.",
@@ -556,7 +601,13 @@ Object.assign(pricingCopy, {
     trialBadge: "14 Tage kostenlos",
     cancelAnytime: "Jederzeit kündbar",
     secureBilling: "Sichere Abo-Verwaltung",
-    softwareNotice: "Timviz verkauft ein Software-Abonnement zur Terminverwaltung. Wir sind kein Marketplace und verarbeiten keine Zahlungen zwischen Kunden und Dienstleistern.",
+    subscriptionNotice: {
+      prefix: "Bitte lies vor der Zahlung die",
+      subscriptionTerms: "Timviz Abo-Bedingungen",
+      middle: " und die ",
+      monobankTerms: "Monobank Bedingungen",
+      suffix: ". Die Zahlung wird von Monobank in USD verarbeitet; du kannst das Abo im Konto kündigen."
+    },
     loginRequired: "Bitte melde dich zuerst an oder erstelle ein Konto, um die kostenlose Testphase zu starten.",
     startingCheckout: "Sichere Zahlung wird vorbereitet...",
     billingError: "Die Zahlung konnte nicht geöffnet werden. Bitte versuche es erneut oder kontaktiere den Support.",

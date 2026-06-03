@@ -19,6 +19,7 @@ type PricingViewProps = {
 };
 
 const planOrder: PricingPlanKey[] = ["free", "monthly", "yearly"];
+const MONOBANK_TERMS_URL = "https://monobank.ua/umovy";
 
 const footerCopy = withEnglishFallback<Record<string, string>>({
   ru: {
@@ -175,7 +176,7 @@ export default function PricingView({ language, copy, user }: PricingViewProps) 
       const payload = (await response.json().catch(() => ({}))) as { paymentUrl?: string; pageUrl?: string; error?: string };
       const url = payload.paymentUrl || payload.pageUrl;
       if (!response.ok || !url) {
-        throw new Error(payload.error || copy.billingError);
+        throw new Error(copy.billingError);
       }
       window.location.assign(url);
     } catch (error) {
@@ -246,7 +247,17 @@ export default function PricingView({ language, copy, user }: PricingViewProps) 
         })}
       </section>
 
-      <p className="pricing-software-notice">{copy.softwareNotice}</p>
+      <p className="pricing-subscription-notice">
+        {copy.subscriptionNotice.prefix}{" "}
+        <Link href={getLocalizedPath(language, "/subscription-terms")}>
+          {copy.subscriptionNotice.subscriptionTerms}
+        </Link>
+        {copy.subscriptionNotice.middle}
+        <a href={MONOBANK_TERMS_URL} target="_blank" rel="noopener noreferrer">
+          {copy.subscriptionNotice.monobankTerms}
+        </a>
+        {copy.subscriptionNotice.suffix}
+      </p>
 
       {message ? <p className="pricing-message">{message}</p> : null}
 

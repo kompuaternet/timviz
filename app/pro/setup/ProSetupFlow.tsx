@@ -20,13 +20,10 @@ import {
 } from "../../../lib/service-templates";
 import { trackAdsEvent } from "../../../lib/ads-events";
 
-const serviceModes = [
-  "Клиенты приходят в мое физическое заведение",
-  "Я работаю с выездом к клиенту",
-  "Я предоставляю услуги онлайн"
-] as const;
-
-type ServiceMode = (typeof serviceModes)[number];
+type ServiceMode =
+  | "Клиенты приходят в мое физическое заведение"
+  | "Я работаю с выездом к клиенту"
+  | "Я предоставляю услуги онлайн";
 
 function getSafeLocalStorage() {
   if (typeof window === "undefined") return undefined;

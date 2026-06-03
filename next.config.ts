@@ -3,6 +3,16 @@ import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  webpack(config) {
+    config.ignoreWarnings = [
+      ...(config.ignoreWarnings ?? []),
+      {
+        module: /@opentelemetry\/instrumentation/,
+        message: /Critical dependency: the request of a dependency is an expression/
+      }
+    ];
+    return config;
+  },
   async redirects() {
     return [
       { source: "/ru/dlya-manikyuru", destination: "/ru/dlya-manikyura", permanent: true },

@@ -385,7 +385,7 @@ async function readClientDirectoryAppointments(professionalId: string) {
     }));
 }
 
-async function readBusinessAppointmentsForDate(businessId: string, appointmentDate: string) {
+async function _readBusinessAppointmentsForDate(businessId: string, appointmentDate: string) {
   if (!businessId.trim() || !appointmentDate.trim()) {
     return [];
   }
@@ -1182,7 +1182,7 @@ async function assertCanCreateMonthlyAppointments(
   }
 }
 
-async function createCalendarAppointmentWithWorkspace(input: {
+async function _createCalendarAppointmentWithWorkspace(input: {
   workspace: WorkspaceSnapshot;
   servicesCache?: ServiceRecord[];
   professionalId: string;
