@@ -11724,10 +11724,6 @@ function WorkspaceHeader({
   }, [session.professionalId, session.token]);
 
   async function openPanel(nextPanel: typeof panel) {
-    if (nextPanel === "share" && !headerHasPremium) {
-      onOpenSettingsSection("online");
-      return;
-    }
     setPanel(nextPanel);
     if (nextPanel === "notifications") {
       await loadNotifications({ spinner: true });
@@ -11736,7 +11732,8 @@ function WorkspaceHeader({
 
   async function togglePublicBooking() {
     if (!headerHasPremium) {
-      close();
+      setPanel(null);
+      setActiveTab("settings");
       onOpenSettingsSection("online");
       return;
     }
@@ -12049,8 +12046,19 @@ function WorkspaceHeader({
                   <Pressable style={styles.headerGhostButton} onPress={openBookingPage} disabled={!publicBookingUrl}>
                     <Text style={styles.headerGhostButtonText}>{t.openPage}</Text>
                   </Pressable>
-                  <Pressable style={styles.headerPrimaryButton} onPress={shareBookingPage} disabled={!publicBookingUrl}>
-                    <Text style={styles.headerPrimaryButtonText}>{t.sharePage}</Text>
+                  <Pressable
+                    style={styles.headerPrimaryButton}
+                    onPress={
+                      publicBookingUrl
+                        ? shareBookingPage
+                        : () => {
+                            setPanel(null);
+                            setActiveTab("settings");
+                            onOpenSettingsSection("online");
+                          }
+                    }
+                  >
+                    <Text style={styles.headerPrimaryButtonText}>{publicBookingUrl ? t.sharePage : t.settingsOnline}</Text>
                   </Pressable>
                 </View>
               </View>
