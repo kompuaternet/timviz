@@ -153,12 +153,26 @@ export default function PricingView({ language, copy, user }: PricingViewProps) 
   }, [language, user]);
 
   function goFree() {
+    trackAdsEvent("sign_up_start", {
+      source: "pricing_free",
+      plan: "free",
+      language,
+      signed_in: Boolean(user)
+    });
     window.location.assign(user ? "/pro/calendar" : "/pro/create-account");
   }
 
   async function openWebBilling(plan: Exclude<PricingPlanKey, "free">) {
     setMessage("");
     const returnTo = `${getLocalizedPath(language, "/pricing")}?plan=${plan}`;
+    trackAdsEvent("checkout_start", {
+      source: "pricing",
+      plan,
+      language,
+      signed_in: Boolean(user),
+      currency: "USD",
+      value: plan === "yearly" ? 29 : 3
+    });
     if (!user) {
       setMessage(copy.loginRequired);
       window.location.assign(`/pro/login?return_to=${encodeURIComponent(returnTo)}`);
@@ -178,6 +192,13 @@ export default function PricingView({ language, copy, user }: PricingViewProps) 
       if (!response.ok || !url) {
         throw new Error(copy.billingError);
       }
+      trackAdsEvent("checkout_redirect", {
+        source: "pricing",
+        plan,
+        language,
+        currency: "USD",
+        value: plan === "yearly" ? 29 : 3
+      });
       window.location.assign(url);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : copy.billingError);

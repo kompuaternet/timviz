@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import TurnstileWidget from "../TurnstileWidget";
 import { useProLanguage } from "../useProLanguage";
+import { trackAdsEvent } from "../../../lib/ads-events";
 import styles from "../pro.module.css";
 
 const loginText = {
@@ -358,6 +359,12 @@ export default function LoginForm({ staleSession = false, returnTo = "" }: Login
       return;
     }
 
+    trackAdsEvent("google_auth_start", {
+      source: "pro_login",
+      provider: "google",
+      language
+    });
+
     const absolute = new URL(googleAuthHref, window.location.origin).toString();
     const telegramRuntime = (
       window as Window & {
@@ -425,6 +432,12 @@ export default function LoginForm({ staleSession = false, returnTo = "" }: Login
     }
 
     if (isTelegramSource) {
+      trackAdsEvent("login_complete", {
+        source: "pro_login",
+        method: "email",
+        destination: "telegram",
+        language
+      });
       const query = new URLSearchParams();
       query.set("source", "telegram");
       if (telegramStartParam) {
@@ -435,6 +448,12 @@ export default function LoginForm({ staleSession = false, returnTo = "" }: Login
       return;
     }
 
+    trackAdsEvent("login_complete", {
+      source: "pro_login",
+      method: "email",
+      destination: returnToPath || "/pro/workspace",
+      language
+    });
     router.push(returnToPath || "/pro/workspace");
     router.refresh();
   }

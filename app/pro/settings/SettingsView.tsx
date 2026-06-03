@@ -1191,6 +1191,7 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
   const onlineBookingRequestIdRef = useRef(0);
   const saveRequestIdRef = useRef(0);
   const settingsMutationVersionRef = useRef(0);
+  const subscriptionPurchaseTrackedRef = useRef(false);
   const publicBookingInputRef = useRef<HTMLInputElement | null>(null);
   const photoUploaderInputRef = useRef<HTMLInputElement | null>(null);
   const photoSectionRef = useRef<HTMLElement | null>(null);
@@ -1204,6 +1205,23 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
     () => normalizeCategoryList([...categoryOptions, ...selectedBusinessCategories]).sort(compareServiceCategories),
     [selectedBusinessCategories]
   );
+
+  useEffect(() => {
+    const billingStatus =
+      typeof window === "undefined" ? "" : new URLSearchParams(window.location.search).get("billing");
+    if (subscriptionPurchaseTrackedRef.current || (billingStatus !== "success" && billingStatus !== "active")) {
+      return;
+    }
+    subscriptionPurchaseTrackedRef.current = true;
+    trackAdsEvent("subscription_purchase", {
+      source: "monobank",
+      status: billingStatus,
+      plan: data.monobankSubscription?.planCode || "premium",
+      currency: data.monobankSubscription?.currency || "USD",
+      value: data.monobankSubscription?.amount ? data.monobankSubscription.amount / 100 : undefined,
+      language
+    });
+  }, [data.monobankSubscription, language]);
 
   const sectionItems = useMemo(
     () =>

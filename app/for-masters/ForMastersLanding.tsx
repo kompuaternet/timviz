@@ -428,6 +428,12 @@ export default function ForMastersLanding({ language }: ForMastersLandingProps) 
       target,
       language
     });
+    trackAdsEvent("app_store_click", {
+      landing: "for_masters",
+      position,
+      target,
+      language
+    });
   }
 
   return (

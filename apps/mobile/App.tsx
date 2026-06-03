@@ -62,6 +62,16 @@ type MobileSession = {
   displayName: string;
 };
 
+type MobileAdsEventName =
+  | "mobile_app_open"
+  | "mobile_sign_up_complete"
+  | "mobile_login_complete"
+  | "mobile_social_auth_complete"
+  | "mobile_checkout_start"
+  | "mobile_purchase_complete"
+  | "support_message_sent"
+  | "premium_gate_view";
+
 type RegisterForm = {
   firstName: string;
   lastName: string;
@@ -6568,6 +6578,10 @@ function normalizeApiSession(result: any, fallbackEmail: string): MobileSession 
   };
 }
 
+function getMobileAppVersion() {
+  return Constants.expoConfig?.version || Constants.manifest2?.extra?.expoClient?.version || "1.0.0";
+}
+
 async function hasBiometricUnlockAvailable() {
   if (Platform.OS === "web") return false;
   try {
@@ -7167,6 +7181,7 @@ export default function App() {
   const workspaceLanguageAppliedRef = useRef(false);
   const languageStorageReadyRef = useRef(false);
   const autoPushRegisteringRef = useRef(false);
+  const lastTrackedAppOpenSessionRef = useRef("");
   const nativeGoogleConfigured = Platform.select({
     ios: Boolean(GOOGLE_IOS_CLIENT_ID),
     android: Boolean(GOOGLE_ANDROID_CLIENT_ID),
@@ -7195,6 +7210,15 @@ export default function App() {
       );
       if (nextSession.token && nextSession.professionalId) {
         void persistSession(nextSession);
+        void trackMobileAdsEvent(
+          "mobile_social_auth_complete",
+          {
+            provider: "google",
+            country: registerPhoneCountry.country,
+            currency: registerPhoneCountry.currency || inferCurrency(registerPhoneCountry.country)
+          },
+          nextSession.token
+        );
       } else {
         Alert.alert("Google", t.socialAuthFailed);
       }
@@ -7712,6 +7736,17 @@ export default function App() {
   }, [session]);
 
   useEffect(() => {
+    if (!session?.token || lastTrackedAppOpenSessionRef.current === session.token) return;
+    lastTrackedAppOpenSessionRef.current = session.token;
+    void trackMobileAdsEvent("mobile_app_open", {
+      language,
+      timezone: detectedTimezone,
+      country: registerPhoneCountry.country,
+      currency: registerPhoneCountry.currency || inferCurrency(registerPhoneCountry.country)
+    });
+  }, [detectedTimezone, language, registerPhoneCountry, session?.token]);
+
+  useEffect(() => {
     if (!session || autoPushRegisteringRef.current) return;
     const storageKey = `${PUSH_AUTO_REGISTER_KEY_PREFIX}${session.professionalId}`;
     autoPushRegisteringRef.current = true;
@@ -7741,6 +7776,35 @@ export default function App() {
       throw new Error(result?.error || `HTTP ${response.status}`);
     }
     return result;
+  }
+
+  async function trackMobileAdsEvent(
+    eventName: MobileAdsEventName,
+    payload: Record<string, string | number | boolean | null | undefined> = {},
+    token = session?.token
+  ) {
+    if (!token) return;
+    try {
+      await fetch(`${API_BASE_URL}/api/mobile/pro/ads/events`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          eventName,
+          platform: Platform.OS,
+          appVersion: getMobileAppVersion(),
+          payload: {
+            ...payload,
+            language,
+            timezone: detectedTimezone,
+          },
+        }),
+      });
+    } catch {
+      // Ads signals are best-effort and must not interrupt the mobile workflow.
+    }
   }
 
   async function registerPushForSession(currentSession: MobileSession, options: { markPrompted?: boolean } = {}) {
@@ -8083,7 +8147,17 @@ export default function App() {
         Alert.alert(t.loginError, result?.error || t.loginError);
         return;
       }
-      await persistSession(normalizeApiSession(result, email));
+      const nextSession = normalizeApiSession(result, email);
+      await persistSession(nextSession);
+      void trackMobileAdsEvent(
+        "mobile_login_complete",
+        {
+          method: "email",
+          country: registerPhoneCountry.country,
+          currency: registerPhoneCountry.currency || inferCurrency(registerPhoneCountry.country)
+        },
+        nextSession.token
+      );
     } catch (error) {
       Alert.alert(t.loginError, error instanceof Error ? error.message : t.loginError);
     } finally {
@@ -8183,7 +8257,17 @@ export default function App() {
         Alert.alert(t.loginError, result?.error || t.socialAuthFailed);
         return;
       }
-      await persistSession(normalizeApiSession(result, String(result?.profile?.email || profile.email || "")));
+      const nextSession = normalizeApiSession(result, String(result?.profile?.email || profile.email || ""));
+      await persistSession(nextSession);
+      void trackMobileAdsEvent(
+        "mobile_social_auth_complete",
+        {
+          provider,
+          country: registerPhoneCountry.country,
+          currency: registerPhoneCountry.currency || inferCurrency(registerPhoneCountry.country)
+        },
+        nextSession.token
+      );
     } catch (error) {
       Alert.alert(t.loginError, error instanceof Error ? error.message : t.socialAuthFailed);
     } finally {
@@ -8278,7 +8362,17 @@ export default function App() {
         Alert.alert(t.registerError, result?.error || t.registerError);
         return;
       }
-      await persistSession(normalizeApiSession(result, payload.email));
+      const nextSession = normalizeApiSession(result, payload.email);
+      await persistSession(nextSession);
+      void trackMobileAdsEvent(
+        "mobile_sign_up_complete",
+        {
+          method: "email",
+          country: payload.country,
+          currency: payload.currency
+        },
+        nextSession.token
+      );
     } catch (error) {
       Alert.alert(t.registerError, error instanceof Error ? error.message : t.registerError);
     } finally {
@@ -9053,6 +9147,7 @@ export default function App() {
           }}
           onOpenSettingsSection={openSettingsSection}
           onSignOut={signOut}
+          trackAdsEvent={trackMobileAdsEvent}
         />
 
         {activeTab === "calendar" ? (
@@ -9152,6 +9247,7 @@ export default function App() {
                 workspace={workspace}
                 busy={busy}
                 apiFetch={apiFetch}
+                trackAdsEvent={trackMobileAdsEvent}
                 onRefreshWorkspace={() => refreshAll(session, selectedDate)}
                 onSaveSchedule={saveStaffSchedule}
               />
@@ -11423,6 +11519,7 @@ function WorkspaceHeader({
   onOpenNotification,
   onOpenSettingsSection,
   onSignOut,
+  trackAdsEvent,
 }: {
   t: Record<string, string>;
   language: AppLanguage;
@@ -11437,6 +11534,7 @@ function WorkspaceHeader({
   onOpenNotification: (item: MobileNotificationRecord) => void;
   onOpenSettingsSection: (section?: MobileSettingsSection) => void;
   onSignOut: () => void;
+  trackAdsEvent: (eventName: MobileAdsEventName, payload?: Record<string, string | number | boolean | null | undefined>) => void;
 }) {
   const title = activeTab === "calendar" ? t.calendarHeaderTitle : t[activeTab];
   const [panel, setPanel] = useState<"setup" | "share" | "support" | "notifications" | "account" | "profile" | "subscription" | "language" | "help" | "deleteAccount" | null>(null);
@@ -11463,7 +11561,7 @@ function WorkspaceHeader({
   const accountDisplayName = getCalendarMemberDisplayName(workspace?.professional || session, session.displayName);
   const accountInitial = accountDisplayName.slice(0, 1).toUpperCase() || "T";
   const accountAvatarUrl = safeText(workspace?.professional.avatarUrl).trim();
-  const appVersion = Constants.expoConfig?.version || Constants.manifest2?.extra?.expoClient?.version || "1.0.0";
+  const appVersion = getMobileAppVersion();
   const headerBookingCredits = workspace?.bookingCredits || {
     total: 100,
     used: 0,
@@ -11739,6 +11837,10 @@ function WorkspaceHeader({
         setSupportMessages((current) => current.map((item) => (item.id === optimisticId ? { ...item, status: undefined } : item)));
       }
       setSupportStatus(t.supportSent);
+      trackAdsEvent("support_message_sent", {
+        source: "mobile_support",
+        ticket_id: nextTicketId || supportTicketId || ""
+      });
       if (nextTicketId) {
         void loadSupportMessages(nextTicketId);
       }
@@ -14512,6 +14614,7 @@ function SettingsTab({
   staff,
   catalog,
   apiFetch,
+  trackAdsEvent,
   onRefreshWorkspace,
   onWorkspaceUpdated,
   setActiveTab,
@@ -14531,6 +14634,7 @@ function SettingsTab({
   staff: StaffSnapshot | null;
   catalog: ServiceCatalogCategory[];
   apiFetch: (path: string, options?: RequestInit) => Promise<any>;
+  trackAdsEvent: (eventName: MobileAdsEventName, payload?: Record<string, string | number | boolean | null | undefined>) => void;
   onRefreshWorkspace: () => void;
   onWorkspaceUpdated: (workspace: WorkspaceSnapshot) => void;
   setActiveTab: (tab: AppTab) => void;
@@ -14812,8 +14916,23 @@ function SettingsTab({
       if (!targetPackage) {
         throw new Error("missing_package");
       }
+      trackAdsEvent("mobile_checkout_start", {
+        billing,
+        product_id: targetPackage.product.identifier,
+        source: "premium",
+        country: workspace.professional.country || registerPhoneCountry.country,
+        currency: workspace.professional.currency || registerPhoneCountry.currency || inferCurrency(registerPhoneCountry.country)
+      });
       const result = await Purchases.purchasePackage(targetPackage);
       await syncPremiumCustomerInfo(result.customerInfo);
+      trackAdsEvent("mobile_purchase_complete", {
+        billing,
+        product_id: targetPackage.product.identifier,
+        source: "premium",
+        store: Platform.OS === "android" ? "google_play" : "app_store",
+        country: workspace.professional.country || registerPhoneCountry.country,
+        currency: workspace.professional.currency || registerPhoneCountry.currency || inferCurrency(registerPhoneCountry.country)
+      });
     } catch (error: any) {
       if (error?.userCancelled || (error instanceof Error && error.message === "purchase_cancelled")) {
         setPremiumMessage(t.premiumPurchaseCancelled);
