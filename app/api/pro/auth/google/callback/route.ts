@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { getPublicAppUrl } from "../../../../../../lib/app-url";
 import { getSessionCookieName, signSessionValue } from "../../../../../../lib/pro-auth";
 import { exchangeCodeForGoogleProfile, getGoogleOAuthSettings } from "../../../../../../lib/google-oauth";
+import { createMobileSocialSession } from "../../../../../../lib/mobile-social-auth";
 import { getTelegramStartAppLinkSync } from "../../../../../../lib/telegram-bot";
 import { encodeTelegramGoogleSignupStartParam } from "../../../../../../lib/telegram-startapp";
 import {
@@ -17,6 +18,11 @@ const GOOGLE_OAUTH_MODE_COOKIE = "rezervo_google_oauth_mode";
 const GOOGLE_OAUTH_PKCE_COOKIE = "rezervo_google_oauth_pkce";
 const GOOGLE_OAUTH_INVITE_COOKIE = "rezervo_google_oauth_invite";
 const GOOGLE_OAUTH_RETURN_TO_COOKIE = "rezervo_google_oauth_return_to";
+const MOBILE_GOOGLE_OAUTH_LANGUAGE_COOKIE = "timviz_mobile_google_oauth_language";
+const MOBILE_GOOGLE_OAUTH_COUNTRY_COOKIE = "timviz_mobile_google_oauth_country";
+const MOBILE_GOOGLE_OAUTH_TIMEZONE_COOKIE = "timviz_mobile_google_oauth_timezone";
+const MOBILE_GOOGLE_OAUTH_CURRENCY_COOKIE = "timviz_mobile_google_oauth_currency";
+const MOBILE_GOOGLE_OAUTH_BRIDGE_COOKIE = "timviz_mobile_google_oauth_bridge";
 
 function normalizeReturnTo(value: string, fallback = "/pro/workspace") {
   const trimmed = value.trim();
@@ -121,6 +127,34 @@ function clearOAuthCookies(cookieStore: Awaited<ReturnType<typeof cookies>>, isS
   });
 }
 
+function mobileRedirect(params: Record<string, string>) {
+  const url = new URL("timviz-master://google-auth");
+  Object.entries(params).forEach(([key, value]) => {
+    if (value) url.searchParams.set(key, value);
+  });
+  return NextResponse.redirect(url);
+}
+
+function clearMobileOAuthCookies(cookieStore: Awaited<ReturnType<typeof cookies>>, isSecure: boolean) {
+  [
+    MOBILE_GOOGLE_OAUTH_LANGUAGE_COOKIE,
+    MOBILE_GOOGLE_OAUTH_COUNTRY_COOKIE,
+    MOBILE_GOOGLE_OAUTH_TIMEZONE_COOKIE,
+    MOBILE_GOOGLE_OAUTH_CURRENCY_COOKIE,
+    MOBILE_GOOGLE_OAUTH_BRIDGE_COOKIE,
+    "timviz_mobile_google_oauth_state",
+    "timviz_mobile_google_oauth_pkce",
+  ].forEach((name) => {
+    cookieStore.set(name, "", {
+      httpOnly: true,
+      sameSite: "lax",
+      path: "/",
+      secure: isSecure,
+      maxAge: 0
+    });
+  });
+}
+
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const appUrl = getPublicAppUrl(request);
@@ -132,6 +166,7 @@ export async function GET(request: Request) {
   const codeVerifier = cookieStore.get(GOOGLE_OAUTH_PKCE_COOKIE)?.value || "";
   const mode = cookieStore.get(GOOGLE_OAUTH_MODE_COOKIE)?.value === "register" ? "register" : "login";
   const inviteToken = cookieStore.get(GOOGLE_OAUTH_INVITE_COOKIE)?.value?.trim() || "";
+  const isMobileOAuth = cookieStore.get(MOBILE_GOOGLE_OAUTH_BRIDGE_COOKIE)?.value === "1";
   const returnTo = normalizeReturnTo(
     cookieStore.get(GOOGLE_OAUTH_RETURN_TO_COOKIE)?.value?.trim() || "",
     "/pro/workspace"
@@ -139,6 +174,10 @@ export async function GET(request: Request) {
 
   if (!code || !state || !expectedState || !codeVerifier || state !== expectedState) {
     clearOAuthCookies(cookieStore, isSecure);
+    if (isMobileOAuth) {
+      clearMobileOAuthCookies(cookieStore, isSecure);
+      return mobileRedirect({ error: "state" });
+    }
     const target = resolveFinalRedirectTarget({
       appUrl,
       returnTo,
@@ -156,6 +195,33 @@ export async function GET(request: Request) {
       redirectUri: settings.redirectUri,
       codeVerifier
     });
+    if (isMobileOAuth) {
+      const session = await createMobileSocialSession({
+        provider: "google",
+        profile: {
+          email: profile.email,
+          givenName: profile.givenName,
+          familyName: profile.familyName,
+          fullName: profile.fullName,
+          avatarUrl: profile.avatarUrl
+        },
+        language: cookieStore.get(MOBILE_GOOGLE_OAUTH_LANGUAGE_COOKIE)?.value,
+        country: cookieStore.get(MOBILE_GOOGLE_OAUTH_COUNTRY_COOKIE)?.value,
+        timezone: cookieStore.get(MOBILE_GOOGLE_OAUTH_TIMEZONE_COOKIE)?.value,
+        currency: cookieStore.get(MOBILE_GOOGLE_OAUTH_CURRENCY_COOKIE)?.value
+      });
+
+      clearOAuthCookies(cookieStore, isSecure);
+      clearMobileOAuthCookies(cookieStore, isSecure);
+
+      return mobileRedirect({
+        token: session.token,
+        professionalId: session.professionalId,
+        email: session.profile.email,
+        displayName: session.profile.displayName
+      });
+    }
+
     const professional = await getProfessionalProfileByEmail(profile.email);
 
     clearOAuthCookies(cookieStore, isSecure);
@@ -247,6 +313,10 @@ export async function GET(request: Request) {
     return NextResponse.redirect(createAccountUrl);
   } catch {
     clearOAuthCookies(cookieStore, isSecure);
+    if (isMobileOAuth) {
+      clearMobileOAuthCookies(cookieStore, isSecure);
+      return mobileRedirect({ error: "oauth" });
+    }
     const target = resolveFinalRedirectTarget({
       appUrl,
       returnTo,

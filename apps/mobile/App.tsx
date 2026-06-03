@@ -5387,22 +5387,79 @@ const copy = {
   de: { ...baseCopy.en, ...generatedMobileCopy.de, ...legalCopy.de },
 } satisfies Record<AppLanguage, Record<keyof typeof baseCopy.en, string>>;
 
+const TIMEZONE_COUNTRY_ISO: Record<string, string> = {
+  "Europe/Kiev": "UA",
+  "Europe/Kyiv": "UA",
+  "Europe/Uzhgorod": "UA",
+  "Europe/Zaporozhye": "UA",
+  "Europe/Warsaw": "PL",
+  "Europe/Prague": "CZ",
+  "Europe/Paris": "FR",
+  "Europe/Berlin": "DE",
+  "Europe/Madrid": "ES",
+  "Europe/London": "GB",
+  "Europe/Moscow": "RU",
+  "Europe/Athens": "GR",
+  "Europe/Sofia": "BG",
+  "Europe/Bucharest": "RO",
+  "Europe/Istanbul": "TR",
+  "Africa/Cairo": "EG",
+  "Africa/Johannesburg": "ZA",
+  "America/New_York": "US",
+  "America/Chicago": "US",
+  "America/Denver": "US",
+  "America/Los_Angeles": "US",
+  "America/Toronto": "CA",
+  "Asia/Dubai": "AE",
+};
+
+const COUNTRY_LANGUAGE_BY_ISO: Record<string, AppLanguage> = {
+  UA: "uk",
+  RU: "ru",
+  PL: "pl",
+  CZ: "cs",
+  FR: "fr",
+  DE: "de",
+  ES: "es",
+  GB: "en",
+  US: "en",
+  CA: "en",
+};
+
+function getCountryIsoFromTimezone(timeZone?: string | null) {
+  const normalized = String(timeZone || "").trim();
+  if (!normalized) return "";
+  return TIMEZONE_COUNTRY_ISO[normalized] || "";
+}
+
 function detectLanguage(): AppLanguage {
   const locale = Localization.getLocales()[0];
-  const candidates = [
+  const languageCandidates = [
     locale?.languageCode,
     locale?.languageTag,
-    locale?.regionCode,
   ]
     .filter(Boolean)
     .map((value) => String(value).toLowerCase());
-  if (candidates.some((value) => value.startsWith("uk") || value === "ua")) return "uk";
-  if (candidates.some((value) => value.startsWith("ru"))) return "ru";
-  if (candidates.some((value) => value.startsWith("fr"))) return "fr";
-  if (candidates.some((value) => value.startsWith("pl"))) return "pl";
-  if (candidates.some((value) => value.startsWith("cs") || value.startsWith("cz"))) return "cs";
-  if (candidates.some((value) => value.startsWith("es"))) return "es";
-  if (candidates.some((value) => value.startsWith("de"))) return "de";
+  if (languageCandidates.some((value) => value.startsWith("uk"))) return "uk";
+  if (languageCandidates.some((value) => value.startsWith("ru"))) return "ru";
+  if (languageCandidates.some((value) => value.startsWith("fr"))) return "fr";
+  if (languageCandidates.some((value) => value.startsWith("pl"))) return "pl";
+  if (languageCandidates.some((value) => value.startsWith("cs") || value.startsWith("cz"))) return "cs";
+  if (languageCandidates.some((value) => value.startsWith("es"))) return "es";
+  if (languageCandidates.some((value) => value.startsWith("de"))) return "de";
+  if (languageCandidates.some((value) => value.startsWith("en"))) return "en";
+
+  const countryCandidates = [
+    getCountryIsoFromTimezone(getDetectedTimezone()),
+    locale?.regionCode,
+  ]
+    .filter(Boolean)
+    .map((value) => String(value).toUpperCase());
+  for (const countryIso of countryCandidates) {
+    const countryLanguage = COUNTRY_LANGUAGE_BY_ISO[countryIso];
+    if (countryLanguage) return countryLanguage;
+  }
+
   return "en";
 }
 
@@ -6285,8 +6342,10 @@ function localizeServiceMode(value: string, t: Record<string, string>) {
 }
 
 function getDetectedCountry() {
+  const timeZoneCountryCode = getCountryIsoFromTimezone(getDetectedTimezone());
   const regionCode = Localization.getLocales()[0]?.regionCode?.toUpperCase();
-  const phoneCountry = PHONE_COUNTRIES.find((country) => country.iso === regionCode) || PHONE_COUNTRIES.find((country) => country.iso === "UA") || PHONE_COUNTRIES[0];
+  const preferredCountryCode = timeZoneCountryCode || regionCode;
+  const phoneCountry = PHONE_COUNTRIES.find((country) => country.iso === preferredCountryCode) || PHONE_COUNTRIES.find((country) => country.iso === "UA") || PHONE_COUNTRIES[0];
   return {
     country: phoneCountry.country,
     currency: phoneCountry.currency,
