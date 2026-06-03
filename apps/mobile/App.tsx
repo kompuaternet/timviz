@@ -5,8 +5,6 @@ import Constants from "expo-constants";
 import * as Google from "expo-auth-session/providers/google";
 import * as ImageManipulator from "expo-image-manipulator";
 import * as ImagePicker from "expo-image-picker";
-import * as InAppPurchases from "expo-in-app-purchases";
-import { IAPResponseCode, InAppPurchaseState, type IAPItemDetails, type InAppPurchase } from "expo-in-app-purchases";
 import * as LocalAuthentication from "expo-local-authentication";
 import * as Localization from "expo-localization";
 import * as Notifications from "expo-notifications";
@@ -657,6 +655,7 @@ const DEFAULT_PUSH_PANEL_SETTINGS: PushPanelState["settings"] = {
 };
 
 const STORAGE_KEY = "timviz_mobile_session_v2";
+const APP_LANGUAGE_KEY = "timviz_mobile_language_v1";
 const SECURE_SESSION_KEY = "timviz_mobile_secure_session_v1";
 const BIOMETRIC_ENABLED_KEY = "timviz_mobile_biometric_enabled_v1";
 const PUSH_AUTO_REGISTER_KEY_PREFIX = "timviz_mobile_push_auto_register_v1:";
@@ -664,14 +663,22 @@ const SUPPORT_TICKET_KEY_PREFIX = "timviz_mobile_support_ticket_v1:";
 const PUSH_PROJECT_ID_ERROR = "push_project_id_missing";
 const WORKSPACE_CACHE_KEY = "timviz_mobile_workspace_cache_v2";
 const API_BASE_URL = (process.env.EXPO_PUBLIC_API_BASE_URL || "https://timviz.com").replace(/\/+$/, "");
+const MOBILE_PLATFORM_SOURCE = Platform.OS === "ios" ? "ios" : Platform.OS === "android" ? "android" : "mobile";
 const APPLE_STANDARD_EULA_URL = "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/";
+const MOBILE_SUBSCRIPTION_MANAGE_URL =
+  Platform.OS === "android" ? "https://play.google.com/store/account/subscriptions" : "https://apps.apple.com/account/subscriptions";
+
+function legalPageUrl(path: string) {
+  return `${API_BASE_URL}${path}?source=${MOBILE_PLATFORM_SOURCE}`;
+}
+
 const LEGAL_URLS = {
-  support: `${API_BASE_URL}/support?source=ios`,
-  privacy: `${API_BASE_URL}/privacy?source=ios`,
-  terms: APPLE_STANDARD_EULA_URL,
-  subscriptionTerms: `${API_BASE_URL}/subscription-terms?source=ios`,
-  refundPolicy: `${API_BASE_URL}/refund-policy?source=ios`,
-  accountDeletion: `${API_BASE_URL}/account-deletion?source=ios`,
+  support: legalPageUrl("/support"),
+  privacy: legalPageUrl("/privacy"),
+  terms: Platform.OS === "ios" ? APPLE_STANDARD_EULA_URL : legalPageUrl("/terms"),
+  subscriptionTerms: legalPageUrl("/subscription-terms"),
+  refundPolicy: legalPageUrl("/refund-policy"),
+  accountDeletion: legalPageUrl("/account-deletion"),
 };
 
 function openLegalUrl(url: string) {
@@ -1535,11 +1542,11 @@ const baseCopy = {
     premiumStartMonthly: "Підключити на місяць",
     premiumStartYearly: "Підключити на рік",
     premiumRestore: "Відновити покупку",
-    premiumManage: "Керувати підпискою можна в App Store.",
-    subscriptionAutoRenewText: "Підписка продовжується автоматично, якщо її не скасувати щонайменше за 24 години до завершення поточного періоду. Керувати підпискою можна в налаштуваннях Apple ID.",
+    premiumManage: "Керувати підпискою можна в магазині застосунків.",
+    subscriptionAutoRenewText: "Підписка продовжується автоматично, якщо її не скасувати щонайменше за 24 години до завершення поточного періоду. Керувати підпискою можна в налаштуваннях магазину застосунків.",
     premiumReady: "Premium оновлено.",
-    premiumUnavailable: "Покупки доступні у TestFlight або App Store збірці.",
-    premiumMissingConfig: "Покупка ще готується в App Store. Спробуйте ще раз після обробки продуктів.",
+    premiumUnavailable: "Покупки доступні у збірці з магазину застосунків.",
+    premiumMissingConfig: "Покупка ще готується в магазині застосунків. Спробуйте ще раз після обробки продуктів.",
     premiumPurchaseCancelled: "Покупку скасовано.",
     premiumSyncFailed: "Не вдалося синхронізувати підписку.",
     settingsGeneral: "Налаштування компанії",
@@ -1636,14 +1643,14 @@ const baseCopy = {
     telegramSaved: "Telegram оновлено",
     telegramSaveFailed: "Не вдалося оновити Telegram.",
     pushTitle: "Сповіщення застосунку",
-    pushHint: "Нові записи та зміни прямо на iPhone.",
+    pushHint: "Нові записи та зміни прямо на телефон.",
     pushEnable: "Увімкнути сповіщення",
     pushEnabled: "Сповіщення увімкнено",
     pushDisabled: "Сповіщення вимкнено",
-    pushPermissionDenied: "Дозвольте сповіщення в налаштуваннях iPhone.",
+    pushPermissionDenied: "Дозвольте сповіщення в налаштуваннях телефону.",
     pushSaved: "Сповіщення оновлено",
     pushSaveFailed: "Не вдалося оновити сповіщення.",
-    pushOpenSettings: "Відкрити налаштування iPhone",
+    pushOpenSettings: "Відкрити налаштування телефону",
     pushDeviceCount: "Пристроїв",
     pushProjectMissing: "Не налаштовано Expo projectId для push-сповіщень. Додайте EXPO_PUBLIC_EAS_PROJECT_ID у конфігурацію застосунку.",
     pushIosCapabilityMissing: "Для push-сповіщень потрібна нова TestFlight-збірка з увімкненими Push Notifications в Apple Developer.",
@@ -2052,11 +2059,11 @@ const baseCopy = {
     premiumStartMonthly: "Подключить на месяц",
     premiumStartYearly: "Подключить на год",
     premiumRestore: "Восстановить покупку",
-    premiumManage: "Управлять подпиской можно в App Store.",
-    subscriptionAutoRenewText: "Подписка продлевается автоматически, если не отменить её минимум за 24 часа до конца текущего периода. Управлять подпиской можно в настройках Apple ID.",
+    premiumManage: "Управлять подпиской можно в магазине приложений.",
+    subscriptionAutoRenewText: "Подписка продлевается автоматически, если не отменить её минимум за 24 часа до конца текущего периода. Управлять подпиской можно в настройках магазина приложений.",
     premiumReady: "Premium обновлен.",
-    premiumUnavailable: "Покупки доступны в TestFlight или App Store сборке.",
-    premiumMissingConfig: "Покупка еще готовится в App Store. Попробуйте еще раз после обработки продуктов.",
+    premiumUnavailable: "Покупки доступны в сборке из магазина приложений.",
+    premiumMissingConfig: "Покупка еще готовится в магазине приложений. Попробуйте еще раз после обработки продуктов.",
     premiumPurchaseCancelled: "Покупка отменена.",
     premiumSyncFailed: "Не удалось синхронизировать подписку.",
     settingsGeneral: "Настройки компании",
@@ -2153,14 +2160,14 @@ const baseCopy = {
     telegramSaved: "Telegram обновлен",
     telegramSaveFailed: "Не удалось обновить Telegram.",
     pushTitle: "Уведомления приложения",
-    pushHint: "Новые записи и изменения прямо на iPhone.",
+    pushHint: "Новые записи и изменения прямо на телефон.",
     pushEnable: "Включить уведомления",
     pushEnabled: "Уведомления включены",
     pushDisabled: "Уведомления выключены",
-    pushPermissionDenied: "Разрешите уведомления в настройках iPhone.",
+    pushPermissionDenied: "Разрешите уведомления в настройках телефона.",
     pushSaved: "Уведомления обновлены",
     pushSaveFailed: "Не удалось обновить уведомления.",
-    pushOpenSettings: "Открыть настройки iPhone",
+    pushOpenSettings: "Открыть настройки телефона",
     pushDeviceCount: "Устройств",
     pushProjectMissing: "Не настроен Expo projectId для push-уведомлений. Добавьте EXPO_PUBLIC_EAS_PROJECT_ID в конфигурацию приложения.",
     pushIosCapabilityMissing: "Для push-уведомлений нужна новая TestFlight-сборка с включенными Push Notifications в Apple Developer.",
@@ -2569,11 +2576,11 @@ const baseCopy = {
     premiumStartMonthly: "Start monthly",
     premiumStartYearly: "Start yearly",
     premiumRestore: "Restore purchase",
-    premiumManage: "Manage the subscription in the App Store.",
-    subscriptionAutoRenewText: "Subscription renews automatically unless cancelled at least 24 hours before the end of the current period. You can manage or cancel your subscription in your Apple ID settings.",
+    premiumManage: "Manage the subscription in your app store.",
+    subscriptionAutoRenewText: "Subscription renews automatically unless cancelled at least 24 hours before the end of the current period. You can manage or cancel it in your app store settings.",
     premiumReady: "Premium updated.",
-    premiumUnavailable: "Purchases are available in TestFlight or App Store builds.",
-    premiumMissingConfig: "The App Store purchase is still being prepared. Try again after products finish processing.",
+    premiumUnavailable: "Purchases are available in app store builds.",
+    premiumMissingConfig: "The app store purchase is still being prepared. Try again after products finish processing.",
     premiumPurchaseCancelled: "Purchase cancelled.",
     premiumSyncFailed: "Could not sync subscription.",
     settingsGeneral: "Company settings",
@@ -2670,14 +2677,14 @@ const baseCopy = {
     telegramSaved: "Telegram updated",
     telegramSaveFailed: "Could not update Telegram.",
     pushTitle: "App notifications",
-    pushHint: "New bookings and changes on your iPhone.",
+    pushHint: "New bookings and changes on your phone.",
     pushEnable: "Enable notifications",
     pushEnabled: "Notifications enabled",
     pushDisabled: "Notifications disabled",
-    pushPermissionDenied: "Allow notifications in iPhone settings.",
+    pushPermissionDenied: "Allow notifications in phone settings.",
     pushSaved: "Notifications updated",
     pushSaveFailed: "Could not update notifications.",
-    pushOpenSettings: "Open iPhone settings",
+    pushOpenSettings: "Open phone settings",
     pushDeviceCount: "Devices",
     pushProjectMissing: "Expo projectId is not configured for push notifications. Add EXPO_PUBLIC_EAS_PROJECT_ID to the app configuration.",
     pushIosCapabilityMissing: "Push notifications need a new TestFlight build with Push Notifications enabled in Apple Developer.",
@@ -2970,10 +2977,10 @@ const generatedMobileCopy = {
     premiumStartMonthly: "Démarrer mensuellement",
     premiumStartYearly: "Démarrer annuellement",
     premiumRestore: "Restaurer l'achat",
-    premiumManage: "Gérer l'abonnement dans l'App Store.",
+    premiumManage: "Gérer l'abonnement dans votre boutique d'applications.",
     premiumReady: "Premium mis à jour.",
-    premiumUnavailable: "Les achats sont disponibles dans TestFlight ou dans la version App Store.",
-    premiumMissingConfig: "L’achat App Store est encore en préparation. Réessayez après le traitement des produits.",
+    premiumUnavailable: "Les achats sont disponibles dans les builds de boutique d'applications.",
+    premiumMissingConfig: "L’achat en boutique d'applications est encore en préparation. Réessayez après le traitement des produits.",
     premiumPurchaseCancelled: "Achat annulé.",
     premiumSyncFailed: "Impossible de synchroniser l'abonnement.",
     settingsGeneral: "Paramètres de l'entreprise",
@@ -3354,10 +3361,10 @@ const generatedMobileCopy = {
     premiumStartMonthly: "Rozpocznij co miesiąc",
     premiumStartYearly: "Rozpocznij co rok",
     premiumRestore: "Przywróć zakup",
-    premiumManage: "Zarządzaj subskrypcją w App Store.",
-    premiumReady: "Premium zaktualizowano. Zakupy",
-    premiumUnavailable: "Zakupy są dostępne w TestFlight albo w wersji App Store.",
-    premiumMissingConfig: "Zakup w App Store jest jeszcze przygotowywany. Spróbuj ponownie po przetworzeniu produktów.",
+    premiumManage: "Zarządzaj subskrypcją w sklepie z aplikacjami.",
+    premiumReady: "Premium zaktualizowano.",
+    premiumUnavailable: "Zakupy są dostępne w buildach ze sklepu z aplikacjami.",
+    premiumMissingConfig: "Zakup w sklepie z aplikacjami jest jeszcze przygotowywany. Spróbuj ponownie po przetworzeniu produktów.",
     premiumPurchaseCancelled: "Zakup anulowany.",
     premiumSyncFailed: "Nie można zsynchronizować subskrypcji.",
     settingsGeneral: "Ustawienia firmy",
@@ -3738,10 +3745,10 @@ const generatedMobileCopy = {
     premiumStartMonthly: "Začít měsíčně",
     premiumStartYearly: "Začít ročně",
     premiumRestore: "Obnovit nákup",
-    premiumManage: "Spravovat předplatné v App Store.",
+    premiumManage: "Spravovat předplatné v obchodě s aplikacemi.",
     premiumReady: "Premium aktualizováno.",
-    premiumUnavailable: "Nákupy jsou dostupné v TestFlightu nebo ve verzi z App Storu.",
-    premiumMissingConfig: "Nákup v App Storu se ještě připravuje. Zkuste to znovu po zpracování produktů.",
+    premiumUnavailable: "Nákupy jsou dostupné v buildech z obchodu s aplikacemi.",
+    premiumMissingConfig: "Nákup v obchodě s aplikacemi se ještě připravuje. Zkuste to znovu po zpracování produktů.",
     premiumPurchaseCancelled: "Nákup zrušen.",
     premiumSyncFailed: "Nelze synchronizovat předplatné.",
     settingsGeneral: "Nastavení společnosti",
@@ -4122,10 +4129,10 @@ const generatedMobileCopy = {
     premiumStartMonthly: "Iniciar mensualmente",
     premiumStartYearly: "Iniciar anualmente",
     premiumRestore: "Restaurar compra",
-    premiumManage: "Administrar la suscripción en App Store.",
+    premiumManage: "Administrar la suscripción en tu tienda de apps.",
     premiumReady: "Premium actualizado.",
-    premiumUnavailable: "Las compras están disponibles en TestFlight o en la versión de App Store.",
-    premiumMissingConfig: "La compra de App Store aún se está preparando. Inténtalo de nuevo cuando los productos terminen de procesarse.",
+    premiumUnavailable: "Las compras están disponibles en builds de tienda de apps.",
+    premiumMissingConfig: "La compra de la tienda de apps aún se está preparando. Inténtalo de nuevo cuando los productos terminen de procesarse.",
     premiumPurchaseCancelled: "Compra cancelada.",
     premiumSyncFailed: "No se pudo sincronizar la suscripción.",
     settingsGeneral: "Ajustes de empresa",
@@ -4506,10 +4513,10 @@ const generatedMobileCopy = {
     premiumStartMonthly: "Monatlich starten",
     premiumStartYearly: "Jährlich starten",
     premiumRestore: "Kauf wiederherstellen",
-    premiumManage: "Das Abonnement im App Store verwalten.",
+    premiumManage: "Das Abonnement im App-Store des Geräts verwalten.",
     premiumReady: "Premium aktualisiert.",
-    premiumUnavailable: "Käufe sind in TestFlight oder im App-Store-Build verfügbar.",
-    premiumMissingConfig: "Der App-Store-Kauf wird noch vorbereitet. Versuche es erneut, wenn die Produkte verarbeitet wurden.",
+    premiumUnavailable: "Käufe sind in App-Store-Builds verfügbar.",
+    premiumMissingConfig: "Der Kauf im App-Store wird noch vorbereitet. Versuche es erneut, wenn die Produkte verarbeitet wurden.",
     premiumPurchaseCancelled: "Kauf storniert.",
     premiumSyncFailed: "Das Abonnement konnte nicht synchronisiert werden.",
     settingsGeneral: "Firmeneinstellungen",
@@ -4987,14 +4994,14 @@ Object.assign(generatedMobileCopy.fr, {
   durationRequired: "Indiquez la durée.",
   settingsPush: "Push",
   pushTitle: "Notifications de l'application",
-  pushHint: "Nouvelles réservations et changements directement sur votre iPhone.",
+  pushHint: "Nouvelles réservations et changements directement sur votre téléphone.",
   pushEnable: "Activer les notifications",
   pushEnabled: "Notifications activées",
   pushDisabled: "Notifications désactivées",
-  pushPermissionDenied: "Autorisez les notifications dans les réglages de l'iPhone.",
+  pushPermissionDenied: "Autorisez les notifications dans les réglages du téléphone.",
   pushSaved: "Notifications mises à jour",
   pushSaveFailed: "Impossible de mettre à jour les notifications.",
-  pushOpenSettings: "Ouvrir les réglages iPhone",
+  pushOpenSettings: "Ouvrir les réglages du téléphone",
   pushDeviceCount: "Appareils",
   pushProjectMissing: "Expo projectId n'est pas configuré pour les notifications push.",
   pushIosCapabilityMissing: "Les notifications push nécessitent une nouvelle build avec Push Notifications activé dans Apple Developer.",
@@ -5052,14 +5059,14 @@ Object.assign(generatedMobileCopy.pl, {
   durationRequired: "Podaj czas trwania.",
   settingsPush: "Push",
   pushTitle: "Powiadomienia aplikacji",
-  pushHint: "Nowe rezerwacje i zmiany prosto na iPhone.",
+  pushHint: "Nowe rezerwacje i zmiany prosto na telefon.",
   pushEnable: "Włącz powiadomienia",
   pushEnabled: "Powiadomienia włączone",
   pushDisabled: "Powiadomienia wyłączone",
-  pushPermissionDenied: "Zezwól na powiadomienia w ustawieniach iPhone.",
+  pushPermissionDenied: "Zezwól na powiadomienia w ustawieniach telefonu.",
   pushSaved: "Powiadomienia zaktualizowane",
   pushSaveFailed: "Nie udało się zaktualizować powiadomień.",
-  pushOpenSettings: "Otwórz ustawienia iPhone",
+  pushOpenSettings: "Otwórz ustawienia telefonu",
   pushDeviceCount: "Urządzenia",
   pushProjectMissing: "Expo projectId nie jest skonfigurowany dla powiadomień push.",
   pushIosCapabilityMissing: "Powiadomienia push wymagają nowej build z włączonym Push Notifications w Apple Developer.",
@@ -5117,14 +5124,14 @@ Object.assign(generatedMobileCopy.cs, {
   durationRequired: "Zadejte délku trvání.",
   settingsPush: "Push",
   pushTitle: "Upozornění aplikace",
-  pushHint: "Nové rezervace a změny přímo na iPhone.",
+  pushHint: "Nové rezervace a změny přímo na telefon.",
   pushEnable: "Zapnout upozornění",
   pushEnabled: "Upozornění zapnuta",
   pushDisabled: "Upozornění vypnuta",
-  pushPermissionDenied: "Povolte upozornění v nastavení iPhone.",
+  pushPermissionDenied: "Povolte upozornění v nastavení telefonu.",
   pushSaved: "Upozornění aktualizována",
   pushSaveFailed: "Upozornění se nepodařilo aktualizovat.",
-  pushOpenSettings: "Otevřít nastavení iPhone",
+  pushOpenSettings: "Otevřít nastavení telefonu",
   pushDeviceCount: "Zařízení",
   pushProjectMissing: "Expo projectId není nastaven pro push upozornění.",
   pushIosCapabilityMissing: "Push upozornění vyžadují novou build s povoleným Push Notifications v Apple Developer.",
@@ -5182,14 +5189,14 @@ Object.assign(generatedMobileCopy.es, {
   durationRequired: "Indica la duración.",
   settingsPush: "Push",
   pushTitle: "Notificaciones de la app",
-  pushHint: "Nuevas reservas y cambios directamente en tu iPhone.",
+  pushHint: "Nuevas reservas y cambios directamente en tu teléfono.",
   pushEnable: "Activar notificaciones",
   pushEnabled: "Notificaciones activadas",
   pushDisabled: "Notificaciones desactivadas",
-  pushPermissionDenied: "Permite las notificaciones en ajustes de iPhone.",
+  pushPermissionDenied: "Permite las notificaciones en ajustes del teléfono.",
   pushSaved: "Notificaciones actualizadas",
   pushSaveFailed: "No se pudieron actualizar las notificaciones.",
-  pushOpenSettings: "Abrir ajustes de iPhone",
+  pushOpenSettings: "Abrir ajustes del teléfono",
   pushDeviceCount: "Dispositivos",
   pushProjectMissing: "Expo projectId no está configurado para notificaciones push.",
   pushIosCapabilityMissing: "Las notificaciones push requieren una nueva build con Push Notifications activado en Apple Developer.",
@@ -5247,14 +5254,14 @@ Object.assign(generatedMobileCopy.de, {
   durationRequired: "Dauer angeben.",
   settingsPush: "Push",
   pushTitle: "App-Benachrichtigungen",
-  pushHint: "Neue Buchungen und Änderungen direkt auf Ihrem iPhone.",
+  pushHint: "Neue Buchungen und Änderungen direkt auf Ihrem Telefon.",
   pushEnable: "Benachrichtigungen aktivieren",
   pushEnabled: "Benachrichtigungen aktiviert",
   pushDisabled: "Benachrichtigungen deaktiviert",
-  pushPermissionDenied: "Erlauben Sie Benachrichtigungen in den iPhone-Einstellungen.",
+  pushPermissionDenied: "Erlauben Sie Benachrichtigungen in den Telefoneinstellungen.",
   pushSaved: "Benachrichtigungen aktualisiert",
   pushSaveFailed: "Benachrichtigungen konnten nicht aktualisiert werden.",
-  pushOpenSettings: "iPhone-Einstellungen öffnen",
+  pushOpenSettings: "Telefoneinstellungen öffnen",
   pushDeviceCount: "Geräte",
   pushProjectMissing: "Expo projectId ist für Push-Benachrichtigungen nicht konfiguriert.",
   pushIosCapabilityMissing: "Push-Benachrichtigungen benötigen eine neue Build mit aktivierten Push Notifications in Apple Developer.",
@@ -6353,8 +6360,8 @@ function isPremiumSettingsSection(section: MobileSettingsSection) {
   return PREMIUM_LOCKED_SETTINGS_SECTIONS.includes(section);
 }
 
-function getPackagePriceLabel(pkg: PurchasesPackage | null, storeKitProduct: IAPItemDetails | null, fallback: string) {
-  return pkg?.product?.priceString || storeKitProduct?.price || fallback;
+function getPackagePriceLabel(pkg: PurchasesPackage | null, fallback: string) {
+  return pkg?.product?.priceString || fallback;
 }
 
 function getPremiumProductId(billing: "monthly" | "yearly") {
@@ -6369,11 +6376,6 @@ function findRevenueCatPackage(packages: PurchasesPackage[], billing: "monthly" 
     packages.find((item) => String(item.packageType) === packageType) ||
     null
   );
-}
-
-function findStoreKitProduct(products: IAPItemDetails[], billing: "monthly" | "yearly") {
-  const productId = getPremiumProductId(billing);
-  return products.find((item) => item.productId === productId) || null;
 }
 
 async function configureRevenueCatForProfessional(professionalId: string) {
@@ -6396,82 +6398,6 @@ function getCustomerInfoEntitlement(customerInfo: CustomerInfo) {
     customerInfo.entitlements.all[REVENUECAT_ENTITLEMENT_ID] ||
     null
   );
-}
-
-let storeKitConnectionPromise: Promise<void> | null = null;
-
-async function ensureStoreKitConnection() {
-  if (Platform.OS !== "ios" && Platform.OS !== "android") {
-    throw new Error("storekit_not_available");
-  }
-  if (!storeKitConnectionPromise) {
-    storeKitConnectionPromise = InAppPurchases.connectAsync().catch((error) => {
-      const message = error instanceof Error ? error.message : "";
-      if (message.toLowerCase().includes("already connected")) return;
-      storeKitConnectionPromise = null;
-      throw error;
-    });
-  }
-  await storeKitConnectionPromise;
-}
-
-async function fetchStoreKitProducts() {
-  await ensureStoreKitConnection();
-  const response = await InAppPurchases.getProductsAsync(PREMIUM_PRODUCT_IDS);
-  if (response.responseCode !== IAPResponseCode.OK) {
-    throw new Error("storekit_unavailable");
-  }
-  const products = response.results || [];
-  return {
-    monthly: findStoreKitProduct(products, "monthly"),
-    yearly: findStoreKitProduct(products, "yearly"),
-  };
-}
-
-async function waitForStoreKitPurchase(productId: string) {
-  await ensureStoreKitConnection();
-  return await new Promise<InAppPurchase>((resolve, reject) => {
-    let settled = false;
-    const settle = (callback: () => void) => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timeout);
-      callback();
-    };
-    const timeout = setTimeout(() => settle(() => reject(new Error("purchase_timeout"))), 120000);
-
-    InAppPurchases.setPurchaseListener((result) => {
-      if (result.responseCode === IAPResponseCode.OK) {
-        const purchase = (result.results || []).find(
-          (item) =>
-            item.productId === productId &&
-            (item.purchaseState === InAppPurchaseState.PURCHASED || item.purchaseState === InAppPurchaseState.RESTORED)
-        );
-        if (purchase) {
-          settle(() => resolve(purchase));
-        }
-        return;
-      }
-      if (result.responseCode === IAPResponseCode.USER_CANCELED) {
-        settle(() => reject(new Error("purchase_cancelled")));
-        return;
-      }
-      if (result.responseCode === IAPResponseCode.DEFERRED) {
-        settle(() => reject(new Error("purchase_deferred")));
-        return;
-      }
-      settle(() => reject(new Error(`storekit_error:${result.errorCode ?? "unknown"}`)));
-    });
-
-    InAppPurchases.purchaseItemAsync(productId).catch((error) => settle(() => reject(error)));
-  });
-}
-
-function getStoreKitPremiumUntil(purchase: InAppPurchase, billing: "monthly" | "yearly") {
-  const purchasedAt = purchase.purchaseTime ? new Date(purchase.purchaseTime) : new Date();
-  const premiumUntil = Number.isFinite(purchasedAt.getTime()) ? purchasedAt : new Date();
-  premiumUntil.setDate(premiumUntil.getDate() + (billing === "yearly" ? 366 : 32));
-  return premiumUntil.toISOString();
 }
 
 function formatReminderLead(minutes: number, t: Record<string, string>) {
@@ -7179,16 +7105,51 @@ export default function App() {
   const serviceSaveFlushPromiseRef = useRef<Promise<void> | null>(null);
   const serviceCreatePromiseRef = useRef<Promise<void> | null>(null);
   const workspaceLanguageAppliedRef = useRef(false);
+  const languageStorageReadyRef = useRef(false);
   const autoPushRegisteringRef = useRef(false);
-  const googleConfigured = Platform.select({
+  const nativeGoogleConfigured = Platform.select({
     ios: Boolean(GOOGLE_IOS_CLIENT_ID),
     android: Boolean(GOOGLE_ANDROID_CLIENT_ID),
     default: Boolean(GOOGLE_WEB_CLIENT_ID),
   });
 
+  function handleGoogleAuthCallbackUrl(url: string) {
+    void WebBrowser.dismissBrowser();
+    try {
+      const parsed = new URL(url);
+      const error = parsed.searchParams.get("error") || "";
+      if (error) {
+        Alert.alert("Google", error === "config" ? t.socialAuthConfigMissing : t.socialAuthFailed);
+        return;
+      }
+      const nextSession = normalizeApiSession(
+        {
+          token: parsed.searchParams.get("token") || "",
+          professionalId: parsed.searchParams.get("professionalId") || "",
+          profile: {
+            email: parsed.searchParams.get("email") || "",
+            displayName: parsed.searchParams.get("displayName") || "",
+          },
+        },
+        parsed.searchParams.get("email") || ""
+      );
+      if (nextSession.token && nextSession.professionalId) {
+        void persistSession(nextSession);
+      } else {
+        Alert.alert("Google", t.socialAuthFailed);
+      }
+    } catch {
+      Alert.alert("Google", t.socialAuthFailed);
+    }
+  }
+
   useEffect(() => {
     const handleIncomingUrl = (url: string) => {
       if (!url) return;
+      if (url.includes("timviz-master://google-auth")) {
+        handleGoogleAuthCallbackUrl(url);
+        return;
+      }
       if (url.includes("timviz-master://captcha")) {
         try {
           const parsed = new URL(url);
@@ -7229,7 +7190,24 @@ export default function App() {
 
     const subscription = Linking.addEventListener("url", ({ url }) => handleIncomingUrl(url));
     return () => subscription.remove();
+  }, [t.socialAuthConfigMissing, t.socialAuthFailed]);
+
+  useEffect(() => {
+    AsyncStorage.getItem(APP_LANGUAGE_KEY)
+      .then((value) => {
+        const savedLanguage = normalizeAppLanguage(value);
+        if (savedLanguage) setLanguage(savedLanguage);
+      })
+      .catch(() => undefined)
+      .finally(() => {
+        languageStorageReadyRef.current = true;
+      });
   }, []);
+
+  useEffect(() => {
+    if (!languageStorageReadyRef.current) return;
+    void AsyncStorage.setItem(APP_LANGUAGE_KEY, language).catch(() => undefined);
+  }, [language]);
 
   useEffect(() => {
     AppleAuthentication.isAvailableAsync()
@@ -8145,11 +8123,23 @@ export default function App() {
   }
 
   async function signInWithGoogle() {
-    if (!googleConfigured) {
-      Alert.alert("Google", t.socialAuthConfigMissing);
-      return;
+    setSocialBusy("google");
+    try {
+      const params = new URLSearchParams();
+      params.set("language", language);
+      params.set("country", registerPhoneCountry.country);
+      params.set("timezone", detectedTimezone);
+      params.set("currency", registerPhoneCountry.currency || inferCurrency(registerPhoneCountry.country));
+      const authUrl = `${API_BASE_URL}/api/mobile/pro/auth/google/start?${params.toString()}`;
+      const result = await WebBrowser.openAuthSessionAsync(authUrl, "timviz-master://google-auth");
+      if (result.type === "success" && result.url) {
+        handleGoogleAuthCallbackUrl(result.url);
+      }
+    } catch (error) {
+      Alert.alert("Google", error instanceof Error ? error.message : t.socialAuthFailed);
+    } finally {
+      setSocialBusy(null);
     }
-    Alert.alert("Google", t.socialAuthConfigMissing);
   }
 
   async function signInWithApple() {
@@ -9171,7 +9161,7 @@ export default function App() {
 
               <SocialAuthButtons
                 t={t}
-                googleEnabled={Boolean(googleConfigured)}
+                googleEnabled={Boolean(nativeGoogleConfigured)}
                 appleEnabled={appleSignInAvailable}
                 busyProvider={socialBusy}
                 disabled={busy}
@@ -11675,7 +11665,7 @@ function WorkspaceHeader({
   }
 
   async function openLegalPage(target: string) {
-    const url = target.startsWith("http") ? target : `${API_BASE_URL}/${language}${target}?source=ios`;
+    const url = target.startsWith("http") ? target : `${API_BASE_URL}/${language}${target}?source=${MOBILE_PLATFORM_SOURCE}`;
     await openLegalUrl(url);
   }
 
@@ -14492,7 +14482,6 @@ function SettingsTab({
   const [isPushSaving, setIsPushSaving] = useState(false);
   const [pushError, setPushError] = useState("");
   const [premiumPackages, setPremiumPackages] = useState<{ monthly: PurchasesPackage | null; yearly: PurchasesPackage | null }>({ monthly: null, yearly: null });
-  const [storeKitProducts, setStoreKitProducts] = useState<{ monthly: IAPItemDetails | null; yearly: IAPItemDetails | null }>({ monthly: null, yearly: null });
   const [isPremiumLoading, setIsPremiumLoading] = useState(false);
   const [premiumMessage, setPremiumMessage] = useState("");
   const [isAutoSavingSettings, setIsAutoSavingSettings] = useState(false);
@@ -14669,7 +14658,7 @@ function SettingsTab({
 
   async function syncPremiumCustomerInfo(customerInfo: CustomerInfo) {
     const entitlement = getCustomerInfoEntitlement(customerInfo);
-    await apiFetch("/api/mobile/pro/subscription/app-store", {
+    await apiFetch("/api/mobile/pro/subscription/store", {
       method: "POST",
       body: JSON.stringify({
         customerInfo: {
@@ -14693,28 +14682,6 @@ function SettingsTab({
     onRefreshWorkspace();
   }
 
-  async function syncStoreKitPurchase(purchase: InAppPurchase, billing: "monthly" | "yearly") {
-    const premiumUntil = getStoreKitPremiumUntil(purchase, billing);
-    await apiFetch("/api/mobile/pro/subscription/app-store", {
-      method: "POST",
-      body: JSON.stringify({
-        storeKitPurchase: {
-          productId: purchase.productId,
-          transactionId: purchase.orderId,
-          originalTransactionId: purchase.originalOrderId || purchase.orderId,
-          transactionReceipt: purchase.transactionReceipt || "",
-          purchaseTime: purchase.purchaseTime,
-          premiumUntil,
-          billing,
-          platform: Platform.OS,
-        },
-      }),
-    });
-    await InAppPurchases.finishTransactionAsync(purchase, false).catch(() => undefined);
-    setPremiumMessage(t.premiumReady);
-    onRefreshWorkspace();
-  }
-
   async function loadPremiumPackages(silent = false) {
     if (!workspace?.professional.id || isPremiumLoading) return;
     if (!silent) {
@@ -14722,27 +14689,21 @@ function SettingsTab({
       setPremiumMessage("");
     }
     try {
-      if (getRevenueCatApiKey()) {
-        await configureRevenueCatForProfessional(workspace.professional.id);
-        const offerings = await Purchases.getOfferings();
-        const packages = offerings.current?.availablePackages || Object.values(offerings.all)[0]?.availablePackages || [];
-        setPremiumPackages({
-          monthly: offerings.current?.monthly || findRevenueCatPackage(packages, "monthly"),
-          yearly: offerings.current?.annual || findRevenueCatPackage(packages, "yearly"),
-        });
-        const customerInfo = await Purchases.getCustomerInfo();
-        if (getCustomerInfoEntitlement(customerInfo)?.isActive) {
-          await syncPremiumCustomerInfo(customerInfo);
-        }
-      } else {
-        setStoreKitProducts(await fetchStoreKitProducts());
+      await configureRevenueCatForProfessional(workspace.professional.id);
+      const offerings = await Purchases.getOfferings();
+      const packages = offerings.current?.availablePackages || Object.values(offerings.all)[0]?.availablePackages || [];
+      setPremiumPackages({
+        monthly: offerings.current?.monthly || findRevenueCatPackage(packages, "monthly"),
+        yearly: offerings.current?.annual || findRevenueCatPackage(packages, "yearly"),
+      });
+      const customerInfo = await Purchases.getCustomerInfo();
+      if (getCustomerInfoEntitlement(customerInfo)?.isActive) {
+        await syncPremiumCustomerInfo(customerInfo);
       }
     } catch (error) {
       if (!silent) {
         const message =
-          error instanceof Error && (error.message === "revenuecat_not_configured" || error.message === "storekit_unavailable")
-            ? t.premiumMissingConfig
-            : t.premiumUnavailable;
+          error instanceof Error && error.message === "revenuecat_not_configured" ? t.premiumMissingConfig : t.premiumUnavailable;
         setPremiumMessage(message);
       }
     } finally {
@@ -14755,32 +14716,18 @@ function SettingsTab({
     setIsPremiumLoading(true);
     setPremiumMessage("");
     try {
-      if (getRevenueCatApiKey()) {
-        await configureRevenueCatForProfessional(workspace.professional.id);
-        let targetPackage = premiumPackages[billing];
-        if (!targetPackage) {
-          const offerings = await Purchases.getOfferings();
-          const packages = offerings.current?.availablePackages || Object.values(offerings.all)[0]?.availablePackages || [];
-          targetPackage = (billing === "yearly" ? offerings.current?.annual : offerings.current?.monthly) || findRevenueCatPackage(packages, billing);
-        }
-        if (!targetPackage) {
-          throw new Error("missing_package");
-        }
-        const result = await Purchases.purchasePackage(targetPackage);
-        await syncPremiumCustomerInfo(result.customerInfo);
-      } else {
-        let product = storeKitProducts[billing];
-        if (!product) {
-          const products = await fetchStoreKitProducts();
-          setStoreKitProducts(products);
-          product = products[billing];
-        }
-        if (!product) {
-          throw new Error("missing_package");
-        }
-        const purchase = await waitForStoreKitPurchase(product.productId);
-        await syncStoreKitPurchase(purchase, billing);
+      await configureRevenueCatForProfessional(workspace.professional.id);
+      let targetPackage = premiumPackages[billing];
+      if (!targetPackage) {
+        const offerings = await Purchases.getOfferings();
+        const packages = offerings.current?.availablePackages || Object.values(offerings.all)[0]?.availablePackages || [];
+        targetPackage = (billing === "yearly" ? offerings.current?.annual : offerings.current?.monthly) || findRevenueCatPackage(packages, billing);
       }
+      if (!targetPackage) {
+        throw new Error("missing_package");
+      }
+      const result = await Purchases.purchasePackage(targetPackage);
+      await syncPremiumCustomerInfo(result.customerInfo);
     } catch (error: any) {
       if (error?.userCancelled || (error instanceof Error && error.message === "purchase_cancelled")) {
         setPremiumMessage(t.premiumPurchaseCancelled);
@@ -14803,22 +14750,9 @@ function SettingsTab({
     setIsPremiumLoading(true);
     setPremiumMessage("");
     try {
-      if (getRevenueCatApiKey()) {
-        await configureRevenueCatForProfessional(workspace.professional.id);
-        const customerInfo = await Purchases.restorePurchases();
-        await syncPremiumCustomerInfo(customerInfo);
-      } else {
-        await ensureStoreKitConnection();
-        const history = await InAppPurchases.getPurchaseHistoryAsync({ useGooglePlayCache: false });
-        const purchase = (history.results || [])
-          .filter((item) => PREMIUM_PRODUCT_IDS.includes(item.productId))
-          .sort((left, right) => (right.purchaseTime || 0) - (left.purchaseTime || 0))[0];
-        if (!purchase) {
-          throw new Error("missing_package");
-        }
-        const billing = purchase.productId === REVENUECAT_YEARLY_PRODUCT_ID ? "yearly" : "monthly";
-        await syncStoreKitPurchase(purchase, billing);
-      }
+      await configureRevenueCatForProfessional(workspace.professional.id);
+      const customerInfo = await Purchases.restorePurchases();
+      await syncPremiumCustomerInfo(customerInfo);
     } catch (error) {
       if (error instanceof Error && error.message === "revenuecat_not_configured") {
         setPremiumMessage(t.premiumMissingConfig);
@@ -15651,31 +15585,31 @@ function SettingsTab({
             </View>
             <View style={styles.premiumMobilePlans}>
               <Pressable
-                style={[styles.premiumMobilePlan, (premiumPackages.monthly || storeKitProducts.monthly) && styles.premiumMobilePlanReady]}
+                style={[styles.premiumMobilePlan, premiumPackages.monthly && styles.premiumMobilePlanReady]}
                 onPress={() => void buyPremiumPackage("monthly")}
                 disabled={isPremiumLoading}
               >
                 <Text style={styles.premiumMobilePlanTitle}>{t.premiumMonthly}</Text>
-                <Text style={styles.premiumMobilePlanPrice}>{getPackagePriceLabel(premiumPackages.monthly, storeKitProducts.monthly, t.premiumMonthlyFallback)}</Text>
+                <Text style={styles.premiumMobilePlanPrice}>{getPackagePriceLabel(premiumPackages.monthly, t.premiumMonthlyFallback)}</Text>
                 <Text style={styles.premiumMobilePlanAction}>{t.premiumStartMonthly}</Text>
               </Pressable>
               <Pressable
-                style={[styles.premiumMobilePlan, styles.premiumMobilePlanFeatured, (premiumPackages.yearly || storeKitProducts.yearly) && styles.premiumMobilePlanReady]}
+                style={[styles.premiumMobilePlan, styles.premiumMobilePlanFeatured, premiumPackages.yearly && styles.premiumMobilePlanReady]}
                 onPress={() => void buyPremiumPackage("yearly")}
                 disabled={isPremiumLoading}
               >
                 <Text style={styles.premiumMobilePlanTitle}>{t.premiumYearly}</Text>
-                <Text style={styles.premiumMobilePlanPrice}>{getPackagePriceLabel(premiumPackages.yearly, storeKitProducts.yearly, t.premiumYearlyFallback)}</Text>
+                <Text style={styles.premiumMobilePlanPrice}>{getPackagePriceLabel(premiumPackages.yearly, t.premiumYearlyFallback)}</Text>
                 <Text style={styles.premiumMobilePlanAction}>{t.premiumStartYearly}</Text>
               </Pressable>
             </View>
             <View style={styles.settingsActionRow}>
               <SecondaryButton label={t.premiumRestore} onPress={() => void restorePremiumPurchase()} disabled={isPremiumLoading} />
-              <SecondaryButton label={t.premiumManage} onPress={() => Linking.openURL("https://apps.apple.com/account/subscriptions").catch(() => undefined)} disabled={Platform.OS !== "ios"} />
+              <SecondaryButton label={t.premiumManage} onPress={() => Linking.openURL(MOBILE_SUBSCRIPTION_MANAGE_URL).catch(() => undefined)} disabled={Platform.OS === "web"} />
             </View>
             <Text style={styles.settingsMutedNotice}>
               {t.subscriptionAutoRenewText ||
-                "Subscription renews automatically unless cancelled at least 24 hours before the end of the current period. You can manage or cancel your subscription in your Apple ID settings."}
+                "Subscription renews automatically unless cancelled at least 24 hours before the end of the current period. You can manage or cancel it in your app store settings."}
             </Text>
             <Text style={styles.premiumLegalText}>
               {t.legalSubscriptionIntro || "By subscribing, you agree to:"}
@@ -16245,25 +16179,8 @@ function LanguageSwitch({
   setLanguage: (language: AppLanguage) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const [anchor, setAnchor] = useState({ x: 16, y: 64, width: 112, height: 40 });
-  const anchorRef = useRef<View>(null);
-  const { width: screenWidth, height: screenHeight } = useWindowDimensions();
-  const viewportPadding = 12;
-  const menuWidth = Math.min(220, Math.max(168, Math.min(anchor.width, screenWidth - viewportPadding * 2)));
-  const menuMaxHeight = Math.min(360, Math.max(220, screenHeight - viewportPadding * 2));
-  const maxMenuLeft = Math.max(viewportPadding, screenWidth - menuWidth - viewportPadding);
-  const preferredMenuLeft = anchor.x + anchor.width - menuWidth;
-  const menuLeft = Math.min(Math.max(preferredMenuLeft, viewportPadding), maxMenuLeft);
-  const maxMenuTop = Math.max(viewportPadding, screenHeight - menuMaxHeight - viewportPadding);
-  const preferredMenuTop = anchor.y + anchor.height + 8;
-  const menuTop = Math.min(Math.max(preferredMenuTop, viewportPadding), maxMenuTop);
-
-  function openMenu() {
-    anchorRef.current?.measureInWindow((x, y, width, height) => {
-      setAnchor({ x, y, width, height });
-      setOpen(true);
-    });
-  }
+  const { height: screenHeight } = useWindowDimensions();
+  const menuMaxHeight = Math.min(420, Math.max(260, screenHeight - 96));
 
   function selectLanguage(nextLanguage: AppLanguage) {
     setLanguage(nextLanguage);
@@ -16271,18 +16188,18 @@ function LanguageSwitch({
   }
 
   return (
-    <View ref={anchorRef} collapsable={false} style={styles.languageMenuAnchor}>
-      <Pressable style={[styles.languageTrigger, open && styles.languageTriggerActive]} onPress={openMenu}>
+    <View style={styles.languageMenuAnchor}>
+      <Pressable style={[styles.languageTrigger, open && styles.languageTriggerActive]} onPress={() => setOpen(true)} hitSlop={8}>
         <Text style={styles.languageTriggerCode}>{languageNames[language]}</Text>
         <Text style={styles.languageTriggerLabel} numberOfLines={1}>
           {languageDisplayNames[language]}
         </Text>
         <Ionicons name={open ? "chevron-up" : "chevron-down"} size={15} color="#64748B" />
       </Pressable>
-      <Modal transparent visible={open} animationType="fade" onRequestClose={() => setOpen(false)}>
-        <View style={styles.languageDropdownLayer}>
+      <Modal transparent visible={open} animationType="fade" onRequestClose={() => setOpen(false)} statusBarTranslucent>
+        <View style={styles.languageSheetLayer}>
           <Pressable style={styles.languageDropdownBackdrop} onPress={() => setOpen(false)} />
-          <View style={[styles.languageDropdownMenu, { top: menuTop, left: menuLeft, width: menuWidth, maxHeight: menuMaxHeight }]}>
+          <View style={[styles.languageSheetMenu, { maxHeight: menuMaxHeight }]}>
             <ScrollView bounces={false} showsVerticalScrollIndicator={false}>
               {SUPPORTED_APP_LANGUAGES.map((item) => {
                 const active = language === item;
@@ -16619,6 +16536,7 @@ const styles = StyleSheet.create({
   },
   authScreen: {
     flex: 1,
+    paddingTop: Platform.OS === "android" ? Math.max(Constants.statusBarHeight || 0, 24) : 0,
     backgroundColor: DESIGN.colors.background,
   },
   keyboard: {
@@ -16715,9 +16633,30 @@ const styles = StyleSheet.create({
   languageDropdownLayer: {
     flex: 1,
   },
+  languageSheetLayer: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 18,
+    paddingVertical: 48,
+  },
   languageDropdownBackdrop: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: "rgba(15, 23, 42, 0.08)",
+  },
+  languageSheetMenu: {
+    width: "100%",
+    maxWidth: 360,
+    padding: 8,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: DESIGN.colors.border,
+    backgroundColor: "#FFFFFF",
+    shadowColor: "#0F172A",
+    shadowOpacity: 0.14,
+    shadowRadius: 22,
+    shadowOffset: { width: 0, height: 14 },
+    elevation: 12,
   },
   languageDropdownMenu: {
     position: "absolute",
@@ -17347,6 +17286,7 @@ const styles = StyleSheet.create({
   },
   appScreen: {
     flex: 1,
+    paddingTop: Platform.OS === "android" ? Math.max(Constants.statusBarHeight || 0, 24) : 0,
     backgroundColor: DESIGN.colors.background,
   },
   nativeHeader: {

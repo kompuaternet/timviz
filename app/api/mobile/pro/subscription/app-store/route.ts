@@ -19,6 +19,7 @@ type NormalizedEntitlement = {
   productId: string;
   expirationDate: string | null;
   periodType: string;
+  source: "apple" | "google";
 };
 
 function asRecord(value: unknown): Record<string, unknown> {
@@ -43,6 +44,12 @@ function isFuture(value: string | null) {
   return Number.isFinite(time) && time > Date.now();
 }
 
+function normalizeStoreSource(value: unknown): "apple" | "google" {
+  const normalized = String(value || "").trim().toLowerCase();
+  if (normalized.includes("play") || normalized.includes("google") || normalized === "android") return "google";
+  return "apple";
+}
+
 function getStatus(entitlement: NormalizedEntitlement | null): PremiumStatus {
   if (!entitlement || !entitlement.isActive) return "inactive";
   const periodType = entitlement.periodType.toLowerCase();
@@ -61,6 +68,7 @@ function normalizeCustomerInfoEntitlement(body: Record<string, unknown>): Normal
     productId,
     expirationDate,
     periodType: getString(entitlement, ["periodType", "period_type"]),
+    source: normalizeStoreSource(getString(entitlement, ["store", "storeType"]) || getString(customerInfo, ["store"])),
   };
 }
 
@@ -81,6 +89,7 @@ function normalizeStoreKitPurchase(body: Record<string, unknown>): NormalizedEnt
     productId,
     expirationDate,
     periodType: getString(purchase, ["periodType", "period_type"]) || "normal",
+    source: normalizeStoreSource(getString(purchase, ["platform", "store"])),
   };
 }
 
@@ -119,6 +128,7 @@ async function fetchRevenueCatEntitlement(professionalId: string): Promise<Norma
     productId,
     expirationDate,
     periodType,
+    source: normalizeStoreSource(getString(entitlement, ["store"]) || getString(subscription, ["store"])),
   };
 }
 
@@ -155,6 +165,7 @@ export async function POST(request: Request) {
       status,
       premiumUntil: entitlement?.expirationDate ?? null,
       productId: entitlement?.productId || null,
+      source: entitlement?.source || "apple",
     });
 
     return NextResponse.json({
@@ -165,7 +176,7 @@ export async function POST(request: Request) {
       updateResult,
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Could not sync App Store subscription.";
+    const message = error instanceof Error ? error.message : "Could not sync mobile store subscription.";
     return NextResponse.json({ error: message }, { status: 400 });
   }
 }

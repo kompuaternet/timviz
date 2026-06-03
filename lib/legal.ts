@@ -55,7 +55,7 @@ export const legalCopy: Record<
           title: "Подписки и платежи",
           paragraphs: [
             "Email может использоваться для аккаунта, подписки, поддержки, сервисных уведомлений и важных сообщений о работе Timviz.",
-            "Платежный статус подписки может поступать от Apple In-App Purchase для iOS или от Monobank для платежей на сайте. Timviz не хранит полные номера банковских карт."
+            "Платежный статус подписки может поступать от магазинов приложений для iOS и Android или от Monobank для платежей на сайте. Timviz не хранит полные номера банковских карт."
           ]
         },
         {
@@ -107,7 +107,7 @@ export const legalCopy: Record<
           title: "Підписки та платежі",
           paragraphs: [
             "Email може використовуватися для акаунта, підписки, підтримки, сервісних сповіщень і важливих повідомлень про роботу Timviz.",
-            "Платіжний статус підписки може надходити від Apple In-App Purchase для iOS або від Monobank для платежів на сайті. Timviz не зберігає повні номери банківських карток."
+            "Платіжний статус підписки може надходити від магазинів застосунків для iOS і Android або від Monobank для платежів на сайті. Timviz не зберігає повні номери банківських карток."
           ]
         },
         {
@@ -159,7 +159,7 @@ export const legalCopy: Record<
           title: "Subscriptions and payments",
           paragraphs: [
             "Email may be used for account, subscription, support, service notifications and important Timviz product messages.",
-            "Subscription payment status may be provided by Apple In-App Purchase for iOS or by Monobank for website payments. Timviz does not store full card numbers."
+            "Subscription payment status may be provided by the iOS and Android app stores or by Monobank for website payments. Timviz does not store full card numbers."
           ]
         },
         {
@@ -226,7 +226,7 @@ export const legalCopy: Record<
         {
           title: "Подписки и сторонние услуги",
           paragraphs: [
-            "В iOS подписки Timviz оформляются через Apple In-App Purchase. На сайте платежи за подписку могут обрабатываться через Monobank.",
+            "В мобильных приложениях Timviz подписки оформляются через Apple App Store или Google Play. На сайте платежи за подписку могут обрабатываться через Monobank.",
             "Timviz предоставляет программные инструменты для онлайн-записи и управления бизнесом. Timviz не продаёт сторонние услуги, не является маркетплейсом и не обрабатывает платежи между клиентами и поставщиками услуг.",
             "Пользователи сами отвечают за свои записи, услуги, цены, выполнение работ и отношения с клиентами. Юридическое название компании: [LEGAL_BUSINESS_NAME]. Поддержка: adm@timviz.com."
           ]
@@ -287,7 +287,7 @@ export const legalCopy: Record<
         {
           title: "Підписки та сторонні послуги",
           paragraphs: [
-            "В iOS підписки Timviz оформлюються через Apple In-App Purchase. На сайті платежі за підписку можуть оброблятися через Monobank.",
+            "У мобільних застосунках Timviz підписки оформлюються через Apple App Store або Google Play. На сайті платежі за підписку можуть оброблятися через Monobank.",
             "Timviz надає програмні інструменти для онлайн-запису та керування бізнесом. Timviz не продає сторонні послуги, не є маркетплейсом і не обробляє платежі між клієнтами та постачальниками послуг.",
             "Користувачі самі відповідають за свої записи, послуги, ціни, виконання робіт і відносини з клієнтами. Юридична назва компанії: [LEGAL_BUSINESS_NAME]. Підтримка: adm@timviz.com."
           ]
@@ -348,7 +348,7 @@ export const legalCopy: Record<
         {
           title: "Subscriptions and third-party services",
           paragraphs: [
-            "On iOS, Timviz subscriptions are purchased through Apple In-App Purchase. On the website, subscription payments may be processed through Monobank.",
+            "In the Timviz mobile apps, subscriptions are purchased through Apple App Store or Google Play. On the website, subscription payments may be processed through Monobank.",
             "Timviz provides software tools for appointment scheduling and business management. Timviz does not sell third-party services, act as a marketplace, or process payments between clients and service providers.",
             "Users are responsible for their own appointments, services, pricing, delivery and client relationships. Legal/business name: [LEGAL_BUSINESS_NAME]. Support: adm@timviz.com."
           ]
@@ -376,7 +376,7 @@ export const legalCopy: Record<
           title: "Подписка на программное обеспечение",
           paragraphs: [
             "Оплата Timviz относится только к доступу к программному обеспечению Timviz и Premium-функциям платформы.",
-            "В iOS возвраты за покупки в App Store обрабатывает Apple. Платежи на сайте могут обрабатываться через Monobank и не используются для оплаты услуг мастеров, салонов или клиентов."
+            "Возвраты за покупки в App Store или Google Play обрабатывает соответствующий магазин приложений. Платежи на сайте могут обрабатываться через Monobank и не используются для оплаты услуг мастеров, салонов или клиентов."
           ]
         },
         {
@@ -408,7 +408,7 @@ export const legalCopy: Record<
           title: "Підписка на програмне забезпечення",
           paragraphs: [
             "Оплата Timviz стосується лише доступу до програмного забезпечення Timviz і Premium-функцій платформи.",
-            "В iOS повернення за покупки в App Store обробляє Apple. Платежі на сайті можуть оброблятися через Monobank і не використовуються для оплати послуг майстрів, салонів або клієнтів."
+            "Повернення за покупки в App Store або Google Play обробляє відповідний магазин застосунків. Платежі на сайті можуть оброблятися через Monobank і не використовуються для оплати послуг майстрів, салонів або клієнтів."
           ]
         },
         {
@@ -440,7 +440,7 @@ export const legalCopy: Record<
           title: "Software subscription",
           paragraphs: [
             "Timviz payments relate only to access to Timviz software and Premium platform features.",
-            "Apple handles refunds for App Store purchases. Website payments may be processed through Monobank and are not used to pay for master, salon or client services."
+            "The relevant app store handles refunds for App Store or Google Play purchases. Website payments may be processed through Monobank and are not used to pay for master, salon or client services."
           ]
         },
         {
@@ -464,7 +464,7 @@ export const legalCopy: Record<
   "subscription-terms": {
     ru: {
       title: "Условия подписки Timviz",
-      description: "Как работают Free, PRO, пробный период и Apple In-App Purchase.",
+      description: "Как работают Free, PRO, пробный период и покупки в мобильном приложении.",
       eyebrow: "Timviz Subscription Terms",
       heading: "Условия подписки",
       intro: "Эта страница объясняет доступ к Timviz PRO, продление, отмену и период действия подписки.",
@@ -477,10 +477,10 @@ export const legalCopy: Record<
           ]
         },
         {
-          title: "Apple In-App Purchase",
+          title: "Покупки в мобильном приложении",
           paragraphs: [
-            "В iOS подписка PRO оформляется через Apple In-App Purchase. Оплата списывается с Apple ID пользователя.",
-            "Подписка продлевается автоматически, если пользователь не отменит её минимум за 24 часа до окончания текущего периода. Управлять подпиской можно в настройках Apple ID."
+            "В iOS и Android подписка PRO оформляется через Apple App Store или Google Play. Оплата списывается через аккаунт соответствующего магазина приложений.",
+            "Подписка продлевается автоматически, если пользователь не отменит её минимум за 24 часа до окончания текущего периода. Управлять подпиской можно в настройках соответствующего магазина приложений."
           ]
         },
         {
@@ -495,14 +495,14 @@ export const legalCopy: Record<
           title: "Возвраты и истечение доступа",
           paragraphs: [
             "После окончания оплаченного периода или пробного доступа платные возможности могут быть ограничены до Free.",
-            "Возвраты по покупкам App Store обрабатывает Apple. Вопросы по платежам на сайте рассматривает поддержка Timviz."
+            "Возвраты по покупкам App Store или Google Play обрабатывает соответствующий магазин приложений. Вопросы по платежам на сайте рассматривает поддержка Timviz."
           ]
         }
       ]
     },
     uk: {
       title: "Умови підписки Timviz",
-      description: "Як працюють Free, PRO, пробний період та Apple In-App Purchase.",
+      description: "Як працюють Free, PRO, пробний період та покупки в мобільному застосунку.",
       eyebrow: "Timviz Subscription Terms",
       heading: "Умови підписки",
       intro: "Ця сторінка пояснює доступ до Timviz PRO, продовження, скасування та період дії підписки.",
@@ -515,10 +515,10 @@ export const legalCopy: Record<
           ]
         },
         {
-          title: "Apple In-App Purchase",
+          title: "Покупки в мобільному застосунку",
           paragraphs: [
-            "В iOS підписка PRO оформлюється через Apple In-App Purchase. Оплата списується з Apple ID користувача.",
-            "Підписка продовжується автоматично, якщо користувач не скасує її щонайменше за 24 години до завершення поточного періоду. Керувати підпискою можна в налаштуваннях Apple ID."
+            "В iOS і Android підписка PRO оформлюється через Apple App Store або Google Play. Оплата списується через акаунт відповідного магазину застосунків.",
+            "Підписка продовжується автоматично, якщо користувач не скасує її щонайменше за 24 години до завершення поточного періоду. Керувати підпискою можна в налаштуваннях відповідного магазину застосунків."
           ]
         },
         {
@@ -533,14 +533,14 @@ export const legalCopy: Record<
           title: "Повернення та завершення доступу",
           paragraphs: [
             "Після завершення оплаченого періоду або пробного доступу платні можливості можуть бути обмежені до Free.",
-            "Повернення за покупки App Store обробляє Apple. Питання щодо платежів на сайті розглядає підтримка Timviz."
+            "Повернення за покупки App Store або Google Play обробляє відповідний магазин застосунків. Питання щодо платежів на сайті розглядає підтримка Timviz."
           ]
         }
       ]
     },
     en: {
       title: "Timviz Subscription Terms",
-      description: "How Free and PRO plans, trial access and Apple In-App Purchase work.",
+      description: "How Free and PRO plans, trial access and mobile in-app purchases work.",
       eyebrow: "Timviz Subscription Terms",
       heading: "Subscription Terms",
       intro: "This page explains Timviz PRO access, renewal, cancellation and subscription access periods.",
@@ -553,10 +553,10 @@ export const legalCopy: Record<
           ]
         },
         {
-          title: "Apple In-App Purchase",
+          title: "Mobile in-app purchases",
           paragraphs: [
-            "In the iOS app, PRO subscriptions are purchased through Apple In-App Purchase. Payment is charged to the user's Apple ID.",
-            "The subscription renews automatically unless cancelled at least 24 hours before the end of the current period. Users can manage or cancel it in Apple ID settings."
+            "In the iOS and Android apps, PRO subscriptions are purchased through Apple App Store or Google Play. Payment is charged through the user's account in the relevant app store.",
+            "The subscription renews automatically unless cancelled at least 24 hours before the end of the current period. Users can manage or cancel it in the relevant app store settings."
           ]
         },
         {
@@ -571,7 +571,7 @@ export const legalCopy: Record<
           title: "Refunds and expiration",
           paragraphs: [
             "After a paid period or trial ends, paid capabilities may be limited back to Free.",
-            "Apple handles refunds for App Store purchases. Website payment questions are reviewed by Timviz support."
+            "The relevant app store handles refunds for App Store or Google Play purchases. Website payment questions are reviewed by Timviz support."
           ]
         }
       ]
@@ -586,8 +586,8 @@ export const legalCopy: Record<
       intro: "Мы помогаем с аккаунтом, календарём, подпиской, приложением и вопросами безопасности.",
       sections: [
         { title: "Как связаться", paragraphs: ["Email: adm@timviz.com", "Обычно мы отвечаем в течение 1–2 рабочих дней."] },
-        { title: "Подписка", paragraphs: ["Подписками Apple нужно управлять в настройках Apple ID.", "По вопросам платежей на сайте напишите в поддержку Timviz."] },
-        { title: "Удаление аккаунта", paragraphs: ["Удаление можно инициировать внутри iOS-приложения в меню Аккаунт → Удалить аккаунт.", "Также можно обратиться на adm@timviz.com, если доступ к аккаунту потерян."] }
+        { title: "Подписка", paragraphs: ["Подписками из App Store или Google Play нужно управлять в настройках соответствующего магазина приложений.", "По вопросам платежей на сайте напишите в поддержку Timviz."] },
+        { title: "Удаление аккаунта", paragraphs: ["Удаление можно инициировать внутри мобильного приложения в меню Аккаунт → Удалить аккаунт.", "Также можно обратиться на adm@timviz.com, если доступ к аккаунту потерян."] }
       ]
     },
     uk: {
@@ -598,8 +598,8 @@ export const legalCopy: Record<
       intro: "Ми допомагаємо з акаунтом, календарем, підпискою, застосунком і питаннями безпеки.",
       sections: [
         { title: "Як зв'язатися", paragraphs: ["Email: adm@timviz.com", "Зазвичай ми відповідаємо протягом 1–2 робочих днів."] },
-        { title: "Підписка", paragraphs: ["Підписками Apple потрібно керувати в налаштуваннях Apple ID.", "Щодо платежів на сайті напишіть у підтримку Timviz."] },
-        { title: "Видалення акаунта", paragraphs: ["Видалення можна ініціювати в iOS-застосунку в меню Акаунт → Видалити акаунт.", "Також можна звернутися на adm@timviz.com, якщо доступ до акаунта втрачено."] }
+        { title: "Підписка", paragraphs: ["Підписками з App Store або Google Play потрібно керувати в налаштуваннях відповідного магазину застосунків.", "Щодо платежів на сайті напишіть у підтримку Timviz."] },
+        { title: "Видалення акаунта", paragraphs: ["Видалення можна ініціювати в мобільному застосунку в меню Акаунт → Видалити акаунт.", "Також можна звернутися на adm@timviz.com, якщо доступ до акаунта втрачено."] }
       ]
     },
     en: {
@@ -610,8 +610,8 @@ export const legalCopy: Record<
       intro: "We help with account, calendar, subscription, app and safety questions.",
       sections: [
         { title: "How to contact support", paragraphs: ["Email: adm@timviz.com", "Typical response time: 1–2 business days."] },
-        { title: "Subscription management", paragraphs: ["For Apple subscriptions, manage or cancel your subscription in Apple ID settings.", "For website payment questions, contact Timviz support."] },
-        { title: "Account deletion", paragraphs: ["Deletion can be initiated inside the iOS app from Account → Delete account.", "You can also contact adm@timviz.com if you cannot access your account."] }
+        { title: "Subscription management", paragraphs: ["For App Store or Google Play subscriptions, manage or cancel your subscription in the relevant app store settings.", "For website payment questions, contact Timviz support."] },
+        { title: "Account deletion", paragraphs: ["Deletion can be initiated inside the mobile app from Account → Delete account.", "You can also contact adm@timviz.com if you cannot access your account."] }
       ]
     }
   },
@@ -759,7 +759,7 @@ const legalExtraSections: Record<LegalPageType, Record<ExtraLegalLanguage, Legal
         title: "Abonnements et paiements",
         paragraphs: [
           "L’email peut être utilisé pour le compte, l’abonnement, l’assistance, les notifications de service et les messages importants concernant Timviz.",
-          "Le statut de paiement d’un abonnement peut provenir d’Apple In-App Purchase pour iOS ou de Monobank pour les paiements sur le site. Timviz ne stocke pas les numéros complets de carte bancaire."
+          "Le statut de paiement d’un abonnement peut provenir des boutiques d’applications iOS et Android ou de Monobank pour les paiements sur le site. Timviz ne stocke pas les numéros complets de carte bancaire."
         ]
       },
       {
@@ -802,7 +802,7 @@ const legalExtraSections: Record<LegalPageType, Record<ExtraLegalLanguage, Legal
         title: "Subskrypcje i płatności",
         paragraphs: [
           "Email może być używany do konta, subskrypcji, wsparcia, powiadomień serwisowych i ważnych wiadomości dotyczących Timviz.",
-          "Status płatności subskrypcji może pochodzić z Apple In-App Purchase dla iOS albo z Monobank dla płatności na stronie. Timviz nie przechowuje pełnych numerów kart."
+          "Status płatności subskrypcji może pochodzić ze sklepów aplikacji iOS i Android albo z Monobank dla płatności na stronie. Timviz nie przechowuje pełnych numerów kart."
         ]
       },
       {
@@ -845,7 +845,7 @@ const legalExtraSections: Record<LegalPageType, Record<ExtraLegalLanguage, Legal
         title: "Předplatné a platby",
         paragraphs: [
           "Email může být použit pro účet, předplatné, podporu, servisní oznámení a důležité zprávy o Timviz.",
-          "Stav platby předplatného může poskytovat Apple In-App Purchase pro iOS nebo Monobank pro platby na webu. Timviz neukládá úplná čísla platebních karet."
+          "Stav platby předplatného mohou poskytovat obchody s aplikacemi pro iOS a Android nebo Monobank pro platby na webu. Timviz neukládá úplná čísla platebních karet."
         ]
       },
       {
@@ -888,7 +888,7 @@ const legalExtraSections: Record<LegalPageType, Record<ExtraLegalLanguage, Legal
         title: "Suscripciones y pagos",
         paragraphs: [
           "El email puede usarse para la cuenta, suscripción, soporte, notificaciones de servicio y mensajes importantes de Timviz.",
-          "El estado de pago de la suscripción puede venir de Apple In-App Purchase para iOS o de Monobank para pagos en el sitio. Timviz no almacena números completos de tarjetas."
+          "El estado de pago de la suscripción puede venir de las tiendas de apps para iOS y Android o de Monobank para pagos en el sitio. Timviz no almacena números completos de tarjetas."
         ]
       },
       {
@@ -931,7 +931,7 @@ const legalExtraSections: Record<LegalPageType, Record<ExtraLegalLanguage, Legal
         title: "Abonnements und Zahlungen",
         paragraphs: [
           "Die E-Mail kann für Konto, Abonnement, Hilfe, Servicemitteilungen und wichtige Timviz Produktnachrichten verwendet werden.",
-          "Der Zahlungsstatus eines Abonnements kann von Apple In-App Purchase für iOS oder von Monobank für Website-Zahlungen kommen. Timviz speichert keine vollständigen Kartennummern."
+          "Der Zahlungsstatus eines Abonnements kann von den App Stores für iOS und Android oder von Monobank für Website-Zahlungen kommen. Timviz speichert keine vollständigen Kartennummern."
         ]
       },
       {
@@ -989,7 +989,7 @@ const legalExtraSections: Record<LegalPageType, Record<ExtraLegalLanguage, Legal
       {
         title: "Abonnements et services tiers",
         paragraphs: [
-          "Sur iOS, les abonnements Timviz sont achetés via Apple In-App Purchase. Sur le site, les paiements d’abonnement peuvent être traités via Monobank.",
+          "Dans les applications mobiles Timviz, les abonnements sont achetés via Apple App Store ou Google Play. Sur le site, les paiements d’abonnement peuvent être traités via Monobank.",
           "Timviz fournit des outils logiciels pour la réservation et la gestion d’entreprise. Timviz ne vend pas de services tiers, n’agit pas comme marketplace et ne traite pas les paiements entre clients et prestataires.",
           "Les utilisateurs sont responsables de leurs propres réservations, services, prix, prestations et relations avec les clients. Nom légal de l’entreprise : [LEGAL_BUSINESS_NAME]. Assistance : adm@timviz.com."
         ]
@@ -1041,7 +1041,7 @@ const legalExtraSections: Record<LegalPageType, Record<ExtraLegalLanguage, Legal
       {
         title: "Subskrypcje i usługi zewnętrzne",
         paragraphs: [
-          "Na iOS subskrypcje Timviz są kupowane przez Apple In-App Purchase. Na stronie płatności za subskrypcję mogą być obsługiwane przez Monobank.",
+          "W aplikacjach mobilnych Timviz subskrypcje są kupowane przez Apple App Store lub Google Play. Na stronie płatności za subskrypcję mogą być obsługiwane przez Monobank.",
           "Timviz udostępnia narzędzia programowe do rezerwacji i zarządzania firmą. Timviz nie sprzedaje usług zewnętrznych, nie jest marketplace i nie obsługuje płatności między klientami a usługodawcami.",
           "Użytkownicy odpowiadają za własne rezerwacje, usługi, ceny, wykonanie i relacje z klientami. Nazwa prawna firmy: [LEGAL_BUSINESS_NAME]. Pomoc: adm@timviz.com."
         ]
@@ -1093,7 +1093,7 @@ const legalExtraSections: Record<LegalPageType, Record<ExtraLegalLanguage, Legal
       {
         title: "Předplatné a služby třetích stran",
         paragraphs: [
-          "Na iOS se předplatné Timviz kupuje přes Apple In-App Purchase. Na webu mohou být platby za předplatné zpracovány přes Monobank.",
+          "V mobilních aplikacích Timviz se předplatné kupuje přes Apple App Store nebo Google Play. Na webu mohou být platby za předplatné zpracovány přes Monobank.",
           "Timviz poskytuje softwarové nástroje pro rezervace a správu firmy. Timviz neprodává služby třetích stran, nepůsobí jako marketplace a nezpracovává platby mezi klienty a poskytovateli služeb.",
           "Uživatelé odpovídají za své rezervace, služby, ceny, poskytování služeb a vztahy s klienty. Právní název firmy: [LEGAL_BUSINESS_NAME]. Podpora: adm@timviz.com."
         ]
@@ -1145,7 +1145,7 @@ const legalExtraSections: Record<LegalPageType, Record<ExtraLegalLanguage, Legal
       {
         title: "Suscripciones y servicios de terceros",
         paragraphs: [
-          "En iOS, las suscripciones Timviz se compran mediante Apple In-App Purchase. En el sitio, los pagos de suscripción pueden procesarse mediante Monobank.",
+          "En las apps móviles de Timviz, las suscripciones se compran mediante Apple App Store o Google Play. En el sitio, los pagos de suscripción pueden procesarse mediante Monobank.",
           "Timviz proporciona herramientas de software para reservas y gestión empresarial. Timviz no vende servicios de terceros, no actúa como marketplace y no procesa pagos entre clientes y proveedores.",
           "Los usuarios son responsables de sus propias reservas, servicios, precios, prestación y relación con clientes. Nombre legal de la empresa: [LEGAL_BUSINESS_NAME]. Soporte: adm@timviz.com."
         ]
@@ -1197,7 +1197,7 @@ const legalExtraSections: Record<LegalPageType, Record<ExtraLegalLanguage, Legal
       {
         title: "Abonnements und Drittleistungen",
         paragraphs: [
-          "Auf iOS werden Timviz Abonnements über Apple In-App Purchase gekauft. Auf der Website können Abonnementzahlungen über Monobank verarbeitet werden.",
+          "In den mobilen Timviz Apps werden Abonnements über Apple App Store oder Google Play gekauft. Auf der Website können Abonnementzahlungen über Monobank verarbeitet werden.",
           "Timviz stellt Softwarewerkzeuge für Buchungen und Unternehmensverwaltung bereit. Timviz verkauft keine Drittleistungen, ist kein Marketplace und verarbeitet keine Zahlungen zwischen Kunden und Dienstleistern.",
           "Nutzer sind für ihre eigenen Buchungen, Dienstleistungen, Preise, Leistungserbringung und Kundenbeziehungen verantwortlich. Rechtlicher Firmenname: [LEGAL_BUSINESS_NAME]. Hilfe: adm@timviz.com."
         ]
@@ -1221,10 +1221,10 @@ const legalExtraSections: Record<LegalPageType, Record<ExtraLegalLanguage, Legal
         ]
       },
       {
-        title: "Apple In-App Purchase",
+        title: "Achats intégrés mobiles",
         paragraphs: [
-          "Dans l’application iOS, les abonnements PRO sont achetés via Apple In-App Purchase. Le paiement est débité de l’identifiant Apple de l’utilisateur.",
-          "L’abonnement se renouvelle automatiquement sauf s’il est annulé au moins 24 heures avant la fin de la période en cours. Les utilisateurs peuvent le gérer ou l’annuler dans les réglages Apple ID."
+          "Dans les applications iOS et Android, les abonnements PRO sont achetés via Apple App Store ou Google Play. Le paiement est débité via le compte de la boutique d’applications concernée.",
+          "L’abonnement se renouvelle automatiquement sauf s’il est annulé au moins 24 heures avant la fin de la période en cours. Les utilisateurs peuvent le gérer ou l’annuler dans les réglages de la boutique d’applications concernée."
         ]
       },
       {
@@ -1239,7 +1239,7 @@ const legalExtraSections: Record<LegalPageType, Record<ExtraLegalLanguage, Legal
         title: "Remboursements et expiration",
         paragraphs: [
           "Après la fin d’une période payée ou d’un essai, les fonctions payantes peuvent être limitées au niveau Free.",
-          "Apple traite les remboursements des achats App Store. Les questions sur les paiements du site sont examinées par l’assistance Timviz."
+          "La boutique d’applications concernée traite les remboursements des achats App Store ou Google Play. Les questions sur les paiements du site sont examinées par l’assistance Timviz."
         ]
       }
     ],
@@ -1252,10 +1252,10 @@ const legalExtraSections: Record<LegalPageType, Record<ExtraLegalLanguage, Legal
         ]
       },
       {
-        title: "Apple In-App Purchase",
+        title: "Zakupy w aplikacji mobilnej",
         paragraphs: [
-          "W aplikacji iOS subskrypcje PRO są kupowane przez Apple In-App Purchase. Płatność jest pobierana z Apple ID użytkownika.",
-          "Subskrypcja odnawia się automatycznie, jeśli nie zostanie anulowana co najmniej 24 godziny przed końcem bieżącego okresu. Można nią zarządzać lub anulować w ustawieniach Apple ID."
+          "W aplikacjach iOS i Android subskrypcje PRO są kupowane przez Apple App Store lub Google Play. Płatność jest pobierana przez konto w odpowiednim sklepie z aplikacjami.",
+          "Subskrypcja odnawia się automatycznie, jeśli nie zostanie anulowana co najmniej 24 godziny przed końcem bieżącego okresu. Można nią zarządzać lub anulować w ustawieniach odpowiedniego sklepu z aplikacjami."
         ]
       },
       {
@@ -1270,7 +1270,7 @@ const legalExtraSections: Record<LegalPageType, Record<ExtraLegalLanguage, Legal
         title: "Zwroty i wygaśnięcie",
         paragraphs: [
           "Po zakończeniu opłaconego okresu lub okresu próbnego funkcje płatne mogą zostać ograniczone do Free.",
-          "Zwroty zakupów w App Store obsługuje Apple. Pytania dotyczące płatności na stronie rozpatruje pomoc Timviz."
+          "Zwroty zakupów w App Store lub Google Play obsługuje odpowiedni sklep z aplikacjami. Pytania dotyczące płatności na stronie rozpatruje pomoc Timviz."
         ]
       }
     ],
@@ -1283,10 +1283,10 @@ const legalExtraSections: Record<LegalPageType, Record<ExtraLegalLanguage, Legal
         ]
       },
       {
-        title: "Apple In-App Purchase",
+        title: "Nákupy v mobilní aplikaci",
         paragraphs: [
-          "V aplikaci iOS se předplatné PRO kupuje přes Apple In-App Purchase. Platba je stržena z Apple ID uživatele.",
-          "Předplatné se automaticky obnovuje, pokud není zrušeno alespoň 24 hodin před koncem aktuálního období. Uživatelé ho mohou spravovat nebo zrušit v nastavení Apple ID."
+          "V aplikacích iOS a Android se předplatné PRO kupuje přes Apple App Store nebo Google Play. Platba je stržena přes účet v příslušném obchodě s aplikacemi.",
+          "Předplatné se automaticky obnovuje, pokud není zrušeno alespoň 24 hodin před koncem aktuálního období. Uživatelé ho mohou spravovat nebo zrušit v nastavení příslušného obchodu s aplikacemi."
         ]
       },
       {
@@ -1301,7 +1301,7 @@ const legalExtraSections: Record<LegalPageType, Record<ExtraLegalLanguage, Legal
         title: "Vrácení peněz a vypršení",
         paragraphs: [
           "Po skončení placeného období nebo zkušebního přístupu mohou být placené funkce omezeny zpět na Free.",
-          "Vrácení peněz za nákupy v App Store řeší Apple. Otázky k platbám na webu posuzuje podpora Timviz."
+          "Vrácení peněz za nákupy v App Store nebo Google Play řeší příslušný obchod s aplikacemi. Otázky k platbám na webu posuzuje podpora Timviz."
         ]
       }
     ],
@@ -1314,10 +1314,10 @@ const legalExtraSections: Record<LegalPageType, Record<ExtraLegalLanguage, Legal
         ]
       },
       {
-        title: "Apple In-App Purchase",
+        title: "Compras dentro de la app móvil",
         paragraphs: [
-          "En la aplicación iOS, las suscripciones PRO se compran mediante Apple In-App Purchase. El pago se carga al Apple ID del usuario.",
-          "La suscripción se renueva automáticamente salvo que se cancele al menos 24 horas antes del final del periodo actual. Los usuarios pueden gestionarla o cancelarla en los ajustes de Apple ID."
+          "En las apps de iOS y Android, las suscripciones PRO se compran mediante Apple App Store o Google Play. El pago se carga a través de la cuenta de la tienda de apps correspondiente.",
+          "La suscripción se renueva automáticamente salvo que se cancele al menos 24 horas antes del final del periodo actual. Los usuarios pueden gestionarla o cancelarla en los ajustes de la tienda de apps correspondiente."
         ]
       },
       {
@@ -1332,7 +1332,7 @@ const legalExtraSections: Record<LegalPageType, Record<ExtraLegalLanguage, Legal
         title: "Reembolsos y vencimiento",
         paragraphs: [
           "Después de finalizar un periodo pagado o una prueba, las funciones de pago pueden limitarse de nuevo a Free.",
-          "Apple gestiona los reembolsos de compras en App Store. Las preguntas sobre pagos del sitio las revisa el soporte de Timviz."
+          "La tienda de apps correspondiente gestiona los reembolsos de compras en App Store o Google Play. Las preguntas sobre pagos del sitio las revisa el soporte de Timviz."
         ]
       }
     ],
@@ -1345,10 +1345,10 @@ const legalExtraSections: Record<LegalPageType, Record<ExtraLegalLanguage, Legal
         ]
       },
       {
-        title: "Apple In-App Purchase",
+        title: "Käufe in der mobilen App",
         paragraphs: [
-          "In der iOS-App werden PRO-Abonnements über Apple In-App Purchase gekauft. Die Zahlung wird dem Apple ID Konto des Nutzers belastet.",
-          "Das Abonnement verlängert sich automatisch, sofern es nicht mindestens 24 Stunden vor Ende des aktuellen Zeitraums gekündigt wird. Nutzer können es in den Apple ID Einstellungen verwalten oder kündigen."
+          "In den iOS- und Android-Apps werden PRO-Abonnements über Apple App Store oder Google Play gekauft. Die Zahlung wird über das Konto im jeweiligen App Store belastet.",
+          "Das Abonnement verlängert sich automatisch, sofern es nicht mindestens 24 Stunden vor Ende des aktuellen Zeitraums gekündigt wird. Nutzer können es in den Einstellungen des jeweiligen App Stores verwalten oder kündigen."
         ]
       },
       {
@@ -1363,7 +1363,7 @@ const legalExtraSections: Record<LegalPageType, Record<ExtraLegalLanguage, Legal
         title: "Rückerstattungen und Ablauf",
         paragraphs: [
           "Nach Ende eines bezahlten Zeitraums oder einer Testphase können kostenpflichtige Funktionen auf Free beschränkt werden.",
-          "Apple bearbeitet Rückerstattungen für App Store Käufe. Fragen zu Website-Zahlungen prüft die Timviz Hilfe."
+          "Der jeweilige App Store bearbeitet Rückerstattungen für App Store oder Google Play Käufe. Fragen zu Website-Zahlungen prüft die Timviz Hilfe."
         ]
       }
     ]
@@ -1374,7 +1374,7 @@ const legalExtraSections: Record<LegalPageType, Record<ExtraLegalLanguage, Legal
         title: "Abonnement logiciel",
         paragraphs: [
           "Les paiements Timviz concernent uniquement l’accès au logiciel Timviz et aux fonctions Premium de la plateforme.",
-          "Apple traite les remboursements des achats App Store. Les paiements sur le site peuvent être traités via Monobank et ne servent pas à payer les services de spécialistes, salons ou clients."
+          "La boutique d’applications concernée traite les remboursements des achats App Store ou Google Play. Les paiements sur le site peuvent être traités via Monobank et ne servent pas à payer les services de spécialistes, salons ou clients."
         ]
       },
       {
@@ -1398,7 +1398,7 @@ const legalExtraSections: Record<LegalPageType, Record<ExtraLegalLanguage, Legal
         title: "Subskrypcja oprogramowania",
         paragraphs: [
           "Płatności Timviz dotyczą wyłącznie dostępu do oprogramowania Timviz i funkcji Premium platformy.",
-          "Zwroty zakupów w App Store obsługuje Apple. Płatności na stronie mogą być obsługiwane przez Monobank i nie służą do opłacania usług specjalistów, salonów ani klientów."
+          "Zwroty zakupów w App Store lub Google Play obsługuje odpowiedni sklep z aplikacjami. Płatności na stronie mogą być obsługiwane przez Monobank i nie służą do opłacania usług specjalistów, salonów ani klientów."
         ]
       },
       {
@@ -1422,7 +1422,7 @@ const legalExtraSections: Record<LegalPageType, Record<ExtraLegalLanguage, Legal
         title: "Softwarové předplatné",
         paragraphs: [
           "Platby Timviz se týkají pouze přístupu k softwaru Timviz a Premium funkcím platformy.",
-          "Vrácení peněz za nákupy v App Store řeší Apple. Platby na webu mohou být zpracovány přes Monobank a nepoužívají se k platbě za služby specialistů, salonů nebo klientů."
+          "Vrácení peněz za nákupy v App Store nebo Google Play řeší příslušný obchod s aplikacemi. Platby na webu mohou být zpracovány přes Monobank a nepoužívají se k platbě za služby specialistů, salonů nebo klientů."
         ]
       },
       {
@@ -1446,7 +1446,7 @@ const legalExtraSections: Record<LegalPageType, Record<ExtraLegalLanguage, Legal
         title: "Suscripción de software",
         paragraphs: [
           "Los pagos de Timviz corresponden únicamente al acceso al software Timviz y a las funciones Premium de la plataforma.",
-          "Apple gestiona los reembolsos de compras en App Store. Los pagos del sitio pueden procesarse mediante Monobank y no se usan para pagar servicios de profesionales, salones o clientes."
+          "La tienda de apps correspondiente gestiona los reembolsos de compras en App Store o Google Play. Los pagos del sitio pueden procesarse mediante Monobank y no se usan para pagar servicios de profesionales, salones o clientes."
         ]
       },
       {
@@ -1470,7 +1470,7 @@ const legalExtraSections: Record<LegalPageType, Record<ExtraLegalLanguage, Legal
         title: "Software-Abonnement",
         paragraphs: [
           "Timviz Zahlungen beziehen sich ausschließlich auf den Zugriff auf die Timviz Software und Premium-Funktionen der Plattform.",
-          "Apple bearbeitet Rückerstattungen für App Store Käufe. Website-Zahlungen können über Monobank verarbeitet werden und werden nicht zur Bezahlung von Dienstleistungen von Spezialisten, Salons oder Kunden verwendet."
+          "Der jeweilige App Store bearbeitet Rückerstattungen für App Store oder Google Play Käufe. Website-Zahlungen können über Monobank verarbeitet werden und werden nicht zur Bezahlung von Dienstleistungen von Spezialisten, Salons oder Kunden verwendet."
         ]
       },
       {
@@ -1493,28 +1493,28 @@ const legalExtraSections: Record<LegalPageType, Record<ExtraLegalLanguage, Legal
   support: {
     fr: [
       { title: "Comment contacter l’assistance", paragraphs: ["Email : adm@timviz.com", "Délai de réponse habituel : 1 à 2 jours ouvrés."] },
-      { title: "Gestion de l’abonnement", paragraphs: ["Pour les abonnements Apple, gérez ou annulez l’abonnement dans les réglages Apple ID.", "Pour les questions de paiement sur le site, contactez l’assistance Timviz."] },
-      { title: "Suppression de compte", paragraphs: ["La suppression peut être lancée dans l’application iOS depuis Compte → Supprimer le compte.", "Vous pouvez aussi contacter adm@timviz.com si vous ne pouvez pas accéder à votre compte."] }
+      { title: "Gestion de l’abonnement", paragraphs: ["Pour les abonnements App Store ou Google Play, gérez ou annulez l’abonnement dans les réglages de la boutique d’applications concernée.", "Pour les questions de paiement sur le site, contactez l’assistance Timviz."] },
+      { title: "Suppression de compte", paragraphs: ["La suppression peut être lancée dans l’application mobile depuis Compte → Supprimer le compte.", "Vous pouvez aussi contacter adm@timviz.com si vous ne pouvez pas accéder à votre compte."] }
     ],
     pl: [
       { title: "Jak skontaktować się z pomocą", paragraphs: ["Email: adm@timviz.com", "Typowy czas odpowiedzi: 1–2 dni robocze."] },
-      { title: "Zarządzanie subskrypcją", paragraphs: ["Subskrypcjami Apple należy zarządzać lub je anulować w ustawieniach Apple ID.", "W sprawach płatności na stronie skontaktuj się z pomocą Timviz."] },
-      { title: "Usunięcie konta", paragraphs: ["Usunięcie można rozpocząć w aplikacji iOS z menu Konto → Usuń konto.", "Możesz też napisać na adm@timviz.com, jeśli nie masz dostępu do konta."] }
+      { title: "Zarządzanie subskrypcją", paragraphs: ["Subskrypcjami z App Store lub Google Play należy zarządzać lub je anulować w ustawieniach odpowiedniego sklepu z aplikacjami.", "W sprawach płatności na stronie skontaktuj się z pomocą Timviz."] },
+      { title: "Usunięcie konta", paragraphs: ["Usunięcie można rozpocząć w aplikacji mobilnej z menu Konto → Usuń konto.", "Możesz też napisać na adm@timviz.com, jeśli nie masz dostępu do konta."] }
     ],
     cs: [
       { title: "Jak kontaktovat podporu", paragraphs: ["Email: adm@timviz.com", "Obvyklá doba odpovědi: 1–2 pracovní dny."] },
-      { title: "Správa předplatného", paragraphs: ["Předplatné Apple spravujte nebo rušte v nastavení Apple ID.", "S dotazy k platbám na webu kontaktujte podporu Timviz."] },
-      { title: "Smazání účtu", paragraphs: ["Smazání lze zahájit v aplikaci iOS v menu Účet → Smazat účet.", "Pokud se k účtu nemůžete dostat, můžete také kontaktovat adm@timviz.com."] }
+      { title: "Správa předplatného", paragraphs: ["Předplatné z App Store nebo Google Play spravujte nebo rušte v nastavení příslušného obchodu s aplikacemi.", "S dotazy k platbám na webu kontaktujte podporu Timviz."] },
+      { title: "Smazání účtu", paragraphs: ["Smazání lze zahájit v mobilní aplikaci v menu Účet → Smazat účet.", "Pokud se k účtu nemůžete dostat, můžete také kontaktovat adm@timviz.com."] }
     ],
     es: [
       { title: "Cómo contactar con soporte", paragraphs: ["Email: adm@timviz.com", "Tiempo habitual de respuesta: 1–2 días laborables."] },
-      { title: "Gestión de la suscripción", paragraphs: ["Para suscripciones de Apple, gestiona o cancela la suscripción en los ajustes de Apple ID.", "Para preguntas sobre pagos del sitio, contacta con soporte de Timviz."] },
-      { title: "Eliminación de cuenta", paragraphs: ["La eliminación puede iniciarse en la aplicación iOS desde Cuenta → Eliminar cuenta.", "También puedes contactar con adm@timviz.com si no puedes acceder a tu cuenta."] }
+      { title: "Gestión de la suscripción", paragraphs: ["Para suscripciones de App Store o Google Play, gestiona o cancela la suscripción en los ajustes de la tienda de apps correspondiente.", "Para preguntas sobre pagos del sitio, contacta con soporte de Timviz."] },
+      { title: "Eliminación de cuenta", paragraphs: ["La eliminación puede iniciarse en la app móvil desde Cuenta → Eliminar cuenta.", "También puedes contactar con adm@timviz.com si no puedes acceder a tu cuenta."] }
     ],
     de: [
       { title: "Hilfe kontaktieren", paragraphs: ["E-Mail: adm@timviz.com", "Übliche Antwortzeit: 1–2 Werktage."] },
-      { title: "Abonnementverwaltung", paragraphs: ["Apple Abonnements verwalten oder kündigen Sie in den Apple ID Einstellungen.", "Bei Fragen zu Website-Zahlungen kontaktieren Sie die Timviz Hilfe."] },
-      { title: "Konto löschen", paragraphs: ["Die Löschung kann in der iOS-App über Konto → Konto löschen gestartet werden.", "Sie können auch adm@timviz.com kontaktieren, wenn Sie keinen Zugriff auf Ihr Konto haben."] }
+      { title: "Abonnementverwaltung", paragraphs: ["App Store oder Google Play Abonnements verwalten oder kündigen Sie in den Einstellungen des jeweiligen App Stores.", "Bei Fragen zu Website-Zahlungen kontaktieren Sie die Timviz Hilfe."] },
+      { title: "Konto löschen", paragraphs: ["Die Löschung kann in der mobilen App über Konto → Konto löschen gestartet werden.", "Sie können auch adm@timviz.com kontaktieren, wenn Sie keinen Zugriff auf Ihr Konto haben."] }
     ]
   },
   "account-deletion": {

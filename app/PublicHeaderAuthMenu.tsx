@@ -216,7 +216,7 @@ export default function PublicHeaderAuthMenu({ language }: PublicHeaderAuthMenuP
     .join("") || "U";
 
   return (
-    <details className="public-menu public-entry-menu">
+    <details className="public-menu public-entry-menu" suppressHydrationWarning>
       <summary className="public-login-entry" aria-label={isAuthenticated ? t.openMenu : t.login} title={isAuthenticated ? t.profile : t.login}>
         {isAuthenticated ? (
           <span className="public-login-auth">

@@ -4,7 +4,7 @@ import { withEnglishFallback, type SiteLanguage } from "./site-language";
 export type TimvizPlan = "free" | "premium";
 export type PremiumStatus = "inactive" | "trialing" | "active" | "past_due" | "canceled";
 export type PremiumBilling = "monthly" | "yearly";
-export type EntitlementSource = "apple" | "monobank" | "manual" | "promo" | "free" | "mixed";
+export type EntitlementSource = "apple" | "google" | "monobank" | "manual" | "promo" | "free" | "mixed";
 
 export type UserAccess = {
   plan: "free" | "pro";
@@ -326,6 +326,7 @@ export async function updateProfessionalPremiumFromAppStore(input: {
   productId?: string | null;
   transactionId?: string | null;
   originalTransactionId?: string | null;
+  source?: Extract<EntitlementSource, "apple" | "google">;
 }) {
   if (!isSupabaseConfigured()) {
     console.info("[app-store] Supabase is not configured; skipping premium update.", {
@@ -341,6 +342,7 @@ export async function updateProfessionalPremiumFromAppStore(input: {
     return { updated: false, reason: "supabase_unavailable" as const };
   }
   const admin = supabase;
+  const storeSource = input.source === "google" ? "google" : "apple";
 
   const patch: Record<string, string | null> = {
     plan: input.status === "inactive" ? "free" : "premium",
@@ -362,14 +364,14 @@ export async function updateProfessionalPremiumFromAppStore(input: {
       userId: professionalId,
       planCode: getPremiumBillingFromAppStoreProductId(input.productId) === "yearly" ? "pro_yearly" : "pro_monthly",
       status,
-      source: "apple",
+      source: storeSource,
       activeUntil: patch.premium_until || input.premiumUntil || null,
       trialUntil: status === "trial" ? patch.premium_until || input.premiumUntil || null : null,
       cancelAtPeriodEnd: input.status === "canceled"
     });
 
-    if (input.originalTransactionId || input.transactionId) {
-      const subscriptionId = input.originalTransactionId || input.transactionId || `${professionalId}:${input.productId || "apple"}`;
+    if (storeSource === "apple" && (input.originalTransactionId || input.transactionId)) {
+      const subscriptionId = input.originalTransactionId || input.transactionId || `${professionalId}:${input.productId || storeSource}`;
       const { error } = await admin.from("apple_subscriptions").upsert(
         {
           id: `apple_${subscriptionId}`,

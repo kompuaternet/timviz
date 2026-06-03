@@ -31,6 +31,7 @@ yarn-error.*
 *.pem
 apple-credentials/
 credentials.json
+google-play-service-account.json
 build/
 
 # local env files

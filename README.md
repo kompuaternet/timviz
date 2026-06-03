@@ -213,9 +213,9 @@ npm run db:upload:gdrive
 3. Участие в бизнесе
 4. Базовые услуги бизнеса
 
-## App Store Premium
+## Mobile Store Premium
 
-Мобильная подписка подключается через RevenueCat и синхронизируется с теми же полями Premium, которые использует сайт:
+Мобильная подписка для iOS и Android подключается через RevenueCat и синхронизируется с теми же полями Premium, которые использует сайт:
 
 1. `plan`
 2. `premium_status`
@@ -234,12 +234,13 @@ Env для мобильной сборки:
 
 ```bash
 EXPO_PUBLIC_REVENUECAT_IOS_API_KEY=
+EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY=
 EXPO_PUBLIC_REVENUECAT_ENTITLEMENT_ID=premium
 EXPO_PUBLIC_REVENUECAT_MONTHLY_PRODUCT_ID=timviz_premium_monthly
 EXPO_PUBLIC_REVENUECAT_YEARLY_PRODUCT_ID=timviz_premium_yearly
 ```
 
-Если `EXPO_PUBLIC_REVENUECAT_IOS_API_KEY` не задан, iOS-сборка использует прямой StoreKit fallback через App Store products с теми же product id. Это позволяет тестировать подписку в TestFlight без RevenueCat, пока RevenueCat-проект и server key ещё не подключены.
+Если `EXPO_PUBLIC_REVENUECAT_IOS_API_KEY` или `EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY` не задан, native-сборка использует прямой in-app purchase fallback через products с теми же product id. Это позволяет тестировать подписку в TestFlight/App Store или Google Play internal testing, пока RevenueCat-проект и server key ещё не подключены.
 
 Env для сайта/API на Railway:
 
@@ -262,6 +263,14 @@ Webhook RevenueCat:
 https://timviz.com/api/revenuecat/webhook
 ```
 
+Mobile API для синхронизации покупки из приложения:
+
+```text
+https://timviz.com/api/mobile/pro/subscription/store
+```
+
+Старый путь `/api/mobile/pro/subscription/app-store` оставлен для совместимости, но новые mobile-сборки используют общий store endpoint. RevenueCat webhook и mobile endpoint сохраняют общий Premium-доступ в `user_entitlements`; для iOS source будет `apple`, для Android source будет `google`.
+
 Webhook Monobank для сайта создаётся автоматически при старте checkout через API регулярных платежей:
 
 ```text
@@ -273,4 +282,31 @@ https://timviz.com/api/webhooks/monobank/subscription/status
 
 - [monobank-subscriptions.sql](/Users/Vitaliy/Graviti/Rezervo/supabase/monobank-subscriptions.sql)
 
-Важно: реальные покупки и восстановление подписки работают только в native build, TestFlight или App Store build. В Expo Go RevenueCat работает в preview mode, поэтому там можно проверить экран Premium, но не настоящую оплату App Store.
+Важно: реальные покупки и восстановление подписки работают только в native build, TestFlight/App Store build или Google Play testing/production build. В Expo Go RevenueCat работает в preview mode, поэтому там можно проверить экран Premium, но не настоящую оплату.
+
+## Android release
+
+Android-приложение — тот же Timviz Master native-клиент, что и iOS: общий API `https://timviz.com`, общая Supabase-база, те же Premium-поля, тот же кэш рабочей области, push, Google login, сервисы, клиенты, календарь, сотрудники, настройки и медиа.
+
+Перед первой отправкой в Google Play:
+
+1. Создать приложение в Play Console с package name `com.timviz.master`.
+2. Создать OAuth Android client id для package `com.timviz.master` и SHA-1 сертификата сборки, затем указать его в `GOOGLE_ANDROID_CLIENT_ID` и `EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID`.
+3. Создать Android app в RevenueCat, подключить Google Play products `timviz_premium_monthly` и `timviz_premium_yearly`, затем указать `EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY`.
+4. Добавить RevenueCat server key и webhook secret в Railway: `REVENUECAT_SECRET_API_KEY`, `REVENUECAT_ENTITLEMENT_ID`, `REVENUECAT_WEBHOOK_SECRET`.
+5. Скачать Play Console service account JSON в `apps/mobile/google-play-service-account.json` локально или в CI secret. Этот файл не коммитить.
+
+Команды:
+
+```bash
+cd apps/mobile
+npm run build:android
+npm run submit:android
+```
+
+Для одновременного релиза iOS и Android:
+
+```bash
+cd apps/mobile
+npm run build:all
+```

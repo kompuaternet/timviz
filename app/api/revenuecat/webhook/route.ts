@@ -26,6 +26,12 @@ function isFuture(value: string | null) {
   return Number.isFinite(time) && time > Date.now();
 }
 
+function normalizeStoreSource(value: unknown): "apple" | "google" {
+  const normalized = String(value || "").trim().toLowerCase();
+  if (normalized.includes("play") || normalized.includes("google") || normalized === "android") return "google";
+  return "apple";
+}
+
 function getStatus(event: Record<string, unknown>, premiumUntil: string | null): PremiumStatus {
   const type = getString(event, ["type", "event_type"]).toUpperCase();
   const periodType = getString(event, ["period_type", "periodType"]).toLowerCase();
@@ -75,6 +81,7 @@ export async function POST(request: Request) {
       productId,
       transactionId: getString(event, ["transaction_id", "transactionId"]) || null,
       originalTransactionId: getString(event, ["original_transaction_id", "originalTransactionId"]) || null,
+      source: normalizeStoreSource(getString(event, ["store", "storeType", "platform"])),
     });
 
     return NextResponse.json({ ok: true, status, premiumUntil, productId, updateResult });
