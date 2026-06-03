@@ -8091,6 +8091,15 @@ export default function App() {
     }
   }
 
+  function scrollAuthFieldIntoView(y: number) {
+    const scroll = () => authScrollRef.current?.scrollTo({ y, animated: true });
+    if (Platform.OS === "android") {
+      setTimeout(scroll, 140);
+      return;
+    }
+    scroll();
+  }
+
   function openForgotPassword() {
     setForgotPasswordEmail(loginForm.email.trim().toLowerCase());
     setForgotPasswordVisible(true);
@@ -9254,7 +9263,7 @@ export default function App() {
                   autoCapitalize="none"
                   placeholder="you@email.com"
                   returnKeyType="next"
-                  onFocus={() => authScrollRef.current?.scrollTo({ y: 330, animated: true })}
+                  onFocus={() => scrollAuthFieldIntoView(330)}
                 />
                 <Field
                   label={t.password}
@@ -9263,7 +9272,7 @@ export default function App() {
                   secureTextEntry
                   returnKeyType="done"
                   onSubmitEditing={signIn}
-                  onFocus={() => authScrollRef.current?.scrollTo({ y: 430, animated: true })}
+                  onFocus={() => scrollAuthFieldIntoView(430)}
                 />
                 <Pressable style={styles.forgotPasswordLink} onPress={openForgotPassword}>
                   <Text style={styles.forgotPasswordLinkText}>{t.forgotPassword}</Text>
@@ -9272,9 +9281,9 @@ export default function App() {
               </View>
             ) : (
               <View style={styles.form}>
-                <Field label={t.firstName} value={registerForm.firstName} onChangeText={(value) => setRegisterForm((current) => ({ ...current, firstName: value }))} returnKeyType="next" onFocus={() => authScrollRef.current?.scrollTo({ y: 300, animated: true })} />
-                <Field label={t.email} value={registerForm.email} onChangeText={(value) => setRegisterForm((current) => ({ ...current, email: value }))} keyboardType="email-address" autoCapitalize="none" placeholder="you@email.com" returnKeyType="next" onFocus={() => authScrollRef.current?.scrollTo({ y: 360, animated: true })} />
-                <Field label={t.companyName} value={registerForm.companyName} onChangeText={(value) => setRegisterForm((current) => ({ ...current, companyName: value }))} returnKeyType="next" onFocus={() => authScrollRef.current?.scrollTo({ y: 430, animated: true })} />
+                <Field label={t.firstName} value={registerForm.firstName} onChangeText={(value) => setRegisterForm((current) => ({ ...current, firstName: value }))} returnKeyType="next" onFocus={() => scrollAuthFieldIntoView(300)} />
+                <Field label={t.email} value={registerForm.email} onChangeText={(value) => setRegisterForm((current) => ({ ...current, email: value }))} keyboardType="email-address" autoCapitalize="none" placeholder="you@email.com" returnKeyType="next" onFocus={() => scrollAuthFieldIntoView(360)} />
+                <Field label={t.companyName} value={registerForm.companyName} onChangeText={(value) => setRegisterForm((current) => ({ ...current, companyName: value }))} returnKeyType="next" onFocus={() => scrollAuthFieldIntoView(430)} />
                 <RegisterPhoneField
                   label={t.phone}
                   selectedCountry={registerPhoneCountry}
@@ -9283,16 +9292,16 @@ export default function App() {
                   value={getLocalPhoneNumber(registerForm.phone, registerPhoneCountry.callingCode)}
                   onChangeText={(value) => setRegisterForm((current) => ({ ...current, phone: getLocalPhoneNumber(value, registerPhoneCountry.callingCode) }))}
                   onOpenPicker={() => setPhoneCountryPickerOpen(true)}
-                  onFocus={() => authScrollRef.current?.scrollTo({ y: 500, animated: true })}
+                  onFocus={() => scrollAuthFieldIntoView(500)}
                 />
-                <Field label={t.password} hint={t.passwordHint} value={registerForm.password} onChangeText={(value) => setRegisterForm((current) => ({ ...current, password: value }))} secureTextEntry returnKeyType="done" onSubmitEditing={register} onFocus={() => authScrollRef.current?.scrollTo({ y: 590, animated: true })} />
+                <Field label={t.password} hint={t.passwordHint} value={registerForm.password} onChangeText={(value) => setRegisterForm((current) => ({ ...current, password: value }))} secureTextEntry returnKeyType="done" onSubmitEditing={register} onFocus={() => scrollAuthFieldIntoView(590)} />
                 <Pressable style={styles.authDetailsToggle} onPress={() => setRegisterDetailsOpen((current) => !current)}>
                   <Text style={styles.authDetailsToggleText}>{t.optionalDetails}</Text>
                   <Ionicons name={registerDetailsOpen ? "chevron-up" : "chevron-down"} size={18} color="#6D4AFF" />
                 </Pressable>
                 {registerDetailsOpen ? (
                   <View style={styles.authOptionalBlock}>
-                    <Field label={t.lastName} value={registerForm.lastName} onChangeText={(value) => setRegisterForm((current) => ({ ...current, lastName: value }))} returnKeyType="done" onFocus={() => authScrollRef.current?.scrollTo({ y: 690, animated: true })} />
+                    <Field label={t.lastName} value={registerForm.lastName} onChangeText={(value) => setRegisterForm((current) => ({ ...current, lastName: value }))} returnKeyType="done" onFocus={() => scrollAuthFieldIntoView(690)} />
                   </View>
                 ) : null}
               </View>
@@ -16335,6 +16344,7 @@ function RegisterPhoneField({
           value={value}
           onChangeText={onChangeText}
           onFocus={onFocus}
+          showSoftInputOnFocus
           keyboardType="phone-pad"
           autoCorrect={false}
           placeholder="00 000 00 00"
@@ -16467,7 +16477,13 @@ function Field({
         <Text style={styles.label}>{label}</Text>
         {hint ? <Text style={styles.hint}>{hint}</Text> : null}
       </View>
-      <TextInput {...props} autoCorrect={false} placeholderTextColor="#94A3B8" style={[styles.input, props.editable === false && styles.inputDisabled]} />
+      <TextInput
+        {...props}
+        autoCorrect={false}
+        showSoftInputOnFocus={props.showSoftInputOnFocus ?? true}
+        placeholderTextColor="#94A3B8"
+        style={[styles.input, props.editable === false && styles.inputDisabled]}
+      />
     </View>
   );
 }
