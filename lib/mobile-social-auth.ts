@@ -217,11 +217,12 @@ export async function getOrCreateMobileSocialProfessional(input: {
   if (existing?.id && existing.accountStatus === "active") {
     const nextFirstName = existing.firstName || input.profile.givenName || input.profile.fullName || "";
     const nextLastName = existing.lastName || input.profile.familyName || "";
-    if (input.profile.avatarUrl || nextFirstName !== existing.firstName || nextLastName !== existing.lastName) {
+    const nextAvatarUrl = existing.avatarUrl || input.profile.avatarUrl || "";
+    if (nextAvatarUrl !== (existing.avatarUrl || "") || nextFirstName !== existing.firstName || nextLastName !== existing.lastName) {
       await updateProfessionalIdentity(existing.id, {
         firstName: nextFirstName,
         lastName: nextLastName,
-        avatarUrl: input.profile.avatarUrl || existing.avatarUrl || ""
+        avatarUrl: nextAvatarUrl
       }).catch(() => undefined);
     }
     return existing.id;
@@ -231,11 +232,12 @@ export async function getOrCreateMobileSocialProfessional(input: {
     await activateProfessionalEmailByEmail(input.profile.email);
     const nextFirstName = existing.firstName || input.profile.givenName || input.profile.fullName || "";
     const nextLastName = existing.lastName || input.profile.familyName || "";
-    if (input.profile.avatarUrl || nextFirstName !== existing.firstName || nextLastName !== existing.lastName) {
+    const nextAvatarUrl = existing.avatarUrl || input.profile.avatarUrl || "";
+    if (nextAvatarUrl !== (existing.avatarUrl || "") || nextFirstName !== existing.firstName || nextLastName !== existing.lastName) {
       await updateProfessionalIdentity(existing.id, {
         firstName: nextFirstName,
         lastName: nextLastName,
-        avatarUrl: input.profile.avatarUrl || existing.avatarUrl || ""
+        avatarUrl: nextAvatarUrl
       }).catch(() => undefined);
     }
     return existing.id;

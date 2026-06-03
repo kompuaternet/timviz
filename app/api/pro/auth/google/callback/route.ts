@@ -236,7 +236,7 @@ export async function GET(request: Request) {
         : professional;
 
     if (activeProfessional && activeProfessional.accountStatus === "active") {
-      if (profile.avatarUrl) {
+      if (profile.avatarUrl && !activeProfessional.avatarUrl) {
         await updateProfessionalAvatar(activeProfessional.id, profile.avatarUrl).catch(() => undefined);
       }
 
