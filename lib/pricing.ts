@@ -43,6 +43,16 @@ export type PricingCopy = {
   loginRequired: string;
   startingCheckout: string;
   billingError: string;
+  checkoutDialog: {
+    title: string;
+    description: string;
+    loading: string;
+    openNewTab: string;
+    close: string;
+    completedTitle: string;
+    completedText: string;
+    goToSettings: string;
+  };
   buttons: Record<PricingPlanKey, string>;
   plans: Record<
     PricingPlanKey,
@@ -83,6 +93,16 @@ export const pricingCopy: Record<SiteLanguage, PricingCopy> = withEnglishFallbac
     loginRequired: "Сначала войдите или создайте аккаунт, чтобы запустить пробный период.",
     startingCheckout: "Готовим защищённую оплату...",
     billingError: "Не удалось открыть оплату. Попробуйте ещё раз или напишите в поддержку.",
+    checkoutDialog: {
+      title: "Оплата через monobank",
+      description: "Завершите подписку в защищенном окне оплаты. Язык сайта сохранен для подсказок Timviz.",
+      loading: "Открываем оплату...",
+      openNewTab: "Открыть оплату в новой вкладке",
+      close: "Закрыть оплату",
+      completedTitle: "Оплата завершена",
+      completedText: "Возвращаемся к вашему Premium-статусу. Если доступ не обновился сразу, подождите несколько секунд.",
+      goToSettings: "Перейти в настройки"
+    },
     buttons: {
       free: "Начать бесплатно",
       monthly: "Подключить Monthly",
@@ -209,6 +229,16 @@ export const pricingCopy: Record<SiteLanguage, PricingCopy> = withEnglishFallbac
     loginRequired: "Спочатку увійдіть або створіть акаунт, щоб запустити пробний період.",
     startingCheckout: "Готуємо захищену оплату...",
     billingError: "Не вдалося відкрити оплату. Спробуйте ще раз або напишіть у підтримку.",
+    checkoutDialog: {
+      title: "Оплата через monobank",
+      description: "Завершіть підписку в захищеному вікні оплати. Мову сайту збережено для підказок Timviz.",
+      loading: "Відкриваємо оплату...",
+      openNewTab: "Відкрити оплату в новій вкладці",
+      close: "Закрити оплату",
+      completedTitle: "Оплату завершено",
+      completedText: "Повертаємося до вашого Premium-статусу. Якщо доступ не оновився одразу, зачекайте кілька секунд.",
+      goToSettings: "Перейти в налаштування"
+    },
     buttons: {
       free: "Почати безкоштовно",
       monthly: "Підключити Monthly",
@@ -335,6 +365,16 @@ export const pricingCopy: Record<SiteLanguage, PricingCopy> = withEnglishFallbac
     loginRequired: "Please sign in or create an account first to start your free trial.",
     startingCheckout: "Preparing secure checkout...",
     billingError: "Could not open checkout. Please try again or contact support.",
+    checkoutDialog: {
+      title: "Payment with monobank",
+      description: "Complete your subscription in the secure payment window. Timviz guidance stays in your site language.",
+      loading: "Opening checkout...",
+      openNewTab: "Open checkout in a new tab",
+      close: "Close checkout",
+      completedTitle: "Payment completed",
+      completedText: "We are returning to your Premium status. If access does not update immediately, wait a few seconds.",
+      goToSettings: "Go to settings"
+    },
     buttons: {
       free: "Start free",
       monthly: "Subscribe monthly",
@@ -463,6 +503,16 @@ Object.assign(pricingCopy, {
     loginRequired: "Connectez-vous ou créez un compte pour démarrer l’essai gratuit.",
     startingCheckout: "Préparation du paiement sécurisé...",
     billingError: "Impossible d’ouvrir le paiement. Réessayez ou contactez le support.",
+    checkoutDialog: {
+      title: "Paiement avec monobank",
+      description: "Terminez l’abonnement dans la fenêtre de paiement sécurisée. Les indications Timviz restent dans la langue du site.",
+      loading: "Ouverture du paiement...",
+      openNewTab: "Ouvrir le paiement dans un nouvel onglet",
+      close: "Fermer le paiement",
+      completedTitle: "Paiement terminé",
+      completedText: "Nous revenons à votre statut Premium. Si l’accès ne se met pas à jour immédiatement, patientez quelques secondes.",
+      goToSettings: "Aller aux paramètres"
+    },
     buttons: { free: "Commencer gratuitement", monthly: "S'abonner au mensuel", yearly: "S'abonner à l'annuel" },
     plans: {
       ...pricingCopy.en.plans,
@@ -500,6 +550,16 @@ Object.assign(pricingCopy, {
     loginRequired: "Najpierw zaloguj się lub utwórz konto, aby rozpocząć okres próbny.",
     startingCheckout: "Przygotowujemy bezpieczną płatność...",
     billingError: "Nie udało się otworzyć płatności. Spróbuj ponownie lub skontaktuj się z pomocą.",
+    checkoutDialog: {
+      title: "Płatność przez monobank",
+      description: "Dokończ subskrypcję w bezpiecznym oknie płatności. Wskazówki Timviz pozostają w języku strony.",
+      loading: "Otwieramy płatność...",
+      openNewTab: "Otwórz płatność w nowej karcie",
+      close: "Zamknij płatność",
+      completedTitle: "Płatność zakończona",
+      completedText: "Wracamy do Twojego statusu Premium. Jeśli dostęp nie odświeży się od razu, poczekaj kilka sekund.",
+      goToSettings: "Przejdź do ustawień"
+    },
     buttons: { free: "Zacznij za darmo", monthly: "Subskrybuj miesięcznie", yearly: "Subskrybuj rocznie" },
     plans: {
       ...pricingCopy.en.plans,
@@ -537,6 +597,16 @@ Object.assign(pricingCopy, {
     loginRequired: "Nejprve se přihlaste nebo vytvořte účet, abyste mohli spustit zkušební období.",
     startingCheckout: "Připravujeme bezpečnou platbu...",
     billingError: "Platbu se nepodařilo otevřít. Zkuste to znovu nebo kontaktujte podporu.",
+    checkoutDialog: {
+      title: "Platba přes monobank",
+      description: "Dokončete předplatné v zabezpečeném platebním okně. Pokyny Timviz zůstanou v jazyce webu.",
+      loading: "Otevíráme platbu...",
+      openNewTab: "Otevřít platbu v nové kartě",
+      close: "Zavřít platbu",
+      completedTitle: "Platba dokončena",
+      completedText: "Vracíme se k vašemu Premium stavu. Pokud se přístup neobnoví hned, počkejte několik sekund.",
+      goToSettings: "Přejít do nastavení"
+    },
     buttons: { free: "Začít zdarma", monthly: "Předplatit měsíčně", yearly: "Předplatit ročně" },
     plans: {
       ...pricingCopy.en.plans,
@@ -574,6 +644,16 @@ Object.assign(pricingCopy, {
     loginRequired: "Primero inicia sesión o crea una cuenta para empezar la prueba gratuita.",
     startingCheckout: "Preparando pago seguro...",
     billingError: "No se pudo abrir el pago. Inténtalo de nuevo o contacta con soporte.",
+    checkoutDialog: {
+      title: "Pago con monobank",
+      description: "Completa la suscripción en la ventana de pago segura. Las indicaciones de Timviz se mantienen en el idioma del sitio.",
+      loading: "Abriendo pago...",
+      openNewTab: "Abrir pago en una nueva pestaña",
+      close: "Cerrar pago",
+      completedTitle: "Pago completado",
+      completedText: "Volvemos a tu estado Premium. Si el acceso no se actualiza al instante, espera unos segundos.",
+      goToSettings: "Ir a ajustes"
+    },
     buttons: { free: "Empezar gratis", monthly: "Suscribirse mensual", yearly: "Suscribirse anual" },
     plans: {
       ...pricingCopy.en.plans,
@@ -611,6 +691,16 @@ Object.assign(pricingCopy, {
     loginRequired: "Bitte melde dich zuerst an oder erstelle ein Konto, um die kostenlose Testphase zu starten.",
     startingCheckout: "Sichere Zahlung wird vorbereitet...",
     billingError: "Die Zahlung konnte nicht geöffnet werden. Bitte versuche es erneut oder kontaktiere den Support.",
+    checkoutDialog: {
+      title: "Zahlung mit monobank",
+      description: "Schließe das Abo im sicheren Zahlungsfenster ab. Timviz-Hinweise bleiben in deiner Seitensprache.",
+      loading: "Zahlung wird geöffnet...",
+      openNewTab: "Zahlung in neuem Tab öffnen",
+      close: "Zahlung schließen",
+      completedTitle: "Zahlung abgeschlossen",
+      completedText: "Wir kehren zu deinem Premium-Status zurück. Falls der Zugang nicht sofort aktualisiert wird, warte einige Sekunden.",
+      goToSettings: "Zu den Einstellungen"
+    },
     buttons: { free: "Kostenlos starten", monthly: "Monatlich abonnieren", yearly: "Jährlich abonnieren" },
     plans: {
       ...pricingCopy.en.plans,

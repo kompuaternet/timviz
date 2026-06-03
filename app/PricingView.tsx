@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import BrandLogo from "./BrandLogo";
 import GlobalLanguageSwitcher from "./GlobalLanguageSwitcher";
 import PublicHeaderAuthMenu from "./PublicHeaderAuthMenu";
@@ -142,8 +142,11 @@ for (const language of Object.keys(publicFooterLabels) as SiteLanguage[]) {
 
 export default function PricingView({ language, copy, user }: PricingViewProps) {
   const footer = footerCopy[language];
+  const checkoutTitleId = useId();
   const [message, setMessage] = useState("");
   const [loadingBilling, setLoadingBilling] = useState<Exclude<PricingPlanKey, "free"> | null>(null);
+  const [checkoutUrl, setCheckoutUrl] = useState("");
+  const [checkoutCompleted, setCheckoutCompleted] = useState(false);
 
   useEffect(() => {
     trackAdsEvent("pricing_view", {
@@ -151,6 +154,17 @@ export default function PricingView({ language, copy, user }: PricingViewProps) 
       signed_in: Boolean(user)
     });
   }, [language, user]);
+
+  useEffect(() => {
+    function handleCheckoutReturn(event: MessageEvent) {
+      if (event.origin !== window.location.origin) return;
+      if ((event.data as { type?: string } | null)?.type !== "timviz:monobank:subscription-return") return;
+      setCheckoutCompleted(true);
+    }
+
+    window.addEventListener("message", handleCheckoutReturn);
+    return () => window.removeEventListener("message", handleCheckoutReturn);
+  }, []);
 
   function goFree() {
     trackAdsEvent("sign_up_start", {
@@ -162,8 +176,15 @@ export default function PricingView({ language, copy, user }: PricingViewProps) 
     window.location.assign(user ? "/pro/calendar" : "/pro/create-account");
   }
 
+  function closeCheckout() {
+    setCheckoutUrl("");
+    setCheckoutCompleted(false);
+    setLoadingBilling(null);
+  }
+
   async function openWebBilling(plan: Exclude<PricingPlanKey, "free">) {
     setMessage("");
+    setCheckoutCompleted(false);
     const returnTo = `${getLocalizedPath(language, "/pricing")}?plan=${plan}`;
     trackAdsEvent("checkout_start", {
       source: "pricing",
@@ -185,12 +206,16 @@ export default function PricingView({ language, copy, user }: PricingViewProps) 
       const response = await fetch("/api/billing/monobank/create-subscription", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ billing: plan })
+        body: JSON.stringify({ billing: plan, language })
       });
-      const payload = (await response.json().catch(() => ({}))) as { paymentUrl?: string; pageUrl?: string; error?: string };
+      const payload = (await response.json().catch(() => ({}))) as { paymentUrl?: string; pageUrl?: string; existing?: boolean; error?: string };
       const url = payload.paymentUrl || payload.pageUrl;
       if (!response.ok || !url) {
         throw new Error(copy.billingError);
+      }
+      if (payload.existing) {
+        window.location.assign(url);
+        return;
       }
       trackAdsEvent("checkout_redirect", {
         source: "pricing",
@@ -199,7 +224,9 @@ export default function PricingView({ language, copy, user }: PricingViewProps) 
         currency: "USD",
         value: plan === "yearly" ? 29 : 3
       });
-      window.location.assign(url);
+      setCheckoutUrl(url);
+      setMessage("");
+      setLoadingBilling(null);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : copy.billingError);
       setLoadingBilling(null);
@@ -281,6 +308,42 @@ export default function PricingView({ language, copy, user }: PricingViewProps) 
       </p>
 
       {message ? <p className="pricing-message">{message}</p> : null}
+
+      {checkoutUrl ? (
+        <div className="pricing-checkout-modal" role="dialog" aria-modal="true" aria-labelledby={checkoutTitleId}>
+          <div className="pricing-checkout-backdrop" onClick={closeCheckout} />
+          <div className="pricing-checkout-shell">
+            <div className="pricing-checkout-header">
+              <div>
+                <h2 id={checkoutTitleId}>{checkoutCompleted ? copy.checkoutDialog.completedTitle : copy.checkoutDialog.title}</h2>
+                <p>{checkoutCompleted ? copy.checkoutDialog.completedText : copy.checkoutDialog.description}</p>
+              </div>
+              <button type="button" className="pricing-checkout-close" onClick={closeCheckout} aria-label={copy.checkoutDialog.close}>
+                ×
+              </button>
+            </div>
+            <div className="pricing-checkout-frame-wrap" aria-busy={!checkoutCompleted}>
+              {checkoutCompleted ? (
+                <div className="pricing-checkout-complete">
+                  <Link className="pricing-button pricing-button-primary" href="/pro/settings?billing=success">
+                    {copy.checkoutDialog.goToSettings}
+                  </Link>
+                </div>
+              ) : (
+                <>
+                  <iframe className="pricing-checkout-frame" src={checkoutUrl} title={copy.checkoutDialog.title} />
+                  <span className="pricing-checkout-loading">{copy.checkoutDialog.loading}</span>
+                </>
+              )}
+            </div>
+            {!checkoutCompleted ? (
+              <a className="pricing-checkout-fallback" href={checkoutUrl} target="_blank" rel="noopener noreferrer">
+                {copy.checkoutDialog.openNewTab}
+              </a>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
 
       <section className="pricing-faq">
         <h2>{copy.faqTitle}</h2>

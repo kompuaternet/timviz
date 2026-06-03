@@ -15,6 +15,7 @@ import {
   type MonobankBilling
 } from "../../../../../lib/monobank-billing";
 import { getSessionCookieName, verifySessionValue } from "../../../../../lib/pro-auth";
+import { defaultSiteLanguage, isSiteLanguage } from "../../../../../lib/site-language";
 import { getSupabaseAdmin, isSupabaseConfigured } from "../../../../../lib/supabase";
 
 export const dynamic = "force-dynamic";
@@ -34,8 +35,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
-  const body = (await request.json().catch(() => ({}))) as { billing?: string };
+  const body = (await request.json().catch(() => ({}))) as { billing?: string; language?: string };
   const billing: MonobankBilling = body.billing === "yearly" ? "yearly" : "monthly";
+  const language = isSiteLanguage(body.language) ? body.language : defaultSiteLanguage;
   const amount = getMonobankAmount(billing);
   const currencyCode = getMonobankCurrencyCode();
   const currencyLabel = getMonobankCurrencyLabel();
@@ -63,7 +65,7 @@ export async function POST(request: Request) {
     body: JSON.stringify({
       amount,
       ccy: currencyCode,
-      redirectUrl: `${appUrl}/pro/settings?billing=success`,
+      redirectUrl: `${appUrl}/billing/monobank/return?status=success&lang=${language}`,
       webHookUrls: {
         chargeUrl: `${appUrl}/api/webhooks/monobank/subscription/charge`,
         statusUrl: `${appUrl}/api/webhooks/monobank/subscription/status`
