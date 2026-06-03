@@ -7121,6 +7121,7 @@ export default function App() {
   const [visitComposerOpen, setVisitComposerOpen] = useState(false);
   const [registerDetailsOpen, setRegisterDetailsOpen] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const authScrollRef = useRef<ScrollView | null>(null);
   const handleServicesModeRequestHandled = useCallback(() => setServicesModeRequest(null), []);
   const detectedCountry = useMemo(() => getDetectedCountry(), []);
   const detectedTimezone = useMemo(() => getDetectedTimezone(), []);
@@ -8064,7 +8065,8 @@ export default function App() {
 
   async function signIn() {
     const email = loginForm.email.trim().toLowerCase();
-    if (!email || !loginForm.password.trim()) {
+    const password = loginForm.password.trim();
+    if (!email || !password) {
       Alert.alert(t.requiredTitle, t.requiredText);
       return;
     }
@@ -8074,7 +8076,7 @@ export default function App() {
       const response = await fetch(`${API_BASE_URL}/api/mobile/pro/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password: loginForm.password, language }),
+        body: JSON.stringify({ email, password, language }),
       });
       const result = await response.json();
       if (!response.ok) {
@@ -9178,9 +9180,19 @@ export default function App() {
 
   return (
     <SafeAreaView style={styles.authScreen}>
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.keyboard}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "android" ? Math.max(Constants.statusBarHeight || 0, 24) : 0}
+        style={styles.keyboard}
+      >
         <ScrollView
-          contentContainerStyle={[styles.authContent, mode === "register" && styles.authContentWithStickyFooter]}
+          ref={authScrollRef}
+          contentContainerStyle={[
+            styles.authContent,
+            mode === "register" && styles.authContentWithStickyFooter,
+            keyboardVisible && styles.authContentKeyboardOpen,
+          ]}
+          keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "on-drag"}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
@@ -9241,12 +9253,17 @@ export default function App() {
                   keyboardType="email-address"
                   autoCapitalize="none"
                   placeholder="you@email.com"
+                  returnKeyType="next"
+                  onFocus={() => authScrollRef.current?.scrollTo({ y: 330, animated: true })}
                 />
                 <Field
                   label={t.password}
                   value={loginForm.password}
                   onChangeText={(value) => setLoginForm((current) => ({ ...current, password: value }))}
                   secureTextEntry
+                  returnKeyType="done"
+                  onSubmitEditing={signIn}
+                  onFocus={() => authScrollRef.current?.scrollTo({ y: 430, animated: true })}
                 />
                 <Pressable style={styles.forgotPasswordLink} onPress={openForgotPassword}>
                   <Text style={styles.forgotPasswordLinkText}>{t.forgotPassword}</Text>
@@ -9255,9 +9272,9 @@ export default function App() {
               </View>
             ) : (
               <View style={styles.form}>
-                <Field label={t.firstName} value={registerForm.firstName} onChangeText={(value) => setRegisterForm((current) => ({ ...current, firstName: value }))} />
-                <Field label={t.email} value={registerForm.email} onChangeText={(value) => setRegisterForm((current) => ({ ...current, email: value }))} keyboardType="email-address" autoCapitalize="none" placeholder="you@email.com" />
-                <Field label={t.companyName} value={registerForm.companyName} onChangeText={(value) => setRegisterForm((current) => ({ ...current, companyName: value }))} />
+                <Field label={t.firstName} value={registerForm.firstName} onChangeText={(value) => setRegisterForm((current) => ({ ...current, firstName: value }))} returnKeyType="next" onFocus={() => authScrollRef.current?.scrollTo({ y: 300, animated: true })} />
+                <Field label={t.email} value={registerForm.email} onChangeText={(value) => setRegisterForm((current) => ({ ...current, email: value }))} keyboardType="email-address" autoCapitalize="none" placeholder="you@email.com" returnKeyType="next" onFocus={() => authScrollRef.current?.scrollTo({ y: 360, animated: true })} />
+                <Field label={t.companyName} value={registerForm.companyName} onChangeText={(value) => setRegisterForm((current) => ({ ...current, companyName: value }))} returnKeyType="next" onFocus={() => authScrollRef.current?.scrollTo({ y: 430, animated: true })} />
                 <RegisterPhoneField
                   label={t.phone}
                   selectedCountry={registerPhoneCountry}
@@ -9266,15 +9283,16 @@ export default function App() {
                   value={getLocalPhoneNumber(registerForm.phone, registerPhoneCountry.callingCode)}
                   onChangeText={(value) => setRegisterForm((current) => ({ ...current, phone: getLocalPhoneNumber(value, registerPhoneCountry.callingCode) }))}
                   onOpenPicker={() => setPhoneCountryPickerOpen(true)}
+                  onFocus={() => authScrollRef.current?.scrollTo({ y: 500, animated: true })}
                 />
-                <Field label={t.password} hint={t.passwordHint} value={registerForm.password} onChangeText={(value) => setRegisterForm((current) => ({ ...current, password: value }))} secureTextEntry />
+                <Field label={t.password} hint={t.passwordHint} value={registerForm.password} onChangeText={(value) => setRegisterForm((current) => ({ ...current, password: value }))} secureTextEntry returnKeyType="done" onSubmitEditing={register} onFocus={() => authScrollRef.current?.scrollTo({ y: 590, animated: true })} />
                 <Pressable style={styles.authDetailsToggle} onPress={() => setRegisterDetailsOpen((current) => !current)}>
                   <Text style={styles.authDetailsToggleText}>{t.optionalDetails}</Text>
                   <Ionicons name={registerDetailsOpen ? "chevron-up" : "chevron-down"} size={18} color="#6D4AFF" />
                 </Pressable>
                 {registerDetailsOpen ? (
                   <View style={styles.authOptionalBlock}>
-                    <Field label={t.lastName} value={registerForm.lastName} onChangeText={(value) => setRegisterForm((current) => ({ ...current, lastName: value }))} />
+                    <Field label={t.lastName} value={registerForm.lastName} onChangeText={(value) => setRegisterForm((current) => ({ ...current, lastName: value }))} returnKeyType="done" onFocus={() => authScrollRef.current?.scrollTo({ y: 690, animated: true })} />
                   </View>
                 ) : null}
               </View>
@@ -16290,6 +16308,7 @@ function RegisterPhoneField({
   value,
   onChangeText,
   onOpenPicker,
+  onFocus,
 }: {
   label: string;
   selectedCountry: PhoneCountryOption;
@@ -16298,6 +16317,7 @@ function RegisterPhoneField({
   value: string;
   onChangeText: (value: string) => void;
   onOpenPicker: () => void;
+  onFocus?: () => void;
 }) {
   return (
     <View style={styles.field}>
@@ -16314,6 +16334,7 @@ function RegisterPhoneField({
         <TextInput
           value={value}
           onChangeText={onChangeText}
+          onFocus={onFocus}
           keyboardType="phone-pad"
           autoCorrect={false}
           placeholder="00 000 00 00"
@@ -16609,6 +16630,9 @@ const styles = StyleSheet.create({
   },
   authContentWithStickyFooter: {
     paddingBottom: 126,
+  },
+  authContentKeyboardOpen: {
+    paddingBottom: Platform.OS === "android" ? 340 : 180,
   },
   topBar: {
     flexDirection: "row",
