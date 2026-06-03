@@ -9258,7 +9258,6 @@ export default function App() {
                 workspace={workspace}
                 busy={busy}
                 apiFetch={apiFetch}
-                trackAdsEvent={trackMobileAdsEvent}
                 onRefreshWorkspace={() => refreshAll(session, selectedDate)}
                 onSaveSchedule={saveStaffSchedule}
               />
@@ -9272,6 +9271,7 @@ export default function App() {
                 staff={staffSnapshot}
                 catalog={serviceCatalog}
                 apiFetch={apiFetch}
+                trackAdsEvent={trackMobileAdsEvent}
                 onRefreshWorkspace={() => refreshAll(session, selectedDate)}
                 onWorkspaceUpdated={(nextWorkspace) => setWorkspace(withPendingServiceSaves(nextWorkspace))}
                 setActiveTab={setActiveTab}
@@ -14939,8 +14939,8 @@ function SettingsTab({
         billing,
         product_id: targetPackage.product.identifier,
         source: "premium",
-        country: workspace.professional.country || registerPhoneCountry.country,
-        currency: workspace.professional.currency || registerPhoneCountry.currency || inferCurrency(registerPhoneCountry.country)
+        country: workspace.professional.country || "Ukraine",
+        currency: workspace.professional.currency || inferCurrency(workspace.professional.country || "Ukraine")
       });
       const result = await Purchases.purchasePackage(targetPackage);
       await syncPremiumCustomerInfo(result.customerInfo);
@@ -14949,8 +14949,8 @@ function SettingsTab({
         product_id: targetPackage.product.identifier,
         source: "premium",
         store: Platform.OS === "android" ? "google_play" : "app_store",
-        country: workspace.professional.country || registerPhoneCountry.country,
-        currency: workspace.professional.currency || registerPhoneCountry.currency || inferCurrency(registerPhoneCountry.country)
+        country: workspace.professional.country || "Ukraine",
+        currency: workspace.professional.currency || inferCurrency(workspace.professional.country || "Ukraine")
       });
     } catch (error: any) {
       if (error?.userCancelled || (error instanceof Error && error.message === "purchase_cancelled")) {
