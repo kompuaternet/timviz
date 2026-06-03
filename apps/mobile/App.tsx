@@ -7178,7 +7178,8 @@ export default function App() {
   const serviceSaveInFlightRef = useRef(false);
   const serviceSaveFlushPromiseRef = useRef<Promise<void> | null>(null);
   const serviceCreatePromiseRef = useRef<Promise<void> | null>(null);
-  const workspaceLanguageAppliedRef = useRef(false);
+  const latestLanguageRef = useRef(language);
+  const pendingProfileLanguageRef = useRef<AppLanguage | null>(null);
   const languageStorageReadyRef = useRef(false);
   const autoPushRegisteringRef = useRef(false);
   const lastTrackedAppOpenSessionRef = useRef("");
@@ -7289,6 +7290,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    latestLanguageRef.current = language;
     if (!languageStorageReadyRef.current) return;
     void AsyncStorage.setItem(APP_LANGUAGE_KEY, language).catch(() => undefined);
   }, [language]);
@@ -7317,6 +7319,25 @@ export default function App() {
     return Boolean(workspace || calendar || clients.length || staffSnapshot);
   }
 
+  function syncLanguageFromWorkspace(value: unknown) {
+    const profileLanguage = normalizeAppLanguage(value);
+    if (!profileLanguage) return;
+    if (pendingProfileLanguageRef.current && pendingProfileLanguageRef.current !== profileLanguage) {
+      return;
+    }
+    pendingProfileLanguageRef.current = null;
+    if (latestLanguageRef.current !== profileLanguage) {
+      latestLanguageRef.current = profileLanguage;
+      setLanguage(profileLanguage);
+    }
+  }
+
+  function setWorkspaceLanguage(nextLanguage: AppLanguage) {
+    pendingProfileLanguageRef.current = nextLanguage;
+    latestLanguageRef.current = nextLanguage;
+    setLanguage(nextLanguage);
+  }
+
   function applyWorkspaceCache(cache: MobileWorkspaceCache) {
     setWorkspace(cache.workspace);
     setCalendar(cache.calendar);
@@ -7327,13 +7348,7 @@ export default function App() {
     if (cache.staffSnapshot?.members?.some((member) => safeText(member.professional.avatarUrl))) {
       staffMediaLoadedAtRef.current = Date.now();
     }
-    if (!workspaceLanguageAppliedRef.current) {
-      const profileLanguage = normalizeAppLanguage(cache.workspace?.professional?.language);
-      if (profileLanguage) {
-        setLanguage(profileLanguage);
-        workspaceLanguageAppliedRef.current = true;
-      }
-    }
+    syncLanguageFromWorkspace(cache.workspace?.professional?.language);
     if (cache.selectedDate) setSelectedDate(cache.selectedDate);
   }
 
@@ -7942,11 +7957,7 @@ export default function App() {
       if (shouldLoadStaffMedia && nextStaffSnapshot?.members?.length) {
         staffMediaLoadedAtRef.current = Date.now();
       }
-      if (!workspaceLanguageAppliedRef.current) {
-        const profileLanguage = normalizeAppLanguage(nextWorkspace.professional?.language);
-        if (profileLanguage) setLanguage(profileLanguage);
-        workspaceLanguageAppliedRef.current = true;
-      }
+      syncLanguageFromWorkspace(nextWorkspace.professional?.language);
       setWorkspace(nextWorkspace);
       setCalendar(withPendingCalendarState(calendarResult, date));
       setCalendarDate(date);
@@ -8384,7 +8395,7 @@ export default function App() {
     setBusy(true);
     pendingServiceSavesRef.current.clear();
     serviceCreatePromiseRef.current = null;
-    workspaceLanguageAppliedRef.current = false;
+    pendingProfileLanguageRef.current = null;
     if (serviceSaveTimerRef.current) {
       clearTimeout(serviceSaveTimerRef.current);
       serviceSaveTimerRef.current = null;
@@ -9133,7 +9144,7 @@ export default function App() {
         <WorkspaceHeader
           t={t}
           language={language}
-          setLanguage={setLanguage}
+          setLanguage={setWorkspaceLanguage}
           session={session}
           workspace={workspace}
           activeTab={activeTab}
@@ -9256,7 +9267,7 @@ export default function App() {
               <SettingsTab
                 t={t}
                 language={language}
-                setLanguage={setLanguage}
+                setLanguage={setWorkspaceLanguage}
                 workspace={workspace}
                 staff={staffSnapshot}
                 catalog={serviceCatalog}
