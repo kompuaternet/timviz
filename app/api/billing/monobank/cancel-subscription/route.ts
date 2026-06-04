@@ -83,6 +83,7 @@ export async function POST() {
     subscription: {
       ...subscription,
       status: "cancelled",
+      activeUntil: subscription.activeUntil || null,
       cancelledAt: now
     }
   });

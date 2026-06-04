@@ -155,6 +155,18 @@ export function getMonobankAccessUntil(input: {
   return addMonobankBillingPeriod(startDate, input.interval || "1m").toISOString();
 }
 
+export function getMonobankPaidUntil(input: {
+  endDate?: string | null;
+  nextChargeDate?: string | null;
+  fallbackDate?: string | null;
+}) {
+  const explicitDates = [parseMonobankDate(input.nextChargeDate), parseMonobankDate(input.endDate), parseMonobankDate(input.fallbackDate)].filter(
+    (date): date is Date => Boolean(date)
+  );
+  if (explicitDates.length === 0) return null;
+  return new Date(Math.max(...explicitDates.map((date) => date.getTime()))).toISOString();
+}
+
 export async function getMonobankSubscriptionStatus(subscriptionId: string) {
   const token = getMonobankToken();
   if (!token) throw new Error("Monobank token is not configured.");

@@ -1,6 +1,7 @@
 import {
   getMonobankAccessUntil,
   getMonobankCurrencyLabelByCode,
+  getMonobankPaidUntil,
   getMonobankSubscriptionStatus,
   mapMonobankStatus,
   parseMonobankDate
@@ -50,9 +51,15 @@ export async function syncLatestMonobankSubscriptionForUser(professionalId: stri
     nextChargeDate: payload.nextChargeDate || null,
     fallbackDate: new Date()
   });
+  const paidUntil = getMonobankPaidUntil({
+    endDate: payload.endDate || null,
+    nextChargeDate: payload.nextChargeDate || null,
+    fallbackDate: typeof subscription.active_until === "string" ? subscription.active_until : null
+  });
   const startDate = parseMonobankDate(payload.startDate);
   const nextChargeDate = parseMonobankDate(payload.nextChargeDate);
   const cancelled = status === "cancelled";
+  const effectiveActiveUntil = activeUntil || (cancelled ? paidUntil : null);
   const now = new Date().toISOString();
   const { error: updateError } = await supabase
     .from("monobank_subscriptions")
@@ -62,7 +69,7 @@ export async function syncLatestMonobankSubscriptionForUser(professionalId: stri
       currency: payload.ccy ? getMonobankCurrencyLabelByCode(payload.ccy) : subscription.currency,
       interval: typeof payload.interval === "string" && payload.interval.trim() ? payload.interval.trim() : subscription.interval,
       active_from: startDate ? startDate.toISOString() : undefined,
-      active_until: activeUntil || undefined,
+      active_until: effectiveActiveUntil || undefined,
       next_charge_at: nextChargeDate ? nextChargeDate.toISOString() : null,
       cancelled_at: cancelled ? now : null,
       mono_modified_date: now,
@@ -84,7 +91,7 @@ export async function syncLatestMonobankSubscriptionForUser(professionalId: stri
     await updateProfessionalPremiumFromMonobank({
       professionalId,
       status: "cancelled",
-      premiumUntil: activeUntil || (typeof subscription.active_until === "string" ? subscription.active_until : null),
+      premiumUntil: effectiveActiveUntil,
       planCode: String(subscription.plan_code || "pro_monthly"),
       invoiceId: String(subscription.subscription_id),
       cancelAtPeriodEnd: true
@@ -95,7 +102,7 @@ export async function syncLatestMonobankSubscriptionForUser(professionalId: stri
     ok: true,
     active: status === "active" || status === "success",
     status,
-    premiumUntil: activeUntil,
+    premiumUntil: effectiveActiveUntil,
     subscriptionId: String(subscription.subscription_id)
   };
 }
