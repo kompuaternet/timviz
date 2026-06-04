@@ -240,7 +240,7 @@ EXPO_PUBLIC_REVENUECAT_MONTHLY_PRODUCT_ID=timviz_premium_monthly
 EXPO_PUBLIC_REVENUECAT_YEARLY_PRODUCT_ID=timviz_premium_yearly
 ```
 
-Если `EXPO_PUBLIC_REVENUECAT_IOS_API_KEY` или `EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY` не задан, native-сборка использует прямой in-app purchase fallback через products с теми же product id. Это позволяет тестировать подписку в TestFlight/App Store или Google Play internal testing, пока RevenueCat-проект и server key ещё не подключены.
+Для настоящей оплаты в native-сборке обязательно нужен RevenueCat SDK key для соответствующей платформы. Если `EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY` не задан в Android build environment, приложение не сможет загрузить Google Play packages и покажет состояние подготовки покупки.
 
 Env для сайта/API на Railway:
 
@@ -292,9 +292,34 @@ Android-приложение — тот же Timviz Master native-клиент, 
 
 1. Создать приложение в Play Console с package name `com.timviz.master`.
 2. Создать OAuth Android client id для package `com.timviz.master` и SHA-1 сертификата сборки, затем указать его в `GOOGLE_ANDROID_CLIENT_ID` и `EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID`.
-3. Создать Android app в RevenueCat, подключить Google Play products `timviz_premium_monthly` и `timviz_premium_yearly`, затем указать `EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY`.
-4. Добавить RevenueCat server key и webhook secret в Railway: `REVENUECAT_SECRET_API_KEY`, `REVENUECAT_ENTITLEMENT_ID`, `REVENUECAT_WEBHOOK_SECRET`.
-5. Скачать Play Console service account JSON в `apps/mobile/google-play-service-account.json` локально или в CI secret. Этот файл не коммитить.
+3. В Play Console создать subscription products `timviz_premium_monthly` и `timviz_premium_yearly`, для каждого добавить и активировать auto-renewing base plan. Product id должны совпадать с env выше.
+4. Создать Android app в RevenueCat, подключить Google Play app/service credentials, импортировать или создать products `timviz_premium_monthly` и `timviz_premium_yearly`, добавить их в offering и entitlement `premium`, затем указать `EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY` в EAS environment для production Android build.
+5. Добавить RevenueCat server key и webhook secret в Railway: `REVENUECAT_SECRET_API_KEY`, `REVENUECAT_ENTITLEMENT_ID`, `REVENUECAT_WEBHOOK_SECRET`.
+6. В RevenueCat webhook указать endpoint `https://timviz.com/api/revenuecat/webhook` и тот же bearer secret из `REVENUECAT_WEBHOOK_SECRET`.
+7. Скачать Play Console service account JSON в `apps/mobile/google-play-service-account.json` локально или создать его в CI перед submit. Этот файл не коммитить.
+8. Первый AAB должен быть загружен в Google Play testing/production track, иначе Google Play products могут не возвращаться в приложении. Тестовые покупки проверяются только в сборке, установленной из Google Play testing/production, с тестером из license/internal testing списка.
+
+Проверка готовности Android-подписок:
+
+```bash
+npm run mobile:doctor:android-subscriptions
+```
+
+Если локально нет Railway secrets, можно проверить только mobile/build часть:
+
+```bash
+npm run mobile:doctor:android-subscriptions -- --skip-server-env
+```
+
+EAS env для Android production build задаётся через Expo, не через git:
+
+```bash
+cd apps/mobile
+eas env:create --name EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY --value <revenuecat_android_public_sdk_key> --environment production --visibility sensitive
+eas env:create --name EXPO_PUBLIC_REVENUECAT_ENTITLEMENT_ID --value premium --environment production --visibility plaintext
+eas env:create --name EXPO_PUBLIC_REVENUECAT_MONTHLY_PRODUCT_ID --value timviz_premium_monthly --environment production --visibility plaintext
+eas env:create --name EXPO_PUBLIC_REVENUECAT_YEARLY_PRODUCT_ID --value timviz_premium_yearly --environment production --visibility plaintext
+```
 
 Команды:
 

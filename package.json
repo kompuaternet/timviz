@@ -32,6 +32,7 @@
     "mobile:start": "cd apps/mobile && npm run start",
     "mobile:ios": "cd apps/mobile && npm run ios",
     "mobile:android": "cd apps/mobile && npm run android",
+    "mobile:doctor:android-subscriptions": "node scripts/check-android-subscriptions.mjs",
     "migrate:supabase": "node scripts/migrate-local-data-to-supabase.mjs",
     "db:backup": "node scripts/db-backup.mjs",
     "db:restore": "node scripts/db-restore.mjs",

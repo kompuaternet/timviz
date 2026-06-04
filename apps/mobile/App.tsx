@@ -674,9 +674,24 @@ const PUSH_PROJECT_ID_ERROR = "push_project_id_missing";
 const WORKSPACE_CACHE_KEY = "timviz_mobile_workspace_cache_v2";
 const API_BASE_URL = (process.env.EXPO_PUBLIC_API_BASE_URL || "https://timviz.com").replace(/\/+$/, "");
 const MOBILE_PLATFORM_SOURCE = Platform.OS === "ios" ? "ios" : Platform.OS === "android" ? "android" : "mobile";
+const MOBILE_ANDROID_PACKAGE_NAME =
+  ((Constants.expoConfig as { android?: { package?: string } } | null)?.android?.package || "com.timviz.master").trim();
 const APPLE_STANDARD_EULA_URL = "https://www.apple.com/legal/internet-services/itunes/dev/stdeula/";
-const MOBILE_SUBSCRIPTION_MANAGE_URL =
-  Platform.OS === "android" ? "https://play.google.com/store/account/subscriptions" : "https://apps.apple.com/account/subscriptions";
+
+function getMobileStoreSource() {
+  if (Platform.OS === "android") return "google_play";
+  if (Platform.OS === "ios") return "app_store";
+  return "mobile_store";
+}
+
+function getMobileSubscriptionManageUrl(productId?: string | null) {
+  if (Platform.OS === "android") {
+    const params = [`package=${encodeURIComponent(MOBILE_ANDROID_PACKAGE_NAME)}`];
+    if (productId) params.unshift(`sku=${encodeURIComponent(productId)}`);
+    return `https://play.google.com/store/account/subscriptions?${params.join("&")}`;
+  }
+  return "https://apps.apple.com/account/subscriptions";
+}
 
 function legalPageUrl(path: string) {
   return `${API_BASE_URL}${path}?source=${MOBILE_PLATFORM_SOURCE}`;
@@ -14867,13 +14882,18 @@ function SettingsTab({
 
   async function syncPremiumCustomerInfo(customerInfo: CustomerInfo) {
     const entitlement = getCustomerInfoEntitlement(customerInfo);
+    const store = getMobileStoreSource();
     await apiFetch("/api/mobile/pro/subscription/store", {
       method: "POST",
       body: JSON.stringify({
+        platform: Platform.OS,
+        store,
         customerInfo: {
           originalAppUserId: customerInfo.originalAppUserId,
           activeSubscriptions: customerInfo.activeSubscriptions,
           latestExpirationDate: customerInfo.latestExpirationDate,
+          store,
+          platform: Platform.OS,
           entitlement: entitlement
             ? {
                 identifier: entitlement.identifier,
@@ -14881,7 +14901,7 @@ function SettingsTab({
                 productIdentifier: entitlement.productIdentifier,
                 expirationDate: entitlement.expirationDate,
                 periodType: entitlement.periodType,
-                store: entitlement.store,
+                store: entitlement.store || store,
               }
             : null,
         },
@@ -14948,7 +14968,7 @@ function SettingsTab({
         billing,
         product_id: targetPackage.product.identifier,
         source: "premium",
-        store: Platform.OS === "android" ? "google_play" : "app_store",
+        store: getMobileStoreSource(),
         country: workspace.professional.country || "Ukraine",
         currency: workspace.professional.currency || inferCurrency(workspace.professional.country || "Ukraine")
       });
@@ -15829,7 +15849,7 @@ function SettingsTab({
             </View>
             <View style={styles.settingsActionRow}>
               <SecondaryButton label={t.premiumRestore} onPress={() => void restorePremiumPurchase()} disabled={isPremiumLoading} />
-              <SecondaryButton label={t.premiumManage} onPress={() => Linking.openURL(MOBILE_SUBSCRIPTION_MANAGE_URL).catch(() => undefined)} disabled={Platform.OS === "web"} />
+              <SecondaryButton label={t.premiumManage} onPress={() => Linking.openURL(getMobileSubscriptionManageUrl()).catch(() => undefined)} disabled={Platform.OS === "web"} />
             </View>
             <Text style={styles.settingsMutedNotice}>
               {t.subscriptionAutoRenewText ||

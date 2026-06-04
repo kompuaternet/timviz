@@ -50,6 +50,11 @@ function normalizeStoreSource(value: unknown): "apple" | "google" {
   return "apple";
 }
 
+function isExpectedPremiumProductId(productId: string) {
+  if (!productId) return false;
+  return [monthlyProductId, yearlyProductId].some((expectedId) => productId === expectedId || productId.startsWith(`${expectedId}:`));
+}
+
 function getStatus(entitlement: NormalizedEntitlement | null): PremiumStatus {
   if (!entitlement || !entitlement.isActive) return "inactive";
   const periodType = entitlement.periodType.toLowerCase();
@@ -63,12 +68,17 @@ function normalizeCustomerInfoEntitlement(body: Record<string, unknown>): Normal
   if (!Object.keys(entitlement).length) return null;
   const expirationDate = getString(entitlement, ["expirationDate", "expires_date"]) || null;
   const productId = getString(entitlement, ["productIdentifier", "product_identifier"]);
+  if (!isExpectedPremiumProductId(productId)) return null;
   return {
     isActive: getBoolean(entitlement, "isActive") && isFuture(expirationDate),
     productId,
     expirationDate,
     periodType: getString(entitlement, ["periodType", "period_type"]),
-    source: normalizeStoreSource(getString(entitlement, ["store", "storeType"]) || getString(customerInfo, ["store"])),
+    source: normalizeStoreSource(
+      getString(entitlement, ["store", "storeType"]) ||
+        getString(customerInfo, ["store", "platform"]) ||
+        getString(body, ["store", "platform"])
+    ),
   };
 }
 
@@ -77,7 +87,7 @@ function normalizeStoreKitPurchase(body: Record<string, unknown>): NormalizedEnt
   if (!Object.keys(purchase).length) return null;
 
   const productId = getString(purchase, ["productId", "productIdentifier", "product_identifier"]);
-  if (productId !== monthlyProductId && productId !== yearlyProductId) return null;
+  if (!isExpectedPremiumProductId(productId)) return null;
 
   const transactionId = getString(purchase, ["transactionId", "orderId"]);
   const receipt = getString(purchase, ["transactionReceipt", "receipt"]);
@@ -116,6 +126,7 @@ async function fetchRevenueCatEntitlement(professionalId: string): Promise<Norma
   if (!Object.keys(entitlement).length) return null;
 
   const productId = getString(entitlement, ["product_identifier", "productIdentifier"]);
+  if (!isExpectedPremiumProductId(productId)) return null;
   const expirationDate = getString(entitlement, ["expires_date", "expirationDate"]) || null;
   const subscriptions = asRecord(subscriber.subscriptions);
   const subscription = productId ? asRecord(subscriptions[productId]) : {};
@@ -173,6 +184,7 @@ export async function POST(request: Request) {
       status,
       premiumUntil: entitlement?.expirationDate ?? null,
       productId: entitlement?.productId || null,
+      source: entitlement?.source || null,
       updateResult,
     });
   } catch (error) {
