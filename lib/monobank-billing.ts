@@ -23,6 +23,19 @@ export type MonobankSubscriptionSummary = {
   cancelledAt: string | null;
 };
 
+export type MonobankSubscriptionStatusPayload = {
+  subscriptionId?: string;
+  status?: string;
+  startDate?: string;
+  endDate?: string;
+  amount?: number;
+  ccy?: number;
+  interval?: string;
+  nextChargeDate?: string;
+  cancellationDesc?: string;
+  errText?: string;
+};
+
 const activeSubscriptionStatuses = ["active", "success", "processing"] as const;
 
 export function getMonobankToken() {
@@ -88,7 +101,7 @@ export function addMonobankBillingPeriod(date: Date, intervalOrBilling: string) 
 
 export function mapMonobankStatus(status: string): MonobankMappedStatus {
   const normalized = status.trim().toLowerCase();
-  if (normalized === "success") return "success";
+  if (["success", "succeeded", "paid", "approved"].includes(normalized)) return "success";
   if (normalized === "failure" || normalized === "failed") return "failure";
   if (normalized === "expired") return "expired";
   if (normalized === "reversed") return "reversed";
@@ -109,6 +122,54 @@ export function getMonobankEventDate(payload: Record<string, unknown>) {
           : "";
   const date = value ? new Date(value) : new Date();
   return Number.isFinite(date.getTime()) ? date : new Date();
+}
+
+export function parseMonobankDate(value: unknown) {
+  if (typeof value !== "string" || !value.trim()) return null;
+  const date = new Date(value);
+  return Number.isFinite(date.getTime()) ? date : null;
+}
+
+export function getMonobankAccessUntil(input: {
+  status: string;
+  interval?: string | null;
+  startDate?: string | null;
+  endDate?: string | null;
+  nextChargeDate?: string | null;
+  fallbackDate?: Date | string | null;
+}) {
+  const status = mapMonobankStatus(input.status);
+  if (status !== "active" && status !== "success") return null;
+
+  const nextChargeDate = parseMonobankDate(input.nextChargeDate);
+  const endDate = parseMonobankDate(input.endDate);
+  const explicitDates = [nextChargeDate, endDate].filter((date): date is Date => Boolean(date));
+  if (explicitDates.length > 0) {
+    return new Date(Math.max(...explicitDates.map((date) => date.getTime()))).toISOString();
+  }
+
+  const startDate =
+    parseMonobankDate(input.startDate) ||
+    (input.fallbackDate instanceof Date ? input.fallbackDate : parseMonobankDate(input.fallbackDate)) ||
+    new Date();
+  return addMonobankBillingPeriod(startDate, input.interval || "1m").toISOString();
+}
+
+export async function getMonobankSubscriptionStatus(subscriptionId: string) {
+  const token = getMonobankToken();
+  if (!token) throw new Error("Monobank token is not configured.");
+
+  const url = new URL("https://api.monobank.ua/api/merchant/subscription/status");
+  url.searchParams.set("subscriptionId", subscriptionId);
+  const response = await fetch(url, {
+    headers: { "X-Token": token },
+    cache: "no-store"
+  });
+  const payload = (await response.json().catch(() => ({}))) as MonobankSubscriptionStatusPayload;
+  if (!response.ok) {
+    throw new Error(payload.errText || "Could not refresh Monobank subscription status.");
+  }
+  return payload;
 }
 
 async function getMonobankPublicKey() {

@@ -159,6 +159,7 @@ export default function PricingView({ language, copy, user }: PricingViewProps) 
       if (event.origin !== window.location.origin) return;
       if ((event.data as { type?: string } | null)?.type !== "timviz:monobank:subscription-return") return;
       setCheckoutCompleted(true);
+      window.location.assign("/pro/settings?billing=success");
     }
 
     window.addEventListener("message", handleCheckoutReturn);

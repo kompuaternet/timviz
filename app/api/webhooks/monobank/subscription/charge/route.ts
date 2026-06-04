@@ -2,10 +2,12 @@ import { createHash, randomUUID } from "crypto";
 import { NextResponse } from "next/server";
 import {
   addMonobankBillingPeriod,
+  getMonobankAccessUntil,
   getMonobankCurrencyLabelByCode,
   getMonobankEventDate,
   isValidMonobankSignature,
-  mapMonobankStatus
+  mapMonobankStatus,
+  parseMonobankDate
 } from "../../../../../../lib/monobank-billing";
 import {
   getProfessionalPremiumSnapshot,
@@ -92,19 +94,30 @@ export async function POST(request: Request) {
   const eventDate = getMonobankEventDate(payload);
   let activeUntil: string | null = null;
 
-  if (eventType === "success") {
-    const snapshot = await getProfessionalPremiumSnapshot({ professionalId: subscription.user_id });
-    const currentAccessDate =
-      subscription.active_until && Number.isFinite(new Date(subscription.active_until).getTime())
-        ? new Date(subscription.active_until)
-        : snapshot?.premium_until && Number.isFinite(new Date(snapshot.premium_until).getTime())
-          ? new Date(snapshot.premium_until)
-          : eventDate;
-    activeUntil = addMonobankBillingPeriod(maxDate(currentAccessDate, eventDate), subscription.interval || "1m").toISOString();
+  if (eventType === "success" || eventType === "active") {
+    activeUntil = getMonobankAccessUntil({
+      status: eventType,
+      interval: subscription.interval || "1m",
+      startDate: stringValue(payload.startDate) || stringValue(payload.createdDate) || null,
+      endDate: stringValue(payload.endDate) || null,
+      nextChargeDate: stringValue(payload.nextChargeDate) || null,
+      fallbackDate: eventDate
+    });
+    if (!activeUntil) {
+      const snapshot = await getProfessionalPremiumSnapshot({ professionalId: subscription.user_id });
+      const currentAccessDate =
+        subscription.active_until && Number.isFinite(new Date(subscription.active_until).getTime())
+          ? new Date(subscription.active_until)
+          : snapshot?.premium_until && Number.isFinite(new Date(snapshot.premium_until).getTime())
+            ? new Date(snapshot.premium_until)
+            : eventDate;
+      activeUntil = addMonobankBillingPeriod(maxDate(currentAccessDate, eventDate), subscription.interval || "1m").toISOString();
+    }
   }
 
   const amount = typeof payload.amount === "number" ? payload.amount : subscription.amount;
   const currency = getMonobankCurrencyLabelByCode(payload.ccy);
+  const nextChargeDate = parseMonobankDate(payload.nextChargeDate);
   const now = new Date().toISOString();
   const { error: updateError } = await supabase
     .from("monobank_subscriptions")
@@ -112,8 +125,9 @@ export async function POST(request: Request) {
       status: eventType,
       amount: typeof amount === "number" ? amount : undefined,
       currency,
-      active_from: eventType === "success" ? eventDate.toISOString() : undefined,
+      active_from: eventType === "success" || eventType === "active" ? eventDate.toISOString() : undefined,
       active_until: activeUntil || undefined,
+      next_charge_at: nextChargeDate ? nextChargeDate.toISOString() : undefined,
       mono_modified_date: stringValue(payload.modifiedDate) || null,
       raw_payload: payload,
       updated_at: now
@@ -132,7 +146,7 @@ export async function POST(request: Request) {
         currency,
         status: eventType,
         period_months: subscription.period_months || 1,
-        active_from: eventType === "success" ? eventDate.toISOString() : null,
+        active_from: eventType === "success" || eventType === "active" ? eventDate.toISOString() : null,
         active_until: activeUntil,
         mono_modified_date: stringValue(payload.modifiedDate) || null,
         raw_payload: payload,
@@ -143,7 +157,7 @@ export async function POST(request: Request) {
     if (paymentError) throw new Error(paymentError.message);
   }
 
-  if (eventType === "success") {
+  if (eventType === "success" || eventType === "active") {
     await updateProfessionalPremiumFromMonobank({
       professionalId: subscription.user_id,
       status: "active",

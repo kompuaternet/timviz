@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { getAppointmentUsageForProfessional } from "../../../lib/pro-calendar";
 import { getLatestMonobankSubscriptionForUser } from "../../../lib/monobank-billing";
+import { syncLatestMonobankSubscriptionForUser } from "../../../lib/monobank-subscription-sync";
 import { getSessionCookieName, verifySessionValue } from "../../../lib/pro-auth";
 import { DEFAULT_BOOKING_CREDITS, getJoinRequestsForOwner, getWorkspaceSnapshot } from "../../../lib/pro-data";
 import { getOnboardingCtaState } from "../../../lib/pro-onboarding";
@@ -15,6 +16,7 @@ type ProSettingsPageProps = {
     startapp?: string;
     start_param?: string;
     tgWebAppStartParam?: string;
+    billing?: string;
   }>;
 };
 
@@ -34,6 +36,15 @@ export default async function ProSettingsPage({ searchParams }: ProSettingsPageP
 
   if (!professionalId) {
     redirect(loginPath);
+  }
+
+  const billingStatus = typeof params.billing === "string" ? params.billing.trim().toLowerCase() : "";
+  if (billingStatus === "success" || billingStatus === "active") {
+    await syncLatestMonobankSubscriptionForUser(professionalId).catch((error) => {
+      console.warn("[monobank] settings subscription refresh failed", {
+        error: error instanceof Error ? error.message : String(error)
+      });
+    });
   }
 
   const [workspace, telegramConnection, monobankSubscription] = await Promise.all([

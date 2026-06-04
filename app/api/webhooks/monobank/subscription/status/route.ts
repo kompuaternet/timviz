@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { createHash } from "crypto";
 import {
+  getMonobankAccessUntil,
   getMonobankEventDate,
   isValidMonobankSignature,
-  mapMonobankStatus
+  mapMonobankStatus,
+  parseMonobankDate
 } from "../../../../../../lib/monobank-billing";
 import { updateProfessionalPremiumFromMonobank } from "../../../../../../lib/premium";
 import { getSupabaseAdmin, isSupabaseConfigured } from "../../../../../../lib/supabase";
@@ -56,7 +58,7 @@ export async function POST(request: Request) {
 
   const { data: subscription, error: subscriptionError } = await supabase
     .from("monobank_subscriptions")
-    .select("id, user_id, plan_code, active_until, mono_modified_date")
+    .select("id, user_id, plan_code, interval, active_until, mono_modified_date")
     .eq("subscription_id", subscriptionId)
     .maybeSingle();
   if (subscriptionError) throw new Error(subscriptionError.message);
@@ -73,6 +75,15 @@ export async function POST(request: Request) {
   const now = new Date().toISOString();
   const nextChargeAt = stringValue(payload.nextChargeDate) || null;
   const endDate = stringValue(payload.endDate) || null;
+  const activeUntil = getMonobankAccessUntil({
+    status: eventType,
+    interval: typeof subscription.interval === "string" ? subscription.interval : "1m",
+    startDate: stringValue(payload.startDate) || null,
+    endDate,
+    nextChargeDate: nextChargeAt,
+    fallbackDate: eventDate
+  });
+  const activeFrom = parseMonobankDate(payload.startDate) || eventDate;
   const cancelled = eventType === "cancelled";
   const { error: updateError } = await supabase
     .from("monobank_subscriptions")
@@ -80,7 +91,8 @@ export async function POST(request: Request) {
       status: eventType,
       next_charge_at: nextChargeAt,
       cancelled_at: cancelled ? eventDate.toISOString() : null,
-      active_until: endDate || undefined,
+      active_from: eventType === "active" || eventType === "success" ? activeFrom.toISOString() : undefined,
+      active_until: activeUntil || endDate || undefined,
       mono_modified_date: eventDate.toISOString(),
       raw_payload: payload,
       updated_at: now
@@ -92,10 +104,18 @@ export async function POST(request: Request) {
     await updateProfessionalPremiumFromMonobank({
       professionalId: subscription.user_id,
       status: "cancelled",
-      premiumUntil: endDate || subscription.active_until || null,
+      premiumUntil: activeUntil || endDate || subscription.active_until || null,
       planCode: subscription.plan_code,
       invoiceId: subscriptionId,
       cancelAtPeriodEnd: true
+    });
+  } else if (eventType === "active" || eventType === "success") {
+    await updateProfessionalPremiumFromMonobank({
+      professionalId: subscription.user_id,
+      status: "active",
+      premiumUntil: activeUntil,
+      planCode: subscription.plan_code,
+      invoiceId: subscriptionId
     });
   }
 
