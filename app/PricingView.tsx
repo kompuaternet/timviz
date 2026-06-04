@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useId, useState } from "react";
+import { useEffect, useState } from "react";
 import BrandLogo from "./BrandLogo";
 import GlobalLanguageSwitcher from "./GlobalLanguageSwitcher";
 import PublicHeaderAuthMenu from "./PublicHeaderAuthMenu";
@@ -142,7 +142,6 @@ for (const language of Object.keys(publicFooterLabels) as SiteLanguage[]) {
 
 export default function PricingView({ language, copy, user }: PricingViewProps) {
   const footer = footerCopy[language];
-  const checkoutTitleId = useId();
   const [message, setMessage] = useState("");
   const [loadingBilling, setLoadingBilling] = useState<Exclude<PricingPlanKey, "free"> | null>(null);
   const [checkoutUrl, setCheckoutUrl] = useState("");
@@ -310,21 +309,28 @@ export default function PricingView({ language, copy, user }: PricingViewProps) 
       {message ? <p className="pricing-message">{message}</p> : null}
 
       {checkoutUrl ? (
-        <div className="pricing-checkout-modal" role="dialog" aria-modal="true" aria-labelledby={checkoutTitleId}>
+        <div className="pricing-checkout-modal" role="dialog" aria-modal="true" aria-label={copy.checkoutDialog.title}>
           <div className="pricing-checkout-backdrop" onClick={closeCheckout} />
           <div className="pricing-checkout-shell">
-            <div className="pricing-checkout-header">
-              <div>
-                <h2 id={checkoutTitleId}>{checkoutCompleted ? copy.checkoutDialog.completedTitle : copy.checkoutDialog.title}</h2>
-                <p>{checkoutCompleted ? copy.checkoutDialog.completedText : copy.checkoutDialog.description}</p>
+            {!checkoutCompleted ? (
+              <div className="pricing-checkout-actions">
+                <a className="pricing-checkout-action" href={checkoutUrl} target="_blank" rel="noopener noreferrer" aria-label={copy.checkoutDialog.openNewTab}>
+                  ↗
+                </a>
+                <button type="button" className="pricing-checkout-action" onClick={closeCheckout} aria-label={copy.checkoutDialog.close}>
+                  ×
+                </button>
               </div>
+            ) : (
               <button type="button" className="pricing-checkout-close" onClick={closeCheckout} aria-label={copy.checkoutDialog.close}>
                 ×
               </button>
-            </div>
+            )}
             <div className="pricing-checkout-frame-wrap" aria-busy={!checkoutCompleted}>
               {checkoutCompleted ? (
                 <div className="pricing-checkout-complete">
+                  <h2>{copy.checkoutDialog.completedTitle}</h2>
+                  <p>{copy.checkoutDialog.completedText}</p>
                   <Link className="pricing-button pricing-button-primary" href="/pro/settings?billing=success">
                     {copy.checkoutDialog.goToSettings}
                   </Link>
@@ -336,11 +342,6 @@ export default function PricingView({ language, copy, user }: PricingViewProps) 
                 </>
               )}
             </div>
-            {!checkoutCompleted ? (
-              <a className="pricing-checkout-fallback" href={checkoutUrl} target="_blank" rel="noopener noreferrer">
-                {copy.checkoutDialog.openNewTab}
-              </a>
-            ) : null}
           </div>
         </div>
       ) : null}
