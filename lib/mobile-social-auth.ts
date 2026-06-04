@@ -19,6 +19,7 @@ export type MobileSocialProfile = {
 };
 
 const TIMVIZ_IOS_GOOGLE_CLIENT_ID = "768484064485-3k8u9fjgoj2usbntj7bmg3evj6o588aj.apps.googleusercontent.com";
+const TIMVIZ_ANDROID_GOOGLE_CLIENT_ID = "768484064485-io60lc35ua205r6phdchfbqfm1ke3q5i.apps.googleusercontent.com";
 
 export function cleanMobileSocialText(value: unknown) {
   return String(value ?? "").trim();
@@ -58,7 +59,8 @@ function getAllowedGoogleAudiences() {
     process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
     process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID,
     process.env.EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID,
-    TIMVIZ_IOS_GOOGLE_CLIENT_ID
+    TIMVIZ_IOS_GOOGLE_CLIENT_ID,
+    TIMVIZ_ANDROID_GOOGLE_CLIENT_ID
   ]
     .map((item) => cleanMobileSocialText(item))
     .filter(Boolean);

@@ -92,8 +92,8 @@ export function getPremiumBillingFromAppStoreProductId(productId: string | null 
     process.env.EXPO_PUBLIC_REVENUECAT_YEARLY_PRODUCT_ID?.trim() ||
     "timviz_premium_yearly";
 
-  if (productId && monthly && productId === monthly) return "monthly";
-  if (productId && yearly && productId === yearly) return "yearly";
+  if (productId && monthly && (productId === monthly || productId.startsWith(`${monthly}:`))) return "monthly";
+  if (productId && yearly && (productId === yearly || productId.startsWith(`${yearly}:`))) return "yearly";
   return null;
 }
 
@@ -128,6 +128,58 @@ function isActiveEntitlement(status: unknown, activeUntil: unknown) {
   if (!["active", "trial", "grace"].includes(normalizedStatus)) return false;
   if (!activeUntil) return normalizedStatus === "active";
   return isFutureDate(String(activeUntil));
+}
+
+async function syncProfessionalPremiumFromEntitlements(professionalId: string) {
+  if (!isSupabaseConfigured()) return { updated: false, reason: "supabase_not_configured" as const };
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return { updated: false, reason: "supabase_unavailable" as const };
+
+  const { data, error } = await supabase
+    .from("user_entitlements")
+    .select("plan_code, status, source, active_until")
+    .eq("user_id", professionalId);
+
+  if (error) {
+    if (isMissingEntitlementsTableError(error)) {
+      return { updated: false, reason: "entitlements_table_missing" as const };
+    }
+    throw new Error(error.message);
+  }
+
+  const activeEntitlements = (data || []).filter(
+    (item) => item.plan_code !== "free" && isActiveEntitlement(item.status, item.active_until)
+  );
+  const sorted = [...activeEntitlements].sort((left, right) => {
+    const leftTime = left.active_until ? new Date(left.active_until).getTime() : Number.MAX_SAFE_INTEGER;
+    const rightTime = right.active_until ? new Date(right.active_until).getTime() : Number.MAX_SAFE_INTEGER;
+    return rightTime - leftTime;
+  });
+  const premiumUntil = sorted[0]?.active_until || null;
+  const activeStatuses = new Set(activeEntitlements.map((item) => String(item.status || "")));
+  const premiumStatus: PremiumStatus = activeEntitlements.length
+    ? activeStatuses.size === 1 && activeStatuses.has("trial")
+      ? "trialing"
+      : "active"
+    : "inactive";
+
+  const patch = {
+    plan: activeEntitlements.length ? "premium" : "free",
+    premium_status: premiumStatus,
+    premium_until: premiumUntil
+  };
+
+  const { data: updated, error: updateError } = await supabase
+    .from("professionals")
+    .update(patch)
+    .eq("id", professionalId)
+    .select("id")
+    .maybeSingle();
+  if (updateError) throw new Error(updateError.message);
+
+  return updated?.id
+    ? { updated: true, professionalId: updated.id, premiumUntil, premiumStatus }
+    : { updated: false, reason: "professional_not_found" as const };
 }
 
 function isMissingEntitlementsTableError(error: unknown) {
@@ -343,30 +395,24 @@ export async function updateProfessionalPremiumFromAppStore(input: {
   }
   const admin = supabase;
   const storeSource = input.source === "google" ? "google" : "apple";
-
-  const patch: Record<string, string | null> = {
+  const fallbackPatch: Record<string, string | null> = {
     plan: input.status === "inactive" ? "free" : "premium",
     premium_status: input.status
   };
 
   if (input.premiumUntil !== undefined) {
-    patch.premium_until = input.premiumUntil;
-  }
-
-  if (input.premiumUntil) {
-    const existing = await getProfessionalPremiumSnapshot(input);
-    patch.premium_until = maxIsoDate(existing?.premium_until, input.premiumUntil);
+    fallbackPatch.premium_until = input.premiumUntil;
   }
 
   async function syncAppStoreEntitlement(professionalId: string) {
     const status = entitlementStatusFromPremiumStatus(input.status);
-    await upsertUserEntitlement({
+    const entitlementResult = await upsertUserEntitlement({
       userId: professionalId,
       planCode: getPremiumBillingFromAppStoreProductId(input.productId) === "yearly" ? "pro_yearly" : "pro_monthly",
       status,
       source: storeSource,
-      activeUntil: patch.premium_until || input.premiumUntil || null,
-      trialUntil: status === "trial" ? patch.premium_until || input.premiumUntil || null : null,
+      activeUntil: input.premiumUntil || null,
+      trialUntil: status === "trial" ? input.premiumUntil || null : null,
       cancelAtPeriodEnd: input.status === "canceled"
     });
 
@@ -380,7 +426,7 @@ export async function updateProfessionalPremiumFromAppStore(input: {
           transaction_id: input.transactionId || null,
           product_id: input.productId || "",
           status,
-          expires_at: patch.premium_until || input.premiumUntil || null,
+          expires_at: input.premiumUntil || null,
           raw_payload: {
             productId: input.productId || null,
             transactionId: input.transactionId || null,
@@ -392,19 +438,44 @@ export async function updateProfessionalPremiumFromAppStore(input: {
       );
       if (error && !isMissingEntitlementsTableError(error)) throw new Error(error.message);
     }
+
+    return entitlementResult;
+  }
+
+  async function applyFallbackPatch(professionalId: string) {
+    const { data, error } = await admin
+      .from("professionals")
+      .update(fallbackPatch)
+      .eq("id", professionalId)
+      .select("id")
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    return data?.id
+      ? { updated: true, by: "id" as const, professionalId: data.id }
+      : { updated: false, reason: "professional_not_found" as const };
+  }
+
+  async function applyEntitlementUpdate(professionalId: string, by: "id" | "email") {
+    const entitlementResult = await syncAppStoreEntitlement(professionalId);
+    if (!entitlementResult.updated) {
+      const fallbackResult = await applyFallbackPatch(professionalId);
+      return fallbackResult.updated ? { ...fallbackResult, by } : fallbackResult;
+    }
+    const aggregateResult = await syncProfessionalPremiumFromEntitlements(professionalId);
+    return aggregateResult.updated
+      ? { updated: true, by, professionalId, aggregateResult }
+      : { updated: false, reason: aggregateResult.reason };
   }
 
   if (input.professionalId) {
     const { data, error } = await supabase
       .from("professionals")
-      .update(patch)
-      .eq("id", input.professionalId)
       .select("id")
+      .eq("id", input.professionalId)
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (data?.id) {
-      await syncAppStoreEntitlement(data.id);
-      return { updated: true, by: "id" as const, professionalId: data.id };
+      return applyEntitlementUpdate(data.id, "id");
     }
   }
 
@@ -412,14 +483,12 @@ export async function updateProfessionalPremiumFromAppStore(input: {
   if (email) {
     const { data, error } = await supabase
       .from("professionals")
-      .update(patch)
-      .eq("email", email)
       .select("id")
+      .eq("email", email)
       .maybeSingle();
     if (error) throw new Error(error.message);
     if (data?.id) {
-      await syncAppStoreEntitlement(data.id);
-      return { updated: true, by: "email" as const, professionalId: data.id };
+      return applyEntitlementUpdate(data.id, "email");
     }
   }
 
@@ -461,15 +530,7 @@ export async function updateProfessionalPremiumFromMonobank(input: {
     premium_until: premiumUntil
   };
 
-  const { data, error } = await supabase
-    .from("professionals")
-    .update(patch)
-    .eq("id", input.professionalId)
-    .select("id")
-    .maybeSingle();
-  if (error) throw new Error(error.message);
-
-  await upsertUserEntitlement({
+  const entitlementResult = await upsertUserEntitlement({
     userId: input.professionalId,
     planCode: input.planCode || "pro_monthly",
     status: active || cancelledWithRemainingAccess ? "active" : input.status,
@@ -477,6 +538,21 @@ export async function updateProfessionalPremiumFromMonobank(input: {
     activeUntil: premiumUntil,
     cancelAtPeriodEnd: input.cancelAtPeriodEnd === true
   });
+
+  if (entitlementResult.updated) {
+    const aggregateResult = await syncProfessionalPremiumFromEntitlements(input.professionalId);
+    return aggregateResult.updated
+      ? { updated: true, professionalId: input.professionalId, invoiceId: input.invoiceId || null, aggregateResult }
+      : { updated: false, reason: aggregateResult.reason };
+  }
+
+  const { data, error } = await supabase
+    .from("professionals")
+    .update(patch)
+    .eq("id", input.professionalId)
+    .select("id")
+    .maybeSingle();
+  if (error) throw new Error(error.message);
 
   return data?.id
     ? { updated: true, professionalId: data.id, invoiceId: input.invoiceId || null }

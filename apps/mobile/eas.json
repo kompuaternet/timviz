@@ -14,6 +14,8 @@
       "env": {
         "EXPO_PUBLIC_API_BASE_URL": "https://timviz.com",
         "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "768484064485-3k8u9fjgoj2usbntj7bmg3evj6o588aj.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID": "768484064485-io60lc35ua205r6phdchfbqfm1ke3q5i.apps.googleusercontent.com",
+        "EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY": "goog_GgEqMuqyfehmwaxveAZkFOaPPCD",
         "EXPO_PUBLIC_REVENUECAT_ENTITLEMENT_ID": "premium",
         "EXPO_PUBLIC_REVENUECAT_MONTHLY_PRODUCT_ID": "timviz_premium_monthly",
         "EXPO_PUBLIC_REVENUECAT_YEARLY_PRODUCT_ID": "timviz_premium_yearly"
@@ -28,6 +30,8 @@
       "env": {
         "EXPO_PUBLIC_API_BASE_URL": "https://timviz.com",
         "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "768484064485-3k8u9fjgoj2usbntj7bmg3evj6o588aj.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID": "768484064485-io60lc35ua205r6phdchfbqfm1ke3q5i.apps.googleusercontent.com",
+        "EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY": "goog_GgEqMuqyfehmwaxveAZkFOaPPCD",
         "EXPO_PUBLIC_REVENUECAT_ENTITLEMENT_ID": "premium",
         "EXPO_PUBLIC_REVENUECAT_MONTHLY_PRODUCT_ID": "timviz_premium_monthly",
         "EXPO_PUBLIC_REVENUECAT_YEARLY_PRODUCT_ID": "timviz_premium_yearly"
@@ -46,6 +50,8 @@
       "env": {
         "EXPO_PUBLIC_API_BASE_URL": "https://timviz.com",
         "EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID": "768484064485-3k8u9fjgoj2usbntj7bmg3evj6o588aj.apps.googleusercontent.com",
+        "EXPO_PUBLIC_GOOGLE_ANDROID_CLIENT_ID": "768484064485-io60lc35ua205r6phdchfbqfm1ke3q5i.apps.googleusercontent.com",
+        "EXPO_PUBLIC_REVENUECAT_ANDROID_API_KEY": "goog_GgEqMuqyfehmwaxveAZkFOaPPCD",
         "EXPO_PUBLIC_REVENUECAT_ENTITLEMENT_ID": "premium",
         "EXPO_PUBLIC_REVENUECAT_MONTHLY_PRODUCT_ID": "timviz_premium_monthly",
         "EXPO_PUBLIC_REVENUECAT_YEARLY_PRODUCT_ID": "timviz_premium_yearly"
@@ -60,6 +66,13 @@
       "android": {
         "serviceAccountKeyPath": "./google-play-service-account.json",
         "track": "production",
+        "releaseStatus": "draft"
+      }
+    },
+    "internal": {
+      "android": {
+        "serviceAccountKeyPath": "./google-play-service-account.json",
+        "track": "internal",
         "releaseStatus": "draft"
       }
     }
