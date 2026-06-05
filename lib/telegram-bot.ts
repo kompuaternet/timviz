@@ -3319,6 +3319,7 @@ export async function sendSuperadminTelegramNotification(input: {
   professionalName?: string;
   professionalEmail?: string;
   professionalPhone?: string;
+  registrationSource?: string;
   ownerMode?: string;
   businessId?: string;
   businessName?: string;
@@ -3345,6 +3346,9 @@ export async function sendSuperadminTelegramNotification(input: {
     lines.push(`👤 ${input.professionalName?.trim() || input.professionalEmail?.trim() || "-"}`);
     lines.push(`✉️ ${input.professionalEmail?.trim() || "-"}`);
     lines.push(`📞 ${input.professionalPhone?.trim() || "-"}`);
+    if (input.registrationSource?.trim()) {
+      lines.push(`📲 Зарегистрирован через: ${input.registrationSource.trim()}`);
+    }
     lines.push(`🧾 Роль: ${roleLabel}`);
     lines.push(`✅ Workspace ready: ${input.workspaceReady ? "yes" : "no"}`);
   } else if (input.eventType === "service_added") {

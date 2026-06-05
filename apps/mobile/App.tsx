@@ -8294,6 +8294,8 @@ export default function App() {
           idToken,
           profile,
           language,
+          platform: Platform.OS,
+          signupSource: `mobile_${Platform.OS}`,
           country: registerPhoneCountry.country,
           timezone: detectedTimezone,
           currency: registerPhoneCountry.currency || inferCurrency(registerPhoneCountry.country),
@@ -8383,6 +8385,8 @@ export default function App() {
       country: registerPhoneCountry.country,
       currency: registerPhoneCountry.currency || inferCurrency(registerPhoneCountry.country),
       timezone: detectedTimezone,
+      platform: Platform.OS,
+      signupSource: `mobile_${Platform.OS}`,
     };
 
     const validationMessage = getRegisterValidationMessage(payload);

@@ -5,6 +5,23 @@ import {
   resolveMobileSocialProfile,
   type MobileSocialProvider
 } from "../../../../../lib/mobile-social-auth";
+import { sendSuperadminTelegramNotification } from "../../../../../lib/telegram-bot";
+
+function getMobileSocialRegistrationSource(body: Record<string, unknown>, request: Request) {
+  const rawSource = cleanMobileSocialText(body.signupSource || body.source || body.platform).toLowerCase();
+  const userAgent = cleanMobileSocialText(request.headers.get("user-agent")).toLowerCase();
+  const source = rawSource || userAgent;
+
+  if (source.includes("ios") || source.includes("iphone") || source.includes("ipad")) {
+    return "iOS приложение";
+  }
+
+  if (source.includes("android")) {
+    return "Android приложение";
+  }
+
+  return "мобильное приложение";
+}
 
 export async function POST(request: Request) {
   try {
@@ -29,6 +46,20 @@ export async function POST(request: Request) {
       timezone: body.timezone,
       currency: body.currency
     });
+
+    if (session.isNewRegistration) {
+      await sendSuperadminTelegramNotification({
+        eventType: "user_registered",
+        professionalId: session.professionalId,
+        professionalName: session.profile.displayName,
+        professionalEmail: session.profile.email,
+        professionalPhone: "",
+        registrationSource: `${getMobileSocialRegistrationSource(body, request)} (${provider})`,
+        ownerMode: "owner",
+        businessName: session.businessName || undefined,
+        workspaceReady: session.workspaceReady
+      }).catch(() => undefined);
+    }
 
     return NextResponse.json(session);
   } catch (error) {

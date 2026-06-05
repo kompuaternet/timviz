@@ -9,6 +9,7 @@ import {
   getProfessionalProfileById,
   updateProfessionalPasswordByEmail
 } from "../../../../../lib/pro-data";
+import { sendSuperadminTelegramNotification } from "../../../../../lib/telegram-bot";
 
 const defaultServiceMode = "Клиенты приходят в мое физическое заведение";
 const passwordTooShortCopy = {
@@ -26,6 +27,22 @@ function cleanText(value: unknown) {
   return String(value ?? "").trim();
 }
 
+function getMobileRegistrationSource(body: Record<string, unknown>, request: Request) {
+  const rawSource = cleanText(body.signupSource || body.source || body.platform).toLowerCase();
+  const userAgent = cleanText(request.headers.get("user-agent")).toLowerCase();
+  const source = rawSource || userAgent;
+
+  if (source.includes("ios") || source.includes("iphone") || source.includes("ipad")) {
+    return "iOS приложение";
+  }
+
+  if (source.includes("android")) {
+    return "Android приложение";
+  }
+
+  return "мобильное приложение";
+}
+
 export async function POST(request: Request) {
   try {
     const body = await request.json();
@@ -40,6 +57,7 @@ export async function POST(request: Request) {
     const country = cleanText(body.country) || "Ukraine";
     const timezone = cleanText(body.timezone) || "Europe/Kyiv";
     const currency = cleanText(body.currency) || "UAH";
+    const registrationSource = getMobileRegistrationSource(body, request);
 
     if (!firstName || !email || !password || !phone || !companyName) {
       return NextResponse.json({ error: t.registrationMissing }, { status: 400 });
@@ -110,6 +128,18 @@ export async function POST(request: Request) {
     const profile = await getProfessionalProfileById(result.professionalId);
     const displayName =
       `${profile?.firstName || firstName} ${profile?.lastName || lastName}`.trim() || email;
+
+    await sendSuperadminTelegramNotification({
+      eventType: "user_registered",
+      professionalId: result.professionalId,
+      professionalName: displayName,
+      professionalEmail: email,
+      professionalPhone: phone,
+      registrationSource,
+      ownerMode: "owner",
+      businessName: companyName || undefined,
+      workspaceReady: result.workspaceReady
+    }).catch(() => undefined);
 
     return NextResponse.json({
       ...result,

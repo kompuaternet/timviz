@@ -227,7 +227,12 @@ export async function getOrCreateMobileSocialProfessional(input: {
         avatarUrl: nextAvatarUrl
       }).catch(() => undefined);
     }
-    return existing.id;
+    return {
+      professionalId: existing.id,
+      isNewRegistration: false,
+      workspaceReady: true,
+      businessName: ""
+    };
   }
 
   if (existing?.id && existing.accountStatus === "pending_email") {
@@ -242,10 +247,16 @@ export async function getOrCreateMobileSocialProfessional(input: {
         avatarUrl: nextAvatarUrl
       }).catch(() => undefined);
     }
-    return existing.id;
+    return {
+      professionalId: existing.id,
+      isNewRegistration: false,
+      workspaceReady: true,
+      businessName: ""
+    };
   }
 
   const firstName = input.profile.givenName || input.profile.fullName || getEmailName(input.profile.email);
+  const businessName = buildCompanyName(input.profile);
   const result = await createProfessionalSetup({
     account: {
       firstName,
@@ -266,7 +277,7 @@ export async function getOrCreateMobileSocialProfessional(input: {
       joinBusinessId: "",
       joinBusinessName: "",
       joinBusinessRole: "",
-      companyName: buildCompanyName(input.profile),
+      companyName: businessName,
       website: "",
       categories: [],
       services: [],
@@ -279,7 +290,12 @@ export async function getOrCreateMobileSocialProfessional(input: {
     }
   });
 
-  return result.professionalId;
+  return {
+    professionalId: result.professionalId,
+    isNewRegistration: true,
+    workspaceReady: result.workspaceReady,
+    businessName
+  };
 }
 
 export async function createMobileSocialSession(input: {
@@ -290,7 +306,7 @@ export async function createMobileSocialSession(input: {
   timezone: unknown;
   currency: unknown;
 }) {
-  const professionalId = await getOrCreateMobileSocialProfessional({
+  const registration = await getOrCreateMobileSocialProfessional({
     provider: input.provider,
     profile: input.profile,
     language: normalizeMobileSocialLanguage(input.language),
@@ -298,6 +314,7 @@ export async function createMobileSocialSession(input: {
     timezone: normalizeMobileSocialTimezone(input.timezone),
     currency: normalizeMobileSocialCurrency(input.currency)
   });
+  const professionalId = registration.professionalId;
   const profile = await getProfessionalProfileById(professionalId);
   const displayName =
     `${profile?.firstName || input.profile.givenName} ${profile?.lastName || input.profile.familyName}`.trim() ||
@@ -306,6 +323,9 @@ export async function createMobileSocialSession(input: {
 
   return {
     professionalId,
+    isNewRegistration: registration.isNewRegistration,
+    workspaceReady: registration.workspaceReady,
+    businessName: registration.businessName,
     token: signSessionValue(professionalId),
     profile: {
       id: professionalId,
