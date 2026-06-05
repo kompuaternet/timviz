@@ -2,6 +2,9 @@ import { defineConfig, devices } from "@playwright/test";
 
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000";
 const isCi = Boolean(process.env.CI);
+const webServerCommand =
+  process.env.PLAYWRIGHT_WEB_SERVER_COMMAND ??
+  "node --localstorage-file=/tmp/timviz-playwright-localstorage ./node_modules/next/dist/bin/next dev --hostname 127.0.0.1 --port 3000";
 
 export default defineConfig({
   testDir: "./tests",
@@ -23,8 +26,7 @@ export default defineConfig({
     navigationTimeout: 30_000
   },
   webServer: {
-    command:
-      "node --localstorage-file=/tmp/timviz-playwright-localstorage ./node_modules/next/dist/bin/next dev --hostname 127.0.0.1 --port 3000",
+    command: webServerCommand,
     url: baseURL,
     reuseExistingServer: !isCi,
     timeout: 120_000

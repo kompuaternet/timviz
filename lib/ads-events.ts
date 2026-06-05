@@ -31,6 +31,7 @@ type AdsAttributionPayload = Record<string, string>;
 
 const ADS_ATTRIBUTION_STORAGE_KEY = "timviz_ads_attribution_v1";
 const ADS_ATTRIBUTION_MAX_AGE_MS = 90 * 24 * 60 * 60 * 1000;
+const DEFAULT_GOOGLE_ADS_SIGNUP_CONVERSION_SEND_TO = "AW-18141706444/Cv3zCPWMnLkcEMzx0cpD";
 const adsCarryPrefixes = ["utm_"];
 const adsCarryKeys = ["gclid", "gbraid", "wbraid", "fbclid", "ttclid", "msclkid"];
 
@@ -91,6 +92,30 @@ function readAdsAttribution(): AdsAttributionPayload {
   } catch {
     return {};
   }
+}
+
+function getGoogleAdsSignupConversionSendTo() {
+  return (
+    process.env.NEXT_PUBLIC_GOOGLE_ADS_SIGNUP_CONVERSION_SEND_TO ||
+    DEFAULT_GOOGLE_ADS_SIGNUP_CONVERSION_SEND_TO
+  ).trim();
+}
+
+function trackGoogleAdsSignupConversion(eventName: AdsEventName) {
+  if (eventName !== "sign_up_complete" || typeof window.gtag !== "function") {
+    return;
+  }
+
+  const sendTo = getGoogleAdsSignupConversionSendTo();
+  if (!sendTo) {
+    return;
+  }
+
+  window.gtag("event", "conversion", {
+    send_to: sendTo,
+    value: 1.0,
+    currency: "UAH"
+  });
 }
 
 export function captureAdsAttribution() {
@@ -169,6 +194,8 @@ export function trackAdsEvent(eventName: AdsEventName, payload: AdsEventPayload 
       window.gtag("event", recommendedEventName, recommendedPayload);
     }
   }
+
+  trackGoogleAdsSignupConversion(eventName);
 }
 
 export function buildAdsCarryoverUrl(pathname: string) {

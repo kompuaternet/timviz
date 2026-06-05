@@ -60,15 +60,36 @@ export function setupPageGuards(page: Page) {
   };
 }
 
+async function hasRenderedTargetPage(page: Page, path: string) {
+  try {
+    const current = new URL(page.url());
+    const expected = new URL(path, current.origin);
+    if (current.pathname !== expected.pathname) return false;
+    await page.locator("main").first().waitFor({ state: "visible", timeout: 1000 });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export async function openAndSettle(page: Page, path: string) {
   await page.evaluate(() => window.stop()).catch(() => undefined);
   await page.waitForTimeout(50);
   await page.goto(path, { waitUntil: "domcontentloaded" }).catch(async (error) => {
-    if (!String(error).includes("interrupted by another navigation")) {
+    const message = String(error);
+    if (message.includes("Timeout") && (await hasRenderedTargetPage(page, path))) {
+      return;
+    }
+    if (!message.includes("interrupted by another navigation")) {
       throw error;
     }
     await page.waitForTimeout(250);
-    await page.goto(path, { waitUntil: "domcontentloaded" });
+    await page.goto(path, { waitUntil: "domcontentloaded" }).catch(async (retryError) => {
+      if (String(retryError).includes("Timeout") && (await hasRenderedTargetPage(page, path))) {
+        return;
+      }
+      throw retryError;
+    });
   });
   await page.waitForLoadState("networkidle").catch(() => undefined);
 }

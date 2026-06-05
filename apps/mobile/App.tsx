@@ -8101,7 +8101,28 @@ export default function App() {
     resolver?.(token);
   }
 
-  function requestCaptchaToken() {
+  async function requestMobileCaptchaFallbackToken() {
+    const response = await fetch(`${API_BASE_URL}/api/mobile/captcha/fallback`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ source: `mobile-${Platform.OS}`, language }),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok || !payload?.token) {
+      throw new Error(payload?.error || t.captchaFailed);
+    }
+    return String(payload.token);
+  }
+
+  async function requestCaptchaToken() {
+    if (Platform.OS === "android") {
+      try {
+        return await requestMobileCaptchaFallbackToken();
+      } catch {
+        return "";
+      }
+    }
+
     return new Promise<string>((resolve) => {
       captchaResolverRef.current = resolve;
       const params = new URLSearchParams();

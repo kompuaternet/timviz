@@ -1,15 +1,19 @@
 import Script from "next/script";
 
+const defaultGoogleAdsTagId = "AW-18141706444";
+
 function getConfiguredGoogleIds() {
-  return [
+  return Array.from(new Set([
     process.env.NEXT_PUBLIC_GOOGLE_TAG_MANAGER_ID,
     process.env.NEXT_PUBLIC_GTM_ID,
+    process.env.NEXT_PUBLIC_GOOGLE_ADS_TAG_ID,
     process.env.NEXT_PUBLIC_GOOGLE_TAG_ID,
     process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID,
-    process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID
+    process.env.NEXT_PUBLIC_GOOGLE_ANALYTICS_ID,
+    defaultGoogleAdsTagId
   ]
     .map((value) => (value || "").trim())
-    .filter(Boolean);
+    .filter(Boolean)));
 }
 
 function isGoogleTagManagerId(value: string) {
@@ -24,9 +28,14 @@ export function getGoogleTagId() {
   return getConfiguredGoogleIds().find((value) => !isGoogleTagManagerId(value)) || "";
 }
 
+export function getGoogleTagIds() {
+  return getConfiguredGoogleIds().filter((value) => !isGoogleTagManagerId(value));
+}
+
 export default function GoogleTag() {
   const tagManagerId = getGoogleTagManagerId();
-  const googleTagId = getGoogleTagId();
+  const googleTagIds = getGoogleTagIds();
+  const googleTagId = googleTagIds[0] || "";
 
   if (!tagManagerId && !googleTagId) {
     return null;
@@ -46,7 +55,7 @@ export default function GoogleTag() {
               window.dataLayer = window.dataLayer || [];
               window.gtag = window.gtag || function(){ window.dataLayer.push(arguments); };
               window.gtag('js', new Date());
-              window.gtag('config', ${JSON.stringify(googleTagId)});
+              ${googleTagIds.map((id) => `window.gtag('config', ${JSON.stringify(id)});`).join("\n              ")}
             `}
           </Script>
         </>
