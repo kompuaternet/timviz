@@ -33,11 +33,11 @@ function getMobileRegistrationSource(body: Record<string, unknown>, request: Req
   const source = rawSource || userAgent;
 
   if (source.includes("ios") || source.includes("iphone") || source.includes("ipad")) {
-    return "iOS приложение";
+    return "мобильное приложение Apple";
   }
 
   if (source.includes("android")) {
-    return "Android приложение";
+    return "мобильное приложение Android";
   }
 
   return "мобильное приложение";

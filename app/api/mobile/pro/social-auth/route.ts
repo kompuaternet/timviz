@@ -13,11 +13,11 @@ function getMobileSocialRegistrationSource(body: Record<string, unknown>, reques
   const source = rawSource || userAgent;
 
   if (source.includes("ios") || source.includes("iphone") || source.includes("ipad")) {
-    return "iOS приложение";
+    return "мобильное приложение Apple";
   }
 
   if (source.includes("android")) {
-    return "Android приложение";
+    return "мобильное приложение Android";
   }
 
   return "мобильное приложение";
@@ -54,7 +54,7 @@ export async function POST(request: Request) {
         professionalName: session.profile.displayName,
         professionalEmail: session.profile.email,
         professionalPhone: "",
-        registrationSource: `${getMobileSocialRegistrationSource(body, request)} (${provider})`,
+        registrationSource: getMobileSocialRegistrationSource(body, request),
         ownerMode: "owner",
         businessName: session.businessName || undefined,
         workspaceReady: session.workspaceReady
