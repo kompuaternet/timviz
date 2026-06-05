@@ -1,0 +1,49 @@
+const fs = require("fs");
+const path = require("path");
+
+const baseConfig = require("./app.json");
+
+function resolveOptionalFile(value) {
+  if (!value) return "";
+  const absolutePath = path.isAbsolute(value) ? value : path.resolve(__dirname, value);
+  return fs.existsSync(absolutePath) ? value : "";
+}
+
+module.exports = () => {
+  const config = JSON.parse(JSON.stringify(baseConfig));
+  const expo = config.expo;
+  const buildPlatform = process.env.EAS_BUILD_PLATFORM || process.env.EXPO_BUILD_PLATFORM || "";
+  const iosGoogleServicesFile = resolveOptionalFile(
+    process.env.GOOGLE_SERVICES_PLIST || process.env.EXPO_PUBLIC_FIREBASE_IOS_PLIST
+  );
+  const androidGoogleServicesFile = resolveOptionalFile(
+    process.env.GOOGLE_SERVICES_JSON || process.env.EXPO_PUBLIC_FIREBASE_ANDROID_JSON
+  );
+  const shouldConfigureIosFirebase = buildPlatform !== "android" && Boolean(iosGoogleServicesFile);
+  const shouldConfigureAndroidFirebase = buildPlatform !== "ios" && Boolean(androidGoogleServicesFile);
+
+  expo.extra = {
+    ...expo.extra,
+    firebaseAnalyticsEnabled: shouldConfigureIosFirebase || shouldConfigureAndroidFirebase,
+  };
+
+  if (shouldConfigureIosFirebase) {
+    expo.ios = {
+      ...expo.ios,
+      googleServicesFile: iosGoogleServicesFile,
+    };
+  }
+
+  if (shouldConfigureAndroidFirebase) {
+    expo.android = {
+      ...expo.android,
+      googleServicesFile: androidGoogleServicesFile,
+    };
+  }
+
+  if (shouldConfigureIosFirebase || shouldConfigureAndroidFirebase) {
+    expo.plugins = [...(expo.plugins || []), "@react-native-firebase/app"];
+  }
+
+  return config;
+};

@@ -8,6 +8,8 @@ const allowedEvents = new Set([
   "mobile_sign_up_complete",
   "mobile_login_complete",
   "mobile_social_auth_complete",
+  "mobile_service_added",
+  "mobile_appointment_created",
   "mobile_checkout_start",
   "mobile_purchase_complete",
   "support_message_sent",

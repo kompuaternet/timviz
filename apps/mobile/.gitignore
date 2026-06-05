@@ -33,6 +33,9 @@ apple-credentials/
 credentials.json
 google-play-service-account.json
 build/
+firebase/
+GoogleService-Info.plist
+google-services.json
 
 # local env files
 .env*.local

@@ -35,6 +35,7 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
+import { setFirebaseMobileUser, trackFirebaseMobileEvent, type MobileAnalyticsPayload } from "./src/lib/mobileAnalytics";
 
 WebBrowser.maybeCompleteAuthSession();
 Notifications.setNotificationHandler({
@@ -68,6 +69,8 @@ type MobileAdsEventName =
   | "mobile_sign_up_complete"
   | "mobile_login_complete"
   | "mobile_social_auth_complete"
+  | "mobile_service_added"
+  | "mobile_appointment_created"
   | "mobile_checkout_start"
   | "mobile_purchase_complete"
   | "support_message_sent"
@@ -7820,9 +7823,17 @@ export default function App() {
 
   async function trackMobileAdsEvent(
     eventName: MobileAdsEventName,
-    payload: Record<string, string | number | boolean | null | undefined> = {},
+    payload: MobileAnalyticsPayload = {},
     token = session?.token
   ) {
+    const enrichedPayload = {
+      ...payload,
+      language,
+      timezone: detectedTimezone,
+      platform: Platform.OS,
+      app_version: getMobileAppVersion(),
+    };
+    void trackFirebaseMobileEvent(eventName, enrichedPayload);
     if (!token) return;
     try {
       await fetch(`${API_BASE_URL}/api/mobile/pro/ads/events`, {
@@ -7835,11 +7846,7 @@ export default function App() {
           eventName,
           platform: Platform.OS,
           appVersion: getMobileAppVersion(),
-          payload: {
-            ...payload,
-            language,
-            timezone: detectedTimezone,
-          },
+          payload: enrichedPayload,
         }),
       });
     } catch {
@@ -8033,6 +8040,10 @@ export default function App() {
     await SecureStore.setItemAsync(SECURE_SESSION_KEY, serialized).catch(() => undefined);
     setPendingBiometricSession(null);
     setSession(nextSession);
+    void setFirebaseMobileUser(nextSession.professionalId, {
+      language: sessionLanguage || language,
+      platform: Platform.OS,
+    });
     void maybeOfferBiometricUnlock();
     await refreshAll(nextSession, selectedDate);
   }
@@ -8553,6 +8564,14 @@ export default function App() {
       [...appointments, ...optimisticAppointments].sort((left, right) => left.startTime.localeCompare(right.startTime))
     );
     setVisitDraft(createDefaultVisitDraft(appointmentDate, items[0]?.startTime || "09:00"));
+    void trackMobileAdsEvent("mobile_appointment_created", {
+      items_count: items.length,
+      has_customer_phone: Boolean(customerPhone),
+      has_service: items.some((item) => !isAppointmentWithoutServiceName(item.serviceName)),
+      total_value: items.reduce((sum, item) => sum + Number(item.priceAmount || 0), 0),
+      currency: workspace?.professional.currency || inferCurrency(workspace?.professional.country || registerPhoneCountry.country),
+      source: "calendar",
+    });
     if (!hadAppointmentsBefore) {
       Alert.alert("Timviz", t.firstAppointmentCreated);
     }
@@ -8886,6 +8905,13 @@ export default function App() {
       attempts: 0,
     });
     scheduleServiceSaveFlush(120);
+    void trackMobileAdsEvent("mobile_service_added", {
+      source: "custom",
+      category: optimisticService.category,
+      duration_minutes: optimisticService.durationMinutes,
+      price: optimisticService.price,
+      currency: workspace?.professional.currency || inferCurrency(workspace?.professional.country || registerPhoneCountry.country),
+    });
     return true;
   }
 
@@ -9018,6 +9044,13 @@ export default function App() {
     pendingServiceSavesRef.current.set(key, pendingSave);
     mergeWorkspaceServices((services) => (services.some((item) => serviceMatchesPending(item, pendingSave)) ? services : [optimisticService, ...services]));
     scheduleServiceSaveFlush();
+    void trackMobileAdsEvent("mobile_service_added", {
+      source: "catalog",
+      category: optimisticService.category,
+      duration_minutes: optimisticService.durationMinutes,
+      price: optimisticService.price,
+      currency: workspace?.professional.currency || inferCurrency(workspace?.professional.country || registerPhoneCountry.country),
+    });
   }
 
   async function saveStaffSchedule(
