@@ -30,7 +30,8 @@ export async function POST(request: Request) {
       profile: {
         id: professionalId,
         email: profile?.email || email,
-        displayName
+        displayName,
+        language: profile?.language || language
       }
     });
   } catch (error) {

@@ -88,7 +88,8 @@ export async function POST(request: Request) {
         profile: {
           id: existingProfile.id,
           email: profile?.email || email,
-          displayName
+          displayName,
+          language: profile?.language || language
         }
       });
     }
@@ -147,7 +148,8 @@ export async function POST(request: Request) {
       profile: {
         id: result.professionalId,
         email: profile?.email || email,
-        displayName
+        displayName,
+        language: profile?.language || language
       }
     });
   } catch (error) {

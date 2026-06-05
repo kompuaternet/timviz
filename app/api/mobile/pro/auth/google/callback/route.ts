@@ -81,7 +81,8 @@ export async function GET(request: Request) {
       token: session.token,
       professionalId: session.professionalId,
       email: session.profile.email,
-      displayName: session.profile.displayName
+      displayName: session.profile.displayName,
+      language: session.profile.language
     });
   } catch {
     clearOAuthCookies(cookieStore, isSecure);

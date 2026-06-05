@@ -60,6 +60,7 @@ type MobileSession = {
   professionalId: string;
   email: string;
   displayName: string;
+  language?: AppLanguage;
 };
 
 type MobileAdsEventName =
@@ -5472,7 +5473,6 @@ function detectLanguage(): AppLanguage {
   if (languageCandidates.some((value) => value.startsWith("cs") || value.startsWith("cz"))) return "cs";
   if (languageCandidates.some((value) => value.startsWith("es"))) return "es";
   if (languageCandidates.some((value) => value.startsWith("de"))) return "de";
-  if (languageCandidates.some((value) => value.startsWith("en"))) return "en";
 
   const countryCandidates = [
     getCountryIsoFromTimezone(getDetectedTimezone()),
@@ -5484,6 +5484,8 @@ function detectLanguage(): AppLanguage {
     const countryLanguage = COUNTRY_LANGUAGE_BY_ISO[countryIso];
     if (countryLanguage) return countryLanguage;
   }
+
+  if (languageCandidates.some((value) => value.startsWith("en"))) return "en";
 
   return "en";
 }
@@ -6585,11 +6587,13 @@ async function requestExpoPushToken() {
 }
 
 function normalizeApiSession(result: any, fallbackEmail: string): MobileSession {
+  const sessionLanguage = normalizeAppLanguage(result.profile?.language || result.language);
   return {
     token: String(result.token || ""),
     professionalId: String(result.professionalId || ""),
     email: String(result.profile?.email || fallbackEmail),
     displayName: String(result.profile?.displayName || result.profile?.email || fallbackEmail),
+    ...(sessionLanguage ? { language: sessionLanguage } : {}),
   };
 }
 
@@ -7194,6 +7198,7 @@ export default function App() {
   const serviceSaveFlushPromiseRef = useRef<Promise<void> | null>(null);
   const serviceCreatePromiseRef = useRef<Promise<void> | null>(null);
   const latestLanguageRef = useRef(language);
+  const initialLanguageRef = useRef(language);
   const pendingProfileLanguageRef = useRef<AppLanguage | null>(null);
   const languageStorageReadyRef = useRef(false);
   const autoPushRegisteringRef = useRef(false);
@@ -7220,6 +7225,7 @@ export default function App() {
           profile: {
             email: parsed.searchParams.get("email") || "",
             displayName: parsed.searchParams.get("displayName") || "",
+            language: parsed.searchParams.get("language") || "",
           },
         },
         parsed.searchParams.get("email") || ""
@@ -7296,11 +7302,15 @@ export default function App() {
     AsyncStorage.getItem(APP_LANGUAGE_KEY)
       .then((value) => {
         const savedLanguage = normalizeAppLanguage(value);
-        if (savedLanguage) setLanguage(savedLanguage);
+        if (savedLanguage && latestLanguageRef.current === initialLanguageRef.current) {
+          latestLanguageRef.current = savedLanguage;
+          setLanguage(savedLanguage);
+        }
       })
       .catch(() => undefined)
       .finally(() => {
         languageStorageReadyRef.current = true;
+        void AsyncStorage.setItem(APP_LANGUAGE_KEY, latestLanguageRef.current).catch(() => undefined);
       });
   }, []);
 
@@ -8010,7 +8020,14 @@ export default function App() {
     }
   }, [activeTab, session]);
 
-  async function persistSession(nextSession: MobileSession) {
+  async function persistSession(nextSession: MobileSession, preferredLanguage?: AppLanguage) {
+    const sessionLanguage = preferredLanguage || nextSession.language;
+    if (sessionLanguage) {
+      pendingProfileLanguageRef.current = sessionLanguage;
+      latestLanguageRef.current = sessionLanguage;
+      setLanguage(sessionLanguage);
+      void AsyncStorage.setItem(APP_LANGUAGE_KEY, sessionLanguage).catch(() => undefined);
+    }
     const serialized = JSON.stringify(nextSession);
     await AsyncStorage.setItem(STORAGE_KEY, serialized);
     await SecureStore.setItemAsync(SECURE_SESSION_KEY, serialized).catch(() => undefined);
@@ -8414,7 +8431,7 @@ export default function App() {
         return;
       }
       const nextSession = normalizeApiSession(result, payload.email);
-      await persistSession(nextSession);
+      await persistSession(nextSession, payload.language);
       void trackMobileAdsEvent(
         "mobile_sign_up_complete",
         {

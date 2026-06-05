@@ -330,7 +330,8 @@ export async function createMobileSocialSession(input: {
     profile: {
       id: professionalId,
       email: profile?.email || input.profile.email,
-      displayName
+      displayName,
+      language: profile?.language || normalizeMobileSocialLanguage(input.language)
     }
   };
 }
