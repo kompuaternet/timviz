@@ -8776,9 +8776,23 @@ export default function App() {
           marketingTelegram: false,
         }),
       })
-      .then(async () => {
+      .then((result) => {
+        const savedClient = result?.client as ClientRecord | undefined;
         pendingClientCreatesRef.current.delete(optimisticClient.id);
-        await refreshAll(session, selectedDate, { silent: true });
+        if (!savedClient?.id) return;
+        setClients((current) => {
+          const withoutOptimistic = current.filter((client) => client.id !== optimisticClient.id && client.id !== savedClient.id);
+          return [savedClient, ...withoutOptimistic];
+        });
+        setVisitDraft((current) => {
+          if (current.selectedClientId !== optimisticClient.id) return current;
+          return {
+            ...current,
+            selectedClientId: savedClient.id,
+            customerName: savedClient.fullName || optimisticClient.fullName,
+            customerPhone: savedClient.phone || optimisticClient.phone,
+          };
+        });
       })
       .catch((error) => {
         pendingClientCreatesRef.current.delete(optimisticClient.id);
@@ -9731,6 +9745,7 @@ function CalendarTab({
   const [clientQuery, setClientQuery] = useState("");
   const [clientCreateOpen, setClientCreateOpen] = useState(false);
   const [newClientDraft, setNewClientDraft] = useState({ firstName: "", lastName: "", phone: "" });
+  const [inlineClientSaving, setInlineClientSaving] = useState(false);
   const visibleDates = useMemo(() => getCalendarModeDates(viewMode, selectedDate), [selectedDate, viewMode]);
   const visibleDatesKey = visibleDates.join("|");
   const preloadDates = useMemo(
@@ -10086,12 +10101,12 @@ function CalendarTab({
   }
 
   function setDraftClient(client: ClientRecord | null) {
-    setVisitDraft({
-      ...visitDraft,
+    setVisitDraft((current) => ({
+      ...current,
       selectedClientId: client?.id,
       customerName: client?.fullName || "",
       customerPhone: client?.phone || "",
-    });
+    }));
     setClientQuery("");
     setClientCreateOpen(false);
     setVisitPickerMode(null);
@@ -10112,13 +10127,23 @@ function CalendarTab({
   }
 
   async function createInlineClient() {
+    if (inlineClientSaving) return;
     const fullName = [newClientDraft.firstName, newClientDraft.lastName].map((item) => item.trim()).filter(Boolean).join(" ");
-    const client = await onCreateClientFromVisit({
-      fullName,
-      phone: newClientDraft.phone.trim(),
-      email: "",
-    });
-    if (client) setDraftClient(client);
+    setInlineClientSaving(true);
+    Keyboard.dismiss();
+    try {
+      const client = await onCreateClientFromVisit({
+        fullName,
+        phone: newClientDraft.phone.trim(),
+        email: "",
+      });
+      if (client) {
+        setNewClientDraft({ firstName: "", lastName: "", phone: "" });
+        setDraftClient(client);
+      }
+    } finally {
+      setInlineClientSaving(false);
+    }
   }
 
   function updateVisitItem(index: number, patch: Partial<VisitServiceDraft>) {
@@ -10596,7 +10621,7 @@ function CalendarTab({
                     <InlineClientInput label={t.firstName} value={newClientDraft.firstName} onChangeText={(value) => setNewClientDraft({ ...newClientDraft, firstName: value })} />
                     <InlineClientInput label={t.lastName} value={newClientDraft.lastName} onChangeText={(value) => setNewClientDraft({ ...newClientDraft, lastName: value })} />
                     <InlineClientInput label={t.phone} value={newClientDraft.phone} onChangeText={(value) => setNewClientDraft({ ...newClientDraft, phone: value })} keyboardType="phone-pad" />
-                    <PrimaryButton label={t.addAndSelectClient} onPress={() => void createInlineClient()} disabled={busy} />
+                    <PrimaryButton label={t.addAndSelectClient} onPress={() => void createInlineClient()} disabled={busy || inlineClientSaving} />
                   </View>
                 ) : null}
                 <View style={styles.clientPickerResults}>
@@ -12877,10 +12902,14 @@ function ServicesTab({
   const [debouncedServiceName, setDebouncedServiceName] = useState("");
   const [catalogQuery, setCatalogQuery] = useState("");
   const [activeCatalogCategory, setActiveCatalogCategory] = useState("");
+  const [highlightMineMode, setHighlightMineMode] = useState(false);
 
   useEffect(() => {
     if (!modeRequest) return;
     setMode(modeRequest.mode);
+    if (modeRequest.mode === "mine") {
+      setHighlightMineMode(false);
+    }
     onModeRequestHandled?.();
   }, [modeRequest, onModeRequestHandled]);
 
@@ -13091,6 +13120,7 @@ function ServicesTab({
   function openExistingDuplicate() {
     if (!duplicateService) return;
     setMode("mine");
+    setHighlightMineMode(false);
     startEdit(duplicateService);
   }
 
@@ -13115,9 +13145,22 @@ function ServicesTab({
       return;
     }
     setMode("mine");
+    setHighlightMineMode(false);
     setCustomCategoryOpen(false);
     setCustomServiceError("");
     void onCreate();
+  }
+
+  function changeMode(nextMode: ServiceTabMode) {
+    setMode(nextMode);
+    if (nextMode === "mine") {
+      setHighlightMineMode(false);
+    }
+  }
+
+  function addCatalogServiceAndHintMine(service: ServiceTemplateRecord & { category: string }) {
+    onAddCatalog(service);
+    setHighlightMineMode(true);
   }
 
   function openServiceActions(service: ServiceRecord) {
@@ -13137,9 +13180,14 @@ function ServicesTab({
           { id: "catalog", label: t.servicesCatalogShort || t.generalCatalog },
         ].map((item) => {
           const active = mode === item.id;
+          const gentlyHinted = item.id === "mine" && highlightMineMode && !active;
           return (
-            <Pressable key={item.id} style={[styles.servicesModeButton, active && styles.servicesModeButtonActive]} onPress={() => setMode(item.id as ServiceTabMode)}>
-              <Text style={[styles.servicesModeText, active && styles.servicesModeTextActive]}>{item.label}</Text>
+            <Pressable
+              key={item.id}
+              style={[styles.servicesModeButton, gentlyHinted && styles.servicesModeButtonHint, active && styles.servicesModeButtonActive]}
+              onPress={() => changeMode(item.id as ServiceTabMode)}
+            >
+              <Text style={[styles.servicesModeText, gentlyHinted && styles.servicesModeTextHint, active && styles.servicesModeTextActive]}>{item.label}</Text>
             </Pressable>
           );
         })}
@@ -13196,7 +13244,7 @@ function ServicesTab({
               <Text style={styles.firstRunTitle}>{t.firstServiceTitle}</Text>
               <Text style={styles.firstRunText}>{t.firstServiceText}</Text>
               <View style={styles.firstRunActions}>
-                <Pressable style={styles.firstRunPrimaryButton} onPress={() => setMode("catalog")}>
+                <Pressable style={styles.firstRunPrimaryButton} onPress={() => changeMode("catalog")}>
                   <Text style={styles.firstRunPrimaryText}>{t.chooseFromCatalog}</Text>
                 </Pressable>
                 <Pressable style={styles.firstRunSecondaryButton} onPress={() => startCustomServiceFromSuggestion()}>
@@ -13349,7 +13397,7 @@ function ServicesTab({
             catalogServices.map((service) => {
               const exists = catalogServiceExists(service);
               return (
-                <Pressable key={`${service.category}-${service.name}`} style={[styles.catalogServiceCard, exists && styles.catalogServiceCardActive]} onPress={() => !exists && onAddCatalog(service)} disabled={busy || exists}>
+                <Pressable key={`${service.category}-${service.name}`} style={[styles.catalogServiceCard, exists && styles.catalogServiceCardActive]} onPress={() => !exists && addCatalogServiceAndHintMine(service)} disabled={busy || exists}>
                   <View style={styles.serviceTextBlock}>
                     <Text style={styles.listTitle}>{service.localizedLabel}</Text>
                     <Text style={styles.listCaption}>{localizeCatalogCategory(localizeText(service.category, catalog.find((group) => group.title === service.category)?.localizedTitle, language), language, t)} · {formatDuration(service.durationMinutes || 60, t)} · {formatMoney(Number(service.price || 0), currency)}</Text>
@@ -20539,11 +20587,23 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 5 },
   },
+  servicesModeButtonHint: {
+    borderWidth: 1,
+    borderColor: "rgba(109, 74, 255, 0.22)",
+    backgroundColor: "rgba(109, 74, 255, 0.08)",
+    shadowColor: DESIGN.colors.primary,
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+  },
   servicesModeText: {
     color: DESIGN.colors.muted,
     fontSize: 12,
     fontWeight: "800",
     textAlign: "center",
+  },
+  servicesModeTextHint: {
+    color: DESIGN.colors.primaryDark,
   },
   servicesModeTextActive: {
     color: DESIGN.colors.primaryDark,
