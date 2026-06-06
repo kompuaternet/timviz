@@ -18,7 +18,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
-  Dimensions,
   Image,
   Keyboard,
   KeyboardAvoidingView,
@@ -5461,17 +5460,6 @@ const COUNTRY_LANGUAGE_BY_ISO: Record<string, AppLanguage> = {
   US: "en",
   CA: "en",
 };
-
-const ANDROID_NAVIGATION_BAR_FALLBACK_INSET = 32;
-
-function getAndroidSystemNavigationInset() {
-  if (Platform.OS !== "android") return 0;
-  const screenHeight = Dimensions.get("screen").height;
-  const windowHeight = Dimensions.get("window").height;
-  const statusBarHeight = Constants.statusBarHeight || 0;
-  const measuredInset = Math.round(screenHeight - windowHeight - statusBarHeight);
-  return Math.max(ANDROID_NAVIGATION_BAR_FALLBACK_INSET, measuredInset, 0);
-}
 
 function getCountryIsoFromTimezone(timeZone?: string | null) {
   const normalized = String(timeZone || "").trim();
@@ -12741,18 +12729,9 @@ function BottomNavigation({
     { tab: "staff", icon: "people-outline", label: t.teamAccount || t.staff },
     { tab: "settings", icon: "ellipsis-horizontal-circle-outline", label: t.moreTab || t.settings },
   ];
-  useWindowDimensions();
-  const androidNavigationInset = getAndroidSystemNavigationInset();
-  const bottomNavSystemOffset =
-    Platform.OS === "android"
-      ? {
-          bottom: androidNavigationInset + 8,
-          paddingBottom: 10,
-        }
-      : null;
 
   return (
-    <View style={[styles.bottomNav, bottomNavSystemOffset]}>
+    <View style={styles.bottomNav}>
       {items.map((item) => {
         const active = activeTab === item.tab;
         const locked = lockedTabs.includes(item.tab);
