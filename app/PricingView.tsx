@@ -278,9 +278,20 @@ export default function PricingView({ language, copy, user }: PricingViewProps) 
               </div>
               {plan.savings ? <p className="pricing-savings">{plan.savings}</p> : null}
               <ul>
-                {plan.features.map((feature) => (
-                  <li key={feature}>{copy.features[feature]}</li>
-                ))}
+                {plan.features.map((feature) => {
+                  const hint = copy.featureHints?.[feature];
+                  return (
+                    <li key={feature}>
+                      <span>{copy.features[feature]}</span>
+                      {hint ? (
+                        <button className="pricing-feature-info" type="button" aria-label={hint}>
+                          *
+                          <span role="tooltip">{hint}</span>
+                        </button>
+                      ) : null}
+                    </li>
+                  );
+                })}
               </ul>
               <button
                 type="button"

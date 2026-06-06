@@ -16,6 +16,7 @@ type MastersCopy = {
   title: string;
   subtitle: string;
   offer: string;
+  offerHint: string;
   primaryCta: string;
   secondaryCta: string;
   appStoreCta: string;
@@ -52,7 +53,8 @@ const copy: Record<SiteLanguage, MastersCopy> = {
     title: "Онлайн-запись для частного мастера",
     subtitle:
       "Клиенты сами выбирают услугу и свободное время - без звонков, переписок и путаницы. Если у вас салон или команда, Timviz тоже подойдет.",
-    offer: "100 записей в месяц бесплатно + 14 дней PRO бесплатно",
+    offer: "Бесплатный тариф навсегда",
+    offerHint: "100 записей ежемесячно бесплатно + 14 дней PRO бесплатно",
     primaryCta: "Создать страницу записи бесплатно",
     secondaryCta: "Посмотреть, как работает",
     appStoreCta: "Открыть в App Store",
@@ -80,7 +82,7 @@ const copy: Record<SiteLanguage, MastersCopy> = {
       { q: "Timviz подходит частному мастеру?", a: "Да. Можно создать страницу записи даже для одного специалиста без отдельного сайта или администратора." },
       { q: "Нужно ли иметь свой сайт?", a: "Нет. Timviz создает вашу страницу записи, ссылку можно отправлять клиентам." },
       { q: "Клиенты смогут сами выбирать время?", a: "Да. Клиент выбирает услугу, специалиста и свободное время." },
-      { q: "Можно начать бесплатно?", a: "Да. Новым пользователям доступно 100 записей в месяц бесплатно и 14 дней PRO." },
+      { q: "Можно начать бесплатно?", a: "Да. Новым пользователям доступен бесплатный тариф навсегда и 14 дней PRO." },
       { q: "Можно отправить ссылку в Instagram или Telegram?", a: "Да. Ссылку можно добавить в профиль, сторис, сообщения или на сайт." },
       { q: "Подходит ли для салона с несколькими мастерами?", a: "Да. Если вы пришли как салон, можно добавить специалистов, услуги и расписание команды." }
     ],
@@ -95,7 +97,8 @@ const copy: Record<SiteLanguage, MastersCopy> = {
     title: "Онлайн-запис для приватного майстра",
     subtitle:
       "Клієнти самі обирають послугу і вільний час - без дзвінків, переписок і плутанини. Якщо у вас салон або команда, Timviz теж підійде.",
-    offer: "100 записів на місяць безкоштовно + 14 днів PRO безкоштовно",
+    offer: "Безкоштовний тариф назавжди",
+    offerHint: "100 записів щомісяця безкоштовно + 14 днів PRO безкоштовно",
     primaryCta: "Створити сторінку запису безкоштовно",
     secondaryCta: "Подивитися, як працює",
     appStoreCta: "Відкрити в App Store",
@@ -123,7 +126,7 @@ const copy: Record<SiteLanguage, MastersCopy> = {
       { q: "Timviz підходить приватному майстру?", a: "Так. Можна створити сторінку запису навіть для одного спеціаліста без окремого сайту чи адміністратора." },
       { q: "Чи потрібен власний сайт?", a: "Ні. Timviz створює вашу сторінку запису, посилання можна надсилати клієнтам." },
       { q: "Клієнти зможуть самі обирати час?", a: "Так. Клієнт обирає послугу, спеціаліста і вільний час." },
-      { q: "Можна почати безкоштовно?", a: "Так. Новим користувачам доступні 100 записів на місяць безкоштовно і 14 днів PRO." },
+      { q: "Можна почати безкоштовно?", a: "Так. Новим користувачам доступний безкоштовний тариф назавжди і 14 днів PRO." },
       { q: "Можна надіслати посилання в Instagram або Telegram?", a: "Так. Посилання можна додати в профіль, сторис, повідомлення або на сайт." },
       { q: "Підходить для салону з кількома майстрами?", a: "Так. Якщо ви прийшли як салон, можна додати спеціалістів, послуги і розклад команди." }
     ],
@@ -138,7 +141,8 @@ const copy: Record<SiteLanguage, MastersCopy> = {
     title: "Online booking for independent specialists",
     subtitle:
       "Clients choose a service and available time themselves - without calls, chats or confusion. If you run a salon or team, Timviz works for you too.",
-    offer: "100 bookings per month free + 14 days of PRO free",
+    offer: "Free plan forever",
+    offerHint: "100 bookings free every month + 14 days of PRO free",
     primaryCta: "Create a booking page for free",
     secondaryCta: "See how it works",
     appStoreCta: "Open in App Store",
@@ -166,7 +170,7 @@ const copy: Record<SiteLanguage, MastersCopy> = {
       { q: "Does Timviz work for an independent specialist?", a: "Yes. You can create a booking page as a solo professional without a separate website or admin." },
       { q: "Do I need my own website?", a: "No. Timviz creates your booking page, and you can send the link to clients." },
       { q: "Can clients choose time themselves?", a: "Yes. A client selects the service, specialist and available time." },
-      { q: "Can I start free?", a: "Yes. New users get 100 bookings per month free and 14 days of PRO." },
+      { q: "Can I start free?", a: "Yes. New users get the free plan forever and 14 days of PRO." },
       { q: "Can I share the link on Instagram or Telegram?", a: "Yes. Add it to your profile, stories, messages or website." },
       { q: "Does it work for a salon with several specialists?", a: "Yes. If you came as a salon, you can add specialists, services and a team schedule." }
     ],
@@ -180,7 +184,8 @@ const copy: Record<SiteLanguage, MastersCopy> = {
     badge: "Pour independants, salons et petits studios",
     title: "Reservation en ligne pour independants",
     subtitle: "Les clients choisissent le service et l'heure disponible, sans appels ni longs messages. Si vous avez un salon ou une equipe, Timviz convient aussi.",
-    offer: "100 reservations par mois gratuites + 14 jours PRO offerts",
+    offer: "Forfait gratuit a vie",
+    offerHint: "100 reservations gratuites chaque mois + 14 jours PRO offerts",
     primaryCta: "Creer une page de reservation gratuite",
     secondaryCta: "Voir le fonctionnement",
     appStoreCta: "Ouvrir dans l'App Store",
@@ -207,7 +212,7 @@ const copy: Record<SiteLanguage, MastersCopy> = {
       { q: "Timviz convient-il a un independant?", a: "Oui. Vous pouvez creer une page comme specialiste solo, sans site separe ni administrateur." },
       { q: "Faut-il un site web?", a: "Non. Timviz cree votre page et vous partagez le lien." },
       { q: "Les clients choisissent-ils l'heure?", a: "Oui. Le client choisit service, specialiste et heure disponible." },
-      { q: "Puis-je commencer gratuitement?", a: "Oui. Les nouveaux utilisateurs ont 100 reservations par mois gratuites et 14 jours PRO." },
+      { q: "Puis-je commencer gratuitement?", a: "Oui. Les nouveaux utilisateurs ont le forfait gratuit a vie et 14 jours PRO." },
       { q: "Puis-je partager le lien sur Instagram ou Telegram?", a: "Oui. Ajoutez-le au profil, stories, messages ou site." },
       { q: "Est-ce adapte a un salon?", a: "Oui. Si vous venez d'un salon, ajoutez specialistes, services et planning d'equipe." }
     ],
@@ -221,7 +226,8 @@ const copy: Record<SiteLanguage, MastersCopy> = {
     badge: "Dla niezaleznych specjalistow, salonow i malych studiow",
     title: "Rezerwacje online dla niezaleznego specjalisty",
     subtitle: "Klienci sami wybieraja usluge i wolny termin, bez telefonow i dlugich wiadomosci. Jesli prowadzisz salon lub zespol, Timviz tez pasuje.",
-    offer: "100 rezerwacji miesiecznie za darmo + 14 dni PRO gratis",
+    offer: "Darmowy plan na zawsze",
+    offerHint: "100 wizyt co miesiac za darmo + 14 dni PRO gratis",
     primaryCta: "Utworz darmowa strone rezerwacji",
     secondaryCta: "Zobacz, jak dziala",
     appStoreCta: "Otworz w App Store",
@@ -248,7 +254,7 @@ const copy: Record<SiteLanguage, MastersCopy> = {
       { q: "Czy Timviz pasuje dla niezaleznego specjalisty?", a: "Tak. Mozesz stworzyc strone rezerwacji jako solo specjalista, bez osobnej strony i administratora." },
       { q: "Czy potrzebuje wlasnej strony?", a: "Nie. Timviz tworzy strone rezerwacji, a Ty wysylasz link klientom." },
       { q: "Czy klienci sami wybieraja czas?", a: "Tak. Klient wybiera usluge, specjaliste i wolny termin." },
-      { q: "Czy moge zaczac za darmo?", a: "Tak. Nowi uzytkownicy dostaja 100 rezerwacji miesiecznie za darmo i 14 dni PRO." },
+      { q: "Czy moge zaczac za darmo?", a: "Tak. Nowi uzytkownicy dostaja darmowy plan na zawsze i 14 dni PRO." },
       { q: "Czy link dziala na Instagramie lub Telegramie?", a: "Tak. Dodaj go do profilu, stories, wiadomosci lub strony." },
       { q: "Czy pasuje do salonu z kilkoma osobami?", a: "Tak. Jesli przychodzisz jako salon, mozesz dodac specjalistow, uslugi i grafik zespolu." }
     ],
@@ -262,7 +268,8 @@ const copy: Record<SiteLanguage, MastersCopy> = {
     badge: "Pro nezavisle specialisty, salony a mala studia",
     title: "Online rezervace pro nezavisleho specialistu",
     subtitle: "Klienti si sami vyberou sluzbu a volny cas, bez telefonatu a dlouhych zprav. Pokud mate salon nebo tym, Timviz se hodi take.",
-    offer: "100 rezervaci mesicne zdarma + 14 dni PRO zdarma",
+    offer: "Tarif zdarma navzdy",
+    offerHint: "100 rezervaci kazdy mesic zdarma + 14 dni PRO zdarma",
     primaryCta: "Vytvorit rezervacni stranku zdarma",
     secondaryCta: "Podivat se, jak funguje",
     appStoreCta: "Otevrit v App Store",
@@ -289,7 +296,7 @@ const copy: Record<SiteLanguage, MastersCopy> = {
       { q: "Hodi se Timviz pro nezavisleho specialistu?", a: "Ano. Rezervacni stranku muzete vytvorit jako solo specialista, bez vlastniho webu nebo administratora." },
       { q: "Potrebuji vlastni web?", a: "Ne. Timviz vytvori vasi stranku a odkaz poslete klientum." },
       { q: "Mohou klienti vybrat cas sami?", a: "Ano. Klient vybere sluzbu, specialistu a volny cas." },
-      { q: "Muzu zacit zdarma?", a: "Ano. Novi uzivatele maji 100 rezervaci mesicne zdarma a 14 dni PRO." },
+      { q: "Muzu zacit zdarma?", a: "Ano. Novi uzivatele maji tarif zdarma navzdy a 14 dni PRO." },
       { q: "Muzu poslat odkaz na Instagram nebo Telegram?", a: "Ano. Pridejte ho do profilu, stories, zprav nebo webu." },
       { q: "Funguje pro salon s vice lidmi?", a: "Ano. Pokud prichazite jako salon, muzete pridat specialisty, sluzby a tymovy rozvrh." }
     ],
@@ -303,7 +310,8 @@ const copy: Record<SiteLanguage, MastersCopy> = {
     badge: "Para profesionales independientes, salones y estudios pequenos",
     title: "Reservas online para profesionales independientes",
     subtitle: "Los clientes eligen servicio y hora disponible sin llamadas ni mensajes largos. Si tienes un salon o equipo, Timviz tambien encaja.",
-    offer: "100 reservas al mes gratis + 14 dias PRO gratis",
+    offer: "Plan gratis para siempre",
+    offerHint: "100 reservas gratis cada mes + 14 dias PRO gratis",
     primaryCta: "Crear pagina de reservas gratis",
     secondaryCta: "Ver como funciona",
     appStoreCta: "Abrir en App Store",
@@ -330,7 +338,7 @@ const copy: Record<SiteLanguage, MastersCopy> = {
       { q: "Sirve Timviz para un profesional independiente?", a: "Si. Puedes crear una pagina de reservas trabajando solo, sin web aparte ni administrador." },
       { q: "Necesito mi propia web?", a: "No. Timviz crea tu pagina y puedes enviar el enlace a clientes." },
       { q: "Los clientes eligen la hora?", a: "Si. El cliente elige servicio, especialista y hora disponible." },
-      { q: "Puedo empezar gratis?", a: "Si. Nuevos usuarios reciben 100 reservas al mes gratis y 14 dias PRO." },
+      { q: "Puedo empezar gratis?", a: "Si. Nuevos usuarios reciben el plan gratis para siempre y 14 dias PRO." },
       { q: "Puedo compartir el enlace en Instagram o Telegram?", a: "Si. Ponlo en perfil, stories, mensajes o web." },
       { q: "Funciona para un salon con varios especialistas?", a: "Si. Si vienes como salon, puedes agregar especialistas, servicios y horario de equipo." }
     ],
@@ -344,7 +352,8 @@ const copy: Record<SiteLanguage, MastersCopy> = {
     badge: "Fuer selbststaendige Profis, Salons und kleine Studios",
     title: "Online-Terminbuchung fuer selbststaendige Profis",
     subtitle: "Kunden waehlen Leistung und freie Zeit selbst, ohne Anrufe oder lange Chats. Wenn Sie einen Salon oder ein Team haben, passt Timviz ebenfalls.",
-    offer: "100 Buchungen pro Monat kostenlos + 14 Tage PRO gratis",
+    offer: "Kostenloser Tarif dauerhaft",
+    offerHint: "100 Buchungen jeden Monat kostenlos + 14 Tage PRO kostenlos",
     primaryCta: "Buchungsseite kostenlos erstellen",
     secondaryCta: "Ansehen, wie es funktioniert",
     appStoreCta: "Im App Store offnen",
@@ -371,7 +380,7 @@ const copy: Record<SiteLanguage, MastersCopy> = {
       { q: "Passt Timviz fuer selbststaendige Profis?", a: "Ja. Sie koennen als Solo-Profi eine Buchungsseite erstellen, ohne eigene Website oder Administrator." },
       { q: "Brauche ich eine eigene Website?", a: "Nein. Timviz erstellt Ihre Buchungsseite, den Link senden Sie an Kunden." },
       { q: "Koennen Kunden selbst eine Zeit waehlen?", a: "Ja. Der Kunde waehlt Leistung, Spezialist und freie Zeit." },
-      { q: "Kann ich kostenlos starten?", a: "Ja. Neue Nutzer erhalten 100 Buchungen pro Monat kostenlos und 14 Tage PRO." },
+      { q: "Kann ich kostenlos starten?", a: "Ja. Neue Nutzer erhalten den kostenlosen Tarif dauerhaft und 14 Tage PRO." },
       { q: "Kann ich den Link auf Instagram oder Telegram teilen?", a: "Ja. Fuegen Sie ihn in Profil, Stories, Nachrichten oder Website ein." },
       { q: "Funktioniert es fuer Salons mit mehreren Personen?", a: "Ja. Wenn Sie als Salon kommen, koennen Sie Spezialisten, Leistungen und Teamplaene hinzufuegen." }
     ],
@@ -456,7 +465,13 @@ export default function ForMastersLanding({ language }: ForMastersLandingProps) 
           <span>{t.badge}</span>
           <h1>{t.title}</h1>
           <p>{t.subtitle}</p>
-          <strong>{t.offer}</strong>
+          <strong className="masters-offer">
+            <span>{t.offer}</span>
+            <button className="masters-offer-info" type="button" aria-label={t.offerHint}>
+              *
+              <span role="tooltip">{t.offerHint}</span>
+            </button>
+          </strong>
           <div className="masters-actions">
             <a className="masters-primary" href={signupHref} onClick={() => trackCta("hero_primary")}>
               {t.primaryCta}

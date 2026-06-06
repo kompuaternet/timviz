@@ -67,6 +67,7 @@ export type PricingCopy = {
     }
   >;
   features: Record<PricingFeatureKey, string>;
+  featureHints?: Partial<Record<PricingFeatureKey, string>>;
   faqTitle: string;
   faq: Array<{ question: string; answer: string }>;
 };
@@ -167,7 +168,7 @@ export const pricingCopy: Record<SiteLanguage, PricingCopy> = withEnglishFallbac
     features: {
       basicAccess: "Базовый доступ",
       oneMaster: "1 мастер / 1 сотрудник",
-      appointmentsLimit: "До 100 записей в месяц",
+      appointmentsLimit: "Бесплатный тариф навсегда",
       onlineBooking: "Онлайн-запись",
       calendar: "Календарь",
       services: "Услуги",
@@ -183,6 +184,9 @@ export const pricingCopy: Record<SiteLanguage, PricingCopy> = withEnglishFallbac
       priorityCatalog: "Дополнительные бизнес-инструменты",
       unlimitedServices: "Услуги и расписание без ограничений",
       cancelAnytime: "Отмена подписки в любое время"
+    },
+    featureHints: {
+      appointmentsLimit: "100 записей ежемесячно бесплатно + 14 дней PRO бесплатно"
     },
     faqTitle: "FAQ",
     faq: [
@@ -204,7 +208,7 @@ export const pricingCopy: Record<SiteLanguage, PricingCopy> = withEnglishFallbac
       },
       {
         question: "Можно ли пользоваться Timviz бесплатно?",
-        answer: "Да. Free подходит для старта и включает до 100 записей в месяц, базовый календарь, услуги, расписание и публичный профиль."
+        answer: "Да. Free доступен навсегда и подходит для старта: базовый календарь, услуги, расписание и публичный профиль."
       }
     ]
   },
@@ -303,7 +307,7 @@ export const pricingCopy: Record<SiteLanguage, PricingCopy> = withEnglishFallbac
     features: {
       basicAccess: "Базовий доступ",
       oneMaster: "1 майстер / 1 співробітник",
-      appointmentsLimit: "До 100 записів на місяць",
+      appointmentsLimit: "Безкоштовний тариф назавжди",
       onlineBooking: "Онлайн-запис",
       calendar: "Календар",
       services: "Послуги",
@@ -319,6 +323,9 @@ export const pricingCopy: Record<SiteLanguage, PricingCopy> = withEnglishFallbac
       priorityCatalog: "Додаткові бізнес-інструменти",
       unlimitedServices: "Послуги та розклад без обмежень",
       cancelAnytime: "Скасування підписки будь-коли"
+    },
+    featureHints: {
+      appointmentsLimit: "100 записів щомісяця безкоштовно + 14 днів PRO безкоштовно"
     },
     faqTitle: "FAQ",
     faq: [
@@ -340,7 +347,7 @@ export const pricingCopy: Record<SiteLanguage, PricingCopy> = withEnglishFallbac
       },
       {
         question: "Чи можна користуватися Timviz безкоштовно?",
-        answer: "Так. Free підходить для старту і включає до 100 записів на місяць, базовий календар, послуги, розклад і публічний профіль."
+        answer: "Так. Free доступний назавжди і підходить для старту: базовий календар, послуги, розклад і публічний профіль."
       }
     ]
   },
@@ -439,7 +446,7 @@ export const pricingCopy: Record<SiteLanguage, PricingCopy> = withEnglishFallbac
     features: {
       basicAccess: "Basic access",
       oneMaster: "1 master / 1 staff member",
-      appointmentsLimit: "Up to 100 appointments per month",
+      appointmentsLimit: "Free plan forever",
       onlineBooking: "Online booking",
       calendar: "Calendar",
       services: "Services",
@@ -455,6 +462,9 @@ export const pricingCopy: Record<SiteLanguage, PricingCopy> = withEnglishFallbac
       priorityCatalog: "Additional business tools",
       unlimitedServices: "Services and scheduling without limits",
       cancelAnytime: "Cancel subscription anytime"
+    },
+    featureHints: {
+      appointmentsLimit: "100 bookings free every month + 14 days of PRO free"
     },
     faqTitle: "FAQ",
     faq: [
@@ -476,7 +486,7 @@ export const pricingCopy: Record<SiteLanguage, PricingCopy> = withEnglishFallbac
       },
       {
         question: "Can I use Timviz for free?",
-        answer: "Yes. Free is designed for getting started and includes up to 100 appointments per month, basic calendar, services, working hours and public profile."
+        answer: "Yes. Free is available forever and is designed for getting started: basic calendar, services, working hours and public profile."
       }
     ]
   }
@@ -520,14 +530,15 @@ Object.assign(pricingCopy, {
       monthly: { ...pricingCopy.en.plans.monthly, name: "Timviz Premium mensuel", tagline: "Pour automatiser votre activité", billing: "par mois", badge: "Paiement en USD" },
       yearly: { ...pricingCopy.en.plans.yearly, name: "Timviz Premium annuel", tagline: "Meilleure offre", billing: "par an", badge: "Meilleure offre", savings: "2 mois offerts" }
     },
-    features: { basicAccess: "Accès de base", oneMaster: "1 professionnel / 1 membre d’équipe", appointmentsLimit: "Jusqu’à 100 rendez-vous par mois", onlineBooking: "Réservation en ligne", calendar: "Calendrier", services: "Services", clients: "Base clients", publicProfile: "Profil public de base", allFree: "Tout ce qui est inclus dans Gratuit", unlimitedAppointments: "Rendez-vous illimités", telegram: "Notifications Telegram", reminders: "Rappels clients", extendedCalendar: "Calendrier avancé", clientManagement: "Gestion des clients", analytics: "Statistiques / analytics", priorityCatalog: "Outils business supplémentaires", unlimitedServices: "Services et planning sans limites", cancelAnytime: "Annulation à tout moment" },
+    features: { basicAccess: "Accès de base", oneMaster: "1 professionnel / 1 membre d’équipe", appointmentsLimit: "Forfait gratuit à vie", onlineBooking: "Réservation en ligne", calendar: "Calendrier", services: "Services", clients: "Base clients", publicProfile: "Profil public de base", allFree: "Tout ce qui est inclus dans Gratuit", unlimitedAppointments: "Rendez-vous illimités", telegram: "Notifications Telegram", reminders: "Rappels clients", extendedCalendar: "Calendrier avancé", clientManagement: "Gestion des clients", analytics: "Statistiques / analytics", priorityCatalog: "Outils business supplémentaires", unlimitedServices: "Services et planning sans limites", cancelAnytime: "Annulation à tout moment" },
+    featureHints: { appointmentsLimit: "100 réservations gratuites chaque mois + 14 jours PRO offerts" },
     faqTitle: "FAQ",
     faq: [
       { question: "Que se passe-t-il après l’essai gratuit ?", answer: "Après l’essai de 14 jours, Premium continue selon l’offre choisie : 3 $/mois ou 29 $/an." },
       { question: "Puis-je annuler à tout moment ?", answer: "Oui. Vous pouvez annuler Premium à tout moment. L’accès reste actif jusqu’à la fin de la période payée." },
       { question: "Qu’est-ce qui est inclus dans Premium ?", answer: "Tout le gratuit, les analytics avancées, notifications, intégrations Telegram et outils business supplémentaires." },
       { question: "Timviz sert-il à payer les services du salon ou du professionnel ?", answer: "Non. Timviz vend uniquement un abonnement logiciel et ne traite pas les paiements entre clients et prestataires." },
-      { question: "Puis-je utiliser Timviz gratuitement ?", answer: "Oui. Le plan gratuit permet de démarrer avec jusqu’à 100 rendez-vous par mois, calendrier, services, horaires et profil public." }
+      { question: "Puis-je utiliser Timviz gratuitement ?", answer: "Oui. Le plan gratuit est disponible à vie et permet de démarrer avec calendrier, services, horaires et profil public." }
     ]
   },
   pl: {
@@ -567,14 +578,15 @@ Object.assign(pricingCopy, {
       monthly: { ...pricingCopy.en.plans.monthly, name: "Timviz Premium miesięczny", tagline: "Dla specjalistów z automatyzacją", billing: "miesięcznie", badge: "Płatność w USD" },
       yearly: { ...pricingCopy.en.plans.yearly, name: "Timviz Premium roczny", tagline: "Najlepsza oferta", billing: "rocznie", badge: "Najlepsza oferta", savings: "2 miesiące gratis" }
     },
-    features: { basicAccess: "Podstawowy dostęp", oneMaster: "1 specjalista / 1 członek zespołu", appointmentsLimit: "Do 100 rezerwacji miesięcznie", onlineBooking: "Rezerwacje online", calendar: "Kalendarz", services: "Usługi", clients: "Baza klientów", publicProfile: "Podstawowy profil publiczny", allFree: "Wszystko z planu darmowego", unlimitedAppointments: "Nielimitowane rezerwacje", telegram: "Powiadomienia Telegram", reminders: "Przypomnienia klientom", extendedCalendar: "Rozszerzony kalendarz", clientManagement: "Zarządzanie klientami", analytics: "Statystyki / analityka", priorityCatalog: "Dodatkowe narzędzia biznesowe", unlimitedServices: "Usługi i grafik bez limitów", cancelAnytime: "Anulowanie w dowolnym momencie" },
+    features: { basicAccess: "Podstawowy dostęp", oneMaster: "1 specjalista / 1 członek zespołu", appointmentsLimit: "Darmowy plan na zawsze", onlineBooking: "Rezerwacje online", calendar: "Kalendarz", services: "Usługi", clients: "Baza klientów", publicProfile: "Podstawowy profil publiczny", allFree: "Wszystko z planu darmowego", unlimitedAppointments: "Nielimitowane rezerwacje", telegram: "Powiadomienia Telegram", reminders: "Przypomnienia klientom", extendedCalendar: "Rozszerzony kalendarz", clientManagement: "Zarządzanie klientami", analytics: "Statystyki / analityka", priorityCatalog: "Dodatkowe narzędzia biznesowe", unlimitedServices: "Usługi i grafik bez limitów", cancelAnytime: "Anulowanie w dowolnym momencie" },
+    featureHints: { appointmentsLimit: "100 wizyt co miesiąc za darmo + 14 dni PRO gratis" },
     faqTitle: "FAQ",
     faq: [
       { question: "Co dzieje się po okresie próbnym?", answer: "Po 14 dniach Premium może działać dalej w wybranym planie: 3 $ miesięcznie albo 29 $ rocznie." },
       { question: "Czy mogę anulować w dowolnym momencie?", answer: "Tak. Premium można anulować w dowolnym momencie, a dostęp zostaje do końca opłaconego okresu." },
       { question: "Co zawiera Premium?", answer: "Wszystko z planu darmowego, zaawansowane statystyki, powiadomienia, integracje Telegram i dodatkowe narzędzia biznesowe." },
       { question: "Czy Timviz służy do płacenia za usługi salonu lub specjalisty?", answer: "Nie. Timviz sprzedaje tylko subskrypcję oprogramowania i nie obsługuje płatności między klientami a usługodawcami." },
-      { question: "Czy mogę korzystać z Timviz za darmo?", answer: "Tak. Plan darmowy pozwala zacząć i obejmuje do 100 rezerwacji miesięcznie, kalendarz, usługi, godziny pracy i profil publiczny." }
+      { question: "Czy mogę korzystać z Timviz za darmo?", answer: "Tak. Plan darmowy jest dostępny na zawsze i pozwala zacząć z kalendarzem, usługami, godzinami pracy i profilem publicznym." }
     ]
   },
   cs: {
@@ -614,14 +626,15 @@ Object.assign(pricingCopy, {
       monthly: { ...pricingCopy.en.plans.monthly, name: "Timviz Premium měsíčně", tagline: "Pro profesionály s automatizací", billing: "měsíčně", badge: "Platba v USD" },
       yearly: { ...pricingCopy.en.plans.yearly, name: "Timviz Premium ročně", tagline: "Nejlepší nabídka", billing: "ročně", badge: "Nejlepší nabídka", savings: "2 měsíce zdarma" }
     },
-    features: { basicAccess: "Základní přístup", oneMaster: "1 profesionál / 1 člen týmu", appointmentsLimit: "Až 100 rezervací měsíčně", onlineBooking: "Online rezervace", calendar: "Kalendář", services: "Služby", clients: "Klientská databáze", publicProfile: "Základní veřejný profil", allFree: "Vše z tarifu Zdarma", unlimitedAppointments: "Neomezené rezervace", telegram: "Telegram upozornění", reminders: "Připomenutí klientům", extendedCalendar: "Rozšířený kalendář", clientManagement: "Správa klientů", analytics: "Statistiky / analytika", priorityCatalog: "Další obchodní nástroje", unlimitedServices: "Služby a rozvrh bez omezení", cancelAnytime: "Zrušení kdykoliv" },
+    features: { basicAccess: "Základní přístup", oneMaster: "1 profesionál / 1 člen týmu", appointmentsLimit: "Tarif zdarma navždy", onlineBooking: "Online rezervace", calendar: "Kalendář", services: "Služby", clients: "Klientská databáze", publicProfile: "Základní veřejný profil", allFree: "Vše z tarifu Zdarma", unlimitedAppointments: "Neomezené rezervace", telegram: "Telegram upozornění", reminders: "Připomenutí klientům", extendedCalendar: "Rozšířený kalendář", clientManagement: "Správa klientů", analytics: "Statistiky / analytika", priorityCatalog: "Další obchodní nástroje", unlimitedServices: "Služby a rozvrh bez omezení", cancelAnytime: "Zrušení kdykoliv" },
+    featureHints: { appointmentsLimit: "100 rezervací každý měsíc zdarma + 14 dní PRO zdarma" },
     faqTitle: "FAQ",
     faq: [
       { question: "Co se stane po zkušebním období?", answer: "Po 14denní zkušební době může Premium pokračovat podle zvoleného tarifu: 3 $ měsíčně nebo 29 $ ročně." },
       { question: "Mohu kdykoliv zrušit?", answer: "Ano. Premium můžete kdykoliv zrušit. Přístup zůstane do konce zaplaceného období." },
       { question: "Co je součástí Premium?", answer: "Vše z tarifu Zdarma, pokročilé statistiky, upozornění, integrace Telegram a další obchodní nástroje." },
       { question: "Slouží Timviz k platbám za služby salonu nebo profesionála?", answer: "Ne. Timviz prodává pouze softwarové předplatné a nezpracovává platby mezi klienty a poskytovateli služeb." },
-      { question: "Mohu používat Timviz zdarma?", answer: "Ano. Tarif Zdarma je pro začátek a zahrnuje až 100 rezervací měsíčně, kalendář, služby, pracovní dobu a veřejný profil." }
+      { question: "Mohu používat Timviz zdarma?", answer: "Ano. Tarif Zdarma je dostupný navždy a pro začátek zahrnuje kalendář, služby, pracovní dobu a veřejný profil." }
     ]
   },
   es: {
@@ -661,14 +674,15 @@ Object.assign(pricingCopy, {
       monthly: { ...pricingCopy.en.plans.monthly, name: "Timviz Premium mensual", tagline: "Para profesionales que quieren automatizar", billing: "al mes", badge: "Pago en USD" },
       yearly: { ...pricingCopy.en.plans.yearly, name: "Timviz Premium anual", tagline: "Mejor oferta", billing: "al año", badge: "Mejor oferta", savings: "2 meses gratis" }
     },
-    features: { basicAccess: "Acceso básico", oneMaster: "1 profesional / 1 miembro del equipo", appointmentsLimit: "Hasta 100 reservas al mes", onlineBooking: "Reserva online", calendar: "Calendario", services: "Servicios", clients: "Base de clientes", publicProfile: "Perfil público básico", allFree: "Todo lo incluido en Gratis", unlimitedAppointments: "Reservas ilimitadas", telegram: "Notificaciones Telegram", reminders: "Recordatorios a clientes", extendedCalendar: "Calendario ampliado", clientManagement: "Gestión de clientes", analytics: "Estadísticas / analítica", priorityCatalog: "Herramientas de negocio adicionales", unlimitedServices: "Servicios y horarios sin límites", cancelAnytime: "Cancelar en cualquier momento" },
+    features: { basicAccess: "Acceso básico", oneMaster: "1 profesional / 1 miembro del equipo", appointmentsLimit: "Plan gratis para siempre", onlineBooking: "Reserva online", calendar: "Calendario", services: "Servicios", clients: "Base de clientes", publicProfile: "Perfil público básico", allFree: "Todo lo incluido en Gratis", unlimitedAppointments: "Reservas ilimitadas", telegram: "Notificaciones Telegram", reminders: "Recordatorios a clientes", extendedCalendar: "Calendario ampliado", clientManagement: "Gestión de clientes", analytics: "Estadísticas / analítica", priorityCatalog: "Herramientas de negocio adicionales", unlimitedServices: "Servicios y horarios sin límites", cancelAnytime: "Cancelar en cualquier momento" },
+    featureHints: { appointmentsLimit: "100 reservas gratis cada mes + 14 días PRO gratis" },
     faqTitle: "FAQ",
     faq: [
       { question: "¿Qué pasa después de la prueba gratuita?", answer: "Tras la prueba de 14 días, Premium puede continuar en el plan elegido: 3 $/mes o 29 $/año." },
       { question: "¿Puedo cancelar cuando quiera?", answer: "Sí. Puedes cancelar Premium en cualquier momento. El acceso se mantiene hasta el final del periodo pagado." },
       { question: "¿Qué incluye Premium?", answer: "Todo lo incluido en Gratis, analítica avanzada, notificaciones, integraciones Telegram y herramientas de negocio adicionales." },
       { question: "¿Timviz se usa para pagar servicios del salón o profesional?", answer: "No. Timviz solo vende una suscripción de software y no procesa pagos entre clientes y proveedores." },
-      { question: "¿Puedo usar Timviz gratis?", answer: "Sí. Gratis está pensado para empezar e incluye hasta 100 reservas al mes, calendario, servicios, horarios y perfil público." }
+      { question: "¿Puedo usar Timviz gratis?", answer: "Sí. Gratis está disponible para siempre y está pensado para empezar con calendario, servicios, horarios y perfil público." }
     ]
   },
   de: {
@@ -708,14 +722,15 @@ Object.assign(pricingCopy, {
       monthly: { ...pricingCopy.en.plans.monthly, name: "Timviz Premium monatlich", tagline: "Für Profis mit Automatisierung", billing: "pro Monat", badge: "Zahlung in USD" },
       yearly: { ...pricingCopy.en.plans.yearly, name: "Timviz Premium jährlich", tagline: "Bestes Angebot", billing: "pro Jahr", badge: "Bestes Angebot", savings: "2 Monate kostenlos" }
     },
-    features: { basicAccess: "Basiszugang", oneMaster: "1 Profi / 1 Teammitglied", appointmentsLimit: "Bis zu 100 Buchungen pro Monat", onlineBooking: "Online-Buchung", calendar: "Kalender", services: "Leistungen", clients: "Kundendatenbank", publicProfile: "Einfaches öffentliches Profil", allFree: "Alles aus Kostenlos", unlimitedAppointments: "Unbegrenzte Buchungen", telegram: "Telegram-Benachrichtigungen", reminders: "Kundenerinnerungen", extendedCalendar: "Erweiterter Kalender", clientManagement: "Kundenverwaltung", analytics: "Statistiken / Analytics", priorityCatalog: "Zusätzliche Business-Tools", unlimitedServices: "Leistungen und Planung ohne Limits", cancelAnytime: "Abo jederzeit kündbar" },
+    features: { basicAccess: "Basiszugang", oneMaster: "1 Profi / 1 Teammitglied", appointmentsLimit: "Kostenloser Tarif dauerhaft", onlineBooking: "Online-Buchung", calendar: "Kalender", services: "Leistungen", clients: "Kundendatenbank", publicProfile: "Einfaches öffentliches Profil", allFree: "Alles aus Kostenlos", unlimitedAppointments: "Unbegrenzte Buchungen", telegram: "Telegram-Benachrichtigungen", reminders: "Kundenerinnerungen", extendedCalendar: "Erweiterter Kalender", clientManagement: "Kundenverwaltung", analytics: "Statistiken / Analytics", priorityCatalog: "Zusätzliche Business-Tools", unlimitedServices: "Leistungen und Planung ohne Limits", cancelAnytime: "Abo jederzeit kündbar" },
+    featureHints: { appointmentsLimit: "100 Buchungen jeden Monat kostenlos + 14 Tage PRO kostenlos" },
     faqTitle: "FAQ",
     faq: [
       { question: "Was passiert nach der kostenlosen Testphase?", answer: "Nach 14 Tagen kann Premium im gewählten Tarif weiterlaufen: 3 $ pro Monat oder 29 $ pro Jahr." },
       { question: "Kann ich jederzeit kündigen?", answer: "Ja. Du kannst Premium jederzeit kündigen. Der Zugang bleibt bis zum Ende des bezahlten Zeitraums aktiv." },
       { question: "Was ist in Premium enthalten?", answer: "Alles aus Kostenlos, erweiterte Statistiken, Benachrichtigungen, Telegram-Integrationen und zusätzliche Business-Tools." },
       { question: "Wird Timviz für Zahlungen an Salons oder Profis genutzt?", answer: "Nein. Timviz verkauft nur ein Software-Abonnement und verarbeitet keine Zahlungen zwischen Kunden und Dienstleistern." },
-      { question: "Kann ich Timviz kostenlos nutzen?", answer: "Ja. Kostenlos ist für den Start gedacht und enthält bis zu 100 Buchungen pro Monat, Kalender, Leistungen, Arbeitszeiten und ein öffentliches Profil." }
+      { question: "Kann ich Timviz kostenlos nutzen?", answer: "Ja. Kostenlos ist dauerhaft verfügbar und für den Start mit Kalender, Leistungen, Arbeitszeiten und öffentlichem Profil gedacht." }
     ]
   }
 });

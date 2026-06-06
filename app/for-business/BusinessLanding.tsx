@@ -28,6 +28,8 @@ type LocalCopy = {
   primaryCta: string;
   secondaryCta: string;
   proof: string;
+  offer: string;
+  offerHint: string;
   screenshotAlt: string;
   whyTitle: string;
   whyCards: Array<{ title: string; text: string }>;
@@ -87,6 +89,8 @@ const copy: Record<LandingLanguage, LocalCopy> = withEnglishFallback<LocalCopy>(
     primaryCta: "Почати безкоштовно",
     secondaryCta: "Подивитися можливості",
     proof: "Без складних налаштувань • запуск за кілька хвилин",
+    offer: "Безкоштовний тариф назавжди",
+    offerHint: "100 записів щомісяця безкоштовно + 14 днів PRO безкоштовно",
     screenshotAlt: "Інтерфейс Timviz для бізнесу",
     whyTitle: "Чому майстри переходять на Timviz",
     whyCards: [
@@ -214,6 +218,8 @@ const copy: Record<LandingLanguage, LocalCopy> = withEnglishFallback<LocalCopy>(
     primaryCta: "Начать бесплатно",
     secondaryCta: "Посмотреть возможности",
     proof: "Без сложных настроек • запуск за несколько минут",
+    offer: "Бесплатный тариф навсегда",
+    offerHint: "100 записей ежемесячно бесплатно + 14 дней PRO бесплатно",
     screenshotAlt: "Интерфейс Timviz для бизнеса",
     whyTitle: "Почему мастера переходят на Timviz",
     whyCards: [
@@ -319,6 +325,8 @@ const copy: Record<LandingLanguage, LocalCopy> = withEnglishFallback<LocalCopy>(
     primaryCta: "Start for free",
     secondaryCta: "See features",
     proof: "No complex setup • launch in minutes",
+    offer: "Free plan forever",
+    offerHint: "100 bookings free every month + 14 days of PRO free",
     screenshotAlt: "Timviz business interface",
     whyTitle: "Why professionals switch to Timviz",
     whyCards: [
@@ -426,6 +434,8 @@ Object.assign(copy, {
     primaryCta: "Commencer gratuitement",
     secondaryCta: "Voir les fonctionnalités",
     proof: "Sans configuration complexe • lancement en quelques minutes",
+    offer: "Forfait gratuit à vie",
+    offerHint: "100 réservations gratuites chaque mois + 14 jours PRO offerts",
     screenshotAlt: "Interface Timviz pour entreprises",
     whyTitle: "Pourquoi les professionnels passent à Timviz",
     whyCards: [
@@ -514,6 +524,8 @@ Object.assign(copy, {
     primaryCta: "Zacznij za darmo",
     secondaryCta: "Zobacz funkcje",
     proof: "Bez skomplikowanej konfiguracji • start w kilka minut",
+    offer: "Darmowy plan na zawsze",
+    offerHint: "100 wizyt co miesiąc za darmo + 14 dni PRO gratis",
     screenshotAlt: "Interfejs biznesowy Timviz",
     whyTitle: "Dlaczego specjaliści przechodzą na Timviz",
     whyCards: [
@@ -602,6 +614,8 @@ Object.assign(copy, {
     primaryCta: "Začít zdarma",
     secondaryCta: "Zobrazit funkce",
     proof: "Bez složitého nastavení • spuštění za pár minut",
+    offer: "Tarif zdarma navždy",
+    offerHint: "100 rezervací každý měsíc zdarma + 14 dní PRO zdarma",
     screenshotAlt: "Business rozhraní Timviz",
     whyTitle: "Proč profesionálové přechází na Timviz",
     whyCards: [
@@ -690,6 +704,8 @@ Object.assign(copy, {
     primaryCta: "Empezar gratis",
     secondaryCta: "Ver funciones",
     proof: "Sin configuración compleja • listo en minutos",
+    offer: "Plan gratis para siempre",
+    offerHint: "100 reservas gratis cada mes + 14 días PRO gratis",
     screenshotAlt: "Interfaz empresarial de Timviz",
     whyTitle: "Por qué los profesionales cambian a Timviz",
     whyCards: [
@@ -778,6 +794,8 @@ Object.assign(copy, {
     primaryCta: "Kostenlos starten",
     secondaryCta: "Funktionen ansehen",
     proof: "Ohne komplizierte Einrichtung • Start in wenigen Minuten",
+    offer: "Kostenloser Tarif dauerhaft",
+    offerHint: "100 Buchungen jeden Monat kostenlos + 14 Tage PRO kostenlos",
     screenshotAlt: "Timviz Business-Oberfläche",
     whyTitle: "Warum Profis zu Timviz wechseln",
     whyCards: [
@@ -1034,6 +1052,13 @@ export default function BusinessLanding({ initialLanguage = "ru" }: BusinessLand
           <span>{t.heroBadge}</span>
           <h1>{t.heroTitle}</h1>
           <p>{t.heroText}</p>
+          <strong className="business-offer">
+            <span>{t.offer}</span>
+            <button className="business-offer-info" type="button" aria-label={t.offerHint}>
+              *
+              <span role="tooltip">{t.offerHint}</span>
+            </button>
+          </strong>
           <div className="business-hero-actions">
             <a className="business-primary" href={createProfileLink}>{t.primaryCta}</a>
             <a className="business-secondary" href="#features">{t.secondaryCta}</a>
