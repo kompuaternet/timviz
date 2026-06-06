@@ -5,6 +5,7 @@ import {
   resolveMobileSocialProfile,
   type MobileSocialProvider
 } from "../../../../../lib/mobile-social-auth";
+import { reportMobileRegistrationConversion } from "../../../../../lib/mobile-registration-conversions";
 import { sendSuperadminTelegramNotification } from "../../../../../lib/telegram-bot";
 
 function getMobileSocialRegistrationSource(body: Record<string, unknown>, request: Request) {
@@ -48,17 +49,34 @@ export async function POST(request: Request) {
     });
 
     if (session.isNewRegistration) {
+      const registrationSource = getMobileSocialRegistrationSource(body, request);
+
       await sendSuperadminTelegramNotification({
         eventType: "user_registered",
         professionalId: session.professionalId,
         professionalName: session.profile.displayName,
         professionalEmail: session.profile.email,
         professionalPhone: "",
-        registrationSource: getMobileSocialRegistrationSource(body, request),
+        registrationSource,
         ownerMode: "owner",
         businessName: session.businessName || undefined,
         workspaceReady: session.workspaceReady
       }).catch(() => undefined);
+
+      await reportMobileRegistrationConversion({
+        professionalId: session.professionalId,
+        provider,
+        email: session.profile.email,
+        displayName: session.profile.displayName,
+        businessName: session.businessName,
+        registrationSource,
+        workspaceReady: session.workspaceReady,
+        language: session.profile.language,
+        country: cleanMobileSocialText(body.country) || undefined,
+        currency: cleanMobileSocialText(body.currency) || undefined,
+        platform: cleanMobileSocialText(body.platform),
+        request
+      });
     }
 
     return NextResponse.json(session);

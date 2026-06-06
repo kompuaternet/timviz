@@ -18,6 +18,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
+  Dimensions,
   Image,
   Keyboard,
   KeyboardAvoidingView,
@@ -35,7 +36,12 @@ import {
   useWindowDimensions,
   View,
 } from "react-native";
-import { setFirebaseMobileUser, trackFirebaseMobileEvent, type MobileAnalyticsPayload } from "./src/lib/mobileAnalytics";
+import {
+  initiateFirebaseMobileRegistrationConversion,
+  setFirebaseMobileUser,
+  trackFirebaseMobileEvent,
+  type MobileAnalyticsPayload
+} from "./src/lib/mobileAnalytics";
 
 WebBrowser.maybeCompleteAuthSession();
 Notifications.setNotificationHandler({
@@ -62,6 +68,7 @@ type MobileSession = {
   email: string;
   displayName: string;
   language?: AppLanguage;
+  isNewRegistration?: boolean;
 };
 
 type MobileAdsEventName =
@@ -5455,6 +5462,17 @@ const COUNTRY_LANGUAGE_BY_ISO: Record<string, AppLanguage> = {
   CA: "en",
 };
 
+const ANDROID_NAVIGATION_BAR_FALLBACK_INSET = 32;
+
+function getAndroidSystemNavigationInset() {
+  if (Platform.OS !== "android") return 0;
+  const screenHeight = Dimensions.get("screen").height;
+  const windowHeight = Dimensions.get("window").height;
+  const statusBarHeight = Constants.statusBarHeight || 0;
+  const measuredInset = Math.round(screenHeight - windowHeight - statusBarHeight);
+  return Math.max(ANDROID_NAVIGATION_BAR_FALLBACK_INSET, measuredInset, 0);
+}
+
 function getCountryIsoFromTimezone(timeZone?: string | null) {
   const normalized = String(timeZone || "").trim();
   if (!normalized) return "";
@@ -6596,6 +6614,7 @@ function normalizeApiSession(result: any, fallbackEmail: string): MobileSession 
     professionalId: String(result.professionalId || ""),
     email: String(result.profile?.email || fallbackEmail),
     displayName: String(result.profile?.displayName || result.profile?.email || fallbackEmail),
+    isNewRegistration: result.isNewRegistration === true || result.isNewRegistration === "true",
     ...(sessionLanguage ? { language: sessionLanguage } : {}),
   };
 }
@@ -7235,6 +7254,20 @@ export default function App() {
       );
       if (nextSession.token && nextSession.professionalId) {
         void persistSession(nextSession);
+        if (nextSession.isNewRegistration) {
+          void initiateFirebaseMobileRegistrationConversion({ email: nextSession.email }).then(() =>
+            trackMobileAdsEvent(
+              "mobile_sign_up_complete",
+              {
+                method: "google",
+                country: registerPhoneCountry.country,
+                currency: registerPhoneCountry.currency || inferCurrency(registerPhoneCountry.country)
+              },
+              nextSession.token
+            )
+          );
+          return;
+        }
         void trackMobileAdsEvent(
           "mobile_social_auth_complete",
           {
@@ -8336,6 +8369,20 @@ export default function App() {
       }
       const nextSession = normalizeApiSession(result, String(result?.profile?.email || profile.email || ""));
       await persistSession(nextSession);
+      if (nextSession.isNewRegistration) {
+        void initiateFirebaseMobileRegistrationConversion({ email: nextSession.email }).then(() =>
+          trackMobileAdsEvent(
+            "mobile_sign_up_complete",
+            {
+              method: provider,
+              country: registerPhoneCountry.country,
+              currency: registerPhoneCountry.currency || inferCurrency(registerPhoneCountry.country)
+            },
+            nextSession.token
+          )
+        );
+        return;
+      }
       void trackMobileAdsEvent(
         "mobile_social_auth_complete",
         {
@@ -8443,14 +8490,16 @@ export default function App() {
       }
       const nextSession = normalizeApiSession(result, payload.email);
       await persistSession(nextSession, payload.language);
-      void trackMobileAdsEvent(
-        "mobile_sign_up_complete",
-        {
-          method: "email",
-          country: payload.country,
-          currency: payload.currency
-        },
-        nextSession.token
+      void initiateFirebaseMobileRegistrationConversion({ email: payload.email, phone: payload.phone }).then(() =>
+        trackMobileAdsEvent(
+          "mobile_sign_up_complete",
+          {
+            method: "email",
+            country: payload.country,
+            currency: payload.currency
+          },
+          nextSession.token
+        )
       );
     } catch (error) {
       Alert.alert(t.registerError, error instanceof Error ? error.message : t.registerError);
@@ -12692,9 +12741,18 @@ function BottomNavigation({
     { tab: "staff", icon: "people-outline", label: t.teamAccount || t.staff },
     { tab: "settings", icon: "ellipsis-horizontal-circle-outline", label: t.moreTab || t.settings },
   ];
+  useWindowDimensions();
+  const androidNavigationInset = getAndroidSystemNavigationInset();
+  const bottomNavSystemOffset =
+    Platform.OS === "android"
+      ? {
+          bottom: androidNavigationInset + 8,
+          paddingBottom: 10,
+        }
+      : null;
 
   return (
-    <View style={styles.bottomNav}>
+    <View style={[styles.bottomNav, bottomNavSystemOffset]}>
       {items.map((item) => {
         const active = activeTab === item.tab;
         const locked = lockedTabs.includes(item.tab);

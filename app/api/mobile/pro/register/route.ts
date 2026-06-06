@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getClientIp, verifyCaptchaToken } from "../../../../../lib/auth-security";
 import { authApiCopy, normalizeAuthLanguage } from "../../../../../lib/auth-api-i18n";
+import { reportMobileRegistrationConversion } from "../../../../../lib/mobile-registration-conversions";
 import { signSessionValue } from "../../../../../lib/pro-auth";
 import {
   activateProfessionalEmailByEmail,
@@ -82,6 +83,7 @@ export async function POST(request: Request) {
 
       return NextResponse.json({
         professionalId: existingProfile.id,
+        isNewRegistration: false,
         workspaceReady: true,
         joinRequest: null,
         token: signSessionValue(existingProfile.id),
@@ -142,8 +144,24 @@ export async function POST(request: Request) {
       workspaceReady: result.workspaceReady
     }).catch(() => undefined);
 
+    await reportMobileRegistrationConversion({
+      professionalId: result.professionalId,
+      provider: "email",
+      email,
+      phone,
+      displayName,
+      businessName: companyName,
+      registrationSource,
+      workspaceReady: result.workspaceReady,
+      language,
+      country,
+      currency,
+      request
+    });
+
     return NextResponse.json({
       ...result,
+      isNewRegistration: true,
       token: signSessionValue(result.professionalId),
       profile: {
         id: result.professionalId,

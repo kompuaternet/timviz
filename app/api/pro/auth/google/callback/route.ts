@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { getPublicAppUrl } from "../../../../../../lib/app-url";
 import { getSessionCookieName, signSessionValue } from "../../../../../../lib/pro-auth";
 import { exchangeCodeForGoogleProfile, getGoogleOAuthSettings } from "../../../../../../lib/google-oauth";
+import { reportMobileRegistrationConversion } from "../../../../../../lib/mobile-registration-conversions";
 import { createMobileSocialSession } from "../../../../../../lib/mobile-social-auth";
 import { getTelegramStartAppLinkSync } from "../../../../../../lib/telegram-bot";
 import { encodeTelegramGoogleSignupStartParam } from "../../../../../../lib/telegram-startapp";
@@ -239,6 +240,23 @@ export async function GET(request: Request) {
         currency: cookieStore.get(MOBILE_GOOGLE_OAUTH_CURRENCY_COOKIE)?.value
       });
 
+      if (session.isNewRegistration) {
+        await reportMobileRegistrationConversion({
+          professionalId: session.professionalId,
+          provider: "google",
+          email: session.profile.email,
+          displayName: session.profile.displayName,
+          businessName: session.businessName,
+          registrationSource: "мобильное приложение Google OAuth",
+          workspaceReady: session.workspaceReady,
+          language: session.profile.language,
+          country: cookieStore.get(MOBILE_GOOGLE_OAUTH_COUNTRY_COOKIE)?.value,
+          currency: cookieStore.get(MOBILE_GOOGLE_OAUTH_CURRENCY_COOKIE)?.value,
+          platform: "ios",
+          request
+        });
+      }
+
       clearOAuthCookies(cookieStore, isSecure);
       clearMobileOAuthCookies(cookieStore, isSecure);
 
@@ -246,7 +264,8 @@ export async function GET(request: Request) {
         token: session.token,
         professionalId: session.professionalId,
         email: session.profile.email,
-        displayName: session.profile.displayName
+        displayName: session.profile.displayName,
+        isNewRegistration: session.isNewRegistration ? "true" : "false"
       });
     }
 

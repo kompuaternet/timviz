@@ -14,6 +14,11 @@ export type MobileAnalyticsEventName =
 
 export type MobileAnalyticsPayload = Record<string, string | number | boolean | null | undefined>;
 
+type MobileRegistrationConversionInput = {
+  email?: string | null;
+  phone?: string | null;
+};
+
 const firebaseEventMap: Record<MobileAnalyticsEventName, string> = {
   mobile_app_open: "app_open",
   mobile_sign_up_complete: "sign_up",
@@ -66,6 +71,22 @@ function sanitizeFirebasePayload(payload: MobileAnalyticsPayload) {
   );
 }
 
+function waitForFirebaseAttributionWindow() {
+  return new Promise((resolve) => setTimeout(resolve, 800));
+}
+
+function normalizeEmailForConversion(value: string | null | undefined) {
+  const email = String(value ?? "").trim().toLowerCase();
+  return email.includes("@") && email.includes(".") ? email : "";
+}
+
+function normalizePhoneForConversion(value: string | null | undefined) {
+  const phone = String(value ?? "").replace(/[^\d+]/g, "");
+  if (!phone.startsWith("+")) return "";
+  const digits = phone.replace(/\D/g, "");
+  return digits.length >= 8 && digits.length <= 15 ? phone : "";
+}
+
 export async function trackFirebaseMobileEvent(eventName: MobileAnalyticsEventName, payload: MobileAnalyticsPayload = {}) {
   const analyticsFactory = await loadFirebaseAnalytics();
   if (!analyticsFactory) return;
@@ -74,6 +95,30 @@ export async function trackFirebaseMobileEvent(eventName: MobileAnalyticsEventNa
     await analytics.logEvent(firebaseEventMap[eventName], sanitizeFirebasePayload(payload));
   } catch {
     firebaseAnalyticsAvailable = false;
+  }
+}
+
+export async function initiateFirebaseMobileRegistrationConversion(input: MobileRegistrationConversionInput) {
+  if (Platform.OS !== "ios") return;
+
+  const analyticsFactory = await loadFirebaseAnalytics();
+  if (!analyticsFactory) return;
+
+  const email = normalizeEmailForConversion(input.email);
+  const phone = normalizePhoneForConversion(input.phone);
+  if (!email && !phone) return;
+
+  try {
+    const analytics = analyticsFactory();
+    if (email && typeof analytics.initiateOnDeviceConversionMeasurementWithEmailAddress === "function") {
+      await analytics.initiateOnDeviceConversionMeasurementWithEmailAddress(email);
+    }
+    if (phone && typeof analytics.initiateOnDeviceConversionMeasurementWithPhoneNumber === "function") {
+      await analytics.initiateOnDeviceConversionMeasurementWithPhoneNumber(phone);
+    }
+    await waitForFirebaseAttributionWindow();
+  } catch {
+    // On-device conversion is best-effort; event logging should still continue.
   }
 }
 

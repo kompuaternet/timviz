@@ -45,5 +45,9 @@ module.exports = () => {
     expo.plugins = [...(expo.plugins || []), "@react-native-firebase/app"];
   }
 
+  if (shouldConfigureIosFirebase) {
+    expo.plugins = [...(expo.plugins || []), "./plugins/with-ios-firebase-on-device-conversion"];
+  }
+
   return config;
 };

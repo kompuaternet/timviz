@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { exchangeCodeForGoogleProfile, getGoogleOAuthSettings } from "../../../../../../../lib/google-oauth";
+import { reportMobileRegistrationConversion } from "../../../../../../../lib/mobile-registration-conversions";
 import { createMobileSocialSession } from "../../../../../../../lib/mobile-social-auth";
 
 const GOOGLE_OAUTH_STATE_COOKIE = "timviz_mobile_google_oauth_state";
@@ -75,6 +76,23 @@ export async function GET(request: Request) {
       currency: cookieStore.get(GOOGLE_OAUTH_CURRENCY_COOKIE)?.value
     });
 
+    if (session.isNewRegistration) {
+      await reportMobileRegistrationConversion({
+        professionalId: session.professionalId,
+        provider: "google",
+        email: session.profile.email,
+        displayName: session.profile.displayName,
+        businessName: session.businessName,
+        registrationSource: "мобильное приложение Google OAuth",
+        workspaceReady: session.workspaceReady,
+        language: session.profile.language,
+        country: cookieStore.get(GOOGLE_OAUTH_COUNTRY_COOKIE)?.value,
+        currency: cookieStore.get(GOOGLE_OAUTH_CURRENCY_COOKIE)?.value,
+        platform: "ios",
+        request
+      });
+    }
+
     clearOAuthCookies(cookieStore, isSecure);
 
     return mobileRedirect({
@@ -82,7 +100,8 @@ export async function GET(request: Request) {
       professionalId: session.professionalId,
       email: session.profile.email,
       displayName: session.profile.displayName,
-      language: session.profile.language
+      language: session.profile.language,
+      isNewRegistration: session.isNewRegistration ? "true" : "false"
     });
   } catch {
     clearOAuthCookies(cookieStore, isSecure);
