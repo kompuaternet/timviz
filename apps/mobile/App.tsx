@@ -7324,11 +7324,20 @@ export default function App() {
 
   useEffect(() => {
     AsyncStorage.getItem(APP_LANGUAGE_KEY)
-      .then((value) => {
+      .then(async (value) => {
         const savedLanguage = normalizeAppLanguage(value);
         if (savedLanguage && latestLanguageRef.current === initialLanguageRef.current) {
           latestLanguageRef.current = savedLanguage;
           setLanguage(savedLanguage);
+          return;
+        }
+        const cacheRaw = await AsyncStorage.getItem(WORKSPACE_CACHE_KEY).catch(() => null);
+        if (!cacheRaw) return;
+        const cache = JSON.parse(cacheRaw) as MobileWorkspaceCache;
+        const cachedProfileLanguage = normalizeAppLanguage(cache.workspace?.professional?.language);
+        if (cachedProfileLanguage && latestLanguageRef.current === initialLanguageRef.current) {
+          latestLanguageRef.current = cachedProfileLanguage;
+          setLanguage(cachedProfileLanguage);
         }
       })
       .catch(() => undefined)
@@ -14235,6 +14244,7 @@ function StaffScheduleTab({
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [pickerMonth, setPickerMonth] = useState(getTodayIso().slice(0, 7) + "-01");
   const [selectedFlexibleDate, setSelectedFlexibleDate] = useState(getTodayIso());
+  const [flexibleDayModalDate, setFlexibleDayModalDate] = useState<string | null>(null);
   const [scheduleAutoStatus, setScheduleAutoStatus] = useState("");
   const scheduleSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const scheduleSaveInFlightRef = useRef(false);
@@ -14262,6 +14272,7 @@ function StaffScheduleTab({
   useEffect(() => {
     setSelectedFlexibleDate(getTodayIso());
     setPickerMonth(getTodayIso().slice(0, 7) + "-01");
+    setFlexibleDayModalDate(null);
   }, [selectedMember?.professional.id]);
 
   useEffect(() => {
@@ -14304,6 +14315,7 @@ function StaffScheduleTab({
 
   function updateScheduleMode(mode: "fixed" | "flexible") {
     setScheduleMode(mode);
+    setFlexibleDayModalDate(null);
     if (mode === "flexible") {
       setCalendarOpen(false);
       setPickerMonth(selectedFlexibleDate.slice(0, 7) + "-01");
@@ -14389,6 +14401,7 @@ function StaffScheduleTab({
     if (!selectedMember) return;
     setSelectedFlexibleDate(date);
     setPickerMonth(date.slice(0, 7) + "-01");
+    setFlexibleDayModalDate(date);
 
     const existing = customDraft[date] || selectedMember.membership.customSchedule?.[date];
     if (existing) {
@@ -14405,6 +14418,20 @@ function StaffScheduleTab({
     rememberFlexibleIntervals(selectedMember.professional.id, intervals);
     latestScheduleDraftRef.current = { workDraft, customDraft: nextCustomDraft, scheduleMode };
     queueScheduleAutosave(120);
+  }
+
+  async function saveFlexibleDayAndClose() {
+    if (!selectedMember) return;
+    const latest = latestScheduleDraftRef.current;
+    if (!validateScheduleBeforeSave(true, latest.workDraft, latest.customDraft, "flexible")) {
+      return;
+    }
+    setScheduleAutoStatus(t.settingsSaving);
+    const ok = await onSaveSchedule(selectedMember, latest.workDraft, latest.customDraft, "flexible", { silent: true });
+    setScheduleAutoStatus(ok ? t.settingsSaved : t.settingsSaveError);
+    if (ok) {
+      setFlexibleDayModalDate(null);
+    }
   }
 
   function getMonthDraftDay(date: string) {
@@ -14647,39 +14674,6 @@ function StaffScheduleTab({
                 );
               })}
             </View>
-            <View style={styles.staffSelectedDayCard}>
-              {(() => {
-                const day = getMonthDraftDay(selectedFlexibleDate);
-                const intervals = getDayIntervalsRecord(day);
-                return (
-                  <>
-                    <View style={styles.staffDayHeader}>
-                      <View style={styles.staffMemberCardInfo}>
-                        <Text style={styles.staffDayTitle}>{formatShortDate(selectedFlexibleDate, language)}</Text>
-                        <Text style={styles.clientOptionCaption}>
-                          {day.enabled ? `${t.workingDay} · ${formatMoneylessHours(getIntervalsDurationMinutes(intervals), t.hoursShort)}` : t.dayOff}
-                        </Text>
-                      </View>
-                      <Pressable style={[styles.mobileSwitch, day.enabled && styles.mobileSwitchActive]} onPress={() => updateMonthDateEnabled(selectedFlexibleDate, !day.enabled)}>
-                        <View style={[styles.mobileSwitchThumb, day.enabled && styles.mobileSwitchThumbActive]} />
-                      </Pressable>
-                    </View>
-                    {day.enabled ? (
-                      <View style={styles.staffIntervalsBox}>
-                        <Text style={styles.staffTimeLabel}>{t.workIntervals}</Text>
-                        <WorkIntervalsEditor
-                          t={t}
-                          intervals={intervals}
-                          onChange={(intervalIndex, field, value) => updateMonthDateInterval(selectedFlexibleDate, intervalIndex, field, value)}
-                          onAddAfter={(intervalIndex) => addMonthDateInterval(selectedFlexibleDate, intervalIndex)}
-                          onRemove={(intervalIndex) => removeMonthDateInterval(selectedFlexibleDate, intervalIndex)}
-                        />
-                      </View>
-                    ) : null}
-                  </>
-                );
-              })()}
-            </View>
           </View>
         ) : (
           staffWeekKeys.map((key, index) => {
@@ -14717,6 +14711,59 @@ function StaffScheduleTab({
         {scheduleAutoStatus ? <Text style={styles.settingsMutedNotice}>{scheduleAutoStatus}</Text> : null}
         <PrimaryButton label={t.saveSchedule} onPress={() => { if (validateScheduleBeforeSave()) void onSaveSchedule(selectedMember, workDraft, customDraft, scheduleMode); }} disabled={busy} />
       </Panel>
+      {flexibleDayModalDate ? (() => {
+        const day = getMonthDraftDay(flexibleDayModalDate);
+        const intervals = getDayIntervalsRecord(day);
+        return (
+          <Modal transparent visible animationType="fade" onRequestClose={() => setFlexibleDayModalDate(null)}>
+            <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.scheduleDayModalOverlay}>
+              <Pressable style={styles.scheduleDayModalBackdrop} onPress={() => setFlexibleDayModalDate(null)} />
+              <View style={styles.scheduleDayModalSheet}>
+                <View style={styles.sheetHandle} />
+                <View style={styles.sheetHeader}>
+                  <View style={styles.staffMemberCardInfo}>
+                    <Text style={styles.sheetTitle}>{formatShortDate(flexibleDayModalDate, language)}</Text>
+                    <Text style={styles.clientOptionCaption}>
+                      {day.enabled ? `${t.workingDay} · ${formatMoneylessHours(getIntervalsDurationMinutes(intervals), t.hoursShort)}` : t.dayOff}
+                    </Text>
+                  </View>
+                  <Pressable style={styles.sheetClose} onPress={() => setFlexibleDayModalDate(null)}>
+                    <Ionicons name="close" size={22} color="#0F172A" />
+                  </Pressable>
+                </View>
+                <Pressable style={styles.settingsToggleRow} onPress={() => updateMonthDateEnabled(flexibleDayModalDate, !day.enabled)}>
+                  <Text style={styles.settingsToggleText}>{day.enabled ? t.workingDay : t.dayOff}</Text>
+                  <View style={[styles.mobileSwitch, day.enabled && styles.mobileSwitchActive]}>
+                    <View style={[styles.mobileSwitchThumb, day.enabled && styles.mobileSwitchThumbActive]} />
+                  </View>
+                </Pressable>
+                {day.enabled ? (
+                  <ScrollView style={styles.scheduleDayModalScroll} contentContainerStyle={styles.scheduleDayModalScrollContent} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+                    <View style={styles.staffIntervalsBox}>
+                      <Text style={styles.staffTimeLabel}>{t.workIntervals}</Text>
+                      <WorkIntervalsEditor
+                        t={t}
+                        intervals={intervals}
+                        onChange={(intervalIndex, field, value) => updateMonthDateInterval(flexibleDayModalDate, intervalIndex, field, value)}
+                        onAddAfter={(intervalIndex) => addMonthDateInterval(flexibleDayModalDate, intervalIndex)}
+                        onRemove={(intervalIndex) => removeMonthDateInterval(flexibleDayModalDate, intervalIndex)}
+                      />
+                    </View>
+                  </ScrollView>
+                ) : null}
+                <View style={styles.scheduleDayModalActions}>
+                  <View style={styles.scheduleDayModalAction}>
+                    <SecondaryButton label={t.cancel} onPress={() => setFlexibleDayModalDate(null)} disabled={busy} />
+                  </View>
+                  <View style={styles.scheduleDayModalAction}>
+                    <PrimaryButton label={t.saveSchedule} onPress={() => void saveFlexibleDayAndClose()} disabled={busy} />
+                  </View>
+                </View>
+              </View>
+            </KeyboardAvoidingView>
+          </Modal>
+        );
+      })() : null}
     </View>
   );
 }
@@ -21641,6 +21688,42 @@ const styles = StyleSheet.create({
     borderColor: "rgba(226, 232, 240, 0.78)",
     backgroundColor: "#FFFFFF",
   },
+  scheduleDayModalOverlay: {
+    flex: 1,
+    justifyContent: "flex-end",
+    backgroundColor: "rgba(15, 23, 42, 0.42)",
+  },
+  scheduleDayModalBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  scheduleDayModalSheet: {
+    maxHeight: "88%",
+    paddingHorizontal: 18,
+    paddingTop: 9,
+    paddingBottom: 22,
+    gap: 10,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    backgroundColor: "#FFFFFF",
+    shadowColor: "#142033",
+    shadowOpacity: 0.16,
+    shadowRadius: 30,
+    shadowOffset: { width: 0, height: -10 },
+  },
+  scheduleDayModalScroll: {
+    maxHeight: 310,
+  },
+  scheduleDayModalScrollContent: {
+    paddingBottom: 8,
+  },
+  scheduleDayModalActions: {
+    flexDirection: "row",
+    gap: 10,
+    alignItems: "center",
+  },
+  scheduleDayModalAction: {
+    flex: 1,
+  },
   staffDayCard: {
     paddingVertical: 11,
     borderBottomWidth: 1,
@@ -21682,8 +21765,10 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   staffIntervalActions: {
+    width: 72,
     flexDirection: "row",
     alignItems: "center",
+    justifyContent: "flex-end",
     gap: 4,
     paddingBottom: 1,
   },
