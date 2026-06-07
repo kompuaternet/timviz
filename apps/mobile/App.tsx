@@ -10109,7 +10109,7 @@ function CalendarTab({
     }));
     setClientQuery("");
     setClientCreateOpen(false);
-    setVisitPickerMode(null);
+    requestAnimationFrame(() => setVisitPickerMode(null));
   }
 
   function getClientDraftFromQuery(query: string) {
@@ -10130,7 +10130,6 @@ function CalendarTab({
     if (inlineClientSaving) return;
     const fullName = [newClientDraft.firstName, newClientDraft.lastName].map((item) => item.trim()).filter(Boolean).join(" ");
     setInlineClientSaving(true);
-    Keyboard.dismiss();
     try {
       const client = await onCreateClientFromVisit({
         fullName,
@@ -10544,7 +10543,7 @@ function CalendarTab({
       ) : null}
 
       <Modal transparent visible={composerOpen} animationType="slide" onRequestClose={() => setComposerOpen(false)}>
-        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.modalBackdrop}>
+        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.modalBackdrop}>
           <View style={[styles.visitSheet, styles.visitEditorSheet]}>
             <View style={styles.sheetHandle} />
             <View style={styles.sheetHeader}>
@@ -10570,7 +10569,7 @@ function CalendarTab({
                 style={styles.clientPickerScroll}
                 contentContainerStyle={styles.clientPickerScrollContent}
                 keyboardShouldPersistTaps="handled"
-                keyboardDismissMode="interactive"
+                keyboardDismissMode={Platform.OS === "ios" ? "interactive" : "none"}
                 showsVerticalScrollIndicator={false}
               >
                 <SearchInput value={clientQuery} onChangeText={setClientQuery} placeholder={t.clientNameOrPhone} />
