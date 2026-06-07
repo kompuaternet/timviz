@@ -9746,6 +9746,7 @@ function CalendarTab({
   const [clientCreateOpen, setClientCreateOpen] = useState(false);
   const [newClientDraft, setNewClientDraft] = useState({ firstName: "", lastName: "", phone: "" });
   const [inlineClientSaving, setInlineClientSaving] = useState(false);
+  const inlineClientSelectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const visibleDates = useMemo(() => getCalendarModeDates(viewMode, selectedDate), [selectedDate, viewMode]);
   const visibleDatesKey = visibleDates.join("|");
   const preloadDates = useMemo(
@@ -10112,6 +10113,32 @@ function CalendarTab({
     requestAnimationFrame(() => setVisitPickerMode(null));
   }
 
+  useEffect(() => {
+    return () => {
+      if (inlineClientSelectTimerRef.current) {
+        clearTimeout(inlineClientSelectTimerRef.current);
+      }
+    };
+  }, []);
+
+  function selectCreatedClientAfterKeyboardSettles(client: ClientRecord) {
+    if (Platform.OS !== "android") {
+      setDraftClient(client);
+      setInlineClientSaving(false);
+      return;
+    }
+
+    Keyboard.dismiss();
+    if (inlineClientSelectTimerRef.current) {
+      clearTimeout(inlineClientSelectTimerRef.current);
+    }
+    inlineClientSelectTimerRef.current = setTimeout(() => {
+      inlineClientSelectTimerRef.current = null;
+      setDraftClient(client);
+      setInlineClientSaving(false);
+    }, 320);
+  }
+
   function getClientDraftFromQuery(query: string) {
     const value = query.trim();
     if (!value) return { firstName: "", lastName: "", phone: "" };
@@ -10138,10 +10165,13 @@ function CalendarTab({
       });
       if (client) {
         setNewClientDraft({ firstName: "", lastName: "", phone: "" });
-        setDraftClient(client);
+        selectCreatedClientAfterKeyboardSettles(client);
+        return;
       }
     } finally {
-      setInlineClientSaving(false);
+      if (!inlineClientSelectTimerRef.current) {
+        setInlineClientSaving(false);
+      }
     }
   }
 
@@ -10623,27 +10653,29 @@ function CalendarTab({
                     <PrimaryButton label={t.addAndSelectClient} onPress={() => void createInlineClient()} disabled={busy || inlineClientSaving} />
                   </View>
                 ) : null}
-                <View style={styles.clientPickerResults}>
-                  {filteredClients.map((client) => (
-                    <Pressable key={client.id} style={styles.clientOptionCard} onPress={() => setDraftClient(client)}>
-                      <View style={styles.clientAvatar}>
-                        <Text style={styles.clientAvatarText}>{(client.fullName || client.phone || "C").slice(0, 1).toUpperCase()}</Text>
-                      </View>
-                      <View style={styles.clientOptionText}>
-                        <Text style={styles.clientOptionTitle} numberOfLines={1} ellipsizeMode="tail">{client.fullName || client.phone}</Text>
-                        <Text style={styles.clientOptionCaption} numberOfLines={1} ellipsizeMode="tail">{client.phone || client.email || t.clients}</Text>
-                      </View>
-                    </Pressable>
-                  ))}
-                  {!filteredClients.length && hasClientSearch ? (
-                    <View style={styles.pickerEmptyState}>
-                      <Text style={styles.pickerEmptyTitle}>{t.noClientFound}</Text>
-                      <Pressable style={styles.pickerEmptyButton} onPress={() => openInlineClientForm(clientQuery)}>
-                        <Text style={styles.pickerEmptyButtonText}>{t.createClientFromSearch}</Text>
+                {!clientCreateOpen ? (
+                  <View style={styles.clientPickerResults}>
+                    {filteredClients.map((client) => (
+                      <Pressable key={client.id} style={styles.clientOptionCard} onPress={() => setDraftClient(client)}>
+                        <View style={styles.clientAvatar}>
+                          <Text style={styles.clientAvatarText}>{(client.fullName || client.phone || "C").slice(0, 1).toUpperCase()}</Text>
+                        </View>
+                        <View style={styles.clientOptionText}>
+                          <Text style={styles.clientOptionTitle} numberOfLines={1} ellipsizeMode="tail">{client.fullName || client.phone}</Text>
+                          <Text style={styles.clientOptionCaption} numberOfLines={1} ellipsizeMode="tail">{client.phone || client.email || t.clients}</Text>
+                        </View>
                       </Pressable>
-                    </View>
-                  ) : null}
-                </View>
+                    ))}
+                    {!filteredClients.length && hasClientSearch ? (
+                      <View style={styles.pickerEmptyState}>
+                        <Text style={styles.pickerEmptyTitle}>{t.noClientFound}</Text>
+                        <Pressable style={styles.pickerEmptyButton} onPress={() => openInlineClientForm(clientQuery)}>
+                          <Text style={styles.pickerEmptyButtonText}>{t.createClientFromSearch}</Text>
+                        </Pressable>
+                      </View>
+                    ) : null}
+                  </View>
+                ) : null}
               </ScrollView>
             ) : visitPickerMode === "service" ? (
               <>
