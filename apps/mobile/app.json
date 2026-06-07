@@ -28,7 +28,7 @@
     },
     "android": {
       "package": "com.timviz.master",
-      "versionCode": 57,
+      "versionCode": 58,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
