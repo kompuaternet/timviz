@@ -24,6 +24,17 @@ const passwordTooShortCopy = {
   de: "Das Passwort muss mindestens 6 Zeichen enthalten."
 } as const;
 
+const emailAlreadyRegisteredCopy = {
+  ru: "Этот email уже зарегистрирован. Войдите в аккаунт или восстановите пароль.",
+  uk: "Цей email уже зареєстрований. Увійдіть в акаунт або відновіть пароль.",
+  en: "This email is already registered. Sign in or reset your password.",
+  fr: "Cet email est déjà enregistré. Connectez-vous ou réinitialisez le mot de passe.",
+  pl: "Ten email jest już zarejestrowany. Zaloguj się albo zresetuj hasło.",
+  cs: "Tento e-mail je již zaregistrován. Přihlaste se nebo obnovte heslo.",
+  es: "Este email ya está registrado. Inicia sesión o restablece la contraseña.",
+  de: "Diese E-Mail ist bereits registriert. Melde dich an oder setze das Passwort zurück."
+} as const;
+
 function cleanText(value: unknown) {
   return String(value ?? "").trim();
 }
@@ -45,6 +56,8 @@ function getMobileRegistrationSource(body: Record<string, unknown>, request: Req
 }
 
 export async function POST(request: Request) {
+  let language = normalizeAuthLanguage(undefined);
+
   try {
     const body = await request.json();
     const firstName = cleanText(body.firstName);
@@ -53,7 +66,7 @@ export async function POST(request: Request) {
     const password = String(body.password ?? "");
     const phone = cleanText(body.phone);
     const companyName = cleanText(body.companyName);
-    const language = normalizeAuthLanguage(body.language);
+    language = normalizeAuthLanguage(body.language);
     const t = authApiCopy[language];
     const country = cleanText(body.country) || "Ukraine";
     const timezone = cleanText(body.timezone) || "Europe/Kyiv";
@@ -172,6 +185,11 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error("[mobile-pro-register] Registration failed", error);
-    return NextResponse.json({ error: authApiCopy.en.registrationFailed }, { status: 400 });
+    const message = error instanceof Error ? error.message : "";
+    if (/email.*существует|already exists|duplicate key|professionals_email/i.test(message)) {
+      return NextResponse.json({ error: emailAlreadyRegisteredCopy[language] }, { status: 409 });
+    }
+
+    return NextResponse.json({ error: authApiCopy[language].registrationFailed }, { status: 400 });
   }
 }

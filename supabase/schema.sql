@@ -459,6 +459,9 @@ alter table public.mobile_push_tokens add column if not exists updated_at timest
 create index if not exists bookings_salon_date_idx on public.bookings (salon_slug, appointment_date, appointment_time);
 create index if not exists bookings_salon_status_created_idx on public.bookings (salon_slug, status, created_at desc);
 create index if not exists bookings_customer_email_idx on public.bookings (customer_email, created_at desc);
+create unique index if not exists professionals_email_normalized_uidx
+  on public.professionals (lower(btrim(email)))
+  where btrim(email) <> '';
 create index if not exists plans_code_idx on public.plans (code);
 create index if not exists user_entitlements_user_status_idx on public.user_entitlements (user_id, status, active_until desc);
 create index if not exists user_entitlements_source_idx on public.user_entitlements (source, updated_at desc);

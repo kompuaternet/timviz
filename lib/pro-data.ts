@@ -318,6 +318,13 @@ function isMissingStaffInvitationsTableError(message?: string) {
   return isMissingTableError(message, "business_staff_invitations");
 }
 
+function isProfessionalEmailConflictError(error: { code?: string; message?: string }) {
+  return (
+    error.code === "23505" &&
+    /professionals_email_normalized_uidx|professionals_email_uidx|professionals.*email/i.test(error.message ?? "")
+  );
+}
+
 function normalizeServiceSource(value: unknown): "catalog" | "custom" {
   return value === "custom" ? "custom" : "catalog";
 }
@@ -1752,6 +1759,10 @@ export async function createProfessionalSetup(input: {
         .eq("id", professionalId);
 
       if (professionalError) {
+        if (isProfessionalEmailConflictError(professionalError)) {
+          throw new Error("Пользователь с таким email уже существует.");
+        }
+
         throw new Error(professionalError.message);
       }
     } else {
@@ -1761,6 +1772,10 @@ export async function createProfessionalSetup(input: {
       });
 
       if (professionalError) {
+        if (isProfessionalEmailConflictError(professionalError)) {
+          throw new Error("Пользователь с таким email уже существует.");
+        }
+
         throw new Error(professionalError.message);
       }
     }
@@ -2538,6 +2553,26 @@ export async function getProfessionalProfileByEmail(email: string) {
   const normalizedEmail = email.trim().toLowerCase();
   if (!normalizedEmail) {
     return null;
+  }
+
+  if (isSupabaseConfigured()) {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      return null;
+    }
+
+    const { data, error } = await supabase
+      .from("professionals")
+      .select(PROFESSIONAL_SELECT_FIELDS)
+      .ilike("email", normalizedEmail)
+      .order("created_at", { ascending: true })
+      .limit(1);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    return data?.[0] ? mapSupabaseProfessionalRow(data[0]) : null;
   }
 
   const directory = await getBusinessDirectorySnapshot();

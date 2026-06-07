@@ -1390,6 +1390,7 @@ export default function ProSetupFlow({
     }
 
     trackAdsEvent("sign_up_complete", {
+      event_id: result.metaRegistrationEventId || undefined,
       source: "pro_setup",
       language,
       owner_mode: activeDraft.ownerMode,

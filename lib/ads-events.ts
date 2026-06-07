@@ -64,9 +64,33 @@ const adsRecommendedEvents: Partial<Record<AdsEventName, string[]>> = {
 declare global {
   interface Window {
     dataLayer?: Array<Record<string, unknown>>;
+    fbq?: (
+      command: "track" | "trackCustom",
+      eventName: string,
+      payload?: Record<string, unknown>,
+      options?: Record<string, unknown>
+    ) => void;
     gtag?: (command: "event", eventName: string, payload?: Record<string, unknown>) => void;
   }
 }
+
+const adsMetaStandardEvents: Partial<Record<AdsEventName, string[]>> = {
+  landing_view: ["ViewContent"],
+  app_store_click: ["Lead"],
+  sign_up_start: ["Lead"],
+  sign_up_complete: ["CompleteRegistration", "Lead"],
+  business_profile_created: ["Lead"],
+  first_booking_received: ["Lead"],
+  pricing_view: ["ViewContent"],
+  pro_trial_started: ["StartTrial"],
+  checkout_start: ["InitiateCheckout"],
+  checkout_redirect: ["AddPaymentInfo"],
+  subscription_purchase: ["Subscribe", "Purchase"],
+  support_message_sent: ["Contact"],
+  mobile_sign_up_complete: ["CompleteRegistration", "Lead"],
+  mobile_checkout_start: ["InitiateCheckout"],
+  mobile_purchase_complete: ["Purchase"]
+};
 
 function isAdsCarryKey(key: string) {
   return adsCarryKeys.includes(key) || adsCarryPrefixes.some((prefix) => key.startsWith(prefix));
@@ -116,6 +140,37 @@ function trackGoogleAdsSignupConversion(eventName: AdsEventName) {
     value: 1.0,
     currency: "UAH"
   });
+}
+
+function cleanMetaPayload(payload: Record<string, unknown>) {
+  return Object.fromEntries(
+    Object.entries(payload)
+      .filter(([, value]) => value !== undefined && value !== null && value !== "")
+      .map(([key, value]) => {
+        if (typeof value === "number" || typeof value === "boolean") {
+          return [key, value];
+        }
+        return [key, String(value).slice(0, 500)];
+      })
+  );
+}
+
+function trackMetaPixelEvents(eventName: AdsEventName, payload: Record<string, unknown>) {
+  if (typeof window.fbq !== "function") {
+    return;
+  }
+
+  const metaEventOptions = typeof payload.event_id === "string" ? { eventID: payload.event_id } : undefined;
+  const metaPayload = cleanMetaPayload({
+    ...payload,
+    timviz_event: eventName
+  });
+
+  window.fbq("trackCustom", eventName, metaPayload, metaEventOptions);
+
+  for (const metaEventName of adsMetaStandardEvents[eventName] || []) {
+    window.fbq("track", metaEventName, metaPayload, metaEventOptions);
+  }
 }
 
 export function captureAdsAttribution() {
@@ -180,6 +235,8 @@ export function trackAdsEvent(eventName: AdsEventName, payload: AdsEventPayload 
   if (typeof window.gtag === "function") {
     window.gtag("event", eventName, eventPayload);
   }
+
+  trackMetaPixelEvents(eventName, eventPayload);
 
   for (const recommendedEventName of adsRecommendedEvents[eventName] || []) {
     const recommendedPayload = {

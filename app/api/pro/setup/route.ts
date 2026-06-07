@@ -14,6 +14,10 @@ import { sendProfessionalConfirmationEmail } from "../../../../lib/pro-confirmat
 import { getSessionCookieName, signSessionValue } from "../../../../lib/pro-auth";
 import { createProfessionalSetup, getProfessionalPasswordResetProfile } from "../../../../lib/pro-data";
 import {
+  getMetaWebRegistrationEventId,
+  reportMetaWebRegistrationConversion
+} from "../../../../lib/meta-conversions";
+import {
   sendJoinRequestTelegramNotification,
   sendSuperadminTelegramNotification
 } from "../../../../lib/telegram-bot";
@@ -116,6 +120,20 @@ export async function POST(request: Request) {
       return NextResponse.json({ ...result, emailConfirmationRequired: true, email });
     }
 
+    const metaRegistrationEventId = getMetaWebRegistrationEventId(result.professionalId);
+    await reportMetaWebRegistrationConversion({
+      professionalId: result.professionalId,
+      email: String(body?.account?.email || "").trim(),
+      phone: String(body?.account?.phone || "").trim(),
+      firstName: String(body?.account?.firstName || "").trim(),
+      lastName: String(body?.account?.lastName || "").trim(),
+      country: String(body?.account?.country || "Ukraine").trim(),
+      language,
+      source: signupSource || "pro_setup",
+      workspaceReady: result.workspaceReady === true,
+      request
+    });
+
     const cookieStore = await cookies();
     cookieStore.set(getSessionCookieName(), signSessionValue(result.professionalId), {
       httpOnly: true,
@@ -125,7 +143,7 @@ export async function POST(request: Request) {
       maxAge: 60 * 60 * 24 * 7
     });
 
-    return NextResponse.json(result);
+    return NextResponse.json({ ...result, metaRegistrationEventId });
   } catch (error) {
     console.error("[pro-setup] Failed to create setup", error);
     return NextResponse.json({ error: authApiCopy.en.registrationFailed }, { status: 400 });

@@ -1218,6 +1218,7 @@ export default function CreateAccountForm() {
 
     logFunnelStep("setup_completed");
     trackAdsEvent("sign_up_complete", {
+      event_id: result.metaRegistrationEventId || undefined,
       source: signupSource || "pro_create_account",
       language,
       workspace_ready: result.workspaceReady === true

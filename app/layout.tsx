@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Script from "next/script";
 import AdsSignals from "./AdsSignals";
 import GoogleTag, { getGoogleTagManagerId } from "./GoogleTag";
+import MetaPixel from "./MetaPixel";
 import PublicMenuAutoClose from "./PublicMenuAutoClose";
 import { buildMetadata, seoCopy, siteUrl } from "../lib/seo";
 import { defaultSiteLanguage } from "../lib/site-language";
@@ -54,6 +55,7 @@ export default async function RootLayout({
           </Script>
         ) : null}
         <GoogleTag />
+        <MetaPixel />
         <AdsSignals />
         <PublicMenuAutoClose />
         {children}
