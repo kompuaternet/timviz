@@ -266,6 +266,25 @@ function getObjectValue(input: unknown, key: string) {
   return (input as Record<string, unknown>)[key];
 }
 
+function shouldReplaceRegistrationSource(
+  current: { platform: SuperadminUserRecord["registrationPlatform"] } | undefined,
+  next: SuperadminUserRecord["registrationPlatform"]
+) {
+  if (!current) {
+    return true;
+  }
+
+  if (current.platform === "website") {
+    return next !== "website";
+  }
+
+  if (current.platform === "mobile") {
+    return next === "ios" || next === "android";
+  }
+
+  return false;
+}
+
 async function getMobileRegistrationSources() {
   const registrationSources = new Map<
     string,
@@ -310,6 +329,44 @@ async function getMobileRegistrationSources() {
       registrationSource: getObjectValue(rawPayload, "registration_source"),
       provider: getObjectValue(rawPayload, "provider")
     });
+
+    registrationSources.set(professionalId, {
+      platform,
+      label: getRegistrationSourceLabel(platform)
+    });
+  }
+
+  const { data: pushRows, error: pushError } = await supabase
+    .from("mobile_push_tokens")
+    .select("professional_id, platform, device_name, updated_at, last_registered_at, created_at")
+    .order("updated_at", { ascending: false });
+
+  if (pushError) {
+    if (isMissingOptionalTableOrColumn(pushError.message)) {
+      return registrationSources;
+    }
+    throw new Error(pushError.message);
+  }
+
+  for (const row of pushRows ?? []) {
+    const professionalId = typeof row.professional_id === "string" ? row.professional_id : "";
+    if (!professionalId) {
+      continue;
+    }
+
+    const platform = resolveRegistrationPlatform({
+      platform: row.platform,
+      source: row.device_name
+    });
+
+    if (platform === "website") {
+      continue;
+    }
+
+    const current = registrationSources.get(professionalId);
+    if (!shouldReplaceRegistrationSource(current, platform)) {
+      continue;
+    }
 
     registrationSources.set(professionalId, {
       platform,
