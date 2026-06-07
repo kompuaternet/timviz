@@ -40,6 +40,8 @@ export type SuperadminUserRecord = {
   accountStatus: string;
   emailConfirmed: boolean;
   provider: string;
+  registrationPlatform: "website" | "ios" | "android" | "mobile";
+  registrationSource: string;
   servicesCount: number;
   photosCount: number;
   createdAt: string;
@@ -62,6 +64,7 @@ export type SuperadminServiceRecord = {
   moderatedAt?: string;
   addedByProfessionalId: string;
   addedByName: string;
+  addedByLanguage: string;
 };
 
 export type SuperadminPhotoRecord = {
@@ -75,6 +78,7 @@ export type SuperadminPhotoRecord = {
   createdAt: string;
   addedByProfessionalId: string;
   addedByName: string;
+  addedByLanguage: string;
 };
 
 const localStorePath = path.join(process.cwd(), "data", "pro-data.json");
@@ -210,6 +214,112 @@ function matchesSearch(haystack: string[], query: string) {
   return haystack.some((value) => normalize(value).includes(query));
 }
 
+function getRegistrationSourceLabel(platform: SuperadminUserRecord["registrationPlatform"]) {
+  switch (platform) {
+    case "ios":
+      return "Приложение iOS";
+    case "android":
+      return "Приложение Android";
+    case "mobile":
+      return "Мобильное приложение";
+    case "website":
+    default:
+      return "Только сайт";
+  }
+}
+
+function resolveRegistrationPlatform(input: {
+  platform?: unknown;
+  source?: unknown;
+  registrationSource?: unknown;
+  provider?: unknown;
+}): SuperadminUserRecord["registrationPlatform"] {
+  const value = [
+    input.platform,
+    input.source,
+    input.registrationSource,
+    input.provider
+  ]
+    .map((part) => (typeof part === "string" ? part : ""))
+    .join(" ")
+    .toLowerCase();
+
+  if (/(ios|iphone|ipad|apple)/i.test(value)) {
+    return "ios";
+  }
+
+  if (/android/i.test(value)) {
+    return "android";
+  }
+
+  if (/(mobile|мобиль)/i.test(value)) {
+    return "mobile";
+  }
+
+  return "website";
+}
+
+function getObjectValue(input: unknown, key: string) {
+  if (!input || typeof input !== "object") {
+    return undefined;
+  }
+  return (input as Record<string, unknown>)[key];
+}
+
+async function getMobileRegistrationSources() {
+  const registrationSources = new Map<
+    string,
+    {
+      platform: SuperadminUserRecord["registrationPlatform"];
+      label: string;
+    }
+  >();
+
+  if (!isSupabaseConfigured()) {
+    return registrationSources;
+  }
+
+  const supabase = getSupabaseAdmin();
+  if (!supabase) {
+    return registrationSources;
+  }
+
+  const { data, error } = await supabase
+    .from("webhook_events")
+    .select("user_id, raw_payload, created_at")
+    .eq("provider", "timviz_mobile_registration_conversion")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    if (isMissingOptionalTableOrColumn(error.message)) {
+      return registrationSources;
+    }
+    throw new Error(error.message);
+  }
+
+  for (const row of data ?? []) {
+    const professionalId = typeof row.user_id === "string" ? row.user_id : "";
+    if (!professionalId || registrationSources.has(professionalId)) {
+      continue;
+    }
+
+    const rawPayload = row.raw_payload;
+    const platform = resolveRegistrationPlatform({
+      platform: getObjectValue(rawPayload, "platform"),
+      source: getObjectValue(rawPayload, "source"),
+      registrationSource: getObjectValue(rawPayload, "registration_source"),
+      provider: getObjectValue(rawPayload, "provider")
+    });
+
+    registrationSources.set(professionalId, {
+      platform,
+      label: getRegistrationSourceLabel(platform)
+    });
+  }
+
+  return registrationSources;
+}
+
 export async function getSuperadminUsers(search = ""): Promise<SuperadminUserRecord[]> {
   const directory = await getBusinessDirectorySnapshot();
   const query = normalize(search);
@@ -225,6 +335,7 @@ export async function getSuperadminUsers(search = ""): Promise<SuperadminUserRec
   }
 
   const walletBalances = new Map<string, number>();
+  const registrationSources = await getMobileRegistrationSources();
   if (isSupabaseConfigured()) {
     const supabase = getSupabaseAdmin();
     if (supabase) {
@@ -248,6 +359,10 @@ export async function getSuperadminUsers(search = ""): Promise<SuperadminUserRec
       if (!professional || !business) {
         return [];
       }
+      const registrationSource = registrationSources.get(professional.id) ?? {
+        platform: "website" as const,
+        label: getRegistrationSourceLabel("website")
+      };
       return [{
         professionalId: professional.id,
         businessId: business.id,
@@ -269,6 +384,8 @@ export async function getSuperadminUsers(search = ""): Promise<SuperadminUserRec
         accountStatus: professional.accountStatus || "active",
         emailConfirmed: professional.accountStatus !== "pending_email",
         provider: "email",
+        registrationPlatform: registrationSource.platform,
+        registrationSource: registrationSource.label,
         servicesCount: servicesByBusiness.get(business.id) ?? 0,
         photosCount: normalizeBusinessPhotos(business.photos).filter((photo) => photo.status !== "blocked").length,
         createdAt: professional.createdAt
@@ -278,35 +395,58 @@ export async function getSuperadminUsers(search = ""): Promise<SuperadminUserRec
   const assignedProfessionalIds = new Set(membershipUsers.map((item) => item.professionalId));
   const unassignedUsers = directory.professionals
     .filter((professional) => !assignedProfessionalIds.has(professional.id))
-    .map((professional) => ({
-      professionalId: professional.id,
-      businessId: "",
-      membershipId: "",
-      fullName: getFullName(professional),
-      firstName: professional.firstName,
-      lastName: professional.lastName,
-      email: professional.email,
-      phone: professional.phone,
-      businessName: "Не подключен к бизнесу",
-      role: "Нет роли",
-      scope: "unassigned" as const,
-      country: professional.country,
-      timezone: professional.timezone,
-      language: professional.language,
-      currency: professional.currency || "USD",
-      bookingCreditsTotal: professional.bookingCreditsTotal ?? DEFAULT_BOOKING_CREDITS,
-      walletBalance: walletBalances.get(professional.id) ?? professional.walletBalance ?? 0,
-      accountStatus: professional.accountStatus || "active",
-      emailConfirmed: professional.accountStatus !== "pending_email",
-      provider: "email",
-      servicesCount: 0,
-      photosCount: 0,
-      createdAt: professional.createdAt
-    } satisfies SuperadminUserRecord));
+    .map((professional) => {
+      const registrationSource = registrationSources.get(professional.id) ?? {
+        platform: "website" as const,
+        label: getRegistrationSourceLabel("website")
+      };
+
+      return {
+        professionalId: professional.id,
+        businessId: "",
+        membershipId: "",
+        fullName: getFullName(professional),
+        firstName: professional.firstName,
+        lastName: professional.lastName,
+        email: professional.email,
+        phone: professional.phone,
+        businessName: "Не подключен к бизнесу",
+        role: "Нет роли",
+        scope: "unassigned" as const,
+        country: professional.country,
+        timezone: professional.timezone,
+        language: professional.language,
+        currency: professional.currency || "USD",
+        bookingCreditsTotal: professional.bookingCreditsTotal ?? DEFAULT_BOOKING_CREDITS,
+        walletBalance: walletBalances.get(professional.id) ?? professional.walletBalance ?? 0,
+        accountStatus: professional.accountStatus || "active",
+        emailConfirmed: professional.accountStatus !== "pending_email",
+        provider: "email",
+        registrationPlatform: registrationSource.platform,
+        registrationSource: registrationSource.label,
+        servicesCount: 0,
+        photosCount: 0,
+        createdAt: professional.createdAt
+      } satisfies SuperadminUserRecord;
+    });
 
   return [...membershipUsers, ...unassignedUsers]
-    .filter((item) => matchesSearch([item.fullName, item.email, item.phone, item.businessName, item.role], query))
-    .sort((left, right) => left.fullName.localeCompare(right.fullName));
+    .filter((item) =>
+      matchesSearch(
+        [
+          item.fullName,
+          item.firstName,
+          item.lastName,
+          item.email,
+          item.phone,
+          item.businessName,
+          item.role,
+          item.registrationSource
+        ],
+        query
+      )
+    )
+    .sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt));
 }
 
 export async function setProfessionalBalances(input: {
@@ -486,14 +626,15 @@ export async function getSuperadminServices(search = ""): Promise<SuperadminServ
         moderationStatus: service.moderationStatus === "pending" ? "pending" : "approved",
         moderatedAt: service.moderatedAt,
         addedByProfessionalId,
-        addedByName: addedByProfessional ? getFullName(addedByProfessional) : "Неизвестно"
+        addedByName: addedByProfessional ? getFullName(addedByProfessional) : "Неизвестно",
+        addedByLanguage: addedByProfessional?.language || "—"
       } satisfies SuperadminServiceRecord;
     });
 
   return rows
     .filter((item): item is SuperadminServiceRecord => item !== null)
     .filter((item) =>
-      matchesSearch([item.name, item.category, item.businessName, item.addedByName], query)
+      matchesSearch([item.name, item.category, item.businessName, item.addedByName, item.addedByLanguage], query)
     )
     .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
 }
@@ -661,12 +802,13 @@ export async function getSuperadminPhotos(search = ""): Promise<SuperadminPhotoR
           status: photo.status === "blocked" ? "blocked" : "active",
           createdAt: photo.createdAt,
           addedByProfessionalId,
-          addedByName: addedBy ? getFullName(addedBy) : "Неизвестно"
+          addedByName: addedBy ? getFullName(addedBy) : "Неизвестно",
+          addedByLanguage: addedBy?.language || "—"
         } satisfies SuperadminPhotoRecord;
       })
     )
     .filter((item) =>
-      matchesSearch([item.businessName, item.caption, item.addedByName], query)
+      matchesSearch([item.businessName, item.caption, item.addedByName, item.addedByLanguage], query)
     )
     .sort((left, right) => right.createdAt.localeCompare(left.createdAt));
 }

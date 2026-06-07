@@ -41,6 +41,9 @@ type CategoryRenameDraft = {
   toCategory: string;
 };
 
+type UserRegistrationPlatformFilter = "all" | SuperadminUserRecord["registrationPlatform"];
+type UserRegistrationSort = "newest" | "oldest";
+
 type GroupedServices = {
   businessId: string;
   businessName: string;
@@ -119,6 +122,21 @@ function getAdminCategoryLabel(category: string) {
   return localized === category ? category : `${localized} (${category})`;
 }
 
+function formatAdminDate(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "—";
+  }
+
+  return new Intl.DateTimeFormat("ru-RU", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  }).format(date);
+}
+
 export default function SuperadminView({
   adminEmail,
   initialUsers,
@@ -134,10 +152,15 @@ export default function SuperadminView({
   const [serviceQuery, setServiceQuery] = useState("");
   const [photoQuery, setPhotoQuery] = useState("");
   const [catalogQuery, setCatalogQuery] = useState("");
+  const [userRegistrationPlatform, setUserRegistrationPlatform] =
+    useState<UserRegistrationPlatformFilter>("all");
+  const [userRegistrationSort, setUserRegistrationSort] = useState<UserRegistrationSort>("newest");
   const [status, setStatus] = useState("");
   const [isBusy, setIsBusy] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState(initialUsers[0]?.professionalId || "");
   const [notificationTarget, setNotificationTarget] = useState<"selected" | "all">("selected");
+  const [notificationProfessionalId, setNotificationProfessionalId] = useState(initialUsers[0]?.professionalId || "");
+  const [notificationUserQuery, setNotificationUserQuery] = useState("");
   const [notificationTitle, setNotificationTitle] = useState("Сообщение от Timviz");
   const [notificationBody, setNotificationBody] = useState("");
   const [balanceDrafts, setBalanceDrafts] = useState<Record<string, { bookingCreditsTotal: string; walletBalance: string }>>(
@@ -171,14 +194,41 @@ export default function SuperadminView({
 
   const filteredUsers = useMemo(() => {
     const query = userQuery.trim().toLowerCase();
-    if (!query) return users;
-    return users.filter((user) =>
-      [user.fullName, user.email, user.phone, user.businessName, user.role]
-        .join(" ")
-        .toLowerCase()
-        .includes(query)
-    );
-  }, [userQuery, users]);
+    return users
+      .filter((user) => {
+        const matchesPlatform =
+          userRegistrationPlatform === "all" ||
+          user.registrationPlatform === userRegistrationPlatform;
+
+        if (!matchesPlatform) {
+          return false;
+        }
+
+        if (!query) {
+          return true;
+        }
+
+        return [
+          user.firstName,
+          user.lastName,
+          user.fullName,
+          user.phone,
+          user.email,
+          user.businessName,
+          user.role,
+          user.registrationSource
+        ]
+          .join(" ")
+          .toLowerCase()
+          .includes(query);
+      })
+      .sort((left, right) => {
+        const leftTime = Date.parse(left.createdAt) || 0;
+        const rightTime = Date.parse(right.createdAt) || 0;
+        const dateDiff = userRegistrationSort === "newest" ? rightTime - leftTime : leftTime - rightTime;
+        return dateDiff || left.fullName.localeCompare(right.fullName);
+      });
+  }, [userQuery, userRegistrationPlatform, userRegistrationSort, users]);
 
   useEffect(() => {
     if (!filteredUsers.some((user) => user.professionalId === selectedUserId)) {
@@ -186,10 +236,45 @@ export default function SuperadminView({
     }
   }, [filteredUsers, selectedUserId]);
 
+  useEffect(() => {
+    if (!users.some((user) => user.professionalId === notificationProfessionalId)) {
+      setNotificationProfessionalId(users[0]?.professionalId || "");
+    }
+  }, [notificationProfessionalId, users]);
+
   const selectedUser =
     filteredUsers.find((user) => user.professionalId === selectedUserId) ??
     users.find((user) => user.professionalId === selectedUserId) ??
     null;
+
+  const selectedNotificationUser =
+    users.find((user) => user.professionalId === notificationProfessionalId) ?? null;
+
+  const notificationUsers = useMemo(() => {
+    const query = notificationUserQuery.trim().toLowerCase();
+    return users
+      .filter((user) => {
+        if (!query) {
+          return true;
+        }
+
+        return [
+          user.firstName,
+          user.lastName,
+          user.fullName,
+          user.phone,
+          user.email,
+          user.businessName,
+          user.language,
+          user.registrationSource
+        ]
+          .join(" ")
+          .toLowerCase()
+          .includes(query);
+      })
+      .sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt))
+      .slice(0, 12);
+  }, [notificationUserQuery, users]);
 
   const customServices = useMemo(
     () => services.filter((service) => service.source === "custom"),
@@ -200,7 +285,7 @@ export default function SuperadminView({
     const query = serviceQuery.trim().toLowerCase();
     if (!query) return customServices;
     return customServices.filter((service) =>
-      [service.name, service.category, service.businessName, service.addedByName]
+      [service.name, service.category, service.businessName, service.addedByName, service.addedByLanguage]
         .join(" ")
         .toLowerCase()
         .includes(query)
@@ -225,7 +310,7 @@ export default function SuperadminView({
     const query = photoQuery.trim().toLowerCase();
     if (!query) return photos;
     return photos.filter((photo) =>
-      [photo.businessName, photo.caption, photo.addedByName]
+      [photo.businessName, photo.caption, photo.addedByName, photo.addedByLanguage]
         .join(" ")
         .toLowerCase()
         .includes(query)
@@ -345,7 +430,7 @@ export default function SuperadminView({
     const targetName =
       notificationTarget === "all"
         ? "всем пользователям"
-        : selectedUser?.fullName || "выбранному пользователю";
+        : selectedNotificationUser?.fullName || "выбранному пользователю";
     setIsBusy(true);
     setStatus("");
     try {
@@ -354,7 +439,7 @@ export default function SuperadminView({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           target: notificationTarget,
-          professionalId: selectedUserId,
+          professionalId: notificationTarget === "all" ? undefined : notificationProfessionalId,
           title: notificationTitle,
           body: notificationBody
         })
@@ -497,7 +582,9 @@ export default function SuperadminView({
           >
             {service.addedByName}
           </button>
-          <span className={styles.rowMeta}>{service.businessName}</span>
+          <span className={styles.rowMeta}>
+            {service.businessName} · язык {service.addedByLanguage || "—"}
+          </span>
         </div>
         <div className={styles.rowActions}>
           <div className={styles.catalogInlineControls}>
@@ -810,6 +897,41 @@ export default function SuperadminView({
             />
           </label>
         </div>
+        {notificationTarget === "selected" ? (
+          <div className={styles.recipientPicker}>
+            <label className={styles.field}>
+              <span>Найти получателя</span>
+              <input
+                className={styles.input}
+                value={notificationUserQuery}
+                onChange={(event) => setNotificationUserQuery(event.target.value)}
+                placeholder="Имя, фамилия, телефон, email или язык"
+              />
+            </label>
+            <div className={styles.recipientList}>
+              {notificationUsers.length > 0 ? (
+                notificationUsers.map((user) => (
+                  <button
+                    key={user.professionalId}
+                    type="button"
+                    className={`${styles.recipientItem} ${
+                      user.professionalId === notificationProfessionalId ? styles.recipientItemActive : ""
+                    }`}
+                    onClick={() => setNotificationProfessionalId(user.professionalId)}
+                  >
+                    <strong>{user.fullName}</strong>
+                    <span>{user.email || user.phone || "Без контакта"}</span>
+                    <span>
+                      Язык: {user.language || "—"} · {user.registrationSource}
+                    </span>
+                  </button>
+                ))
+              ) : (
+                <div className={styles.emptyState}>Получатель не найден.</div>
+              )}
+            </div>
+          </div>
+        ) : null}
         <label className={styles.field}>
           <span>Текст уведомления</span>
           <textarea
@@ -824,12 +946,21 @@ export default function SuperadminView({
             type="button"
             className={styles.primaryButton}
             onClick={() => void sendAdminNotification()}
-            disabled={isBusy || !notificationTitle.trim() || !notificationBody.trim() || (notificationTarget === "selected" && !selectedUserId)}
+            disabled={
+              isBusy ||
+              !notificationTitle.trim() ||
+              !notificationBody.trim() ||
+              (notificationTarget === "selected" && !notificationProfessionalId)
+            }
           >
             Отправить уведомление
           </button>
           <span className={styles.rowMeta}>
-            {notificationTarget === "all" ? "Получат все активные аккаунты" : selectedUser ? `Получит ${selectedUser.fullName}` : "Выбери пользователя ниже"}
+            {notificationTarget === "all"
+              ? "Получат все активные аккаунты"
+              : selectedNotificationUser
+                ? `Получит ${selectedNotificationUser.fullName} · язык ${selectedNotificationUser.language || "—"}`
+                : "Выбери пользователя в списке выше"}
           </span>
         </div>
       </section>
@@ -840,30 +971,63 @@ export default function SuperadminView({
             <h2>Пользователи</h2>
             <p>Слева быстрый список, справа карточка, где уже можно менять балансы, входить под пользователем или удалить его.</p>
           </div>
-          <input
-            className={styles.searchInput}
-            placeholder="Поиск по имени, email, телефону, роли или бизнесу"
-            value={userQuery}
-            onChange={(event) => setUserQuery(event.target.value)}
-          />
+          <div className={styles.userFilters}>
+            <input
+              className={styles.searchInput}
+              placeholder="Поиск: имя, фамилия, телефон или email"
+              value={userQuery}
+              onChange={(event) => setUserQuery(event.target.value)}
+            />
+            <select
+              className={styles.select}
+              value={userRegistrationPlatform}
+              onChange={(event) =>
+                setUserRegistrationPlatform(event.target.value as UserRegistrationPlatformFilter)
+              }
+              aria-label="Фильтр по источнику регистрации"
+            >
+              <option value="all">Все источники</option>
+              <option value="website">Только сайт</option>
+              <option value="ios">Приложение iOS</option>
+              <option value="android">Приложение Android</option>
+              <option value="mobile">Мобильное приложение</option>
+            </select>
+            <select
+              className={styles.select}
+              value={userRegistrationSort}
+              onChange={(event) => setUserRegistrationSort(event.target.value as UserRegistrationSort)}
+              aria-label="Сортировка по дате регистрации"
+            >
+              <option value="newest">Сначала новые</option>
+              <option value="oldest">Сначала старые</option>
+            </select>
+          </div>
         </div>
 
         <div className={styles.entityLayout}>
           <div className={styles.entityList}>
-            {filteredUsers.map((user) => (
-              <button
-                key={user.professionalId}
-                type="button"
-                className={`${styles.entityListItem} ${
-                  user.professionalId === selectedUserId ? styles.entityListItemActive : ""
-                }`}
-                onClick={() => setSelectedUserId(user.professionalId)}
-              >
-                <strong>{user.fullName}</strong>
-                <span>{user.businessName}</span>
-                <span>{user.email}</span>
-              </button>
-            ))}
+            {filteredUsers.length > 0 ? (
+              filteredUsers.map((user) => (
+                <button
+                  key={user.professionalId}
+                  type="button"
+                  className={`${styles.entityListItem} ${
+                    user.professionalId === selectedUserId ? styles.entityListItemActive : ""
+                  }`}
+                  onClick={() => setSelectedUserId(user.professionalId)}
+                >
+                  <strong>{user.fullName}</strong>
+                  <span>{user.businessName}</span>
+                  <span>{user.email}</span>
+                  <span>Язык: {user.language || "—"}</span>
+                  <span>
+                    {user.registrationSource} · {formatAdminDate(user.createdAt)}
+                  </span>
+                </button>
+              ))
+            ) : (
+              <div className={styles.emptyState}>Пользователей по этим фильтрам не найдено.</div>
+            )}
           </div>
 
           <div className={styles.entityDetail}>
@@ -902,6 +1066,8 @@ export default function SuperadminView({
                   <span>Аккаунт: {selectedUser.accountStatus}</span>
                   <span>Email: {selectedUser.emailConfirmed ? "подтверждён" : "ждёт подтверждения"}</span>
                   <span>Provider: {selectedUser.provider}</span>
+                  <span>Источник: {selectedUser.registrationSource}</span>
+                  <span>Дата регистрации: {formatAdminDate(selectedUser.createdAt)}</span>
                   <span>Язык: {selectedUser.language}</span>
                   <span>Валюта: {selectedUser.currency}</span>
                   <span>Услуг: {selectedUser.servicesCount}</span>
@@ -969,7 +1135,7 @@ export default function SuperadminView({
           </div>
           <input
             className={styles.searchInput}
-            placeholder="Поиск по услуге, категории, бизнесу или автору"
+            placeholder="Поиск по услуге, категории, бизнесу, автору или языку"
             value={serviceQuery}
             onChange={(event) => setServiceQuery(event.target.value)}
           />
@@ -1035,7 +1201,7 @@ export default function SuperadminView({
           </div>
           <input
             className={styles.searchInput}
-            placeholder="Поиск по бизнесу, подписи или автору"
+            placeholder="Поиск по бизнесу, подписи, автору или языку"
             value={photoQuery}
             onChange={(event) => setPhotoQuery(event.target.value)}
           />
@@ -1071,7 +1237,8 @@ export default function SuperadminView({
                       </button>
                       <div className={styles.rowMeta}>
                         {photo.isPrimary ? "Главное фото" : "Дополнительное"} ·{" "}
-                        {photo.status === "blocked" ? "Заблокировано" : "Активно"}
+                        {photo.status === "blocked" ? "Заблокировано" : "Активно"} · язык{" "}
+                        {photo.addedByLanguage || "—"}
                       </div>
                     </div>
                     <div className={styles.rowActions}>
