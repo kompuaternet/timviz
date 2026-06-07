@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "768484064485",
+    "project_id": "gen-lang-client-0773034397",
+    "storage_bucket": "gen-lang-client-0773034397.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:768484064485:android:af98a11276515a5697280c",
+        "android_client_info": {
+          "package_name": "com.timviz.master"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "768484064485-sgmmtka892i7j5dsqrcedfhgftanjo69.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCbo64tkpkg_75HWZ1Z9D8HaSa9GpDCenE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "768484064485-sgmmtka892i7j5dsqrcedfhgftanjo69.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "768484064485-3k8u9fjgoj2usbntj7bmg3evj6o588aj.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.timviz.master"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
