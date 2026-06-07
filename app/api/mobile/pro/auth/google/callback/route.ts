@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { exchangeCodeForGoogleProfile, getGoogleOAuthSettings } from "../../../../../../../lib/google-oauth";
 import { reportMobileRegistrationConversion } from "../../../../../../../lib/mobile-registration-conversions";
 import { createMobileSocialSession } from "../../../../../../../lib/mobile-social-auth";
+import { sendSuperadminTelegramNotification } from "../../../../../../../lib/telegram-bot";
 
 const GOOGLE_OAUTH_STATE_COOKIE = "timviz_mobile_google_oauth_state";
 const GOOGLE_OAUTH_PKCE_COOKIE = "timviz_mobile_google_oauth_pkce";
@@ -77,13 +78,25 @@ export async function GET(request: Request) {
     });
 
     if (session.isNewRegistration) {
+      await sendSuperadminTelegramNotification({
+        eventType: "user_registered",
+        professionalId: session.professionalId,
+        professionalName: session.profile.displayName,
+        professionalEmail: session.profile.email,
+        professionalPhone: "",
+        registrationSource: "мобильное приложение iOS",
+        ownerMode: "owner",
+        businessName: session.businessName || undefined,
+        workspaceReady: session.workspaceReady
+      }).catch(() => undefined);
+
       await reportMobileRegistrationConversion({
         professionalId: session.professionalId,
         provider: "google",
         email: session.profile.email,
         displayName: session.profile.displayName,
         businessName: session.businessName,
-        registrationSource: "мобильное приложение Google OAuth",
+        registrationSource: "мобильное приложение iOS",
         workspaceReady: session.workspaceReady,
         language: session.profile.language,
         country: cookieStore.get(GOOGLE_OAUTH_COUNTRY_COOKIE)?.value,

@@ -14,7 +14,7 @@ function getMobileSocialRegistrationSource(body: Record<string, unknown>, reques
   const source = rawSource || userAgent;
 
   if (source.includes("ios") || source.includes("iphone") || source.includes("ipad")) {
-    return "мобильное приложение Apple";
+    return "мобильное приложение iOS";
   }
 
   if (source.includes("android")) {

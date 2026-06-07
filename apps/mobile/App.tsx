@@ -681,6 +681,7 @@ const BIOMETRIC_ENABLED_KEY = "timviz_mobile_biometric_enabled_v1";
 const PUSH_AUTO_REGISTER_KEY_PREFIX = "timviz_mobile_push_auto_register_v1:";
 const SUPPORT_TICKET_KEY_PREFIX = "timviz_mobile_support_ticket_v1:";
 const PUSH_PROJECT_ID_ERROR = "push_project_id_missing";
+const PUSH_FIREBASE_CONFIG_ERROR = "push_firebase_config_missing";
 const WORKSPACE_CACHE_KEY = "timviz_mobile_workspace_cache_v2";
 const API_BASE_URL = (process.env.EXPO_PUBLIC_API_BASE_URL || "https://timviz.com").replace(/\/+$/, "");
 const MOBILE_PLATFORM_SOURCE = Platform.OS === "ios" ? "ios" : Platform.OS === "android" ? "android" : "mobile";
@@ -1688,6 +1689,7 @@ const baseCopy = {
     pushOpenSettings: "Відкрити налаштування телефону",
     pushDeviceCount: "Пристроїв",
     pushProjectMissing: "Не налаштовано Expo projectId для push-сповіщень. Додайте EXPO_PUBLIC_EAS_PROJECT_ID у конфігурацію застосунку.",
+    pushFirebaseMissing: "Для push-сповіщень потрібна нова Android-збірка з Firebase config.",
     pushIosCapabilityMissing: "Для push-сповіщень потрібна нова TestFlight-збірка з увімкненими Push Notifications в Apple Developer.",
     minutesBefore: "хв до запису",
     hoursBefore: "год до запису",
@@ -2205,6 +2207,7 @@ const baseCopy = {
     pushOpenSettings: "Открыть настройки телефона",
     pushDeviceCount: "Устройств",
     pushProjectMissing: "Не настроен Expo projectId для push-уведомлений. Добавьте EXPO_PUBLIC_EAS_PROJECT_ID в конфигурацию приложения.",
+    pushFirebaseMissing: "Для push-уведомлений нужна новая Android-сборка с Firebase config.",
     pushIosCapabilityMissing: "Для push-уведомлений нужна новая TestFlight-сборка с включенными Push Notifications в Apple Developer.",
     minutesBefore: "мин до записи",
     hoursBefore: "ч до записи",
@@ -2722,6 +2725,7 @@ const baseCopy = {
     pushOpenSettings: "Open phone settings",
     pushDeviceCount: "Devices",
     pushProjectMissing: "Expo projectId is not configured for push notifications. Add EXPO_PUBLIC_EAS_PROJECT_ID to the app configuration.",
+    pushFirebaseMissing: "Push notifications need a new Android build with Firebase config.",
     pushIosCapabilityMissing: "Push notifications need a new TestFlight build with Push Notifications enabled in Apple Developer.",
     minutesBefore: "min before",
     hoursBefore: "h before",
@@ -5039,6 +5043,7 @@ Object.assign(generatedMobileCopy.fr, {
   pushOpenSettings: "Ouvrir les réglages du téléphone",
   pushDeviceCount: "Appareils",
   pushProjectMissing: "Expo projectId n'est pas configuré pour les notifications push.",
+  pushFirebaseMissing: "Les notifications push nécessitent une nouvelle build Android avec la configuration Firebase.",
   pushIosCapabilityMissing: "Les notifications push nécessitent une nouvelle build avec Push Notifications activé dans Apple Developer.",
 });
 
@@ -5104,6 +5109,7 @@ Object.assign(generatedMobileCopy.pl, {
   pushOpenSettings: "Otwórz ustawienia telefonu",
   pushDeviceCount: "Urządzenia",
   pushProjectMissing: "Expo projectId nie jest skonfigurowany dla powiadomień push.",
+  pushFirebaseMissing: "Powiadomienia push wymagają nowej build Android z konfiguracją Firebase.",
   pushIosCapabilityMissing: "Powiadomienia push wymagają nowej build z włączonym Push Notifications w Apple Developer.",
 });
 
@@ -5169,6 +5175,7 @@ Object.assign(generatedMobileCopy.cs, {
   pushOpenSettings: "Otevřít nastavení telefonu",
   pushDeviceCount: "Zařízení",
   pushProjectMissing: "Expo projectId není nastaven pro push upozornění.",
+  pushFirebaseMissing: "Push upozornění vyžadují novou Android build s Firebase config.",
   pushIosCapabilityMissing: "Push upozornění vyžadují novou build s povoleným Push Notifications v Apple Developer.",
 });
 
@@ -5234,6 +5241,7 @@ Object.assign(generatedMobileCopy.es, {
   pushOpenSettings: "Abrir ajustes del teléfono",
   pushDeviceCount: "Dispositivos",
   pushProjectMissing: "Expo projectId no está configurado para notificaciones push.",
+  pushFirebaseMissing: "Las notificaciones push requieren una nueva build Android con configuración Firebase.",
   pushIosCapabilityMissing: "Las notificaciones push requieren una nueva build con Push Notifications activado en Apple Developer.",
 });
 
@@ -5299,6 +5307,7 @@ Object.assign(generatedMobileCopy.de, {
   pushOpenSettings: "Telefoneinstellungen öffnen",
   pushDeviceCount: "Geräte",
   pushProjectMissing: "Expo projectId ist für Push-Benachrichtigungen nicht konfiguriert.",
+  pushFirebaseMissing: "Push-Benachrichtigungen benötigen einen neuen Android-Build mit Firebase-Konfiguration.",
   pushIosCapabilityMissing: "Push-Benachrichtigungen benötigen eine neue Build mit aktivierten Push Notifications in Apple Developer.",
 });
 
@@ -6595,6 +6604,24 @@ async function requestExpoPushToken() {
   return { status: finalStatus, expoPushToken: token.data };
 }
 
+function getPushErrorMessage(error: unknown, t: Record<string, string>) {
+  const message = error instanceof Error ? error.message : String(error || "");
+  if (message === PUSH_PROJECT_ID_ERROR) {
+    return t.pushProjectMissing || t.pushSaveFailed;
+  }
+  if (
+    message === PUSH_FIREBASE_CONFIG_ERROR ||
+    message.includes("Default FirebaseApp is not initialized") ||
+    message.includes("FirebaseApp.initializeApp")
+  ) {
+    return t.pushFirebaseMissing || t.pushSaveFailed;
+  }
+  if (message.includes("aps-environment")) {
+    return t.pushIosCapabilityMissing || t.pushSaveFailed;
+  }
+  return message || t.pushSaveFailed;
+}
+
 function normalizeApiSession(result: any, fallbackEmail: string): MobileSession {
   const sessionLanguage = normalizeAppLanguage(result.profile?.language || result.language);
   return {
@@ -7165,6 +7192,10 @@ export default function App() {
   const [registerDetailsOpen, setRegisterDetailsOpen] = useState(false);
   const [keyboardVisible, setKeyboardVisible] = useState(false);
   const authScrollRef = useRef<ScrollView | null>(null);
+  const workspaceScrollRef = useRef<ScrollView | null>(null);
+  const settingsSectionContentYRef = useRef<number | null>(null);
+  const pendingSettingsSectionScrollRef = useRef(false);
+  const settingsSectionScrollTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const handleServicesModeRequestHandled = useCallback(() => setServicesModeRequest(null), []);
   const detectedCountry = useMemo(() => getDetectedCountry(), []);
   const detectedTimezone = useMemo(() => getDetectedTimezone(), []);
@@ -7757,7 +7788,45 @@ export default function App() {
   function openSettingsSection(section: MobileSettingsSection = "general") {
     setSettingsSection(section);
     setActiveTab("settings");
+    requestSettingsSectionScroll();
   }
+
+  function flushSettingsSectionScroll() {
+    const targetY = settingsSectionContentYRef.current;
+    if (targetY === null) return false;
+    pendingSettingsSectionScrollRef.current = false;
+    workspaceScrollRef.current?.scrollTo({ y: Math.max(targetY - 6, 0), animated: true });
+    return true;
+  }
+
+  function requestSettingsSectionScroll() {
+    pendingSettingsSectionScrollRef.current = true;
+    if (settingsSectionScrollTimerRef.current) {
+      clearTimeout(settingsSectionScrollTimerRef.current);
+    }
+    settingsSectionScrollTimerRef.current = setTimeout(() => {
+      settingsSectionScrollTimerRef.current = null;
+      if (!pendingSettingsSectionScrollRef.current) return;
+      if (!flushSettingsSectionScroll()) {
+        requestSettingsSectionScroll();
+      }
+    }, 90);
+  }
+
+  function rememberSettingsSectionContentY(y: number) {
+    settingsSectionContentYRef.current = y;
+    if (pendingSettingsSectionScrollRef.current) {
+      requestSettingsSectionScroll();
+    }
+  }
+
+  useEffect(() => {
+    return () => {
+      if (settingsSectionScrollTimerRef.current) {
+        clearTimeout(settingsSectionScrollTimerRef.current);
+      }
+    };
+  }, []);
 
   function activateCachedSession(cachedSession: MobileSession) {
     setSession(cachedSession);
@@ -9349,6 +9418,7 @@ export default function App() {
         ) : (
           <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={styles.workspaceKeyboard}>
           <ScrollView
+            ref={workspaceScrollRef}
             style={styles.workspaceScroll}
             contentContainerStyle={[styles.workspaceContent, keyboardVisible && styles.workspaceContentKeyboardOpen]}
             refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => refreshAll()} tintColor="#7C3AED" />}
@@ -9427,6 +9497,8 @@ export default function App() {
                 setActiveTab={setActiveTab}
                   activeSection={settingsSection}
                   setActiveSection={setSettingsSection}
+                  onSectionSelected={requestSettingsSectionScroll}
+                  onSectionContentLayout={rememberSettingsSectionContentY}
                   onSignOut={signOut}
                   biometricAvailable={biometricAvailable}
                   biometricEnabled={biometricEnabled}
@@ -14892,6 +14964,8 @@ function SettingsTab({
   setActiveTab,
   activeSection,
   setActiveSection,
+  onSectionSelected,
+  onSectionContentLayout,
   onSignOut,
   biometricAvailable,
   biometricEnabled,
@@ -14912,6 +14986,8 @@ function SettingsTab({
   setActiveTab: (tab: AppTab) => void;
   activeSection: MobileSettingsSection;
   setActiveSection: (section: MobileSettingsSection) => void;
+  onSectionSelected?: () => void;
+  onSectionContentLayout?: (y: number) => void;
   onSignOut: () => void;
   biometricAvailable: boolean;
   biometricEnabled: boolean;
@@ -14972,6 +15048,11 @@ function SettingsTab({
     ),
     [selectedBusinessCategories, workspace?.business.categories]
   );
+
+  function selectSettingsSection(section: MobileSettingsSection) {
+    setActiveSection(section);
+    onSectionSelected?.();
+  }
 
   function filterPendingPhotoDeletes(nextPhotos: BusinessPhotoRecord[]) {
     return nextPhotos.filter((photo) => !pendingPhotoDeletesRef.current.has(photo.id) && photo.status !== "blocked");
@@ -15910,14 +15991,7 @@ function SettingsTab({
       setStatusText(t.pushSaved);
       return true;
     } catch (error) {
-      const message = error instanceof Error ? error.message : "";
-      setPushError(
-        message === PUSH_PROJECT_ID_ERROR
-          ? t.pushProjectMissing || t.pushSaveFailed
-          : message.includes("aps-environment")
-            ? t.pushIosCapabilityMissing || t.pushSaveFailed
-            : message || t.pushSaveFailed
-      );
+      setPushError(getPushErrorMessage(error, t));
       return false;
     } finally {
       setIsPushSaving(false);
@@ -16002,7 +16076,7 @@ function SettingsTab({
             <Pressable
               key={section}
               style={[styles.settingsAccordionHeader, activeSection === section && styles.settingsAccordionHeaderActive]}
-              onPress={() => setActiveSection(section)}
+              onPress={() => selectSettingsSection(section)}
             >
               <View style={styles.settingsSectionTitleRow}>
                 <Text style={[styles.settingsSectionText, activeSection === section && styles.settingsSectionTextActive]}>{settingsSectionLabel(section, t)}</Text>
@@ -16016,7 +16090,7 @@ function SettingsTab({
 
       {!isOwner ? <Text style={styles.settingsMutedNotice}>{t.ownerOnlyHint}</Text> : null}
 
-      <View style={styles.settingsAccordionBody}>
+      <View style={styles.settingsAccordionBody} onLayout={(event) => onSectionContentLayout?.(event.nativeEvent.layout.y)}>
       {activeSectionLocked ? (
         <PremiumFeatureGate t={t} feature={activeSection as PremiumFeature} professional={workspace?.professional} onUpgrade={onRequestPremium} />
       ) : null}

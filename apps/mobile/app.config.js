@@ -9,16 +9,28 @@ function resolveOptionalFile(value) {
   return fs.existsSync(absolutePath) ? value : "";
 }
 
+function resolveFirstOptionalFile(values) {
+  for (const value of values) {
+    const resolved = resolveOptionalFile(value);
+    if (resolved) return resolved;
+  }
+  return "";
+}
+
 module.exports = () => {
   const config = JSON.parse(JSON.stringify(baseConfig));
   const expo = config.expo;
   const buildPlatform = process.env.EAS_BUILD_PLATFORM || process.env.EXPO_BUILD_PLATFORM || "";
-  const iosGoogleServicesFile = resolveOptionalFile(
-    process.env.GOOGLE_SERVICES_PLIST || process.env.EXPO_PUBLIC_FIREBASE_IOS_PLIST
-  );
-  const androidGoogleServicesFile = resolveOptionalFile(
-    process.env.GOOGLE_SERVICES_JSON || process.env.EXPO_PUBLIC_FIREBASE_ANDROID_JSON
-  );
+  const iosGoogleServicesFile = resolveFirstOptionalFile([
+    process.env.GOOGLE_SERVICES_PLIST,
+    process.env.EXPO_PUBLIC_FIREBASE_IOS_PLIST,
+    "./firebase/GoogleService-Info.plist",
+  ]);
+  const androidGoogleServicesFile = resolveFirstOptionalFile([
+    process.env.GOOGLE_SERVICES_JSON,
+    process.env.EXPO_PUBLIC_FIREBASE_ANDROID_JSON,
+    "./firebase/google-services.json",
+  ]);
   const shouldConfigureIosFirebase = buildPlatform !== "android" && Boolean(iosGoogleServicesFile);
   const shouldConfigureAndroidFirebase = buildPlatform !== "ios" && Boolean(androidGoogleServicesFile);
 

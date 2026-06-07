@@ -89,6 +89,7 @@ export async function POST(request: Request) {
       professionalName,
       professionalEmail: String(body?.account?.email || "").trim(),
       professionalPhone: String(body?.account?.phone || "").trim(),
+      registrationSource: "сайт",
       ownerMode,
       businessName: businessName || undefined,
       businessId: businessId || undefined,

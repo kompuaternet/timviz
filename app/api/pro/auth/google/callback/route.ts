@@ -5,7 +5,7 @@ import { getSessionCookieName, signSessionValue } from "../../../../../../lib/pr
 import { exchangeCodeForGoogleProfile, getGoogleOAuthSettings } from "../../../../../../lib/google-oauth";
 import { reportMobileRegistrationConversion } from "../../../../../../lib/mobile-registration-conversions";
 import { createMobileSocialSession } from "../../../../../../lib/mobile-social-auth";
-import { getTelegramStartAppLinkSync } from "../../../../../../lib/telegram-bot";
+import { getTelegramStartAppLinkSync, sendSuperadminTelegramNotification } from "../../../../../../lib/telegram-bot";
 import { encodeTelegramGoogleSignupStartParam } from "../../../../../../lib/telegram-startapp";
 import {
   acceptStaffInvitation,
@@ -241,13 +241,25 @@ export async function GET(request: Request) {
       });
 
       if (session.isNewRegistration) {
+        await sendSuperadminTelegramNotification({
+          eventType: "user_registered",
+          professionalId: session.professionalId,
+          professionalName: session.profile.displayName,
+          professionalEmail: session.profile.email,
+          professionalPhone: "",
+          registrationSource: "мобильное приложение iOS",
+          ownerMode: "owner",
+          businessName: session.businessName || undefined,
+          workspaceReady: session.workspaceReady
+        }).catch(() => undefined);
+
         await reportMobileRegistrationConversion({
           professionalId: session.professionalId,
           provider: "google",
           email: session.profile.email,
           displayName: session.profile.displayName,
           businessName: session.businessName,
-          registrationSource: "мобильное приложение Google OAuth",
+          registrationSource: "мобильное приложение iOS",
           workspaceReady: session.workspaceReady,
           language: session.profile.language,
           country: cookieStore.get(MOBILE_GOOGLE_OAUTH_COUNTRY_COOKIE)?.value,
