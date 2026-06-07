@@ -1,0 +1,37 @@
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+
+# Native credentials and generated projects
+.kotlin/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+apple-credentials/
+credentials.json
+google-play-service-account.json
+build/
+/ios
+/android
+
+# Firebase config used by Android builds. Keep the folder ignored except the
+# Android config file that EAS must upload into the build archive.
+firebase/*
+!firebase/google-services.json
+GoogleService-Info.plist
+
+# Local env and generated files
+.env*.local
+*.tsbuildinfo
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+.DS_Store
+*.pem
