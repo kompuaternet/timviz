@@ -12,7 +12,11 @@ import {
 import { authApiCopy, normalizeAuthLanguage } from "../../../../lib/auth-api-i18n";
 import { sendProfessionalConfirmationEmail } from "../../../../lib/pro-confirmation-mail";
 import { getSessionCookieName, signSessionValue } from "../../../../lib/pro-auth";
-import { createProfessionalSetup, getProfessionalPasswordResetProfile } from "../../../../lib/pro-data";
+import {
+  createProfessionalSetup,
+  getProfessionalPasswordResetProfile,
+  removeGeneratedTimvizSuffix
+} from "../../../../lib/pro-data";
 import {
   getMetaWebRegistrationEventId,
   reportMetaWebRegistrationConversion
@@ -80,8 +84,8 @@ export async function POST(request: Request) {
     const ownerMode = String(body?.setup?.ownerMode || "owner").trim();
     const businessName =
       ownerMode === "owner"
-        ? String(body?.setup?.companyName || "").trim()
-        : String(body?.setup?.joinBusinessName || "").trim();
+        ? removeGeneratedTimvizSuffix(String(body?.setup?.companyName || ""))
+        : removeGeneratedTimvizSuffix(String(body?.setup?.joinBusinessName || ""));
     const businessId = String(body?.setup?.joinBusinessId || "").trim();
 
     await sendSuperadminTelegramNotification({

@@ -9,6 +9,7 @@ import {
   createProfessionalSetup,
   getProfessionalProfileByEmail,
   getProfessionalProfileById,
+  removeGeneratedTimvizSuffix,
   updateProfessionalPasswordByEmail
 } from "../../../../../lib/pro-data";
 import { sendSuperadminTelegramNotification } from "../../../../../lib/telegram-bot";
@@ -66,7 +67,7 @@ export async function POST(request: Request) {
     const email = cleanText(body.email).toLowerCase();
     const password = String(body.password ?? "");
     const phone = cleanText(body.phone);
-    const companyName = cleanText(body.companyName);
+    const companyName = removeGeneratedTimvizSuffix(cleanText(body.companyName));
     language = normalizeAuthLanguage(body.language);
     const t = authApiCopy[language];
     const country = cleanText(body.country) || "Ukraine";

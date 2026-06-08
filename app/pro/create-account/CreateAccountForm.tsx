@@ -1172,7 +1172,7 @@ export default function CreateAccountForm() {
           joinBusinessId: "",
           joinBusinessName: "",
           joinBusinessRole: "",
-          companyName: firstName.trim() ? `${firstName.trim()} Timviz` : "Timviz",
+          companyName: firstName.trim() || email.trim().split("@")[0] || "Компания",
           website: "",
           categories: [],
           services: [],
