@@ -28,7 +28,7 @@
     },
     "android": {
       "package": "com.timviz.master",
-      "versionCode": 64,
+      "versionCode": 65,
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -67,7 +67,12 @@
         }
       ],
       "expo-font",
-      "expo-notifications"
+      [
+        "expo-notifications",
+        {
+          "defaultChannel": "timviz-master"
+        }
+      ]
     ],
     "owner": "timviz"
   }

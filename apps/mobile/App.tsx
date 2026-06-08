@@ -53,6 +53,8 @@ Notifications.setNotificationHandler({
   }),
 });
 
+const ANDROID_PUSH_CHANNEL_ID = "timviz-master";
+
 type BaseAppLanguage = "uk" | "ru" | "en";
 type AppLanguage = BaseAppLanguage | "fr" | "pl" | "cs" | "es" | "de";
 type AuthMode = "login" | "register";
@@ -6577,7 +6579,18 @@ function getExpoProjectId() {
   );
 }
 
+async function ensureAndroidPushChannel() {
+  if (Platform.OS !== "android") return;
+  await Notifications.setNotificationChannelAsync(ANDROID_PUSH_CHANNEL_ID, {
+    name: "Timviz",
+    importance: Notifications.AndroidImportance.MAX,
+    vibrationPattern: [0, 250, 250, 250],
+    lightColor: "#6D4AFF",
+  });
+}
+
 async function requestExpoPushToken() {
+  await ensureAndroidPushChannel();
   const currentPermission = await Notifications.getPermissionsAsync();
   let finalStatus = currentPermission.status;
   if (finalStatus !== "granted") {
