@@ -668,11 +668,11 @@ type SettingsPatchPayload = {
 
 const DEFAULT_PUSH_PANEL_SETTINGS: PushPanelState["settings"] = {
   notificationsNewBooking: true,
-  notificationsCabinetBooking: false,
+  notificationsCabinetBooking: true,
   notificationsRescheduled: true,
   notificationsCancelled: true,
-  notificationsReminder: false,
-  notificationsToday: false,
+  notificationsReminder: true,
+  notificationsToday: true,
   reminderLeadMinutes: 120,
 };
 
@@ -680,7 +680,6 @@ const STORAGE_KEY = "timviz_mobile_session_v2";
 const APP_LANGUAGE_KEY = "timviz_mobile_language_v1";
 const SECURE_SESSION_KEY = "timviz_mobile_secure_session_v1";
 const BIOMETRIC_ENABLED_KEY = "timviz_mobile_biometric_enabled_v1";
-const PUSH_AUTO_REGISTER_KEY_PREFIX = "timviz_mobile_push_auto_register_v1:";
 const SUPPORT_TICKET_KEY_PREFIX = "timviz_mobile_support_ticket_v1:";
 const PUSH_PROJECT_ID_ERROR = "push_project_id_missing";
 const PUSH_FIREBASE_CONFIG_ERROR = "push_firebase_config_missing";
@@ -7903,14 +7902,8 @@ export default function App() {
 
   useEffect(() => {
     if (!session || autoPushRegisteringRef.current) return;
-    const storageKey = `${PUSH_AUTO_REGISTER_KEY_PREFIX}${session.professionalId}`;
     autoPushRegisteringRef.current = true;
-    AsyncStorage.getItem(storageKey)
-      .then(async (alreadyPrompted) => {
-        const permission = await Notifications.getPermissionsAsync();
-        if (alreadyPrompted === "1" && permission.status !== "granted") return;
-        await registerPushForSession(session, { markPrompted: true });
-      })
+    registerPushForSession(session)
       .catch(() => undefined)
       .finally(() => {
         autoPushRegisteringRef.current = false;
@@ -7966,17 +7959,19 @@ export default function App() {
     }
   }
 
-  async function registerPushForSession(currentSession: MobileSession, options: { markPrompted?: boolean } = {}) {
+  function getEnabledPushSettingsPatch(): Partial<PushPanelState["settings"]> {
+    return Object.fromEntries(PUSH_BOOLEAN_SETTING_KEYS.map((key) => [key, true])) as Partial<PushPanelState["settings"]>;
+  }
+
+  async function registerPushForSession(currentSession: MobileSession) {
     if (Platform.OS === "web") return false;
     const pushResult = await requestExpoPushToken();
+    setPushPermissionStatus(pushResult.status);
     if (pushResult.status !== "granted" || !pushResult.expoPushToken) {
-      if (options.markPrompted) {
-        await AsyncStorage.setItem(`${PUSH_AUTO_REGISTER_KEY_PREFIX}${currentSession.professionalId}`, "1").catch(() => undefined);
-      }
       return false;
     }
 
-    const response = await fetch(`${API_BASE_URL}/api/mobile/pro/push`, {
+    const postResponse = await fetch(`${API_BASE_URL}/api/mobile/pro/push`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -7990,11 +7985,26 @@ export default function App() {
         timezone: workspace?.professional.timezone || detectedTimezone || "UTC",
       }),
     });
-    const payload = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      throw new Error(payload?.error || `HTTP ${response.status}`);
+    const postPayload = await postResponse.json().catch(() => ({}));
+    if (!postResponse.ok) {
+      throw new Error(postPayload?.error || `HTTP ${postResponse.status}`);
     }
-    await AsyncStorage.setItem(`${PUSH_AUTO_REGISTER_KEY_PREFIX}${currentSession.professionalId}`, "1").catch(() => undefined);
+
+    const settingsPatch = getEnabledPushSettingsPatch();
+    const patchResponse = await fetch(`${API_BASE_URL}/api/mobile/pro/push`, {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${currentSession.token}`,
+      },
+      body: JSON.stringify(settingsPatch),
+    });
+    const patchPayload = await patchResponse.json().catch(() => ({}));
+    if (!patchResponse.ok) {
+      throw new Error(patchPayload?.error || `HTTP ${patchResponse.status}`);
+    }
+
+    setPushPanel(normalizePushPanel(patchPayload, normalizePushPanel(postPayload, pushPanel)));
     return true;
   }
 
