@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { getPublicAppUrl } from "../../../../../../lib/app-url";
 import { parseAppleUserProfile, verifyAppleIdentityToken } from "../../../../../../lib/apple-oauth";
 import { getSessionCookieName, signSessionValue } from "../../../../../../lib/pro-auth";
+import { recordProfessionalAccessSource } from "../../../../../../lib/pro-access-source";
 import {
   activateProfessionalEmailByEmail,
   getProfessionalProfileByEmail
@@ -89,6 +90,14 @@ async function handleAppleCallback(request: Request, form: FormData) {
         path: "/",
         secure: isSecure,
         maxAge: 60 * 60 * 24 * 7
+      });
+      await recordProfessionalAccessSource({
+        professionalId: professional.id,
+        eventType: "login",
+        platform: "website",
+        source: "сайт",
+        method: "apple",
+        request
       });
       return NextResponse.redirect(new URL(returnTo, getPublicAppUrl(request)));
     }

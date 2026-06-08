@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getClientIp, verifyCaptchaToken } from "../../../../../lib/auth-security";
 import { authApiCopy, normalizeAuthLanguage } from "../../../../../lib/auth-api-i18n";
 import { reportMobileRegistrationConversion } from "../../../../../lib/mobile-registration-conversions";
+import { recordProfessionalAccessSource } from "../../../../../lib/pro-access-source";
 import { signSessionValue } from "../../../../../lib/pro-auth";
 import {
   activateProfessionalEmailByEmail,
@@ -94,6 +95,15 @@ export async function POST(request: Request) {
       const displayName =
         `${profile?.firstName || firstName} ${profile?.lastName || lastName}`.trim() || email;
 
+      await recordProfessionalAccessSource({
+        professionalId: existingProfile.id,
+        eventType: "login",
+        platform: body.platform,
+        source: registrationSource,
+        method: "password",
+        request
+      });
+
       return NextResponse.json({
         professionalId: existingProfile.id,
         isNewRegistration: false,
@@ -169,6 +179,15 @@ export async function POST(request: Request) {
       language,
       country,
       currency,
+      request
+    });
+
+    await recordProfessionalAccessSource({
+      professionalId: result.professionalId,
+      eventType: "registration",
+      platform: body.platform,
+      source: registrationSource,
+      method: "password",
       request
     });
 

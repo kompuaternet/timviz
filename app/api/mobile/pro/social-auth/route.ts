@@ -6,6 +6,7 @@ import {
   type MobileSocialProvider
 } from "../../../../../lib/mobile-social-auth";
 import { reportMobileRegistrationConversion } from "../../../../../lib/mobile-registration-conversions";
+import { recordProfessionalAccessSource } from "../../../../../lib/pro-access-source";
 import { sendSuperadminTelegramNotification } from "../../../../../lib/telegram-bot";
 
 function getMobileSocialRegistrationSource(body: Record<string, unknown>, request: Request) {
@@ -47,10 +48,9 @@ export async function POST(request: Request) {
       timezone: body.timezone,
       currency: body.currency
     });
+    const registrationSource = getMobileSocialRegistrationSource(body, request);
 
     if (session.isNewRegistration) {
-      const registrationSource = getMobileSocialRegistrationSource(body, request);
-
       await sendSuperadminTelegramNotification({
         eventType: "user_registered",
         professionalId: session.professionalId,
@@ -78,6 +78,15 @@ export async function POST(request: Request) {
         request
       });
     }
+
+    await recordProfessionalAccessSource({
+      professionalId: session.professionalId,
+      eventType: session.isNewRegistration ? "registration" : "login",
+      platform: body.platform,
+      source: registrationSource,
+      method: provider,
+      request
+    });
 
     return NextResponse.json(session);
   } catch (error) {

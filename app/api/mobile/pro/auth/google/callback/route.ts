@@ -4,6 +4,7 @@ import { exchangeCodeForGoogleProfile, getGoogleOAuthSettings } from "../../../.
 import { reportMobileRegistrationConversion } from "../../../../../../../lib/mobile-registration-conversions";
 import { createMobileSocialSession } from "../../../../../../../lib/mobile-social-auth";
 import { sendSuperadminTelegramNotification } from "../../../../../../../lib/telegram-bot";
+import { recordProfessionalAccessSource } from "../../../../../../../lib/pro-access-source";
 
 const GOOGLE_OAUTH_STATE_COOKIE = "timviz_mobile_google_oauth_state";
 const GOOGLE_OAUTH_PKCE_COOKIE = "timviz_mobile_google_oauth_pkce";
@@ -105,6 +106,15 @@ export async function GET(request: Request) {
         request
       });
     }
+
+    await recordProfessionalAccessSource({
+      professionalId: session.professionalId,
+      eventType: session.isNewRegistration ? "registration" : "login",
+      platform: "ios",
+      source: "мобильное приложение iOS",
+      method: "google",
+      request
+    });
 
     clearOAuthCookies(cookieStore, isSecure);
 

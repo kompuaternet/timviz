@@ -154,6 +154,8 @@ export default function SuperadminView({
   const [catalogQuery, setCatalogQuery] = useState("");
   const [userRegistrationPlatform, setUserRegistrationPlatform] =
     useState<UserRegistrationPlatformFilter>("all");
+  const [userAccessPlatform, setUserAccessPlatform] =
+    useState<UserRegistrationPlatformFilter>("all");
   const [userRegistrationSort, setUserRegistrationSort] = useState<UserRegistrationSort>("newest");
   const [status, setStatus] = useState("");
   const [isBusy, setIsBusy] = useState(false);
@@ -199,8 +201,11 @@ export default function SuperadminView({
         const matchesPlatform =
           userRegistrationPlatform === "all" ||
           user.registrationPlatform === userRegistrationPlatform;
+        const matchesAccessPlatform =
+          userAccessPlatform === "all" ||
+          user.lastAccessPlatform === userAccessPlatform;
 
-        if (!matchesPlatform) {
+        if (!matchesPlatform || !matchesAccessPlatform) {
           return false;
         }
 
@@ -216,7 +221,8 @@ export default function SuperadminView({
           user.email,
           user.businessName,
           user.role,
-          user.registrationSource
+          user.registrationSource,
+          user.lastAccessSource
         ]
           .join(" ")
           .toLowerCase()
@@ -228,7 +234,7 @@ export default function SuperadminView({
         const dateDiff = userRegistrationSort === "newest" ? rightTime - leftTime : leftTime - rightTime;
         return dateDiff || left.fullName.localeCompare(right.fullName);
       });
-  }, [userQuery, userRegistrationPlatform, userRegistrationSort, users]);
+  }, [userAccessPlatform, userQuery, userRegistrationPlatform, userRegistrationSort, users]);
 
   useEffect(() => {
     if (!filteredUsers.some((user) => user.professionalId === selectedUserId)) {
@@ -994,6 +1000,20 @@ export default function SuperadminView({
             </select>
             <select
               className={styles.select}
+              value={userAccessPlatform}
+              onChange={(event) =>
+                setUserAccessPlatform(event.target.value as UserRegistrationPlatformFilter)
+              }
+              aria-label="Фильтр по последнему входу"
+            >
+              <option value="all">Все входы</option>
+              <option value="website">Вход: сайт</option>
+              <option value="ios">Вход: iOS</option>
+              <option value="android">Вход: Android</option>
+              <option value="mobile">Вход: приложение</option>
+            </select>
+            <select
+              className={styles.select}
               value={userRegistrationSort}
               onChange={(event) => setUserRegistrationSort(event.target.value as UserRegistrationSort)}
               aria-label="Сортировка по дате регистрации"
@@ -1021,7 +1041,10 @@ export default function SuperadminView({
                   <span>{user.email}</span>
                   <span>Язык: {user.language || "—"}</span>
                   <span>
-                    {user.registrationSource} · {formatAdminDate(user.createdAt)}
+                    Регистрация: {user.registrationSource} · {formatAdminDate(user.createdAt)}
+                  </span>
+                  <span>
+                    Последний вход: {user.lastAccessSource} · {formatAdminDate(user.lastAccessAt)}
                   </span>
                 </button>
               ))
@@ -1068,6 +1091,8 @@ export default function SuperadminView({
                   <span>Provider: {selectedUser.provider}</span>
                   <span>Источник: {selectedUser.registrationSource}</span>
                   <span>Дата регистрации: {formatAdminDate(selectedUser.createdAt)}</span>
+                  <span>Последний вход: {selectedUser.lastAccessSource}</span>
+                  <span>Дата входа: {formatAdminDate(selectedUser.lastAccessAt)}</span>
                   <span>Язык: {selectedUser.language}</span>
                   <span>Валюта: {selectedUser.currency}</span>
                   <span>Услуг: {selectedUser.servicesCount}</span>

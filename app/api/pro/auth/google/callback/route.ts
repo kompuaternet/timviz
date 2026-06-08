@@ -5,6 +5,7 @@ import { getSessionCookieName, signSessionValue } from "../../../../../../lib/pr
 import { exchangeCodeForGoogleProfile, getGoogleOAuthSettings } from "../../../../../../lib/google-oauth";
 import { reportMobileRegistrationConversion } from "../../../../../../lib/mobile-registration-conversions";
 import { createMobileSocialSession } from "../../../../../../lib/mobile-social-auth";
+import { recordProfessionalAccessSource } from "../../../../../../lib/pro-access-source";
 import { getTelegramStartAppLinkSync, sendSuperadminTelegramNotification } from "../../../../../../lib/telegram-bot";
 import { encodeTelegramGoogleSignupStartParam } from "../../../../../../lib/telegram-startapp";
 import {
@@ -269,6 +270,15 @@ export async function GET(request: Request) {
         });
       }
 
+      await recordProfessionalAccessSource({
+        professionalId: session.professionalId,
+        eventType: session.isNewRegistration ? "registration" : "login",
+        platform: "ios",
+        source: "мобильное приложение iOS",
+        method: "google",
+        request
+      });
+
       clearOAuthCookies(cookieStore, isSecure);
       clearMobileOAuthCookies(cookieStore, isSecure);
 
@@ -312,6 +322,14 @@ export async function GET(request: Request) {
         path: "/",
         secure: isSecure,
         maxAge: 60 * 60 * 24 * 7
+      });
+      await recordProfessionalAccessSource({
+        professionalId: activeProfessional.id,
+        eventType: "login",
+        platform: "website",
+        source: "сайт",
+        method: "google",
+        request
       });
       const target = resolveFinalRedirectTarget({
         appUrl,

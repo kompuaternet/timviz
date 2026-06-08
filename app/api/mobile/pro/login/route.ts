@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { authApiCopy, normalizeAuthLanguage } from "../../../../../lib/auth-api-i18n";
+import { recordProfessionalAccessSource } from "../../../../../lib/pro-access-source";
 import { signSessionValue } from "../../../../../lib/pro-auth";
 import { authenticateProfessional, getProfessionalProfileById } from "../../../../../lib/pro-data";
 
@@ -19,6 +20,15 @@ export async function POST(request: Request) {
     if (!professionalId) {
       return NextResponse.json({ error: t.invalidLogin }, { status: 401 });
     }
+
+    await recordProfessionalAccessSource({
+      professionalId,
+      eventType: "login",
+      platform: body.platform,
+      source: body.source || "mobile_app",
+      method: "password",
+      request
+    });
 
     const profile = await getProfessionalProfileById(professionalId);
     const displayName =

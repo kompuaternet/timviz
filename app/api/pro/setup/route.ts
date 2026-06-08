@@ -17,6 +17,7 @@ import {
   getMetaWebRegistrationEventId,
   reportMetaWebRegistrationConversion
 } from "../../../../lib/meta-conversions";
+import { recordProfessionalAccessSource } from "../../../../lib/pro-access-source";
 import {
   sendJoinRequestTelegramNotification,
   sendSuperadminTelegramNotification
@@ -95,6 +96,15 @@ export async function POST(request: Request) {
       businessId: businessId || undefined,
       workspaceReady: result.workspaceReady
     }).catch(() => undefined);
+
+    await recordProfessionalAccessSource({
+      professionalId: result.professionalId,
+      eventType: "registration",
+      platform: "website",
+      source: "сайт",
+      method: authProvider,
+      request
+    });
 
     if (result.joinRequest) {
       await sendJoinRequestTelegramNotification({

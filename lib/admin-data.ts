@@ -18,6 +18,11 @@ import {
   type GlobalCatalogGroupKey
 } from "./global-service-catalog";
 import { getServiceLocalizedText, type LocalizedServiceText } from "./service-templates";
+import {
+  getProfessionalAccessLabel,
+  resolveProfessionalAccessPlatform,
+  type ProfessionalAccessPlatform
+} from "./pro-access-source";
 
 export type SuperadminUserRecord = {
   professionalId: string;
@@ -40,8 +45,11 @@ export type SuperadminUserRecord = {
   accountStatus: string;
   emailConfirmed: boolean;
   provider: string;
-  registrationPlatform: "website" | "ios" | "android" | "mobile";
+  registrationPlatform: ProfessionalAccessPlatform;
   registrationSource: string;
+  lastAccessPlatform: ProfessionalAccessPlatform;
+  lastAccessSource: string;
+  lastAccessAt: string;
   servicesCount: number;
   photosCount: number;
   createdAt: string;
@@ -215,17 +223,7 @@ function matchesSearch(haystack: string[], query: string) {
 }
 
 function getRegistrationSourceLabel(platform: SuperadminUserRecord["registrationPlatform"]) {
-  switch (platform) {
-    case "ios":
-      return "Приложение iOS";
-    case "android":
-      return "Приложение Android";
-    case "mobile":
-      return "Мобильное приложение";
-    case "website":
-    default:
-      return "Только сайт";
-  }
+  return getProfessionalAccessLabel(platform, "registration");
 }
 
 function resolveRegistrationPlatform(input: {
@@ -234,29 +232,7 @@ function resolveRegistrationPlatform(input: {
   registrationSource?: unknown;
   provider?: unknown;
 }): SuperadminUserRecord["registrationPlatform"] {
-  const value = [
-    input.platform,
-    input.source,
-    input.registrationSource,
-    input.provider
-  ]
-    .map((part) => (typeof part === "string" ? part : ""))
-    .join(" ")
-    .toLowerCase();
-
-  if (/(ios|iphone|ipad|apple)/i.test(value)) {
-    return "ios";
-  }
-
-  if (/android/i.test(value)) {
-    return "android";
-  }
-
-  if (/(mobile|мобиль)/i.test(value)) {
-    return "mobile";
-  }
-
-  return "website";
+  return resolveProfessionalAccessPlatform(input);
 }
 
 function getObjectValue(input: unknown, key: string) {
@@ -377,6 +353,108 @@ async function getMobileRegistrationSources() {
   return registrationSources;
 }
 
+async function getProfessionalLastAccessSources() {
+  const accessSources = new Map<
+    string,
+    {
+      platform: ProfessionalAccessPlatform;
+      label: string;
+      at: string;
+    }
+  >();
+
+  if (!isSupabaseConfigured()) {
+    return accessSources;
+  }
+
+  const supabase = getSupabaseAdmin();
+  if (!supabase) {
+    return accessSources;
+  }
+
+  const { data, error } = await supabase
+    .from("webhook_events")
+    .select("provider, event_type, user_id, raw_payload, created_at")
+    .in("provider", ["timviz_professional_access", "timviz_ads"])
+    .order("created_at", { ascending: false })
+    .limit(5000);
+
+  if (error) {
+    if (!isMissingOptionalTableOrColumn(error.message)) {
+      throw new Error(error.message);
+    }
+  }
+
+  for (const row of data ?? []) {
+    const professionalId = typeof row.user_id === "string" ? row.user_id : "";
+    if (!professionalId || accessSources.has(professionalId)) {
+      continue;
+    }
+
+    const rawPayload = row.raw_payload;
+    const platform = resolveRegistrationPlatform({
+      platform: getObjectValue(rawPayload, "platform"),
+      source: getObjectValue(rawPayload, "source")
+    });
+
+    if (row.provider === "timviz_ads" && platform === "website") {
+      continue;
+    }
+
+    accessSources.set(professionalId, {
+      platform,
+      label: getProfessionalAccessLabel(platform, "access"),
+      at: typeof row.created_at === "string" ? row.created_at : ""
+    });
+  }
+
+  const { data: pushRows, error: pushError } = await supabase
+    .from("mobile_push_tokens")
+    .select("professional_id, platform, device_name, updated_at, last_registered_at, created_at")
+    .order("updated_at", { ascending: false });
+
+  if (pushError) {
+    if (isMissingOptionalTableOrColumn(pushError.message)) {
+      return accessSources;
+    }
+    throw new Error(pushError.message);
+  }
+
+  for (const row of pushRows ?? []) {
+    const professionalId = typeof row.professional_id === "string" ? row.professional_id : "";
+    if (!professionalId) {
+      continue;
+    }
+
+    const platform = resolveRegistrationPlatform({
+      platform: row.platform,
+      source: row.device_name
+    });
+
+    if (platform === "website") {
+      continue;
+    }
+
+    const at =
+      (typeof row.updated_at === "string" && row.updated_at) ||
+      (typeof row.last_registered_at === "string" && row.last_registered_at) ||
+      (typeof row.created_at === "string" && row.created_at) ||
+      "";
+    const current = accessSources.get(professionalId);
+    if (current?.at && at && Date.parse(current.at) >= Date.parse(at)) {
+      continue;
+    }
+
+    accessSources.set(professionalId, {
+      platform,
+      label: getProfessionalAccessLabel(platform, "access"),
+      at
+    });
+  }
+
+  return accessSources;
+}
+
 export async function getSuperadminUsers(search = ""): Promise<SuperadminUserRecord[]> {
   const directory = await getBusinessDirectorySnapshot();
   const query = normalize(search);
@@ -393,6 +471,7 @@ export async function getSuperadminUsers(search = ""): Promise<SuperadminUserRec
 
   const walletBalances = new Map<string, number>();
   const registrationSources = await getMobileRegistrationSources();
+  const lastAccessSources = await getProfessionalLastAccessSources();
   if (isSupabaseConfigured()) {
     const supabase = getSupabaseAdmin();
     if (supabase) {
@@ -420,6 +499,11 @@ export async function getSuperadminUsers(search = ""): Promise<SuperadminUserRec
         platform: "website" as const,
         label: getRegistrationSourceLabel("website")
       };
+      const lastAccessSource = lastAccessSources.get(professional.id) ?? {
+        platform: "website" as const,
+        label: getProfessionalAccessLabel("website", "access"),
+        at: professional.createdAt
+      };
       return [{
         professionalId: professional.id,
         businessId: business.id,
@@ -443,6 +527,9 @@ export async function getSuperadminUsers(search = ""): Promise<SuperadminUserRec
         provider: "email",
         registrationPlatform: registrationSource.platform,
         registrationSource: registrationSource.label,
+        lastAccessPlatform: lastAccessSource.platform,
+        lastAccessSource: lastAccessSource.label,
+        lastAccessAt: lastAccessSource.at,
         servicesCount: servicesByBusiness.get(business.id) ?? 0,
         photosCount: normalizeBusinessPhotos(business.photos).filter((photo) => photo.status !== "blocked").length,
         createdAt: professional.createdAt
@@ -456,6 +543,11 @@ export async function getSuperadminUsers(search = ""): Promise<SuperadminUserRec
       const registrationSource = registrationSources.get(professional.id) ?? {
         platform: "website" as const,
         label: getRegistrationSourceLabel("website")
+      };
+      const lastAccessSource = lastAccessSources.get(professional.id) ?? {
+        platform: "website" as const,
+        label: getProfessionalAccessLabel("website", "access"),
+        at: professional.createdAt
       };
 
       return {
@@ -481,6 +573,9 @@ export async function getSuperadminUsers(search = ""): Promise<SuperadminUserRec
         provider: "email",
         registrationPlatform: registrationSource.platform,
         registrationSource: registrationSource.label,
+        lastAccessPlatform: lastAccessSource.platform,
+        lastAccessSource: lastAccessSource.label,
+        lastAccessAt: lastAccessSource.at,
         servicesCount: 0,
         photosCount: 0,
         createdAt: professional.createdAt
@@ -498,7 +593,8 @@ export async function getSuperadminUsers(search = ""): Promise<SuperadminUserRec
           item.phone,
           item.businessName,
           item.role,
-          item.registrationSource
+          item.registrationSource,
+          item.lastAccessSource
         ],
         query
       )

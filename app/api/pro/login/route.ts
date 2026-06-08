@@ -4,6 +4,7 @@ import { checkRateLimit, getClientIp } from "../../../../lib/auth-security";
 import { authApiCopy, normalizeAuthLanguage } from "../../../../lib/auth-api-i18n";
 import { getSessionCookieName, signSessionValue } from "../../../../lib/pro-auth";
 import { acceptStaffInvitation, authenticateProfessional, getProfessionalProfileByEmail } from "../../../../lib/pro-data";
+import { recordProfessionalAccessSource } from "../../../../lib/pro-access-source";
 
 export async function POST(request: Request) {
   try {
@@ -55,6 +56,15 @@ export async function POST(request: Request) {
         invitationToken: inviteToken
       });
     }
+
+    await recordProfessionalAccessSource({
+      professionalId,
+      eventType: "login",
+      platform: "website",
+      source: "сайт",
+      method: "password",
+      request
+    });
 
     const cookieStore = await cookies();
     cookieStore.set(getSessionCookieName(), signSessionValue(professionalId), {

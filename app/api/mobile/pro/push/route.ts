@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getMobileProfessionalId } from "../_auth";
+import { recordProfessionalAccessSource } from "../../../../../lib/pro-access-source";
 import { getWorkspaceSnapshot } from "../../../../../lib/pro-data";
 import {
   getMobilePushState,
@@ -56,6 +57,15 @@ export async function POST(request: Request) {
       deviceName: String(body.deviceName || ""),
       language: String(body.language || workspace.professional.language || "en"),
       timezone: String(body.timezone || workspace.professional.timezone || "UTC")
+    });
+
+    await recordProfessionalAccessSource({
+      professionalId,
+      eventType: "activity",
+      platform: body.platform,
+      source: "mobile_push_token",
+      method: "push",
+      request
     });
 
     const state = await getMobilePushState(professionalId);
