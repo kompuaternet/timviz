@@ -3,6 +3,7 @@ import { getMobileProfessionalId } from "../_auth";
 import { getWorkspaceSnapshot } from "../../../../../lib/pro-data";
 import {
   getMobilePushState,
+  sendPushEnabledNotification,
   unregisterMobilePushToken,
   updateMobilePushSettings,
   upsertMobilePushToken
@@ -58,9 +59,11 @@ export async function POST(request: Request) {
     });
 
     const state = await getMobilePushState(professionalId);
+    const testPush = await sendPushEnabledNotification(token).catch(() => ({ sent: 0 }));
     return NextResponse.json({
       ok: true,
       tokenId: token.id,
+      testPushSent: testPush.sent,
       ...state
     });
   } catch (error) {

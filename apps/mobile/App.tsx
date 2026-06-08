@@ -7959,10 +7959,6 @@ export default function App() {
     }
   }
 
-  function getEnabledPushSettingsPatch(): Partial<PushPanelState["settings"]> {
-    return Object.fromEntries(PUSH_BOOLEAN_SETTING_KEYS.map((key) => [key, true])) as Partial<PushPanelState["settings"]>;
-  }
-
   async function registerPushForSession(currentSession: MobileSession) {
     if (Platform.OS === "web") return false;
     const pushResult = await requestExpoPushToken();
@@ -7971,7 +7967,7 @@ export default function App() {
       return false;
     }
 
-    const postResponse = await fetch(`${API_BASE_URL}/api/mobile/pro/push`, {
+    const response = await fetch(`${API_BASE_URL}/api/mobile/pro/push`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -7985,26 +7981,12 @@ export default function App() {
         timezone: workspace?.professional.timezone || detectedTimezone || "UTC",
       }),
     });
-    const postPayload = await postResponse.json().catch(() => ({}));
-    if (!postResponse.ok) {
-      throw new Error(postPayload?.error || `HTTP ${postResponse.status}`);
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(payload?.error || `HTTP ${response.status}`);
     }
 
-    const settingsPatch = getEnabledPushSettingsPatch();
-    const patchResponse = await fetch(`${API_BASE_URL}/api/mobile/pro/push`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${currentSession.token}`,
-      },
-      body: JSON.stringify(settingsPatch),
-    });
-    const patchPayload = await patchResponse.json().catch(() => ({}));
-    if (!patchResponse.ok) {
-      throw new Error(patchPayload?.error || `HTTP ${patchResponse.status}`);
-    }
-
-    setPushPanel(normalizePushPanel(patchPayload, normalizePushPanel(postPayload, pushPanel)));
+    setPushPanel(normalizePushPanel(payload, pushPanel));
     return true;
   }
 

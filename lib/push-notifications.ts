@@ -62,11 +62,11 @@ type ReminderRunStats = {
 const reminderWindowMin = Number.parseInt(process.env.PUSH_REMINDER_WINDOW_MIN || "15", 10) || 15;
 const defaultPushSettings = {
   notificationsNewBooking: true,
-  notificationsCabinetBooking: false,
+  notificationsCabinetBooking: true,
   notificationsRescheduled: true,
   notificationsCancelled: true,
-  notificationsReminder: false,
-  notificationsToday: false,
+  notificationsReminder: true,
+  notificationsToday: true,
   reminderLeadMinutes: 120
 };
 const localPushStorePath = path.join(process.cwd(), "data", "mobile-push-store.json");
@@ -635,6 +635,21 @@ export async function upsertMobilePushToken(input: {
   }
   if (error) throw new Error(error.message);
   return mapPushToken(data);
+}
+
+export async function sendPushEnabledNotification(record: PushTokenRecord) {
+  const text = getPushText(record.language);
+  const result = await sendExpoPushMessages([
+    {
+      to: record.expoPushToken,
+      sound: "default",
+      title: text.enabledTitle,
+      body: text.enabledBody,
+      data: { type: "push_enabled" }
+    }
+  ]);
+  await deactivatePushTokens(result.invalidTokens);
+  return { sent: result.sent };
 }
 
 export async function getMobilePushTokensForProfessional(professionalId: string) {
