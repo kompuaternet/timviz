@@ -43,12 +43,12 @@ export function normalizeMobileSocialCurrency(value: unknown) {
 }
 
 function getEmailName(email: string) {
-  return email.split("@")[0]?.replace(/[._-]+/g, " ").trim() || "Timviz";
+  return email.split("@")[0]?.replace(/[._-]+/g, " ").trim() || "Компания";
 }
 
 function buildCompanyName(profile: MobileSocialProfile) {
   const name = profile.givenName || profile.fullName || getEmailName(profile.email);
-  return `${name} Timviz`.trim();
+  return name.trim() || "Компания";
 }
 
 function getAllowedGoogleAudiences() {

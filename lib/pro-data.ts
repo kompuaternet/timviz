@@ -457,9 +457,16 @@ function normalizeAvatarUrl(value: unknown) {
   }
 }
 
+export function removeGeneratedTimvizSuffix(value: string) {
+  const original = value.trim();
+  const cleaned = original.replace(/\s+Timviz\s*$/i, "").trim();
+  return cleaned || original;
+}
+
 function normalizeBusinessRecord(business: BusinessRecord): BusinessRecord {
   return {
     ...business,
+    name: removeGeneratedTimvizSuffix(business.name),
     workScheduleMode: normalizeWorkScheduleMode(business.workScheduleMode),
     workSchedule: normalizeWorkSchedule(business.workSchedule),
     customSchedule: normalizeCustomSchedule(business.customSchedule),
@@ -1802,7 +1809,7 @@ export async function createProfessionalSetup(input: {
       businessId = makeId("biz");
       const { error: businessError } = await supabase.from("businesses").insert({
         id: businessId,
-        name: input.setup.companyName,
+        name: removeGeneratedTimvizSuffix(input.setup.companyName),
         website: input.setup.website,
         categories: input.setup.categories,
         account_type: input.setup.accountType,
@@ -2106,7 +2113,7 @@ export async function createProfessionalSetup(input: {
   if (input.setup.ownerMode === "owner") {
     const business: BusinessRecord = {
       id: makeId("biz"),
-      name: input.setup.companyName,
+      name: removeGeneratedTimvizSuffix(input.setup.companyName),
       website: input.setup.website,
       categories: input.setup.categories,
       accountType: input.setup.accountType,
@@ -3378,7 +3385,7 @@ async function ensureStandaloneWorkspaceForProfessional(input: {
   const businessName =
     `${professional.firstName} ${professional.lastName}`.trim() ||
     professional.email ||
-    "Timviz";
+    "Компания";
   const workSchedule = createDefaultWorkSchedule();
   const customSchedule = createEmptyCustomSchedule();
 
