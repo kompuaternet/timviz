@@ -16803,6 +16803,15 @@ function RegisterPhoneField({
   onOpenPicker: () => void;
   onFocus?: () => void;
 }) {
+  const phoneInputRef = useRef<TextInput | null>(null);
+
+  function focusPhoneInput() {
+    phoneInputRef.current?.focus();
+    if (Platform.OS === "android") {
+      setTimeout(() => phoneInputRef.current?.focus(), 40);
+    }
+  }
+
   return (
     <View style={styles.field}>
       <View style={styles.fieldHeader}>
@@ -16816,11 +16825,16 @@ function RegisterPhoneField({
           <Ionicons name="chevron-down" size={14} color={DESIGN.colors.muted} />
         </Pressable>
         <TextInput
+          ref={phoneInputRef}
           value={value}
           onChangeText={onChangeText}
           onFocus={onFocus}
+          onPressIn={focusPhoneInput}
           showSoftInputOnFocus
-          keyboardType="phone-pad"
+          keyboardType={Platform.OS === "android" ? "number-pad" : "phone-pad"}
+          inputMode="numeric"
+          autoComplete="tel"
+          textContentType="telephoneNumber"
           autoCorrect={false}
           placeholder="00 000 00 00"
           placeholderTextColor="#94A3B8"
