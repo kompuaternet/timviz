@@ -2316,6 +2316,90 @@ export async function getWorkspaceSnapshot(
   };
 }
 
+export async function deleteProfessionalAccount(professionalId: string) {
+  const directory = await getBusinessDirectorySnapshot();
+  const professional = directory.professionals.find((item) => item.id === professionalId);
+
+  if (!professional) {
+    throw new Error("Account not found.");
+  }
+
+  const membership = directory.memberships.find(
+    (item) => item.professionalId === professionalId && item.scope !== "pending"
+  );
+  const isOwner = membership?.scope === "owner";
+
+  if (membership) {
+    const otherActiveMembers = directory.memberships.filter(
+      (item) =>
+        item.businessId === membership.businessId &&
+        item.professionalId !== professionalId &&
+        item.scope !== "pending"
+    );
+
+    if (isOwner && otherActiveMembers.length > 0) {
+      throw new Error("TEAM_MEMBERS_CONNECTED");
+    }
+  }
+
+  if (isSupabaseConfigured()) {
+    const supabase = getSupabaseAdmin();
+    if (!supabase) {
+      throw new Error("Supabase is not available.");
+    }
+
+    if (isOwner && membership) {
+      const { error: businessError } = await supabase
+        .from("businesses")
+        .delete()
+        .eq("id", membership.businessId);
+
+      if (businessError) {
+        throw new Error(businessError.message);
+      }
+    }
+
+    const { error } = await supabase
+      .from("professionals")
+      .delete()
+      .eq("id", professionalId);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    invalidateBusinessDirectoryCache();
+    return { ok: true };
+  }
+
+  const store = await ensureDemoBusinessesInLocalStore();
+  store.professionals = store.professionals.filter((item) => item.id !== professionalId);
+  store.memberships = store.memberships.filter((item) => item.professionalId !== professionalId);
+  store.joinRequests = (store.joinRequests ?? []).filter((item) => item.professionalId !== professionalId);
+  store.staffInvitations = (store.staffInvitations ?? []).map((item) => ({
+    ...item,
+    invitedByProfessionalId:
+      item.invitedByProfessionalId === professionalId ? undefined : item.invitedByProfessionalId,
+    acceptedProfessionalId:
+      item.acceptedProfessionalId === professionalId ? undefined : item.acceptedProfessionalId
+  }));
+
+  if (isOwner && membership) {
+    store.businesses = store.businesses.filter((item) => item.id !== membership.businessId);
+    store.services = store.services.filter((item) => item.businessId !== membership.businessId);
+    store.memberships = store.memberships.filter((item) => item.businessId !== membership.businessId);
+    store.joinRequests = (store.joinRequests ?? []).filter((item) => item.businessId !== membership.businessId);
+    store.staffInvitations = (store.staffInvitations ?? []).filter((item) => item.businessId !== membership.businessId);
+  } else {
+    store.services = store.services.map((item) =>
+      item.createdByProfessionalId === professionalId ? { ...item, createdByProfessionalId: undefined } : item
+    );
+  }
+
+  await writeStore(store);
+  return { ok: true };
+}
+
 export async function getPendingJoinRequestForProfessional(professionalId: string) {
   const directory = await getBusinessDirectorySnapshot();
   const request = directory.joinRequests.find(

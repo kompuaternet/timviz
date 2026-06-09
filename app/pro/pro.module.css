@@ -11538,6 +11538,17 @@
     radial-gradient(circle at top right, rgba(91, 127, 255, 0.16), transparent 34%);
 }
 
+.settingsDangerCard {
+  border-color: rgba(209, 47, 66, 0.22);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(255, 247, 248, 0.92)),
+    radial-gradient(circle at top right, rgba(209, 47, 66, 0.08), transparent 34%);
+}
+
+.settingsDangerCard .dangerButton {
+  margin-top: 14px;
+}
+
 .settingsPlanBadge {
   border: 1px solid rgba(91, 127, 255, 0.18);
   background: rgba(91, 127, 255, 0.1) !important;

@@ -361,7 +361,14 @@ const settingsExtras = {
     avatarReplace: "Сменить аватар",
     avatarRemove: "Удалить аватар",
     avatarImageOnly: "Выберите файл изображения (JPG, PNG, WEBP).",
-    avatarTooLarge: "Аватар слишком большой. Максимум 2 МБ."
+    avatarTooLarge: "Аватар слишком большой. Максимум 2 МБ.",
+    deleteAccountTitle: "Удаление аккаунта",
+    deleteAccountText: "Удалите аккаунт мастера и связанные данные кабинета. Это действие нельзя отменить.",
+    deleteAccountButton: "Удалить аккаунт",
+    deleteAccountConfirm: "Удалить аккаунт? Это действие нельзя отменить.",
+    deleteAccountDeleting: "Удаляем аккаунт...",
+    deleteAccountFailed: "Не удалось удалить аккаунт. Попробуйте ещё раз.",
+    deleteAccountBlockedTeam: "Сначала удалите сотрудников из бизнеса или передайте права владельца."
   },
   uk: {
     readFileFailed: "Не вдалося прочитати файл.",
@@ -456,7 +463,14 @@ const settingsExtras = {
     avatarReplace: "Змінити аватар",
     avatarRemove: "Видалити аватар",
     avatarImageOnly: "Оберіть файл зображення (JPG, PNG, WEBP).",
-    avatarTooLarge: "Аватар завеликий. Максимум 2 МБ."
+    avatarTooLarge: "Аватар завеликий. Максимум 2 МБ.",
+    deleteAccountTitle: "Видалення акаунта",
+    deleteAccountText: "Видаліть акаунт майстра та пов'язані дані кабінету. Цю дію не можна скасувати.",
+    deleteAccountButton: "Видалити акаунт",
+    deleteAccountConfirm: "Видалити акаунт? Цю дію не можна скасувати.",
+    deleteAccountDeleting: "Видаляємо акаунт...",
+    deleteAccountFailed: "Не вдалося видалити акаунт. Спробуйте ще раз.",
+    deleteAccountBlockedTeam: "Спочатку видаліть співробітників із бізнесу або передайте права власника."
   },
   en: {
     readFileFailed: "Could not read the file.",
@@ -551,7 +565,14 @@ const settingsExtras = {
     avatarReplace: "Replace avatar",
     avatarRemove: "Remove avatar",
     avatarImageOnly: "Please choose an image file (JPG, PNG, WEBP).",
-    avatarTooLarge: "Avatar is too large. Maximum size is 2 MB."
+    avatarTooLarge: "Avatar is too large. Maximum size is 2 MB.",
+    deleteAccountTitle: "Delete account",
+    deleteAccountText: "Delete your specialist account and related dashboard data. This action cannot be undone.",
+    deleteAccountButton: "Delete account",
+    deleteAccountConfirm: "Delete your account? This action cannot be undone.",
+    deleteAccountDeleting: "Deleting account...",
+    deleteAccountFailed: "Could not delete the account. Please try again.",
+    deleteAccountBlockedTeam: "Remove team members from the business or transfer ownership first."
   },
   fr: {
     readFileFailed: "Impossible de lire le fichier.",
@@ -597,7 +618,14 @@ const settingsExtras = {
     avatarTitle: "Avatar du spécialiste",
     avatarUpload: "Téléverser l’avatar",
     avatarReplace: "Remplacer l’avatar",
-    avatarRemove: "Supprimer l’avatar"
+    avatarRemove: "Supprimer l’avatar",
+    deleteAccountTitle: "Supprimer le compte",
+    deleteAccountText: "Supprimez le compte spécialiste et les données liées au tableau de bord. Cette action est irréversible.",
+    deleteAccountButton: "Supprimer le compte",
+    deleteAccountConfirm: "Supprimer le compte ? Cette action est irréversible.",
+    deleteAccountDeleting: "Suppression du compte...",
+    deleteAccountFailed: "Impossible de supprimer le compte. Réessayez.",
+    deleteAccountBlockedTeam: "Supprimez d'abord les membres de l'équipe ou transférez la propriété."
   },
   pl: {
     readFileFailed: "Nie udało się odczytać pliku.",
@@ -641,7 +669,14 @@ const settingsExtras = {
     avatarTitle: "Avatar specjalisty",
     avatarUpload: "Prześlij avatar",
     avatarReplace: "Zmień avatar",
-    avatarRemove: "Usuń avatar"
+    avatarRemove: "Usuń avatar",
+    deleteAccountTitle: "Usuń konto",
+    deleteAccountText: "Usuń konto specjalisty i powiązane dane panelu. Tej czynności nie można cofnąć.",
+    deleteAccountButton: "Usuń konto",
+    deleteAccountConfirm: "Usunąć konto? Tej czynności nie można cofnąć.",
+    deleteAccountDeleting: "Usuwanie konta...",
+    deleteAccountFailed: "Nie udało się usunąć konta. Spróbuj ponownie.",
+    deleteAccountBlockedTeam: "Najpierw usuń członków zespołu albo przekaż właścicielstwo."
   },
   cs: {
     sectionGeneral: "Obecné",
@@ -659,7 +694,14 @@ const settingsExtras = {
     telegramConnected: "Bot připojen",
     telegramNotConnected: "Bot není připojen",
     scheduleOpenButton: "Otevřít rozvrh",
-    onboardingProgress: (done: number, total: number) => `${done} z ${total} hotovo`
+    onboardingProgress: (done: number, total: number) => `${done} z ${total} hotovo`,
+    deleteAccountTitle: "Smazat účet",
+    deleteAccountText: "Smažte účet specialisty a související data v kabinetu. Tuto akci nelze vrátit zpět.",
+    deleteAccountButton: "Smazat účet",
+    deleteAccountConfirm: "Smazat účet? Tuto akci nelze vrátit zpět.",
+    deleteAccountDeleting: "Mažeme účet...",
+    deleteAccountFailed: "Účet se nepodařilo smazat. Zkuste to znovu.",
+    deleteAccountBlockedTeam: "Nejprve odeberte členy týmu nebo převeďte vlastnictví."
   },
   es: {
     sectionGeneral: "General",
@@ -677,7 +719,14 @@ const settingsExtras = {
     telegramConnected: "Bot conectado",
     telegramNotConnected: "Bot no conectado",
     scheduleOpenButton: "Abrir horario",
-    onboardingProgress: (done: number, total: number) => `${done} de ${total} completado`
+    onboardingProgress: (done: number, total: number) => `${done} de ${total} completado`,
+    deleteAccountTitle: "Eliminar cuenta",
+    deleteAccountText: "Elimina la cuenta del especialista y los datos relacionados del panel. Esta acción no se puede deshacer.",
+    deleteAccountButton: "Eliminar cuenta",
+    deleteAccountConfirm: "¿Eliminar la cuenta? Esta acción no se puede deshacer.",
+    deleteAccountDeleting: "Eliminando cuenta...",
+    deleteAccountFailed: "No se pudo eliminar la cuenta. Inténtalo de nuevo.",
+    deleteAccountBlockedTeam: "Primero elimina a los miembros del equipo o transfiere la propiedad."
   },
   de: {
     sectionGeneral: "Allgemein",
@@ -695,7 +744,14 @@ const settingsExtras = {
     telegramConnected: "Bot verbunden",
     telegramNotConnected: "Bot nicht verbunden",
     scheduleOpenButton: "Zeitplan öffnen",
-    onboardingProgress: (done: number, total: number) => `${done} von ${total} erledigt`
+    onboardingProgress: (done: number, total: number) => `${done} von ${total} erledigt`,
+    deleteAccountTitle: "Konto löschen",
+    deleteAccountText: "Lösche das Spezialistenkonto und die zugehörigen Dashboard-Daten. Diese Aktion kann nicht rückgängig gemacht werden.",
+    deleteAccountButton: "Konto löschen",
+    deleteAccountConfirm: "Konto löschen? Diese Aktion kann nicht rückgängig gemacht werden.",
+    deleteAccountDeleting: "Konto wird gelöscht...",
+    deleteAccountFailed: "Das Konto konnte nicht gelöscht werden. Bitte versuche es erneut.",
+    deleteAccountBlockedTeam: "Entferne zuerst Teammitglieder oder übertrage die Inhaberschaft."
   }
 } as const;
 
@@ -1161,6 +1217,7 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
   const [autosaveRetryTick, setAutosaveRetryTick] = useState(0);
   const [isTopUpLoading, setIsTopUpLoading] = useState(false);
   const [isCancellingSubscription, setIsCancellingSubscription] = useState(false);
+  const [isDeletingAccount, setIsDeletingAccount] = useState(false);
   const [joinRequests, setJoinRequests] = useState(initialData.joinRequests);
   const [addressSearchValue, setAddressSearchValue] = useState(initialData.business.address ?? "");
   const [addressSuggestions, setAddressSuggestions] = useState<AddressSuggestion[]>([]);
@@ -2431,6 +2488,49 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
     router.refresh();
   }
 
+  async function handleDeleteAccount() {
+    if (isDeletingAccount) {
+      return;
+    }
+
+    if (typeof window !== "undefined" && !window.confirm(copy.deleteAccountConfirm)) {
+      return;
+    }
+
+    setIsDeletingAccount(true);
+    setStatus("");
+
+    try {
+      if (autoSaveTimerRef.current) {
+        window.clearTimeout(autoSaveTimerRef.current);
+        autoSaveTimerRef.current = null;
+      }
+
+      const response = await fetch("/api/pro/account/delete", {
+        method: "DELETE"
+      });
+      const payload = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        if (payload?.code === "team_members_connected") {
+          throw new Error(copy.deleteAccountBlockedTeam);
+        }
+
+        throw new Error(
+          typeof payload?.error === "string" && payload.error.trim()
+            ? payload.error
+            : copy.deleteAccountFailed
+        );
+      }
+
+      router.push(getPostLogoutRedirectPath("settings"));
+      router.refresh();
+    } catch (error) {
+      setStatus(error instanceof Error ? error.message : copy.deleteAccountFailed);
+      setIsDeletingAccount(false);
+    }
+  }
+
   const useSingleColumnGrid =
     activeSection === "telegram" || activeSection === "address";
 
@@ -2819,6 +2919,24 @@ export default function SettingsView({ initialData, onboardingCta, initialSectio
                       </div>
                     </section>
                   ) : null}
+
+                  <section className={`${styles.settingsCard} ${styles.settingsDangerCard}`}>
+                    <div className={styles.settingsCardHeader}>
+                      <div>
+                        <span>{copy.deleteAccountButton}</span>
+                        <h2>{copy.deleteAccountTitle}</h2>
+                      </div>
+                    </div>
+                    <p className={styles.settingsCardHint}>{copy.deleteAccountText}</p>
+                    <button
+                      type="button"
+                      className={styles.dangerButton}
+                      onClick={() => void handleDeleteAccount()}
+                      disabled={isDeletingAccount}
+                    >
+                      {isDeletingAccount ? copy.deleteAccountDeleting : copy.deleteAccountButton}
+                    </button>
+                  </section>
                 </>
               ) : null}
 
