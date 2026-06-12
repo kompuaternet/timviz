@@ -1,7 +1,13 @@
 import Script from "next/script";
 
+const defaultTimvizMetaPixelId = "166404170851922";
+
 function getMetaPixelId() {
-  return (process.env.NEXT_PUBLIC_META_PIXEL_ID || process.env.META_PIXEL_ID || "").trim();
+  return (
+    process.env.NEXT_PUBLIC_META_PIXEL_ID ||
+    process.env.META_PIXEL_ID ||
+    defaultTimvizMetaPixelId
+  ).trim();
 }
 
 export default function MetaPixel() {

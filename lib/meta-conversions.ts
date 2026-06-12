@@ -14,6 +14,7 @@ type MetaWebRegistrationInput = {
 };
 
 const defaultMetaGraphApiVersion = "v25.0";
+const defaultTimvizMetaPixelId = "166404170851922";
 const defaultTimeoutMs = 2500;
 const timvizSiteUrl = "https://timviz.com";
 
@@ -87,7 +88,7 @@ export function getMetaWebRegistrationEventId(professionalId: string) {
 }
 
 export async function reportMetaWebRegistrationConversion(input: MetaWebRegistrationInput) {
-  const pixelId = env("META_PIXEL_ID", "NEXT_PUBLIC_META_PIXEL_ID");
+  const pixelId = env("META_PIXEL_ID", "NEXT_PUBLIC_META_PIXEL_ID") || defaultTimvizMetaPixelId;
   const accessToken = env("META_CONVERSIONS_API_ACCESS_TOKEN", "META_CAPI_ACCESS_TOKEN");
 
   if (!pixelId || !accessToken || !input.professionalId) {
