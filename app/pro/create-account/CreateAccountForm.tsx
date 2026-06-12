@@ -1209,13 +1209,6 @@ export default function CreateAccountForm() {
       return;
     }
 
-    if (result.emailConfirmationRequired) {
-      window.sessionStorage.removeItem(liveDraftKey);
-      setEmailConfirmationSent(result.email || email.trim());
-      setIsCheckingEmail(false);
-      return;
-    }
-
     logFunnelStep("setup_completed");
     trackAdsEvent("sign_up_complete", {
       event_id: result.metaRegistrationEventId || undefined,
@@ -1234,6 +1227,14 @@ export default function CreateAccountForm() {
         language
       });
     }
+
+    if (result.emailConfirmationRequired) {
+      window.sessionStorage.removeItem(liveDraftKey);
+      setEmailConfirmationSent(result.email || email.trim());
+      setIsCheckingEmail(false);
+      return;
+    }
+
     window.sessionStorage.removeItem(liveDraftKey);
     router.push("/pro/calendar");
     router.refresh();

@@ -122,19 +122,6 @@ export async function POST(request: Request) {
       }).catch(() => undefined);
     }
 
-    if (authProvider === "email" && !skipEmailConfirmation) {
-      const professional = await getProfessionalPasswordResetProfile(email);
-      if (professional) {
-        await sendProfessionalConfirmationEmail({
-          request,
-          professional,
-          language
-        }).catch((error) => console.warn("[pro-setup] Confirmation email failed", error));
-      }
-
-      return NextResponse.json({ ...result, emailConfirmationRequired: true, email });
-    }
-
     const metaRegistrationEventId = getMetaWebRegistrationEventId(result.professionalId);
     await reportMetaWebRegistrationConversion({
       professionalId: result.professionalId,
@@ -148,6 +135,19 @@ export async function POST(request: Request) {
       workspaceReady: result.workspaceReady === true,
       request
     });
+
+    if (authProvider === "email" && !skipEmailConfirmation) {
+      const professional = await getProfessionalPasswordResetProfile(email);
+      if (professional) {
+        await sendProfessionalConfirmationEmail({
+          request,
+          professional,
+          language
+        }).catch((error) => console.warn("[pro-setup] Confirmation email failed", error));
+      }
+
+      return NextResponse.json({ ...result, emailConfirmationRequired: true, email, metaRegistrationEventId });
+    }
 
     const cookieStore = await cookies();
     cookieStore.set(getSessionCookieName(), signSessionValue(result.professionalId), {
