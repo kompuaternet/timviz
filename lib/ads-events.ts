@@ -173,6 +173,22 @@ function trackMetaPixelEvents(eventName: AdsEventName, payload: Record<string, u
   }
 }
 
+export function trackMetaPageView(payload: AdsEventPayload = {}) {
+  if (typeof window === "undefined" || typeof window.fbq !== "function") {
+    return;
+  }
+
+  const attributionPayload = captureAdsAttribution();
+  const eventPayload = cleanMetaPayload({
+    ...attributionPayload,
+    ...payload,
+    page_location: window.location.href,
+    page_path: window.location.pathname
+  });
+
+  window.fbq("track", "PageView", eventPayload);
+}
+
 export function captureAdsAttribution() {
   if (typeof window === "undefined") {
     return {};

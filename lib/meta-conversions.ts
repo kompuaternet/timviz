@@ -54,7 +54,7 @@ function getClientIp(request?: Request) {
 }
 
 function getEventSourceUrl(request?: Request) {
-  return request?.headers.get("referer") || `${timvizSiteUrl}/ru/for-masters`;
+  return request?.headers.get("referer") || `${timvizSiteUrl}/ru/for-business`;
 }
 
 function getUserData(input: MetaWebRegistrationInput) {

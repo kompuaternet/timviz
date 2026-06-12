@@ -1,5 +1,14 @@
 # Creative Briefs
 
+## Ready Static Creatives
+
+- `creatives/timviz_fb_feed_1080x1350.png` - 4:5 feed creative for Facebook and Instagram.
+- `creatives/timviz_fb_square_1080x1080.png` - 1:1 square creative for broad feed placements.
+- `creatives/timviz_fb_story_1080x1920.png` - 9:16 Stories/Reels creative.
+- `creatives/preview_contact_sheet.jpg` - quick preview sheet for approval.
+
+Style direction: premium light UI, pearl background, violet CTA, soft mint/champagne accents, no heavy black frame.
+
 ## Video 1: Direct Chaos
 
 - Format: 9:16, 15 seconds.

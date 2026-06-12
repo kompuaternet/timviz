@@ -27,7 +27,9 @@ export async function generateMetadata({
   }
 
   const language = lang as SiteLanguage;
-  const metadata = buildMetadata(`/${language}/for-masters`, forMastersSeoCopy[language], language);
+  const metadata = buildMetadata(`/${language}/for-masters`, forMastersSeoCopy[language], language, {
+    image: "/social/timviz-business-og.png"
+  });
   return {
     ...metadata,
     alternates: buildLanguageAlternates("/for-masters", language)

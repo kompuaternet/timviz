@@ -1,7 +1,19 @@
+import type { Metadata } from "next";
 import GlobalLanguageSwitcher from "../../GlobalLanguageSwitcher";
 import CreateAccountForm from "./CreateAccountForm";
 import CreateAccountVisual from "./CreateAccountVisual";
+import { buildMetadata, seoCopy } from "../../../lib/seo";
+import { defaultSiteLanguage } from "../../../lib/site-language";
 import styles from "../pro.module.css";
+
+export const metadata: Metadata = buildMetadata(
+  "/pro/create-account",
+  seoCopy.createAccount[defaultSiteLanguage],
+  defaultSiteLanguage,
+  {
+    image: "/social/timviz-signup-og.png"
+  }
+);
 
 export default function ProCreateAccountPage() {
   return (

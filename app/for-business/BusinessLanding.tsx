@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { buildAdsCarryoverUrl, trackAdsEvent } from "../../lib/ads-events";
 import { mobileApps } from "../../lib/mobile-apps";
 import { getNicheSlug } from "../../lib/niche-pages";
 import { getLocalizedPath, isSiteLanguage, publicFooterLabels, type SiteLanguage, withEnglishFallback } from "../../lib/site-language";
@@ -933,9 +934,9 @@ type BusinessLandingProps = {
 
 export default function BusinessLanding({ initialLanguage = "ru" }: BusinessLandingProps) {
   const [language, setLanguage] = useState<LandingLanguage>(initialLanguage);
+  const [signupHref, setSignupHref] = useState("/pro/create-account?source=for_business");
   const t = copy[language];
   const assets = screenAssets[language];
-  const createProfileLink = "/pro/create-account";
   const footerLabels = publicFooterLabels[language];
   const capability = capabilityLabels[language];
   const useful = usefulLabels[language];
@@ -979,6 +980,51 @@ export default function BusinessLanding({ initialLanguage = "ru" }: BusinessLand
     window.addEventListener("rezervo-language-change", onLanguageChange);
     return () => window.removeEventListener("rezervo-language-change", onLanguageChange);
   }, [initialLanguage]);
+
+  useEffect(() => {
+    trackAdsEvent("landing_view", {
+      landing: "for_business",
+      language
+    });
+    setSignupHref(buildAdsCarryoverUrl("/pro/create-account?source=for_business"));
+  }, [language]);
+
+  function trackSignupCta(position: string) {
+    trackAdsEvent("cta_click", {
+      landing: "for_business",
+      position,
+      language
+    });
+    trackAdsEvent("sign_up_start", {
+      source: "for_business",
+      position,
+      language
+    });
+  }
+
+  function trackSecondaryCta(position: string, target: string) {
+    trackAdsEvent("cta_click", {
+      landing: "for_business",
+      position,
+      target,
+      language
+    });
+  }
+
+  function trackStoreCta(position: string, target: string) {
+    trackAdsEvent("cta_click", {
+      landing: "for_business",
+      position,
+      target,
+      language
+    });
+    trackAdsEvent("app_store_click", {
+      landing: "for_business",
+      position,
+      target,
+      language
+    });
+  }
 
   const faqSchema = useMemo(
     () => ({
@@ -1027,7 +1073,7 @@ export default function BusinessLanding({ initialLanguage = "ru" }: BusinessLand
         <a className="public-logo" href={getLocalizedPath(language)}><BrandLogo /></a>
         <nav className="business-nav" aria-label={t.menu}>
           <PublicHeaderAuthMenu language={language} />
-          <a href={createProfileLink} className="public-company-button">{t.create}</a>
+          <a href={signupHref} className="public-company-button" onClick={() => trackSignupCta("header")}>{t.create}</a>
           <details className="public-menu">
             <summary aria-label={t.menu} title={t.menu}>
               <span>{t.menu}</span>
@@ -1039,7 +1085,7 @@ export default function BusinessLanding({ initialLanguage = "ru" }: BusinessLand
               <a href={getLocalizedPath(language, "/account")}>{t.clientLogin}</a>
               <hr />
               <strong>{t.business}</strong>
-              <a href={createProfileLink}>{t.create}</a>
+              <a href={signupHref} onClick={() => trackSignupCta("menu")}>{t.create}</a>
               <a href="/pro/login">{t.businessLogin}</a>
             </div>
           </details>
@@ -1060,10 +1106,17 @@ export default function BusinessLanding({ initialLanguage = "ru" }: BusinessLand
             </button>
           </strong>
           <div className="business-hero-actions">
-            <a className="business-primary" href={createProfileLink}>{t.primaryCta}</a>
-            <a className="business-secondary" href="#features">{t.secondaryCta}</a>
+            <a className="business-primary" href={signupHref} onClick={() => trackSignupCta("hero_primary")}>{t.primaryCta}</a>
+            <a className="business-secondary" href="#features" onClick={() => trackSecondaryCta("hero_secondary", "features")}>{t.secondaryCta}</a>
             {storeLinks.map((store) => (
-              <a className="business-secondary" href={store.href} key={store.target} rel="noopener noreferrer" target="_blank">
+              <a
+                className="business-secondary"
+                href={store.href}
+                key={store.target}
+                rel="noopener noreferrer"
+                target="_blank"
+                onClick={() => trackStoreCta(`hero_${store.target}`, store.target)}
+              >
                 {store.label}
               </a>
             ))}
@@ -1089,7 +1142,7 @@ export default function BusinessLanding({ initialLanguage = "ru" }: BusinessLand
           ))}
         </div>
         <div className="business-inline-cta">
-          <a className="business-primary" href={createProfileLink}>{t.primaryCta}</a>
+          <a className="business-primary" href={signupHref} onClick={() => trackSignupCta("why_inline")}>{t.primaryCta}</a>
         </div>
       </section>
       <section className="business-seo-section">
@@ -1099,7 +1152,7 @@ export default function BusinessLanding({ initialLanguage = "ru" }: BusinessLand
       <section className="business-seo-section">
         <h2>{t.middleCtaTitle}</h2>
         <p>{t.middleCtaText}</p>
-        <a className="business-primary" href={createProfileLink}>{t.middleCtaButton}</a>
+        <a className="business-primary" href={signupHref} onClick={() => trackSignupCta("middle")}>{t.middleCtaButton}</a>
       </section>
 
       <section className="business-screens-section">
@@ -1168,7 +1221,7 @@ export default function BusinessLanding({ initialLanguage = "ru" }: BusinessLand
       <section className="business-seo-section">
         <h2>{t.telegramTitle}</h2>
         <p>{t.telegramText}</p>
-        <a className="business-secondary" href={createProfileLink}>{t.telegramCta}</a>
+        <a className="business-secondary" href={signupHref} onClick={() => trackSignupCta("telegram")}>{t.telegramCta}</a>
       </section>
 
       <section className="business-feature-section">
@@ -1207,9 +1260,16 @@ export default function BusinessLanding({ initialLanguage = "ru" }: BusinessLand
       <section className="business-final-section">
         <h2>{t.finalTitle}</h2>
         <p>{t.finalText}</p>
-        <a className="business-primary" href={createProfileLink}>{copy[language].create}</a>
+        <a className="business-primary" href={signupHref} onClick={() => trackSignupCta("final")}>{copy[language].create}</a>
         {storeLinks.map((store) => (
-          <a className="business-secondary" href={store.href} key={store.target} rel="noopener noreferrer" target="_blank">
+          <a
+            className="business-secondary"
+            href={store.href}
+            key={store.target}
+            rel="noopener noreferrer"
+            target="_blank"
+            onClick={() => trackStoreCta(`final_${store.target}`, store.target)}
+          >
             {store.label}
           </a>
         ))}
@@ -1230,7 +1290,15 @@ export default function BusinessLanding({ initialLanguage = "ru" }: BusinessLand
           <a href={getLocalizedPath(language, "/refund-policy")}>{footerLabels.refund}</a>
           <a href={getLocalizedPath(language, "/contact")}>{footerLabels.contact}</a>
           {storeLinks.map((store) => (
-            <a href={store.href} key={store.target} rel="noopener noreferrer" target="_blank">{store.label}</a>
+            <a
+              href={store.href}
+              key={store.target}
+              rel="noopener noreferrer"
+              target="_blank"
+              onClick={() => trackStoreCta(`footer_${store.target}`, store.target)}
+            >
+              {store.label}
+            </a>
           ))}
           <a href="mailto:adm@timviz.com">adm@timviz.com</a>
         </div>

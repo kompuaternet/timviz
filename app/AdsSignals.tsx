@@ -1,15 +1,35 @@
 "use client";
 
-import { useEffect } from "react";
-import { captureAdsAttribution, trackAdsEvent } from "../lib/ads-events";
+import { usePathname } from "next/navigation";
+import { useEffect, useRef } from "react";
+import { trackAdsEvent, trackMetaPageView } from "../lib/ads-events";
 
 export default function AdsSignals() {
+  const pathname = usePathname();
+  const previousPathRef = useRef<string | null>(null);
+
   useEffect(() => {
-    captureAdsAttribution();
+    if (!pathname) {
+      return;
+    }
+
+    const previousPath = previousPathRef.current;
+    const isInitialPageView = previousPath === null;
+    previousPathRef.current = pathname;
+
     trackAdsEvent("page_view_signal", {
-      source: "site"
+      source: "site",
+      route: pathname,
+      navigation_type: isInitialPageView ? "initial" : "client"
     });
-  }, []);
+
+    if (!isInitialPageView) {
+      trackMetaPageView({
+        source: "client_navigation",
+        route: pathname
+      });
+    }
+  }, [pathname]);
 
   return null;
 }
