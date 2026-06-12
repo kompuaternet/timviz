@@ -85,11 +85,11 @@ const adsMetaStandardEvents: Partial<Record<AdsEventName, string[]>> = {
   pro_trial_started: ["StartTrial"],
   checkout_start: ["InitiateCheckout"],
   checkout_redirect: ["AddPaymentInfo"],
-  subscription_purchase: ["Subscribe", "Purchase"],
+  subscription_purchase: ["Subscribe"],
   support_message_sent: ["Contact"],
   mobile_sign_up_complete: ["CompleteRegistration", "Lead"],
   mobile_checkout_start: ["InitiateCheckout"],
-  mobile_purchase_complete: ["Purchase"]
+  mobile_purchase_complete: ["Subscribe"]
 };
 
 function isAdsCarryKey(key: string) {
@@ -155,6 +155,21 @@ function cleanMetaPayload(payload: Record<string, unknown>) {
   );
 }
 
+function normalizeMetaPurchasePayload(payload: Record<string, unknown>) {
+  const value = Number(payload.value);
+  const currency = String(payload.currency ?? "").trim().toUpperCase();
+
+  if (!Number.isFinite(value) || value <= 0 || !/^[A-Z]{3}$/.test(currency)) {
+    return null;
+  }
+
+  return {
+    ...payload,
+    value,
+    currency
+  };
+}
+
 function trackMetaPixelEvents(eventName: AdsEventName, payload: Record<string, unknown>) {
   if (typeof window.fbq !== "function") {
     return;
@@ -169,7 +184,12 @@ function trackMetaPixelEvents(eventName: AdsEventName, payload: Record<string, u
   window.fbq("trackCustom", eventName, metaPayload, metaEventOptions);
 
   for (const metaEventName of adsMetaStandardEvents[eventName] || []) {
-    window.fbq("track", metaEventName, metaPayload, metaEventOptions);
+    const standardPayload = metaEventName === "Purchase" ? normalizeMetaPurchasePayload(metaPayload) : metaPayload;
+    if (!standardPayload) {
+      continue;
+    }
+
+    window.fbq("track", metaEventName, standardPayload, metaEventOptions);
   }
 }
 
