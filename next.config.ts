@@ -15,6 +15,9 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
+      { source: "/ua", destination: "/uk", permanent: true },
+      { source: "/ua/:path*", destination: "/uk/:path*", permanent: true },
+
       { source: "/ru/dlya-manikyuru", destination: "/ru/dlya-manikyura", permanent: true },
       { source: "/ru/dlya-perukariv", destination: "/ru/dlya-parikmaherov", permanent: true },
       { source: "/en/dlya-manikyuru", destination: "/en/for-nail-technicians", permanent: true },
