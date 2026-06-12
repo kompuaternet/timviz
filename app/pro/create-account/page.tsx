@@ -11,7 +11,7 @@ export const metadata: Metadata = buildMetadata(
   seoCopy.createAccount[defaultSiteLanguage],
   defaultSiteLanguage,
   {
-    image: "/social/timviz-signup-og.png"
+    image: "/social/timviz-signup-og-20260612.png"
   }
 );
 

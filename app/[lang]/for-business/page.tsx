@@ -26,7 +26,7 @@ export async function generateMetadata({
   }
 
   const metadata = buildMetadata(`/${lang}/for-business`, seoCopy.forBusiness[lang], lang, {
-    image: "/social/timviz-business-og.png"
+    image: "/social/timviz-business-og-20260612.png"
   });
   return {
     ...metadata,

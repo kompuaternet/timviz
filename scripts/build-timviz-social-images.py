@@ -131,14 +131,14 @@ def make_card(output: str, headline: str, body: str, button: str, screenshot: st
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     make_card(
-        "timviz-business-og.png",
+        "timviz-business-og-20260612.png",
         "Онлайн-запись без переписок",
         "Клиенты выбирают услугу и свободное время сами. Timviz собирает заявки, календарь и уведомления в одном месте.",
         "Создать профиль",
         "ru-day.png",
     )
     make_card(
-        "timviz-signup-og.png",
+        "timviz-signup-og-20260612.png",
         "Создайте кабинет Timviz",
         "Бесплатный старт для мастера или салона: услуги, график, календарь и ссылка для клиентов.",
         "Начать бесплатно",
