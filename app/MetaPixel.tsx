@@ -1,7 +1,7 @@
 import Script from "next/script";
 
 function getMetaPixelId() {
-  return (process.env.NEXT_PUBLIC_META_PIXEL_ID || "").trim();
+  return (process.env.NEXT_PUBLIC_META_PIXEL_ID || process.env.META_PIXEL_ID || "").trim();
 }
 
 export default function MetaPixel() {
